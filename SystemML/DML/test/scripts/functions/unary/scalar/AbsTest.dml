@@ -1,0 +1,11 @@
+# junit test class: dml.test.integration.functions.unary.scalar.AbsTest.java
+
+$$readhelper$$
+
+IntComputation = abs($$int$$);
+IntComputationHelper = IntComputation * Helper;
+writeMM(IntComputationHelper, "$$outdir$$int", format="text");
+
+DoubleComputation = abs($$double$$);
+DoubleComputationHelper = DoubleComputation * Helper;
+writeMM(DoubleComputationHelper, "$$outdir$$double", format="text");

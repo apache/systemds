@@ -1,0 +1,10 @@
+# junit test class: dml.test.integration.functions.aggregate.SumTest.java
+
+$$readhelper$$
+
+scalar = $$scalar$$;
+
+computation = sum(scalar);
+ComputationHelper = computation * Helper;
+
+writeMM( ComputationHelper, "$$outdir$$computed", format="text");

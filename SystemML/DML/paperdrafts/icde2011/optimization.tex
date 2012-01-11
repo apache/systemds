@@ -1,0 +1,226 @@
+
+\begin{table*}[t]
+\centering
+\caption{Characteristics of Matrices.}
+\label{tab:matrix-stats}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+Matrix & X,Y,W & H' & V & W' & S & H\\
+\hline
+Dimension & $d\times 10$ &  $100,000\times 10$ & $d\times 100,000$ & $10\times d$ & $10\times 10$ & $10\times 100,000$\\
+\hline
+%Block Size & $1000\times 100$ & $1000\times 1000$ & $1000\times 100$ & $1000\times 1000$ \\
+%\hline
+Sparsity & 1 & 1& 0.001 & 1 & 1 & 1\\
+\hline
+\#non zeros & $10d$ & 1 million & $100d$ & $10d$ & 100 & 1 million\\
+%\hline
+%Size in cell representation & & & &\\
+%\hline 
+%Size in block representation & & & &\\
+\hline
+\end{tabular}
+\SmallCrunch
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{File Sizes of Matrices for different $d$ (block size is 1000x1000)}
+\label{tab:file-size}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+& d (million) & 1 & 2.5 & 5 & 7.5 & 10 & 15 & 20 & 30 & 40 & 50\\
+\hline
+\hline
+V & \# non zero (million) & 100 & 250 & 500 & 750 & 1000 & 1500 & 2000 & 3000 & 4000 & 5000\\
+\cline{2-12}
+& Size (GB)  & 1.5 & 3.7 & 7.5 & 11.2 & 14.9& 22.4& 29.9 & 44.9 &59.8 & 74.8\\
+\hline
+\hline
+X,Y,W,W' & \# non zero (million) & 10 & 25& 50& 75& 100& 150& 200 & 300 &400 & 500\\
+\cline{2-12}
+& Size (GB) & 0.077 & 0.191 & 0.382& 0.573 & 0.764 & 1.1 & 1.5 & 2.2 & 3.0 & 3.7\\
+\hline
+\end{tabular}
+\SmallCrunch
+\end{table*}
+
+%One optimization in the HOP layer of \systemmlit \ is to choose the low level execution plan based
+%on cost model. In this section, we use matrix multiplication as an example to illustrate how to
+%choose between CPMM and RMM for a particular matrix multiplication.
+
+%In Section~\ref{sec:mrruntime}, we have introduced two alternatives of matrix multiplication and
+%discussed their cost model. In this section,
+
+\noindent{\bf RMM vs CPMM:} We now analyze the performance differences between alternative execution plans for matrix multiplication, RMM and CPMM. We consider three examples from GNMF (Script~\ref{scpt:gnmf}): \texttt{V\mmult
+  t(H)}, \texttt{W\mmult (H\mmult t(H))}, and \texttt{t(W)\mmult W}. To focus on
+matrix multiplication, we set \texttt{H'=t(H)}, \texttt{S=H\mmult t(H)}, and \texttt{W'=t(W)}. Then the
+three multiplications are defined as: \texttt{V\mmult H'}, \texttt{W\mmult S} and \texttt{W'\mmult
+  W}. The inputs of these three multiplications have very distinct characteristics as shown in
+Table~\ref{tab:matrix-stats}. With $d$ taking values in millions, V is a very large matrix; H' is a
+medium sized matrix; W' and W are very tall and skinny matrices; and S is a tiny matrix. We compare execution times for
+the two alternative algorithms for the three matrix multiplications in Figures~\ref{fig:mmult-cmp1},
+\ref{fig:mmult-cmp2} and \ref{fig:mmult-cmp3}.
+
+Note that neither of the algorithms always outperforms the other with their relative performance depending
+on the data characteristics as described below.
+
+%\begin{itemize}
+%\item 
+For \texttt{V\mmult H'}, due to the large sizes of both V and H', CPMM is the preferred
+approach over RMM, because the shuffling cost in RMM increases dramatically with the number of rows
+in V. 
+
+%\item 
+For \texttt{W\mmult S}, RMM is preferred over CPMM, as S is small enough
+to fit in one block, and RMM essentially partitions W and broadcasts S to perform the matrix
+multiplication. 
+
+%\item 
+For \texttt{W'\mmult W}, the cost for RMM is $\textit{shuffle}(|W'|+|W|)+IO_{dfs}(|W'|+|W|+|S|)$ with a degree of parallelism of only 1, while the
+cost of CPMM is roughly $\textit{shuffle}(|W'|+|W|+r|S|)+IO_{dfs}(2r|S|+|W'|+|W|+|S|)$. For CPMM, the degree of parallelization is $d/1000$, which ranges from 1000 to 50000 as $d$
+increases from 1 million to 50 million. When $d$ is relatively small, even though the degree of
+parallelization is only 1, the advantage of the low shuffle cost makes RMM perform better than
+CPMM. However, as $d$ increases, CPMM's higher degree of parallelism makes it outperform
+RMM. Overall, CPMM performs very stably with increasing sizes of W' and W.
+%\end{itemize}
+
+%The result of \texttt{W'\mmult W} will be a $10\times 10$ dense matrix with the same characteristics as S. 
+
+
+\some
+{plots/mmult_cmp1.eps}
+{fig:mmult-cmp1}
+{plots/mmult_cmp2.eps}
+{fig:mmult-cmp2}
+{plots/mmult_cmp3.eps}
+{fig:mmult-cmp3}
+{Comparing two alternatives of matrix multiplication: (a) \texttt{V\mmult H'}, (b) \texttt{W\mmult S}, (c) \texttt{W'\mmult W}}
+
+
+\noindent{\bf Piggybacking:} To analyze the impact of piggybacking several lops into a single
+MapReduce job, we compare piggybacking to a naive approach, where each lop is evaluated in a
+separate MapReduce job. Depending on whether a single lop dominates the cost of evaluating a LOP-Dag,
+the piggybacking optimization may or may not be significant. To demonstrate this, we first consider the expression
+\texttt{W*(Y/X)} with \texttt{X=W\mmult H\mmult t(H)} and \texttt{Y=V\mmult t(H)}. The matrix
+characteristics for X, Y, and W are listed in Tables~\ref{tab:matrix-stats}
+and~\ref{tab:file-size}. Piggybacking reduces the number of MapReduce jobs from 2 to 1 resulting in
+a factor of 2 speed-up as shown in Figure~\ref{fig:piggyback-binary}. On the other hand, consider
+the expression \texttt{W*(V\mmult t(H)/X)} from the GNMF algorithm (step 8), where \texttt{X=W\mmult
+  H\mmult t(H)}. While piggybacking reduces the number of MapReduce jobs from 5 to 2, the associated
+performance gains are small as shown in Figure~\ref{fig:piggyback-mmult}.
+
+%There are 4 language level matrix operations in this expression. These 4 operations can be packed
+%into 2 Mapreduce jobs using piggybacking, compared to 5 MapReduce jobs with the naive approach
+%(matrix multiplication requires 2 MapReduce jobs, the other operations require one MapReduce job
+%each). shows the execution time for the two approaches. The matrix characteristics for X, H, V, and
+%W are listed in Table~\ref{tab:matrix-stats}. We fix the size of matrix H (7.8 MB) and increase the
+%size of X, V, and W by changing $d$ from 1 million to 20 million. The sizes of the matrices X, V and
+%W for different $d$ values can be found in Table~\ref{tab:file-size}. The experimental results show
+%that the benefit of piggybacking for this setting is insignificant, because the expensive matrix
+%multiplication between V and t(H) dominates the execution time.
+
+\twosubfigures
+{plots/piggyback_binary.eps}
+{\texttt{W*(Y/X)}}
+{fig:piggyback-binary}
+{plots/piggyback_mmult.eps}
+{\texttt{W*(V\mmult t(H)/X)}}
+{fig:piggyback-mmult}
+{Piggybacking or not:}
+
+\noindent{\bf Matrix Blocking:} Table~\ref{tab:cmp-block} shows the effect of matrix blocking
+on storage and computational efficiency (time) using the expression \texttt{V\mmult H'}. As a
+baseline, the table also includes the corresponding numbers for the cell representation. The matrix
+characteristics for V with d=1 million rows and H are listed in Table~\ref{tab:matrix-stats}.  The
+execution time for the expression improves by orders of magnitude from hours for the cell
+representation to minutes for the block representation. 
+
+The impact of block size on storage requirements varies for sparse and dense matrices. For dense
+matrix $H'$, blocking significantly reduces the storage requirements compared to the cell
+representation. On the other hand, for sparse matrix $V$, small block sizes can increase the storage
+requirement compared to the cell representation, since only a small fraction of the cells are non-zero
+per block and the per block metadata space requirements are relatively high.
+
+Figure~\ref{fig:blocking-cmp} shows the performance comparison for different block sizes with increasing matrix
+sizes\footnote{Smaller block sizes were ignored in this experiment since they took hours even for 1
+  million rows in $V$.}. This graph shows that the performance benefit of using a larger block size
+increases as the size of V increases.
+
+%Compared to cell representation, blocking reduces the storage for the sparse matrix V almost 37\%
+%for $100\times 100$ block size, and 50\% for $1000\times 1000$ block size. If the block size is too
+%small ($10\times 10$ block size), the storage for $V$ increases as the block representation incurs
+%per-block bookkeeping, and given that for 0.001 sparsity each $10\times 10$ block has only 1 cell
+%value in it, the number of blocks will be roughly the same as the number of non-zero cells. The
+%storage savings for dense matrix H' are at approx. 75\% compared to cell representation as there are
+%less blocks then cells to store.
+
+%However, the result doesn't imply that we should arbitrarily
+%increase the block size. A block should always fit in memory and make sure that there is a
+%sufficient number of blocks for parallelism, fully utilizing a given cluster.
+
+%Matrix V has 1 million rows.
+
+\begin{table}[t]
+\centering
+\caption{Comparison of different block sizes}
+\label{tab:cmp-block}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Block Size & 1000x1000 & 100x100 & 10x10 & cell\\
+\hline
+Execution time &117sec & 136sec & 3hr & $>$5hr\\
+\hline
+Size of V (GB) & 1.5 & 1.9 & 4.8 & 3.0\\
+\hline
+Size of H' (MB) & 7.8 & 7.9 & 8.1 & 31.0\\
+\hline
+\end{tabular}
+\Crunch
+\end{table}
+
+\noindent{\bf Local Aggregator for CPMM:} To understand the performance advantages of using a 
+local aggregator (Section~\ref{sec:localagg}), consider the evaluation of \texttt{V\mmult H'} (V is
+$d\times w$ matrix, and H' is $w \times t$ matrix). The matrix characteristics for V and H' can be
+found in Tables~\ref{tab:matrix-stats} and~\ref{tab:file-size}. We first set $w=100,000$ and
+$t=10$. In this configuration, each reducer performs 2 cross products on average, and the ideal
+performance gain through local aggregation is a factor of 2. Figure~\ref{fig:mmcj-n} shows the
+benefit of using the local aggregator. As $d$ increases from 1 million to 20 million, the speedup
+ranges from 1.2 to 2.
+
+We next study the effect of $w$, by fixing $d$ at 1 million and varying $w$ from 100,000 to 300,000. The number of cross products performed in each reducer increases as $w$
+increases. Consequently, as shown in Figure~\ref{fig:mmcj-k-size}, the intermediate result of
+\mmcjlop\ increases linearly with $w$ when a local aggregator is not deployed. On the other hand,
+when a local aggregator is applied, the size of the intermediate result stays constant as shown in
+the figure. Therefore, the running time with a local aggregator increases very slowly while without an
+aggregator the running time increases more rapidly (see Figure~\ref{fig:mmcj-k}).
+
+
+\twosubfigures
+{plots/blocking_cmp.eps}
+{Execution time with different block sizes}
+{fig:blocking-cmp}
+{plots/mmult_mmcj_n.eps}
+{Advantage of local aggregator with increasing d}
+{fig:mmcj-n}
+{}
+
+\twosubfigures
+{plots/mmult_mmcj_k_size.eps}
+{intermediate result size}
+{fig:mmcj-k-size}
+{plots/mmult_mmcj_k.eps}
+{execution time}
+{fig:mmcj-k}
+{CPMM with increasing w:}
+
+%{plots/mmult_mmcj_n_size.eps}
+%{The intermediate result sizes with increasing m}
+%{fig:mmcj-n-size}
+
+%\subsubsection{Other Optimization strategies}
+%
+%\textbf{Algebraic Rewrites}
+%\textbf{Description}: e.g. \texttt{A\mmult B\mmult C = (A\mmult B)\mmult C = A\mmult (B\mmult C)}. Based on the dimensionality and the sparsity of A, B and C, the optimizer will choose the right order to perform the operations. 
+%
+%\textbf{Conditional Evaluation}

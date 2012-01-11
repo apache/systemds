@@ -1,0 +1,80 @@
+$$readhelper$$
+
+#A <- nominal variable
+#Y <- scale variable
+
+A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
+Y = read("$$indir$$Y", rows=$$rows$$, cols=1, format="text");
+
+# mean and variance in target variable
+W = nrow(A);
+my = mean(Y);
+varY = centralMoment(Y,2) * W/(W-1.0)
+
+# category-wise (frequencies, means, variances)
+CFreq = groupedAggregate(target=Y, groups=A, fn="count"); 
+CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+CVars = groupedAggregate(target=Y, groups=A, fn="variance");
+
+# number of categories
+R = nrow(CFreq);
+
+Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ));
+
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreq-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+#print2("W = " + W + ", R = " + R + ", Anova num " + anova_num + ", Anova den " + anova_den);
+
+/*
+# Category Frequencies
+CFreq = ctable(A,1);
+W = nrow(A);
+
+# univariate stats by categories
+# (mean,variance,sigma) for each category
+FY1 = ctable(A,1,Y);
+FY2 = ctable(A,1,Y^2);
+
+CMeans = FY1/CFreq;
+CStdDev = sqrt((FY2/CFreq - CMeans^2)*(CFreq/(CFreq-1)));
+CVars = CStdDev^2;
+
+# (mean,variance,sigma) over all categories
+my = sum(Y)/W;
+sigmaY = sqrt((sum(Y^2)/W - my*my)*(W/(W-1)));
+varY = sigmaY^2;
+
+CVars = groupedCentralMoment(Y,A,2);
+
+
+# Eta and ANOVA F Measure
+Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ))
+
+R = nrow(CFreq);
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreq-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+#ANOVAF = exp(log(anova_num)-log(anova_den));
+*/
+
+# ---------------------------------------------------------
+# output required statistics
+varYHelper = varY * Helper;
+write(varYHelper, "$$outdir$$outVarY", format="text");
+
+myHelper = my * Helper;
+write(myHelper, "$$outdir$$outMeanY", format="text");
+
+write(CFreq, "$$outdir$$outCatFreqs", format="text");
+write(CMeans, "$$outdir$$outCatMeans", format="text");
+write(CVars, "$$outdir$$outCatVars", format="text");
+
+EtaHelper = Eta * Helper;
+write(EtaHelper, "$$outdir$$outEta", format="text");
+
+AnovaFHelper = ANOVAF * Helper;
+write(AnovaFHelper, "$$outdir$$outAnovaF", format="text");
+
+

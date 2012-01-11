@@ -1,0 +1,36 @@
+
+The growing need to analyze massive datasets has led to an increased interest
+in implementing ML algorithms on MapReduce. SystemML~\cite{systemml} is a large scale system for ML based on Apache Hadoop, developed in IBM research. In SystemML, statistical ML algorithms are expressed as simple scripts in a high-level language with linear algebra and mathematical primitives. SystemML then complies the scripts, applies various optimization techniques based on input data and system characteristics, and eventually translates them into efficient runtime on MapReduce. %SystemML is part of the big data analytics solution offered in IBM Infosphere BigInsights~\cite{biginsights} (can I say that yet???). 
+SystemML has been used for a large class of ML solutions, including classification, clustering, regression, matrix factorization, ranking etc. 
+
+Besides complex ML algorithms, SystemML also provides powerful tools to quantitively describe the basic features of data, called \textit{descriptive statistics}. %Descriptive statistics are used to quantitively describe the basic features of data. %They are in direct comparison to inferential statistics that infer general conclusions from the sample data. Descriptive statistics 
+Descriptive statistics primarily include {\em univariate analysis} that deals with a single variable at a time, and {\em bivariate analysis} that examines the degree of association between two variables. They are the foundation of virtually every quantitative analysis of data. Table~\ref{tab:stats} lists the descriptive statistics currently supported in SystemML. In this paper, we describe our experience in addressing the two major challenges when implementing descriptive statistics in SystemML: (1) numerical stability while operating on large datasets in the distributed setting of MapReduce; (2) efficient implementation of order statistics in MapReduce.
+
+%Most of descriptive statistics, except for order statistics, can be expressed in a certain summation form, therefore seeming easy to be implemented in MapReduce. However, straightforward implementations can often lead to disasters in numerical accuracy, due to overflow, underflow and round-off errors associated with finite precision arithmetic. The numerical stability problem gets more serious with the increasing need to analyze larger volumes of data. However, numerical stability issue is largely ignored in the context of large scale data processing. The popular Hadoop-based systems PIG~\cite{pig}, HIVE~\cite{hive} and JAQL~\cite{jaql} are still using dangerous naive implementations for sum, mean and variance. Surprisingly, numerically unstable algorithms are even in use in well-known distributed database products~\cite{netezza, teradata}. In SystemML, numerical stability is a major priority. In this paper, we first share our experience in the endeavor of ensuring numerical stability of the descriptive statistics, and call for attention to this important issue for large scale data processing.
+
+%Different from the other descriptive statistics, order statistics, used in median and quantiles, impose an order on all the input data, thus do not fit in the natural computation model of MapReduce. We will demonstrate how the existing distributed order statistics algorithms do not fit in the MapReduce environment and describe how we implement efficient order statistics in SystemML. 
+
+%\begin{table*}[t]
+%\centering
+%\begin{tabular}{|c|c|l|}
+%\hline
+%& Distribution & Min, Max, Range, Quantiles \\
+%\cline{2-3}
+%Univariate & Central Tendency & Mean, Harmonic mean, Geometric mean, Standard error of mean, Median, Inter-quartile mean, Mode\\
+%\cline{2-3} 
+%Analysis & Dispersion & Variance, Standard deviation, Coefficient of variation \\
+%\cline{2-3}
+%& Shape & Central moment, Skewness, Standard error of skewness, Kurtosis, Standard error of kurtosis\\
+%\hline
+%& Scale by Scale & Pearson’s R\\
+%\cline{2-3}
+%Bivariate & Categorical by Categorical & Chi-squared coefficient, Cramer’s V \\
+%\cline{2-3}
+%Analysis & Scale by Categorical & Eta, ANOVA F-measure \\
+%\cline{2-3}
+%& Ordinal by Ordinal & Spearman correlation \\
+%\hline
+%\end{tabular}
+%\caption{Descriptive statistics supported in SystemML}
+%\label{tab:stats}
+%\end{table*}

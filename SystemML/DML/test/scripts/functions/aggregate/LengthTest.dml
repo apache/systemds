@@ -1,0 +1,13 @@
+# junit test class: dml.test.integration.functions.aggregate.LengthTest.java
+
+$$readhelper$$
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorLength = length(Vector);
+VectorLengthHelper = VectorLength * Helper;
+writeMM(VectorLengthHelper, "$$outdir$$vector_length", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixLength = length(Matrix);
+MatrixLengthHelper = MatrixLength * Helper;
+writeMM(MatrixLengthHelper, "$$outdir$$matrix_length", format="text");

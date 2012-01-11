@@ -1,0 +1,7 @@
+#-f src/dml/runtime/test/numericalStability/scripts/generate_vector.dml 10 1 50 1 'out'
+A=Rand(rows = $1, cols = 1, min = $2, max = $3);
+needRoundOff=$4;
+if(needRoundOff==1)
+{A=round(A)}
+writeMM(A, $5, format="text");
+

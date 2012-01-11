@@ -1,0 +1,23 @@
+# junit test class: dml.test.integration.functions.unary.scalar.NegationTest.java
+
+$$readhelper$$
+
+IntVar = $$int$$;
+IntComputation = -IntVar;
+IntComputationHelper = IntComputation * Helper;
+writeMM(IntComputationHelper, "$$outdir$$int", format="text");
+
+NegativeIntVar = $$negativeint$$;
+NegativeIntComputation = -NegativeIntVar;
+NegativeIntComputationHelper = NegativeIntComputation * Helper;
+writeMM(NegativeIntComputationHelper, "$$outdir$$negative_int", format="text");
+
+DoubleVar = $$double$$;
+DoubleComputation = -DoubleVar;
+DoubleComputationHelper = DoubleComputation * Helper;
+writeMM(DoubleComputationHelper, "$$outdir$$double", format="text");
+
+NegativeDoubleVar = $$negativedouble$$;
+NegativeDoubleComputation = -NegativeDoubleVar;
+NegativeDoubleComputationHelper = NegativeDoubleComputation * Helper;
+writeMM(NegativeDoubleComputationHelper, "$$outdir$$negative_double", format="text");

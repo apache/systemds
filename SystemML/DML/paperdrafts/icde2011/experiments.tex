@@ -1,0 +1,36 @@
+The goals of our experimentation are to study scalability under conditions of varying
+data and Hadoop cluster sizes, and the effectiveness of optimizations in SystemML. For this
+purpose, we chose GNMF for which similar studies have been conducted recently~\cite{msrwww10}, thereby enabling
+meaningful comparisons. Since \systemmltext\ is architected to enable a large class of ML algorithms, we also study 2 other popular ML algorithms, namely linear regression and PageRank.
+
+\subsection{Experimental Setup}\label{sec:exp-setup}
+
+The experiments were conducted with Hadoop 0.20~\cite{hadoop} on two different clusters:
+\begin{itemize}
+
+\item{40-core cluster}: The cluster uses 5 local machines as worker nodes. Each machine has 8 cores with hyperthreading enabled, 32 GB RAM and 500 GB storage. We set each node to run 15 concurrent
+  mappers and 10 concurrent reducers.
+
+\item{100-core EC2 cluster}: The EC2 cluster has 100 worker nodes.  Each node is an EC2
+  small instance with 1 compute unit, 1.7 GB memory and 160 GB storage. Each node is set to run 2
+  mappers and 1 reducer concurrently.
+
+\end{itemize}
+
+The datasets are synthetic, and for given dimensionality and sparsity, the data generator creates
+random matrices with uniformly distributed non-zero cells. A fixed matrix block size
+(c.f. Section~\ref{sec:blocking}) of $1000\times 1000$ is used for all the experiments, except for
+the matrix blocking experiments in Section~\ref{sec:optimizations}. For the local aggregator used in CPMM, we use an
+in-memory buffer pool of size 900 MB on the 40-core cluster and 500 MB on the 100-core EC2 cluster.
+
+\subsection{Scalability}
+\label{sec:scale-expt}
+\input{exptscalability.tex}
+
+\subsection{Optimizations}
+\label{sec:optimizations}
+\input{optimization.tex}
+
+\subsection{Additional Algorithms}
+\label{sec:more-algs}
+\input{morealgs.tex}

@@ -1,0 +1,8 @@
+# junit test class: dml.test.integration.functions.aggregate.ColSumTest.java
+
+$$readhelper$$
+
+computation = prod($$scalar$$);
+ComputationHelper = computation * Helper;
+
+writeMM(ComputationHelper, "$$outdir$$computed", format="text");

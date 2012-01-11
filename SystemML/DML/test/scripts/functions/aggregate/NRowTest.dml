@@ -1,0 +1,13 @@
+# junit test class: dml.test.integration.functions.aggregate.NRowTest.java
+
+$$readhelper$$
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorRows = nrow(Vector);
+VectorRowsHelper = VectorRows * Helper;
+writeMM(VectorRowsHelper, "$$outdir$$vector_rows", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixRows = nrow(Matrix);
+MatrixRowsHelper = MatrixRows * Helper;
+writeMM(MatrixRowsHelper, "$$outdir$$matrix_rows", format="text");

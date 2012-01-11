@@ -1,0 +1,60 @@
+#dummytrain = function(Matrix[Double] IP) return (Matrix[Double] OP, Matrix[Double] OB) 
+dummytrain = function(Matrix[Double] IP) return (Matrix[Double] OP) 
+{
+OP = t(IP) %*% IP
+#OB = t(IP) %*% IP
+}
+
+dummytest = function (Matrix[Double] MD, Matrix[Double] UL) return (Double OP)
+{
+OP = 11.2
+#OP = rowSums(colSums(UL %*% MD))
+}
+
+#mydata = readMM ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
+mydata = readMM ("./scripts/AnInput",rows=100000,cols=20000, format="binary") ;
+
+build ensemble myens on (mydata)
+#partition (method='rowholdout', frac='0.7', numiterations=3, replicate=true) as (a)
+#partition (method='rsm', frac='0.7', numiterations=3, replicate=true) as (a)
+partition (method='bagging', frac='0.7', numiterations=3, replicate=true) as (a)
+train dummytrain(a) as (m)
+
+#crossval (mydata)
+#partition (type='kfold', element='row', numfolds=2, replicate=true) as (a, b)
+#partition (type='holdout', element='row', frac='0.4', numiterations=3, replicate=true) as (b,a) 
+#train dummytrain(a) as (m)
+#test dummytest(m, b) as (error)
+#aggregate sum(error) as (err)
+#partition (type='bootstrap', element='row', frac='0.5', numiterations=3, replicate=true) as (a)
+#train dummytrain(a) as (m)
+#test dummytest(m, mydata) as (error)
+#aggregate sum(error) as (err)
+
+#TODO/DEBUGs:
+# - hashmap - where to compute avil memory?! also, delte it after cv partition!
+# - el file write stmt (new datatype?) 
+# - cv aggrgn stmt error - prob ignore for now?!
+# - train/test funcs compiln; select[] opern - prob ignore for now?!
+#DONE:
+# - del spent files on hdfs (locn of tmp file is ./data/?) - how to get filesys in pgm blk? -> shirish: use rm:::filepathname! works!
+# - JR mult inps n class - doesnt seem to work in mrjobconfig -> shirish/ytian: use same stmt for both, hadoopfix -> hadoop! works!
+# - rm files .mtd! -> removed ./data/! let it be in curr working diro!
+# - RB operns still has bugs, espl el integn :-/ chk holdout's rb mapper! also chk output matrices (mydatare deletions??!) - works
+# - rsm with RB? uncsry? yes, rsm cannot go by RB! of course, bagging cant either.	
+# - cv stratified? is it possible? for HM/JR? - Not until we read the rows! So, not possible!
+# - remove column type from cv (and issupervised)! - done
+# - el train output filepath (temp0OP) gets overwritten (need to do mv and register)! - done
+# - verify the methods work for v.large matrices! espl, multi-blocks with partl blks at edges! - done, works
+# - distr cache for sfmapfile (not v.esntl) - returns null for files in local filesys - done
+
+#Berthold/Doug discussion (Aug 10):
+# 1 design expt plan and graphs to produce!! show to shiv! primarily partition? wt bout end-to-end? train/test? ********** TODO!!!
+#		finish all expts before i leave!!!!!
+# 2 make sure cv submatrix works properly!!!
+# 3 writeup el integerated with cv paper! 
+#		document cv and el clearly at high level wrt partition's attributes; wt overlaps, wt doesnt; method vs type vs element
+#DONE:
+# - send use case for matrix projection - send to bert, doug, ytian! ************ TODAY!!!!
+# - reword cv "method" as "type" **** TODO!!
+# - include rowholdout method in el!! (doug) ************* TODAY!!!!!

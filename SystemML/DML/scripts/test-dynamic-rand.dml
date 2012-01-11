@@ -1,0 +1,31 @@
+matMult = function(Int dim, Int dim2) return ( Matrix[Double]  tempm)
+{
+	A = Rand(rows=5, cols=10,min=2.0, max=2.0);
+	tempm = Rand(rows=10, cols=5, min=1.0, max=1.0);
+	temp2m = Rand(rows=dim2, cols=dim, min=1.0, max=1.0);
+	D = temp2m + 1;
+	
+	E = A + D; 
+	F = rowSums(E);
+	Fsum = sum(F);
+
+	print("F in matMutl is ", Fsum);
+	i = 0;
+	while (i < 1){
+		i = i + 2;
+	}		
+}
+	
+input1 = readMM( "llr_xfile", rows=10, cols=10, format="text");
+input2 = readMM( "llr_xfile", rows=10, cols=10, format="text");
+D = 2.0;
+dim = 10;
+dim2 = 5;
+
+F = matMult(dim, dim2)
+
+
+print("D should be 2 ", D);
+fsum = sum(F);
+print("fsum is ", fsum);
+#writeMM ( F, "F.output", format="text");

@@ -1,0 +1,1698 @@
+package dml.test.utils;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+
+import dml.runtime.matrix.io.MatrixBlock;
+import dml.runtime.matrix.io.MatrixCell;
+import dml.runtime.matrix.io.MatrixIndexes;
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
+import dml.test.BinaryMatrixCharacteristics;
+import dml.test.MatrixIndex;
+
+/**
+ * <p>
+ * Provides methods to easily create tests. Implemented methods can be used for
+ * </p>
+ * <ul>
+ * <li>data comparison</li>
+ * <li>test data generation</li>
+ * <li>writing files</li>
+ * <li>reading files</li>
+ * <li>clean up</li>
+ * </ul>
+ * 
+ * @author schnetter
+ * @author Felix Hamborg
+ */
+public class TestUtils {
+
+	/** job configuration used for file system access */
+	public static Configuration conf = new Configuration();
+
+	/** global random generator for default seed */
+	public static Random random = new Random(System.currentTimeMillis());
+
+	/** internal buffer to store assertion information */
+	private static ArrayList<String> _AssertInfos = new ArrayList<String>();
+	private static boolean _AssertOccured = false;
+
+	/** String used to replace variables in scripts */
+	private static String _RS = "\\$\\$";
+
+	/**
+	 * <p>
+	 * Compares to arrays for equality. The elements in the array can be in
+	 * different order.
+	 * </p>
+	 * 
+	 * @param expecteds
+	 *            expected values
+	 * @param actuals
+	 *            actual values
+	 */
+	public static void assertInterchangedArraysEquals(String[] expecteds, String[] actuals) {
+		assertEquals("different number of elements in arrays", expecteds.length, actuals.length);
+		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
+		expactation: for (int i = 0; i < expecteds.length; i++) {
+			for (int j = 0; j < actuals.length; j++) {
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
+					foundIndexes.add(new Integer(j));
+					continue expactation;
+				}
+			}
+			fail("Missing element " + expecteds[i]);
+		}
+	}
+
+	/**
+	 * <p>
+	 * Compares to arrays for equality. The elements in the array can be in
+	 * different order.
+	 * </p>
+	 * 
+	 * @param expecteds
+	 *            expected values
+	 * @param actuals
+	 *            actual values
+	 */
+	public static void assertInterchangedArraysEquals(int[] expecteds, int[] actuals) {
+		assertEquals("different number of elements in arrays", expecteds.length, actuals.length);
+		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
+		expactation: for (int i = 0; i < expecteds.length; i++) {
+			for (int j = 0; j < actuals.length; j++) {
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
+					foundIndexes.add(new Integer(j));
+					continue expactation;
+				}
+			}
+			fail("Missing element " + expecteds[i]);
+		}
+	}
+
+	/**
+	 * <p>
+	 * Compares to arrays for equality. The elements in the array can be in
+	 * different order.
+	 * </p>
+	 * 
+	 * @param expecteds
+	 *            expected values
+	 * @param actuals
+	 *            actual values
+	 */
+	public static void assertInterchangedArraysEquals(double[] expecteds, double[] actuals) {
+		assertEquals("different number of elements in arrays", expecteds.length, actuals.length);
+		ArrayList<Integer> foundIndexes = new ArrayList<Integer>();
+		expactation: for (int i = 0; i < expecteds.length; i++) {
+			for (int j = 0; j < actuals.length; j++) {
+				if (expecteds[i] == actuals[j] && !foundIndexes.contains(new Integer(j))) {
+					foundIndexes.add(new Integer(j));
+					continue expactation;
+				}
+			}
+			fail("Missing element " + expecteds[i]);
+		}
+	}
+
+	/**
+	 * <p>
+	 * Compares the expected values calculated in Java by testcase and which are
+	 * in the normal filesystem, with those calculated by SystemML located in
+	 * HDFS
+	 * </p>
+	 * 
+	 * @param expectedFile
+	 *            file with expected values, which is located in OS filesystem
+	 * @param actualDir
+	 *            file with actual values, which is located in HDFS
+	 * @param epsilon
+	 *            tolerance for value comparison
+	 */
+	public static void compareDMLMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(actualDir);
+			Path compareFile = new Path(expectedFile);
+			FSDataInputStream compareIn = fs.open(compareFile);
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+						.parseDouble(rcv[2]));
+			}
+			compareIn.close();
+
+			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
+
+			assertTrue(fs.getFileStatus(outDirectory).isDir());
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+
+			long cellCounter = 0;
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+							.parseDouble(rcv[2]));
+					cellCounter++;
+				}
+				outIn.close();
+			}
+
+			int countErrors = 0;
+			for (CellIndex index : expectedValues.keySet()) {
+				Double expectedValue = expectedValues.get(index);
+				Double actualValue = actualValues.get(index);
+				if (expectedValue == null)
+					expectedValue = 0.0;
+				if (actualValue == null)
+					actualValue = 0.0;
+				
+			//	System.out.println("actual value: "+actualValue+", expected value: "+expectedValue);
+				
+				if (!compareCellValue(expectedValue, actualValue, epsilon)) {
+					System.out.println("mismatch: expected " + expectedValue + ", actual " + actualValue);
+					countErrors++;
+				}
+			}
+			assertTrue("for file " + actualDir + " " + countErrors + " values are not equal", countErrors == 0);
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Reads values from a matrix file in HDFS in DML format
+	 * 
+	 * @deprecated You should not use this method, it is recommended to use the
+	 *             corresponding method in AutomatedTestBase
+	 * @param filePath
+	 * @return
+	 */
+	public static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String filePath) {
+		FileSystem fs;
+		try {
+			fs = FileSystem.get(conf);
+			Path outDirectory = new Path(filePath);
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+							.parseDouble(rcv[2]));
+				}
+				outIn.close();
+			}
+
+			return expectedValues;
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Reads values from a matrix file in OS's FS in R format
+	 * 
+	 * @deprecated You should not use this method, it is recommended to use the
+	 *             corresponding method in AutomatedTestBase
+	 * 
+	 * @param filePath
+	 * @return
+	 */
+	
+	// TODO: we must use http://www.inf.uni-konstanz.de/algo/lehre/ws05/pp/mtj/mvio/MatrixVectorReader.html
+	// to read matrices from R
+	
+	public static HashMap<CellIndex, Double> readRMatrixFromFS(String filePath) {
+		BufferedReader compareIn;
+		try {
+			compareIn = new BufferedReader(new FileReader(filePath));
+
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
+			String line;
+			/** skip both R header lines */
+			line = compareIn.readLine();
+			
+			int matrixType = -1;
+			if ( line.endsWith(" general") )
+				matrixType = 1;
+			if ( line.endsWith(" symmetric") )
+				matrixType = 2;
+			
+			if ( matrixType == -1 )
+				throw new RuntimeException("unknown matrix type while reading R matrix: ." + line);
+			
+			line = compareIn.readLine(); // header line with dimension and nnz information
+			
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				if(rcv.length==3) {
+					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+								.parseDouble(rcv[2]));
+					if ( matrixType == 2 )
+						expectedValues.put(new CellIndex(Integer.parseInt(rcv[1]), Integer.parseInt(rcv[0])), Double
+								.parseDouble(rcv[2]));
+				}
+				else
+					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), 1.0);
+			}
+			compareIn.close();
+			return expectedValues;
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+		return null;
+	}
+
+	/**
+	 * Compares two double values regarding tolerance t. If one or both of them
+	 * is null it is converted to 0.0.
+	 * 
+	 * @param v1
+	 * @param v2
+	 * @param t
+	 *            Tolerance
+	 * @return
+	 */
+	private static boolean compareCellValue(Double v1, Double v2, double t) {
+		if (v1 == null)
+			v1 = 0.0;
+		if (v2 == null)
+			v2 = 0.0;
+		if (v1.equals(v2))
+			return true;
+
+		return Math.abs(v1 - v2) <= t;
+	}
+
+	/**
+	 * Compares two double values. If one or both of them is null it is
+	 * converted to 0.0.
+	 * 
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	private static boolean compareCellValue(Double v1, Double v2) {
+		return compareCellValue(v1, v2, 0);
+	}
+
+	/**
+	 * <p>
+	 * Compares two matrices in array format.
+	 * </p>
+	 * 
+	 * @param expectedMatrix
+	 *            expected values
+	 * @param actualMatrix
+	 *            actual values
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param epsilon
+	 *            tolerance for value comparison
+	 */
+	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
+			double epsilon) {
+		int countErrors = 0;
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon))
+					countErrors++;
+			}
+		}
+		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+	}
+
+	/**
+	 * Compares two matrices given as HashMaps. The matrix containing more nnz
+	 * is iterated and each cell value compared against the corresponding cell
+	 * in the smaller matrix, to ensure that all values are compared.<br/>
+	 * This method does not assert. Instead statistics are added to
+	 * AssertionBuffer, at the end of the test you should call
+	 * {@link TestUtils#displayAssertionBuffer()}.
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param tolerance
+	 * @return True if matrices are identical regarding tolerance.
+	 */
+	public static boolean compareMatrices(HashMap<CellIndex, Double> m1, HashMap<CellIndex, Double> m2,
+			double tolerance, String name1, String name2) {
+		HashMap<CellIndex, Double> first = m2;
+		HashMap<CellIndex, Double> second = m1;
+		String namefirst = name2;
+		String namesecond = name1;
+		/** to ensure that always the matrix with more nnz is iterated */
+		if (m1.size() > m2.size()) {
+			first = m1;
+			second = m2;
+			namefirst = name1;
+			namesecond = name2;
+		}
+
+		int countErrorWithinTolerance = 0;
+		int countErrorIdentical = 0;
+		int countIdentical = 0;
+		double minerr = -1;
+		double maxerr = 0;
+
+		for (CellIndex index : first.keySet()) {
+			Double v1 = first.get(index);
+			Double v2 = second.get(index);
+			if (v1 == null)
+				v1 = 0.0;
+			if (v2 == null)
+				v2 = 0.0;
+			if (Math.abs(v1 - v2) < minerr || minerr == -1)
+				minerr = Math.abs(v1 - v2);
+			if (Math.abs(v1 - v2) > maxerr)
+				maxerr = Math.abs(v1 - v2);
+
+			if (!compareCellValue(first.get(index), second.get(index), 0)) {
+				countErrorIdentical++;
+				if (!compareCellValue(first.get(index), second.get(index), tolerance)) {
+					countErrorWithinTolerance++;
+				}
+			} else {
+				countIdentical++;
+			}
+		}
+
+		String assertPrefix = (countErrorWithinTolerance == 0) ? "    " : "!  ";
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " # stored values in " + namefirst + ": "
+				+ first.size());
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " # stored values in " + namesecond + ": "
+				+ second.size());
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " identical values(z=0): " + countIdentical);
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " wrong values(z=" + tolerance + "): "
+				+ countErrorWithinTolerance);
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " min error: " + minerr);
+		_AssertInfos.add(assertPrefix + name1 + "<->" + name2 + " max error: " + maxerr);
+
+		if (countErrorWithinTolerance == 0)
+			return true;
+
+		_AssertOccured = true;
+		return false;
+	}
+
+	/**
+	 * Converts a 2D array into a sparse hashmap matrix.
+	 * 
+	 * @param matrix
+	 * @return
+	 */
+	public static HashMap<CellIndex, Double> convert2DDoubleArrayToHashMap(double[][] matrix) {
+		HashMap<CellIndex, Double> hmMatrix = new HashMap<CellIndex, Double>();
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				if (matrix[i][j] != 0)
+					hmMatrix.put(new CellIndex(i + 1, j + 1), matrix[i][j]);
+			}
+		}
+
+		return hmMatrix;
+	}
+
+	/**
+	 * Converts a 2D double array into a 1D double array.
+	 * 
+	 * @param array
+	 * @return
+	 */
+	public static double[] convert2Dto1DDoubleArray(double[][] array) {
+		double[] ret = new double[array.length * array[0].length];
+		int c = 0;
+		for (int i = 0; i < array.length; i++) {
+			for (int j = 0; j < array[0].length; j++) {
+				ret[c++] = array[i][j];
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Converts a 1D double array into a 2D double array.
+	 * 
+	 * @param array
+	 * @return
+	 */
+	public static double[][] convert1Dto2DDoubleArray(double[] array, int rows) {
+		int cols = array.length / rows;
+		double[][] ret = new double[rows][cols];
+
+		for (int c = 0; c < array.length; c++) {
+			ret[c % cols][c / cols] = array[c];
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Asserts the content of assertion buffer, which may contain of all methods
+	 * which assert not themselves but add information to that buffer.
+	 */
+	public static void displayAssertionBuffer() {
+		String msg = "Detailed matrices characteristics:\n";
+		for (String cur : _AssertInfos) {
+			msg += cur + "\n";
+		}
+
+		assertTrue(msg, !_AssertOccured);
+	}
+
+	/**
+	 * <p>
+	 * Compares a dml matrix file in HDFS with a file in normal file system
+	 * generated by R
+	 * </p>
+	 * 
+	 * @param rFile
+	 *            file with values calculated by R
+	 * @param hdfsDir
+	 *            file with actual values calculated by DML
+	 * @param epsilon
+	 *            tolerance for value comparison
+	 */
+	public static void compareDMLHDFSFileWithRFile(String rFile, String hdfsDir, double epsilon) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(hdfsDir);
+			BufferedReader compareIn = new BufferedReader(new FileReader(rFile));
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
+			String line;
+			/** skip both R header lines */
+			compareIn.readLine();
+			compareIn.readLine();
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+						.parseDouble(rcv[2]));
+			}
+			compareIn.close();
+
+			assertTrue(fs.getFileStatus(outDirectory).isDir());
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+
+			long cellCounter = 0;
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+							.parseDouble(rcv[2]));
+					cellCounter++;
+				}
+				outIn.close();
+			}
+
+			int countErrors = 0;
+			for (CellIndex index : expectedValues.keySet()) {
+				Double expectedValue = expectedValues.get(index);
+				Double actualValue = actualValues.get(index);
+				if (expectedValue == null)
+					expectedValue = 0.0;
+				if (actualValue == null)
+					actualValue = 0.0;
+
+				if (!compareCellValue(expectedValue, actualValue, epsilon))
+					countErrors++;
+			}
+			assertTrue("for file " + hdfsDir + " " + countErrors + " values are not in equal", countErrors == 0);
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Compares two files in text format for which the values may be in
+	 * different order.
+	 * </p>
+	 * 
+	 * @param expectedFile
+	 *            file with expected values
+	 * @param actualDir
+	 *            file with actual values
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param epsilon
+	 *            tolerance for value comparison
+	 */
+	@Deprecated
+	public static void compareFilesInDifferentOrder(String expectedFile, String actualDir, int rows, int cols,
+			double epsilon) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path expectedFilePath = new Path(expectedFile);
+			Path actualDirPath = new Path(actualDir);
+			assertTrue(actualDir + " is no directory", fs.getFileStatus(actualDirPath).isDir());
+			FileStatus[] actualFiles = fs.listStatus(actualDirPath);
+			assertEquals("number of files in directory not 1", 1, actualFiles.length);
+
+			FSDataInputStream outIn = fs.open(actualFiles[0].getPath());
+			FSDataInputStream compareIn = fs.open(expectedFilePath);
+
+			double[][] expectedMatrix = new double[rows][cols];
+			double[][] actualMatrix = new double[rows][cols];
+
+			String line;
+			long actualCellCounter = 0;
+			while ((line = outIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				actualMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
+				actualCellCounter++;
+			}
+			outIn.close();
+
+			long expectedCellCounter = 0;
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				expectedMatrix[Integer.parseInt(rcv[0])][Integer.parseInt(rcv[1])] = Double.parseDouble(rcv[2]);
+				expectedCellCounter++;
+			}
+			compareIn.close();
+
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					assertEquals("value not equal for " + i + "," + j, expectedMatrix[i][j], actualMatrix[i][j],
+							epsilon);
+				}
+			}
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Checks a matrix against a number of specifications.
+	 * </p>
+	 * 
+	 * @param matrix
+	 *            matrix
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param min
+	 *            minimum value
+	 * @param max
+	 *            maximum value
+	 */
+	public static void checkMatrix(BinaryMatrixCharacteristics matrix, long rows, long cols, double min, double max) {
+		assertEquals(rows, matrix.getRows());
+		assertEquals(cols, matrix.getCols());
+		double[][] matrixValues = matrix.getValues();
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				assertTrue("invalid value",
+						((matrixValues[i][j] >= min && matrixValues[i][j] <= max) || matrixValues[i][j] == 0));
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * Checks a matrix read from a file in text format against a number of
+	 * specifications.
+	 * </p>
+	 * 
+	 * @param outDir
+	 *            directory containing the matrix
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param min
+	 *            minimum value
+	 * @param max
+	 *            maximum value
+	 */
+	public static void checkMatrix(String outDir, long rows, long cols, double min, double max) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(outDir);
+			assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				String line;
+				while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					long row = Long.parseLong(rcv[0]);
+					long col = Long.parseLong(rcv[1]);
+					double value = Double.parseDouble(rcv[2]);
+					assertTrue("invalid row index", (row > 0 && row <= rows));
+					assertTrue("invlaid column index", (col > 0 && col <= cols));
+					assertTrue("invalid value", ((value >= min && value <= max) || value == 0));
+				}
+				outIn.close();
+			}
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Checks for matrix in directory existence.
+	 * </p>
+	 * 
+	 * @param outDir
+	 *            directory
+	 */
+	public static void checkForOutputExistence(String outDir) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(outDir);
+			assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			assertEquals("number of files in directory not 1", 1, outFiles.length);
+			FSDataInputStream outIn = fs.open(outFiles[0].getPath());
+			String outLine = outIn.readLine();
+			outIn.close();
+			assertNotNull("file is empty", outLine);
+			assertTrue("file is empty", outLine.length() > 0);
+		} catch (IOException e) {
+			fail("unable to read " + outDir + ": " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Removes all the directories specified in the array in HDFS
+	 * </p>
+	 * 
+	 * @param directories
+	 *            directories array
+	 */
+	public static void removeHDFSDirectories(String[] directories) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			for (String directory : directories) {
+				Path dir = new Path(directory);
+				if (fs.exists(dir) && fs.getFileStatus(dir).isDir()) {
+					fs.delete(dir, true);
+				}
+			}
+		} catch (IOException e) {
+		}
+	}
+
+	/**
+	 * <p>
+	 * Removes all the directories specified in the array in OS filesystem
+	 * </p>
+	 * 
+	 * @param directories
+	 *            directories array
+	 */
+	public static void removeDirectories(String[] directories) {
+		for (String directory : directories) {
+			File dir = new File(directory);
+			deleteDirectory(dir);
+		}
+	}
+
+	private static boolean deleteDirectory(File path) {
+		if (path.exists()) {
+			File[] files = path.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				if (files[i].isDirectory()) {
+					deleteDirectory(files[i]);
+				} else {
+					files[i].delete();
+				}
+			}
+		}
+		return (path.delete());
+	}
+
+	/**
+	 * <p>
+	 * Removes all the files specified in the array in HDFS
+	 * </p>
+	 * 
+	 * @param files
+	 *            files array
+	 */
+	public static void removeHDFSFiles(String[] files) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			for (String directory : files) {
+				Path dir = new Path(directory);
+				if (fs.exists(dir) && !fs.getFileStatus(dir).isDir()) {
+					fs.delete(dir, false);
+				}
+			}
+		} catch (IOException e) {
+		}
+	}
+
+	/**
+	 * <p>
+	 * Removes all the files specified in the array in OS filesystem
+	 * </p>
+	 * 
+	 * @param files
+	 *            files array
+	 */
+	public static void removeFiles(String[] files) {
+		for (String directory : files) {
+			File f = new File(directory);
+			if (!f.exists() || !f.canWrite() || f.isDirectory())
+				continue;
+
+			f.delete();
+		}
+	}
+
+	/**
+	 * <p>
+	 * Clears a complete directory.
+	 * </p>
+	 * 
+	 * @param directory
+	 *            directory
+	 */
+	public static void clearDirectory(String directory) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			FileStatus[] directoryContent = fs.listStatus(new Path(directory));
+			for (FileStatus content : directoryContent) {
+				fs.delete(content.getPath(), true);
+			}
+		} catch (IOException e) {
+		}
+	}
+
+	/**
+	 * <p>
+	 * Generates a test matrix with the specified parameters as a two
+	 * dimensional array.
+	 * </p>
+	 * <p>
+	 * Set seed to -1 to use the current time as seed.
+	 * </p>
+	 * 
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param min
+	 *            minimum value
+	 * @param max
+	 *            maximum value
+	 * @param sparsity
+	 *            sparsity
+	 * @param seed
+	 *            seed
+	 * @return random matrix
+	 */
+	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
+		double[][] matrix = new double[rows][cols];
+		Random random;
+		if (seed == -1)
+			random = TestUtils.random;
+		else
+			random = new Random(seed);
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (random.nextDouble() > sparsity)
+					continue;
+				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
+	 * <p>
+	 * Generates a test matrix with the specified parameters as a two
+	 * dimensional array. The matrix will not contain any zero values.
+	 * </p>
+	 * <p>
+	 * Set seed to -1 to use the current time as seed.
+	 * </p>
+	 * 
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param min
+	 *            minimum value
+	 * @param max
+	 *            maximum value
+	 * @param seed
+	 *            seed
+	 * @return random matrix
+	 */
+	public static double[][] generateNonZeroTestMatrix(int rows, int cols, double min, double max, long seed) {
+		double[][] matrix = new double[rows][cols];
+		Random random;
+		if (seed == -1)
+			random = TestUtils.random;
+		else
+			random = new Random(seed);
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				double randValue;
+				do {
+					randValue = random.nextDouble();
+				} while (randValue == 0);
+				matrix[i][j] = (randValue * (max - min) + min);
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
+	 * <p>
+	 * Generates a test matrix with the specified parameters and writes it to a
+	 * file using the text format.
+	 * </p>
+	 * <p>
+	 * Set seed to -1 to use the current time as seed.
+	 * </p>
+	 * 
+	 * @param file
+	 *            output file
+	 * @param rows
+	 *            number of rows
+	 * @param cols
+	 *            number of columns
+	 * @param min
+	 *            minimum value
+	 * @param max
+	 *            maximum value
+	 * @param sparsity
+	 *            sparsity
+	 * @param seed
+	 *            seed
+	 */
+	public static void generateTestMatrixToFile(String file, int rows, int cols, double min, double max,
+			double sparsity, long seed) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path inFile = new Path(file);
+			DataOutputStream out = fs.create(inFile);
+			PrintWriter pw = new PrintWriter(out);
+			Random random;
+			if (seed == -1)
+				random = TestUtils.random;
+			else
+				random = new Random(seed);
+
+			for (int i = 1; i <= rows; i++) {
+				for (int j = 1; j <= cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					double value = (random.nextDouble() * (max - min) + min);
+					if (value != 0)
+						pw.println(i + " " + j + " " + value);
+				}
+			}
+			pw.close();
+			out.close();
+		} catch (IOException e) {
+			fail("unable to write test matrix: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Counts the number of NNZ values in a matrix
+	 * 
+	 * @param matrix
+	 * @return
+	 */
+	public static int countNNZ(double[][] matrix) {
+		int n = 0;
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				if (matrix[i][j] != 0)
+					n++;
+			}
+		}
+		return n;
+	}
+
+	/**
+	 * <p>
+	 * Writes a matrix to a file using the text format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param matrix
+	 *            matrix
+	 * @param isR
+	 *            when true, writes a R matrix to disk
+	 * 
+	 */
+	public static void writeTestMatrix(String file, double[][] matrix, boolean isR) {
+		try {
+			DataOutputStream out = null;
+			if (!isR) {
+				FileSystem fs = FileSystem.get(conf);
+				Path inFile = new Path(file);
+
+				fs.createNewFile(inFile);
+				out = fs.create(inFile);
+
+			} else {
+				out = new DataOutputStream(new FileOutputStream(file));
+			}
+
+			PrintWriter pw = new PrintWriter(out);
+			int nzcount = countNNZ(matrix);
+			if (isR) {
+				/** add R header */
+				pw.println("%%MatrixMarket matrix coordinate real general");
+				pw.println("" + matrix.length + " " + matrix[0].length + " " + nzcount);
+			}
+			if (nzcount > 0) {
+				for (int i = 0; i < matrix.length; i++) {
+					for (int j = 0; j < matrix[i].length; j++) {
+						if (matrix[i][j] != 0)
+							pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
+					}
+				}
+			} else {
+				pw.println("1 1 " + matrix[0][0]);
+			}
+			pw.close();
+			out.close();
+		} catch (IOException e) {
+			fail("unable to write test matrix (" + file + "): " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Writes a matrix to a file using the text format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param matrix
+	 *            matrix
+	 */
+	public static void writeTestMatrix(String file, double[][] matrix) {
+		writeTestMatrix(file, matrix, false);
+	}
+
+	/**
+	 * <p>
+	 * Writes a matrix to a file using the binary cells format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param matrix
+	 *            matrix
+	 */
+	public static void writeBinaryTestMatrixCells(String file, double[][] matrix) {
+		try {
+			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+					MatrixIndexes.class, MatrixCell.class);
+
+			MatrixIndexes index = new MatrixIndexes();
+			MatrixCell value = new MatrixCell();
+			for (int i = 0; i < matrix.length; i++) {
+				for (int j = 0; j < matrix[i].length; j++) {
+					if (matrix[i][j] != 0) {
+						index.setIndexes((i + 1), (j + 1));
+						value.setValue(matrix[i][j]);
+						writer.append(index, value);
+					}
+				}
+			}
+
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to write test matrix: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Writes a matrix to a file using the binary blocks format.
+	 * </p>
+	 * 
+	 * @param file
+	 *            file name
+	 * @param matrix
+	 *            matrix
+	 * @param rowsInBlock
+	 *            rows in block
+	 * @param colsInBlock
+	 *            columns in block
+	 * @param sparseFormat
+	 *            sparse format
+	 */
+	public static void writeBinaryTestMatrixBlocks(String file, double[][] matrix, int rowsInBlock, int colsInBlock,
+			boolean sparseFormat) {
+		try {
+			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(file),
+					MatrixIndexes.class, MatrixBlock.class);
+
+			MatrixIndexes index = new MatrixIndexes();
+			MatrixBlock value = new MatrixBlock();
+			for (int i = 0; i < matrix.length; i += rowsInBlock) {
+				int rows = Math.min(rowsInBlock, (matrix.length - i));
+				for (int j = 0; j < matrix[i].length; j += colsInBlock) {
+					int cols = Math.min(colsInBlock, (matrix[i].length - j));
+					index.setIndexes(((i / rowsInBlock) + 1), ((j / colsInBlock) + 1));
+					value = new MatrixBlock(rows, cols, sparseFormat);
+					for (int k = 0; k < rows; k++) {
+						for (int l = 0; l < cols; l++) {
+							value.setValue(k, l, matrix[i + k][j + l]);
+						}
+					}
+					writer.append(index, value);
+				}
+			}
+
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to write test matrix: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Replaces variables in a DML or R script with the specified values. A
+	 * variable of format ##name## will be replaced where the name is used to
+	 * identify the variable in the hashmap containing the belonging value.
+	 * </p>
+	 * 
+	 * @param strScriptDirectory
+	 *            directory which contains the DML script
+	 * @param strScriptFile
+	 *            filename of the DML script
+	 * @param variables
+	 *            hashmap containing all the variables and their replacements
+	 * @deprecated Use ParameterBuilder.setVariablesInScript instead
+	 */
+	public static void setVariablesInScript(String strScriptDirectory, String strScriptFile,
+			HashMap<String, String> variables) {
+		try {
+			String strScript = strScriptDirectory + strScriptFile;
+			String strTmpScript = strScript + "t";
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(strScript)));
+			FileOutputStream out = new FileOutputStream(strTmpScript);
+			PrintWriter pw = new PrintWriter(out);
+			String content;
+			Pattern unresolvedVars = Pattern.compile(_RS + ".*" + _RS);
+			/**
+			 * sothat variables, which were not assigned, are replaced by an
+			 * empty string
+			 */
+			while ((content = in.readLine()) != null) {
+				for (String variable : variables.keySet()) {
+					Pattern pattern = Pattern.compile(_RS + variable + _RS);
+					Matcher matcher = pattern.matcher(content);
+					while (matcher.find()) {
+						content = content.replaceFirst(matcher.group().replace("$", "\\$"), variables.get(variable));
+					}
+				}
+				Matcher matcher = unresolvedVars.matcher(content);
+				content = matcher.replaceAll("");
+				pw.println(content);
+			}
+			pw.close();
+			out.close();
+			in.close();
+
+			/*
+			 * // remove checksum files if created Path crcFile = new
+			 * Path(dmlScriptDirectory + "." + dmlScriptFile + ".crc"); if
+			 * (fs.exists(crcFile)) fs.delete(crcFile, false); crcFile = new
+			 * Path(dmlScriptDirectory + "." + dmlScriptFile + "t.crc"); if
+			 * (fs.exists(crcFile)) fs.delete(crcFile, false);
+			 */
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to set variables in dml script: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Prints out a DML script.
+	 * </p>
+	 * 
+	 * @param dmlScriptfile
+	 *            filename of DML script
+	 */
+	public static void printDMLScript(String dmlScriptFile) {
+		try {
+			System.out.println("Running script: " + dmlScriptFile + "\n");
+			System.out.println("******************* DML script *******************");
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
+			String content;
+			while ((content = in.readLine()) != null) {
+				System.out.println(content);
+			}
+			in.close();
+			System.out.println("**************************************************\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to print dml script: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Prints out an R script.
+	 * </p>
+	 * 
+	 * @param dmlScriptfile
+	 *            filename of RL script
+	 */
+	public static void printRScript(String dmlScriptFile) {
+		try {
+			System.out.println("Running script: " + dmlScriptFile + "\n");
+			System.out.println("******************* R script *******************");
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)));
+			String content;
+			while ((content = in.readLine()) != null) {
+				System.out.println(content);
+			}
+			in.close();
+			System.out.println("**************************************************\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to print R script: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Renames a temporary DML script file back to it's original name.
+	 * </p>
+	 * 
+	 * @param dmlScriptFile
+	 *            temporary script file
+	 */
+	public static void renameTempDMLScript(String dmlScriptFile) {
+		// try {
+		// FileSystem fs = FileSystem.get(conf);
+		// Path oldPath = new Path(dmlScriptFile + "t");
+		// Path newPath = new Path(dmlScriptFile);
+		// if (fs.exists(oldPath))
+		// fs.rename(oldPath, newPath);
+		File oldPath = new File(dmlScriptFile + "t");
+		File newPath = new File(dmlScriptFile);
+		oldPath.renameTo(newPath);
+
+		/*
+		 * } catch (IOException e) { e.printStackTrace();
+		 * fail("unable to write dml script back: " + e.getMessage()); }
+		 */
+	}
+
+	/**
+	 * <p>
+	 * Removes all temporary files and directories in the current working
+	 * directory.
+	 * </p>
+	 */
+	public static void removeTemporaryFiles() {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path workingDir = new Path(".");
+			FileStatus[] files = fs.listStatus(workingDir);
+			for (FileStatus file : files) {
+				String fileName = file.getPath().toString().substring(
+						file.getPath().getParent().toString().length() + 1);
+				if (fileName.contains("temp"))
+					fs.delete(file.getPath());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to remove temporary files: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * <p>
+	 * Checks if any temporary files or directories exist in the current working
+	 * directory.
+	 * </p>
+	 * 
+	 * @return true if temporary files or directories are available
+	 */
+	public static boolean checkForTemporaryFiles() {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path workingDir = new Path(".");
+			FileStatus[] files = fs.listStatus(workingDir);
+			for (FileStatus file : files) {
+				String fileName = file.getPath().toString().substring(
+						file.getPath().getParent().toString().length() + 1);
+				if (fileName.contains("temp"))
+					return true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to remove temporary files: " + e.getMessage());
+		}
+
+		return false;
+	}
+
+	/**
+	 * <p>
+	 * Reads binary cells from a file. A matrix characteristic is created which
+	 * contains the characteristics of the matrix read from the file and the
+	 * values.
+	 * </p>
+	 * 
+	 * @param directory
+	 *            directory containing the matrix
+	 * @return matrix characteristics
+	 */
+	public static BinaryMatrixCharacteristics readCellsFromSequenceFile(String directory) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			FileStatus[] files = fs.listStatus(new Path(directory));
+
+			HashMap<MatrixIndex, Double> valueMap = new HashMap<MatrixIndex, Double>();
+			int rows = 0;
+			int cols = 0;
+			MatrixIndexes indexes = new MatrixIndexes();
+			MatrixCell value = new MatrixCell();
+			for (FileStatus file : files) {
+				SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
+
+				while (reader.next(indexes, value)) {
+					if (rows < indexes.getRowIndex())
+						rows = (int) indexes.getRowIndex();
+					if (cols < indexes.getColumnIndex())
+						cols = (int) indexes.getColumnIndex();
+
+					valueMap.put(new MatrixIndex((int) indexes.getRowIndex(), (int) indexes.getColumnIndex()), value
+							.getValue());
+				}
+
+				reader.close();
+			}
+
+			double[][] values = new double[rows][cols];
+			long nonZeros = 0;
+			for (MatrixIndex index : valueMap.keySet()) {
+				values[index.getRow() - 1][index.getCol() - 1] = valueMap.get(index);
+				if (valueMap.get(index) != 0)
+					nonZeros++;
+			}
+
+			return new BinaryMatrixCharacteristics(values, rows, cols, 0, 0, 0, 0, nonZeros);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to read sequence file in " + directory);
+		}
+
+		return null;
+	}
+
+	/**
+	 * <p>
+	 * Reads binary blocks from a file. A matrix characteristic is created which
+	 * contains the characteristics of the matrix read from the file and the
+	 * values.
+	 * </p>
+	 * 
+	 * @param directory
+	 *            directory containing the matrix
+	 * @param rowsInBlock
+	 *            rows in block
+	 * @param colsInBlock
+	 *            columns in block
+	 * @return matrix characteristics
+	 */
+	public static BinaryMatrixCharacteristics readBlocksFromSequenceFile(String directory, int rowsInBlock,
+			int colsInBlock) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			FileStatus[] files = fs.listStatus(new Path(directory));
+
+			HashMap<MatrixIndex, Double> valueMap = new HashMap<MatrixIndex, Double>();
+			int rowsInLastBlock = -1;
+			int colsInLastBlock = -1;
+			int rows = 0;
+			int cols = 0;
+			MatrixIndexes indexes = new MatrixIndexes();
+			MatrixBlock value = new MatrixBlock();
+			for (FileStatus file : files) {
+				SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), file.getPath(), conf);
+
+				while (reader.next(indexes, value)) {
+					if (value.getNumRows() < rowsInBlock) {
+						if (rowsInLastBlock == -1)
+							rowsInLastBlock = value.getNumRows();
+						else if (rowsInLastBlock != value.getNumRows())
+							fail("invalid block sizes");
+						rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
+					} else if (value.getNumRows() == rowsInBlock) {
+						if (rows <= (indexes.getRowIndex() * rowsInBlock + value.getNumRows())) {
+							if (rowsInLastBlock == -1)
+								rows = (int) ((indexes.getRowIndex() - 1) * rowsInBlock + value.getNumRows());
+							else
+								fail("invalid block sizes");
+						}
+					} else {
+						fail("invalid block sizes");
+					}
+
+					if (value.getNumColumns() < colsInBlock) {
+						if (colsInLastBlock == -1)
+							colsInLastBlock = value.getNumColumns();
+						else if (colsInLastBlock != value.getNumColumns())
+							fail("invalid block sizes");
+						cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
+					} else if (value.getNumColumns() == colsInBlock) {
+						if (cols <= (indexes.getColumnIndex() * colsInBlock + value.getNumColumns())) {
+							if (colsInLastBlock == -1)
+								cols = (int) ((indexes.getColumnIndex() - 1) * colsInBlock + value.getNumColumns());
+							else
+								fail("invalid block sizes");
+						}
+					} else {
+						fail("invalid block sizes");
+					}
+
+					if (value.isInSparseFormat()) {
+						HashMap<CellIndex, Double> valuesInBlock = value.getSparseMap();
+						for (CellIndex index : valuesInBlock.keySet()) {
+							valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + index.row),
+									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + index.column)), valuesInBlock
+									.get(index));
+						}
+					} else {
+						double[] valuesInBlock = value.getDenseArray();
+						for (int i = 0; i < value.getNumRows(); i++) {
+							for (int j = 0; j < value.getNumColumns(); j++) {
+								valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + i),
+										(int) ((indexes.getColumnIndex() - 1) * colsInBlock + j)), valuesInBlock[i
+										* value.getNumColumns() + j]);
+							}
+						}
+					}
+				}
+
+				reader.close();
+			}
+
+			long nonZeros = 0;
+			double[][] values = new double[rows][cols];
+			for (MatrixIndex index : valueMap.keySet()) {
+				values[index.getRow()][index.getCol()] = valueMap.get(index);
+				if (valueMap.get(index) != 0)
+					nonZeros++;
+			}
+
+			return new BinaryMatrixCharacteristics(values, rows, cols, rowsInBlock, rowsInLastBlock, colsInBlock,
+					colsInLastBlock, nonZeros);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to read sequence file in " + directory);
+		}
+
+		return null;
+	}
+
+	/**
+	 * <p>
+	 * Returns the path to a file in a directory if it is the only file in the
+	 * directory.
+	 * </p>
+	 * 
+	 * @param directory
+	 *            directory containing the file
+	 * @return path of the file
+	 */
+	public static Path getFileInDirectory(String directory) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			FileStatus[] files = fs.listStatus(new Path(directory));
+			if (files.length != 1)
+				throw new IOException("requires exactly one file in directory " + directory);
+
+			return files[0].getPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to open file in " + directory);
+		}
+
+		return null;
+	}
+
+	/**
+	 * <p>
+	 * Creates an empty file.
+	 * </p>
+	 * 
+	 * @param file
+	 *            filename
+	 */
+	public static void createFile(String filename) throws IOException {
+			FileSystem fs = FileSystem.get(conf);
+			fs.create(new Path(filename));
+	}
+
+	/**
+	 * <p>
+	 * Performs transpose onto a matrix and returns the result.
+	 * </p>
+	 * 
+	 * @param a
+	 *            matrix
+	 * @return transposed matrix
+	 */
+	public static double[][] performTranspose(double[][] a) {
+		int rows = a[0].length;
+		int cols = a.length;
+		double[][] result = new double[rows][cols];
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				result[i][j] = a[j][i];
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * Performs matrix multiplication onto two matrices and returns the result.
+	 * </p>
+	 * 
+	 * @param a
+	 *            left matrix
+	 * @param b
+	 *            right matrix
+	 * @return computed result
+	 */
+	public static double[][] performMatrixMultiplication(double[][] a, double[][] b) {
+		int rows = a.length;
+		int cols = b[0].length;
+		double[][] result = new double[rows][cols];
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				double value = 0;
+				for (int k = 0; k < a[i].length; k++) {
+					value += (a[i][k] * b[k][j]);
+				}
+				result[i][j] = value;
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * <p>
+	 * Returns a random integer value.
+	 * </p>
+	 * 
+	 * @return random integer value
+	 */
+	public static int getRandomInt() {
+		Random random = new Random(System.currentTimeMillis());
+		int randomValue = random.nextInt();
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns a positive random integer value.
+	 * </p>
+	 * 
+	 * @return positive random integer value
+	 */
+	public static int getPositiveRandomInt() {
+		int randomValue = TestUtils.getRandomInt();
+		if (randomValue < 0)
+			randomValue = -randomValue;
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns a negative random integer value.
+	 * </p>
+	 * 
+	 * @return negative random integer value
+	 */
+	public static int getNegativeRandomInt() {
+		int randomValue = TestUtils.getRandomInt();
+		if (randomValue > 0)
+			randomValue = -randomValue;
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns a random double value.
+	 * </p>
+	 * 
+	 * @return random double value
+	 */
+	public static double getRandomDouble() {
+		Random random = new Random(System.currentTimeMillis());
+		double randomValue = random.nextInt() * random.nextDouble();
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns a positive random double value.
+	 * </p>
+	 * 
+	 * @return positive random double value
+	 */
+	public static double getPositiveRandomDouble() {
+		double randomValue = TestUtils.getRandomDouble();
+		if (randomValue < 0)
+			randomValue = -randomValue;
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns a negative random double value.
+	 * </p>
+	 * 
+	 * @return negative random double value
+	 */
+	public static double getNegativeRandomDouble() {
+		double randomValue = TestUtils.getRandomDouble();
+		if (randomValue > 0)
+			randomValue = -randomValue;
+		return randomValue;
+	}
+
+	/**
+	 * <p>
+	 * Returns the string representation of a double value which can be used in
+	 * a DML script.
+	 * </p>
+	 * 
+	 * @param value
+	 *            double value
+	 * @return string representation
+	 */
+	public static String getStringRepresentationForDouble(double value) {
+		NumberFormat nf = DecimalFormat.getInstance(new Locale("EN"));
+		nf.setGroupingUsed(false);
+		nf.setMinimumFractionDigits(1);
+		nf.setMaximumFractionDigits(20);
+		return nf.format(value);
+	}
+
+	/**
+	 * Clears internal assertion information storage
+	 */
+	public static void clearAssertionInformation() {
+		_AssertInfos.clear();
+		_AssertOccured = false;
+	}
+
+	/**
+	 * <p>
+	 * Generates a matrix containing easy to debug values in its cells.
+	 * </p>
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param bContainsZeros
+	 *            If true, the matrix contains zeros. If false, the matrix
+	 *            contains only positive values.
+	 * @return
+	 */
+	public static double[][] createNonRandomMatrixValues(int rows, int cols, boolean bContainsZeros) {
+		double[][] matrix = new double[rows][cols];
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (!bContainsZeros)
+					matrix[i][j] = (i + 1) * 10 + (j + 1);
+				else
+					matrix[i][j] = (i) * 10 + (j);
+			}
+		}
+		return matrix;
+	}
+}

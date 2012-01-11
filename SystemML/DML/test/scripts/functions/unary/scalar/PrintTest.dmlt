@@ -1,0 +1,5 @@
+# junit test class: dml.test.integration.functions.unary.scalar.PrintTest.java
+
+x=Hello World!;
+
+print("X=",x);

@@ -1,0 +1,41 @@
+Outline
+
+1. Motivation				Sekar & Shiv
+
+2. DML Overview				Sekar & Shiv
+
+3. System Architecture and Implementation	
+   3.1. Language				Sekar
+   3.2. Hops, lops				Berthold / Amol
+   3.3. Runtime					yuanyuan
+
+4. Experiments					YuanYuan / Vikas
+   4.1. Pick 
+          - NMF variations: GNMF (need T(X) X), NMF/KL (need conditional eval), NMF/SL (need parallel for)
+            highlight optimizations: 
+               T(X) X   and  A %*% B %*% C (workaround: use parenth)
+
+          - Expressiveness: include 1 or 2 more classes to demonstrate expressiveness: sparse linear solver + ???
+
+   4.2. Productivity & Expressiveness
+
+           - show that DML is a productive tool in comparison to Java
+	   - show DML productivity by the ease with which different variations of DML can be written
+
+   4.3. Performance
+          - compare to MS GNMF specific implementation
+
+   4.4. Show off alternate plans and validate their requirement		Yuanyuan / Sekar / Amol
+
+5. Optimizations & alternate plans, towards an optimizer for DML	Yuanyuan / Sekar / Amol
+
+6. Related Work								Vikas & Amol
+   - Hadoop related work: mahout, hama, 
+   - Languages for statistical learning R/Matlab
+   - High Performance Computing groups
+
+Ed / Berthold / Shiv will do regular reading and complaining.
+
+
+
+

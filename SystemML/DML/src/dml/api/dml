@@ -1,0 +1,7 @@
+#!/bin/bash
+if [ $# -eq 0 ] ; then
+	echo 'Usage: dml <dmlscript> [debug]'
+	exit 1
+fi
+
+hadoop jar /home/dmlbeta/bin/dmlbeta/SystemML.jar ${1} ${2} log

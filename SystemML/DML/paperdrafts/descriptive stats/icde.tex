@@ -1,0 +1,95 @@
+% IEEE Paper Template for US-LETTER Page Size (V1)
+% Sample Conference Paper using IEEE LaTeX style file for US-LETTER pagesize.
+% Copyright (C) 2006 Causal Productions Pty Ltd.
+% Permission is granted to distribute and revise this file provided that
+% this header remains intact.
+%
+\documentclass[10pt,conference,letterpaper]{IEEEtran}
+%\documentclass{IEEEtran}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{color}
+\usepackage{lscape, subfigure, latexsym, amssymb, amsmath, algorithm, algorithmic}
+\usepackage{eucal}
+\usepackage{eufrak}
+\newtheorem{defn}{Definition}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{epsf}
+\usepackage{balance}
+\usepackage{stmaryrd}
+%\usepackage{appendix}
+%\usepackage{pxfonts}
+% names of approaches
+\input{mymacs.tex}
+
+\pagenumbering{arabic}
+
+\begin{document}
+%
+\title{Scalable and Numerically Stable Descriptive Statistics in SystemML}
+%l
+\author{Yuanyuan Tian \ \ \  Shirish Tatikonda \ \ \  Berthold Reinwald
+%
+% author names are typeset in 11pt, which is the default size in the author block
+%{}%
+% add some space between author names and affils
+\vspace{1.6mm}\\
+\fontsize{10}{10}\selectfont\itshape
+\fontsize{10}{10}\selectfont\rmfamily\itshape
+IBM Almaden Research Center, USA\\
+\fontsize{9}{9}\selectfont\ttfamily\upshape
+\{ytian, statiko, reinwald\}@us.ibm.com
+}%
+\maketitle
+\begin{abstract}
+With the exponential growth in the amount of data that is being generated in recent years, there is a pressing need for applying machine learning algorithms to large data sets. SystemML is a framework that employs a declarative approach for large scale data analytics. 
+%There has been a growing need for applying machine learning (ML) algorithms on very large datasets. SystemML is a declarative approach to scalable machine learning. 
+In SystemML, machine learning algorithms are expressed as scripts in a high-level language, called DML, which is syntactically similar to R. DML scripts are compiled, optimized, and executed in the SystemML runtime that is built on top of MapReduce. 
+
+%Apart from the complex machine learning algorithms, SystemML also provides constructs to compute various {\em descriptive statistics} -- powerful tools to quantitatively describe the basic features of data.
+
+As the basis of virtually every quantitative analysis, {\em descriptive statistics} provide powerful tools to explore data in SystemML. In this paper, we describe our experience in implementing descriptive statistics in SystemML. In particular, we elaborate on how to overcome the two major challenges: (1) achieving numerical stability while operating on large data sets in a distributed setting of MapReduce; and (2) designing scalable algorithms to compute order statistics in MapReduce. By empirically comparing to algorithms commonly used in existing tools and systems, we demonstrate the numerical accuracy achieved by SystemML. We also highlight the valuable lessons we have learned in this exercise.
+
+
+%Through a detailed empirical evaluation, we demonstrate the numerical accuracies achieved by SystemML in computing various descriptive statistics. We also highlight the lessons we have learned in this exercise.
+
+%As the basis of virtually every quantitative analysis, \textit{descriptive statistics} provide powerful tools to explore data in SystemML. This paper describes our experience in implementing descriptive statistics in SystemML. In particular, we elaborate on how to overcome the two major challenges: (1) numerical stability while operating on large datasets in the distributed setting of MapReduce; (2) efficient implementation of order statistics in MapReduce.
+\end{abstract}
+
+\section{Introduction}
+\input{intro}
+
+\section{Numerical Stability}
+\label{sec:stability}
+\input{stability}
+
+\section{Order Statistics}\label{sec:sort-order-stats}
+
+\input{orderstats}
+
+\input{orderStatinSystemML}
+
+\section{Experiments}
+\label{sec:exp}
+\input{experiment}
+
+\section{Discussion}
+\input{discussion}
+
+\section*{Acknowledgment}
+We would like to thank Peter Haas for his valuable suggestions and consultation on this work. We would also like to thank the other members of the SystemML team: Douglas R. Burdick, Amol Ghoting, Rajasekar Krishnamurthy, Edwin Pednault, Vikas Sindhwani, and Shivakumar Vaithyanathan.
+
+\bibliographystyle{abbrv}
+\bibliography{ref}
+
+\newpage
+
+%\appendix
+\begin{appendices}
+\section{Proof of Error Bound for MapReduce Kahan Summation Algorithm}
+\input{appendix}
+\end{appendices}
+
+\end{document}

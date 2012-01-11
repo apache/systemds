@@ -1,0 +1,30 @@
+V = readMM($1, rows=$2, cols=1, format="text")
+ones = Rand(rows=$2, cols=1, min=1.0, max=1.0);
+Helper = Rand(rows=1, cols=1, min=1.0, max=1.0);
+
+# a set of number of values specify the number of cases of each categorical
+Nc = ctable(V,ones);
+
+# the number of categories of a categorical variable
+R = nrow(Nc)
+
+# total count
+s = sum(Nc)
+
+# percentage values of each categorical compare to the total case number
+Pc = Nc / s
+
+# all categorical values of a categorical variable
+#C = ppred(Nc, 0, ">")
+
+# mode
+mx = max(Nc)
+Mode =  ppred(Nc, mx, "==")
+
+RHelper = Helper * R;
+
+writeMM(RHelper, $3, format="text")
+writeMM(Nc,      $4, format="text")
+writeMM(Pc,      $5, format="text")
+writeMM(Mode,    $6, format="text")
+

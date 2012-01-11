@@ -1,0 +1,7 @@
+# junit test class: dml.test.integration.functions.binary.matrix.ElementwiseSubtractionTest.java
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+B = readMM("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
+C = A - B;
+$$OP3$$ 
+writeMM(C, "$$outdir$$c", format="text");

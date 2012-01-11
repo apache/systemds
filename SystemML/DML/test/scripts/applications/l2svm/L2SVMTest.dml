@@ -1,0 +1,61 @@
+# JUnit test class: dml.test.integration.applications.L2SVMTest.java
+
+X = readMM("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
+Y = readMM("$$indir$$y", rows=$$rows$$, cols=1, format="text")
+epsilon = $$eps$$
+lambda = $$lambda$$
+
+num_samples = nrow(X)
+dimensions = ncol(X)
+
+g_old = t(X) %*% Y
+s = g_old
+w = Rand(rows=dimensions, cols=1, min=0, max=0, pdf="uniform")
+
+iter = 0
+continue = 1
+while(continue == 1)  {
+	# minimizing primal obj along direction s
+	step_sz = 0
+	Xd = X %*% s
+	wd = lambda * sum(w * s)
+	dd = lambda * sum(s * s)
+	continue1 = 1
+	while(continue1 == 1){
+		tmp_w = w + step_sz*s
+		out = 1 - Y * (X %*% tmp_w)
+		sv = ppred(out, 0, ">")
+		out = out * sv
+		g = wd + step_sz*dd - sum(out * Y * Xd)
+		h = dd + sum(Xd * sv * Xd)
+		step_sz = step_sz - g/h
+		if (g*g/h < 0.0000000001){
+			continue1 = 0
+		}
+	}
+	
+	#update weights
+	w = w + step_sz*s
+	
+	out = 1 - Y * (X %*% w)
+	sv = ppred(out, 0, ">")
+	out = sv * out
+	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+	g_new = t(X) %*% (out * Y) - lambda * w
+	
+	print2("OBJ = "+obj)
+	
+	tmp = sum(s * g_old)
+	if(step_sz*tmp < epsilon*obj){
+		continue = 0
+	}
+	
+	#non-linear CG step
+	be = sum(g_new * g_new)/sum(g_old * g_old)
+	s = be * s + g_new
+	g_old = g_new
+
+	iter = iter + 1
+}
+
+writeMM(w, "$$outdir$$w", format="text")

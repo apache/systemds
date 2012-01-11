@@ -1,0 +1,54 @@
+X = read($1, rows=$4, cols=1, format="text");
+Y = read($2, rows=$4, cols=1, format="text");
+Z = read($3, rows=$4, cols=1, format="text");
+
+A=round(Z)
+
+W = $4;
+
+Helper=Rand(rows = 1, cols = 1, min = 1, max = 1);
+
+# Unweighted co-variance
+covXY = cov(X,Y);
+
+# compute standard deviations for both X and Y by computing 2^nd central moment
+
+m2X = centralMoment(X,2);
+m2Y = centralMoment(Y,2);
+sigmaX = sqrt(m2X);
+sigmaY = sqrt(m2Y);
+
+# Pearson's R
+pearsonR = covXY/sigmaX/sigmaY*W/(W-1.0);
+
+accmvarY = m2Y * W
+my = sum(Y)/W;
+
+CFreq = ctable(A,1); # groupedAggregate(target=Y, groups=A, fn="count"); # 
+R = nrow(CFreq);
+
+accumCVars = groupedAggregate(target=Y, groups=A, fn="centralmoment", order=2)*CFreq;
+CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+
+intermediate= 1-sum(accumCVars)/accmvarY;
+
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( accumCVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+if(intermediate>=0)
+{Eta = sqrt(intermediate)}
+else
+{Eta=-1;}
+#Eta=0
+
+EtaHelper=Eta*Helper
+ANOVAFHelper=ANOVAF*Helper
+PearsonRHelper = pearsonR * Helper;
+CovHelper=covXY*Helper;
+
+writeMM(EtaHelper, $6, format="binary");
+writeMM(ANOVAFHelper, $7, format="binary");
+writeMM(PearsonRHelper, $5, format="binary");
+writeMM(CovHelper, $8, format="binary")
+

@@ -1,0 +1,78 @@
+$$readhelper$$
+
+#A <- nominal variable
+#Y <- scale variable
+#WM <- weights
+
+A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
+Y = read("$$indir$$Y", rows=$$rows$$, cols=1, format="text");
+WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+
+W = sum(WM);
+my = sum(Y*WM)/W
+varY = centralMoment(Y,WM,2) * W/(W-1.0)
+
+CFreq = groupedAggregate(target=WM, groups=A, fn="sum");
+CMeans = groupedAggregate(target=Y, groups=A, weights=WM, fn="mean");
+CVars = groupedAggregate(target=Y, groups=A, weights=WM, fn="variance");
+
+# number of categories
+R = nrow(CFreq);
+
+Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ));
+
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreq-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+#print2("W = " + W + ", R = " + R + ", Anova num " + anova_num + ", Anova den " + anova_den);
+
+/*
+# Category Frequencies
+CFreq = ctable(A,1,WM);
+W = sum(WM);
+
+# univariate stats by categories
+# (mean,variance,sigma) for each category
+YW = Y*WM;
+Y2W = (Y^2)*WM;
+FY1 = ctable(A,1,YW);
+FY2 = ctable(A,1,Y2W);
+
+CMeans = FY1/CFreq;
+CStdDev = sqrt((FY2/CFreq - CMeans^2)*(CFreq/(CFreq-1)));
+CVars = CStdDev^2;
+
+# (mean,variance,sigma) over all categories
+my = sum(YW)/W;
+sigmaY = sqrt((sum(Y2W)/W - my*my)*(W/(W-1)));
+varY = sigmaY^2;
+
+# Eta and ANOVA F Measure
+Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ))
+
+R = nrow(CFreq);
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreq-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+#ANOVAF = exp(log(anova_num)-log(anova_den));
+*/
+
+
+# ---------------------------------------------------------
+# output required statistics
+varYHelper = varY * Helper;
+write(varYHelper, "$$outdir$$outVarY", format="text");
+
+myHelper = my * Helper;
+write(myHelper, "$$outdir$$outMeanY", format="text");
+
+write(CFreq, "$$outdir$$outCatFreqs", format="text");
+write(CMeans, "$$outdir$$outCatMeans", format="text");
+write(CVars, "$$outdir$$outCatVars", format="text");
+
+EtaHelper = Eta * Helper;
+write(EtaHelper, "$$outdir$$outEta", format="text");
+
+AnovaFHelper = ANOVAF * Helper;
+write(AnovaFHelper, "$$outdir$$outAnovaF", format="text");

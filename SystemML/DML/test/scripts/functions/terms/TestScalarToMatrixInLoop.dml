@@ -1,0 +1,12 @@
+# junit test class: dml.test.integration.functions.terms.ScalarToMatrixInLoop.java
+
+A = Rand(cols=$$cols$$, rows=$$rows$$);
+W = 5;
+i = 0;
+while( i < 1)
+{
+	W = A + W;
+	i = i + 1;
+}
+
+writeMM(W, "$$outdir$$w", format="text"); 

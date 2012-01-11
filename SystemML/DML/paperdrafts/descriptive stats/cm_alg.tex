@@ -1,0 +1,25 @@
+\begin{algorithm}
+\caption{Central Moment} 
+\label{algo:cm}
+\begin{algorithmic}
+\small{
+\STATE \textbf{CentralMoment}(X: input data items, k: order)\{
+\STATE \ \ $n=0$, $\mu=0$, $M_2=0$..., $M_k=0$
+\STATE \ \ \textbf{for} $i = 1 \to X.size$ 
+\STATE \ \ \ \ $(n, \mu, M_2,...,M_k)=\textbf{incM}(n, \mu, M_2,...,M_k,1, x_i, 0,...,0)$
+%\STATE \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  $1, x_i, 0,...,0)$
+\STATE \ \ \textbf{return} $\frac{M^k}{n}$ \}
+\STATE 
+\STATE \textbf{incM}($n_a,\mu_a,M_{2,a},..., M_{k,a}$, // $1^{st}$ input
+\STATE \ \ \ \ \ \ $n_b,\mu_b,M_{2,b},..., M_{k,b}$)\{ // $2^{nd}$ input
+\STATE \ \ $\textbf{if }n_1=0\textbf{ then return } (n_b,\mu_b,M_{2,b},..., M_{k,b})$
+\STATE \ \ $\textbf{if }n_2=0\textbf{ then return } (n_a,\mu_a,M_{2,a},..., M_{k,a})$
+\STATE \ \ $n=n_a+n_b$
+\STATE \ \ $\delta=\mu_b-\mu_a$
+\STATE \ \ $\mu=\mu_a+n_b\frac{\delta}{n}$
+\STATE \ \ $\textbf{for } p=2 \to k$
+\STATE \ \ \ \ $M_p=M_{p,a}+M_{p,b}+\sum\limits_{j=1}^{p-2}{p \choose j}[(-\frac{n_2}{n})^j M_{p-j,a}+(\frac{n_1}{n})^j M_{p-j,b}]\delta + (\frac{n_1n_2}{n}\delta)^p[\frac{1}{n_2^{p-1}}-(\frac{-1}{n_1})^{p-1}]$
+\STATE \ \ \textbf{return} $(n,\mu,M_2,..., M_k)$ \}
+}
+\end{algorithmic}
+\end{algorithm}

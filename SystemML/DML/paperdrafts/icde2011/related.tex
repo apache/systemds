@@ -1,0 +1,53 @@
+The increasing demand for massive-scale analytics has recently spurred many efforts to design
+systems that enable distributed machine learning. 
+DryadLINQ~\cite{DryadLinq2008} is a compiler which
+translates LINQ programs into a set of jobs that can be executed on the Microsoft Dryad
+platform. LINQ is a .NET extension that provides declarative programming for data manipulation. 
+The DryadLINQ set of language extensions is supported in C\# and facilitates the
+generation and optimization of distributed executions plans for the specified portions of the C\# program. The Large
+Vector Library built on top of DryadLINQ provides simple mathematical primitives and datatypes using
+which machine learning algorithms can be implemented in C\#. However, unlike
+SystemML, the onus of identifying the data parallel components of an algorithm and expressing them in DryadLINQ
+expressions is still left to the programmer.
+
+Apache Mahout~\cite{mahout} provides a library of ML algorithms written in Hadoop. Compared to SystemML's declarative approach, Mahout requires detailed implementation for new algorithms and change of existing code for performance tuning.
+
+Pegasus~\cite{pegasusICDM2009} is a Hadoop-based library that implements a class of graph mining algorithms that can be expressed via repeated matrix-vector multiplications. The generic versions of the key Pegasus primitive is subsumed by matrix multiplication operators in SystemML. Unlike Pegasus, SystemML does not consider a single primitive in isolation but attempts to optimize a sequence of general linear algebra computations.  
+  
+Spark~\cite{Zaharia:EECS-2010-53} is a cluster computing framework that allows users to define distributed datasets that can be cached in memory across machines for applications that require frequent passes through them. Likewise, parallel computing toolboxes in Matlab and R allow distributed objects to be created and message-passing functions to be defined to implement data and task parallel algorithms. By contrast, SystemML is designed to process massive datasets that may not fit in distributed memory and need to reside on disk.  R packages like rmpi, rpvm expose the programmer directly to message-passing systems with significant expectation of parallel programming expertise. Other popular packages such as SNOW~\cite{snow} that are built on top of MPI packages are relatively more convenient but still low-level (e.g., requiring explicit distribution of data across worker nodes) in comparison to the rapid prototyping environment enabled by SystemML. Ricardo~\cite{ricardo} is another R-Hadoop system where large-scale computations are expressed in JAQL, a high level query interface on top of Hadoop, while R is called for smaller-scale single-node statistical tasks. This requires the programmer to identify scalability of different components of an algorithm, and re-express large-scale matrix operations in terms of JAQL queries. Similar to Ricardo, the RHIPE~\cite{rhipe} package provides the capability to run an instance of R on each Hadoop node, with the programmer needing to directly write Map and Reduce functions.  
+
+
+%%The Apache Mahout project
+
+
+%DryadLinq on Dryad appears to be analogous to JAQL on MapReduce. The Large-vector library is akin to developing 
+%mathematical operators in JAQL. 
+
+
+%\\
+%\\
+%\begin{itemize}
+
+%\item Pegasus~\cite{pegasusICDM2009}
+%\\
+%\item DryadLinq~\cite{DryadLinq2008}
+%%\\
+%%\item Extensions of R : packages - multicore, rmpi, snow, bigmemory, RHIPE
+%%\\
+%%\item Parallel Matlab
+%%\\
+%%\item Mahout
+%\\
+%\end{itemize}
+
+
+%%Contributions: language + optimization + runtime to process massive volumes of data.
+
+%% SINGLE NODE RUNS
+
+%% GNMF
+%%   1M : 45.1908
+%% 2.5M : 132.6283
+%%   5M : 291.3325
+%% 7.5M : 489.1537 
+%%  10M : Cholmod error 'out of memory' at file:../Core/cholmod_memory.c, line 148

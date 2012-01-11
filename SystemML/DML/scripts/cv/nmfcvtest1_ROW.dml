@@ -1,0 +1,55 @@
+NMFcvtest = function (x,wd,hd,alpha) return (error)
+{
+
+	writeMM(x, "scripts/X_Output", format="text");	
+
+	max_iteration = 1
+	xrow = nrow(x)
+	numtopics = 4;
+	wb = Rand(rows = xrow, cols = numtopics) ;
+	#continue = true 
+	#berror = x - wb %*% hd
+	#newObj = sum(berror * berror)
+	
+	i = 0
+	#while (continue && i < max_iteration) {
+	while (i < max_iteration) {
+		wb = wb * ((x %*% t(hd)) / ( wb %*% (hd %*% t(hd))))
+  		i = i + 1
+  		
+  		# Convergence test begin
+		oldObj = newObj
+  		berror = x - wb %*% hd
+		newObj = sum(berror * berror)
+  		continue = (newObj-oldObj) > (oldObj * accuracy)
+	}
+	
+	ycol = ncol(x)
+	numtopics = 4;
+	hc = Rand(rows = numtopics, cols = ycol)
+	continue = true
+	cerror = x - wd %*% hc
+	newObj = sum(cerror * cerror)
+	
+	i = 0
+	#while (continue && i < max_iteration) {
+	while (i < max_iteration) {
+		#replaced y --> x
+		hc = hc * ((t(wd) %*% x) /  ( (t(wd) %*% wd) %*% hc))
+		i = i + 1
+		
+		# Convergence test begin
+		#oldObj = newObj
+  		#cerror = y - wd %*% hc
+		#newObj = sum(cerror * cerror)
+		#continue = (newObj-oldObj) > (oldObj * accuracy)
+	}
+
+	apred = wb %*% hc
+	#diff = alpha - apred 
+	diff = alpha
+	
+	product = diff*diff
+	error = rowSums(colSums(product));
+
+}

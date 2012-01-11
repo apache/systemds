@@ -1,0 +1,30 @@
+$$readhelper$$
+
+V = read("$$indir$$vector", rows=$$rows1$$, cols=1, format="text")
+#ones = Rand(rows=$$rows1$$, cols=1, min=1.0, max=1.0);
+
+# a set of number of values specify the number of cases of each categorical
+Nc = ctable(V,1);
+
+# the number of categories of a categorical variable
+R = nrow(Nc)
+
+# total count
+s = sum(Nc)
+
+# percentage values of each categorical compare to the total case number
+Pc = Nc / s
+
+# all categorical values of a categorical variable
+C = ppred(Nc, 0, ">")
+
+# mode
+mx = max(Nc)
+Mode =  ppred(Nc, mx, "==")
+
+RHelper=R*Helper
+write(Nc, "$$outdir$$Nc", format="text")
+write(RHelper, "$$outdir$$R", format="text")
+write(Pc, "$$outdir$$Pc", format="text")
+write(C, "$$outdir$$C", format="text")
+write(Mode, "$$outdir$$Mode", format="text")

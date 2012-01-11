@@ -1,0 +1,25 @@
+# Calculates PI with the AGM Method by Gauss
+# (see http://en.wikipedia.org/wiki/AGM_method)
+
+#Initialisation
+a = 1.0;
+b = 1.0 / sqrt(2.0);
+c = 1.0 / 4.0;
+h = 1.0; # Helper variable to store the variable a
+x = 1.0;
+
+n = 3; # enough because of the size constraint of double
+i = 1;
+
+while(i <= n)
+{
+	h = a;
+	a = (a + b) * 0.5;
+	b = sqrt(h * b);
+	c = c - (x * ((a-h)^2));
+	x = 2*x;
+	i = i + 1;
+}
+
+pi = (((a + b)^2) / (4 * c));
+print2(pi);

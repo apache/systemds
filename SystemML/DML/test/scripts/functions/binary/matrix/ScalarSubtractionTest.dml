@@ -1,0 +1,19 @@
+# junit test class: dml.test.integration.functions.binary.matrix.ScalarSubtractionTest.java
+
+$$vardeclaration$$
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorLeft = Vector - $$subtrahend$$;
+writeMM(VectorLeft, "$$outdir$$vector_left", format="text");
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorRight = $$minuend$$ - Vector;
+writeMM(VectorRight, "$$outdir$$vector_right", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixLeft = Matrix - $$subtrahend$$;
+writeMM(MatrixLeft, "$$outdir$$matrix_left", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixRight = $$minuend$$ - Matrix;
+writeMM(MatrixRight, "$$outdir$$matrix_right", format="text");

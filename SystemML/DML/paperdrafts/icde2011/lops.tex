@@ -1,0 +1,365 @@
+The LOP component translates HOP-Dags into corresponding low-level physical execution 
+plans (or LOP-Dags). In this section, we detail the low-level operators (lop) that 
+describe individual operations over key-value pairs and show how a LOP-Dag is constructed 
+from a HOP-Dag. We also present a greedy \emph{piggybacking heuristic} for packaging lops 
+into small number of MapReduce jobs.
+
+\noindent {\bf Description of lops:} Lops represent basic operations in a MapReduce environment. Each lop takes one or more sets of key-value pairs as
+input and generates one set of key-value pairs as output that can be consumed by one or more lops. 
+Example lops\footnote{Lops over scalars are omitted in the interest of space.} are provided in Table~\ref{tab:lopproperties}.
+%For example, the \grplop\ takes in multiple sets of key-value pairs and groups the values based on their keys. The \binarylop\  
+
+\noindent{\bf Construction of LOP-Dags:} A HOP-Dag is processed in a bottom-up fashion to 
+generate the corresponding LOP-Dag by translating each hop into one or more lops.
+Figure~\ref{fig:lopsexample} describes the translation of a \textit{Binary} hop to the corresponding
+lops for the expression \texttt{C/D} (Figure~\ref{fig:example}). At the bottom, each of the
+two \datalop \ lops returns one set of key-value pairs for the input matrices, conceptually, one
+entry for each cell in the individual matrices. (In practice, as will be described in
+Section~\ref{sec:blocking}, \datalop\ lop typically returns multiple cells for each key where the
+number of cells is determined by an appropriate blocking strategy.) A \grplop\ then groups or sorts
+the key-value pairs from the two inputs based on their key. Each resulting group is then passed on
+to a \binarylop\ lop to perform the division of the corresponding cell-values. Other example
+translations of hops to lops are provided in Table~\ref{tab:notation}.
+
+Figure~\ref{fig:hoplop}(b) shows the generated LOP-Dag for the ``H Assignment" part of the 
+HOP-Dag in Figure~\ref{fig:hoplop}(a). Note that the \textit{AggregateBinary} hop for 
+matrix multiplication can be translated into different sequences of lops (see the last 
+column of the 3rd row in Table~\ref{tab:notation}). In our example of 
+Figure~\ref{fig:hoplop}(b), $\mmcjlop \rightarrow \grplop \rightarrow \agglop(\sum)$ is 
+chosen for \texttt{t(W)\mmult V} and \texttt{t(W)\mmult W},  
+and \rmmlop\ is chosen for multiplying the result of (\texttt{t(W)\mmult W}) with \texttt{H}.
+
+\noindent{\bf Packaging a LOP-Dag into MapReduce jobs:}
+Translating every lop to a MapReduce job, though straightforward, will result in multiple 
+scans of input data and intermediate results. If, however, multiple lops can be packaged 
+into a single MapReduce job, the resulting reduction in scans may result in an improvement 
+in efficiency. Packing multiple lops into a single MapReduce job requires clear 
+understanding of the following two properties of lops:
+
+\emph{Location}: whether the lop can be performed in Map, Reduce, either or both phases. 
+Note that the execution of certain lops, such as \grplop, spans both Map and Reduce 
+phases.
+
+\emph{Key Characteristics}: whether the input keys are required to be grouped, the output 
+keys produced are grouped, and whether the lop generates different output keys. 
+
+These properties for the individual lops are summarized in Table~\ref{tab:lopproperties}. Algorithm~\ref{algo:piggybacking} describes the greedy {\it piggybacking algorithm} that packs the lops in a LOP-Dag into a small number of MapReduce jobs. The nodes in a given LOP-Dag are first topologically sorted, and then partitioned into multiple lists based on their execution location property. Note that the nodes within each list are in topologically sorted order. The approach then iteratively assigns the lops to one or more MapReduce job(s). During each iteration, it allocates a new MapReduce job and assigns lops first to the Map phase, then assigns lops that span the Map and Reduce phases, and finally assigns lops to the Reduce phase. This assignment is carried out by invoking the method $addNodesByLocation$. 
+
+%A given lop node is assigned to a job for its execution only after all of its descendant lops in the LOP-Dag have already been assigned (Line 17). Since the lops with execution location $MapAndReduce$ perform an implicit sort, they are assigned to jobs one at a time (Line 21). Group lops (with execution location $MapAndReduce$) are added to the reduce phase provided the same MapReduce job has been assigned a descendant group lop and that none of the intermediate lops between the two group lops alter the keys (Line 24). 
+
+Lop nodes with
+execution locations of $Map$ or $MapOrReduce$ can be assigned to the Map phase provided their
+descendants in the LOP-Dag have already been assigned. 
+Note that the descendants of a given lop $p$ are the ones that have a directed path to $p$, and they appear prior to $p$ in a topological sort. 
+When no more lops can be added to the Map phase, we proceed to add lops that span the Map and Reduce phases, ensuring that another
+descendant with execution location $MapAndReduce$ will not be assigned to the same job. Finally,
+lops with the execution locations of $MapOrReduce$ and $Reduce$ are directly added to the Reduce
+phase of the job provided their descendants have already been assigned. Group lops (with execution
+location $MapAndReduce$) can be added to the reduce phase provided the same MapReduce job has been
+assigned a descendant group lop and that none of the intermediate lops between the two group lops
+alter the keys. 
+For example, consider the five lops shown as dotted boxes in Figure~\ref{fig:hoplop}(b). 
+The first {\em group} lop is assigned to span Map and Reduce phases of the job. 
+Remaining two {\em group} lops are executed in the Reduce phase because the $aggr.(+)$ and $binary(/)$ lops do not alter the keys.
+%Since $binary(/)$ lop does not alter the keys, the subsequent {\em group} lop is assigned to the Reduce phase. 
+Therefore, the entire LOP-Dag is packed into just five MapReduce jobs (see Figure~\ref{fig:hoplop}(c)). 
+The job number is shown next to each lop in Figure~\ref{fig:hoplop}(b). Overall runtime complexity of our piggybacking strategy is quadratic in LOP-Dag size.
+While Pig~\cite{pig} also makes an effort to pack multiple operators into MapReduce jobs, their approach is not readily applicable for complex linear algebraic operations.
+
+%Note that Pig~\cite{pig} also packs several database-related operators into MapReduce jobs. 
+%However, their strategy is fairly simple when compared to our piggybacking approach that aims to reduce the number of resulting jobs.
+%Similarly to SystemML's piggybacking, Pig~\cite{pig} also assigns multiple physical operators to different phases of a MapReduce job, but for database-like selection, aggregation and join operations. 
+
+
+%Lop nodes with
+%execution locations of $Map$ or $MapOrReduce$ can be assigned to the Map phase provided their
+%descendants in the LOP-Dag have already been assigned. When no more lops can be added to the Map
+%phase, we proceed with adding lops that span the Map and Reduce phases, ensuring that another
+%descendant with execution location $MapAndReduce$ will not be assigned to the same job. Finally,
+%lops with the execution locations of $MapOrReduce$ and $Reduce$ are directly added to the Reduce
+%phase of the job provided their descendants have already been assigned. Group lops (with execution
+%location $MapAndReduce$) can be added to the reduce phase provided the same MapReduce job has been
+%assigned a descendant group lop and that none of the intermediate lops between the two group lops
+%alter the keys. For example in Figure~\ref{fig:hoplop}(b), the {\em group} lop that is marked with a
+%dotted circle is assigned to the Reduce phase as the $binary(/)$ lop underneath it does not alter
+%the keys. Therefore, the entire LOP-Dag can be packed into just five MapReduce jobs as shown in
+%Figure~\ref{fig:hoplop}(c). The job number is shown next to each lop in Figure~\ref{fig:hoplop}(b). 
+%Similar to SystemML's piggybacking, Pig~\cite{pig} also assigns multiple physical operators to 
+%different phases of a MapReduce job, but for database-like selection, aggregation and join operations. 
+
+%\reminder{Amol and Shirish. Explain topological sort in algorithm; is it deterministic, i.e. if I run it again w/ same LOP-Dag, will i get same instructions? Runtime program instructions in line 2 are not explained. Inconsistency: Location is called execution phase in Table III. Table III Data lop: can be in Map or Reduce?? Don't think so. Fix ``scalar'' in Table III.}
+
+
+\begin{table*}[]
+\caption{Example lops in SystemML: $\{\langle(i,j), x_{ij}\rangle\}$ is the conceptual key-value representation of Matrix $X$}
+\label{tab:lopproperties}
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{LOP Type} & \textbf{Description} & \textbf{Execution Location} & \textbf{Key Characteristics} \\ \hline
+\datalop & input data source or output data sink, in key value pairs $\{\langle(i,j), x_{ij}\rangle\}$ & Map or Reduce& none \\ \hline
+%\scalarlop &operate on each value, $\{\langle(i,j), x_{ij}\rangle\}$ $\Mapsto$ $\{\langle(i,j), op(x_{ij})\rangle\}$ & Map or Reduce & none \\ \hline
+\scalarlop &operate on each value with an optional scalar, $\{\langle(i,j), x_{ij}\rangle\},s$ $\Mapsto$ $\{\langle(i,j), op(x_{ij},s)\rangle\}$
+& Map or Reduce & none \\ \hline
+\translop & transform each key, $\{\langle(i,j), x_{ij}\rangle\}$ $\Mapsto$ $\{\langle trans(i,j), x_{ij}\rangle\}$
+& Map or Reduce & keys changed   \\ \hline
+\grplop & groups values by the key, $\{\langle(i,j), x_{ij}\rangle\},\{\langle(i,j), y_{ij}\rangle\}...$ $\Mapsto$ $\{\langle(i,j), \{x_{ij}, y_{ij}...\}\rangle\}$ 
+&  Map and Reduce & output keys grouped \\ \hline
+\binarylop & operate on two values with the same key,  $\{\langle(i,j), \{x_{ij}, y_{ij}\}\rangle\}$ $\Mapsto$ $\{\langle(i,j), op(x_{ij}, y_{ij})\rangle\}$ 
+& Reduce & input keys grouped \\ \hline
+\agglop & aggregate all the values with the same key, $\{\langle(i,j), values\rangle\}$ $\Mapsto$ $\{\langle(i,j), agg(values)\rangle\}$ 
+& Reduce & input keys grouped \\ \hline
+\mmcjlop &cross product computation in the CPMM matrix multiplication, 
+& Map and Reduce & none \\ 
+& $\{\langle(i,k), x_{ik}\rangle\},\{\langle(k,j), y_{kj}\rangle\}$ $\Mapsto$ $\{\langle(i,j), op(x_{ik}, y_{kj})\rangle\}$& & \\ \hline
+\rmmlop &RMM matrix multiplication,   
+& Map and Reduce & none \\ 
+& $\{\langle(i,k), x_{ik}\rangle\},\{\langle(k,j), y_{kj}\rangle\}$ $\Mapsto$ $\{\langle(i,j), agg(\{op(x_{ik}, y_{kj})\})\rangle\}$& &\\ \hline
+%%partial\_aggregate\_lop & Map or Reduce & changes indices \\ \hline
+\end{tabular}
+\SmallCrunch
+\end{table*}
+
+\eat{
+\begin{algorithm}
+\begin{scriptsize}
+\begin{algorithmic}[1]
+\STATE SortedNodes $\leftarrow$ TopologicalSort(LOPDag)
+\STATE ReadyNodes $\leftarrow$ Leaf Nodes in SortedNodes
+\WHILE{(Nodes remain to be assigned)}
+\STATE Create a new MapReduce job $MR_i$
+\STATE \COMMENT{Assign lops to Mapper based on location property}
+\FOR{($n \in ReadyNodes$ is of type \scalarlop, \translop\ or \datalop)} 
+\STATE Assign $n$ to $MR_i$
+\STATE Remove $n$ from ReadyNodes and add children of $n$ to ReadyNodes.
+\ENDFOR
+\STATE \COMMENT{Assign lops to Map and Reduce based on location property}
+\FOR{($n \in $ ReadyNodes is of type \grplop, \mmcjlop\ or \rmmlop)} 
+\STATE Assign $n$ to $MR_i$ if $\not \exists n_1$ assigned to $MR_i$ such that $n_1$ is an ancestor of $n$ with lop type \grplop, \mmcjlop\ or \rmmlop.
+\STATE Remove $n$ from ReadyNodes and add children of $n$ to ReadyNodes.
+\ENDFOR
+\STATE \COMMENT{Assign lops to Reduce based on location property}
+\FOR{($n \in $ ReadyNodes is of type \binarylop, \agglop\ or \grplop)}
+\STATE \COMMENT{Take Key Characteristics into account; input needs to be grouped}
+\STATE Assign $n$ to $MR_i$, if $\exists n_1$ assigned to $MR_i$, $n_1$ is an ancestor of $n$ and of type \grplop\ and $\not \exists$ \translop\ child of $n_1$ assigned to $MR_i$. 
+\STATE Remove $n$ from ReadyNodes and add children of $n$ to ReadyNodes.
+\ENDFOR
+\ENDWHILE
+\end{algorithmic}
+\caption{Piggybacking : Grouping lops that can be evaluated together in a single MapReduce job}
+\label{algo:piggybacking}
+\end{scriptsize}
+\end{algorithm}
+}
+
+
+\eat{
+\begin{algorithm}
+\begin{scriptsize}
+\begin{algorithmic}[1]
+\STATE Input:  LOP-Dag
+\STATE Output: Runtime program instructions ($prog$)
+\STATE \COMMENT{Group nodes based on execution location and then topologically sort each group} 
+\STATE [MapN, MapOrReduceN, MapAndReduceN, ReduceN] $\leftarrow$ TopoSort(LOP-Dag);
+\WHILE{(Nodes in LOP-Dag remain to be assigned)}
+\STATE Job $\leftarrow$ create a new MapReduce job;
+\STATE \COMMENT{Iteratively assign lops to the Mapper}
+\STATE addNodesByLocation(MapN $\cup$ MapOrReduceN, Map, Job);
+\STATE \COMMENT{Assign lops that span Mapper and Reducer}
+\STATE addNodesByLocation(MapAndReduceN, MapAndReduce, Job);
+\STATE \COMMENT{Iteratively assign lops to the Reducer}
+\STATE addNodesByLocation(MapOrReduceN $\cup$ MapAndReduceN $\cup$ ReduceN, Reduce, Job);
+\STATE inst $\leftarrow$ getInstructions(Job);
+\STATE add inst to $prog$;
+\ENDWHILE
+\STATE ~
+\STATE \COMMENT{Method to add nodes that are ready to be assigned for a specific execution location}
+\STATE Method: addNodesByLocation ( S, loc, Job )
+\WHILE{(true)}
+\STATE  readyNodes = \{ \};
+	\WHILE {( S is not empty )} 
+	\STATE n $\leftarrow$ S.next();
+		\IF{(n is not yet assigned and all parents of n have been assigned)} 
+			\IF{(loc is Map )}
+			\STATE add n to readyNodes;
+			\ENDIF 
+			\IF{(loc is MapAndReduce )}
+				\IF{(n does not have a descendant lop with execution location MapAndReduce in readyNodes and Job)}
+				\STATE add n to readyNodes;
+				\ENDIF
+			\ENDIF
+			\IF{(loc is Reduce)} 
+				\IF{(n is not a group lop)}
+				\STATE add n to readyNodes;
+				\ENDIF
+				\STATE \COMMENT{Add group lops to the same job if the keys are already sorted}
+				\IF{(n is a group lop \& n has a descendant group lop in readyNodes or Job \& none of the lops between these two group lops alter keys)}
+				\STATE add n to readyNodes; 
+				\ENDIF
+			\ENDIF
+		\ENDIF
+	\ENDWHILE
+	\IF{(readyNodes is empty)}
+	\STATE break;
+	\ENDIF
+	\IF{(loc is Map)}
+	\STATE addNodes(Job.Map, readyNodes);
+	\ENDIF
+	\IF{(loc is MapAndReduce)}
+	\STATE addNodes(Job.MapAndReduce, readyNodes);
+	\ENDIF
+	\IF{(loc is Reduce)}
+	\STATE addNodes(Job.Reduce, readyNodes);
+	\ENDIF
+\ENDWHILE
+\end{algorithmic}
+\caption{Piggybacking : Grouping lops that can be evaluated together in a single MapReduce job}
+\label{algo:piggybacking}
+\end{scriptsize}
+\end{algorithm}
+}
+
+\customizedfig
+{figures/LopsExample.eps}
+{Translating hop to lop for expression $C/D$ from Figure~\ref{fig:example}}
+{fig:lopsexample}
+{2in}
+
+\begin{algorithm}
+\begin{scriptsize}
+\begin{algorithmic}[1]
+\STATE Input:  LOP-Dag
+\STATE Output: A set of MapReduce Jobs($MRJobs$)
+\STATE [$N_{Map}, N_{MapOrRed}, N_{MapAndRed}, N_{Red}$] = TopologicalSort(LOP-Dag);
+\WHILE{(Nodes in LOP-Dag remain to be assigned)}
+\STATE Job $\leftarrow$ create a new MapReduce job;
+\STATE addNodesByLocation($N_{Map} \cup N_{MapOrRed}$, Map, Job);
+\STATE addNodesByLocation($N_{MapAndRed}$, MapAndReduce, Job);
+\STATE addNodesByLocation($N_{MapOrRed} \cup N_{MapAndRed} \cup N_{Red}$, Reduce, Job);
+\STATE add Job to $MRJobs$;
+\ENDWHILE
+\STATE ~
+%\STATE \COMMENT{Method to add nodes that are ready to be assigned for a specific execution location}
+\STATE {\bf Method:} {\it addNodesByLocation ( S, loc, Job )}
+\WHILE{(true)}
+\STATE  Z $\leftarrow \phi$
+\WHILE {( $S$ is not empty )} 
+	\STATE $n$ $\leftarrow$ $S$.next()
+	\IF{($n$ is not yet assigned and all descendants of $n$ have been assigned)} 
+		\IF{($loc$ is Map )}
+			\STATE add $n$ to Z
+		\ELSIF{($loc$ is MapAndReduce )}
+			\STATE add $n$ to Z if n does not have any descendant lop in Z and Job whose location is MapAndReduce 
+		\ELSIF{($loc$ is Reduce)} 
+			\STATE add $n$ to Z if $n$ is not a group lop
+			\STATE if $n$ is a group lop: add $n$ to Z only if $n$ has a descendant group lop in Z or Job \& none of the lops between these two group lops alter keys
+		\ENDIF
+	\ENDIF
+\ENDWHILE
+\STATE break if Z is empty
+\STATE add Z to $Job$.Map, $Job$.MapAndReduce, or $Job$.Reduce, based on $loc$
+\ENDWHILE
+\end{algorithmic}
+\caption{Piggybacking : Packing lops that can be evaluated together in a single MapReduce job}
+\label{algo:piggybacking}
+\end{scriptsize}
+\end{algorithm}
+
+\eat{
+The LOPDag is processed in a bottom-up fashion using a greedy heuristic that exploits the 
+above properties. Figure~\ref{fig:piggybacking} shows how the computation of H is achieved 
+using 5 MapReduce jobs. For instance, the computation $t(W) \mmult W$ is performed in a 
+single MapReduce job, with the transform operator in the map phase and the matrix 
+multiplication (\rmmlop) in the map, shuffle and reduce phases.
+}
+
+%{\noindent{\bf {Matrix Multiplication Algorithms}} Assume two blocked matrices $A$ and $B$ with 
+%$M_b \times K_b$ blocks in $A$ and $K_b \times N_b$
+%blocks in $B$. The matrix multiplication computation at the block level corresponds to $C_{i,j}
+%=\sum_k{ A_{i,k} \times B_{k,j}}$.
+
+\eat{
+Figure~\ref{fig:mmult2} illustrates the replication based matrix multiplication approach 
+(RMM), which requires only one MapReduce job. The LOPDag for this execution plan contains 
+a single \rmmloptext\ lop, which is implemented in the MapAndReduce phase of the generic 
+MapReduce job. In this approach, each reducer computes one or more result blocks, i.e., 
+$C_{i,j}$'s, and the mappers send the required data to the reducers. Since each block 
+$A_{i,k}$ contributes to the computation of several result blocks ($C_{i,0}$, $C_{i,1}$, 
+$\ldots$, $C_{i, N_b-1}$), the mapper sends $N_b$ copies of $A_{i,k}$ to the corresponding 
+reducers. Similarly, $M_b$ copies of $B_{k,j}$ are sent to the corresponding reducers. 
+Within each reducer, since all the required blocks for computing $C_{i,j}$ are available, 
+the result is computed by performing block-based matrix multiplication followed by 
+aggregation.
+
+Figure~\ref{fig:mmult1} demonstrates the Cross Product based approach for matrix
+multiplication. CPMM is represented in LOPDags as a sequence of three lops
+-- \mmcjloptext, \grploptext\ and \aggloptext, and requires 2 MapReduce jobs for execution. For
+instance, Figure~\ref{fig:piggybacking} shows a CPMM evaluation for the computation of $W^TW$. In
+the Map phase of the first MapReduce job for CPMM, the two input matrices A and B are read. In the
+MapAndReduce phase, \mmcjloptext\ groups input blocks $A_{i,k}$'s and $B_{k,j}$'s by the common key
+$k$ and performs a cross product to compute $C^k_{i,j}=A_{i,k}B_{k,j}$. These results are
+passed along to the next MapReduce job by the Reduce phase. In the second MapReduce job, the Map
+phase reads in these intermediate results. The \grploptext\ lop is evaluated in the MapAndReduce
+phase to group all the $C^k_{i,j}$'s by the key $(i,j)$. Finally, in the Reduce phase,
+the \aggloptext\ lop computes $C_{i,j}=\sum_k{C^k_{i,j}}$.
+}
+
+%We topologically sort the Lop DAG such that each child node appears before its parent node in the
+%sorted order.  Next, we iteratively process the sorted DAG starting with the leaf nodes. We maintain
+%a list of queued nodes and a list of execution nodes.  The list of queued nodes represents Lop nodes
+%that cannot be processed during that iteration.  The list of execution nodes represents Lop nodes
+%that can be processed during that iteration. Both lists are cleared at the start of each iteration.
+%During each iteration, unprocessed Lop nodes whose child nodes are not queued are added to the list
+%of execution nodes depending on some criteria. A Lop node of type Scalar is added to the list of
+%execution nodes provided all its inputs are either ready or in the list of execution nodes.  Lop
+%nodes of other types are added depending on whether or not they can be added to a Generic Map-Reduce
+%job given their child nodes in the list of execution nodes.  A Lop node of type MapOrReduce or
+%MapOrReduceBreaksAlignment can always be added to the list as its computation can be piggybacked in
+%the mapper or the reducer.  A Lop node of type ReduceOnly requires that there not be a child node in
+%the list that needs a reduce operation and it can be added provided it does not have a child node of
+%type ReduceOnly in the list.  A Lop node of type AlignedReduce can always be piggybacked with a Lop
+%of type ReduceOnly provided it does not have a child node of type MapOrReduceBreaksAlignment
+%proceeding the Lop of type ReduceOnly.  A node that cannot be added to the list of execution nodes
+%is added to the list of queued nodes.  For a queuedNode with two inputs for which one input is in
+%the list of queued nodes, the non-queued input node, it child nodes in the list of execution nodes,
+%and the parents of these child nodes, are queued. These will be processed in the next iteration.
+%These heuristic strategies ensure that we pack as many Lops into a Map-Reduce job as possible
+%thereby reducing the number of Map-Reduce jobs needed at runtime.  The list of execution nodes at
+%the end of an iteration are then mapped into a list of one or more instructions, instructions being
+%of type SimpleInstructions and MapReduceInstructions. In the case of SimpleInstructions, results of
+%intermediate computations are managed through additional SimpleInstructions that allow for the
+%creation, writing, and deletion of temporary variables when they are no longer needed.  In the case
+%of MapReduceInstructions, Map-Reduce jobs that need to generate intermediate results are again
+%managed using temporary directories that need to be deleted when they are no longer needed. The
+%translator generates SimpleInstructions for file deletions to handle such cases.  This process
+%continue iteratively until the entire Lop DAG is processed.
+
+%{\tt The following text needs to be moved after runtime}
+
+%{\tt Lops to Runtime Translation}
+
+%The Runtime layer provides a small number of generic Map-Reduce jobs and a control program capable
+%of executing small scale computations (such has scalar computations) outside of the Map-Reduce
+%infrastructure.
+
+%The Lops to Runtime translator processes the Lops DAG for each Statement Block to
+%produce one or more instructions.  These instructions can be of two types - SimpleInstructions (for
+%small scale computations) and MapReduceInstructions (for large scale computations).  These
+%instructions are then handled by the control program at runtime. The SimpleInstructions are directly
+%executed by the control program, while the MapReduceInstructions are executed through the invocation
+%of the corresponding Generic Map-Reduce jobs. The MapReduceInstructions allow for the specification
+%of Lop DAGs that can be processed using a single Generic Map-Reduce job and its main parameters are
+%a) Input path names, b) DAG of Lop computations to be performed in the mapper, c) Aggregations
+%(right after the sort operation) to be performed on the outputs of the Lop nodes processed in the
+%mapper d) DAG of computations to be performed on the outputs of the aggregations and/or one or more
+%Lop nodes processed in the mapper and e) Output path names. There are additional parameters related
+%to blocking, dimensionality, etc. that we do not describe due to lack of space.
+
+
+
+
+
+
+
+
+

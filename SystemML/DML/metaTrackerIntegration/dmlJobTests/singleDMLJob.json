@@ -1,0 +1,15 @@
+  {
+      job_id	  : "MyDmlJob"
+     ,job_type    : "com.ibm.metatracker.jobdef.DmlJob"
+     ,input_dirs  : [ "input" ]
+     ,output_dirs : [ "output" ]  
+     ,trigger     : { type : "once" ,params : {"allow_inputs" : "True"} }
+     ,variables   : {
+		               "dml.pattern"        : "single"
+                      ,"dml.scripts.dir"    : "testdata/dmlJobTests"
+                      ,"dml.script.name"    : "single.dml"
+		              ,"$1"	                : {value: "A.mtx", mode: "in" }
+		              ,"$2"          	    : {value: "2"                }  // nbr to multiply   
+		              ,"$3"	                : {value: "B", mode: "out"}
+                    }
+  }

@@ -1,0 +1,8 @@
+# junit test class: dml.test.integration.functions.aggregate.SumTest.java
+
+$$readhelper$$
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+b = trace(A);
+BHelper = b * Helper;
+writeMM(BHelper, "$$outdir$$b", format="text");

@@ -1,0 +1,59 @@
+## initially, everything was 10000 -- lowered it to 100 
+
+A = Rand(rows = 100000, cols = 100000, min = 1, max = 1000, pdf = "uniform");
+y = Rand(rows = 100000, cols = 1, min = 1, max = 1, pdf = "uniform");
+b = Rand(rows = 100000, cols = 1, min = 1, max = 1, pdf = "uniform");
+c = Rand(rows = 1, cols = 100000, min = 1, max = 1, pdf = "uniform");
+
+#A = readMM("data\fileA", rows=3, cols=3, format="text");
+#y = readMM("data\fileY", rows=3, cols=1, format="text");
+#b = readMM("data\fileB", rows=3, cols=1, format="text");
+#c = readMM("data\fileC", rows=1, cols=3, format="text");
+
+m=ncol(A);
+n=nrow(A);
+Amax = max(A);
+eps = 1.0;
+mu = 1/eps * log ((m*Amax)/eps);
+alpha=eps/4;
+beta = alpha / (10*mu);
+delta = alpha / (10*mu*n*Amax);
+
+i = 1;
+max_iter = 5;
+potential=1000.0;
+prev_potential=0.0;
+
+ 
+while ( (eps > 0.1) & (i <= max_iter) ) {    
+    if (abs(potential - prev_potential) < 10^-7) {
+		eps = eps / 1.1;
+                mu = 1/eps * log ((m*Amax)/eps);
+                alpha=eps/4;
+                beta = alpha / (10*mu);
+                delta = alpha / (10*mu*n*Amax);
+    }
+    
+    # Step 1
+    oy = A %*% y;
+    x = exp(mu*(1-oy));
+    
+    # Step 2
+    ox = t(A) %*% x;
+    
+    v1 = ppred (ox, 1+alpha, ">=");
+    v2 = ppred(ox, 1-alpha, "<=");
+    v3 = ppred(v1+v2,0,"==");
+    
+    y = v1*pmax((1+beta)*y, delta) + v2*y*(1-beta) + v3*y;
+    
+    prev_potential = potential;
+    potential = sum(y) + sum(x)/mu;
+    
+    print("Iteration",i);
+    
+    i = i+1;
+
+}
+writeMM(x, "X.result", format="text");
+writeMM(y, "Y.result", format="text");

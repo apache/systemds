@@ -1,0 +1,30 @@
+# Script to generate Fibonacci numbers
+
+# x <- number of Fibonacci numbers to compute (to test scalar read)
+x = read("data/scalar_s", data_type="scalar", value_type="int");
+
+fib1 = 1;
+fib2 = 1;
+
+if (x >= 1) {
+  print2("fib(" + 1 + ") = " + fib1); # tests new print functionality
+  fib3 = 1;
+}
+if (x >= 2) {
+  print2("fib(" + 2 + ") = " + fib2);
+  fib3 = 1;
+}
+if ( x >= 3) {
+  i = 3;
+  while (i <= x) {
+    fib3 = fib1 + fib2;
+    print2("fib(" + i + ") = " + fib3);
+    
+    fib1 = fib2;
+    fib2 = fib3;
+    i = i + 1;
+  }
+}
+
+# write the final Fib number to HDFS (to test scalar write)
+write(fib3, "data/scalar_fib");

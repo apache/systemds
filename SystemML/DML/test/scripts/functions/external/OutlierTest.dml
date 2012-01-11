@@ -1,0 +1,14 @@
+outliers = externalFunction(Matrix[Double] D, Integer m, Integer k) 
+return (Matrix[Double] C) 
+implemented in (classname="dml.packagesupport.OutlierWrapper",execlocation="master")
+
+
+
+M = readMM( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
+
+k = 2;
+m = 5;
+
+o = outliers(M,m,k);
+
+writeMM(o, "$$outdir$$o", format="text");

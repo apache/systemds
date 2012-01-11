@@ -1,0 +1,9 @@
+testFunc = externalFunction(Matrix[Double] D, Integer k) return (Matrix[Double] C, Integer l)
+	implemented in (className="dml.packagesupport.TestPackageFunctionMaster",execLocation="worker")
+
+M = readMM( "scripts/llr_xfile", rows=10, cols=10, format="text");
+
+i = 5;
+[M,i] = testFunc(M,i);
+
+writeMM(M,"outfile",format="text");

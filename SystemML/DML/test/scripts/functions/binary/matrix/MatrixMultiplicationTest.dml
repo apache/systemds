@@ -1,6 +1,0 @@
-# junit test class: dml.test.integration.functions.binary.matrix.MatrixMultiplicationTest.java
-
-A = readMM("$$indir$$a", rows=$$m$$, cols=$$n1$$, format="text");
-B = readMM("$$indir$$b", rows=$$n2$$, cols=$$k$$, format="text");
-C = A %*% B;
-writeMM(C, "$$outdir$$c", format="text");

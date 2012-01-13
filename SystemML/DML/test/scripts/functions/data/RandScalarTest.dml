@@ -1,6 +1,0 @@
-# junit test class: dml.test.integration.functions.data.RandTest.java
-
-$$readhelper$$
-
-a = Rand(min=$$min$$, max=$$max$$);
-writeMM(a, "$$outdir$$rand", format="text");

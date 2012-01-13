@@ -1,5 +1,0 @@
-# junit test class: dml.test.integration.functions.data.WriteMMTest.java
-
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
-writeMM(A, "$$outdir$$b", format="text");
-writeMM(A, "$$outdir$$c", format="text");

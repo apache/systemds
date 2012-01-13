@@ -1,6 +1,0 @@
-<root>
-<numreducers>10</numreducers>
-<scratch>scratch_space</scratch>
-<defaultblocksize>1000</defaultblocksize>
-<NimbleSystemConfigFile>./scripts/system.xml</NimbleSystemConfigFile>
-</root>

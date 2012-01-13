@@ -1,8 +1,0 @@
-# junit test class: dml.test.integration.functions.unary.matrix.CastAsScalarTest.java
-
-$$readhelper$$
-
-A = readMM("$$indir$$a", rows=1, cols=1, format="text");
-b = castAsScalar(A);
-BHelper = b * Helper;
-writeMM(BHelper, "$$outdir$$b", format="text");

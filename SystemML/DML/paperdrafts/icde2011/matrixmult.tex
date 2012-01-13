@@ -1,0 +1,105 @@
+%Matrix multiplication is one of the expensive operations currently supported in 
+%\systemmltext. We first present two different execution plans (RMM and CPMM) and 
+%appropriate optimizations to perform matrix multiplication. We then describe how our 
+%runtime component {\em automatically} chooses the most efficient plan by taking the data 
+%characteristics into account. \reminder{Yuanyuan. At runtime, we choose between RMM and CPMM?}
+
+For the expensive matrix multiplication operation, \systemmltext\ currently supports two 
+alternative execution plans: RMM and CPMM. For CPMM, we describe a runtime optimization 
+using a {\it local aggregator} that enables partial aggregation in the reducer. Using a 
+cost model, we detail a comparison of the two plans under different data characteristics.
+
+\subsection{RMM and CPMM}
+Consider two matrices $A$ and $B$ represented in blocked format, with $M_b \times K_b$ blocks in $A$ and $K_b \times N_b$ blocks in $B$. The matrix multiplication can be written in blocked format as follows: $C_{i,j}=\sum_k{ A_{i,k}B_{k,j}}$, $i < M_b, k < K_b, j < N_b$.
+
+{\noindent {\bf RMM:} The replication based matrix multiplication strategy, as illustrated in Figure~\ref{fig:mmult2}, requires only one MapReduce job. The LOP-Dag for this execution plan contains a single \rmmloptext\ lop. 
+Each reducer in this strategy is responsible for computing the {\em final} value for one or more blocks in the resulting matrix $C$. In order to compute one result block $C_{i,j}$, the reducer must obtain all required blocks from input matrices, i.e., $A_{i,k}$ and $B_{k,j}$, $\forall$ $k$. Since each block in $A$ and $B$ can be used to produce multiple result blocks in $C$, they need to be replicated. For example, $A_{i,k}$ is used in computing the blocks $C_{i,j}$s, $0 \leq j < N_b$. 
+
+%In this algorithm, for a reducer to compute the result block $C_{i,j}$ it needs access to 
+%all $A_{i,k}$ and $B_{k,j}$ with different $k$. Since each block $A_{i,k}$ contributes to 
+%the computation of several result blocks - i.e., $C_{i,0}$, $C_{i,1}$, $\ldots$, $C_{i, 
+%N_b-1}$ - the mapper sends $N_b$ copies of $A_{i,k}$ to the corresponding reducers. 
+%Similarly, $M_b$ copies of $B_{k,j}$ are sent to the corresponding reducers. The reducer 
+%now has all the required blocks to compute $C_{i,j}$.
+
+{\noindent{\bf CPMM:}} Figure~\ref{fig:mmult1}
+demonstrates the cross product based algorithm for matrix
+multiplication. CPMM is represented in a LOP-Dag with three
+lops $\mmcjlop \rightarrow \grplop \rightarrow \agglop(\sum)$, and requires 2
+MapReduce jobs for execution.
+%Figure~\ref{fig:piggybacking} shows a CPMM evaluation for the computation of $W^TW$. 
+The mapper of the first MapReduce job
+reads the two input matrices A and B and groups input blocks $A_{i,k}$s 
+and $B_{k,j}$s by the common key $k$. The reducer performs a cross product to compute $P^k_{i,j}=A_{i,k}B_{k,j}$. In the second MapReduce
+job the mapper reads the results from the previous MapReduce job
+and groups all
+the $P^k_{i,j}$s by the key $(i,j)$. Finally, in the Reduce phase,
+the \aggloptext\ lop computes $C_{i,j}=\sum_k{P^k_{i,j}}$.
+
+\subsection{Local Aggregator for CPMM}\label{sec:localagg}
+In CPMM, the first MapReduce job outputs $P^k_{i,j}$ for $1 \leq k \leq
+K_b$. When $K_b$ is larger than the number of available reducers $r$,
+each reducer may process multiple cross products. Suppose a reducer applies cross products
+on $k = k'$ and $k = k''$, then both $P^{k'}_{i,j}=A_{i,k'}B_{k',j}$ and $P^{k''}_{i,j}=A_{i,k''}B_{k'',j}$ are computed
+in the same reducer. From the description of CPMM, we know that 
+the second MapReduce job aggregates the output of the first job as
+$C_{i,j}=\sum_k{P^k_{i,j}}$. 
+Instead of outputting $P^{k'}_{i,j}$ and
+$P^{k''}_{i,j}$ separately, it is more efficient to
+aggregate the partial results within the reducer. Note that this
+local aggregation is applicable only for \mmcjlop.
+This operation is similar in
+spirit to the \textit{combiner}~\cite{mapreduce} in MapReduce,
+the major difference being that here partial
+aggregation is being performed in the reducer.
+
+There is still the operational difficulty that
+the size of the partial aggregation may be too large to fit in memory. We have,
+therefore, implemented a disk-based local aggregator that uses an in-memory buffer pool. CPMM always generates the result blocks in a sorted order, so that partial aggregation only incurs sequential IOs with an LRU buffer replacement policy. One aspect worth noting is that no matter how many cross products get assigned to a single reducer the result size is bounded by the size of matrix $C$, denoted as $|C|$. We demonstrate in Section~\ref{sec:optimizations}, that this seemingly simple optimization significantly improves the performance of CPMM.
+
+\subsection{RMM vs CPMM}\label{sec:mmult-cmp} 
+We start with a simple cost model for the two algorithms. Empirically,
+we found that the distributed file system (DFS) IO and network costs were dominant factors in the running time, and consequently we focus on these costs in our analysis.
+
+In RMM, the mappers replicate each block of $A$ and $B$, $N_b$ 
+and $M_b$ times respectively.
+As a result, $N_b|A|+M_b|B|$ data is shuffled in the MapReduce
+job. Therefore, the cost of RMM can be derived as $cost(\textit{RMM})=
+\textit{shuffle}(N_b|A|+M_b|B|)+\textit{IO}_{\it dfs}(|A| + |B| + |C|)$.
+
+%\begin{equation}\label{rmm-cost}
+%    cost(RMM)= \textit{shuffle}(N_b|A|+M_b|B|)
+%\end{equation}
+
+In CPMM, in the first job, mappers read blocks of $A$ and
+$B$, and send them to reducers. So, the amount of data shuffled is
+$|A|+|B|$. The reducers perform cross products for each $k$ and apply
+a \textit{local aggregator} to partially aggregate the results across
+different values of $k$ within a reducer. The result size produced
+by each reducer is bounded by $|C|$. When there are $r$ reducers in the
+job, the amount of data written to DFS is bounded by $r|C|$.  This
+data is then read into the second MapReduce job, shuffled and then
+fed into the reducers to produce the final result. So, the total cost
+of CPMM is bounded by $cost(\textit{CPMM})\leq
+\textit{shuffle}(|A|+|B|+r|C|)+\textit{IO}_{\it dfs}(|A| + |B| + |C|+ 2r|C|)$.
+%\begin{equation}\label{cpmm-cost2}
+%    cost(CPMM)\leq \textit{shuffle}(|A|+|B|+r|C|)+IO_{dfs}(2r|C|)
+%\end{equation}
+
+For data of the same size, \textit{shuffle} is a more expensive operation 
+than $\textit{IO}_{\it dfs}$ as it involves network overhead, local file
+system IO and external sorting.
+
+The cost models discussed above provide a guideline for choosing the
+appropriate algorithm for a particular matrix multiplication. When $A$
+and $B$ are both very large, CPMM is likely to perform better, since
+the shuffle overhead of RMM is prohibitive. On the other hand, if
+one matrix, say A, is small enough to fit in one block
+($M_b=K_b=1$), the cost of RMM becomes $\textit{shuffle}(N_b|A|+|B|)
++ \textit{IO}_{\it dfs}(|A| + |B| + |C|)$. Essentially, RMM now partitions the
+large matrix $B$ and broadcasts the small matrix $A$ to every
+reducer. In this case, RMM is likely to perform better than CPMM.
+In Section~\ref{sec:optimizations}, we will experimentally
+compare the performance of CPMM and RMM for different input data
+characteristics.
+

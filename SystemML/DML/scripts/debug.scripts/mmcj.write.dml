@@ -1,0 +1,31 @@
+######################################################################################
+# Date: 06-Apr-2011
+# Creator: statiko
+# BUG:
+#    Unary lop in D*5 has two parents: MMCJ and PERSISTENT-WRITE.
+#    PERSISTENT-WRITE gets piggybacked into MMCJ job, which is 
+#        incorrect since MMCJ can only produce its own output and nothing else.
+#    As a result, that PERSISTENT-WRITE is completely ignored and E.out is generated.
+#
+# FIX:
+#    Set the compatibility for all DATA WRITE lops so that they are not 
+#        piggybacked with lops that produce a single output.
+#    Additionally, checks have been placed in handleSingleOutputJobs() to detect 
+#        lops with execLocation other than Map and MapOrReduce.
+#
+# OUTSTANDING ISSUES:
+#    None.
+######################################################################################
+
+A = readMM("fileA", rows=3, cols=3, format="text");
+B = readMM("fileA", rows=3, cols=3, format="text");
+C = readMM("fileA", rows=3, cols=3, format="text");
+
+D = A + B;
+E = D * 5;
+
+writeMM(E, "E.out", format="text");
+
+F = E %*% C;
+writeMM(F, "F.out", format="text");
+

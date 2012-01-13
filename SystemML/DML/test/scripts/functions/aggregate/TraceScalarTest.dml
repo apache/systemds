@@ -1,0 +1,7 @@
+# junit test class: dml.test.integration.functions.aggregate.SumTest.java
+
+$$readhelper$$
+
+b = trace($$scalar$$);
+BHelper = b * Helper;
+writeMM(BHelper, "$$outdir$$b", format="text");

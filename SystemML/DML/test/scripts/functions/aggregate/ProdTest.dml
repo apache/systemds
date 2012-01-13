@@ -1,0 +1,13 @@
+# junit test class: dml.test.integration.functions.aggregate.ProdTest.java
+
+$$readhelper$$
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorProd = prod(Vector);
+VectorProdHelper = VectorProd * Helper;
+writeMM(VectorProdHelper, "$$outdir$$vector_prod", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixProd = prod(Matrix);
+MatrixProdHelper = MatrixProd * Helper;
+writeMM(MatrixProdHelper, "$$outdir$$matrix_prod", format="text");

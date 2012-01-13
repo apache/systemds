@@ -1,0 +1,25 @@
+# Property-File for ant build script, to build and test SystemML
+
+#GENERAL
+general.localmode=true
+#general.libpath=/home/hadoop/bin/ant/lib
+general.libpath=lib/ant
+
+#SystemML
+systemml.version=0.3
+
+#SVN
+
+svn.repository.url=https://svn.cs.opensource.ibm.com/svn/dml/DML
+
+#BUILD
+build.jarnamejunit=JunitSystemML.jar
+build.jarnamerun=SystemML.jar
+build.folder=bin
+
+#HADOOP
+hadoop.cluster.path=/home/hadoop/bin/hadoop/hadoop-0.20.2-core.jar
+hadoop.local.path=lib/hadoop-0.20.2-core.jar
+hadoop.jvmargs.cluster=-Xmx1000m -Dhadoop.log.dir=/local/IHC-0.20/logs -Dhadoop.log.file=hadoop.log -Dhadoop.home.dir=/home/hadoop/bin/hadoop/bin/.. -Dhadoop.id.str= -Dhadoop.root.logger=INFO,console -Djava.library.path=/home/hadoop/bin/hadoop/bin/../lib/native/Linux-amd64-64 -Dhadoop.policy.file=hadoop-policy.xml
+hadoop.jvmargs.localmode=-Xmx750m
+hadoop.hdfs.basepath=/user/hadoop

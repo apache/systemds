@@ -1,0 +1,9 @@
+dml-path "./scripts/packages:../other/path/to/nowhere";
+
+import dirA::testA as t1;
+import dirA::dirAA::testAA as t2;
+
+B = 1;
+B = t1::foo(B);
+B = t2::bar(B);
+print ("B is ", B);

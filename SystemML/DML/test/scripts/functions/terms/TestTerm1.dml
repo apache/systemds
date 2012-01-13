@@ -1,0 +1,9 @@
+# junit test class: dml.test.integration.functions.terms.ScalarMatrixUnaryBinaryTest.java
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+
+W = 1;
+W = W + A;
+W = W + W;
+
+writeMM(W, "$$outdir$$w", format="text"); 

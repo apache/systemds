@@ -1,0 +1,13 @@
+$$readhelper$$
+
+#A <- Ordinal
+#B <- Ordinal
+
+A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
+B = read("$$indir$$B", rows=$$rows$$, cols=1, format="text");
+
+sp = spearman(A,B);
+
+spHelper = sp * Helper;
+write(spHelper, "$$outdir$$outSpearman", format="text");
+

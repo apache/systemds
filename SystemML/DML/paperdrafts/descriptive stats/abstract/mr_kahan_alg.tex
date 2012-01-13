@@ -1,0 +1,28 @@
+\begin{algorithm}
+\caption{MapReduce Kahan Summation} 
+\label{algo:mrkahan}
+\begin{algorithmic}
+\small{
+\STATE //helper function
+\STATE //$s_1$ and $s_2$ are partial sums, $c_1$ and $c_2$ are correction terms
+\STATE \textbf{KahanAdd}($s_1, c_1, s_2, c_2$)\{
+\STATE \ \ $corrected\_s_2 = s_2 + c_1+c_2$
+\STATE \ \ $sum=s_1+corrected\_s_2$
+\STATE \ \ $new\_c=corrected\_s_2-(sum - s_1)$
+\STATE \ \ \textbf{return} $(sum, new\_c)$ \}
+\STATE 
+\STATE // Mapper Class
+\STATE \textbf{configure}()\{ $sum=0$, $correction=0$ //initialization \}
+\STATE \textbf{map}(k: the dummy key, v: the value)\{
+\STATE \ \ $(sum, correction)=\textbf{KahanAdd}(sum, correction, v, 0)$ \}
+\STATE \textbf{close}()\{ \textbf{emit} $<null, (sum, correction)>$ \}
+\STATE 
+\STATE // Reducer Class
+\STATE \textbf{reduce}(k: the dummy key, listV: the list of values)\{
+\STATE \ \ $sum=0$, $correction=0$
+\STATE \ \ \textbf{for} $(s, c)$ in  listV 
+\STATE \ \ \ \ $(sum, correction)=\textbf{KahanAdd}(sum, correction, s, c)$
+\STATE \ \ \textbf{emit} $<null, sum>$ \}
+}
+\end{algorithmic}
+\end{algorithm}

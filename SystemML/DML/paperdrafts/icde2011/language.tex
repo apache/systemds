@@ -1,0 +1,125 @@
+
+%A popular tool amongst machine learning practitioners is R~\cite{R}.
+%The language in R exposes a rich set of
+%features including mathematical constructs such as linear algebra operations, 
+%control structures such as while and for loops, function support including
+%recursive functions and  object-oriented programming features. 
+%While it provides the expressivity needed
+%to implement a wide variety of ML algorithms, it is procedural in
+%nature thereby precluding optimizations that consider 
+%alternative plans such as those discussed in Example~\ref{algo:gnmf}.
+
+\dmlr\ is a declarative language whose syntax closely resembles 
+the syntax of R\footnote{R is prototypical for a larger class of such languages including
+Matlab~\cite{matlab}}~\cite{R}. To enable more system generated optimization, \dmlr\ does not
+provide all the flexibility available in R. However, this loss in flexibility results largely in
+loss in programming convenience and does not significantly impact the class of ML algorithms that
+are expressible in \dmlr.
+%We begin by describing the features in \dmlr\ and then proceed to discuss the differences 
+%with respect to R~\footnote{R is prototypical of a larger class of such languages 
+%including Matlab~\cite{matlab}}. 
+The GNMF algorithm (Algorithm~\ref{algo:gnmf}) is expressed in
+\dmlr\ syntax in Script~\ref{scpt:gnmf}. We explain \dmlr\
+constructs using this example.
+\\ 
+\begin{script}\label{scpt:gnmf}
+GNMF\\
+\footnotesize
+\texttt{1:\ V=readMM("in/V", rows=1e8, cols=1e5, nnzs=1e10);\\
+2:\ W=readMM("in/W", rows=1e8, cols=10);\\
+3:\ H=readMM("in/H", rows=10, cols=1e5);\\
+4:\ max\_iteration=20;\\
+5:\ i=0;\\
+6:\ \textbf{while}(i<max\_iteration)\{\\
+7:\ \ \ H=H*(t(W)\mmult V)/(t(W)\mmult W\mmult H);\\
+8:\ \ \ W=W*(V\mmult t(H))/(W\mmult H\mmult t(H));\\
+9:\ \ \ i=i+1;\}\\
+10:writeMM(W, "out/W");\\
+11:writeMM(H, "out/H");}
+\end{script}
+\vspace*{0.1in}
+
+\noindent {\bf Data Types:} \dmlr\ supports two main data types: matrices and 
+scalars~\footnote{We treat vectors as a special case of matrices.}. Scalar 
+data types supported are integer, double, string and logical. The cells in a matrix may 
+consist of integer, double, string or logical values.
+
+\noindent {\bf Statements:} A \dmlr\ program consists of a sequence of statements, with 
+the default computation semantics being sequential evaluation of the individual 
+statements. 
+
+The following constructs are currently supported in \dmlr.
+
+{\it Input/Output}: \concept{ReadMM} and \concept{WriteMM}
+statements are provided for respectively reading and writing matrices from and to files. 
+Optionally, in the \concept{ReadMM} statement,
+the user can provide additional properties of the matrix
+such as sparsity (number of non-zero entries or nnzs).
+
+{\it Control Structures}: Control structures supported in \dmlr\
+include the \concept{while} statement, \concept{for} statement and
+\concept{if} statement. Steps~6-9 in Script~\ref{scpt:gnmf} show an
+example \concept{while} statement.
+
+{\it Assignment}: An \concept{assignment} statement 
+consists of an expression and the result of which is assigned to a
+variable - e.g., Steps~7 ,8 and 9 in Script~\ref{scpt:gnmf}. Note
+that the assignment can be to a scalar or a matrix. 
+
+%\begin{itemize}
+%\item {\it Input/Output}: \concept{ReadMM} and \concept{WriteMM}
+%statements are provided for respectively reading and writing, vectors
+%or matrices, from and to files. Optionally, in the \concept{ReadMM} statement,
+%the user can provide additional properties of the matrix or vector,
+%such as dimensionality and sparsity (number of non-zero entries or nnzs).
+%
+%\item {\it Control Structures} : Control structures supported in \dmlr\
+%include the \concept{while} statement, \concept{for} statement and
+%\concept{if} statement. Steps~6-9 in Script~\ref{scpt:gnmf} show an
+%example \concept{while} statement.
+%
+%\item {\it Assignment}: An \concept{assignment} statement 
+%consists of an expression and the result of which is assigned to a
+%variable - e.g., Steps~7,8 and 9 in Script~\ref{scpt:gnmf}. Note
+%that the assignment can be to a scalar, vector or matrix. 
+%\end{itemize}
+
+%Table~\ref{tab:operators} lists the main types of operators supported
+%in \dmlr\ along with a few examples for each type. The arithmetic
+%operators extend naturally to matrices and vectors where the semantics
+%is such that the operator is applied to the corresponding cells. For
+%instance the expression C = \binaryop{A}{*}{B} will multiply the
+%values in the corresponding cells in A and B and populate the
+%appropriate cell in C with the result. Several internal functions,
+%specific to particular data types, are
+%supported. E.g., \concept{colSum} computes the sum of every column in
+%a matrix and returns a vector, while \concept{t} computes the
+%transpose of a matrix.
+
+Table~\ref{tab:notation} lists several example operators allowed in expressions in \dmlr. 
+The arithmetic operators $+,-,*,/$ extend naturally to matrices where the semantics is 
+such that the operator is applied to the corresponding cells. For instance, the expression 
+$Z=X*Y$ will multiply the values in the corresponding cells in $X$ and $Y$, and populate 
+the appropriate cell in $Z$ with the result. Several internal functions, specific to 
+particular data types, are supported -- e.g., \concept{rowSum} computes the sum of every 
+row in a matrix and returns a column matrix (i.e., a vector), while \concept{t($\cdot$)} 
+computes the transpose of a matrix.
+
+\dmlr\ also allows users to define their own functions using the syntax {\textit 
+{``function~~(arglist)~~body''}}. Here, the \textit{arglist} consists of a set of formal 
+input and output arguments and the body is a group of valid \dmlr\ statements.
+
+\noindent {\bf Comparison with R programming language:} As pointed out before, we have 
+made some choices in the design of \dmlr\ to better enable system optimizations. For 
+example, \dmlr\ does not support \emph{object oriented features}, \emph{advanced data 
+types} (such as lists and arrays) and \emph{advanced function support} (such as accessing 
+variables in the caller function and further up in the call-stack). Besides these advanced 
+features for programming convenience, R also supports extensive \emph{graphical 
+procedures} that are clearly beyond the scope of \dmlr.
+
+%\emph{[[Note: I also suggest that at the end of the paper
+%in the discussion section we have a paragraph on ``Revisiting Design Choices of \dmlr\ ``.]]}
+
+\input{compiler.tex}
+
+%{\tt Sekar, you need to explain: program, statement block, variable analysis, damn across statement blocks.}

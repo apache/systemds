@@ -1,0 +1,315 @@
+% ----------------------------------------------------------------
+%changes to the algorithm format
+%\newcommand{\algorithmicreturn}{\textbf{return}}
+%\newcommand{\algorithmiccomment}[1]{// #1}
+\newcommand{\DoubleSpace}{\edef\baselinestretch{1.45}\Huge}
+% \newcommand{\DoubleSpace}{\edef\baselinestretch{1.0}\Huge\normalsize}
+\newcommand{\SingleSpace}{\edef\baselinestretch{1.0}\Huge\normalsize}
+\newcommand{\eat}[1] {}
+\newcommand{\reminder}[1]{\textcolor{red}{\em $\rightarrow$ (#1)$\leftarrow$}}
+\newcommand{\remove}[1]{\textcolor{blue}{\em $\rightarrow$ [{\bf REM-START} (#1) {\bf REM-END}] $\leftarrow$}}
+
+% \newcommand{\reminder}[1]{ [[[ \marginpar{\mbox{$<==$}} #1 ]]] }
+% \newcommand{\reminder}[1]{ [[[{\underline{ \sl $\longrightarrow$ #1 $\longleftarrow$}}]]]}
+%\newcommand{\BigCrunch}{}
+%\newcommand{\Crunch}{}
+%\newcommand{\SmallCrunch}{}
+%\newcommand{\Skip}{}
+
+\newcommand{\BigCrunch}{\vspace*{-1.5em}}
+\newcommand{\Crunch}{\vspace*{-1em}}
+\newcommand{\SmallCrunch}{\vspace*{-1ex}}
+\newcommand{\Skip}{\vspace*{1ex}}
+
+\newcommand{\Rset}{\Upsilon}
+\newcommand{\Aset}{\Lambda}
+\newcommand{\Eset}{E}
+\newcommand{\Asubset}{A}
+\newcommand{\Rsubset}{R}
+\newcommand{\grp}{\mathcal{G}}
+
+
+\newcommand{\myDefnBegin}[1]{
+\SmallCrunch
+\begin{defn}\label{#1}
+}
+
+\newcommand{\myDefnEnd}{
+\end{defn}
+\SmallCrunch
+}
+
+\newcommand{\myThmBegin}[1]{
+%\Crunch
+\begin{thm}\label{#1}
+}
+
+\newcommand{\myThmEnd}{
+\end{thm}
+%\BigCrunch
+}
+
+\newcommand{\onesmallfigure}[3]{
+%\Crunch
+\begin{figure}[tb]
+\begin{center}
+\centerline{\epsfxsize=1.0in \epsffile{#1}}
+% \DoubleSpace
+\SmallCrunch
+\centerline{\parbox{3in}{\caption{#2} \label{#3}}}
+\BigCrunch
+\end{center}
+\BigCrunch
+\end{figure}
+}
+
+\newcommand{\onemediumfigure}[3]{
+%\Crunch
+\begin{figure}[tb]
+\begin{center}
+\centerline{\epsfxsize=1.75in \epsffile{#1}}
+% \DoubleSpace
+%\Crunch
+\centerline{\parbox{3in}{\caption{#2} \label{#3}}}
+% \SingleSpace
+\end{center}
+\BigCrunch
+\end{figure}
+}
+
+
+\newcommand{\onefigure}[3]{
+\begin{figure}[t]
+\begin{center}
+\centerline{\epsfxsize=2.4in \epsffile{#1}}
+\centerline{\parbox{3.5in}{\caption{#2} \label{#3}}}
+\SmallCrunch
+\end{center}
+\BigCrunch
+\end{figure}
+}
+
+\newcommand{\onelargefigure}[3]{
+% \Crunch
+\begin{figure}[t]
+\begin{center}
+\centerline{\epsfxsize=3.2in \epsffile{#1}}
+% \DoubleSpace
+\centerline{\parbox{3.5in}{\caption{ #2} \label{#3}}}
+% \SingleSpace
+\SmallCrunch
+\end{center}
+\BigCrunch
+\end{figure}
+}
+
+\newcommand{\twofigs}[6]{
+\begin{figure*}[t]
+\centerline{
+            \epsfxsize=3.1in \epsffile{#1}
+            \hfill
+            \epsfxsize=3.1in \epsffile{#4}
+           }
+\centerline{
+            \parbox{3.1in}{\caption{#2} \label{#3}}
+            \hfill
+            \parbox{3.1in}{\caption{#5} \label{#6}}
+           }
+\end{figure*}
+}
+
+\newcommand{\twofiguresinonecol}[6]{
+\begin{figure}[tb]
+\centerline{
+            \hfill
+            \epsfxsize=2.0in \epsffile{#1}
+            \hfill
+            \epsfxsize=0.9in \epsffile{#4}
+            \hfill
+           }
+           \SmallCrunch
+\centerline{
+            \hfill
+            \parbox{2.0in}{\caption{ #2} \label{#3}}
+            \hfill
+            \parbox{1.1in}{\caption{ #5} \label{#6}}
+            \hfill
+           }
+\SmallCrunch
+\end{figure}
+% \Skip
+}
+
+\newcommand{\twobigfiguresinonecol}[6]{
+\begin{figure}
+\centerline{
+            \hfill
+            \epsfxsize=1.8in \epsffile{#1}
+            \hfill
+            \epsfxsize=1.8in \epsffile{#4}
+            \hfill
+           }
+           \SmallCrunch
+\centerline{
+            \hfill
+            \parbox{1.72in}{\caption{ #2} \label{#3}}
+            \hfill
+            \parbox{1.7in}{\caption{ #5} \label{#6}}
+            \hfill
+           }
+\BigCrunch
+\end{figure}
+% \Skip
+}
+
+\newcommand{\twofigures}[6]{
+\begin{figure*}[tb]
+\centerline{
+            \hfill
+            \epsfxsize=2.45in \epsffile{#1}
+            \hfill
+            \epsfxsize=4.65in \epsffile{#4}
+            \hfill
+           }
+           \SmallCrunch
+\centerline{
+            \hfill
+            \parbox{2.45in}{\caption{#2} \label{#3}}
+            \hfill
+            \parbox{4.65in}{\caption{#5} \label{#6}}
+            \hfill
+           }
+\SmallCrunch
+\end{figure*}
+% \Skip
+}
+
+\def\papernumber #1 raised #2 {
+   % \vspace{-#2}
+    \vbox to 0pt{\hfill\framebox{\bf Paper Number #1}}
+   % \vspace{#2}
+}
+
+\newcommand{\threefiguresmss}[9]{
+    \begin{figure*}[tbh]
+    \centerline{
+    \epsfxsize=3in \epsffile{#1}
+    \hfill
+    \epsfxsize=1.1in \epsffile{#4}
+    \hfill
+    \epsfxsize=1.3in
+    \epsffile{#7}
+    }
+\SmallCrunch
+%    \SingleSpace
+    \centerline{
+    \parbox{3.0in}{\caption{#2}
+    \label{#3}}
+    \hfill
+    \parbox{1.8in}{\caption{#5}
+    \label{#6}}
+    \hfill
+    \parbox{1.8in}{\caption{#8}
+    \label{#9}}
+    }
+%\BigCrunch
+%    \DoubleSpace
+\Skip
+\end{figure*}
+}
+
+\newcommand{\threefiguresmlm}[9]{
+    \begin{figure*}[tbh]
+    \centerline{
+    \epsfxsize=1.80in \epsffile{#1}
+    \hfill
+    \epsfxsize=2.50in \epsffile{#4}
+    \hfill
+    \epsfxsize=1.70in
+    \epsffile{#7}
+    }
+\SmallCrunch
+%    \SingleSpace
+    \centerline{
+    \parbox{2.00in}{\caption{#2}
+    \label{#3}}
+    \hfill
+    \parbox{2.50in}{\caption{#5}
+    \label{#6}}
+    \hfill
+    \parbox{2.00in}{\caption{#8}
+    \label{#9}}
+    }
+%\BigCrunch
+%    \DoubleSpace
+\Skip
+\end{figure*}
+}
+
+\newcommand{\threefigureslmm}[9]{
+    \begin{figure*}[tbh]
+    \centerline{
+    \epsfxsize=2.8in \epsffile{#1}
+    \hfill
+    \epsfxsize=2.2in \epsffile{#4}
+    \hfill
+    \epsfxsize=2.1in
+    \epsffile{#7}
+    }
+\SmallCrunch
+%    \SingleSpace
+    \centerline{
+    \parbox{2.7in}{\caption{#2}
+    \label{#3}}
+    \hfill
+    \parbox{1.9in}{\caption{#5}
+    \label{#6}}
+    \hfill
+    \parbox{1.9in}{\caption{#8}
+    \label{#9}}
+    }
+%\BigCrunch
+%    \DoubleSpace
+\Skip
+\end{figure*}
+}
+
+
+%\newcommand{\fourfigures}[12]{
+%\begin{figure*}[thb]
+%    \centerline{
+%    \epsfxsize=1.575in \epsffile{#1}
+%    \hfill
+%    \epsfxsize=1.575in \epsffile{#4}
+%    \hfill
+%    \epsfxsize=1.575in \epsffile{#7}
+%    \hfill
+%    \epsfxsize=1.575in \epsffile{#10}
+%    }
+%    \SingleSpace
+%\SmallCrunch
+%    \centerline{
+%    \parbox{1.6in}{\caption{#2} \label{#3}}
+%    \hfill
+%    \parbox{1.6in}{\caption{#5} \label{#6}}
+%    \hfill
+%    \parbox{1.6in}{\caption{#8} \label{#9}}
+%    \hfill
+%    \parbox{1.6in}{\caption{#11} \label{#12}}
+%}
+%    \DoubleSpace
+%\Skip
+%\end{figure*}
+%}
+
+
+\newenvironment{mylist}{
+% \baselineskip 10 pt
+\begin{list}{$\bullet$}{
+\setlength{\leftmargin}{1.5ex}
+\setlength{\labelwidth}{1ex}
+\setlength{\labelsep}{0.5ex}
+\setlength{\itemsep}{0.2ex}
+\setlength{\parsep}{0.2ex}
+}}
+{\end{list}}

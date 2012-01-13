@@ -1,0 +1,9 @@
+# junit test class: dml.test.integration.functions.aggregate.LengthTest.java
+
+$$readhelper$$
+
+computation = ncol($$scalar$$);
+
+ComputationHelper = Helper * computation;
+
+writeMM(ComputationHelper, "$$outdir$$computed", format="text");

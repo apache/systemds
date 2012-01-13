@@ -1,0 +1,10 @@
+# junit test class: dml.test.integration.functions.aggregate.ProdTest.java
+
+$$readhelper$$
+
+scalar = $$scalar$$;
+
+computation = prod(scalar);
+ComputationHelper = computation * Helper;
+
+writeMM(ComputationHelper, "$$outdir$$computed", format="text");

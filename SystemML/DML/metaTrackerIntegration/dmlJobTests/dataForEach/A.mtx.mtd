@@ -1,0 +1,10 @@
+{ 
+  "rows": 10
+  ,"cols": 1
+  ,"rows_per_block": 1000
+  ,"cols_per_block": 1000
+  ,"nnz": 2
+  ,"description": { "author": "SystemML" 
+                  ,"kind": "nominal"
+                } 
+}

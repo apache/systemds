@@ -1,0 +1,19 @@
+\subsection{Stable Mean}
+\label{sec:mean}
+
+Mean is a fundamental operation for any quantitative data analysis. The widely used technique is to divde the sum by the total number of input elements. %Both PIG and HIVE relies on this approach, where $sum$ is computed using the naive recursive summation algorithm. 
+This straightforward method of computing mean however suffers from numerical instability. As the number of data points increases, the accuracy of sum decreases, thereby affecting the quality of mean. Even when the stable summation is used, sum divided by count technique often results in less accurate results. 
+
+In SystemML, we employ an incremental approach to compute the mean. This method maintains a running mean of the elements processed so far. It makes use of the update rule in Equation~\ref{eq:mean}. In a MapReduce setting, all mappers apply this update rule to compute the partial values for count and mean. These partial values are then aggregated in the single reducer to produce the final value of mean.
+
+\begin{small}
+\begin{equation}
+\begin{split}
+n=& n_a+n_b, \;\; \delta=\mu_b-\mu_a, \;\; \mu=\mu_a\varoplus n_b\frac{\delta}{n}
+\end{split}
+\label{eq:mean}
+\end{equation}
+\end{small}
+
+In Equation~\ref{eq:mean}, $n_a$ and $n_b$ denote the partial counts, $\mu_a$ and $\mu_b$ refer to partial means. The combined mean is denoted by $\mu$, and it is computed using the \textsc{KahanIncrement} function in Algorithm~\ref{algo:kahan}, denoted as $\varoplus$ in the equation. In other words, we keep a correction term for the running mean, and $\mu=\mu_a\varoplus n_b\frac{\delta}{n}$ is calculated via $(\mu.value, \mu.correction)=$ \textsc{KahanIncrement} $(\mu_a.value, \mu_a.correction, n_b\frac{\delta}{n}, 0)$. Note that the use of \textsc{KahanIncrement} is important to obtain stable value for $\mu$. When the value of $n_b\frac{\delta}{n}$ is much smaller than $\mu_a$, the resulting $\mu$ will incur a loss in accuracy -- which can be alleviated by using \textsc{KahanIncrement}. As we show later in Section~\ref{sec:exp}, this incremental algorithm results in more accurate results. We also use it in stable algorithms to compute higher order statistics and covariance (see Sections~\ref{sec:highorder}~\&~~\ref{sec:covariance}).
+

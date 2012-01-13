@@ -1,0 +1,15 @@
+$$readhelper$$
+
+#A <- Ordinal
+#B <- Ordinal
+#WM <- Weights
+
+A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
+B = read("$$indir$$B", rows=$$rows$$, cols=1, format="text");
+WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+
+sp = spearman(A,B,WM);
+
+spHelper = sp * Helper;
+write(spHelper, "$$outdir$$outSpearman", format="text");
+

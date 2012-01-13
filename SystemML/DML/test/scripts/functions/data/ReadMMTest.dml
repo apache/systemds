@@ -1,0 +1,4 @@
+# junit test class: dml.test.integration.functions.data.ReadMMTest.java
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="$$format$$"$$blockrows$$$$blockcols$$);
+writeMM(A, "$$outdir$$a", format="text");

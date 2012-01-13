@@ -1,0 +1,125 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{#1}
+\csname url@rmstyle\endcsname
+\providecommand{\newblock}{\relax}
+\providecommand{\bibinfo}[2]{#2}
+\providecommand\BIBentrySTDinterwordspacing{\spaceskip=0pt\relax}
+\providecommand\BIBentryALTinterwordstretchfactor{4}
+\providecommand\BIBentryALTinterwordspacing{\spaceskip=\fontdimen2\font plus
+\BIBentryALTinterwordstretchfactor\fontdimen3\font minus
+  \fontdimen4\font\relax}
+\providecommand\BIBforeignlanguage[2]{{%
+\expandafter\ifx\csname l@#1\endcsname\relax
+\typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}%
+\typeout{** loaded for the language `#1'. Using the pattern for}%
+\typeout{** the default language instead.}%
+\else
+\language=\csname l@#1\endcsname
+\fi
+#2}}
+
+\bibitem{SVMgpu}
+B.~Catanzaro, N.~Sundaram, and K.~Keutzer, ``Fast support vector machine
+  training and classification on graphics processors,'' in \emph{ICML}, 2008.
+
+\bibitem{nips06}
+C.-T. Chu, S.~K. Kim, Y.-A. Lin, Y.~Yu, G.~R. Bradski, A.~Y. Ng, and
+  K.~Olukotun, ``Map-reduce for machine learning on multicore,'' in
+  \emph{NIPS}, 2006, pp. 281--288.
+
+\bibitem{cascadesvm}
+H.~P. Graf, E.~Cosatto, L.~Bottou, I.~Durdanovic, and V.~Vapnik, ``Parallel
+  support vector machines: The cascade svm,'' in \emph{NIPS}, 2004.
+
+\bibitem{paralleltutorial}
+E.~Y. Chang, H.~Bai, and K.~Zhu, ``Parallel algorithms for mining large-scale
+  rich-media data,'' in \emph{MM '09: Proceedings of the seventeen ACM
+  international conference on Multimedia}, 2009.
+
+\bibitem{parallelnmf}
+S.~A. Robila and L.~G. Maciak, ``A parallel unmixing algorithm for
+  hyperspectral images,'' in \emph{Intelligent Robots and Computer Vision},
+  2006.
+
+\bibitem{phoenix}
+C.~Ranger, R.~Raghuraman, A.~Penmetsa, G.~Bradski, and C.~Kozyrakis,
+  ``Evaluating mapreduce for multi-core and multiprocessor systems,'' in
+  \emph{HPCA '07: Proceedings of the 2007 IEEE 13th International Symposium on
+  High Performance Computer Architecture}, 2007.
+
+\bibitem{scope}
+R.~Chaiken, B.~Jenkins, P.-A. Larson, B.~Ramsey, D.~Shakib, S.~Weaver, and
+  J.~Zhou, ``Scope: easy and efficient parallel processing of massive data
+  sets,'' \emph{Proc. VLDB Endow.}, vol.~1, no.~2, 2008.
+
+\bibitem{hadoop}
+Apache, ``Apache hadoop,'' http://hadoop.apache.org/.
+
+\bibitem{msrwww10}
+C.~Liu, H.~chih Yang, J.~Fan, L.-W. He, and Y.-M. Wang, ``Distributed
+  nonnegative matrix factorization for web-scale dyadic data analysis on
+  mapreduce,'' in \emph{WWW}, 2010, pp. 681--690.
+
+\bibitem{googlewww07}
+A.~Das, M.~Datar, A.~Garg, and S.~Rajaram, ``Google news personalization:
+  scalable online collaborative filtering,'' in \emph{WWW}, 2007, pp. 271--280.
+
+\bibitem{planet}
+B.~Panda, J.~Herbach, S.~Basu, and R.~J. Bayardo, ``Planet: Massively parallel
+  learning of tree ensembles with mapreduce,'' \emph{PVLDB}, vol.~2, no.~2, pp.
+  1426--1437, 2009.
+
+\bibitem{mahout}
+Apache, ``Apache mahout,'' http://mahout.apache.org/.
+
+\bibitem{LeeSeungGNMF}
+D.~Lee and H.~S. Seung, ``Algorithms for non-negative matrix factorization,''
+  2001.
+
+\bibitem{mapreduce}
+J.~Dean and S.~Ghemawat, ``Mapreduce: simplified data processing on large
+  clusters,'' \emph{CACM}, vol.~51, no.~1, pp. 107--113, 2008.
+
+\bibitem{matlab}
+Mathworks, ``Matlab,'' http://www.mathworks.com.
+
+\bibitem{R}
+R.~team, ``The r project for statistical computing,'' http://www.r-project.org.
+
+\bibitem{boom10}
+P.~Alvaro, T.~Condie, N.~Conway, K.~Elmeleegy, J.~M. Hellerstein, and R.~Sears,
+  ``Boom analytics: exploring data-centric, declarative programming for the
+  cloud,'' in \emph{EuroSys}, 2010, pp. 223--236.
+
+\bibitem{PageRank}
+L.~Page, S.~Brin, R.~Motwani, and T.~Winograd, ``The pagerank citation ranking:
+  Bringing order to the web,'' Stanford University, Tech. Rep., 1999.
+
+\bibitem{DryadLinq2008}
+Y.~Yu, M.~Isard, D.~Fetterly, M.~Budiu, U.~Erlingsson, P.~K. Gunda, and
+  J.~Currey, ``Dryadlinq: A system for general-purpose distributed
+  data-parallel computing using a high-level language,'' in \emph{Symposium on
+  Operating System Design and Implementation (OSDI)}, 2008.
+
+\bibitem{pegasusICDM2009}
+U.~Kang, C.~E. Tsourakakis, and C.~Faloutsos, ``Pegasus: A peta-scale graph
+  mining system - implementation and observations,'' in \emph{ICDM}, 2009.
+
+\bibitem{Zaharia:EECS-2010-53}
+M.~Zaharia, N.~M.~M. Chowdhury, M.~Franklin, S.~Shenker, and I.~Stoica,
+  ``Spark: Cluster computing with working sets,'' EECS Department, University
+  of California, Berkeley, Tech. Rep. UCB/EECS-2010-53, May 2010.
+
+\bibitem{snow}
+L.~Tierney, A.~J. Rossini, N.~Li, and H.~Sevcikova, ``Snow: Simple network of
+  workstations,'' http://cran.r-project.org/web/packages/snow.
+
+\bibitem{ricardo}
+S.~Das, Y.~Sismanis, K.~Beyer, R.~Gemulla, P.~Haas, and J.~McPherson,
+  ``Ricardo: Integrating r and hadoop,'' in \emph{SIGMOD}, 2010.
+
+\bibitem{rhipe}
+S.~Guha, ``Rhipe: R and hadoop integrated processing environment,''
+  http://ml.stat.purdue.edu/rhipe.
+
+\end{thebibliography}

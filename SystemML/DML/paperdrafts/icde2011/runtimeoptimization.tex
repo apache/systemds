@@ -1,0 +1,16 @@
+%\subsubsection{Runtime Optimizations}
+%\label{sec:runtime-opt} 
+%We next present two important runtime optimization strategies applied in
+%\systemmltext. In Section~\ref{sec:optimizations}, we experimentally
+%demonstrate the benefit of these optimization strategies.
+%
+%
+%\textbf{Cache Reduction in CPMM and RMM}: 
+%
+%In both CPMM and RMM approaches for matrix multiplication, there is a need to perform products on all the $A_{i,k}$'s and $B_{k,j}$'s. 
+%
+%In the reduce phase of the first MapReduce job, a cross product on all the $A_{i,k}$'s and $B_{k,j}$'s is performed for each $k$. In other words, for each $i$ ($0\leq i <M_b$), $A_{i,k}$ needs to be multiplied to every $B_{k,j}$ where j is from 0 to $N_b-1$. Naively we can cache all the $A_{i,k}$'s and $B_{k,j}$'s in memory then perform cross product. But this naive approach requires maximally $M_b+N_b$ blocks to fit in memory. This requirement can not always be guaranteed when multiplying large matrices. To improve the applicability of the CPMM approach, we employ a secondary sort~\cite{} in the shuffle phase to ensure that the input of the smaller matrix is always ordered before the input of the other. This way, only the corresponding blocks of the smaller matrix needs to fit in memory. As the blocks of the other matrix are fed in the reducer, we can just probe the cache to produce the result of the cross product. In the extreme case when even the corresponding blocks of the smaller matrix cannot fit in memory, we spill the cache to disk to ensure the applicability of the CPMM approach. However, based on our empirical observation, the in memory cache is enough to handle most cases of matrix multiplication.
+%
+%Again, instead of caching all the required blocks in memory for the computation of $C_{i,j}$. We apply a secondary sort to ensure that the all the blocks for the reducers are in the order of $A_{i,0}$, $B_{0,j}$, $A_{i,1}$, $B_{1,j}$ and so on. So, only one block is needed to be cached, and the aggregation is performed incrementally. 
+
+

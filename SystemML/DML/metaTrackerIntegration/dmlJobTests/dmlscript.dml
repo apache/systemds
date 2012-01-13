@@ -1,0 +1,6 @@
+A = Rand (rows=10, cols=5);
+
+r = nrow(A);
+
+write (A, "basic.data", format="text");
+write (r, "basic.r");

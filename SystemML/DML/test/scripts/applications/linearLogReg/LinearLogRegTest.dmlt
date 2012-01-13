@@ -1,0 +1,163 @@
+# Solves Linear Logistic Regression using Trust Region methods. 
+# Can be adapted for L2-SVMs and more general unconstrained optimization problems also
+# setup optimization parameters (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+
+# Usage:  /home/vikas/R-2.10.1/bin/R --vanilla --args Xfile X yfile y C 2 tol 1e-6 maxiter 100 < linearLogReg.r
+#parseCommandArgs()
+
+#Command-line args
+C = 2
+tol = 0.000001
+maxiter = 3
+maxinneriter = 3 
+
+X = readMM("C:/workspace/DML/test/scripts/applications/linearLogReg/in/X", rows=1000, cols=1000, format="text")
+N = nrow(X)
+D = ncol(X)
+
+y = readMM( "C:/workspace/DML/test/scripts/applications/linearLogReg/in/y", rows=1000, cols=1, format="text")
+
+
+eta0 = 0.0
+eta1 = 0.25
+eta2 = 0.75
+sigma1 = 0.25
+sigma2 = 0.5
+sigma3 = 4.0
+psi = 0.1 
+
+#initialize w
+#w = matrix(0,D,1)
+#w = readMM( "llr_wfile", rows=10, cols=1, format="text")
+w = Rand(rows=D, cols=1, min=0.0, max=0.0);
+ 
+o = X %*% w
+logistic = 1.0/(1.0 + exp( -y * o))
+
+obj = 0.5 * t(w) %*% w + C*sum(logistic)
+grad = w + C*t(X) %*% ((logistic - 1)*y)
+logisticD = logistic*(1-logistic)
+delta = sqrt(sum(grad*grad))
+
+# number of iterations
+iter = 0
+
+# starting point for CG
+#zeros_D = matrix(0,D,1)
+#zeros_D = readMM( "llr_zeros_D", rows=10, cols=1, format="text")
+zeros_D = Rand(rows = D, cols = 1, min = 0.0, max = 0.0);
+
+# boolean for convergence check
+
+converge = (delta < tol) | (iter > maxiter)
+norm_r2 = sum(grad*grad)
+alpha = t(w) %*% w
+
+while(!converge) {
+	
+	norm_grad = sqrt(sum(grad*grad))
+	# SOLVE TRUST REGION SUB-PROBLEM
+	s = zeros_D
+	r = -grad
+	d = r
+	inneriter = 0
+	innerconverge = ( sqrt(sum(r*r)) <= psi * norm_grad) 
+
+	innerconverge = false
+	while (!innerconverge) {
+
+		norm_r2 = sum(r*r)
+		Hd = d + C*(t(X) %*% (logisticD*(X %*% d)))
+		alpha_deno = t(d) %*% Hd 
+		alpha = norm_r2 / alpha_deno
+	
+		s = s + castAsScalar(alpha) * d
+		sts = t(s) %*% s
+		delta2 = delta*delta 
+		stsScalar = castAsScalar(sts)
+		
+		shouldBreak = false;
+		if (stsScalar > delta2) {
+
+			std = t(s) %*% d
+			dtd = t(d) %*% d
+			rad = sqrt(std*std + dtd*(delta2 - sts))
+			stdScalar = castAsScalar(std)
+			if(stdScalar >= 0) {
+				tau = (delta2 - sts)/(std + rad)
+			} 
+			else {
+				tau = (rad - std)/dtd
+			}
+						
+			s = s + castAsScalar(tau) * d
+			r = r - castAsScalar(tau) * Hd
+			
+			#break
+			shouldBreak = true;
+			innerconverge = true;
+		
+		} 
+		
+		if (!shouldBreak) {
+
+			r = r - castAsScalar(alpha) * Hd
+			old_norm_r2 = norm_r2 
+			norm_r2 = sum(r*r)
+			beta = norm_r2/old_norm_r2
+			d = r + beta*d
+			innerconverge = (sqrt(norm_r2) <= psi * norm_grad) | (inneriter < maxinneriter)
+		
+		}
+		 
+		
+	}  
+	
+	# END TRUST REGION SUB-PROBLEM
+	# compute rho, update w, obtain delta
+	qk = -0.5*(t(s) %*% (grad - r))
+	
+	wnew = w + s	
+	onew = X %*% wnew
+	logisticnew = 1.0/(1.0 + exp(-y * o ))
+	objnew = 0.5 * t(wnew) %*% wnew + C * sum(logisticnew)
+	
+	rho = (objnew - obj) / qk
+	rhoScalar = castAsScalar(rho);
+	snorm = sqrt(sum( s * s ))
+	
+	if (rhoScalar > eta0) {
+		
+		w = wnew
+		o = onew
+		grad = w + C*t(X) %*% ((logisticnew - 1) * y )
+		logisticD = logisticnew * (1 - logisticnew)
+	
+	} 
+	
+	iter = iter + 1
+	converge = (norm_r2 < (tol * tol)) | (iter > maxiter)
+
+	alphaScalar = castAsScalar(alpha)
+	
+	if (rhoScalar < eta0){
+		delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
+	
+	}
+	else {
+		if (rhoScalar < eta1){
+			delta = max(sigma1 * delta, min( alphaScalar  * snorm, sigma2 * delta))
+		}
+		else { 
+			if (rhoScalar < eta2) {
+				delta = max(sigma1 * delta, min( alphaScalar * snorm, sigma3 * delta))
+			}
+			else {
+				delta = max(delta, min( alphaScalar * snorm, sigma3 * delta))
+			}
+		}
+	} 
+	
+} 
+
+writeMM(w, "C:/workspace/DML/test/scripts/applications/linearLogReg/out/w", format="text");

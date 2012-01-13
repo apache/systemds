@@ -1,0 +1,9 @@
+{ 
+    "rows": 602
+    ,"cols": 2
+    ,"rows_in_block": 1000
+    ,"cols_in_block": 1000
+    ,"nnz": 0
+    ,"format": "text"
+    ,"description": { "author": "SystemML" } 
+}

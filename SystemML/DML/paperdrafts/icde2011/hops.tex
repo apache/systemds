@@ -1,0 +1,94 @@
+\begin{table*}[t]
+\centering
+\caption{Example hops in SystemML: $x_{ij}$, $y_{ij}$ are cells in matrices $X$, $Y$, respectively.}
+\label{tab:hop}
+\begin{small}
+\footnotesize
+\begin{tabular}{|l|l|m{3.2in}|l|}
+\hline
+{\bf HOP Type} & {\bf Notation} & {\bf Semantics} & {\bf Example in Table~\ref{tab:notation}} \\
+\hline
+{\em Binary} &$b(op): X, Y$  & for each $x_{ij}$ and $y_{ij}$, perform $op(x_{ij}, y_{ij})$, where $op$ is $*, +, -, /$ etc. & $b(*): X, Y$ \\ \hline
+{\em Unary} &$u(op): X$ & for each $x_{ij}$, perform $op(x_{ij})$, where $op$ is $log$, $sin$ etc. & $u(log): X$\\ \hline
+{\em AggregateUnary}& $au(aggop, dimension): X$ & apply $aggop$ for the cells in dimension, where $aggop$ is $\sum$, $\prod$ etc, and $dimension$ is  
+$row$ (row wise), $col$ (column wise) or $all$ (the whole matrix). & $au(\sum,row): X$\\ \hline
+{\em AggregateBinary}& $ab(aggop, op): X, Y$ & for each $i,j$, perform $aggop(\{op(x_{ik}, y_{kj})| \forall k\})$, where $op$ is $*, +, -, /$ etc, and $aggop$ is 
+$\sum$, $\prod$ etc. & $ab(\sum, *): X, Y$ \\  \hline
+{\em Reorg} & $r(op): X$ & reorganize elements in a matrix, such as transpose ($op=T$). & $r(T): X$ \\ \hline
+{\em Data} & $data(op): X$ & read ($op=r$) or write ($op=w$) a matrix. & \\ 
+\hline
+\end{tabular}
+\end{small}
+\SmallCrunch
+\end{table*}
+
+The HOP component takes the parsed representation of a statement block as input, and produces a HOP-Dag representing the data flow. 
+%We first describe the hops available in \systemmltext\ along with
+%their semantics, and then describe the construction of HOP-Dag.
+
+
+\customizedfigInCol
+{figures/hoplop.eps} 
+{HOP-Dag, LOP-Dag and Runtime of the while Loop Body in Figure~\ref{fig:programanalysis}}
+{fig:hoplop}
+{5in}
+
+\noindent{\bf Description of hops:} 
+Each hop in the HOP-Dag has one or more input(s), performs an operation or transformation, 
+and produces output that is consumed by one or more subsequent hops. Table~\ref{tab:hop} 
+lists some example hops supported in \systemmltext\ along with their 
+semantics\footnote{Table~\ref{tab:hop} describes the semantics of hops in terms of 
+matrices. Semantics of hops for scalars are similar in spirit.}. In addition, the instantiation of hops from the \dmlr\ parsed representation is exemplified in Table~\ref{tab:notation}. 
+Consider the matrix multiplication \texttt{Z=X\mmult Y} as an instance, an {\em 
+AggregateBinary} hop is instantiated with the binary operation $*$ and the aggregate operation $\sum$. The semantics of this hop instance, denoted by $ab(\sum,*)$, is to compute, $\forall i,j, \sum_k ({x_{i,k} * y_{k,j}})$. 
+
+
+%Consider the cell-wise multiplication \texttt{Z=X*Y} as an instance, a {\em Binary} hop is instantiated with binary operation $*$, and $X$ and $Y$ as operands. The semantics of this binary hop is to compute $x_{i,j} * y_{i,j}$ for every pair of corresponding cells in the two matrices. For the more complex matrix multiplication \texttt{Z=X\mmult Y}, an {\em AggregateBinary} hop is instantiated with the binary operation $*$ and the aggregate operation $\sum$. The semantics of hop instance, denoted by $ab(\sum,*)$, is to compute, $\forall i,j, \sum_k ({x_{i,k} * y_{k,j}})$. 
+
+%To understand the instantiation of hops from the \dmlr\ parsed representation,
+%let us consider the cell-wise division of matrices $C$ and $D$ shown in
+%Figure~\ref{fig:example}. a {\em Binary} hop is instantiated with
+%binary operation $/$, and $C$ and $D$ as operands. The semantics of this
+%binary hop is such that it computes $c_{i,j} / d_{i,j}$ for every
+%pair of corresponding cells in the two matrices. For a more complex hop 
+%such as {\em AggregateBinary}, let us consider the  matrix multiplication 
+%$W \mmult H$ in Script~\ref{scpt:gnmf}. For this purpose an
+%{\em AggBinary} hop is instantiated
+%with the binary operation $*$ and the aggregate operation $+$. 
+%
+%Data hops can be transient or persistent with respect to the lifetime of a script.
+
+
+\noindent{\bf Construction of HOP-Dag:} 
+The computation in each statement block is represented as one HOP-Dag~\footnote{Statement blocks for control structures such as {\it while} loops have additional HOP-Dags, e.g. for representing predicates.}. Figure~\ref{fig:hoplop}(a) shows the HOP-Dag for the body of the \textit{while} loop statement block in Figure~\ref{fig:programanalysis} constructed using the hops in Table~\ref{tab:hop}. Note how multiple statements in a statement block have been combined into a single HOP-Dag. The HOP-Dag need not be a connected graph, as shown in Figure~\ref{fig:hoplop}(a).
+
+The computation \texttt{t(W)\mmult W} in the statement block is represented 
+using four hops -- a {\it data(r):$W$} hop that reads $W$ is fed into a Reorg hop 
+{\it r($T$)} to perform the matrix transposition, which is then fed, along with the {\it 
+data(r):$W$} hop, into an AggregateBinary hop {\it $ab(\sum,*)$} to perform the matrix 
+multiplication. 
+%Note that a HOP-Dag does not have to be connected as shown in 
+%Figure~\ref{fig:hoplop}(a).
+
+%The hop {\it data(r):$W$} feeds into the Reorg hop {\it r($T$)}, which in turn feeds into 
+%the AggregateBinary hop {\it $ab(\sum,*)$} together with the {\it data(r):$W$} hop to 
+%represent the \texttt{t(W)\mmult W} part of the statement block. Note that a HOP-Dag does 
+%not have to be connected as shown in Figure~\ref{fig:hoplop}(a).
+
+The grayed \textit{data(r)} hops represent the live-in variables for matrices
+$W$, $H$, and $V$, and the scalar $i$ at the beginning of an
+iteration\footnote{The max\_iteration variable is used in the HOP-Dag
+for the \concept{while} loop predicate.}. The grayed \textit{data(w)} hops
+represent the live-out variables at the end of an iteration that need
+to be passed onto the next iteration. These data hops -- which are
+transient -- implicitly connect HOP-Dags of different statement blocks
+by mapping the transient \textit{data(w)} hops (sinks) of
+one statement block to the transient \textit{data(r)} hops (sources) of the next statement 
+block, or the next iteration of the \concept{while} loop.
+
+%\begin{figure}[t]
+%\center
+%{\includegraphics[width=2.6in]{figures/hopsdag.eps}}
+%\caption{HOPDag for While Loop Body in Figure~\ref{fig:programanalysis}.}
+%\label{fig:hopdag}
+%\end{figure}

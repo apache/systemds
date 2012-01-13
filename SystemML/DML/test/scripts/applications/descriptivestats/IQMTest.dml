@@ -1,0 +1,14 @@
+$$readhelper$$
+
+V = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text")
+W = readMM("$$indir$$weight", rows=$$rows$$, cols=1, format="text")
+
+# inter quartile mean
+iqm = interQuartileMean(V)
+iqmHelper1 = iqm * Helper;
+writeMM(iqmHelper1, "$$outdir$$iqm", format="text");
+
+# weighted inter quartile mean
+wiqm = interQuartileMean(V, W)
+iqmHelper2 = wiqm * Helper;
+writeMM(iqmHelper2, "$$outdir$$weighted_iqm", format="text");

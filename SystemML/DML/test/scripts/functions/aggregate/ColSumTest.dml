@@ -1,0 +1,11 @@
+# junit test class: dml.test.integration.functions.aggregate.ColSumTest.java
+
+$$readhelper$$
+
+Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorColSum = colSums(Vector);
+writeMM(VectorColSum, "$$outdir$$vector_colsum", format="text");
+
+Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixColSum = colSums(Matrix);
+writeMM(MatrixColSum, "$$outdir$$matrix_colsum", format="text");

@@ -1,0 +1,62 @@
+We now give an overview of \systemmlit. Figure~\ref{fig:arch} shows the overall 
+architecture of \systemmlit\ that consists of four components. 
+%Each component provides distinct functionality, thus enforcing modularity and enabling flexibility to extend \systemmlit\ to other runtime platforms.
+
+\noindent {\bf Language:} Algorithms in \systemmlit\ are written in a high-level language 
+called {\bf D}eclarative {\bf M}achine learning {\bf L}anguage (\dmlr). \dmlr\ exposes 
+mathematical and linear algebra primitives on matrices that are natural to express a 
+large class of ML algorithms, including linear models, PCA, PageRank, NMF etc. In addition, \dmlr\ supports 
+control constructs such as \emph{while} and \emph{for} to write complex iterative 
+algorithms. Through program analysis, \systemmlit\ breaks a \dmlr\ script into smaller 
+units called {\it statement blocks}. Each statement block, separately, is optimized and executed by subsequent
+components.
+
+\noindent {\bf High-Level Operator Component (HOP):} The HOP component analyzes all the 
+operations within a statement block and
+chooses from multiple high-level execution plans. A plan is represented in
+a HOP-Dag, a directed acyclic graph of basic operations (called \textit{hops}) over matrices and
+scalars. Optimizations considered in this component include algebraic rewrites, selection of the physical representation for
+intermediate matrices, and cost-based optimizations.
+
+%The HOP component analyzes all the operations within a statement block and chooses from 
+%multiple high-level execution plans (such as the alternative plans discussed in 
+%Example~\ref{ex:gnmf}). Each execution plan is represented as a HOP-Dag, a directed 
+%acyclic graph of basic operations (called \textit{hops}) over matrices and scalars. 
+%Optimizations considered in this component include algebraic rewrites, selection of 
+%physical representation for intermediate matrices and cost-based optimization.
+
+\noindent {\bf Low-Level Operator Component (LOP):} The LOP component translates the 
+high-level execution plans provided by the HOP component into low-level physical plans on MapReduce,
+represented as LOP-Dags. Each low-level operator (\textit{lop}) in a LOP-Dag operates on
+key-value pairs or scalars. The LOP-Dag is then compiled into one or more MapReduce jobs by packing
+multiple lops into MapReduce jobs to keep the number of data scans small. We refer to this strategy
+as {\em piggybacking}.
+%The primary optimization performed in this component is piggybacking; i.e., deciding 
+%which lops in a LOP-Dag can be grouped into a single MapReduce job. 
+
+\noindent {\bf Runtime:} The runtime component executes the low-level plans obtained from 
+the LOP component on Hadoop. The main execution engine in \systemmlit\ is a generic 
+MapReduce job, which can be instructed to execute multiple lops inside it. A control 
+module orchestrates the execution of different instances of the generic MapReduce job.
+Multiple optimizations are performed in the runtime component; e.g., execution plans for 
+individual lops are decided dynamically based on data characteristics such as sparsity of 
+the input matrices.
+
+%Note that the HOP component considers {\it logical} execution plans over matrices and scalars. Its optimizations are specific to operations on these high-level data types, such as deciding the correct execution order of a matrix multiplication chain (as discussed in Example~\ref{ex:gnmf}). In comparison, the LOP component captures operations specific to MapReduce over key-value pairs. As a result, the optimizations are aimed at translating the {\it physical} plans into efficient MapReduce operations. Each of the four components in \systemmlit\ provides distinct functionality, thus enforcing modularity and enabling flexibility to extend \systemmlit\ to other runtime platforms.
+
+\sllsubfigures
+{figures/arch.eps}
+{\systemmltext \ Architecture}
+{fig:arch}
+{figures/example.eps}
+{Evaluation of A=B*(C/D): conceptually, each key-value pair contains the index and the value of a cell in the matrix}
+{fig:example}
+{figures/programanalysis.eps}
+{Program Analysis}
+{fig:programanalysis}
+
+
+Figure~\ref{fig:example} shows how a single DML statement \texttt{A=B*(C/D)} is processed in \systemmlit. The language expression consists of untyped variables and is translated into a HOP-Dag consisting of a cell-wise division hop and a cell-wise multiplication hop on matrices. A lower-level execution plan is then generated for this expression as shown in the LOP-Dag. Here, the {\it Cell-Wise Binary Divide} hop is translated into two lops -- a {\it Group} lop that sorts key-value pairs to align the cells from C and D; followed by the lop {\it Binary Divide on Each Group}. Finally, the entire LOP-Dag is translated into a single MapReduce job, where (a)~the mapper reads three inputs, (b)~all groupings are performed implicitly between the mapper and the reducer and (c)~the reducer performs the division followed by the multiplication.
+
+%We now present the details of each component in \systemmlit.
+%We describe each of the components in \systemmlit\ in more detail in the next section.

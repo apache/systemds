@@ -1,0 +1,70 @@
+X = read($1, rows=$4, cols=1, format="text");
+Y = read($2, rows=$4, cols=1, format="text");
+Z = read($3, rows=$4, cols=1, format="text");
+
+A=round(Z)
+
+Helper=Rand(rows = 1, cols = 1, min = 1, max = 1);
+
+s2X = sum(X^2);
+s2Y = sum(Y^2);
+
+W = $4;
+
+mx = sum(X)/W; 
+my = sum(Y)/W;
+
+# standard deviation 
+sigmaX = sqrt( (s2X/W - mx*mx) * (W/(W-1)) )
+sigmaY = sqrt( (s2Y/W - my*my) * (W/(W-1)) )
+
+# covariance
+covXY = sum((X-mx)*(Y-my))/(W-1);
+
+# Pearson's R
+pearsonR = covXY / (sigmaX*sigmaY);
+
+
+# Category Frequencies
+CFreq = ctable(A,1);
+
+# univariate stats by categories
+# (mean,variance,sigma) for each category
+FY1 = ctable(A,1,Y);
+FY2 = ctable(A,1,Y^2);
+
+CMeans = FY1/CFreq;
+CStdDev = sqrt((FY2/CFreq - CMeans^2)*(CFreq/(CFreq-1)));
+CVars = CStdDev^2;
+
+# (mean,variance,sigma) over all categories
+my = sum(Y)/W;
+sigmaY = sqrt((sum(Y^2)/W - my*my)*(W/(W-1)));
+varY = sigmaY^2;
+
+# Eta and ANOVA F Measure
+intermediate= 1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) );
+
+R = nrow(CFreq);
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreq-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+Eta=-1;
+if(intermediate>=0)
+{Eta = sqrt(intermediate)}
+#else
+#{Eta=-1;}
+
+
+ANOVAFHelper=ANOVAF*Helper
+CovHelper=covXY*Helper;
+PearsonRHelper = pearsonR * Helper;
+EtaHelper=Eta*Helper
+
+writeMM(EtaHelper, $6, format="binary");
+writeMM(ANOVAFHelper, $7, format="binary");
+writeMM(PearsonRHelper, $5, format="binary");
+writeMM(CovHelper, $8, format="binary")
+
+

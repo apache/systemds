@@ -1,0 +1,5 @@
+# junit test class: dml.test.integration.functions.unary.matrix.SqrtTest.java
+
+In = readMM("$$indir$$in", rows=$$rows$$, cols=$$cols$$, format="text");
+Out = sqrt(In);
+writeMM(Out, "$$outdir$$out", format="text");

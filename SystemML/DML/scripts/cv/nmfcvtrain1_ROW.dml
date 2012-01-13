@@ -1,0 +1,14 @@
+NMFcvtrain = function(a,b) return (wd,hd) {
+	zrow = nrow(a);
+	numtopics = 4;
+	wd = Rand(rows = zrow, cols = numtopics) ;
+	
+	zcol = ncol(a)
+	numtopics = 4;
+	hd = Rand(rows = numtopics, cols=zcol) ;
+
+	writeMM( a, "scripts/aRow_output", format="text");
+	writeMM( b, "scripts/bRow_output", format="text");
+
+
+}

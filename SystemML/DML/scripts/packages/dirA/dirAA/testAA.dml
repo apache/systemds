@@ -1,0 +1,25 @@
+dml-path "../other/path/to/nowhere:./scripts/packages";
+
+import dirA::testA as t1;
+
+
+foo = function(Double C) return ( Double  C)
+{
+	print("foo in testAA.dml in matMult is ~/packages/dirA/dirAA", C);
+	C = t1::foo(C);
+	C = C + 20;
+}
+
+bar = function(Double C) return ( Double  C)
+{
+	print("bar in testAA.dml in matMult is ~/packages/dirA/dirAA", C);
+	C = t1::bar(C);
+	C = C + 30;
+}
+
+baz = function(Double C) return ( Double  C)
+{
+	print("baz in testAA.dml in matMult is ~/packages/dirA/dirAA", C);
+	C = t1::baz(C);
+	C = C + 40;
+}

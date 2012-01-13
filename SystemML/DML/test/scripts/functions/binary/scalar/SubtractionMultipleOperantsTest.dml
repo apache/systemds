@@ -1,0 +1,11 @@
+# junit test class: dml.test.integration.functions.binary.scalar.SubtractionTest.java
+
+$$readhelper$$
+
+IntIntIntComputation = $$intintintop1$$ - $$intintintop2$$ - $$intintintop3$$;
+IntIntIntComputationHelper = IntIntIntComputation * Helper;
+writeMM(IntIntIntComputationHelper, "$$outdir$$int_int_int", format="text");
+
+DoubleDoubleDoubleComputation = $$doubledoubledoubleop1$$ - $$doubledoubledoubleop2$$ - $$doubledoubledoubleop3$$;
+DoubleDoubleDoubleComputationHelper = DoubleDoubleDoubleComputation * Helper;
+writeMM(DoubleDoubleDoubleComputationHelper, "$$outdir$$double_double_double", format="text");

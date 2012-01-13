@@ -1,0 +1,66 @@
+
+We now discuss the numerical accuracy achieved by SystemML for bivariate statistics. We consider two types of statistics: {\em scale-categorical} and {\em scale-scale}. In the former type, we compute {\em Eta}\footnote{Eta is defined as $(1-\frac{\sum\limits_{r=1}^{R}(n_r-1)\sigma_r^2}{(n-1)\sigma^2})^{\frac{1}{2}}$, where $R$ is the number of categories, $n_r$ is the number of data entries per category, $\sigma_r^2$ is the variance per category, $n$ is the total number of data entries, and $\sigma^2$ is the total variance.} and {\em ANOVA-F}\footnote{ANOVA-F is defined as $\frac{\sum\limits_{r=1}^{R}n_r(\mu_r-\mu)^2}{\sum\limits_{r=1}^{R}(n_r-1)\sigma_r^2}.\frac{n-R}{R-1}$, where $R$ is the number of categories, $n_r$ is the number of data entries per category, $\mu_r$ is the mean per category, $\sigma_r^2$ is the variance per category, $n$ is the total number of data entries, and $\mu$ is the total mean.} measures, whereas in the latter case, we compute {\em covariance} and {\em Pearson correlation (R)}\footnote{Pearson-R is defined as $\frac{\sigma_{xy}}{\sigma_x\sigma_y}$, where $\sigma_{xy}$ is the covariance, $\sigma_x$ and $\sigma_y$ are standard deviations.}. For scale variables, we use data sets in value ranges R1, R2 and R3 that were described in Section~\ref{sec:exp-setup}. For categorical variables, we generated data in which $50$ different categories are uniformly distributed.
+
+For computing these statistics, SystemML relies on numerically stable methods for {\em sum}, {\em mean}, {\em variance} and {\em covariance} from Section~\ref{sec:stability}, whereas the naive method in comparison uses the naive recursive summation for sum, sum divided by count for mean, and textbook one-pass algorithms for variance and covariance. 
+
+The LRE values obtained for scale-categorical statistics are shown in Table~\ref{tab:bivar_sc}. From the table, it is evident that the statistics computed in SystemML have higher accuracy than the ones from the naive method. It can also be observed that the accuracy achieved by both methods reduces as the magnitude of input values increases -- e.g., LRE numbers for R3 are smaller than those of R1. As we move from R1 to R3, the accuracy of the naive method drops more steeply compared to SystemML. This is because the inaccuracies of total and per-category $mean$ and $variance$ quickly propagate and magnify the errors in Eta and ANOVA-F. 
+%This emphasizes the fact that the use of inaccurate values in computations can lead to grossly erroneous results. 
+Similar trends can be observed in case of covariance and Pearson correlation, as shown in Table~\ref{tab:bivar_ss}. For the cases of R2 vs. R3 with $100$ million and $1$ billion data sets, the naive algorithm produces negative values for variance (see Table~\ref{tab:univariate}), which resulted in undefined values for Pearson-R (shown as NA in Table~\ref{tab:bivar_ss}).
+
+\begin{table}[t]
+\centering
+\caption{Numerical Accuracy of Bivariate Scale-Categorical Statistics: Eta and ANOVA-F (LRE values)}
+\label{tab:bivar_sc}
+\begin{tabular}{|c|c|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Eta}} &  \multicolumn{2}{|c|}{\textbf{ANOVA-F}} \\
+ & (million) & \multicolumn{2}{|c|}{} &  \multicolumn{2}{|c|}{} \\
+\hline
+\textbf{Range} & & SystemML & Naive & SystemML & Naive \\ 
+\hline
+             & 10   & 16.2 & 13.7 & 16.2 & 10.0 \\
+\textbf{R1}  & 100  & 16.6 & 13.7 & 15.6 & 10.0 \\
+             & 1000 & 16.5 & 13.6 & 15.8 & 9.9  \\
+\hline
+\hline
+             & 10   & 16.2 & 7.2 & 13.3 & 3.5 \\
+\textbf{R2}  & 100  & 16.6 & 7.4 & 13.4 & 3.7 \\
+             & 1000 & 16.5 & 7.9 & 13.4 & 4.3 \\
+\hline
+\hline
+             & 10   & 16.2 & 0   & 10.2 & 0 \\
+\textbf{R3}  & 100  & 15.9 & 1.9 & 10.0 & 0 \\
+             & 1000 & 16.5 & 1.2 & 10.0 & 0 \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\begin{table}[t]
+\centering
+\caption{Numerical Accuracy of Bivariate Scale-Scale Statistics: Covariance and Pearson-R (LRE values)}
+\label{tab:bivar_ss}
+\begin{tabular}{|c|c|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Covariance}} &  \multicolumn{2}{|c|}{\textbf{Pearson-R}} \\
+ & (million) & \multicolumn{2}{|c|}{} &  \multicolumn{2}{|c|}{} \\
+\hline
+\textbf{Range} & & SystemML & Naive & SystemML & Naive \\ 
+\hline
+                     & 10   & 15.0 &  8.4 & 15.1 &  6.2 \\
+\textbf{R1 vs. R2}   & 100  & 15.6 &  8.5 & 15.4 &  6.4 \\
+                     & 1000 & 16.0 &  8.7 & 15.7 &  6.2 \\
+\hline
+\hline
+                     & 10   & 13.5 &  3.0 & 13.5  & 3.0  \\
+\textbf{R2 vs. R3}   & 100  & 12.8 &  2.8 & 12.7 & NA \\
+                     & 1000 & 13.6 &  3.9 & 13.8 & NA \\
+\hline
+%\multicolumn{6}{l}{}\\
+\multicolumn{6}{c}{NA represents undefined Pearson-R due to a negative value for variance.}
+\end{tabular}
+\end{table}
+
+
+
+

@@ -1,0 +1,24 @@
+
+In this section, we evaluate the scalability of the sort-based order statistics algorithm presented in Section~\ref{sec:sort-order-stats}. Script~\ref{scpt:linearrg} shows how order statistics are expressed in DML language -- more details on the DML syntax can be found in~\cite{systemml}. The script computes the median as well as other quantiles as specified by the vector $P$, from the input data $V$. In this experiment, we fix $P=\{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9\}$, and vary the size of $V$ (the value range of data in $V$ is R1). Figure~\ref{fig:orderStatsScale} shows the execution time of this script as the input data size increases. For the given DML script, SystemML is able to identify that multiple different order statistics are computed on the same data set, and it accordingly performs a single sort and then computes the required order statistics. Furthermore, all the specified order statistics are selected simultaneously, in parallel.
+
+\
+\begin{script}\label{scpt:linearrg}
+A Simple Script of Order Statistics\\
+\footnotesize
+\texttt{
+1:\ \ \# input vector (column matrix)\\
+2:\ \ V = read("in/V");\\
+3:\ \ \# a vector specifying the desired quantiles \\
+4:\ \ P = read("in/P");\\
+5:\ \ \# compute median\\
+6:\ \ median = quantile(V, 0.5);\\
+7:\ \ print("median: ", median);\\
+8:\ \ \# compute quantiles\\
+9:\ \ Q = quantile(V, P);\\
+10:\ write(Q, "out/Q");\\}
+\end{script}
+
+\onefigure
+{figs/order_stats_scale.eps}
+{Execution Time for Script 1}
+{fig:orderStatsScale}

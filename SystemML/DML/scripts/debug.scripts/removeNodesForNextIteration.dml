@@ -1,0 +1,82 @@
+######################################################################################
+# Date: 06-Apr-2011
+# Creator: statiko
+# BUG:
+#    
+#
+#
+# FIX:
+#
+#
+#
+#
+# OUTSTANDING ISSUES:
+#    None.
+######################################################################################
+
+V = readMM("Aq.in", rows=40, cols=1, format="text");
+W = readMM("Wq.in", rows=40, cols=1, format="text");
+P = readMM("Pq.in", rows=5, cols=1, format="text");
+
+W = round(W)
+
+n = nrow(V)
+
+wt=sum(W)
+
+# sum
+s1 = sum(V*W)
+
+# squared sum
+s2 = sum(V^2*W)
+
+# cubic sum
+s3 = sum(V^3*W)
+
+# quard sum
+s4 = sum(V^4*W)
+
+# mean
+mu = s1/wt
+
+# standard deviations
+std_dev = sqrt((s2/wt - mu*mu)*(wt/(wt-1)))
+
+# standard errors of mean
+SE = std_dev/sqrt(wt)
+
+# variances
+var = std_dev^2
+
+# coefficients of variation
+cv = std_dev/mu
+
+# harmonic means (note: may generate out of memory for large sparse matrices becauses of NaNs)
+har_mu = wt/(sum((1.0/V)*W))
+
+# geometric means is not currently supported.
+ geom_mu = n*exp(sum(log(V))/n)
+
+# min and max
+mn=min(V)
+mx=max(V)
+
+# range
+range2 = mx - mn
+
+# median
+md = quantile(V, W, 0.5)
+
+# quantile
+#Q = quantile(V, W, P)
+
+print("sum= ", s1)
+print("mean= ", mu)
+print("standard deviations= ", std_dev)
+print("harmonic means= ", har_mu)
+print("geometric means= ", geom_mu)
+print("min= ", mn)
+print("max= ", mx)
+print("range= ", range2);
+print("median", md)
+#writeMM(Q, "Q.output", format="text")

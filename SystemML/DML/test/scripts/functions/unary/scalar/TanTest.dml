@@ -1,0 +1,11 @@
+# junit test class: dml.test.integration.functions.unary.scalar.TanTest.java
+
+$$readhelper$$
+
+IntComputation = tan($$int$$);
+IntComputationHelper = IntComputation * Helper;
+writeMM(IntComputationHelper, "$$outdir$$int", format="text");
+
+DoubleComputation = tan($$double$$);
+DoubleComputationHelper = DoubleComputation * Helper;
+writeMM(DoubleComputationHelper, "$$outdir$$double", format="text");

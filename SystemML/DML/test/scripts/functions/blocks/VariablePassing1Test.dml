@@ -1,0 +1,21 @@
+# JUnit test class: dml.test.integration.functions.blocks.VariableTest.java
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+B = readMM("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
+
+x = sum(A);
+D = A * x;
+
+C = B * D;
+B = B * D;
+
+continue = true;
+while(continue == true) {
+	F = 3 * B;
+	E = 3 * D;
+	continue = false;
+}
+
+writeMM(C, "$$outdir$$c", format="text");
+writeMM(F, "$$outdir$$f", format="text");
+writeMM(E, "$$outdir$$e", format="text");

@@ -1,0 +1,124 @@
+\subsubsection{Generic MapReduce Job (\gmr)}
+
+%As discussed in Section~\ref{sec:lops}, the LOP layer analyzes the
+%lops DAG and piggybacks lops into MapReduce jobs. The lops executed in
+%one MapReduce job will be very different from the lops of another,
+%thus it is impossible to prepare different MapReduce jobs for all of
+%these operations. In the MR runtime, there is only one generic
+%MapReduce job that can be instructed to performed all different
+%operations.
+
+%Besides MapReduce jobs for performing blocking and generating random matrices, 
+%there are three main genetic MapReduce jobs: \gmr, \mmcjmr \ and
+%\amr. \gmr \ is used to operate all lops except for \mmcjlop \ and
+%\rmmlop; \mmcjmr \ is mainly used to operate on \mmcjlop; and \amr \
+%is mainly used to operate on \rmmlop. In addition, \mmcjmr \ and \amr
+%can also operate \scalarlop \ and \translop. Below, we describe each
+%genetic MapReduce job in details.
+
+
+\gmr\ is a generic MapReduce job and is the main execution engine in \systemmltext.
+It is instantiated by the piggybacking algorithm (Algorithm~\ref{algo:piggybacking}) with 
+the runtime instructions associated with one or more lops. The job is then executed in the 
+MapReduce environment. As an example, consider the MapReduce job marked 1 in 
+Figure~\ref{fig:hoplop}(c). It contains instructions to execute three different lops -- a 
+\datalop; a \translop; and a \mmcjlop\ (the lops are also marked 1 in 
+Figure~\ref{fig:hoplop}(b)). The instructions for the first two lops are executed in the 
+Map phase of the job whereas the instruction for the third lop is executed both in Map 
+and Reduce phases. 
+
+%\gmr\ is a generic MapReduce job and is the main execution engine in \systemmltext. It is 
+%instantiated by the piggybacking algorithm (Algorithm~\ref{algo:piggybacking}) with one or 
+%more lops. Based on the location properties shown in Table~\ref{tab:lopproperties}, each 
+%of the lops assigned to \gmr\ is executed in the map phase, reduce phase, or both in the 
+%map and reduce phases. To understand the instantiation of \gmr, consider the MapReduce job 
+%marked 1 in Figure~\ref{fig:hoplop}(c). The 3 lops assigned to this job are \datalop, 
+%\translop\ and \mmcjlop\ (the lops are also marked 1 in Figure~\ref{fig:hoplop}(b)). To 
+%instantiate this MapReduce job, \gmr\ has to be parameterized as follows:
+%\begin{itemize}
+%\item The Map phase of this job will run \datalop, \translop, and the map portion of 
+%\mmcjlop\ in order as indicated by the LOP-Dag.
+%\item The Reduce phase of this job will perform the reduce portion of \mmcjlop. 
+%\end{itemize}
+
+%\eat{which is parameterized to execute one or more
+%lops. The execution of a lop in a MapReduce job happens either within the map, or reduce, or parts
+%of it in the map and reduce phase (see placement property in
+%Table~\ref{tab:lopproperties}). Consequently, when a LOPDag is packaged into one or more MapReduce
+%jobs, each MapReduce job is an instantiation of \gmr\ with lops assigned to the
+%Map phase, the MapAndReduce phase and the Reduce phase.
+%Note that when both the
+%MapAndReduce and Reduce phases have no lops to execute, the MapReduce job will be run as a
+%map-only job.}
+
+
+%\eat{
+%Figure~\ref{fig:gmr} shows the 
+%the 1st MapReduce job in Figure~\ref{fig:piggybacking} with the lops
+%assigned to the different phases. The job reads blocks of $W$ matrix as key-value pairs and performs
+%the \translop\ in the Map phase to produce map output MO1. In another branch of the Map phase,
+%key-value pairs of W are passed through to map output MO2. The MapAndReduce phase
+%shows \mmcjlop\ on MO1 and MO2 to produce reduce input RI1. The shown MapReduce job has no lop in
+%the Reduce phase, thus RI1 is directly passed through to generate output O1.
+%
+%
+%Generally, the MapShuffleReduce phase may contain lops, such as \grplop, \mmcjlop \ and \rmmlop,
+%that need to utilize the shuffle stage of MapReduce for data reorganization. The execution of these
+%lops spans both, the mappers and the reducers. 
+%
+%\onemediumfigure
+%{figures/gmr.eps} {Generic MapReduce Job (\gmr)} {fig:gmr}
+%}
+
+\subsubsection{Control Module}
+
+The control module is responsible for orchestrating the execution of the instantiated MapReduce jobs for a \dmlr\ script. Operations
+performed in the control module include scalar computations, such as arithmetic operations and predicate evaluations, and
+metadata operations such as deletion of intermediate results while executing the \dmlr\ script.
+
+%As depicted in Figure~\ref{fig:gmr}, this generic MapReduce job
+%contains 3 phases: Map phase, MapShuffleReduce phase and Reduce
+%phase. The lops piggybacked in this MapReduce job are also divided
+%into the 3 phases and executed in the Map, MapShuffleReduce and Reduce
+%order. Figure~\ref{fig:gmr} shows the lops performed by the generic
+%MapReduce job to implement the first half of $W^TW$ from
+%Figure~\ref{fig:lopsexample}. The Map phase takes blocks as key-value
+%pairs from 1 or more matrices and performs the corresponding lops in
+%the mappers of the generic MapReduce job. For example, in
+%Figure~\ref{fig:gmr}, key-value pairs of W goes through a \translop \
+%to produce map output MO1. In another branch, key-value pairs of W
+%also directly stream through to MO2. The MapShuffleReduce phase
+%contains lops, such as \grplop, \mmcjlop \ and \rmmlop, that need to
+%utilize the shuffle stage of MapReduce for data reorganization. The
+%execution of these lops spans from the mappers to the reducers. In
+%Figure~\ref{fig:gmr}, a \mmcjlop is performed on MO1 and MO2 from the
+%Map phase to produce RI1 - an input to the Reduce phase. The Reduce
+%phase then performs lops in the reducers to produce the final
+%outputs. In Figure~\ref{fig:gmr}, there is no lop in the Reduce phase,
+%thus RI1 is directly passed through to generate output O1. Note that
+%when both the MapShuffleReduce and Reduce phases have no lop to
+%execute, the MapReduce job will be map-only.
+
+%\onefigure
+%{figures/mmcj.eps}
+%{\mmcjmr}
+%{fig:mmcj}
+
+%\textbf{\mmcjmr}: Different from \gmr, \mmcjmr \ only contains 2 stages: map phase and shuffle-reduce phase, and supports a more limited set of lops. As depicted in Figure~\ref{fig:mmcj}, the map phase supports unary lops and transform lops, whereas the shuffle-reduce phase can only perform one \mmcjlop \ lop. 
+%
+%\textbf{\amr}: Similar to \mmcjmr, \amr \ also contains map phase and shuffle-reduce phase. The map phase has the same functionality as the \mmcjmr \ map phase. The difference is that the shuffle-reduce phase of \amr \ only supports one \rmmlop \ lop.
+
+%\begin{table*}[t]
+%\centering
+%\caption{Two alternatives for matrix multiplication}
+%\label{tab:mmult}
+%\begin{tabular}{|c|c|c|c|c|}
+%\hline
+%& lops & \#jobs & parallelization & cost\\ 
+%\hline
+%CPMM & \mmcjlop $\rightarrow$\grplop $\rightarrow$\agglop & 2 & $K_b$ & $\textit{shuffle}(|A|+|B|+r|C|)+IO_{dfs}(2r|C|)$\\
+%\hline
+%RMM & \rmmlop & 1 & $M_b N_b$ & $\textit{shuffle}(N_b|A|+M_b|B|)$\\
+%\hline
+%\end{tabular}
+%\end{table*}

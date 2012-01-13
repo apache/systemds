@@ -1,0 +1,8 @@
+[
+ { 
+   inputDir            : "apsParse"
+  ,datafile            : "option2"
+  ,outputDir           : "apsParse/out"
+  ,localDir            : "/local2/WF"
+ }
+]

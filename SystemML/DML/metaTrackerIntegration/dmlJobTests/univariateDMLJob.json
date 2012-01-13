@@ -1,0 +1,52 @@
+  {
+      job_id	  : "MyDmlJob"
+     ,job_type    : "com.ibm.metatracker.jobdef.DmlJob"
+     ,input_dirs  : [ "input" ]
+     ,output_dirs : [ "output" ]  
+     ,trigger     : { type : "once" ,params : {"allow_inputs" : "True"} }
+     ,variables   : {
+		              "dml.pattern" : "univariate"
+		             ,"dml.switch"  : { "switch.field" : "kind"
+		      			               ,cases: {
+                                                 scale  : { "dml.scripts.dir" : "dmlScriptsDir"
+                                                           ,"dml.script.name" : "scale.dml" 
+                                                           ,"$1"  : {value: "#FILE#"  ,		    mode: "in" }
+                                                           ,"$2"  : {value: "#FILE#.mean",      mode: "out"}
+                                                           ,"$3"  : {value: "#FILE#.std",       mode: "out"}
+                                                           ,"$4"  : {value: "#FILE#.SE",        mode: "out"}
+                                                           ,"$5"  : {value: "#FILE#.var",       mode: "out"}
+                                                           ,"$6"  : {value: "#FILE#.cv",        mode: "out"}
+                                                           ,"$7"  : {value: "#FILE#.har",       mode: "out"}
+                                                           ,"$8"  : {value: "#FILE#.geom",      mode: "out"}
+                                                           ,"$9"  : {value: "#FILE#.min",       mode: "out"}
+                                                           ,"$10" : {value: "#FILE#.max",       mode: "out"}
+                                                           ,"$11" : {value: "#FILE#.rng",       mode: "out"}
+                                                           ,"$12" : {value: "#FILE#.g1",        mode: "out"}
+                                                           ,"$13" : {value: "#FILE#.se_g1",     mode: "out"}
+                                                           ,"$14" : {value: "#FILE#.g2",        mode: "out"}
+                                                           ,"$15" : {value: "#FILE#.se_g2",     mode: "out"}
+                                                           ,"$16" : {value: "#FILE#.out_minus", mode: "out"}
+                                                           ,"$17" : {value: "#FILE#.out_plus",  mode: "out"}
+                                                           ,"$18" : {value: "#FILE#.median",    mode: "out"}
+                                                           ,"$19" : {value: "#FILE#.iqm",       mode: "out"}
+                                                          }
+                                                ,nominal: { "dml.scripts.dir" : "dmlScriptsDir"
+                                                           ,"dml.script.name" : "categorial.dml" 
+                                                           ,"$1" : {value: "#FILE#"  ,    mode: "in" }
+                                                           ,"$2" : {value: "#FILE#.R",    mode: "out"}
+                                                           ,"$3" : {value: "#FILE#.NC",   mode: "out"}
+                                                           ,"$4" : {value: "#FILE#.PC",   mode: "out"}
+                                                           ,"$5" : {value: "#FILE#.MODE", mode: "out"}
+                                                          }
+                                                ,ordinal: { "dml.scripts.dir" : "dmlScriptsDir"
+                                                           ,"dml.script.name" : "categorical.dml" 
+                                                           ,"$1" : {value: "#FILE#"  ,    mode: "in" }
+                                                           ,"$2" : {value: "#FILE#.R",    mode: "out"}
+                                                           ,"$3" : {value: "#FILE#.NC",   mode: "out"}
+                                                           ,"$4" : {value: "#FILE#.PC",   mode: "out"}
+                                                           ,"$5" : {value: "#FILE#.MODE", mode: "out"}
+                                                          }
+                                               }
+                                      }
+                    }
+  }

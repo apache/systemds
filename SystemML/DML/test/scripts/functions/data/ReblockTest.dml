@@ -1,0 +1,4 @@
+# junit test class: dml.test.integration.functions.data.ReblockTest.java
+
+A = readMM("$$indir$$a", rows=10, cols=10, rows_per_block=2, cols_per_block=2, format="binary");
+writeMM(A, "$$outdir$$a", format="text");

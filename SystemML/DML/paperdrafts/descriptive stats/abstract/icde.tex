@@ -1,0 +1,61 @@
+% IEEE Paper Template for US-LETTER Page Size (V1)
+% Sample Conference Paper using IEEE LaTeX style file for US-LETTER pagesize.
+% Copyright (C) 2006 Causal Productions Pty Ltd.
+% Permission is granted to distribute and revise this file provided that
+% this header remains intact.
+%
+\documentclass[10pt,conference,letterpaper]{IEEEtran}
+%\documentclass{IEEEtran}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{color}
+\usepackage{lscape, subfigure, latexsym, amssymb, amsmath, algorithm, algorithmic}
+\usepackage{eucal}
+\usepackage{eufrak}
+\newtheorem{defn}{Definition}
+%\usepackage{epsf}
+\usepackage{balance}
+
+% names of approaches
+\input{mymacs.tex}
+
+\pagenumbering{arabic}
+
+\begin{document}
+%
+\title{Scalable and Numerically Stable Descriptive Statistics In SystemML}
+%l
+\author{Yuanyuan Tian \ \ \  Shirish Tatikonda \ \ \  Berthold Reinwald
+%
+% author names are typeset in 11pt, which is the default size in the author block
+%{}%
+% add some space between author names and affils
+\vspace{1.6mm}\\
+\fontsize{10}{10}\selectfont\itshape
+\fontsize{10}{10}\selectfont\rmfamily\itshape
+IBM Almaden Research Center, USA\\
+\fontsize{9}{9}\selectfont\ttfamily\upshape
+\{ytian, statiko, reinwald\}@us.ibm.com
+}%
+\maketitle
+\begin{abstract}
+There has been growing need for applying machine learning (ML) algorithms on very large datasets. SystemML is a declarative approach to scalable statistical ML. In SystemML, statistical ML algorithms are expressed as simple scripts in a high-level language. SystemML then complies and optimizes the scripts, and eventually translates them into efficient runtime on MapReduce. As the basis of virtually every quantitative analysis, \textit{descriptive statistics} provide powerful tools to explore data in SystemML. This paper describes our experience in implementing descriptive statistics in SystemML. In particular, we elaborate on how to overcome the two major challenges: (1) numerical stability while operating on large datasets in the distributed setting of MapReduce; (2) efficient implementation of order statistics in MapReduce.
+\end{abstract}
+
+\section{Introduction}
+\input{intro}
+
+\section{Numerical Stability}
+\input{stability}
+
+\section{Order Statistics}
+
+\input{orderstats}
+
+\input{orderStatinSystemML}
+
+\bibliographystyle{abbrv}
+\bibliography{ref}
+
+\end{document}

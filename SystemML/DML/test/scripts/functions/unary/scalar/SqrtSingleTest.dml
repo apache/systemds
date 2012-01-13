@@ -1,0 +1,7 @@
+# junit test class: dml.test.integration.functions.unary.scalar.SqrtTest.java
+
+$$readhelper$$
+
+Computation = sqrt($$value$$);
+ComputationHelper = Computation * Helper;
+writeMM(ComputationHelper, "$$outdir$$computed", format="text");

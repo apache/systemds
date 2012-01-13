@@ -1,0 +1,90 @@
+In this section, we evaluate the effect of using \textsc{KahanIncrement} in the update rules of central moments (Equation~\ref{eq:cmeq}) and covariance (Equation~\ref{eq:coveq}) on the accuracy of the results.
+
+Table~\ref{tab:univariate-vs-hive} and Table~\ref{tab:bivar_vs_hive} show the numerical accuracy achieved by the update rules using \textsc{KahanIncrement} and basic addition for higher-order statistics and scale-scale bivariate statistics. Evidently, update rules using \textsc{KahanIncrement} are able to produce more accurate results for all statistics across the board. In SystemML, the correction terms maintained in Kahan technique helps in reducing the effect of truncation errors. 
+
+%The latest version of HIVE (0.7.1) provides a number descriptive statistics including \textit{sum}, \textit{mean}, \textit{variance}, \textit{standard deviation}, \textit{covariance}, and \textit{pearson correlation}. We now compare the accuracies achieved by SystemML against those of HIVE, for several statistics. Since HIVE (as well as PIG) computes \textit{sum} and \textit{mean} using the naive recursive summation algorithm, the comparison between SystemML and HIVE on these two statistics will be same as the results presented in Table~\ref{tab:sum}. 
+%
+%For higher order statistics, covariance, and Pearson correlation, both SystemML and HIVE employ the same incremental update rules, as shown in Sections~\ref{sec:highorder}~\&~\ref{sec:covariance}. The primary difference is that SystemML makes use of \textsc{KahanIncrement} to perform aggregations, whereas HIVE relies on the basic addition. The differences in accuracy achieved by SystemML and HIVE are shown in Table~\ref{tab:univariate-vs-hive} and Table~\ref{tab:bivar_vs_hive}. Evidently, SystemML is able to produce more accurate results than HIVE for all statistics across the board. In SystemML, the correction terms maintained in Kahan technique helps in reducing the effect of truncation errors.
+
+%As discussed in Section~\ref{sec:highorder} and Section~\ref{sec:covariance}, HIVE employs similar update rule as in SystemML to compute variance, standard deviation, covariance and pearson correlation. However, SystemML uses \textsc{KahanIncrement} in the update rule, whereas HIVE just employs the basic addition. In Table~\ref{tab:univariate-vs-hive} and Table~\ref{tab:bivar_vs_hive}, we compare the accuracy of results produced by the algorithms used in SystemML and HIVE. For both univariate and bivariate statistics, it is evident that SystemML presents significant advantage over HIVE.
+
+%\begin{table}[thb]
+%\caption{Accuracy Comparision between SystemML and HIVE for Variance and Standard Deviation (LRE values)}
+%\label{tab:univariate-vs-hive}
+%\centering
+%\begin{tabular}{|c|c|r|r|r|r|}
+%\hline
+% & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Variance}} & \multicolumn{2}{|c|}{\textbf{Std}} \\
+% & (million) & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{}\\
+%\hline
+%\textbf{Range} & & SystemML & HIVE & SystemML & HIVE \\ 
+%\hline
+%             & 10   & 16.0 & 13.5 & 15.9 & 13.8  \\
+%\textbf{R1}  & 100  & 16.2 & 13.7 & 16.8 & 14.0  \\
+%             & 1000 & 16.0 & 14.1 & 16.4 & 14.4  \\
+%\hline
+%\hline
+%             & 10   & 15.4 & 12.8  & 15.9 & 13.1   \\
+%\textbf{R2}  & 100  & 15.6 & 12.5  & 15.8 & 12.8   \\
+%             & 1000 & 16.2 & 13.8  & 16.4 & 14.1   \\
+%\hline
+%\hline
+%             & 10   & 14.4 & 9.3    & 14.7 & 9.6     \\
+%\textbf{R3}  & 100  & 12.9 & 9.5    & 13.2 & 9.8    \\
+%             & 1000 & 13.2 & 10.3   & 13.5 & 10.6    \\
+%\hline
+%\end{tabular}
+%\end{table}
+
+\begin{table*}[thb]
+\caption{The Effect of \textsc{KahanIncrement} on the Accuracy of Higher-Order Statistics (LRE values)}
+\label{tab:univariate-vs-hive}
+\centering
+\begin{tabular}{|c|c|r|r|r|r|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Variance}} & \multicolumn{2}{|c|}{\textbf{Std}} & \multicolumn{2}{|c|}{\textbf{Skewness}} & \multicolumn{2}{|c|}{\textbf{Kurtosis}}\\
+ & (million) & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{}\\
+\hline
+\textbf{Range} & & Kahan & Basic & Kahan & Basic & Kahan & Basic & Kahan & Basic\\ 
+\hline
+             & 10   & 16.0 & 13.5 & 15.9 & 13.8 & 16.4 & 13.0 & 15.3 & 13.7 \\
+\textbf{R1}  & 100  & 16.2 & 13.7 & 16.8 & 14.0 & 14.9 & 12.5 & 15.6 & 12.8 \\
+             & 1000 & 16.0 & 14.1 & 16.4 & 14.4 & 14.5 & 12.1 & 15.6 & 11.8\\
+\hline
+\hline
+             & 10   & 15.4 & 12.8  & 15.9 & 13.1  & 12.5 & 11.8  & 14.9 & 13.4 \\
+\textbf{R2}  & 100  & 15.6 & 12.5  & 15.8 & 12.8  & 12.0 & 9.7   & 14.9 & 14.3 \\
+             & 1000 & 16.2 & 13.8  & 16.4 & 14.1  & 12.1 & 9.3   & 15.2 & 11.8 \\
+\hline
+\hline
+             & 10   & 14.4 & 9.3    & 14.7 & 9.6  & 9.1  & 7.1   & 12.6  & 9.5 \\
+\textbf{R3}  & 100  & 12.9 & 9.5    & 13.2 & 9.8  & 9.0  & 6.8  & 13.2  & 9.7 \\
+             & 1000 & 13.2 & 10.3   & 13.5 & 10.6 & 9.4  & 6.3  & 12.9 & 10.0 \\
+\hline
+\end{tabular}
+\end{table*}
+
+
+
+\begin{table}[t]
+\centering
+\caption{The Effect of \textsc{KahanIncrement} on the Accuracy of Covariance and Pearson-R (LRE values)}
+\label{tab:bivar_vs_hive}
+\begin{tabular}{|c|c|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Covariance}} &  \multicolumn{2}{|c|}{\textbf{Pearson-R}} \\
+ & (million) & \multicolumn{2}{|c|}{} &  \multicolumn{2}{|c|}{} \\
+\hline
+\textbf{Range} & & Kahan & Basic & Kahan & Basic \\ 
+\hline
+                     & 10   & 15.0 &  14.2 & 15.1 &  13.0 \\
+\textbf{R1 vs. R2}   & 100  & 15.6 &  13.3 & 15.4 &  13.0 \\
+                     & 1000 & 16.0 &  14.6 & 15.7 &  14.2 \\
+\hline
+\hline
+                     & 10   & 13.5 &  10.0 & 13.5  & 9.8  \\
+\textbf{R2 vs. R3}   & 100  & 12.8 &  10.0 & 12.7 & 10.5 \\
+                     & 1000 & 13.6 &  11.4 & 13.8 & 10.5 \\
+\hline
+\end{tabular}
+\end{table}

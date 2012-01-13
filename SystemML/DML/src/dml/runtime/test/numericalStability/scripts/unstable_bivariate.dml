@@ -1,0 +1,43 @@
+Y = read($2, rows=$4, cols=1, rows_per_block=$9, cols_per_block=1, format="binary");
+A = read($3, rows=$4, cols=1, rows_per_block=$9, cols_per_block=1, format="binary");
+
+W = $4;
+
+# Category Frequencies
+CFreq = ctable(A,1);
+
+# univariate stats by categories
+# (mean,variance,sigma) for each category
+FY1 = ctable(A,1,Y);
+FY2 = ctable(A,1,Y^2);
+
+CMeans = FY1/CFreq;
+#CVars = (FY2/CFreq - CMeans^2)*(CFreq/(CFreq-1));
+AccumCVars = FY2 - CMeans^2*CFreq;
+
+# (mean,variance,sigma) over all categories
+my = sum(Y)/W;
+sy2= sum(Y^2)
+varY = (sy2/W - my*my)*(W/(W-1))
+sigmaY = sqrt(varY);
+
+# Eta and ANOVA F Measure
+
+R = nrow(CFreq);
+sumAccumCVars=sum(AccumCVars)
+anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
+anova_den = sumAccumCVars/(W-R);
+ANOVAF = anova_num/anova_den;
+
+intermediate= 1 - ( sumAccumCVars / ((W-1)*varY) );
+Eta=-1;
+if(intermediate>=0)
+{Eta = sqrt(intermediate)}
+
+Helper=Rand(rows = 1, cols = 1, min = 1, max = 1);
+ANOVAFHelper=ANOVAF*Helper
+EtaHelper=Eta*Helper
+
+writeMM(EtaHelper, $6, format="binary");
+writeMM(ANOVAFHelper, $7, format="binary");
+

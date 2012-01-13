@@ -1,0 +1,50 @@
+\subsection{Experimental Setup}\label{sec:exp-setup}
+
+\textbf{Experiment Cluster}: The experiments were conducted with Hadoop 0.20~\cite{hadoop} on a cluster with 5 machines as worker nodes. Each machine has 8 cores with hyperthreading enabled, 32 GB RAM and 2 TB storage. We set each machine to run 15 concurrent mappers and 10 concurrent reducers.
+
+\textbf{Experiment Data Sets}: There exist several benchmark data sets to assess the accuracy of numerical algorithms and software, such as NIST StRD~\cite{nist}. However, these benchmarks mostly provide very small date sets. For example, the largest data set in NIST StRD contains only 5000 data points. To test the numerical stability of distributed algorithms, we generated large synthetic data sets similar to those in NIST StRD. Our data generator takes the data size and the value range as inputs, and generates values from uniform distribution. For our experiments, we created data sets with different sizes (10million to 1billion) whose values are in the following 3 ranges, R1:[1.0 -- 1.5), R2:[1000.0 -- 1000.5) and R3:[1000000.0 -- 1000000.5).
+
+\textbf{Accuracy Measurement}: In order to assess the numerical accuracy of the results produced by any algorithm, we need the true values of statistics. For this purpose, we rely on Java $BigDecimal$ that can represent arbitrary-precision signed decimal numbers. We implemented the naive algorithms for all statistics using Java $BigDecimal$ with precision $1000$. With such a high precision, results of all mathematically equivalent algorithms should approach closely to the true value. We implemented naive recursive summation for sum, sum divided by count for mean, one-pass algorithms for higher-order statistics as shown in Table~\ref{tab:1-pass}, and textbook one-pass algorithm for covariance. We consider obtained results as the ``true values" of these statistics.
+
+We measure the accuracy achieved by different algorithms using the Log Relative Error (LRE) metric described in~\cite{LRE}. If $q$ is the computed value from an algorithm and $t$ is the true value, then LRE is defined as $$LRE=-\log_{10}|\frac{q-t}{t}|$$
+LRE measures the number of significant digits that match between the computed value from the algorithm $q$ and the true value $t$. Therefore, a higher value of LRE indicates that the algorithm is numerically more stable.
+
+%The higher a LRE value is, the better the algorithm. 
+%is, the more desirable the estimated value is. As mentioned above, $t$ in our context refers to the values obtained using $BigDecimal$.
+
+\begin{table}[tbh]
+\caption{Textbook One-Pass Algorithms for Higher-Order Statistics}
+\label{tab:1-pass}
+\centering
+\begin{tabular}{|c|c|}
+\hline
+& Equations for 1-Pass Algorithm \\
+\hline
+variance & $\frac{1}{n-1}S_2-\frac{1}{n(n-1)}S_1^2$ \\
+\hline
+std & $(variance)^{\frac{1}{2}}$ \\
+\hline
+skewness & $\frac{S_3 - \frac{3}{n}S_1S_2 + \frac{2}{n^2}S_1^3}{n\times std\times variance}$\\
+\hline
+kurtosis & $\frac{S_4 - \frac{4}{n}S_3S_1 + \frac{6}{n^2}S_2S_1^2 - \frac{3}{n^3}S_1^4}{n\times (variance)^2} - 3$ \\
+\hline
+%\multicolumn{2}{l}{}\\
+\multicolumn{2}{c}{$S_p=\sum\limits_{i=1}^{n}x_i^p$, which can be easily computed in one pass.}
+\end{tabular}
+\end{table}
+
+\subsection{Numerical Stability of Univariate Statistics}\label{sec:univariate_exp}
+\input{univariateExp}
+
+\subsection{Numerical Stability of Bivariate Statistics}\label{sec:bivariate_exp}
+\input{bivariateExp}
+
+\subsection{The Impact of \textsc{KahanIncrement}}
+\label{sec:comparison_exp}
+\input{comparison}
+
+\subsection{Performance of Order Statistics}
+\input{orderStatsExp}
+
+
+

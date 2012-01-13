@@ -1,0 +1,71 @@
+In this section, we showcase another two classic algorithms written in DML: Linear Regression and PageRank~\cite{PageRank}. 
+
+{\bf Linear Regression:} Script~\ref{scpt:linearrg} is an implementation of a conjugate gradient
+solver for large, sparse, regularized linear regression problems. In the script below, $V$ is a data
+matrix (sparsity 0.001) whose rows correspond to training data points in a high-dimensional, sparse
+feature space. The vector $b$ is a dense vector of regression targets. The output vector $w$ has the
+learnt parameters of the model that can be used to make predictions on new data points.
+
+\vspace{0.25cm}
+\begin{script}\label{scpt:linearrg}
+Linear Regression\\
+\footnotesize
+\texttt{
+1:\ V=readMM("in/V", rows=1e8, cols=1e5, nnzs=1e10);\\
+2:\ y=readMM("in/y", rows=1e8, cols=1);\\
+3:\ lambda  = 1e-6; // regularization parameter \\
+4:\ r=-(t(V) \%*\% y) ;\\
+5:\ p=-r ;\\
+6:\ norm\_r2=sum(r*r);\\
+7:\ max\_iteration=20;\\
+8:\ i=0;\\
+9:\ \textbf{while}(i<max\_iteration)\{\\
+10:\ \ q=((t(V) \%*\% (V \%*\% p)) + lambda*p) \\
+11:\ \ alpha= norm\_r2/(t(p)\mmult q);\\
+12:\ \ w=w+alpha*p;\\
+13:\ \ old\_norm\_r2=norm\_r2;\\
+14:\ \ r=r+alpha*q;\\
+15:\ \ norm\_r2=sum(r*r);\\
+16:\ \ beta=norm\_r2/old\_norm\_r2; \\
+17:\ \ p=-r+beta*p;\\
+18:\ \ i=i+1;\}\\
+19:writeMM(w, "out/w");}
+\end{script}
+\vspace{0.25cm}
+
+{\bf PageRank:} Script~\ref{scpt:pagerank} shows the DML script for the PageRank algorithm. In
+this algorithm, $G$ is a row-normalized adjacency matrix (sparsity 0.001) of a directed graph.  The
+procedure uses power iterations to compute the PageRank of every node in the graph.
+
+Figures~\ref{fig:linearrg-local} and~\ref{fig:pagerank-local} show the scalability of \systemmltext\ for linear regression and PageRank, respectively. For linear regression, as the number of rows increases from 1 million to 20 million (non-zeros ranging from 100 million to 2 billion), the execution time increases steadily. The PageRank algorithm also scales nicely with increasing number of rows from 100 thousand to 1.5 million (non-zeros ranging from 100 million to 2.25 billion). 
+
+\vspace{0.25cm}
+\begin{script}\label{scpt:pagerank}
+PageRank\\
+\footnotesize
+\texttt{
+1:\ G=readMM("in/G", rows=1e6, cols=1e6, nnzs=1e9);\\
+//p: initial uniform pagerank\\
+2:\ p=readMM("in/p", rows=1e6, cols=1); \\
+//e: all-ones vector  \\
+3:\ e=readMM("in/e", rows=1e6, cols=1); \\
+//ut: personalization \\
+4:\ ut=readMM("in/ut", rows=1, cols=1e6); \\
+5:\ alpha=0.85; //teleport probability \\
+6:\ max\_iteration=20;\\
+7:\ i=0;\\
+8:\ \textbf{while}(i<max\_iteration)\{\\
+9:\ \ p=alpha*(G\mmult p)+(1-alpha)*(e\mmult ut\mmult p);\\
+10:\ i=i+1;\}\\
+11:writeMM(p, "out/p");}
+\end{script}
+\vspace{0.25cm} 
+
+\twosubfigures
+{plots/linearrg_local.eps}
+{Execution of Linear Regression with increasing data size on 40-core cluster}
+{fig:linearrg-local}
+{plots/pagerank_local.eps}
+{Execution of PageRank with increasing data size on 40-core cluster}
+{fig:pagerank-local}
+{}

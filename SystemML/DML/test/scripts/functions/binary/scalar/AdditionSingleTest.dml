@@ -1,0 +1,8 @@
+# junit test class: dml.test.integration.functions.binary.scalar.AdditionTest.java
+
+$$readhelper$$
+
+$$vardeclaration$$
+Computation = $$op1$$ + $$op2$$;
+ComputationHelper = Computation * Helper;
+writeMM(ComputationHelper, "$$outdir$$out", format="text");

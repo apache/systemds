@@ -1,0 +1,9 @@
+# JUnit test class: dml.test.integration.functions.blocks.VariableTest.jav
+
+A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+B = $$factor$$ * t(A);
+
+C = A %*% B;
+D = B %*% C;
+
+writeMM (D, "$$outdir$$d", format="text");

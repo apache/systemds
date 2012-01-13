@@ -1,0 +1,103 @@
+
+In this section, we demonstrate the numeric stability of SystemML in computing a subset of univariate statistics. 
+
+\begin{table*}[thb]
+\caption{Numerical Accuracy of Sum and Mean (LRE values)}
+\label{tab:sum}
+\centering
+\begin{tabular}{|c|c|r|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{3}{|c|}{\textbf{Sum}} &  \multicolumn{2}{|c|}{\textbf{Mean}}\\
+ & (million) & \multicolumn{3}{|c|}{} &  \multicolumn{2}{|c|}{}\\
+\hline
+\textbf{Range} & & SystemML & Naive & Sorted & SystemML & Naive\\ 
+\hline
+             & 10   & 16.1 & 13.5 & 16.1 & 16.7 & 13.5 \\
+\textbf{R1}  & 100  & 16.3 & 13.8 & 13.6 & 16.2 & 13.8 \\
+             & 1000 & 16.8 & 13.6 & 13.5 & 16.5 & 13.6 \\
+\hline
+\hline
+             & 10   & 16.8 & 14.4 & 13.9 & 16.5 & 14.4 \\
+\textbf{R2}  & 100  & 16.1 & 13.4 & 13.4 & 16.9 & 13.4 \\
+             & 1000 & 16.6 & 13.1 & 13.9 & 16.4 & 13.1 \\
+\hline
+\hline
+             & 10   & 15.9 & 14.0 & 13.9 & 16.3 & 14.0 \\
+\textbf{R3}  & 100  & 16.0 & 13.1 & 13.4 & 16.9 & 13.1 \\
+             & 1000 & 16.3 & 12.9 & 12.2 & 16.5 & 12.9 \\
+\hline
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:sum} lists the accuracy (LRE values) of results produced by different algorithms for sum and $mean$. For summation, we compare the MapReduce Kahan summation used in SystemML against the naive recursive summation and the sorted summation. The latter two algorithms are adapted to the MapReduce environment. In case of naive recursive summation, mappers compute the partial sums using recursive summation, which are then aggregated in the reducer. 
+%This adapted naive recursive summation is used in both PIG and HIVE. 
+In case of sorted summation, we first sort the entire data on MapReduce using the algorithm described in Section~\ref{sec:sort-order-stats}, and then apply the adapted naive recursive summation on the sorted data. As shown in Table~\ref{tab:sum}, SystemML consistently produces more accurate results than the other two methods. The accuracies from naive recursive summation and the sorted summation are comparable. In terms of runtime performance, our MapReduce Kahan summation and the naive recursive summation are similar, but the sorted summation is up to $5$ times slower as it performs an explicit sort on the entire data. Similarly, the accuracies obtained by SystemML for mean are consistently better than naive ``sum divided by count" method.
+
+%We also compare the accuracy of mean algorithms in Table~\ref{tab:sum}. Again, the mean algorithm in SystemML consistently produces more accurate results than the naive approach (naive recursive sum divided by count).
+
+\begin{table*}[thb]
+\caption{Numerical Accuracy of Higher-Order Statistics (LRE values)}
+\label{tab:univariate}
+\centering
+\begin{tabular}{|c|c|r|r|r|r|r|r|r|r|}
+\hline
+ & \textbf{Size} & \multicolumn{2}{|c|}{\textbf{Variance}} & \multicolumn{2}{|c|}{\textbf{Std}} & \multicolumn{2}{|c|}{\textbf{Skewness}} & \multicolumn{2}{|c|}{\textbf{Kurtosis}}\\
+ & (million) & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{}\\
+\hline
+\textbf{Range} & & SystemML & Naive & SystemML & Naive & SystemML & Naive & SystemML & Naive\\ 
+\hline
+             & 10   & 16.0 & 11.3 & 15.9 & 11.6 & 16.4 & 7.5 & 15.3 & 9.8 \\
+\textbf{R1}  & 100  & 16.2 & 11.5 & 16.8 & 11.8 & 14.9 & 7.1 & 15.6 & 9.3 \\
+             & 1000 & 16.0 & 11.3 & 16.4 & 11.6 & 14.5 & 6.5 & 15.6 & 8.9 \\
+\hline
+\hline
+             & 10   & 15.4 & 5.9  & 15.9 & 6.2  & 12.5 & 0   & 14.9 & 0 \\
+\textbf{R2}  & 100  & 15.6 & 5.3  & 15.8 & 5.6  & 12.0 & 0   & 14.9 & 0 \\
+             & 1000 & 16.2 & 4.9  & 16.4 & 5.2  & 12.1 & 0   & 15.2 & 0 \\
+\hline
+\hline
+             & 10   & 14.4 & 0    & 14.7 & 0    & 9.1  & 0   & 12.6  & 0 \\
+\textbf{R3}  & 100  & 12.9 & 0    & 13.2 & NA   & 9.0  & NA  & 13.2  & NA \\
+             & 1000 & 13.2 & 0    & 13.5 & NA   & 9.4  & NA  & 12.9 & NA \\
+\hline
+%\multicolumn{10}{l}{}\\
+\multicolumn{10}{c}{NA represents undefined standard deviation, skewness or kurtosis due to a negative value for variance.}
+\end{tabular}
+\end{table*}
+
+The accuracy comparison for higher-order statistics is shown in Table~\ref{tab:univariate}. In SystemML, we employ the algorithms presented in Section~\ref{sec:highorder} to compute required central moments, which are then used to compute higher-order statistics. We compare SystemML against the naive textbook one-pass methods (see Table~\ref{tab:1-pass}). As shown in Table~\ref{tab:univariate}, SystemML attains more accurate results for all statistics. The difference between the two methods in case of higher-order statistics is much more pronounced than that observed for sum and mean from Table~\ref{tab:sum}. This is because the round-off and truncation errors get magnified as the order increases. It is important to note that for some data sets in ranges R2 and R3, the higher-order statistics computed by the naive method are grossly erroneous ($0$ digits matched). More importantly, in some cases, the naive method produced negative values for variance, which led to undefined values for standard deviation, skewness and kurtosis (shown as NA in Table~\ref{tab:univariate}). 
+
+%It is clearly shown in Table~\ref{tab:univariate} that SystemML algorithms are significantly more stable than the textbook one-pass algorithms. The advantage of SystemML is much higher in the higher-order statistics than sum and mean, because errors get more amplified as the order increases. For some datasets in ranges R2 and R3, the higher order statistics are completely wrong (0 digits matched). In particular, the R3 100 million data set and R3 1 billion data set produce negative variance, which leads to undefined standard deviation, skewness and kurtosis (shown as NA in Table~\ref{tab:univariate}).
+
+The value range has a considerable impact on the accuracy of univariate statistics. Even though R1, R2, and R3 have the same delta (i.e., the difference between minimum and maximum value), the accuracies obtained by all the algorithms drop as the magnitude of values increases. A popular technique to address this problem is to shift all the values by a constant, compute the statistics, and add the shifting effect back to the result. The chosen constant is typically the minimum value or the mean (computed or approximate). Chan {\em et al.} showed that such a technique helps in computing statistics with higher accuracy~\cite{variance}. 
+
+%Although the delta (difference between min and max values) of each range is the same (0.5), all algorithms including stable ones present decreasing accuracy from R1, R2 to R3. This is because the 3 ranges have increasing means. If we know ahead of time some basic characteristics of a dataset, we can simply shift the data before computing the statistics, then add the shifting effect back to the results. For example, it has been shown in~\cite{variance} that to compute variance for a dataset with a large mean, substantial gains in accuracy can be achieved by shifting all the data by some approximation of the mean. Similarly, shifting can be applied to the other univariate statistics for increased accuracy.
+
+%\begin{table*}[t]
+%\caption{Numerical Accuracy of Univariate Statistics (LRE values)}
+%\label{tab:univariate}
+%\centering
+%\begin{tabular}{|c|c|r|r|r|r|r|r|r|r|r|r|r|r|r|}
+%\hline
+% & \textbf{size} & \multicolumn{3}{|c|}{\textbf{sum}} &  \multicolumn{2}{|c|}{\textbf{mean}}& \multicolumn{2}{|c|}{\textbf{variance}} & \multicolumn{2}{|c|}{\textbf{std}} & \multicolumn{2}{|c|}{\textbf{skewness}} & \multicolumn{2}{|c|}{\textbf{kurtosis}}\\
+% & (million) & \multicolumn{3}{|c|}{} &  \multicolumn{2}{|c|}{}& \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{} & \multicolumn{2}{|c|}{}\\
+%\hline
+%\textbf{Range} & & SystemML & naive & sorted & SystemML & naive & SystemML & 1-pass & SystemML & 1-pass & SystemML & 1-pass & SystemML & 1-pass\\ 
+%\hline
+%    & 10   & 16.1 & 13.5 & 16.1 & 16.7 & 13.5 & 13.5 & 11.3 & 13.8 & 11.6 & 13.0 & 7.5 & 13.7 & 9.8 \\
+%\textbf{R1}  & 100  & 16.3 & 13.8 & 13.6 & 15.9 & 13.8 & 13.7 & 11.5 & 14.0 & 11.8 & 12.5 & 7.1 &  12.8 & 9.3 \\
+%    & 1000 & 16.8 & 13.6 & 13.5 & 16.5 & 13.6 & 14.1 & 11.3 & 14.4 & 11.6 & 12.1 & 6.5 & 11.8 & 8.9 \\
+%\hline
+%\hline
+%    & 10   & 16.8 & 14.4 & 13.9 & 16.5 & 14.4 & 12.8 & 5.9  & 13.1 & 6.2  & 11.8 & 0   & 13.4 & 0 \\
+%\textbf{R2}  & 100  & 16.1 & 13.4 & 13.4 & 15.9 & 13.4 & 12.5 & 5.3  & 12.8 & 5.6  & 9.7  & 0   & 14.3 & 0 \\
+%    & 1000 & 16.6 & 13.1 & 13.9 & 16.4 & 13.1 & 13.8 & 4.9  & 14.1 & 5.2  & 9.3  & 0   & 11.8 & 0 \\
+%\hline
+%\hline
+%    & 10   & 15.9 & 14.0 & 13.9 & 15.7 & 14.0 & 9.3  & 0    & 9.6  & 0    & 7.1  & 0   & 9.5  & 0 \\
+%\textbf{R3}  & 100  & 16.0 & 13.1 & 13.4 & 16.0 & 13.1 & 9.5  & 0    & 9.8  & NA   & 6.8  & NA  & 9.7  & 0 \\
+%    & 1000 & 16.3 & 12.9 & 12.2 & 16.1 & 12.9 & 10.3 & 0    & 10.5 & NA   & 6.3  & NA  & 10.0 & 0 \\
+%\hline
+%\end{tabular}
+%\end{table*}
+

@@ -54,7 +54,7 @@ import dml.utils.configuration.DMLConfig;
 @SuppressWarnings("deprecation")
 public class Dag<N extends Lops> {
 
-	static int total_reducers = 75;
+	static int total_reducers;
 	static String scratch = "";
 
 	boolean DEBUG = DMLScript.DEBUG;
@@ -83,10 +83,10 @@ public class Dag<N extends Lops> {
 
 		nodes = new ArrayList<N>();
 
-		/** get number of reducers from job config */
+		/* Override num_reducers from cluster setup, if available. 
+		 * Default value is specified in DMLConfig class. */
 		JobConf jConf = new JobConf();
-		// TODO: this is not correct, this should be read from a config file
-		total_reducers = jConf.getInt("mapred.reduce.tasks", 75);
+		total_reducers = jConf.getInt("mapred.reduce.tasks", DMLConfig.DEFAULT_NUM_REDUCERS);
 	}
 
 	/**
@@ -104,6 +104,7 @@ public class Dag<N extends Lops> {
 
 		if (config != null) {
 			if (config.getTextValue("numreducers") != null)
+				// if the user has provided the number of reducers explicitly, then use that number.
 				total_reducers = Integer.parseInt(config
 						.getTextValue("numreducers"));
 
@@ -117,10 +118,6 @@ public class Dag<N extends Lops> {
 		// hold all nodes in a vector (needed for ordering)
 		Vector<N> node_v = new Vector<N>();
 		node_v.addAll(nodes);
-
-		// first sort nodes topologically
-		// doTopologicalSort(node_v);
-		// doTopologicalSort_order(node_v);
 
 		/*
 		 * Sort the nodes by topological order.
@@ -756,29 +753,12 @@ public class Dag<N extends Lops> {
 				// reduce node, make sure no parent needs reduce, else queue
 				if (node.getExecLocation() == ExecLocation.MapAndReduce) {
 
-					// boolean eliminate = false;
-					// eliminate = canEliminateLop(node, execNodes);
-					// if (eliminate || (!hasChildNode(node, execNodes,
-					// ExecLocation.MapAndReduce)) &&
-					// !hasMRJobChildNode(node,execNodes)) {
-
-					// TODO: statiko -- keep the middle condition
-					// discuss about having a lop that is MapAndReduce but does
-					// not define a job
 					if (DEBUG)
 						System.out.println(indent + "Adding -"
 								+ node.toString());
 					execNodes.add(node);
 					finishedNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, eliminate);
-
-					// } else {
-					// if (DEBUG)
-					// System.out.println("Queueing -" + node.toString());
-					// queuedNodes.add(node);
-					// removeNodesForNextIteration(node, finishedNodes,
-					// execNodes, queuedNodes, jobNodes);
-					// }
 					continue;
 				}
 
@@ -1311,11 +1291,10 @@ public class Dag<N extends Lops> {
 			//if(node.definesMRJob() && isChild(tmpNode,node) && (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) == 0)
 			//  continue;
 
-			// TODO: statiko -- check if this is too conservative?
 			if (child_queued) {
-  	     // if one of the children are queued, 
-	       // remove some child nodes on other leg that may be needed later on. 
-	       // For e.g. Group lop. 
+				// if one of the children are queued, 
+				// remove some child nodes on other leg that may be needed later on. 
+				// For e.g. Group lop. 
  
 			  if((tmpNode == node.getInputs().get(0) || tmpNode == node.getInputs().get(1)) && 
 			      tmpNode.isAligner())
@@ -1754,7 +1733,6 @@ public class Dag<N extends Lops> {
 			if ( jt == JobType.INVALID || jt == JobType.ANY )
 				continue;
 			
-			// TODO: Following hardcoding of JobType.PARTITION must be removed
 			if ( jt == JobType.PARTITION ) {
 				if ( jobNodes.get(jt.getId()).size() > 0 )
 					generatePartitionJob(jobNodes.get(jt.getId()), inst, deleteinst);
@@ -2041,7 +2019,6 @@ public class Dag<N extends Lops> {
 			}
 		}
 
-		/* TODO: some hardcoding that needs to be removed */
 		if (rootNode.getType() == Type.SortKeys) {
 			rootOutputInfo = new OutputInfo(CompactOutputFormat.class,
 					DoubleWritable.class, IntWritable.class);
@@ -2857,10 +2834,8 @@ public class Dag<N extends Lops> {
 			}
 
 			/*
-			 * Hardcode output Key and Value Classes for SortKeys
+			 * Hardcode output Key and Value Classes for SortKeys. Ideally lops must encode this information.
 			 */
-			// TODO: statiko -- remove this hardcoding -- i.e., lops must encode
-			// the information on key/value classes
 			if (node.getType() == Type.SortKeys) {
 				// SortKeys is the input to some other lop (say, L)
 				// InputInfo of L is the ouputInfo of SortKeys, which is
@@ -2985,79 +2960,12 @@ public class Dag<N extends Lops> {
 		return false;
 	}
 
-	private void doTopologicalSort_order(Vector<N> v) {
-		int numNodes = v.size();
-		Vector<N> sortedNodes = new Vector<N>();
-
-		HashMap<Integer, Integer> levelmap = new HashMap<Integer, Integer>();
-		for (int i = 0; i < numNodes; i++) {
-			levelmap.put(v.get(i).getID(), -1);
-		}
-
-		int numSourceNodes = 0;
-		for (int i = 0; i < numNodes; i++) {
-			if (v.get(i).getInputs().size() == 0) {
-				levelmap.put(v.get(i).getID(), 0);
-				sortedNodes.add(v.get(i));
-				numSourceNodes++;
-			}
-		}
-
-		int start = 0;
-		int end = sortedNodes.size();
-		int level = 0, tlevel;
-		boolean covered = false;
-
-		while (start != end) {
-			level++;
-			for (int i = start; i < end; i++) {
-				N node = sortedNodes.get(i);
-				for (int j = 0; j < node.getOutputs().size(); j++) {
-					// check the levels of all inputs of j^th output
-					N parent = (N) node.getOutputs().get(j);
-					if (levelmap.get(parent.getID()) == -1) {
-						int max = -1;
-						covered = true;
-						for (int k = 0; k < parent.getInputs().size(); k++) {
-							tlevel = levelmap.get(parent.getInputs().get(k)
-									.getID());
-							if (tlevel == -1) {
-								covered = false;
-								break;
-							}
-							if (max < tlevel)
-								max = tlevel;
-						}
-						if (covered) {
-							levelmap.put(parent.getID(), max + 1);
-							sortedNodes.add(parent);
-						}
-					}
-				}
-			}
-			start = end;
-			end = sortedNodes.size();
-		}
-
-		// Copy sortedNodes into "v"
-		v.clear();
-		for (int i = 0; i < sortedNodes.size(); i++) {
-			v.add(sortedNodes.get(i));
-		}
-
-		// print the nodes in sorted order
-		if (DEBUG) {
-			for (int i = 0; i < sortedNodes.size(); i++) {
-				System.out.print(sortedNodes.get(i).getID() + "("
-						+ levelmap.get(sortedNodes.get(i).getID()) + "), ");
-			}
-			System.out.println("");
-		}
-		// System.out.println("done");
-
-	}
-
 	@SuppressWarnings("unchecked")
+	/**
+	 * Method to topologically sort lops
+	 * 
+	 * @param v
+	 */
 	private void doTopologicalSort_strict_order(Vector<N> v) {
 		int numNodes = v.size();
 
@@ -3144,7 +3052,6 @@ public class Dag<N extends Lops> {
 					throw new DMLRuntimeException(
 							"Unexpected error in topological sort.");
 				} catch (DMLRuntimeException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -3164,40 +3071,6 @@ public class Dag<N extends Lops> {
 
 	}
 
-	/**
-	 * Method to topologically sort lops
-	 * 
-	 * @param v
-	 */
-
-	/*
-	 * private void doTopologicalSort(Vector<N> v) { Vector<N> sortedNodes = new
-	 * Vector<N>(); Vector<N> unsortedNodes = new Vector<N>();
-	 * 
-	 * // first add root notes to sortedNodes // keep remainder in unsortednodes
-	 * for (int i = 0; i < v.size(); i++) { N node = v.elementAt(i); if
-	 * (node.getOutputs().size() == 0) { sortedNodes.add(node); } else {
-	 * unsortedNodes.add(node); } }
-	 * 
-	 * // while unsorted nodes left, add one or more to sortedNodes while
-	 * (unsortedNodes.size() != 0) { for (int i = 0; i < unsortedNodes.size();
-	 * i++) { N node = unsortedNodes.elementAt(i); int sortedChildren = 0; for
-	 * (int j = 0; j < node.getOutputs().size(); j++) { if
-	 * (sortedNodes.contains(node.getOutputs().get(j))) sortedChildren++; }
-	 * 
-	 * // if all parents are in sorted list, add to sorted list if
-	 * (sortedChildren == node.getOutputs().size()) { sortedNodes.add(node);
-	 * unsortedNodes.remove(node); break; } } }
-	 * 
-	 * // copy sortedNodes into v in reverse order
-	 * 
-	 * v.clear();
-	 * 
-	 * for (int i = sortedNodes.size() - 1; i >= 0; i--) {
-	 * v.add(sortedNodes.elementAt(i)); }
-	 * 
-	 * }
-	 */
 
 	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, Vector<N> childNodes, ExecLocation type) {

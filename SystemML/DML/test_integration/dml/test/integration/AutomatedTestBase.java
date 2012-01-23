@@ -42,6 +42,7 @@ public abstract class AutomatedTestBase {
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
 	protected static final boolean DEBUG = false;
+	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
 	
 	protected static String baseDirectory;
@@ -612,8 +613,12 @@ public abstract class AutomatedTestBase {
 			TestUtils.printDMLScript(executionFile);
 
 		try {
-			if (DEBUG)
-				DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
+			if (DEBUG) {
+				if(VISUALIZE)
+					DMLScript.main(new String[] { "-f" ,executionFile, "-d", "-visualize" });
+				else
+					DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
+			}
 			else
 				DMLScript.main(new String[] { "-f", executionFile });
 

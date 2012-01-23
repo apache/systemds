@@ -33,21 +33,14 @@ import dml.parser.ParseException;
 import dml.runtime.controlprogram.Program;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.controlprogram.WhileProgramBlock;
-import dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import dml.runtime.instructions.CPInstructions.Data;
+import dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.sql.sqlcontrolprogram.NetezzaConnector;
 import dml.sql.sqlcontrolprogram.SQLProgram;
-import dml.sql.sqllops.SQLCondition;
-import dml.sql.sqllops.SQLJoin;
-import dml.sql.sqllops.SQLSelectStatement;
-import dml.sql.sqllops.SQLCondition.BOOLOP;
-import dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import dml.utils.DMLException;
-import dml.utils.DMLRuntimeException;
 import dml.utils.HopsException;
 import dml.utils.LanguageException;
-import dml.utils.ParameterBuilder;
 import dml.utils.Statistics;
 import dml.utils.configuration.DMLConfig;
 import dml.utils.visualize.DotGraph;
@@ -56,10 +49,14 @@ import dml.utils.visualize.DotGraph;
 public class DMLScript {
 
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + " (-nz)?" + " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			//+ " [-f | -s] <filename>" + " (-nz)?" + " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path \n"
 			+ " -s: <filename> will be interpreted as a DML script string \n"
-			+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
+			/*
+			 * BIRelease: Following code is commented for BigInsights Release. 
+			 */
+			//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
 			+ " [-d | -debug]: (optional) output debug info \n"
 			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use config file: ./config.xml) \n" 
@@ -67,6 +64,7 @@ public class DMLScript {
 			+ "<args-list>: (optional) args to DML script; use single-ticks to denote string args ";
 					
 	public static boolean DEBUG = false;
+	public static boolean VISUALIZE = false;
 	public static boolean LOG = false;	
 	public enum RUNTIME_PLATFORM { HADOOP, NZ, INVALID };
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
@@ -143,8 +141,15 @@ public class DMLScript {
 				DEBUG = true;
 			} else if (args[argid].equalsIgnoreCase("-l") || args[argid].equalsIgnoreCase("-log")) {
 				LOG = true;
+			} else if (args[argid].equalsIgnoreCase("-visualize")) {
+				VISUALIZE = true;
 			} else if(args[argid].equalsIgnoreCase("-nz")){
-				rtplatform = RUNTIME_PLATFORM.NZ;
+				/*
+				 * BIRelease: Following code is commented for BigInsights Release. 
+				 */
+				// BIRelease: Since NZ is not supported for BigInsights, we simply exit.
+				//rtplatform = RUNTIME_PLATFORM.NZ;
+				System.exit(1);
 			
 			// handle config file
 			} else if (args[argid].startsWith("-config=")){
@@ -277,7 +282,7 @@ public class DMLScript {
 			// last parameter: the path of DML source directory. If dml source
 			// is at /path/to/dml/src then it should be /path/to/dml.
 			//
-			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, path_to_src);
+			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, path_to_src, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
@@ -297,7 +302,7 @@ public class DMLScript {
 
 			// visualize
 			DotGraph gt = new DotGraph();
-			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, path_to_src);
+			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, path_to_src, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
@@ -331,7 +336,7 @@ public class DMLScript {
 			dmlt.resetLopsDAGVisitStatus(prog);
 
 			DotGraph gt = new DotGraph();
-			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, path_to_src);
+			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, path_to_src, VISUALIZE);
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
 
@@ -411,7 +416,7 @@ public class DMLScript {
 	
 		dmlt.resetSQLLopsDAGVisitStatus(prog);
 		DotGraph g = new DotGraph();
-		g.drawSQLLopsDAG(prog, "SQLLops DAG", 100, 100, path_to_src);
+		g.drawSQLLopsDAG(prog, "SQLLops DAG", 100, 100, path_to_src, VISUALIZE);
 		dmlt.resetSQLLopsDAGVisitStatus(prog);
 	
 		String sql = sqlprog.generateSQLString();

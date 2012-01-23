@@ -15,14 +15,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Locale;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.netezza.error.NzSQLException;
-
 import dml.runtime.matrix.io.MatrixValue.CellIndex;
+
+/*
+ * BIRelease: Following code is commented for BigInsights Release. 
+ */
+// import org.netezza.error.NzSQLException;
+
 
 public class NetezzaConnector {
 	
@@ -88,12 +87,15 @@ public class NetezzaConnector {
     {
     	checkConnected();
     	Statement st = null;
-        try {
+    	/*
+    	 * BIRelease: Following code is commented for BigInsights Release. 
+    	 */
+//        try {
 
             st = conn.createStatement();
             st.execute(sql);
-        }
-        catch(NzSQLException e)
+//        }
+/*        catch(NzSQLException e)
         {
         	if(e.getErrorCode() == 1012 && e.getMessage().contains("Integer.MAX_VALUE"))
         		System.out.println("WARNING: " + e.getErrorCode() + " " + e.getMessage() + "\r\n" + e.getLocalizedMessage());
@@ -107,7 +109,7 @@ public class NetezzaConnector {
                     e1.printStackTrace();
                 }
         }
-    }
+*/    }
     
     /**
      * Calls a procedure without parameters as created by SystemML on the database

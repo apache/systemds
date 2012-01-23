@@ -7,10 +7,7 @@ general.libpath=lib/ant
 
 #SystemML
 systemml.version=0.3
-
-#SVN
-
-svn.repository.url=https://svn.cs.opensource.ibm.com/svn/dml/DML
+release.notes=Notes go here.
 
 #BUILD
 build.jarnamejunit=JunitSystemML.jar

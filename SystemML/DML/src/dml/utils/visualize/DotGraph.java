@@ -21,13 +21,15 @@ public class DotGraph {
 	}
 	
 	@SuppressWarnings("deprecation")
-	void visualize(String content, String title, int x, int y, String basePath) {
+	void visualize(String content, String title, int x, int y, String basePath, boolean draw_graph) {
 		String osname = System.getProperty("os.name"); 
 		if (osname.contains("Windows")) {
 			printGraphString(content, title);
-			Graph graph = GrappaSupport.filterGraph(content, basePath);
-			DAGFrame dagFrame = new DAGFrame(graph, title, x, y);
-			dagFrame.show();
+			if ( draw_graph ) {
+				Graph graph = GrappaSupport.filterGraph(content, basePath);
+				DAGFrame dagFrame = new DAGFrame(graph, title, x, y);
+				dagFrame.show();
+			}
 		}
 		else {
 			System.out.println("Warning: Can not visualize the graph on current OS (" + osname + "). Displaying the graph in text format.");
@@ -54,14 +56,14 @@ public class DotGraph {
 	 * @throws LanguageException 
 	 */
 
-	public void drawHopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath) throws HopsException, LanguageException {
+	public void drawHopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath, boolean draw_graph) throws HopsException, LanguageException {
 		String graphString = HopGraph.getHopGraphString(dmlp, title, x, y, basePath);
-		visualize(graphString, title, x, y, basePath);
+		visualize(graphString, title, x, y, basePath, draw_graph);
 	}
 	
-	public void drawSQLLopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath) throws HopsException, LanguageException {
+	public void drawSQLLopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath, boolean draw_graph) throws HopsException, LanguageException {
 		String graphString = SQLLopGraph.getSQLLopGraphString(dmlp, title, x, y, basePath);
-		visualize(graphString, title, x, y, basePath);
+		visualize(graphString, title, x, y, basePath, draw_graph);
 	}
 
 	/**
@@ -81,14 +83,14 @@ public class DotGraph {
 	 *            /path/to/dml/src then basePath should be /path/to/dml.
 	 * @throws LanguageException 
 	 */
-	public void drawLopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath) throws LanguageException {
+	public void drawLopsDAG(DMLProgram dmlp, String title, int x, int y, String basePath, boolean draw_graph) throws LanguageException {
 		String graphString = LopGraph.getLopGraphString(dmlp, title, x, y, basePath);
-		visualize(graphString, title, x, y, basePath);
+		visualize(graphString, title, x, y, basePath, draw_graph);
 	}
 	
-	public void drawInstructionsDAG(Program dmlp, String title, int x, int y, String basePath) throws DMLUnsupportedOperationException {
+	public void drawInstructionsDAG(Program dmlp, String title, int x, int y, String basePath, boolean draw_graph) throws DMLUnsupportedOperationException {
 		String graphString = InstructionGraph.getInstructionGraphString(dmlp, title, x, y, basePath);
-		visualize(graphString, title, x, y, basePath);
+		visualize(graphString, title, x, y, basePath, draw_graph);
 	}
 
 }

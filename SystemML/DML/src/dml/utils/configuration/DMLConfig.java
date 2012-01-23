@@ -16,6 +16,16 @@ public class DMLConfig
 {
 
     public static final int DEFAULT_BLOCK_SIZE = 1000;
+    
+    /**
+     * Default value for the number of reducers.
+     * 
+     * This value will be overridden by the value set in 
+     * cluster setup, which itself can be overridden by 
+     * explicitly specifying "num_reducers" in config.xml. 
+     */
+    public static final int DEFAULT_NUM_REDUCERS = 75;
+    
 	String config_file_name;
 	Element xml_root;
 	

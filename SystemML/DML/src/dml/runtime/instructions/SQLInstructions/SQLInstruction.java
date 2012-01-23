@@ -2,8 +2,6 @@ package dml.runtime.instructions.SQLInstructions;
 
 import java.sql.SQLException;
 
-import org.netezza.error.NzSQLException;
-
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.sql.sqlcontrolprogram.ExecutionResult;
 import dml.utils.DMLRuntimeException;

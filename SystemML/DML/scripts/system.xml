@@ -7,7 +7,7 @@
 		<NumberOfReapThreads>1</NumberOfReapThreads>
 		<SowerWaitInterval>1000</SowerWaitInterval>
 		<ReaperWaitInterval>1000</ReaperWaitInterval>
-		<Scratch>output</Scratch>
+		<Scratch>nimbleoutput</Scratch>
 	</parameters>
 </system>
 </nimbleConfig>

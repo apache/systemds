@@ -1,0 +1,24 @@
+sgd = externalFunction(Matrix[Double] V, Integer n, Integer m, Integer e, Integer factors)
+return (Matrix[Double] W, Matrix[Double] tH)
+implemented in (classname="dml.packagesupport.SGDWrapper", execlocation="master")
+
+ 
+#n X m is the number of blocks the ratings matrix is divided into
+#each block is of size rows(V)/n X cols(V)/m cells 
+n = 5;
+m = 5;
+# maximum number of (outer) iterations
+max_epochs = 10; 
+# number of latent factors
+latent_factors = 5; 
+
+V = readMM("$$indir$$V", rows=$$rows$$, cols=$$cols$$, format="text");
+
+#invokation returns W and transpose of H
+
+[W, tH] = sgd(V, n, m, max_epochs, latent_factors)
+
+#ith row in W contains ith user's factors
+writeMM(W, "$$outdir$$W", format="text");
+#jth row in H contains jth item's factors
+writeMM(tH, "$$outdir$$tH", format="text");

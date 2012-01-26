@@ -16,16 +16,7 @@ public class DMLConfig
 {
 
     public static final int DEFAULT_BLOCK_SIZE = 1000;
-    
-    /**
-     * Default value for the number of reducers.
-     * 
-     * This value will be overridden by the value set in 
-     * cluster setup, which itself can be overridden by 
-     * explicitly specifying "num_reducers" in config.xml. 
-     */
     public static final int DEFAULT_NUM_REDUCERS = 75;
-    
 	String config_file_name;
 	Element xml_root;
 	
@@ -43,6 +34,34 @@ public class DMLConfig
 		parseConfig();
 	}
 	
+	public void merge(DMLConfig otherConfig) throws ParserConfigurationException, SAXException, IOException 
+	{
+		if (otherConfig == null) 
+			return;
+	
+		// for each element in otherConfig, either overwrite existing value OR add to defaultConfig
+		NodeList otherConfigNodeList = otherConfig.xml_root.getChildNodes();
+		if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
+			for (int i=0; i<otherConfigNodeList.getLength(); i++){
+				org.w3c.dom.Node optionalConfigNode = otherConfigNodeList.item(i);
+				if (optionalConfigNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE){
+					
+					// try to find optional config node in default config node
+					String paramName = optionalConfigNode.getNodeName();
+					String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
+					if (this.xml_root.getElementsByTagName(paramName) != null){
+						DMLConfig.setTextValue(this.xml_root, paramName, paramValue);
+						System.out.println("INFO: updating " + paramName + " with value " + paramValue);
+					}
+					else {
+						System.out.println("ERROR: attempting to define new attribute " + paramValue + " not defined in default config");
+						throw new ParserConfigurationException();
+					}
+					
+				}
+			} // end for (int i=0; i<otherConfigNodeList.getLength(); i++){
+		} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
+	}
 	
 	/**
 	 * Method to parse configuration
@@ -83,8 +102,24 @@ public class DMLConfig
 		if (nl != null && nl.getLength() > 0) {
 			Element el = (Element) nl.item(0);
 			textVal = el.getFirstChild().getNodeValue();
+			
 		}
 		return textVal;
+	}
+	
+	/**
+	 * Method to update the string value of an element identified by tagname 
+	 * @param ele
+	 * @param tagName
+	 * @param newTextValue
+	 */
+	private static void setTextValue(Element ele, String tagName, String newTextValue) {
+		
+		NodeList nl = ele.getElementsByTagName(tagName);
+		if (nl != null && nl.getLength() > 0) {
+			Element el = (Element) nl.item(0);
+			el.getFirstChild().setNodeValue(newTextValue);	
+		}
 	}
 	
 }

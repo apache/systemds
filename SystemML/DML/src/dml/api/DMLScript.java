@@ -49,17 +49,15 @@ import dml.utils.visualize.DotGraph;
 public class DMLScript {
 
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
-			//+ " [-f | -s] <filename>" + " (-nz)?" + " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + /*" (-nz)?" + */ " [-d | -debug]?" + " [-v | -visualize]?"  + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path \n"
 			+ " -s: <filename> will be interpreted as a DML script string \n"
-			/*
-			 * BIRelease: Following code is commented for BigInsights Release. 
-			 */
+			// COMMENT OUT FOR BIRelease
 			//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
 			+ " [-d | -debug]: (optional) output debug info \n"
+			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ " [-l | -log]: (optional) output log info \n"
-			+ " -config: (optional) use config file <config_filename> (default: use config file: ./config.xml) \n" 
+			+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
 			+ "<args-list>: (optional) args to DML script; use single-ticks to denote string args ";
 					
@@ -68,6 +66,7 @@ public class DMLScript {
 	public static boolean LOG = false;	
 	public enum RUNTIME_PLATFORM { HADOOP, NZ, INVALID };
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
+	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
 	// stores the path to the source
 	public static final String path_to_src = "./";
@@ -96,7 +95,7 @@ public class DMLScript {
 		boolean fromFile = false;
 	
 		// stores name of the config file
-		String systemConfigurationFileName = "config.xml";
+		String systemConfigurationFileName = null;
 		
 		//////////////// for DEBUG, dump arguments /////////////////////////////
 		System.out.println("INFO: Value for args passed to DMLScript: ");
@@ -141,17 +140,12 @@ public class DMLScript {
 				DEBUG = true;
 			} else if (args[argid].equalsIgnoreCase("-l") || args[argid].equalsIgnoreCase("-log")) {
 				LOG = true;
-			} else if (args[argid].equalsIgnoreCase("-visualize")) {
+			} else if (args[argid].equalsIgnoreCase("-v") || args[argid].equalsIgnoreCase("-visualize")) {
 				VISUALIZE = true;
-			} else if(args[argid].equalsIgnoreCase("-nz")){
-				/*
-				 * BIRelease: Following code is commented for BigInsights Release. 
-				 */
-				// BIRelease: Since NZ is not supported for BigInsights, we simply exit.
-				//rtplatform = RUNTIME_PLATFORM.NZ;
-				System.exit(1);
-			
 			// handle config file
+			//} else if(args[argid].equalsIgnoreCase("-nz")){
+			//	rtplatform = RUNTIME_PLATFORM.NZ;
+		
 			} else if (args[argid].startsWith("-config=")){
 				systemConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				systemConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
@@ -183,7 +177,8 @@ public class DMLScript {
 			System.out.println("INFO: FROM-FILE: " + fromFile);
 			System.out.println("INFO: SCRIPT: " + fileName);
 			System.out.println("INFO: DEBUG: "  + DEBUG);
-			System.out.println("INFO: CONFIG: " + systemConfigurationFileName);
+			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			System.out.println("INFO: OPTIONAL CONFIG: " + systemConfigurationFileName);
 			System.out.println("INFO: RUNTIME: " + rtplatform);
 			System.out.println("INFO: LOG: "  + LOG);
 			
@@ -227,20 +222,37 @@ public class DMLScript {
 			script.close();
 		}
 
-		//////////////////// set DML config file //////////////////////// 
-		DMLConfig config = null;
+		//////////////////// parse the builtin config file and optional config file //////////////////////// 
+		// try to read
+		DMLConfig defaultConfig = null;
+		try {
+			defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+
+		} catch (Exception e) {
+			System.out.println("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		// read the optional config file to overwrite changed parameter values
+		DMLConfig optionalConfig = null;
 		if (systemConfigurationFileName != null) {
 			try {
-				config = new DMLConfig(systemConfigurationFileName);
-				if (DEBUG) {
-					System.out.println("numreducers = " + config.getTextValue("numreducers"));
-					System.out.println("scratch = " + config.getTextValue("scratch"));
-					System.out.println("defaultblocksize = " + config.getTextValue("defaultblocksize"));
-				}
+				optionalConfig = new DMLConfig(systemConfigurationFileName);
+					
 			} catch (Exception e) {
-				System.out.println("Error parsing configuration " + e.toString());
+				System.out.println("Error parsing optional configuration file: " + systemConfigurationFileName);
 				System.exit(-1);
 			}
+		}
+		
+		// update default config file with values from optional config file
+		try {
+			defaultConfig.merge(optionalConfig);
+		}
+		catch(Exception e){
+			System.out.println("ERROR: failed to merge default ");
+			return;
 		}
 		
 		//////////////////////////// parse script ///////////////////////////////
@@ -291,7 +303,8 @@ public class DMLScript {
 			System.out.println("********************** Rewriting HOPS DAG *******************");
 		}
 
-		dmlt.rewriteHopsDAG(prog, config);
+		// defaultConfig contains reconciled information for config
+		dmlt.rewriteHopsDAG(prog, defaultConfig);
 		dmlt.resetHopsDAGVisitStatus(prog);
 
 		if (DEBUG) {
@@ -306,12 +319,12 @@ public class DMLScript {
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
-		if ( rtplatform == RUNTIME_PLATFORM.NZ ) {
-			executeNetezza(dmlt, prog, config, fileName);
+		//if ( rtplatform == RUNTIME_PLATFORM.NZ ) {
+		//	executeNetezza(dmlt, prog, config, fileName);
 			
-		} else if (rtplatform == RUNTIME_PLATFORM.HADOOP ) {
-			executeHadoop(dmlt, prog, config, out);
-		}			
+		//} else if (rtplatform == RUNTIME_PLATFORM.HADOOP ) {
+			executeHadoop(dmlt, prog, defaultConfig, out);
+		//}			
 	} // end main
 
 	

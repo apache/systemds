@@ -1,6 +1,6 @@
 # JUnit test class: dml.test.integration.functions.blocks.VariableTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 
 B = A;
 continue = false;
@@ -8,4 +8,4 @@ while(continue == true) {
 	B = 2 * A;
 }
 
-writeMM(B, "$$outdir$$b", format="text");
+write(B, "$$outdir$$b", format="text");

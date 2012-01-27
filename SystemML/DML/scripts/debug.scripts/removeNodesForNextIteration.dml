@@ -14,9 +14,9 @@
 #    None.
 ######################################################################################
 
-V = readMM("Aq.in", rows=40, cols=1, format="text");
-W = readMM("Wq.in", rows=40, cols=1, format="text");
-P = readMM("Pq.in", rows=5, cols=1, format="text");
+V = read("Aq.in", rows=40, cols=1, format="text");
+W = read("Wq.in", rows=40, cols=1, format="text");
+P = read("Pq.in", rows=5, cols=1, format="text");
 
 W = round(W)
 
@@ -79,4 +79,4 @@ print("min= ", mn)
 print("max= ", mx)
 print("range= ", range2);
 print("median", md)
-#writeMM(Q, "Q.output", format="text")
+#write(Q, "Q.output", format="text")

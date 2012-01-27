@@ -1,9 +1,9 @@
 # junit test class: dml.test.integration.functions.unary.matrix.AbsTest.java
 
-Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 AbsVector = abs(Vector);
-writeMM(AbsVector, "$$outdir$$vector", format="text");
+write(AbsVector, "$$outdir$$vector", format="text");
 
-Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
 AbsMatrix = abs(Matrix);
-writeMM(AbsMatrix, "$$outdir$$matrix", format="text");
+write(AbsMatrix, "$$outdir$$matrix", format="text");

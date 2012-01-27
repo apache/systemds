@@ -10,9 +10,9 @@
 #    None.
 ######################################################################################
 
-A = readMM("A.in", rows=40, cols=1, format="text");
+A = read("A.in", rows=40, cols=1, format="text");
 D = A + 20;
 A = A + 1;
-writeMM(A, "file2", format="text" );
-writeMM(D, "file2", format="text" );
+write(A, "file2", format="text" );
+write(D, "file2", format="text" );
 

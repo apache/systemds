@@ -1,5 +1,5 @@
 # junit test class: dml.test.integration.functions.unary.matrix.DiagTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = diag(A);
-writeMM(B, "$$outdir$$b", format="text");
+write(B, "$$outdir$$b", format="text");

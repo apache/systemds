@@ -15,8 +15,8 @@ matMult = function(Int dim, Matrix[Double] B) return ( Matrix[Double]  C)
 	
 }
 
-input1 = readMM( "./scripts/llr_xfile", rows=10, cols=10, format="text");
-input2 = readMM( "./scripts/llr_xfile", rows=10, cols=10, format="text");
+input1 = read( "./scripts/llr_xfile", rows=10, cols=10, format="text");
+input2 = read( "./scripts/llr_xfile", rows=10, cols=10, format="text");
 D = 2.0;
 dim = 10;
 
@@ -26,4 +26,4 @@ F = matMult(dim, input1)
 print("D should be 2 ", D);
 fsum = sum(F);
 print("fsum is ", fsum);
-#writeMM ( F, "F.output", format="text");
+#write ( F, "F.output", format="text");

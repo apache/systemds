@@ -1,7 +1,7 @@
 NMFcvtest = function (x,wd,hd,alpha) return (error)
 {
 
-	writeMM(x, "scripts/X_Output", format="text");	
+	write(x, "scripts/X_Output", format="text");	
 
 	max_iteration = 1
 	xrow = nrow(x)

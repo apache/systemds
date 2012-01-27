@@ -4,8 +4,8 @@ $$readhelper$$
 
 IntComputation = abs($$int$$);
 IntComputationHelper = IntComputation * Helper;
-writeMM(IntComputationHelper, "$$outdir$$int", format="text");
+write(IntComputationHelper, "$$outdir$$int", format="text");
 
 DoubleComputation = abs($$double$$);
 DoubleComputationHelper = DoubleComputation * Helper;
-writeMM(DoubleComputationHelper, "$$outdir$$double", format="text");
+write(DoubleComputationHelper, "$$outdir$$double", format="text");

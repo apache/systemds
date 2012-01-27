@@ -33,4 +33,4 @@ print("D should be 2 ", D);
 print("p should be 3 ", p);
 fsum = sum(F);
 print("fsum is ", fsum);
-#writeMM ( F, "F.output", format="text");
+#write ( F, "F.output", format="text");

@@ -2,7 +2,7 @@
 
 $$readhelper$$
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 b = trace(A);
 BHelper = b * Helper;
-writeMM(BHelper, "$$outdir$$b", format="text");
+write(BHelper, "$$outdir$$b", format="text");

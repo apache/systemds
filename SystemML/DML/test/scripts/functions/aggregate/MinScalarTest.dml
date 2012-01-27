@@ -6,4 +6,4 @@ computation = min($$scalar$$);
 
 ComputationHelper = Helper * computation;
 
-writeMM(ComputationHelper, "$$outdir$$computed", format="text");
+write(ComputationHelper, "$$outdir$$computed", format="text");

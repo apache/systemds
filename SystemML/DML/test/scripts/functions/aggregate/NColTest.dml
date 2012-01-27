@@ -2,12 +2,12 @@
 
 $$readhelper$$
 
-Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 VectorCols = ncol(Vector);
 VectorColsHelper = VectorCols * Helper;
-writeMM(VectorColsHelper, "$$outdir$$vector_cols", format="text");
+write(VectorColsHelper, "$$outdir$$vector_cols", format="text");
 
-Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
 MatrixCols = ncol(Matrix);
 MatrixColsHelper = MatrixCols * Helper;
-writeMM(MatrixColsHelper, "$$outdir$$matrix_cols", format="text");
+write(MatrixColsHelper, "$$outdir$$matrix_cols", format="text");

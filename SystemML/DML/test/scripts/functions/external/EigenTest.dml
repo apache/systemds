@@ -3,8 +3,8 @@ return (Matrix[Double] E, Matrix[Double] V)
 implemented in (classname="dml.packagesupport.EigenWrapper",execlocation="master")
  
 
-A = readMM( "$$indir$$A", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read( "$$indir$$A", rows=$$rows$$, cols=$$cols$$, format="text");
 [E,V] = eigen(A);
 
-writeMM(E, "$$outdir$$val", format="text");
-writeMM(V, "$$outdir$$vec", format="text");
+write(E, "$$outdir$$val", format="text");
+write(V, "$$outdir$$vec", format="text");

@@ -7,4 +7,4 @@ scalar = $$scalar$$;
 computation = sum(scalar);
 ComputationHelper = computation * Helper;
 
-writeMM( ComputationHelper, "$$outdir$$computed", format="text");
+write( ComputationHelper, "$$outdir$$computed", format="text");

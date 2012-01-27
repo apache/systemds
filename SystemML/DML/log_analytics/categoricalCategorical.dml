@@ -1,13 +1,13 @@
 # A <- nominal 
 # B <- nominal 
 
-A = readMM($1, rows=$3, cols=1, format="text");
-B = readMM($2, rows=$3, cols=1, format="text");
+A = read($1, rows=$3, cols=1, format="text");
+B = read($2, rows=$3, cols=1, format="text");
 Helper = Rand(rows=1, cols=1, min=1.0, max=1.0);
 
 # Contingency Table
 F = ctable(A,B);
-writeMM(F, $4, format="text" );
+write(F, $4, format="text" );
 
 # Chi-Squared
 
@@ -19,7 +19,7 @@ T = (F-E)^2/E;
 chi_squared = sum(T);
 
 ChiSqHelper = chi_squared * Helper;
-writeMM(ChiSqHelper, $5, format="text");
+write(ChiSqHelper, $5, format="text");
 
 # Cramer's V
 R = nrow(F);
@@ -28,5 +28,5 @@ q = min(R,C);
 cramers_v = sqrt(chi_squared/(W*(q-1)));
 
 CramersVHelper = cramers_v * Helper;
-writeMM(CramersVHelper, $6, format="text");
+write(CramersVHelper, $6, format="text");
 

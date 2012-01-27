@@ -2,18 +2,18 @@
 
 $$vardeclaration$$
 
-Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 VectorLeft = Vector / $$divisor$$;
-writeMM(VectorLeft, "$$outdir$$vector_left", format="text");
+write(VectorLeft, "$$outdir$$vector_left", format="text");
 
-Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 VectorRight = $$dividend$$ / Vector;
-writeMM(VectorRight, "$$outdir$$vector_right", format="text");
+write(VectorRight, "$$outdir$$vector_right", format="text");
 
-Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
 MatrixLeft = Matrix / $$divisor$$;
-writeMM(MatrixLeft, "$$outdir$$matrix_left", format="text");
+write(MatrixLeft, "$$outdir$$matrix_left", format="text");
 
-Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
 MatrixRight = $$dividend$$ / Matrix;
-writeMM(MatrixRight, "$$outdir$$matrix_right", format="text");
+write(MatrixRight, "$$outdir$$matrix_right", format="text");

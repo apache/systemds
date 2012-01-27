@@ -2,8 +2,8 @@
 
 univar = function (string INPUTFILE, int ROWS, string OUTFILE)
 {
-   V = readMM(INPUTFILE, rows=ROWS, cols=10,format="text")
-   writeMM(V, OUTFILE, format="text")
+   V = read(INPUTFILE, rows=ROWS, cols=10,format="text")
+   write(V, OUTFILE, format="text")
 }
    #ones = Rand(rows=10, cols=10, min=1.0, max=1.0);
 
@@ -42,8 +42,8 @@ univar = function (string INPUTFILE, int ROWS, string OUTFILE)
 
    # RHelper = Helper * R;
 
-  #writeMM(RHelper, OUTVAR, format="text")
-  #writeMM(Nc, "OUTPUT_NC", format="text")
-  # writeMM(Pc, OUTPUT, format="text")
-  # writeMM(Mode, OUTPUT+", format="text")
+  #write(RHelper, OUTVAR, format="text")
+  #write(Nc, "OUTPUT_NC", format="text")
+  # write(Pc, OUTPUT, format="text")
+  # write(Mode, OUTPUT+", format="text")
 #}

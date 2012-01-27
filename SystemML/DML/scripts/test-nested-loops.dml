@@ -8,7 +8,7 @@ loop1 = 0;
 loop2 = 0;
 loop3 = 0;
 
-A = readMM( "llr_yfile", rows=10, cols=1, format="text")
+A = read( "llr_yfile", rows=10, cols=1, format="text")
 B = A - A;
 C = A - A;
 D = A - A;
@@ -47,7 +47,7 @@ print ("Dsum should be 40 and is ", Dsum)
 
 ################ test 2: nested if-else statements #################
 
-A = readMM( "llr_yfile", rows=10, cols=1, format="text")
+A = read( "llr_yfile", rows=10, cols=1, format="text")
 B = A - A;
 
 pred1 = true;

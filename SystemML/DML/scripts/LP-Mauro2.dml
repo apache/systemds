@@ -5,10 +5,10 @@
 #b = Rand(rows = 10, cols = 1, min = 1, max = 1, pdf = "uniform");
 #c = Rand(rows = 1, cols = 10, min = 1, max = 1, pdf = "uniform");
 
-A = readMM("data\fileA", rows=3, cols=3, format="text");
-y = readMM("data\fileY", rows=3, cols=1, format="text");
-b = readMM("data\fileB", rows=3, cols=1, format="text");
-c = readMM("data\fileC", rows=1, cols=3, format="text");
+A = read("data\fileA", rows=3, cols=3, format="text");
+y = read("data\fileY", rows=3, cols=1, format="text");
+b = read("data\fileB", rows=3, cols=1, format="text");
+c = read("data\fileC", rows=1, cols=3, format="text");
 
 m=ncol(A);
 n=nrow(A);
@@ -50,15 +50,15 @@ while ( (i <= max_iter) ) {
 #    prev_potential = potential;
 #    potential = sum(y) + sum(x)/mu;
     
-    if (i==1) {writeMM(y, "Y.result1", format="text");}
-    if (i==2) {writeMM(y, "Y.result2", format="text");}
-    if (i==3) {writeMM(y, "Y.result3", format="text");}
-    if (i==4) {writeMM(y, "Y.result4", format="text");}
-    if (i==5) {writeMM(y, "Y.result5", format="text");}
-    if (i==1) {writeMM(x, "X.result1", format="text");}
-    if (i==2) {writeMM(x, "X.result2", format="text");}
-    if (i==3) {writeMM(x, "X.result3", format="text");}
-    if (i==4) {writeMM(x, "X.result4", format="text");}
-    if (i==5) {writeMM(x, "X.result5", format="text");}
+    if (i==1) {write(y, "Y.result1", format="text");}
+    if (i==2) {write(y, "Y.result2", format="text");}
+    if (i==3) {write(y, "Y.result3", format="text");}
+    if (i==4) {write(y, "Y.result4", format="text");}
+    if (i==5) {write(y, "Y.result5", format="text");}
+    if (i==1) {write(x, "X.result1", format="text");}
+    if (i==2) {write(x, "X.result2", format="text");}
+    if (i==3) {write(x, "X.result3", format="text");}
+    if (i==4) {write(x, "X.result4", format="text");}
+    if (i==5) {write(x, "X.result5", format="text");}
     i = i+1;
 }

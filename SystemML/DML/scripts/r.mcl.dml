@@ -1,7 +1,7 @@
 # Regularized-MCL Graph Clustering Algorithm
 
 # A is the adjacency matrix of graph -- each column corresponds to outgoing edges of one node
-A = readMM("r.mcl.ex.0.A", rows=10, cols=10, format="text");
+A = read("r.mcl.ex.0.A", rows=10, cols=10, format="text");
 D = colSums(A);
 diag = DIAG ( D );
 I = IDENTITY( NROW(A), NCOL(A) );
@@ -33,4 +33,4 @@ while ( continue == true ) {
 	}
 }
 
-writeMM(M, "r.mcl.result.M", format="text");
+write(M, "r.mcl.result.M", format="text");

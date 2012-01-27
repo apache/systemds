@@ -2,12 +2,12 @@
 
 $$readhelper$$
 
-Vector = readMM("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 VectorMin = min(Vector);
 VectorMinHelper = VectorMin * Helper;
-writeMM(VectorMinHelper, "$$outdir$$vector_min", format="text");
+write(VectorMinHelper, "$$outdir$$vector_min", format="text");
 
-Matrix = readMM("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
 MatrixMin = min(Matrix);
 MatrixMinHelper = MatrixMin * Helper;
-writeMM(MatrixMinHelper, "$$outdir$$matrix_min", format="text");
+write(MatrixMinHelper, "$$outdir$$matrix_min", format="text");

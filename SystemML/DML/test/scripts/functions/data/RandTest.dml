@@ -1,4 +1,4 @@
 # junit test class: dml.test.integration.functions.data.RandTest.java
 
 A = Rand(rows=$$rows$$, cols=$$cols$$, min=$$min$$, max=$$max$$);
-writeMM(A, "$$outdir$$rand", format="text");
+write(A, "$$outdir$$rand", format="text");

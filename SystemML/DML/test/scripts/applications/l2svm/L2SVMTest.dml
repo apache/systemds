@@ -1,7 +1,7 @@
 # JUnit test class: dml.test.integration.applications.L2SVMTest.java
 
-X = readMM("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
-Y = readMM("$$indir$$y", rows=$$rows$$, cols=1, format="text")
+X = read("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
+Y = read("$$indir$$y", rows=$$rows$$, cols=1, format="text")
 epsilon = $$eps$$
 lambda = $$lambda$$
 
@@ -58,4 +58,4 @@ while(continue == 1)  {
 	iter = iter + 1
 }
 
-writeMM(w, "$$outdir$$w", format="text")
+write(w, "$$outdir$$w", format="text")

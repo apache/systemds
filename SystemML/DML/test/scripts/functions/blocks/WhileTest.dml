@@ -1,10 +1,10 @@
 # JUnit test class: dml.test.integration.functions.blocks.WhileTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 i = 0;
 while(i < $$maxiterations$$)
 {
 	A = A * 3;
 	i = i + 1;
 }
-writeMM(A, "$$outdir$$b", format="text");
+write(A, "$$outdir$$b", format="text");

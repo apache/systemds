@@ -9,7 +9,7 @@ while(i == 1)
 	Left1 = 2 * Left1;
 	i = i + 2;
 }
-writeMM(Left1, "$$outdir$$left_1", format="text");
+write(Left1, "$$outdir$$left_1", format="text");
 
 Left2 = Helper
 i = 0;
@@ -18,7 +18,7 @@ while(i == 0)
 	Left2 = 2 * Left2;
 	i = i + 1;
 }
-writeMM(Left2, "$$outdir$$left_2", format="text");
+write(Left2, "$$outdir$$left_2", format="text");
 
 Left3 = Helper
 i = 0;
@@ -27,7 +27,7 @@ while(i == -1)
 	Left3 = 2 * Left3;
 	i = i + 1;
 }
-writeMM(Left3, "$$outdir$$left_3", format="text");
+write(Left3, "$$outdir$$left_3", format="text");
 
 Right1 = Helper
 i = 0;
@@ -36,7 +36,7 @@ while(1 == i)
 	Right1 = 2 * Right1;
 	i = i - 1;
 }
-writeMM(Right1, "$$outdir$$right_1", format="text");
+write(Right1, "$$outdir$$right_1", format="text");
 
 Right2 = Helper
 i = 0;
@@ -45,7 +45,7 @@ while(0 == i)
 	Right2 = 2 * Right2;
 	i = i - 1;
 }
-writeMM(Right2, "$$outdir$$right_2", format="text");
+write(Right2, "$$outdir$$right_2", format="text");
 
 Right3 = Helper
 i = 0;
@@ -54,4 +54,4 @@ while(-1 == i)
 	Right3 = 2 * Right3;
 	i = i - 2;
 }
-writeMM(Right3, "$$outdir$$right_3", format="text");
+write(Right3, "$$outdir$$right_3", format="text");

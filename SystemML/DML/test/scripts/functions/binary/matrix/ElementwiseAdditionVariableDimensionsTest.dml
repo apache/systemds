@@ -1,6 +1,6 @@
 # junit test class: dml.test.integration.functions.binary.matrix.ElementwiseAdditionTest.java
 
-A = readMM("$$indir$$a", rows=$$rows1$$, cols=$$cols1$$, format="text");
-B = readMM("$$indir$$b", rows=$$rows2$$, cols=$$cols2$$, format="text");
+A = read("$$indir$$a", rows=$$rows1$$, cols=$$cols1$$, format="text");
+B = read("$$indir$$b", rows=$$rows2$$, cols=$$cols2$$, format="text");
 C = A + B;
-writeMM(C, "$$outdir$$c", format="text");
+write(C, "$$outdir$$c", format="text");

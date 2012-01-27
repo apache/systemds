@@ -10,7 +10,7 @@ error = 10.2
 
 
 
-mydata = readMM ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
+mydata = read ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
 
 
 ################################### SUBMATRIX

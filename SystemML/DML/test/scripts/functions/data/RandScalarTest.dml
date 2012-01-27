@@ -3,4 +3,4 @@
 $$readhelper$$
 
 a = Rand(min=$$min$$, max=$$max$$);
-writeMM(a, "$$outdir$$rand", format="text");
+write(a, "$$outdir$$rand", format="text");

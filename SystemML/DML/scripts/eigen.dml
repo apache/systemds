@@ -3,9 +3,9 @@ return (Matrix[Double] E, Matrix[Double] V)
 implemented in (classname="dml.packagesupport.EigenWrapper",execlocation="master")
  
 
-A = readMM("data/seqMiner.mtx", rows=50, cols=6, format="text");
+A = read("data/seqMiner.mtx", rows=50, cols=6, format="text");
 #E = eigen values, V = eigen vectors
 [E,V] = eigen(A);
 
-writeMM( E, "data/eigen-val-out", format="text");
-writeMM( V, "data/eigen-vec-out", format="text");
+write( E, "data/eigen-val-out", format="text");
+write( V, "data/eigen-vec-out", format="text");

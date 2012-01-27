@@ -1,6 +1,6 @@
-A = readMM ("mytestA.data", rows= 5, cols = 1, format="text");
-W = readMM ("mytestW.data", rows= 5, cols = 1, format="text");
-p = readMM ("mytestP.data", rows=3, cols=1, format="text");
+A = read ("mytestA.data", rows= 5, cols = 1, format="text");
+W = read ("mytestW.data", rows= 5, cols = 1, format="text");
+p = read ("mytestP.data", rows=3, cols=1, format="text");
 s = 1 - 0.5;
 
 ql = quantile (A, 0.5);
@@ -20,31 +20,31 @@ iqws = interQuantile (A, W, s);
 iqm = interQuartileMean (A);
 iqmw = interQuartileMean (A,W);
 
-#writeMM (ql, "myq1", format ="text");
-#writeMM (qs, "myqs", format ="text");
-#writeMM (qm, "myqm", format ="text");
+#write (ql, "myq1", format ="text");
+#write (qs, "myqs", format ="text");
+#write (qm, "myqm", format ="text");
 
-#writeMM (qwl, "myqw1", format ="text");
-#writeMM (qws, "myqws", format ="text");
-#writeMM (qwm, "myqwm", format ="text");
+#write (qwl, "myqw1", format ="text");
+#write (qws, "myqws", format ="text");
+#write (qwm, "myqwm", format ="text");
 
-#writeMM (iql, "myiq1", format ="text");
-#writeMM (iqs, "myiqs", format ="text");
+#write (iql, "myiq1", format ="text");
+#write (iqs, "myiqs", format ="text");
 
-#writeMM (iqwl, "myiqw1", format ="text");
-#writeMM (iqws, "myiqws", format ="text");
+#write (iqwl, "myiqw1", format ="text");
+#write (iqws, "myiqws", format ="text");
 
 print ("IQM =", iqm);
 print ("IQMW =", iqmw);
 
-#W = readMM ("mytestB.data", rows= 5, cols = 1, format="text");
+#W = read ("mytestB.data", rows= 5, cols = 1, format="text");
 
 #C = ctable (A, B);
 
 #r = nrow(C);
 #c = ncol(C);
 
-#writeMM (C, "mytestC.data", format="text");
+#write (C, "mytestC.data", format="text");
 #print ("Nrow = ", r);
 #print ("Ncol = ", c);
 

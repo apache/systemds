@@ -1,8 +1,8 @@
 # junit test class: dml.test.integration.functions.binary.matrix.ElementwiseAdditionMultiplicationTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
-B = readMM("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
-C = readMM("$$indir$$c", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+B = read("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
+C = read("$$indir$$c", rows=$$rows$$, cols=$$cols$$, format="text");
 
 result = A*B*C;
-writeMM(result, "$$outdir$$result", format="text");
+write(result, "$$outdir$$result", format="text");

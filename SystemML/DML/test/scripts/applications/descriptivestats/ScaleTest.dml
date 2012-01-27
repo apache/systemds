@@ -1,7 +1,7 @@
 $$readhelper$$
 
-V = readMM("$$indir$$vector", rows=$$rows1$$, cols=1, format="text")
-P = readMM("$$indir$$prob", rows=$$rows2$$, cols=1, format="text")
+V = read("$$indir$$vector", rows=$$rows1$$, cols=1, format="text")
+P = read("$$indir$$prob", rows=$$rows2$$, cols=1, format="text")
 
 n = nrow(V)
 
@@ -87,22 +87,22 @@ se_g2Helper=se_g2*Helper
 medianHelper1 = md * Helper
 iqmHelper = iqm * Helper
 
-writeMM(meanHelper, "$$outdir$$mean", format="text");
-writeMM(stdHelper, "$$outdir$$std", format="text");
-writeMM(SEHelper, "$$outdir$$se", format="text");
-writeMM(varHelper, "$$outdir$$var", format="text");
-writeMM(cvHelper, "$$outdir$$cv", format="text");
-writeMM(harHelper, "$$outdir$$har", format="text");
-writeMM(geomHelper, "$$outdir$$geom", format="text");
-writeMM(minHelper, "$$outdir$$min", format="text");
-writeMM(maxHelper, "$$outdir$$max", format="text");
-writeMM(rngHelper, "$$outdir$$rng", format="text");
-writeMM(g1Helper, "$$outdir$$g1", format="text");
-writeMM(se_g1Helper, "$$outdir$$se_g1", format="text");
-writeMM(g2Helper, "$$outdir$$g2", format="text");
-writeMM(se_g2Helper, "$$outdir$$se_g2", format="text");
-writeMM(out_minus, "$$outdir$$out_minus", format="text");
-writeMM(out_plus, "$$outdir$$out_plus", format="text");
-writeMM(medianHelper1, "$$outdir$$median", format="text");
-writeMM(Q, "$$outdir$$quantile", format="text");
-writeMM(iqmHelper, "$$outdir$$iqm", format="text");
+write(meanHelper, "$$outdir$$mean", format="text");
+write(stdHelper, "$$outdir$$std", format="text");
+write(SEHelper, "$$outdir$$se", format="text");
+write(varHelper, "$$outdir$$var", format="text");
+write(cvHelper, "$$outdir$$cv", format="text");
+write(harHelper, "$$outdir$$har", format="text");
+write(geomHelper, "$$outdir$$geom", format="text");
+write(minHelper, "$$outdir$$min", format="text");
+write(maxHelper, "$$outdir$$max", format="text");
+write(rngHelper, "$$outdir$$rng", format="text");
+write(g1Helper, "$$outdir$$g1", format="text");
+write(se_g1Helper, "$$outdir$$se_g1", format="text");
+write(g2Helper, "$$outdir$$g2", format="text");
+write(se_g2Helper, "$$outdir$$se_g2", format="text");
+write(out_minus, "$$outdir$$out_minus", format="text");
+write(out_plus, "$$outdir$$out_plus", format="text");
+write(medianHelper1, "$$outdir$$median", format="text");
+write(Q, "$$outdir$$quantile", format="text");
+write(iqmHelper, "$$outdir$$iqm", format="text");

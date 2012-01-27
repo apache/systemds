@@ -18,15 +18,15 @@ sigma3 = 4.0
 psi = 0.1 
 
 # read (training and test) data files
-X = readMM("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
-Xt = readMM("$$indir$$Xt", rows=$$rows_test$$, cols=$$cols_test$$, format="text")
+X = read("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
+Xt = read("$$indir$$Xt", rows=$$rows_test$$, cols=$$cols_test$$, format="text")
 N = $$rows$$;
 D = $$cols$$;
 Nt = $$rows_test$$;
 
 # read (training and test) labels
-y = readMM( "$$indir$$y", rows=$$rows$$, cols=1, format="text")
-yt = readMM( "$$indir$$yt", rows=$$rows_test$$, cols=1, format="text")
+y = read( "$$indir$$y", rows=$$rows$$, cols=1, format="text")
+yt = read( "$$indir$$yt", rows=$$rows_test$$, cols=1, format="text")
 
 #initialize w
 w = Rand(rows=D, cols=1, min=0.0, max=0.0);
@@ -201,5 +201,5 @@ while(!converge) {
 	print("     Converge = ", converge)
 } 
 
-writeMM(w, "$$outdir$$w", format="text");
+write(w, "$$outdir$$w", format="text");
 

@@ -1,8 +1,8 @@
 # JUnit test class: dml.test.integration.applications.HITSTest.java
 
-G = readMM("$$indir$$graph2.mtx",rows=$$rows$$, cols=$$cols$$, format="text");
+G = read("$$indir$$graph2.mtx",rows=$$rows$$, cols=$$cols$$, format="text");
 
-authorities=readMM("$$indir$$init_authorities2.mtx",rows=$$rows$$, cols=1, format="text");
+authorities=read("$$indir$$init_authorities2.mtx",rows=$$rows$$, cols=1, format="text");
 
 
 maxiter = $$maxiter$$;
@@ -42,5 +42,5 @@ while(!converge) {
 	#print(paste("Iterations :", iter, " delta_hubs :", delta_hubs, " delta_authorities :", delta_authorities))
 }
 
-writeMM(hubs,"$$outdir$$hubs",format="text")
-writeMM(authorities,"$$outdir$$authorities",format="text")
+write(hubs,"$$outdir$$hubs",format="text")
+write(authorities,"$$outdir$$authorities",format="text")

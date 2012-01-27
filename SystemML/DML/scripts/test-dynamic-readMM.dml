@@ -1,6 +1,6 @@
 matMult = function(Int dim, Int dim2) return ( Matrix[Double]  tempm)
 {
-	tempm = readMM( "llr_xfile", rows="dim", cols="dim2", format="text");
+	tempm = read( "llr_xfile", rows="dim", cols="dim2", format="text");
 }
 	
 
@@ -12,4 +12,4 @@ dim2 = 10;
 F = matMult(dim, dim2)
 fsum = sum(F);
 print("fsum is ", fsum);
-#writeMM ( F, "F.output", format="text");
+#write ( F, "F.output", format="text");

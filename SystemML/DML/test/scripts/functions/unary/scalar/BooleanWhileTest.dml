@@ -8,11 +8,11 @@ while(continue) {
 	TrueHelper = 2 * Helper;
 	continue = false;
 }
-writeMM(TrueHelper, "$$outdir$$true", format="text");
+write(TrueHelper, "$$outdir$$true", format="text");
 
 FalseHelper = Helper;
 continue = false;
 while(continue) {
 	FalseHelper = 2 * Helper;
 }
-writeMM(FalseHelper, "$$outdir$$false", format="text");
+write(FalseHelper, "$$outdir$$false", format="text");

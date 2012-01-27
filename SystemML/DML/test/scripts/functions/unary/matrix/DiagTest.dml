@@ -1,9 +1,9 @@
 # junit test class: dml.test.integration.functions.unary.matrix.DiagTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = diag(A);
-writeMM(B, "$$outdir$$b", format="text");
+write(B, "$$outdir$$b", format="text");
 
-C = readMM("$$indir$$c", rows=$$rows$$, cols=1, format="text");
+C = read("$$indir$$c", rows=$$rows$$, cols=1, format="text");
 D = diag(C);
-writeMM(D, "$$outdir$$d", format="text");
+write(D, "$$outdir$$d", format="text");

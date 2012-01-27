@@ -7,14 +7,14 @@ return (Matrix[Double] C)
 implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
 
 
-M = readMM( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
-initialCenters = readMM( "$$indir$$initCenters", rows=5, cols=$$cols$$, format="text");
+M = read( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
+initialCenters = read( "$$indir$$initCenters", rows=5, cols=$$cols$$, format="text");
 
 k = 5;
 
 kcenters = kMeans(M,k)
 kcentersWithInit = kMeansWithInit(M,k,initialCenters);
 
-writeMM(kcenters, "$$outdir$$kcenters", format="text");
-writeMM(kcentersWithInit, "$$outdir$$kcentersWithInit", format="text");
+write(kcenters, "$$outdir$$kcenters", format="text");
+write(kcentersWithInit, "$$outdir$$kcentersWithInit", format="text");
 

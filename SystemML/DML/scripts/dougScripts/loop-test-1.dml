@@ -5,4 +5,4 @@ while(i < 3)
 	A = A * 3;
 	i = i + 1;
 }
-writeMM(A, "A.out", format="text");
+write(A, "A.out", format="text");

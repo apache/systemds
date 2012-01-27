@@ -17,15 +17,15 @@
 #    None.
 ######################################################################################
 
-A = readMM("fileA", rows=3, cols=3, format="text");
-B = readMM("fileA", rows=3, cols=3, format="text");
-C = readMM("fileA", rows=3, cols=3, format="text");
+A = read("fileA", rows=3, cols=3, format="text");
+B = read("fileA", rows=3, cols=3, format="text");
+C = read("fileA", rows=3, cols=3, format="text");
 
 D = A + B;
 E = D * 5;
 
-writeMM(E, "E.out", format="text");
+write(E, "E.out", format="text");
 
 F = E %*% C;
-writeMM(F, "F.out", format="text");
+write(F, "F.out", format="text");
 

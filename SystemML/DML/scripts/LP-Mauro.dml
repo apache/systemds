@@ -5,10 +5,10 @@ y = Rand(rows = 100000, cols = 1, min = 1, max = 1, pdf = "uniform");
 b = Rand(rows = 100000, cols = 1, min = 1, max = 1, pdf = "uniform");
 c = Rand(rows = 1, cols = 100000, min = 1, max = 1, pdf = "uniform");
 
-#A = readMM("data\fileA", rows=3, cols=3, format="text");
-#y = readMM("data\fileY", rows=3, cols=1, format="text");
-#b = readMM("data\fileB", rows=3, cols=1, format="text");
-#c = readMM("data\fileC", rows=1, cols=3, format="text");
+#A = read("data\fileA", rows=3, cols=3, format="text");
+#y = read("data\fileY", rows=3, cols=1, format="text");
+#b = read("data\fileB", rows=3, cols=1, format="text");
+#c = read("data\fileC", rows=1, cols=3, format="text");
 
 m=ncol(A);
 n=nrow(A);
@@ -55,5 +55,5 @@ while ( (eps > 0.1) & (i <= max_iter) ) {
     i = i+1;
 
 }
-writeMM(x, "X.result", format="text");
-writeMM(y, "Y.result", format="text");
+write(x, "X.result", format="text");
+write(y, "Y.result", format="text");

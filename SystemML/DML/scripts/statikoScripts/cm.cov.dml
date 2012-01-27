@@ -1,8 +1,8 @@
 # Script to test piggybacking and runtime for centralMoment and covariance
 
-X = readMM("data/X", rows= 100000, cols= 1, format="text" );
-Y = readMM("data/Y", rows= 100000, cols= 1, format="text" );
-WM = readMM("data/WM", rows= 100000, cols= 1, format="text" );
+X = read("data/X", rows= 100000, cols= 1, format="text" );
+Y = read("data/Y", rows= 100000, cols= 1, format="text" );
+WM = read("data/WM", rows= 100000, cols= 1, format="text" );
 
 x = cov(X,Y);
 xw = cov(X,Y,WM);
@@ -42,9 +42,9 @@ print2("Median weighted - " + medianXW + "(X), " + medianYW + "(Y).");
 
 /*
 # ---> R script for verification
-X=readMM(file="C:/work/RTC Workspace/DML/data/X.mtx");
-Y=readMM(file="C:/work/RTC Workspace/DML/data/Y.mtx");
-WM=readMM(file="C:/work/RTC Workspace/DML/data/WM.mtx");
+X=read(file="C:/work/RTC Workspace/DML/data/X.mtx");
+Y=read(file="C:/work/RTC Workspace/DML/data/Y.mtx");
+WM=read(file="C:/work/RTC Workspace/DML/data/WM.mtx");
 
 covXY = cov(X[,1],Y[,1],method="pearson")
 print(covXY, digits=20)

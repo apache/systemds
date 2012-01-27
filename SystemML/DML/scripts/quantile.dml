@@ -1,5 +1,5 @@
-V = readMM("quantile_V", rows=100, cols=1, format="text")
-P = readMM("quantile_P", rows=10, cols=1, format="text")
+V = read("quantile_V", rows=100, cols=1, format="text")
+P = read("quantile_P", rows=10, cols=1, format="text")
 #P={0.5, 0.7}
 Q = quantile(V, P)
-writeMM(Q, "quantile_Q", format="text")
+write(Q, "quantile_Q", format="text")

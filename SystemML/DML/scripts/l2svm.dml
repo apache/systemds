@@ -1,5 +1,5 @@
-X = readMM("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_train.X", rows=1605, cols=124, format="text")
-Y = readMM("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_train.Y", rows=1605, cols=1, format="text")
+X = read("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_train.X", rows=1605, cols=124, format="text")
+Y = read("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_train.Y", rows=1605, cols=1, format="text")
 
 epsilon = 0.000001
 lambda = 1
@@ -57,20 +57,20 @@ while(continue == 1)  {
 	iter = iter + 1
 }
 
-writeMM(w, "w_dml.out", format="text")
+write(w, "w_dml.out", format="text")
 print2("Iterations : "+iter)
 print2("completed learning")
 
-#w = readMM("w.out", rows=124, cols=1, format="text")
-X = readMM("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_test.X", rows=30956, cols=124, format="text")
+#w = read("w.out", rows=124, cols=1, format="text")
+X = read("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_test.X", rows=30956, cols=124, format="text")
 N = nrow(X)
-Y = readMM("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_test.Y", rows=30956, cols=1, format="text")
+Y = read("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_test.Y", rows=30956, cols=1, format="text")
 
 pred = 2*ppred(X %*% w, 0, ">=") - 1
-#writeMM(pred, "pred.out", format="text")
+#write(pred, "pred.out", format="text")
 
 diff = (Y-pred)/2
-#writeMM(diff, "diff.out", format="text")
+#write(diff, "diff.out", format="text")
 
 mismatches = sum(diff * diff)
 err = mismatches / N * 100

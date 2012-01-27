@@ -1,6 +1,6 @@
 ######################################################################################
 # BUG:
-#    Data dependency through readMM and writeMM is not captured in Hops/Lops Dag
+#    Data dependency through read and write is not captured in Hops/Lops Dag
 #    In this script, data dependency due to "file2" must be captured
 #
 # FIX:
@@ -9,11 +9,11 @@
 #    None.
 ######################################################################################
 
-A = readMM("A.in", rows=40, cols=1, format="text");
+A = read("A.in", rows=40, cols=1, format="text");
 A = A + 1;
-writeMM(A, "file2", format="text" );
+write(A, "file2", format="text" );
 
-X = readMM("file2", rows=40, cols=1, format="text");
+X = read("file2", rows=40, cols=1, format="text");
 X = X + 20;
-writeMM(X, "fileX", format="text" );
+write(X, "fileX", format="text" );
 

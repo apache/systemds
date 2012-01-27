@@ -1,8 +1,8 @@
 # JUnit test class: dml.test.integration.applications.GNMFTest.java
 
-V = readMM("$$indir$$v", rows=$$m$$, cols=$$n$$, format="text");
-W = readMM("$$indir$$w", rows=$$m$$, cols=$$k$$, format="text");
-H = readMM("$$indir$$h", rows=$$k$$, cols=$$n$$, format="text");
+V = read("$$indir$$v", rows=$$m$$, cols=$$n$$, format="text");
+W = read("$$indir$$w", rows=$$m$$, cols=$$k$$, format="text");
+H = read("$$indir$$h", rows=$$k$$, cols=$$n$$, format="text");
 max_iteration = $$maxiter$$;
 i = 0;
 
@@ -14,5 +14,5 @@ while(i < max_iteration) {
 	i = i + 1;
 }
 
-writeMM(R, "$$outdir$$r", format="text");
-writeMM(H, "$$outdir$$h", format="text");
+write(R, "$$outdir$$r", format="text");
+write(H, "$$outdir$$h", format="text");

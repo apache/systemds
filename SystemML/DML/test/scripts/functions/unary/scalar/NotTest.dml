@@ -7,7 +7,7 @@ booleanVar = true;
 while(!booleanVar == true) {
 	TrueTrue = 2 * Helper;
 }
-writeMM(TrueTrue, "$$outdir$$true_true", format="text");
+write(TrueTrue, "$$outdir$$true_true", format="text");
 
 TrueFalse = Helper;
 booleanVar = true;
@@ -15,14 +15,14 @@ while(!booleanVar == false) {
 	TrueFalse = 2 * Helper;
 	booleanVar = false;
 }
-writeMM(TrueFalse, "$$outdir$$true_false", format="text");
+write(TrueFalse, "$$outdir$$true_false", format="text");
 
 FalseFalse = Helper;
 booleanVar = false;
 while(!booleanVar == false) {
 	FalseFalse = 2 * Helper;
 }
-writeMM(FalseFalse, "$$outdir$$false_false", format="text");
+write(FalseFalse, "$$outdir$$false_false", format="text");
 
 FalseTrue = Helper;
 booleanVar = false;
@@ -30,4 +30,4 @@ while(!booleanVar == true) {
 	FalseTrue = 2 * Helper;
 	booleanVar = true;
 }
-writeMM(FalseTrue, "$$outdir$$false_true", format="text");
+write(FalseTrue, "$$outdir$$false_true", format="text");

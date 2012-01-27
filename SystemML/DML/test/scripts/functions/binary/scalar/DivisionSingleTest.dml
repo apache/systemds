@@ -5,4 +5,4 @@ $$readhelper$$
 $$vardeclaration$$
 Computation = $$op1$$ / $$op2$$;
 ComputationHelper = Computation * Helper;
-writeMM(ComputationHelper, "$$outdir$$computed", format="text");
+write(ComputationHelper, "$$outdir$$computed", format="text");

@@ -4,4 +4,4 @@ $$readhelper$$
 
 b = trace($$scalar$$);
 BHelper = b * Helper;
-writeMM(BHelper, "$$outdir$$b", format="text");
+write(BHelper, "$$outdir$$b", format="text");

@@ -5,9 +5,9 @@ $$readhelper$$
 $$intvardeclaration$$
 IntComputation = exp($$intop$$);
 IntComputationHelper = IntComputation * Helper;
-writeMM(IntComputationHelper, "$$outdir$$int", format="text");
+write(IntComputationHelper, "$$outdir$$int", format="text");
 
 $$doublevardeclaration$$
 DoubleComputation = exp($$doubleop$$);
 DoubleComputationHelper = DoubleComputation * Helper;
-writeMM(DoubleComputationHelper, "$$outdir$$double", format="text");
+write(DoubleComputationHelper, "$$outdir$$double", format="text");

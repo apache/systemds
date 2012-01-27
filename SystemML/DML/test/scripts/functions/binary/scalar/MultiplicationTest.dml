@@ -5,19 +5,19 @@ $$readhelper$$
 $$intintvardeclaration$$
 IntIntComputation = $$intintop1$$ * $$intintop2$$;
 IntIntComputationHelper = IntIntComputation * Helper;
-writeMM(IntIntComputationHelper, "$$outdir$$int_int", format="text");
+write(IntIntComputationHelper, "$$outdir$$int_int", format="text");
 
 $$intdoublevardeclaration$$
 IntDoubleComputation = $$intdoubleop1$$ * $$intdoubleop2$$;
 IntDoubleComputationHelper = IntDoubleComputation * Helper;
-writeMM(IntDoubleComputationHelper, "$$outdir$$int_double", format="text");
+write(IntDoubleComputationHelper, "$$outdir$$int_double", format="text");
 
 $$doubledoublevardeclaration$$
 DoubleDoubleComputation = $$doubledoubleop1$$ * $$doubledoubleop2$$;
 DoubleDoubleComputationHelper = DoubleDoubleComputation * Helper;
-writeMM(DoubleDoubleComputationHelper, "$$outdir$$double_double", format="text");
+write(DoubleDoubleComputationHelper, "$$outdir$$double_double", format="text");
 
 $$doubleintvardeclaration$$
 DoubleIntComputation = $$doubleintop1$$ * $$doubleintop2$$;
 DoubleIntComputationHelper = DoubleIntComputation * Helper;
-writeMM(DoubleIntComputationHelper, "$$outdir$$double_int", format="text");
+write(DoubleIntComputationHelper, "$$outdir$$double_int", format="text");

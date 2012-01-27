@@ -9,4 +9,4 @@ while( i < 1)
 	i = i + 1;
 }
 
-writeMM(W, "$$outdir$$w", format="text"); 
+write(W, "$$outdir$$w", format="text"); 

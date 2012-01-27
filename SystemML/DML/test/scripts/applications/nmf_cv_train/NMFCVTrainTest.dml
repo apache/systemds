@@ -1,7 +1,7 @@
  
-	x=readMM("$$indir$$x", rows=5, cols=5, nnzs=20, format="text") ;
-	y=readMM("$$indir$$y", rows=5, cols=5, nnzs=20, format="text") ;
-	z=readMM("$$indir$$z", rows=5, cols=5, nnzs=20, format="text") ;
+	x=read("$$indir$$x", rows=5, cols=5, nnzs=20, format="text") ;
+	y=read("$$indir$$y", rows=5, cols=5, nnzs=20, format="text") ;
+	z=read("$$indir$$z", rows=5, cols=5, nnzs=20, format="text") ;
 	
 	zrow = nrow(z);
 	numtopics = 4;
@@ -70,6 +70,6 @@
 		#newObj = sum(cerror * cerror)
 		#continue = (newObj-oldObj) > (oldObj * accuracy)
 	}
-	writeMM (wb,"$$outdir$$nmf.wb.result", rows_in_block = 1, columns_in_block = 1, format="binary");
-	writeMM (hc,"$$outdir$$nmf.hc.result", rows_in_block = 1, columns_in_block = 1, format="binary");
+	write (wb,"$$outdir$$nmf.wb.result", rows_in_block = 1, columns_in_block = 1, format="binary");
+	write (hc,"$$outdir$$nmf.hc.result", rows_in_block = 1, columns_in_block = 1, format="binary");
 	

@@ -1,4 +1,4 @@
-# junit test class: dml.test.integration.functions.data.WriteMMTest.java
+# junit test class: dml.test.integration.functions.data.writeTest.java
 
-A = readMM("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
-writeMM(A, "$$outdir$$a", format="$$format$$");
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+write(A, "$$outdir$$a", format="$$format$$");

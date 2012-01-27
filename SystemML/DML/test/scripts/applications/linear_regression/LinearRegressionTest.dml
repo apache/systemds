@@ -1,7 +1,7 @@
 # JUnit test class: dml.test.integration.applications.LinearRegressionTest.java
 
-V = readMM("$$indir$$v", rows=$$rows$$, cols=$$cols$$, format="text");
-y = readMM("$$indir$$y", rows=$$rows$$, cols=1, format="text");
+V = read("$$indir$$v", rows=$$rows$$, cols=$$cols$$, format="text");
+y = read("$$indir$$y", rows=$$rows$$, cols=1, format="text");
 eps = $$eps$$;
 r = -(t(V) %*% y);
 p = -r;
@@ -22,4 +22,4 @@ while(i < max_iteration) {
 	i = i + 1;
 }
 
-writeMM(w, "$$outdir$$w", format="text");
+write(w, "$$outdir$$w", format="text");

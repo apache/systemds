@@ -12,7 +12,7 @@ NMFcvtrain = function(z) return (wd,hd) {
 	zerror = z - wd %*% hd
 	newObj = sum(zerror * zerror)
 	
-	#writeMM( z, "scripts/z_output", format="text");
+	#write( z, "scripts/z_output", format="text");
 
 	max_iteration = 5
 	i = 0

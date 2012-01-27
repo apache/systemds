@@ -4,11 +4,11 @@ implemented in (classname="dml.packagesupport.OutlierWrapper",execlocation="mast
 
 
 
-M = readMM( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
+M = read( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
 
 k = 2;
 m = 5;
 
 o = outliers(M,m,k);
 
-writeMM(o, "$$outdir$$o", format="text");
+write(o, "$$outdir$$o", format="text");

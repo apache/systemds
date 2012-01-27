@@ -11,8 +11,8 @@ OP = 11.2
 #OP = rowSums(colSums(UL %*% MD))
 }
 
-#mydata = readMM ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
-mydata = readMM ("./scripts/AnInput",rows=100000,cols=20000, format="binary") ;
+#mydata = read ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
+mydata = read ("./scripts/AnInput",rows=100000,cols=20000, format="binary") ;
 
 build ensemble myens on (mydata)
 #partition (method='rowholdout', frac='0.7', numiterations=3, replicate=true) as (a)

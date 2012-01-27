@@ -12,13 +12,13 @@ max_epochs = 10;
 # number of latent factors
 latent_factors = 5; 
 
-V = readMM("$$indir$$V", rows=$$rows$$, cols=$$cols$$, format="text");
+V = read("$$indir$$V", rows=$$rows$$, cols=$$cols$$, format="text");
 
 #invokation returns W and transpose of H
 
 [W, tH] = sgd(V, n, m, max_epochs, latent_factors)
 
 #ith row in W contains ith user's factors
-writeMM(W, "$$outdir$$W", format="text");
+write(W, "$$outdir$$W", format="text");
 #jth row in H contains jth item's factors
-writeMM(tH, "$$outdir$$tH", format="text");
+write(tH, "$$outdir$$tH", format="text");

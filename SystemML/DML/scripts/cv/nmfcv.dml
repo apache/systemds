@@ -7,8 +7,8 @@ nmfcvtrain1_ROW = function(Matrix[Double] c,Matrix[Double] d) return (Matrix[Dou
 	numtopics = 4;
 	hd = Rand(rows = 4, cols=10) ;
 
-	writeMM( c, "scripts/cRow_output", format="text");
-	writeMM( d, "scripts/dRow_output", format="text");
+	write( c, "scripts/cRow_output", format="text");
+	write( d, "scripts/dRow_output", format="text");
 
 
 }
@@ -16,7 +16,7 @@ nmfcvtrain1_ROW = function(Matrix[Double] c,Matrix[Double] d) return (Matrix[Dou
 nmfcvtest1_ROW = function (Matrix[Double] x, Matrix[Double] wd, Matrix[Double] hd, Matrix[Double] alpha) return (Double error)
 {
 
-	writeMM(x, "scripts/X_Output", format="text");	
+	write(x, "scripts/X_Output", format="text");	
 
 	max_iteration = 1
 	xrow = nrow(x)
@@ -71,7 +71,7 @@ nmfcvtest1_ROW = function (Matrix[Double] x, Matrix[Double] wd, Matrix[Double] h
 
 
 
-mydata = readMM ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
+mydata = read ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
 
 
 ################################### SUBMATRIX

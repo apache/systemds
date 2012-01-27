@@ -42,7 +42,7 @@ while(continue == 1)  {
 	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
 	g_new = t(X) %*% (out * Y) - lambda * w
 	
-	print2("OBJ = "+obj)
+	print("OBJ = "+obj)
 	
 	tmp = sum(s * g_old)
 	if(step_sz*tmp < epsilon*obj){
@@ -58,8 +58,8 @@ while(continue == 1)  {
 }
 
 write(w, "w_dml.out", format="text")
-print2("Iterations : "+iter)
-print2("completed learning")
+print("Iterations : " + iter)
+print("completed learning")
 
 #w = read("w.out", rows=124, cols=1, format="text")
 X = read("C:/Users/IBM_ADMIN/workspace/SVD/bin/a1a_test.X", rows=30956, cols=124, format="text")
@@ -75,5 +75,5 @@ diff = (Y-pred)/2
 mismatches = sum(diff * diff)
 err = mismatches / N * 100
 
-print2("#Incorrect : "+mismatches)
-print2("Error(%) : "+err)
+print("#Incorrect : "+mismatches)
+print("Error(%) : "+err)

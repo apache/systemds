@@ -28,4 +28,4 @@ T = sum(RES);
 # Calculate PI
 pi = 4 * T / n;
 
-print2(pi);
+print(pi);

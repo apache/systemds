@@ -7,18 +7,18 @@ fib1 = 1;
 fib2 = 1;
 
 if (x >= 1) {
-  print2("fib(" + 1 + ") = " + fib1); # tests new print functionality
+#  print("fib(" + 1 + ") = " + fib1); # tests new print functionality
   fib3 = 1;
 }
 if (x >= 2) {
-  print2("fib(" + 2 + ") = " + fib2);
+#  //print("fib(" + 2 + ") = " + fib2);
   fib3 = 1;
 }
 if ( x >= 3) {
   i = 3;
   while (i <= x) {
     fib3 = fib1 + fib2;
-    print2("fib(" + i + ") = " + fib3);
+#    //print("fib(" + i + ") = " + fib3);
     
     fib1 = fib2;
     fib2 = fib3;

@@ -28,17 +28,17 @@ medianXW = quantile(X,WM,0.5);
 medianYW = quantile(Y,WM,0.5);
 
 
-print2("cov = " + x + ", cov_w = " + xw);
+print("cov = " + x + ", cov_w = " + xw);
 
-print2("CM order 2 - " + m2X + "(X), " + m2Y + "(Y).");
-print2("CM order 3 - " + m3X + "(X), " + m3Y + "(Y).");
-print2("CM order 4 - " + m4X + "(X), " + m4Y + "(Y).");
-print2("CM order 2 weighted - " + m2XW + "(X), " + m2YW + "(Y).");
-print2("CM order 3 weighted - " + m3XW + "(X), " + m3YW + "(Y).");
-print2("CM order 4 weighted - " + m4XW + "(X), " + m4YW + "(Y).");
+print("CM order 2 - " + m2X + "(X), " + m2Y + "(Y).");
+print("CM order 3 - " + m3X + "(X), " + m3Y + "(Y).");
+print("CM order 4 - " + m4X + "(X), " + m4Y + "(Y).");
+print("CM order 2 weighted - " + m2XW + "(X), " + m2YW + "(Y).");
+print("CM order 3 weighted - " + m3XW + "(X), " + m3YW + "(Y).");
+print("CM order 4 weighted - " + m4XW + "(X), " + m4YW + "(Y).");
 
-print2("Median - " + medianX + "(X), " + medianY + "(Y).");
-print2("Median weighted - " + medianXW + "(X), " + medianYW + "(Y).");
+print("Median - " + medianX + "(X), " + medianY + "(Y).");
+print("Median weighted - " + medianXW + "(X), " + medianYW + "(Y).");
 
 /*
 # ---> R script for verification

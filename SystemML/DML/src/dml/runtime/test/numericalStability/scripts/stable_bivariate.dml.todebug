@@ -18,9 +18,9 @@ Csum = groupedAggregate(target=Y, groups=A, fn="sum");
 CMeans = Csum/CFreq;
 sumAccumCVars=sum(accumCVars)
 print("sumAccumCVars", sumAccumCVars)
-writeMM(Csum, "Csum", format="text");
-writeMM(CMeans, "CMeans", format="text");
-writeMM(CFreq, "CFreq", format="text");
+write(Csum, "Csum", format="text");
+write(CMeans, "CMeans", format="text");
+write(CFreq, "CFreq", format="text");
 
 anova_num_before=sum( CFreq*( (CMeans-my)^2 ) )
 
@@ -44,6 +44,6 @@ Helper=Rand(rows = 1, cols = 1, min = 1, max = 1);
 EtaHelper=Eta*Helper
 ANOVAFHelper=ANOVAF*Helper
 
-writeMM(EtaHelper, $6, format="binary");
-writeMM(ANOVAFHelper, $7, format="binary");
+write(EtaHelper, $6, format="binary");
+write(ANOVAFHelper, $7, format="binary");
 

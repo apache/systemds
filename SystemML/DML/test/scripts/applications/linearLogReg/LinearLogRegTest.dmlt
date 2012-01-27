@@ -160,4 +160,4 @@ while(!converge) {
 	
 } 
 
-writeMM(w, "C:/workspace/DML/test/scripts/applications/linearLogReg/out/w", format="text");
+write(w, "C:/workspace/DML/test/scripts/applications/linearLogReg/out/w", format="text");

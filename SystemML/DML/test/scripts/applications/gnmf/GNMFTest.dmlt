@@ -14,5 +14,5 @@ while(i < max_iteration) {
 	i = i + 1;
 }
 
-writeMM(W, "./test/scripts/applications/gnmf/out/w", format="text");
-writeMM(H, "./test/scripts/applications/gnmf/out/h", format="text");
+write(W, "./test/scripts/applications/gnmf/out/w", format="text");
+write(H, "./test/scripts/applications/gnmf/out/h", format="text");

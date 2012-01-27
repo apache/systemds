@@ -94,8 +94,8 @@ public class DMLScript {
 		// stores if <filename> arg is file (if true) or is a string (if false)
 		boolean fromFile = false;
 	
-		// stores name of the config file
-		String systemConfigurationFileName = null;
+		// stores name of the OPTIONAL config file
+		String optionalConfigurationFileName = null;
 		
 		//////////////// for DEBUG, dump arguments /////////////////////////////
 		System.out.println("INFO: Value for args passed to DMLScript: ");
@@ -147,8 +147,8 @@ public class DMLScript {
 			//	rtplatform = RUNTIME_PLATFORM.NZ;
 		
 			} else if (args[argid].startsWith("-config=")){
-				systemConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
-				systemConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
+				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
+				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
 				
 			// handle the args to DML Script -- rest of args will be
 			} else if (args[argid].startsWith("-args")) {
@@ -177,8 +177,9 @@ public class DMLScript {
 			System.out.println("INFO: FROM-FILE: " + fromFile);
 			System.out.println("INFO: SCRIPT: " + fileName);
 			System.out.println("INFO: DEBUG: "  + DEBUG);
+			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
 			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			System.out.println("INFO: OPTIONAL CONFIG: " + systemConfigurationFileName);
+			System.out.println("INFO: OPTIONAL CONFIG: " + optionalConfigurationFileName);
 			System.out.println("INFO: RUNTIME: " + rtplatform);
 			System.out.println("INFO: LOG: "  + LOG);
 			
@@ -236,12 +237,12 @@ public class DMLScript {
 		
 		// read the optional config file to overwrite changed parameter values
 		DMLConfig optionalConfig = null;
-		if (systemConfigurationFileName != null) {
+		if (optionalConfigurationFileName != null) {
 			try {
-				optionalConfig = new DMLConfig(systemConfigurationFileName);
+				optionalConfig = new DMLConfig(optionalConfigurationFileName);
 					
 			} catch (Exception e) {
-				System.out.println("Error parsing optional configuration file: " + systemConfigurationFileName);
+				System.out.println("Error parsing optional configuration file: " + optionalConfigurationFileName);
 				System.exit(-1);
 			}
 		}

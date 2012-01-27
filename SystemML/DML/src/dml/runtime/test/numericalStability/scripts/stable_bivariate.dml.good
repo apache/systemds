@@ -47,8 +47,8 @@ ANOVAFHelper=ANOVAF*Helper
 PearsonRHelper = pearsonR * Helper;
 CovHelper=covXY*Helper;
 
-writeMM(EtaHelper, $6, format="binary");
-writeMM(ANOVAFHelper, $7, format="binary");
-writeMM(PearsonRHelper, $5, format="binary");
-writeMM(CovHelper, $8, format="binary")
+write(EtaHelper, $6, format="binary");
+write(ANOVAFHelper, $7, format="binary");
+write(PearsonRHelper, $5, format="binary");
+write(CovHelper, $8, format="binary")
 

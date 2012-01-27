@@ -4,8 +4,8 @@ Helper = readMM("./test/scripts/functions/aggregate/in/helper/in", rows=1, cols=
 
 Vector = readMM("./test/scripts/functions/aggregate/in/vector", rows=10, cols=1, format="text");
 VectorColSum = colSums(Vector);
-writeMM(VectorColSum, "./test/scripts/functions/aggregate/out/vector_colsum", format="text");
+write(VectorColSum, "./test/scripts/functions/aggregate/out/vector_colsum", format="text");
 
 Matrix = readMM("./test/scripts/functions/aggregate/in/matrix", rows=10, cols=10, format="text");
 MatrixColSum = colSums(Matrix);
-writeMM(MatrixColSum, "./test/scripts/functions/aggregate/out/matrix_colsum", format="text");
+write(MatrixColSum, "./test/scripts/functions/aggregate/out/matrix_colsum", format="text");

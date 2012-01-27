@@ -1,7 +1,6 @@
 package dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import dml.utils.LanguageException;
 
@@ -52,9 +51,9 @@ public class ForStatement extends Statement{
 	
 	public String toString(){
 		StringBuffer sb = new StringBuffer();
-		sb.append("for ( ");
+		sb.append("for ");
 		sb.append(_predicate.toString());
-		sb.append(") { \n");
+		sb.append(" { \n");
 		for (StatementBlock block : _body){
 			sb.append(block.toString());
 		}

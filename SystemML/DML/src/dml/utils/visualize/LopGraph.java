@@ -183,9 +183,10 @@ public class LopGraph {
 		if (current instanceof WhileStatementBlock) {
 			// Handle Predicate
 			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
-			String predicateString = prepareLopsNodeList(predicateHops.get_lops());
-			graphString += predicateString;
-			
+			if (predicateHops != null){
+				String predicateString = prepareLopsNodeList(predicateHops.get_lops());
+				graphString += predicateString;
+			}
 			// handle children
 			WhileStatement wstmt = (WhileStatement)((WhileStatementBlock)current).getStatement(0);
 			for (StatementBlock sb : wstmt.getBody()){	

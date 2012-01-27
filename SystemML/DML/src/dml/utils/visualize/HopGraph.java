@@ -1,7 +1,6 @@
 package dml.utils.visualize;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import dml.hops.DataOp;
@@ -135,10 +134,12 @@ public class HopGraph {
 		
 		if (current instanceof WhileStatementBlock) {
 			// Handle Predicate
-			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
-			String predicateString = prepareHopsNodeList(predicateHops);
-			graphString += predicateString;
 			
+			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
+			if (predicateHops != null){
+				String predicateString = prepareHopsNodeList(predicateHops);
+				graphString += predicateString;
+			}
 			// handle children
 			WhileStatement wstmt = (WhileStatement)((WhileStatementBlock)current).getStatement(0);
 			for (StatementBlock sb : wstmt.getBody()){	

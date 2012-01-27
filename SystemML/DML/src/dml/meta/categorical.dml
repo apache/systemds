@@ -1,4 +1,4 @@
-V = readMM($1, rows=$2, cols=1, format="text")
+V = read($1, rows=$2, cols=1, format="text")
 ones = Rand(rows=$2, cols=1, min=1.0, max=1.0);
 Helper = Rand(rows=1, cols=1, min=1.0, max=1.0);
 
@@ -23,8 +23,8 @@ Mode =  ppred(Nc, mx, "==")
 
 RHelper = Helper * R;
 
-writeMM(RHelper, $3, format="text")
-writeMM(Nc,      $4, format="text")
-writeMM(Pc,      $5, format="text")
-writeMM(Mode,    $6, format="text")
+write(RHelper, $3, format="text")
+write(Nc,      $4, format="text")
+write(Pc,      $5, format="text")
+write(Mode,    $6, format="text")
 

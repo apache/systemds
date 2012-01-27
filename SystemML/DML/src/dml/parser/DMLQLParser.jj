@@ -78,10 +78,12 @@ public class DMLQLParser extends DMLQLParserBase{
      	}       
 	}
 
-	private void setCommandArgs(HashMap<String,String> ca){		commandArgs = ca;
+	private void setCommandArgs(HashMap<String,String> ca){
+		commandArgs = ca;
 	}
 
-	private void setDmlPathSet(ArrayList<String> passed){		dmlPathSet = passed;
+	private void setDmlPathSet(ArrayList<String> passed){
+		dmlPathSet = passed;
 	}
 	   
 	public DMLQLParser(File f, HashMap<String,String> commandArgs)throws IOException, ParseException {
@@ -164,26 +166,30 @@ TOKEN :
 	// KEYWORDS
 	<IF		: "if">
 	|<ELSE		: "else">
-	|<REPEAT		: "repeat">
 	|<WHILE		: "while">
 	|<FUNCTION		: "function">
 	|<EXTERNALFUNCTION  : "externalFunction" >
 	|<IMPLEMENTED :		  "implemented" >
 	|<FOR		: "for">
 	|<IN		: "in">
-	|<NEXT		: "next">
-	|<BREAK		: "break">
+	//|<NEXT		: "next">
+	//|<BREAK		: "break">
 	|<TRUE		: "true">
 	|<FALSE		: "false">
  	|<NULL		: "null">
-	|<INF		: "Inf">
-	|<NAN		: "NaN">
-	|<NA		: "NA">
+	//|<INF		: "Inf">
+	//|<NAN		: "NaN">
+	//|<NA		: "NA">
+
+	|<SEQ : "seq"> 	
+
 	|<AS		: "as">
+	| <RETURN : "return" >
+
+
 	|<TRAIN	: "train">
 	|<TEST	: "test">
 	|<AGG		: "aggregate">
-	| <RETURN : "return" >
 	| < BUILD : "build" >
 	| < ON : "on" >
 	| < USE : "use" >
@@ -227,14 +233,12 @@ TOKEN :
 	| <IMPORT : "import"> 
 	| <DMLPATH : "dml-path">  
 
-	| <READMARKETMATRIX : "readMM">
-	| <WRITEMARKETMATRIX : "writeMM">
 	| <PRINT : "print">
-	| <PRINT2 : "print2">
-	| <CROSSVAL  : "crossval">
-	| <ENSEMBLE  : "ensemble">
+//	| <PRINT2 : "print2">
+//	| <CROSSVAL  : "crossval">
+//	| <ENSEMBLE  : "ensemble">
 
-	| <PARTITION : "partition">
+//	| <PARTITION : "partition">
 	| <AVG		 : "avg" >
 	| <RAND      : "Rand">
 	| <CAST_AS_SCALAR: "castAsScalar" >
@@ -351,13 +355,13 @@ DMLProgram __inputInternal() :
 			| LOOKAHEAD(3) current = ExternalFunctionStatement()
 			| current = OutputStatement()
 			| current = PrintStatement()
-			| current = Print2Statement()
+		//	| current = Print2Statement()
 			| current = WhileStatement()
 			| current = ForStatement()
 			| current = IfStatement()
-			| current = CVStatement()
-			| current = ELStatement()
-			| current = ELUseStatement()	
+		//	| current = CVStatement()
+		//	| current = ELStatement()
+		//	| current = ELUseStatement()	
 		){
 			StatementBlock sb = null;
 			if (current instanceof WhileStatement) {
@@ -369,15 +373,15 @@ DMLProgram __inputInternal() :
 			else if (current instanceof IfStatement){
 				sb = new IfStatementBlock();	
 			}	
-			else if (current instanceof CVStatement) {
-				sb = new CVStatementBlock();
-			}
-			else if (current instanceof ELStatement) {
-				sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				sb = new ELUseStatementBlock();
-			}			
+		//	else if (current instanceof CVStatement) {
+		//		sb = new CVStatementBlock();
+		//	}
+		//	else if (current instanceof ELStatement) {
+		//		sb = new ELStatementBlock();
+		//	}
+		//	else if (current instanceof ELUseStatement) {
+		//		sb = new ELUseStatementBlock();
+		//	}			
 			else if (current instanceof FunctionStatement) {
 				sb = new FunctionStatementBlock();
 			}
@@ -391,7 +395,8 @@ DMLProgram __inputInternal() :
 			{
 				// if the path verifies, parse the file to create a DMLProgram
 				ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
-				if (importStmt.verify(dmlPathSet)) {
+				if (importStmt.verify(dmlPathSet)) {
+
 					try {
 					  	DMLProgram importedProg = null;
 						File moduleFile = new File(importStmt.getCompletePath());
@@ -415,7 +420,8 @@ DMLProgram __inputInternal() :
 						// IF (alias is defined OR no filter placed on functions to import) THEN
 						//		1) attempt to create new namespace for imported DML module file if not already defined
 						//		2) attempt to add functions to existing namespace
-						if (importStmt.getAlias() != null || ( !importStmt.getImportAll() && importStmt.getImportVarList().size() == 0)){
+						if (importStmt.getAlias() != null || ( !importStmt.getImportAll() && importStmt.getImportVarList().size() == 0)){
+
 							if (!dmlp.getNamespaces().containsKey(namespaceKey))
 						  		dmlp.getNamespaces().put(namespaceKey,importedProg);
 				
@@ -432,7 +438,9 @@ DMLProgram __inputInternal() :
 								
 						// import all functions into the current "null" namespace
 						if(importStmt.getImportAll()){
-							for (String fname : importedProg.getFunctionStatementBlocks(null).keySet()){								if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))									throw new ParseException("function " + fname + " is already defined in current namespace ");
+							for (String fname : importedProg.getFunctionStatementBlocks(null).keySet()){
+								if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))
+									throw new ParseException("function " + fname + " is already defined in current namespace ");
 								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
 								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(null).get(fname));
 							}	
@@ -440,19 +448,23 @@ DMLProgram __inputInternal() :
 						
 						// import named functions into current namespace. Named functions must NOT exist in current namespace ("null" namespace).
 						else if (importStmt.getImportVarList().size() > 0){
-							for (String fname : importStmt.getImportVarList()) {								if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))
+							for (String fname : importStmt.getImportVarList()) {
+								if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))
 									throw new ParseException("function " + fname + " is already defined in current namespace ");
 								if (!importedProg.getFunctionStatementBlocks(null).containsKey(fname))
 									throw new ParseException("function " + fname + " not defined in module path " + importStmt.getModulePath());
 								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
 								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(null).get(fname));
-							}						}					
+							}
+						}					
 					}
-					catch(Exception e){						throw new ParseException(e.getMessage());
+					catch(Exception e){
+						throw new ParseException(e.getMessage());
 					}
 				} // if (importStmt.verify(dmlPathSet))
 				
-				else {					throw new ParseException("failed to import  " + importStmt.toString());
+				else {
+					throw new ParseException("failed to import  " + importStmt.toString());
 				}
 
 				// add import statement to DML program
@@ -462,14 +474,18 @@ DMLProgram __inputInternal() :
 
 			// handle function declarations
 			else if (sb instanceof FunctionStatementBlock) {
-			  	FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);				try {
+			  	FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
+				try {
 				  // check if the function is defined in the current namespace
 				  if (dmlp.getFunctionStatementBlocks(null).containsKey(first.getName()))
-				 	  throw new LanguageException("function " + first.getName() + " already defined in current namespace ");				  dmlp.getFunctionStatementBlocks(null).put(first.getName(), (FunctionStatementBlock)sb);
-				} catch (LanguageException e) {					throw new ParseException(e.getMessage());
+				 	  throw new LanguageException("function " + first.getName() + " already defined in current namespace ");
+				  dmlp.getFunctionStatementBlocks(null).put(first.getName(), (FunctionStatementBlock)sb);
+				} catch (LanguageException e) {
+					throw new ParseException(e.getMessage());
 				}
 			}	
-			else {			  	dmlp.addStatementBlock(sb);
+			else {
+			  	dmlp.addStatementBlock(sb);
 			}
 		}
 	)+ <EOF>
@@ -480,7 +496,8 @@ DMLProgram __inputInternal() :
 }
 
 PathStatement PathStatement():
-{	Token t1 = null;
+{
+	Token t1 = null;
 	PathStatement pstmt = new PathStatement();
 }
 {
@@ -491,17 +508,21 @@ PathStatement PathStatement():
 			dmlPathSet.addAll(pstmt.getPackagePaths());
 		}
 	[<SEMICOLON>]
-	{		return pstmt;
+	{
+		return pstmt;
 	}
 }
 
-ImportStatement ImportStatement() :{	Token t1 = null, t2 = null, t3 = null, t4 = null;
+ImportStatement ImportStatement() :
+{
+	Token t1 = null, t2 = null, t3 = null, t4 = null;
 	ImportStatement importStmt = new ImportStatement();
 
 	// directory structure of DML package containing module being imported
 	// last entry is the name of the module.
 	ArrayList<String> modulePathPieces = new ArrayList<String>();
-}{
+}
+{
 	<IMPORT> t1 = <ID> {modulePathPieces.add(t1.image);}
 		(<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
 	
@@ -538,13 +559,13 @@ FunctionStatement FunctionStatement() :
 			| LOOKAHEAD(3) current = FunctionStatement()
 			| current = OutputStatement()
 			| current = PrintStatement()
-			| current = Print2Statement()
+		//	| current = Print2Statement()
 			| current = WhileStatement()
 			| current = ForStatement()
 			| current = IfStatement()
-			| current = CVStatement()
-			| current = ELStatement()
-			| current = ELUseStatement()
+		//	| current = CVStatement()
+		//	| current = ELStatement()
+		//	| current = ELUseStatement()
 			
 		){
 			StatementBlock sb = null;
@@ -557,15 +578,15 @@ FunctionStatement FunctionStatement() :
 			else if (current instanceof IfStatement){
 				sb = new IfStatementBlock();	
 			}	
-			else if (current instanceof CVStatement) {
-				sb = new CVStatementBlock() ;
-			}
-			else if (current instanceof ELStatement) {
-				sb = new ELStatementBlock() ;
-			}
-			else if (current instanceof ELUseStatement) {
-				sb = new ELUseStatementBlock() ;
-			}
+			//else if (current instanceof CVStatement) {
+			//	sb = new CVStatementBlock() ;
+			//}
+			//else if (current instanceof ELStatement) {
+			//	sb = new ELStatementBlock() ;
+			//}
+			//else if (current instanceof ELUseStatement) {
+			//	sb = new ELUseStatementBlock() ;
+			//}
 			else if (current instanceof FunctionStatement) {
 				throw new ParseException(" Nested function definitions are not supported ");
 			}
@@ -612,118 +633,6 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 }
 
 
-ELStatement ELStatement() :
-{
-  Token t = null;
-  String eNameStr = null; 
-  CVStatement.AGG agg = null ;
-
-  HashMap<String,String> partitionParams = null;
-
-  ArrayList<String> dataList = new ArrayList<String>();
-  String trainFunctionName = null, testFunctionName = null ;
-  
-  ArrayList<String> partitionOutputs = new ArrayList<String>(), trainFunctionParams = new ArrayList<String>(),
-  			trainFunctionOutputs = new ArrayList<String>(), testFunctionParams = new ArrayList<String>(),
-  			testFunctionOutputs = new ArrayList<String>(), errorAggFunctionParams = new ArrayList<String>(),
-  			errorAggFunctionOutputs = new ArrayList<String>();
-
-}
-{
-	<BUILD><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
-	<PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
-	<TRAIN> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  [<AS> trainFunctionOutputs = ReadList()]
-    [<TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()]
-
-	{
-
- 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-							trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-							testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-							partitionOutputs, 
-							agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-	  	return new ELStatement(eNameStr, dataList, partitionParams, params) ;
-	}
-}
-
-
-ELUseStatement ELUseStatement() :
-{
-  Token t = null, aggfunc = null;
-  String eNameStr = null;
-  HashMap<String,String> partitionParams = null;
-  String trainFunctionName = null, testFunctionName = null ;
-
-  ArrayList<String> dataList = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
-  		trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
-  		testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
-  		errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
- 
-}
-{
-	<USE><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
-    <TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()
-	<AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
-
-	{
-
-	  	CVStatement.AGG agg = null ;
-	   	if("sum".equals(aggfunc.image))
-	  		agg = CVStatement.AGG.sum ;
-	 	else if("avg".equals(aggfunc.image))
-	  		agg = CVStatement.AGG.avg ;
-
- 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-							trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-							testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-							partitionOutputs, 
-							agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-	  return new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
-	}
-
-}
-
-
-
-CVStatement CVStatement() :
-{
-  Token t;
-
-  String trainFunctionName = null, testFunctionName = null ;
-
-  ArrayList<String> inputs = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
-  	trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
-  	testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
-  	errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
-
-  CVStatement.AGG agg = null ;
-
-  HashMap<String,String> partitionParams ;
-
-  Token aggfunc = null;
-}
-{
-	<CROSSVAL> inputs = ReadList()
-	<PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
-	<TRAIN> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  <AS> trainFunctionOutputs = ReadList()
-	<TEST>  t = <ID> { testFunctionName  = t.image; } testFunctionParams = ReadList()  <AS> testFunctionOutputs   = ReadList()
-	<AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
-	{
-	  if("sum".equals(aggfunc.image))
-	  	agg = CVStatement.AGG.sum ;
-	  else if("avg".equals(aggfunc.image))
-	  	agg = CVStatement.AGG.avg ;
-
- 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters (trainFunctionName, trainFunctionParams, trainFunctionOutputs,
- 														 testFunctionName,  testFunctionParams,  testFunctionOutputs,
- 													     partitionOutputs, agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-	  	return new CVStatement(inputs, partitionParams, params) ;
-	}
-}
-
 
 HashMap <String,String > ReadGenericParamList() :
 {
@@ -743,7 +652,8 @@ HashMap <String,String > ReadGenericParamList() :
 	 | doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString()); }
 	 | boolid = BooleanConstant() { map.put(t1.image, boolid.toString()); }
 	 | t2 = <SQL_STRING_LITERAL> { map.put(t1.image, dequoteStr('\'',t2.image)); }
-	 | t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
+	 | t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
+
 	)
 	( < COMMA > t1 = < ID > <ASSIGN>
 	(
@@ -773,10 +683,12 @@ Vector<DataIdentifier> ReadTypedArgList() :
   
 } 
 
-{  
+{
+  
   <LEFTPAREN> 
 	  t1 =<ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>] d1 = Identifier() 
-	 	(	 	  <ASSIGN>	intid = IntConstant() { d1.setDefaultValue(intid.toString());}
+	 	(
+	 	  <ASSIGN>	intid = IntConstant() { d1.setDefaultValue(intid.toString());}
 	 				| doubleid = DoubleConstant() { d1.setDefaultValue(doubleid.toString()); }
 	 				| boolid = BooleanConstant()  { d1.setDefaultValue(boolid.toString()); }
 	 				| t3 = <SQL_STRING_LITERAL>   { d1.setDefaultValue(dequoteStr('\'',t3.image)); }
@@ -785,16 +697,21 @@ Vector<DataIdentifier> ReadTypedArgList() :
 		)?
 
 		{
-	  	  if (t1.image.equalsIgnoreCase("matrix")){				if (t2 == null){					throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
+	  	  if (t1.image.equalsIgnoreCase("matrix")){
+				if (t2 == null){
+					throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
 				}
-				else{					dataType = "matrix";
+				else{
+					dataType = "matrix";
 					valueType = t2.image;
 				}
 	  	   }
-		   else if (t1.image.equalsIgnoreCase("object")){				dataType = "object";
+		   else if (t1.image.equalsIgnoreCase("object")){
+				dataType = "object";
 				valueType = "object";
 		   }
-	  	   else {	  	    	dataType = "scalar";
+	  	   else {
+	  	    	dataType = "scalar";
 	  	    	valueType = t1.image;
 	       }
 		  	d1.setTypeInfo(valueType, dataType);  	   
@@ -802,7 +719,8 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	    }
 
 	(<COMMA>  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier()
-		(		   <ASSIGN>
+		(
+		   <ASSIGN>
 		 	intid = IntConstant() 		  { d2.setDefaultValue(intid.toString());}
 	 		| doubleid = DoubleConstant() { d2.setDefaultValue(doubleid.toString()); }
 	 		| boolid = BooleanConstant()  { d2.setDefaultValue(boolid.toString()); }
@@ -851,7 +769,8 @@ ArrayList<String> ReadList() :
 
 
 ArrayList<ArrayList<Expression>> ReadIndexList() :
-{  ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
+{
+  ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
   ArrayList<Expression> targetList = new ArrayList<Expression>();
   Expression target = null;
 }
@@ -876,13 +795,17 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 }
 
 ArrayList<Expression> ColonDelimitedExpression() :
-{	ArrayList<Expression> exprsList = new ArrayList<Expression>();
+{
+	ArrayList<Expression> exprsList = new ArrayList<Expression>();
 	Expression left = null, right = null;
 }
-{	[left = Expression()] <COLON> [right = Expression()]	
+{
+	[left = Expression()] <COLON> [right = Expression()]	
 	{
 		exprsList.add(left); 
-		exprsList.add(right); 		return exprsList;	}
+		exprsList.add(right); 
+		return exprsList;
+	}
 }
 
 MultiAssignmentStatement MultiAssignmentStatement() :
@@ -907,7 +830,9 @@ AssignmentStatement AssignmentStatement() :
 }
 {
 	 target = Identifier()
-	 {		if (target.getName().startsWith("$"))			throw new ParseException("cannot assign variable on left-hand side of assignment statement from command-line");
+	 {
+		if (target.getName().startsWith("$"))
+			throw new ParseException("cannot assign variable on left-hand side of assignment statement from command-line");
 	 }
 	 <ASSIGN>
       source = Expression()
@@ -934,14 +859,14 @@ IfStatement IfStatement() :
 			|  LOOKAHEAD(3) current = InputStatement() 
 			|  current = OutputStatement()
 			|  current = PrintStatement()
-			|  current = Print2Statement()
+		//	|  current = Print2Statement()
 			|  LOOKAHEAD(2) current = WhileStatement()
 			|  current = ForStatement()
 			|  current = IfStatement()
 			|  LOOKAHEAD(RandStatement()) current = RandStatement()
-			|  current = CVStatement()
-			|  current = ELStatement()
-			|  current = ELUseStatement()
+		//	|  current = CVStatement()
+		//	|  current = ELStatement()
+		//	|  current = ELUseStatement()
 			
 			){
 				StatementBlock sb = null;
@@ -954,15 +879,15 @@ IfStatement IfStatement() :
 				else if (current instanceof ForStatement) {
 					sb = new ForStatementBlock();
 				}
-				else if (current instanceof CVStatement) {
-					sb = new CVStatementBlock() ;
-				}
-				else if (current instanceof ELStatement) {
-					sb = new ELStatementBlock() ;
-				}
-				else if (current instanceof ELUseStatement) {
-					sb = new ELUseStatementBlock() ;
-				}	
+				//else if (current instanceof CVStatement) {
+				//	sb = new CVStatementBlock() ;
+				//}
+				//else if (current instanceof ELStatement) {
+				//	sb = new ELStatementBlock() ;
+				//}
+				//else if (current instanceof ELUseStatement) {
+				//	sb = new ELUseStatementBlock() ;
+				//}	
 				else {
 					sb = new StatementBlock();
 				}
@@ -983,14 +908,14 @@ IfStatement IfStatement() :
 			| LOOKAHEAD(3) current = InputStatement() 
 			|  current = OutputStatement()
 			|  current = PrintStatement()
-			|  current = Print2Statement()
+		//	|  current = Print2Statement()
 			|  LOOKAHEAD(2) current = WhileStatement()
 			|  current = ForStatement()
 			|  current = IfStatement()
 			| LOOKAHEAD(RandStatement()) current = RandStatement()
-			|  current = CVStatement()
-			|  current = ELStatement()
-			|  current = ELUseStatement()
+		//	|  current = CVStatement()
+		//	|  current = ELStatement()
+		//	|  current = ELUseStatement()
 			
 			){
 				StatementBlock sb = null;
@@ -1003,15 +928,15 @@ IfStatement IfStatement() :
 				else if (current instanceof ForStatement) {
 					sb = new ForStatementBlock();
 				}
-				else if (current instanceof CVStatement) {
-					sb = new CVStatementBlock() ;
-				}
-				else if (current instanceof ELStatement) {
-					sb = new ELStatementBlock() ;
-				}
-				else if (current instanceof ELUseStatement) {
-					sb = new ELUseStatementBlock() ;
-				}
+				//else if (current instanceof CVStatement) {
+				//	sb = new CVStatementBlock() ;
+				//}
+				//else if (current instanceof ELStatement) {
+				//	sb = new ELStatementBlock() ;
+				//}
+				//else if (current instanceof ELUseStatement) {
+				//	sb = new ELUseStatementBlock() ;
+				//}
 				else {
 					sb = new StatementBlock();
 				}
@@ -1022,7 +947,8 @@ IfStatement IfStatement() :
 	
 		<RIGHTCURLYPAREN>
 		{
-		  is.mergeStatementBlocksElseBody();		}
+		  is.mergeStatementBlocksElseBody();
+		}
 	)?
 	{
 		return is;
@@ -1044,14 +970,14 @@ ForStatement ForStatement() :
 		| LOOKAHEAD(3) current = InputStatement() 
 		|  current = OutputStatement()
 		|  current = PrintStatement()
-	    |  current = Print2Statement()
+   //   |  current = Print2Statement()
 		|  LOOKAHEAD(2) current = WhileStatement()
 		|  current = ForStatement()
 		|  current = IfStatement()
 		| LOOKAHEAD(RandStatement()) current = RandStatement()
-		|  current = CVStatement()
-		|  current = ELStatement()
-		|  current = ELUseStatement()
+	//	|  current = CVStatement()
+	//	|  current = ELStatement()
+	//	|  current = ELUseStatement()
 	
 	){
 		StatementBlock sb = null;
@@ -1064,15 +990,15 @@ ForStatement ForStatement() :
 		else if (current instanceof ForStatement) {
 			sb = new ForStatementBlock();
 		}
-		else if (current instanceof CVStatement) {
-			sb = new CVStatementBlock() ;
-		}
-		else if (current instanceof ELStatement) {
-			sb = new ELStatementBlock() ;
-		}
-		else if (current instanceof ELUseStatement) {
-			sb = new ELUseStatementBlock() ;
-		}
+		//else if (current instanceof CVStatement) {
+		//	sb = new CVStatementBlock() ;
+		//}
+		//else if (current instanceof ELStatement) {
+		//	sb = new ELStatementBlock() ;
+		//}
+		//else if (current instanceof ELUseStatement) {
+		//	sb = new ELUseStatementBlock() ;
+		//}
 		else {
 			sb = new StatementBlock();
 		}
@@ -1103,14 +1029,14 @@ WhileStatement WhileStatement() :
 		| LOOKAHEAD(3) current = InputStatement() 
 		|  current = OutputStatement()
 		|  current = PrintStatement()
-		|  current = Print2Statement()
+	//	|  current = Print2Statement()
 		|  LOOKAHEAD(2) current = WhileStatement()
 		|  current = ForStatement()
 		|  current = IfStatement()
 		| LOOKAHEAD(RandStatement()) current = RandStatement()
-		|  current = CVStatement()
-		|  current = ELStatement()
-		|  current = ELUseStatement()
+	//	|  current = CVStatement()
+	//	|  current = ELStatement()
+	//	|  current = ELUseStatement()
 	
 	){
 		StatementBlock sb = null;
@@ -1123,15 +1049,15 @@ WhileStatement WhileStatement() :
 		else if (current instanceof ForStatement) {
 			sb = new ForStatementBlock();
 		}
-		else if (current instanceof CVStatement) {
-			sb = new CVStatementBlock() ;
-		}
-		else if (current instanceof ELStatement) {
-			sb = new ELStatementBlock() ;
-		}
-		else if (current instanceof ELUseStatement) {
-			sb = new ELUseStatementBlock() ;
-		}
+		//else if (current instanceof CVStatement) {
+		//	sb = new CVStatementBlock() ;
+		//}
+		//else if (current instanceof ELStatement) {
+		//	sb = new ELStatementBlock() ;
+		//}
+		//else if (current instanceof ELUseStatement) {
+		//	sb = new ELUseStatementBlock() ;
+		//}
 		else {
 			sb = new StatementBlock();
 		}
@@ -1149,12 +1075,58 @@ WhileStatement WhileStatement() :
 }
  
 IterablePredicate IterablePredicate() :
-{	Expression range;
-	Identifier iterVar;
-}{	<LEFTPAREN>
-	iterVar = Identifier() <IN> range = Expression()
+{
+	DataIdentifier iterVar = null;
+	int from = 0, to = 0;
+	int increment = 1;
+	ArrayList<String> params = null;
+	ArrayList<Expression> exprParams = null; 
+}
+{
+	<LEFTPAREN>
+	
+		iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> params = ReadList()) )
+		{
+
+			if (params == null && exprParams == null)
+			{
+				throw new ParseException("iterable predicate in for loop must specify parameters"); 
+			}
+
+			if (params != null)
+			{
+				// use params from seq(from, to, [increment]?)
+				if (params.size() <  2 || params.size() > 3)
+				{
+					throw new ParseException("for seq, must specify both from and to value and cannot specify more than 3 args to seq");
+				}
+				else
+				{
+					from = new Integer(params.get(0));
+					to   = new Integer(params.get(1));
+					increment = (params.size() == 3) ? new Integer(params.get(2)) : 1;  
+				} 
+				
+			}
+			else {
+				// use exprParams
+				if (exprParams.size() !=2 && exprParams.get(0) instanceof IntIdentifier && exprParams.get(1) instanceof IntIdentifier)
+				{
+					throw new ParseException("for predicate can only specify two integer predicates --- value of from and to ");
+				}
+
+				IntIdentifier fromExpr = (IntIdentifier)exprParams.get(0);
+				IntIdentifier toExpr   = (IntIdentifier)exprParams.get(1);
+				from = new Long(fromExpr.getValue()).intValue();
+				to = new Long(toExpr.getValue()).intValue();
+				increment = 1;
+			}
+		  
+		//	if (params.size() > 2)
+		}
+		
 	<RIGHTPAREN>
-	{return new IterablePredicate(iterVar, range);}
+	{return new IterablePredicate(iterVar, from, to, increment);}
 }
 
 ConditionalPredicate ConditionalPredicate() :  
@@ -1379,13 +1351,17 @@ Identifier IdentifierOrConstant() :
 
 {
 	(
-	   id = Identifier()			///////// BEGIN handle variable param ///////////////
-		{		  
+	   id = Identifier()
+	
+		///////// BEGIN handle variable param ///////////////
+		{
+		  
 			if (((DataIdentifier)id).getName().startsWith("$")){
 				// replace with constant of appropriate type
 				String argVal = commandArgs.get(((DataIdentifier)id).getName());
 
-				if (argVal == null)					System.out.println("ERROR: value for " + ((DataIdentifier)id).getName() + " is undefined ");
+				if (argVal == null)
+					System.out.println("ERROR: value for " + ((DataIdentifier)id).getName() + " is undefined ");
 				
 				
 				try {
@@ -1551,7 +1527,8 @@ DataIdentifier Identifier() :
 	FunctionCallIdentifier functCall = null;
 	ArrayList<ArrayList<Expression>> exprListList = null;
 }
-{
+
+{
 	[LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
 		
 	{
@@ -1559,9 +1536,11 @@ DataIdentifier Identifier() :
 		
 		if (functCall != null) {
 		    String namespaceName = (tNamespace == null) ? null : tNamespace.image;
-		  	functCall.setFunctionNamespace(namespaceName);		 	functCall.setFunctionName(t.image);
+		  	functCall.setFunctionNamespace(namespaceName);
+		 	functCall.setFunctionName(t.image);
 			return functCall;
-		} else if (exprListList != null){			id.setIndices(exprListList);
+		} else if (exprListList != null){
+			id.setIndices(exprListList);
 			return id;
 		} else{
 			return id; 
@@ -1576,7 +1555,8 @@ FunctionCallIdentifier FunctionCall():
 	FunctionCallIdentifier functCall = null;
 	ArrayList<Expression> exprs = new ArrayList<Expression>();
 }
-{	  <LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>		
+{
+	  <LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>		
 	{
 		functCall = new FunctionCallIdentifier(exprs);
 		return functCall;
@@ -1592,7 +1572,8 @@ Expression ParameterizedBuiltInFunction():
 }
 {
 	( 	<CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
-		| < GROUPEDAGG > {bifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;}		 
+		| < GROUPEDAGG > {bifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;}
+		 
 	)
 	
 	pbfe = readParameterizedBuiltInParameters()
@@ -1693,12 +1674,12 @@ InputStatement InputStatement() :
 	 InputStatement is = null;
 }
 {
-	 id = Identifier()	 {
+	 id = Identifier()
+	 {
 		if (id.getName().startsWith("$"))
 	 		throw new ParseException("command-line parameters (e.g. $1) do not support assignment");
 	 }
-	 <ASSIGN>
-	 (<READMATRIX> | < READMARKETMATRIX >)
+	 <ASSIGN> <READMATRIX>
 	 is = ReadInputStatementParamList() [<SEMICOLON>]
 	{
 		is.setIdentifier(id);
@@ -1719,8 +1700,11 @@ InputStatement ReadInputStatementParamList() :
 
 
 { <LEFTPAREN> 
-	 (	   t1 = <DBLQUOTE_STRING_LITERAL>  {is.setFileName(dequoteStr('\"',t1.image));}
-	 	| t2 = <ID>	 	{	 	  
+	 (
+	   t1 = <DBLQUOTE_STRING_LITERAL>  {is.setFileName(dequoteStr('\"',t1.image));}
+	 	| t2 = <ID>
+	 	{
+	 	  
 			if (t2.image.startsWith("$")){
 						  
 				String argVal = commandArgs.get(t2.image);
@@ -1794,16 +1778,17 @@ OutputStatement OutputStatement() :
 	 DoubleIdentifier doubleid = null;
 }
 {
-	    (<WRITEMATRIX> | < WRITEMARKETMATRIX >)
-	      <LEFTPAREN>
+	    <WRITEMATRIX> <LEFTPAREN>
 
 	     // name of variable to be written out 
-	     fn = Identifier()	     {
+	     fn = Identifier()
+	     {
 	     	os = new OutputStatement(fn, null);
 	     }
 
 	     <COMMA>
- 		(		  	t1 = <DBLQUOTE_STRING_LITERAL>  {os.setFileName(dequoteStr('\"',t1));}
+ 		(
+		  	t1 = <DBLQUOTE_STRING_LITERAL>  {os.setFileName(dequoteStr('\"',t1));}
 		  		| t3 = Identifier()
 
 			  		///////// BEGIN handle variable param ///////////////
@@ -1834,7 +1819,9 @@ OutputStatement OutputStatement() :
 						if (t3.getName().startsWith("$")){
 							// replace
 							String argVal = commandArgs.get(t3.getName());
-							if (argVal == null)								System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");							  
+							if (argVal == null)
+								System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");
+							  
 							try {
 								Long longVal = new Long(argVal);
 								os.addStringParam(t1.image, longVal.toString()); 
@@ -1894,6 +1881,7 @@ PrintStatement PrintStatement() :
 	{return ps;}
 }
 
+/*
 Print2Statement Print2Statement() :
 {
 	 Expression source;
@@ -1905,6 +1893,7 @@ Print2Statement Print2Statement() :
 			return new Print2Statement(source);
 		}
 }
+*/
 
 void RelationalOp() : {}
 {
@@ -1935,27 +1924,36 @@ RandStatement RandStatement() :
 			| t3 = Identifier()
 				///////// BEGIN handle variable param ///////////////
 				{
-					if (t3.getName().startsWith("$")){						// replace
+					if (t3.getName().startsWith("$")){
+						// replace
 						String argVal = commandArgs.get(t3.getName());
 							System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");
-						try {							Long longVal = new Long(argVal);
+						try {
+							Long longVal = new Long(argVal);
 							rs.addLongParam(t1.image, longVal.longValue()); 
 							
 						} catch(Exception e1){
-						  	try {						  	  Double doubleVal = new Double(argVal);
+						  	try {
+						  	  Double doubleVal = new Double(argVal);
 						  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
 						  	  
-						  	} catch (Exception e2) {																if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+						  	} catch (Exception e2) {
+								
+								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
 									Boolean boolVal = new Boolean(argVal);
 						  	  		rs.addStringParam(t1.image, argVal);
 								}
-								else {									rs.addStringParam(t1.image, dequoteStr('\"', argVal));
+								else {
+									rs.addStringParam(t1.image, dequoteStr('\"', argVal));
 								}	
 	
-						  	} // end catch e2						  						  	 
+						  	} // end catch e2
+						  						  	 
 						} // end catch e1
 							
-					}					else {						rs.addVarParam(t1.image, t3);
+					}
+					else {
+						rs.addVarParam(t1.image, t3);
 					}
 			  	}
 
@@ -2015,3 +2013,127 @@ RandStatement RandStatement() :
 		return rs;
 	}
 }
+
+
+
+/**
+
+
+ELStatement ELStatement() :
+{
+  Token t = null;
+  String eNameStr = null; 
+  CVStatement.AGG agg = null ;
+
+  HashMap<String,String> partitionParams = null;
+
+  ArrayList<String> dataList = new ArrayList<String>();
+  String trainFunctionName = null, testFunctionName = null ;
+  
+  ArrayList<String> partitionOutputs = new ArrayList<String>(), trainFunctionParams = new ArrayList<String>(),
+  			trainFunctionOutputs = new ArrayList<String>(), testFunctionParams = new ArrayList<String>(),
+  			testFunctionOutputs = new ArrayList<String>(), errorAggFunctionParams = new ArrayList<String>(),
+  			errorAggFunctionOutputs = new ArrayList<String>();
+
+}
+{
+	<BUILD><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
+	<PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
+	<TRAIN> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  [<AS> trainFunctionOutputs = ReadList()]
+    [<TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()]
+
+	{
+
+ 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+							trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+							testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+							partitionOutputs, 
+							agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+
+	  	return new ELStatement(eNameStr, dataList, partitionParams, params) ;
+	}
+}
+
+ELUseStatement ELUseStatement() :
+{
+  Token t = null, aggfunc = null;
+  String eNameStr = null;
+  HashMap<String,String> partitionParams = null;
+  String trainFunctionName = null, testFunctionName = null ;
+
+  ArrayList<String> dataList = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
+  		trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
+  		testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
+  		errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
+ 
+}
+{
+	<USE><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
+    <TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()
+	<AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
+
+	{
+
+	  	CVStatement.AGG agg = null ;
+	   	if("sum".equals(aggfunc.image))
+	  		agg = CVStatement.AGG.sum ;
+	 	else if("avg".equals(aggfunc.image))
+	  		agg = CVStatement.AGG.avg ;
+
+ 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+							trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+							testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+							partitionOutputs, 
+							agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+
+	  return new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
+	}
+
+}
+
+
+
+CVStatement CVStatement() :
+{
+  Token t;
+
+  String trainFunctionName = null, testFunctionName = null ;
+
+  ArrayList<String> inputs = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
+  	trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
+  	testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
+  	errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
+
+  CVStatement.AGG agg = null ;
+
+  HashMap<String,String> partitionParams ;
+
+  Token aggfunc = null;
+}
+{
+	<CROSSVAL> inputs = ReadList()
+	<PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
+	<TRAIN> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  <AS> trainFunctionOutputs = ReadList()
+	<TEST>  t = <ID> { testFunctionName  = t.image; } testFunctionParams = ReadList()  <AS> testFunctionOutputs   = ReadList()
+	<AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
+	{
+	  if("sum".equals(aggfunc.image))
+	  	agg = CVStatement.AGG.sum ;
+	  else if("avg".equals(aggfunc.image))
+	  	agg = CVStatement.AGG.avg ;
+
+ 		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters (trainFunctionName, trainFunctionParams, trainFunctionOutputs,
+ 														 testFunctionName,  testFunctionParams,  testFunctionOutputs,
+ 													     partitionOutputs, agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+
+	  	return new CVStatement(inputs, partitionParams, params) ;
+	}
+}
+
+**/
+
+
+
+
+
+

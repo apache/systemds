@@ -3,5 +3,5 @@ A=Rand(rows = $1, cols = 1, min = $2, max = $3);
 needRoundOff=$4;
 if(needRoundOff==1)
 {A=round(A)}
-writeMM(A, $5, format="text");
+write(A, $5, format="text");
 

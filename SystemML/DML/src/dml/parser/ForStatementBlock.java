@@ -14,6 +14,10 @@ public class ForStatementBlock extends StatementBlock {
 	private Hops _predicateHops;
 	private Lops _predicateLops = null;
 	
+	
+	public IterablePredicate getIterPredicate(){
+		return ((ForStatement)_statements.get(0)).getIterablePredicate();
+	}
 
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, IOException {
 		
@@ -25,8 +29,8 @@ public class ForStatementBlock extends StatementBlock {
 		
 		IterablePredicate predicate = fs.getIterablePredicate();
 		
-		// process the statement blocks in the body of the while statement
-		predicate.getPredicate().validateExpression(ids.getVariables());
+		// process the statement blocks in the body of the for statement
+		predicate.validateExpression(ids.getVariables());
 		ArrayList<StatementBlock> body = fs.getBody();
 		
 		this._dmlProg = dmlProg;

@@ -1,7 +1,6 @@
 package dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import dml.utils.LanguageException;
 
@@ -46,7 +45,6 @@ public class WhileStatement extends Statement{
 		return true;
 	}
 	
-
 
 	public void mergeStatementBlocks(){
 		_body = StatementBlock.mergeStatementBlocks(_body);

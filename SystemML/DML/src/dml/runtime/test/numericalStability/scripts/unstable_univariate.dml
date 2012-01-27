@@ -1,4 +1,4 @@
-X = readMM($1, rows=$2, cols=1, format="text")
+X = read($1, rows=$2, cols=1, format="text")
 
 n = $2
 
@@ -41,9 +41,9 @@ varHelper=var*Helper
 g2Helper=g2*Helper
 g1Helper=g1*Helper
 
-writeMM(muHelper,$3,format="binary")
-writeMM(stdHelper,$4,format="binary")
-writeMM(varHelper,$5,format="binary")
-writeMM(g2Helper,$6,format="binary")
-writeMM(g1Helper,$7,format="binary")
-writeMM(s1Helper,$8,format="binary")
+write(muHelper,$3,format="binary")
+write(stdHelper,$4,format="binary")
+write(varHelper,$5,format="binary")
+write(g2Helper,$6,format="binary")
+write(g1Helper,$7,format="binary")
+write(s1Helper,$8,format="binary")

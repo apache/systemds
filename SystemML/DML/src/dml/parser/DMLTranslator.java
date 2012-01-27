@@ -4,11 +4,7 @@ package dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map.Entry;
-
-import dml.parser.*;
 
 import dml.hops.AggBinaryOp;
 import dml.hops.AggUnaryOp;
@@ -16,6 +12,7 @@ import dml.hops.BinaryOp;
 import dml.hops.DataOp;
 import dml.hops.Hops;
 import dml.hops.LiteralOp;
+import dml.hops.ParameterizedBuiltinOp;
 import dml.hops.RandOp;
 import dml.hops.ReorgOp;
 import dml.hops.TertiaryOp;
@@ -28,20 +25,15 @@ import dml.hops.Hops.OpOp2;
 import dml.hops.Hops.OpOp3;
 import dml.hops.Hops.ParamBuiltinOp;
 import dml.hops.Hops.VISIT_STATUS;
-import dml.hops.ParameterizedBuiltinOp;
-import dml.lops.DoubleVal;
-import dml.lops.IndexPair;
 import dml.lops.Lops;
-import dml.lops.VAL;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import dml.sql.sqlcontrolprogram.SQLCleanup;
-import dml.sql.sqlcontrolprogram.SQLCreateBase;
+import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLCreateTable;
 import dml.sql.sqlcontrolprogram.SQLDeclare;
-import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLIfElseProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLOverwriteScalar;
 import dml.sql.sqlcontrolprogram.SQLOverwriteTable;
@@ -286,8 +278,11 @@ public class DMLTranslator {
 				constructLops(stmtBlock);
 			
 			// handle for stmt predicate
-			Lops l = ((ForStatementBlock) sb).getPredicateHops().constructLops();
-			((ForStatementBlock) sb).set_predicateLops(l);		
+			Hops predicateHops = ((ForStatementBlock) sb).getPredicateHops();
+			if (predicateHops != null){
+				Lops l = ((ForStatementBlock) sb).getPredicateHops().constructLops();
+				((ForStatementBlock) sb).set_predicateLops(l);
+			}
 		}
 		else if (sb instanceof FunctionStatementBlock){
 			FunctionStatement functStmt = (FunctionStatement)sb.getStatement(0);
@@ -1051,10 +1046,13 @@ public class DMLTranslator {
 			ForStatementBlock fsb = (ForStatementBlock) current; 
 			Hops predicateHops = ((ForStatementBlock) current).getPredicateHops();
 			System.out.println("********************** PREDICATE LOPS *******************");
-			Lops predicateLops = predicateHops.get_lops();
-			if (predicateLops == null)
-				predicateLops = predicateHops.constructLops();
-			predicateLops.printMe();
+			if (predicateHops != null){
+				Lops predicateLops = predicateHops.get_lops();
+				if (predicateLops != null) {
+					predicateLops = predicateHops.constructLops();
+					predicateLops.printMe();
+				}
+			}
 			
 			if (fsb.getNumStatements() > 1)
 				throw new HopsException("ForStatementBlock has more than 1 statement");
@@ -1170,7 +1168,7 @@ public class DMLTranslator {
 			ForStatementBlock wstb = (ForStatementBlock) current; 
 			Hops predicateHops = wstb.getPredicateHops();
 			System.out.println("********************** PREDICATE HOPS *******************");
-			predicateHops.printMe();
+			if (predicateHops != null) predicateHops.printMe();
 		
 			if (wstb.getNumStatements() > 1)
 				System.out.println("error -- while stmt block has more than 1 stmt");
@@ -1277,12 +1275,13 @@ public class DMLTranslator {
 		
 		if (current instanceof ForStatementBlock) {
 			// handle predicate
-			ForStatementBlock wstb = (ForStatementBlock) current;
-			wstb.getPredicateHops().resetVisitStatus();
+			ForStatementBlock fstb = (ForStatementBlock) current;
+			if (fstb.getPredicateHops() != null) 
+				fstb.getPredicateHops().resetVisitStatus();
 		
-			if (wstb.getNumStatements() > 1)
+			if (fstb.getNumStatements() > 1)
 				System.out.println("error -- while stmt block has more than 1 stmt");
-			ForStatement ws = (ForStatement)wstb.getStatement(0);
+			ForStatement ws = (ForStatement)fstb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
 				resetHopsDAGVisitStatus(sb);
@@ -1438,7 +1437,8 @@ public class DMLTranslator {
 		
 		if (current instanceof ForStatementBlock) {
 			ForStatementBlock fsb = (ForStatementBlock) current;
-			fsb.get_predicateLops().resetVisitStatus();
+			if (fsb.get_predicateLops() != null)
+				fsb.get_predicateLops().resetVisitStatus();
 			if (fsb.getNumStatements() > 1)
 				System.out.println("error -- for stmt block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
@@ -1780,7 +1780,7 @@ public class DMLTranslator {
 		ArrayList<StatementBlock> body = whilesb.getBody();
 			
 		// construct hops for iterable predicate
-		constructHopsForIterablePredicate(sb);
+		//constructHopsForIterablePredicate(sb);
 			
 		for (int i = 0; i < body.size(); i++) {
 			StatementBlock current = body.get(i);
@@ -1865,10 +1865,12 @@ public class DMLTranslator {
 			((IfStatementBlock)passedSB).set_predicate_hops(predicateHops);
 	}
 
-	
+	/*
 	public void constructHopsForIterablePredicate(StatementBlock passedSB) throws ParseException {
 
+		
 		HashMap<String, Hops> _ids = new HashMap<String, Hops>();
+		
 		
 		// set iterable predicate
 		ForStatement fs = (ForStatement) ((ForStatementBlock)passedSB).getStatement(0);
@@ -1903,8 +1905,10 @@ public class DMLTranslator {
 			predicateHops = processExpression(ip.getPredicate(), null, _ids);
 		}
 		((ForStatementBlock)passedSB).set_predicate_hops(predicateHops);
+		
+		
 	}
-
+	 */
 	
 	/**
 	 * Construct Hops from parse tree : Process Expression in an assignment

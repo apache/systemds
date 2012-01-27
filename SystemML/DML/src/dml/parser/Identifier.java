@@ -159,6 +159,18 @@ public abstract class Identifier extends Expression{
 		_formatType = null;
 	}
 	
+	public void setIntProperties(){
+		_dataType = DataType.SCALAR;
+		_valueType = ValueType.INT;
+		_dim1 = 0;
+		_dim2 = 0;
+		_rows_in_block = 1;
+		_columns_in_block = 1;
+		_nnzs = 1;
+		_formatType = null;
+	}
+	
+	
 	public boolean isScalarBoolean(){
 		return (_valueType == ValueType.BOOLEAN) && (_dataType == DataType.SCALAR);
 	}

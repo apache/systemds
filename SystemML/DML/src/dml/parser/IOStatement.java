@@ -1,19 +1,14 @@
 package dml.parser;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
 import dml.parser.Expression.DataType;
@@ -100,7 +95,8 @@ public abstract class IOStatement extends Statement{
 	        	exists = false;
 	        }
 	        
-	        // if the MTD file exists
+	        // if the MTD file exists, check the values specified in read statement match
+	        //	values in MTD file
 	        if (exists){
 	        
 		        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
@@ -109,11 +105,11 @@ public abstract class IOStatement extends Statement{
 				for (Object key : configObject.keySet()){
 					
 					if (getStringParam(key.toString()) != null && !getStringParam(key.toString()).equalsIgnoreCase(configObject.get(key).toString()) ){
-						throw new LanguageException("replacing " + key.toString() + " with value " + configObject.get(key).toString() + " from MTX file.  Read statmeent has value " + getStringParam(key.toString()));
+						throw new LanguageException("replacing " + key.toString() + " with value " + configObject.get(key).toString() + " from MTD file.  Read statmeent has value " + getStringParam(key.toString()));
 						//_stringParams.put(key.toString(), configObject.get(key).toString());
 					}
 					else if (getVarParam(key.toString()) != null && !getVarParam(key.toString()).equalsIgnoreCase(configObject.get(key).toString()) ){
-						throw new LanguageException("replacing " + key.toString() + " with value " + configObject.get(key).toString() + " from MTX file. Read statmeent has value " + getVarParam(key.toString()));
+						throw new LanguageException("replacing " + key.toString() + " with value " + configObject.get(key).toString() + " from MTD file. Read statmeent has value " + getVarParam(key.toString()));
 						//_varParams.put(key.toString(), configObject.get(key).toString());
 					}
 					else {

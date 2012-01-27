@@ -1,33 +1,29 @@
 package dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import dml.parser.Expression.ValueType;
+import dml.parser.IterablePredicate;
 import dml.runtime.instructions.Instruction;
-import dml.runtime.instructions.CPInstructions.BooleanObject;
-import dml.runtime.instructions.CPInstructions.CPInstruction;
-import dml.runtime.instructions.CPInstructions.Data;
-import dml.runtime.instructions.CPInstructions.ScalarCPInstruction;
-import dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
-import dml.runtime.matrix.MetaData;
+import dml.runtime.instructions.CPInstructions.IntObject;
+import dml.runtime.instructions.CPInstructions.ScalarObject;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
 
 public class ForProgramBlock extends ProgramBlock {
 
-	private ArrayList<Instruction> _predicate;
-	private String _predicateResultVar;
-	protected ArrayList <Instruction> _exitInstructions ;
-	private ArrayList<ProgramBlock> _childBlocks;
+	protected ArrayList<Instruction> 	_predicate;
+	protected ArrayList <Instruction> 	_exitInstructions ;
+	private ArrayList<ProgramBlock> 	_childBlocks;
+
+	protected IterablePredicate			_iterablePredicate;
 	
 	public void printMe() {
 		
-		System.out.println("***** current for block predicate inst: *****");
-		for (Instruction cp : _predicate){
-			cp.printMe();
-		}
+		//System.out.println("***** current for block predicate inst: *****");
+		//for (Instruction cp : _predicateInst){
+		//	cp.printMe();
+		//}
 		
 		System.out.println("***** children block inst: *****");
 		for (ProgramBlock pb : this._childBlocks){
@@ -42,42 +38,52 @@ public class ForProgramBlock extends ProgramBlock {
 		
 	}
 	
+	/*
 	public ForProgramBlock(Program prog, ArrayList<Instruction> predicate){
 		super(prog);
 		_predicate = predicate;
-		_predicateResultVar = findPredicateResultVar ();
+		//_predicateResultVar = findPredicateResultVar ();
 		_exitInstructions = new ArrayList<Instruction>();
 		_childBlocks = new ArrayList<ProgramBlock>(); 
 	}
-
-	public void setExitInstructions2(ArrayList<Instruction> exitInstructions){
-		_exitInstructions = exitInstructions;
+	*/
+	
+	public ForProgramBlock(Program prog, IterablePredicate iterPred){
+		super(prog);
+		//_predicate = null;
+		//_predicateResultVar = findPredicateResultVar ();
+		_exitInstructions = new ArrayList<Instruction>();
+		_childBlocks = new ArrayList<ProgramBlock>(); 
+		_iterablePredicate = iterPred;
+		
 	}
-
-	public void setExitInstructions1(ArrayList<Instruction> predicate){
-		_predicate = predicate;
-	}
+	
+		
+	//public void setExitInstructions1(ArrayList<Instruction> predicate){
+	//	_predicate = predicate;
+	//}
 	
 	public void addExitInstruction(Instruction inst){
 		_exitInstructions.add(inst);
 	}
 	
-	public ArrayList<Instruction> getPredicate(){
-		return _predicate;
-	}
+	//public ArrayList<Instruction> getPredicate(){
+	//	return _predicate;
+	//}
 	
-	public String getPredicateResultVar(){
-		return _predicateResultVar;
-	}
+	//public String getPredicateResultVar(){
+	//	return _predicateResultVar;
+	//}
 	
-	public void setPredicateResultVar(String resultVar) {
-		_predicateResultVar = resultVar;
-	}
+	//public void setPredicateResultVar(String resultVar) {
+	//	_predicateResultVar = resultVar;
+	//}
 	
 	public ArrayList<Instruction> getExitInstructions(){
 		return _exitInstructions;
 	}
 
+	/*
 	private String findPredicateResultVar ( ) {
 		String result = null;
 		for ( Instruction si : _predicate ) {
@@ -89,7 +95,13 @@ public class ForProgramBlock extends ProgramBlock {
 		}
 		return result;
 	}
+	*/
 	
+	
+	/* for the current For Loop, there are no instructions to execute.  Instead, the iterable 
+	 * predicate variable has it's value updated in the execute() method. 
+	 * 
+	 * 
 	private BooleanObject executePredicate(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		BooleanObject result = null;
 		//TODO change this
@@ -121,13 +133,18 @@ public class ForProgramBlock extends ProgramBlock {
 			throw new DMLRuntimeException("Failed to evaluate the FOR predicate.");
 		return result;
 	}
+	 */	
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
-	
-		BooleanObject predResult = executePredicate(ec); 
 
-		while(predResult.getBooleanValue()){
-			
+		// add the iterable predicate variable to the variable set
+		String iterVarName = _iterablePredicate.getIterVar().getName();
+		IntObject iterValue = new IntObject(iterVarName, _iterablePredicate.getFrom());
+		_variables.put(iterValue.getName(), iterValue);
+		ScalarObject predResult = (ScalarObject)this._variables.get(iterVarName);
+		
+		while(predResult.getIntValue() <= _iterablePredicate.getTo()){
+						
 			// for each program block
 			for (ProgramBlock pb : this._childBlocks){
 				
@@ -138,10 +155,17 @@ public class ForProgramBlock extends ProgramBlock {
 				_matrices = pb.getMetaData();
 			}
 			
-			predResult = executePredicate(ec);
+			// update the iterable predicate variable 
+			if (_variables.get(iterVarName) == null || !(_variables.get(iterVarName) instanceof IntObject))
+				throw new DMLRuntimeException("iter predicate " + iterVarName + " must be remain of type scalar int");
+			
+			int newValue = ((ScalarObject)_variables.get(iterVarName)).getIntValue() + _iterablePredicate.getIncrement();
+			_variables.put(iterVarName, new IntObject(iterVarName,newValue));
+			predResult = (ScalarObject)_variables.get(iterVarName);
+			
 		}
 		
-		execute(_exitInstructions, ec);	
+		//execute(_exitInstructions, ec);	
 	}
 
 	public void addProgramBlock(ProgramBlock childBlock) {

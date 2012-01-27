@@ -2,13 +2,10 @@ package dml.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Vector ; 
 
-import dml.lops.Lops;
 import dml.lops.LopProperties;
+import dml.lops.Lops;
 import dml.lops.compile.Dag;
-
 import dml.runtime.controlprogram.CVProgramBlock;
 import dml.runtime.controlprogram.ELProgramBlock;
 import dml.runtime.controlprogram.ELUseProgramBlock;
@@ -20,12 +17,10 @@ import dml.runtime.controlprogram.Program;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.controlprogram.WhileProgramBlock;
 import dml.runtime.instructions.Instruction;
-import dml.runtime.instructions.CPInstructions.CPInstruction;
 import dml.utils.DMLException;
 import dml.utils.LanguageException;
 import dml.utils.LopsException;
 import dml.utils.configuration.DMLConfig;
-import dml.lops.LopProperties;
 
 
 public class DMLProgram {
@@ -273,6 +268,7 @@ public class DMLProgram {
 		else if (sb instanceof ForStatementBlock){
 		
 			// create DAG for loop predicates
+			/*
 			pred_dag = new Dag<Lops>();
 			((ForStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
 			
@@ -282,10 +278,13 @@ public class DMLProgram {
 			for (Instruction i : pInst ) {
 				pred_instruct.add(i);
 			}
+			*/
 			
-			// create while program block
-			ForProgramBlock rtpb = new ForProgramBlock(prog, pred_instruct);
+			// create for program block
+			IterablePredicate iterPred = ((ForStatementBlock)sb).getIterPredicate();
+			ForProgramBlock rtpb = new ForProgramBlock(prog, iterPred);
 			
+			/*
 			if (rtpb.getPredicateResultVar() == null ) {
 				// e.g case : FOR(continue)
 				if ( ((ForStatementBlock) sb).get_predicateLops().getExecLocation() == LopProperties.ExecLocation.Data ) {
@@ -295,8 +294,9 @@ public class DMLProgram {
 				else
 					throw new LopsException("Error in translating the FOR predicate."); 
 			}
+			*/
 			
-			// process the body of the while statement block
+			// process the body of the for statement block
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			if (fsb.getNumStatements() > 1)
 				throw new LopsException("ForStatementBlock should have 1 statement");
@@ -368,7 +368,7 @@ public class DMLProgram {
 			// handle CV case
 			CVStatementBlock cvsb = ((CVStatementBlock)sb) ;
 			
-			CVProgramBlock cvpb = new CVProgramBlock( prog, cvsb.getPartitionParams(), ((CVStatement)cvsb.getStatement(0)).getFunctionParameters(), config) ;		
+			CVProgramBlock cvpb = null; //new CVProgramBlock( prog, cvsb.getPartitionParams(), ((CVStatement)cvsb.getStatement(0)).getFunctionParameters(), config) ;		
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (cvsb.get_lops() != null && cvsb.get_lops().size() > 0){
@@ -401,7 +401,7 @@ public class DMLProgram {
 			// handle EL case
 			ELStatementBlock esb = ((ELStatementBlock)sb) ;
 			
-			ELProgramBlock epb = new ELProgramBlock( prog, esb.getPartitionParams(), ((ELStatement)esb.getStatement(0)).getFunctionParameters(), config) ;		
+			ELProgramBlock epb = null; // new ELProgramBlock( prog, esb.getPartitionParams(), ((ELStatement)esb.getStatement(0)).getFunctionParameters(), config) ;		
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (esb.get_lops() != null && esb.get_lops().size() > 0){
@@ -434,7 +434,7 @@ public class DMLProgram {
 			// handle EL Use case
 			ELUseStatementBlock eusb = ((ELUseStatementBlock)sb) ;
 			
-			ELUseProgramBlock eupb = new ELUseProgramBlock( prog, eusb.getPartitionParams(), ((ELUseStatement)eusb.getStatement(0)).getFunctionParameters(), config) ;		
+			ELUseProgramBlock eupb = null; //new ELUseProgramBlock( prog, eusb.getPartitionParams(), ((ELUseStatement)eusb.getStatement(0)).getFunctionParameters(), config) ;		
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (eusb.get_lops() != null && eusb.get_lops().size() > 0){

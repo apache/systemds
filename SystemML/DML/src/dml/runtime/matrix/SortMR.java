@@ -37,6 +37,7 @@ import dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
 import dml.runtime.matrix.io.Converter;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.MatrixCell;
+import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -104,8 +105,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
         FileSystem fs = FileSystem.get(job);
         Path partFile = new Path(SamplingSortMRInputFormat.PARTITION_FILENAME);
         splitPoints = readPartitions(fs, partFile, job);
- //       System.out.println("num reducers: "+job.getNumReduceTasks());
-
+     //   System.out.println("num reducers: "+job.getNumReduceTasks());
        } catch (IOException ie) {
         throw new IllegalArgumentException("can't read paritions file", ie);
       }
@@ -115,7 +115,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     }
 
     public int getPartition(K key, V value, int numPartitions) {
-  //  	System.out.println("num paritions in getPartition: "+numPartitions);
+    //	System.out.println("num paritions in getPartition: "+numPartitions);
   //  	System.out.println(key+" is in parititon: "+findPartition(key));
       return findPartition(key)%numPartitions;
     }
@@ -241,7 +241,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    FileOutputFormat.setOutputPath(job, outpath);
 	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    job.setNumReduceTasks(numReducers);
+	    //detect whether this is running in local mode or not, since if local mode, the number of reducers are hard set to 1 no matter what
+	//    System.out.println(job.get("fs.default.name"));
+	//    System.out.println(job.get("mapred.job.tracker"));
+	    if(job.get("mapred.job.tracker").indexOf("local")>=0)
+	    	job.setNumReduceTasks(1);
+	    else
+	    	job.setNumReduceTasks(numReducers);
 	    job.setJobName("SortMR");
 	    job.setOutputKeyClass(outputInfo.outputKeyClass);
 	    job.setOutputValueClass(outputInfo.outputValueClass);
@@ -256,7 +262,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    	job.set(INSTRUCTION, instructionBeforesort);
 	    MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
 	    MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, false, brlen, bclen);
-	    SamplingSortMRInputFormat.writePartitionFile(job, partitionFile);
+	    int partitionWith0=SamplingSortMRInputFormat.writePartitionFile(job, partitionFile);
 	    DistributedCache.addCacheFile(partitionUri, job);
 	    DistributedCache.createSymlink(job);
 	    job.setInt("dfs.replication", replication);
@@ -277,21 +283,34 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    RunningJob runjob=JobClient.runJob(job);
 		Group group=runjob.getCounters().getGroup(NUM_VALUES_PREFIX);
 		numReducers=job.getNumReduceTasks();
+	//	System.out.println("num reducers: "+job.getNumReduceTasks());
+		
+		NumItemsByEachReducerMetaData metadata;
 		long[] counts=new long[numReducers];
+		long total=0;
 		for(int i=0; i<numReducers; i++)
 		{
 			counts[i]=group.getCounter(Integer.toString(i));
+			total+=counts[i];
 		//	System.out.println("partition "+i+": "+counts[i]);
 		}
+		//add missing 0s back to the results
+		long missing0s=0;
+		if(total<rlen*clen)
+		{
+			if(partitionWith0<0) throw new RuntimeException("no partition contains 0, which is wrong!");
+			missing0s=rlen*clen-total;
+			counts[partitionWith0]+=missing0s;
+		}else
+			partitionWith0=-1;
+		
 	//	runSelect(output, "some", counts, new double[]{0.4, 0.2, 0.41, 0.7});
 	//	runSelect(output, "some", counts, 0.25, 0.75);//new double[]{0.4, 0.2, 0.45, 0.7});
 	  //  LOG.info("done");
 	    MapReduceTool.deleteFileIfExistOnHDFS(SamplingSortMRInputFormat.PARTITION_FILENAME);
-	    return new JobReturn(stats, counts, runjob.isSuccessful());
-	    
-	    
+	    return new JobReturn(stats, counts, partitionWith0, missing0s, runjob.isSuccessful());
 	  }
- 
+
   /*
   public static void runSelect(String input, String output, long[] counts, double[] probs) throws IOException
   {

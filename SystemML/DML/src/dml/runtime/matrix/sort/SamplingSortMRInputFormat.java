@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Vector;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
@@ -22,8 +21,6 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileRecordReader;
 import org.apache.hadoop.util.IndexedSortable;
 import org.apache.hadoop.util.QuickSort;
-import org.apache.hadoop.util.ReflectionUtils;
-
 import dml.runtime.matrix.SortMR;
 import dml.runtime.matrix.io.Converter;
 import dml.runtime.matrix.io.MatrixCell;
@@ -87,7 +84,7 @@ extends SequenceFileInputFormat<K,V> {
 	 * @param numPartitions the desired number of partitions
 	 * @return an array of size numPartitions - 1 that holds the split points
 	 */
-		Vector<WritableComparable> createPartitions(int numPartitions) {
+		 Vector<WritableComparable> createPartitions(int numPartitions) {
 			int numRecords = records.size();
 		//	System.out.println("Making " + numPartitions + " from " + numRecords + 
           //           " records");
@@ -108,7 +105,10 @@ extends SequenceFileInputFormat<K,V> {
 		//		System.out.println("pivot: "+ret);
 			return result;
 		}
+		
+		 
 	}
+	
 	
 	@Override
 	public RecordReader<K,V> getRecordReader(InputSplit split,
@@ -129,7 +129,7 @@ extends SequenceFileInputFormat<K,V> {
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
 	   */
-	public static void writePartitionFile(JobConf conf, Path partFile) 
+	public static int writePartitionFile(JobConf conf, Path partFile) 
 	  throws IOException, InstantiationException, IllegalAccessException {
 	    
 		SamplingSortMRInputFormat inFormat = new SamplingSortMRInputFormat();
@@ -189,10 +189,22 @@ extends SequenceFileInputFormat<K,V> {
 	    SequenceFile.Writer writer = 
 	    	SequenceFile.createWriter(outFs, conf, partFile, targetKeyClass, NullWritable.class);
 	    NullWritable nullValue = NullWritable.get();
-	    for(Object splitValue : sampler.createPartitions(partitions)) {
+	    int index0=-1;
+	    int i=0;
+	    boolean lessthan0=true;
+	    for(WritableComparable splitValue: sampler.createPartitions(partitions)) {
 	    	writer.append(splitValue, nullValue);
+	    	if(lessthan0 && ((DoubleWritable)splitValue).get()>=0)
+	    	{
+	    		index0=i;
+	    		lessthan0=false;
+	    	}
+	    	i++;
 	    }
+	    if(lessthan0)
+	    	index0=partitions-1;
 	    writer.close();
+	    return index0;
 	  }
 
 	@Override

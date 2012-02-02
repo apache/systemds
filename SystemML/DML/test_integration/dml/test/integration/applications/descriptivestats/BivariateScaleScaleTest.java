@@ -85,8 +85,8 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 
 		long seed = System.currentTimeMillis();
 		//System.out.println("Seed = " + seed);
-        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 1, seed);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 1, seed+1);
+        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed);
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed+1);
 
 		writeInputMatrix("X", X, true);
 		writeInputMatrix("Y", Y, true);
@@ -128,11 +128,11 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 
 		loadTestConfiguration(config);
 
-		long seed = System.currentTimeMillis();
+		//long seed = System.currentTimeMillis();
 		//System.out.println("Seed = " + seed);
-        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 1, seed);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 1, seed);
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, seed);
+        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
         round(WM);
         
 		writeInputMatrix("X", X, true);

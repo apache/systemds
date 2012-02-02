@@ -98,8 +98,8 @@ T=S[(n25+1):n75]
 iqm=mean(T)
 
 # outliers use ppred to describe it
-out_minus = as.numeric(Temp < mu-5*std_dev)*Temp 
-out_plus = as.numeric(Temp > mu+5*std_dev)*Temp
+out_minus = t(as.numeric(Temp < mu-5*std_dev)*Temp) 
+out_plus = t(as.numeric(Temp > mu+5*std_dev)*Temp)
 
 meanHelper=mu*Helper
 stdHelper=std_dev*Helper

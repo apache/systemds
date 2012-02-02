@@ -1,4 +1,4 @@
-package dml.runtime.matrix.io;
+package dml.runtime.matrix.mapred.obsolete;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -12,6 +12,16 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import dml.runtime.functionobjects.Multiply;
+import dml.runtime.functionobjects.Plus;
+import dml.runtime.instructions.CPInstructions.KahanObject;
+import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
+import dml.runtime.matrix.io.MatrixBlock1D;
+import dml.runtime.matrix.io.MatrixIndexes;
+import dml.runtime.matrix.io.MatrixValue;
+import dml.runtime.matrix.io.SparseRow;
+import dml.runtime.matrix.io.MatrixBlock1D.Remain;
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -23,12 +33,8 @@ import dml.runtime.matrix.operators.UnaryOperator;
 import dml.runtime.util.UtilFunctions;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
-import dml.runtime.functionobjects.Multiply;
-import dml.runtime.functionobjects.Plus;
-import dml.runtime.instructions.CPInstructions.KahanObject;
-import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
 
-public class MatrixBlock1D extends MatrixValue{
+public class MatrixBlockDSM extends MatrixValue{
 
 	//protected static final Log LOG = LogFactory.getLog(MatrixBlock1D.class);
 	private int rlen;
@@ -38,12 +44,11 @@ public class MatrixBlock1D extends MatrixValue{
 	private double[] denseBlock=null;
 	private int nonZeros=0;
 	public static final double SPARCITY_TURN_POINT=0.1;
-	//private static final int THRESHOLD_K= (int)(1/(1+Math.log(1+SPARCITY_TURN_POINT)/Math.log(1-SPARCITY_TURN_POINT)));
 	
-	private HashMap<CellIndex, Double> sparseBlock=null;
-	private CellIndex tempCellIndex=new CellIndex(0, 0);
+	private SparseRow[] sparseRows=null;
 	
-	public static boolean checkSparcityOnAggBinary(MatrixBlock1D m1, MatrixBlock1D m2)
+	
+	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
@@ -54,7 +59,7 @@ public class MatrixBlock1D extends MatrixValue{
 		return ( 1-Math.pow(1-pq, k) < SPARCITY_TURN_POINT );
 	}
 	
-	private static boolean checkSparcityOnBinary(MatrixBlock1D m1, MatrixBlock1D m2)
+	private static boolean checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
@@ -66,12 +71,12 @@ public class MatrixBlock1D extends MatrixValue{
 		
 	}
 	
-	private static boolean checkRealSparcity(MatrixBlock1D m)
+	private static boolean checkRealSparcity(MatrixBlockDSM m)
 	{
 		return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
 	}
 	
-	public MatrixBlock1D()
+	public MatrixBlockDSM()
 	{
 		rlen=0;
 		clen=0;
@@ -79,7 +84,7 @@ public class MatrixBlock1D extends MatrixValue{
 		nonZeros=0;
 		maxrow = maxcolumn = 0;
 	}
-	public MatrixBlock1D(int rl, int cl, boolean sp)
+	public MatrixBlockDSM(int rl, int cl, boolean sp)
 	{
 		rlen=rl;
 		clen=cl;
@@ -88,7 +93,7 @@ public class MatrixBlock1D extends MatrixValue{
 		maxrow = maxcolumn = 0;
 	}
 	
-	public MatrixBlock1D(MatrixBlock1D that)
+	public MatrixBlockDSM(MatrixBlockDSM that)
 	{
 		this.copy(that);
 	}
@@ -143,12 +148,20 @@ public class MatrixBlock1D extends MatrixValue{
 		return sparse;
 	}
 	
+	private void resetSparse()
+	{
+		if(sparseRows!=null)
+		{
+			for(int i=0; i<sparseRows.length; i++)
+				if(sparseRows[i]!=null)
+					sparseRows[i].reset();
+		}
+	}
 	public void reset()
 	{
 		if(sparse)
 		{
-			if(sparseBlock!=null)
-				sparseBlock.clear();
+			resetSparse();
 		}
 		else
 		{
@@ -159,8 +172,8 @@ public class MatrixBlock1D extends MatrixValue{
 				else
 					Arrays.fill(denseBlock, 0, rlen*clen, 0);
 			}
-			nonZeros=0;
 		}
+		nonZeros=0;
 	}
 	
 	public void reset(int rl, int cl) {
@@ -180,8 +193,6 @@ public class MatrixBlock1D extends MatrixValue{
 		rlen=rl;
 		clen=cl;
 		sparse=false;
-		if(sparseBlock!=null)
-			sparseBlock.clear();
 		
 		if(v==0)
 		{
@@ -197,26 +208,30 @@ public class MatrixBlock1D extends MatrixValue{
 		nonZeros=limit;
 	}
 	
-	private void copySparseToSparse(MatrixBlock1D that)
+	private void copySparseToSparse(MatrixBlockDSM that)
 	{
 		this.nonZeros=that.nonZeros;
-		if(that.sparseBlock==null)
+		if(that.sparseRows==null)
 		{
-			if(sparseBlock!=null)
-				sparseBlock.clear();
+			resetSparse();
 			return;
 		}
-		
-		if(sparseBlock==null)
-			sparseBlock=new HashMap<CellIndex, Double>(that.sparseBlock);
-		else
+	
+		if(sparseRows==null ||  sparseRows.length<that.sparseRows.length)
 		{
-			sparseBlock.clear();
-			sparseBlock.putAll(that.sparseBlock);
+			sparseRows=new SparseRow[rlen];
+			for(int i=0; i<that.sparseRows.length; i++)
+				if(that.sparseRows[i]!=null)
+					sparseRows[i]=new SparseRow(that.sparseRows[i]);	
+		}else
+		{
+			for(int i=0; i<that.sparseRows.length; i++)
+				if(that.sparseRows[i]!=null)
+					sparseRows[i].copy(that.sparseRows[i]);
 		}
 	}
 	
-	private void copyDenseToDense(MatrixBlock1D that)
+	private void copyDenseToDense(MatrixBlockDSM that)
 	{
 		this.nonZeros=that.nonZeros;
 		
@@ -232,11 +247,10 @@ public class MatrixBlock1D extends MatrixValue{
 		System.arraycopy(that.denseBlock, 0, this.denseBlock, 0, limit);
 	}
 	
-	private void copySparseToDense(MatrixBlock1D that)
+	private void copySparseToDense(MatrixBlockDSM that)
 	{
-		//LOG.info("**** copySparseToDense: "+that.getNumRows()+"x"+that.getNumColumns()+"  nonZeros: "+that.nonZeros);
-		this.nonZeros=0;//set value will increase the nonZeros
-		if(that.sparseBlock==null)
+		this.nonZeros=that.nonZeros;
+		if(that.sparseRows==null)
 		{
 			if(denseBlock!=null)
 				Arrays.fill(denseBlock, 0);
@@ -245,40 +259,60 @@ public class MatrixBlock1D extends MatrixValue{
 		int limit=rlen*clen;
 		if(denseBlock==null || denseBlock.length<limit)
 			denseBlock=new double[limit];
-		Arrays.fill(denseBlock, 0, limit, 0);
-		for(Entry<CellIndex, Double> e: that.sparseBlock.entrySet())
-			setValue(e.getKey(), e.getValue());
+		else
+			Arrays.fill(denseBlock, 0, limit, 0);
+		int start=0;
+		for(int r=0; r<that.sparseRows.length; r++)
+		{
+			double[] values=that.sparseRows[r].getValueContainer();
+			int[] cols=that.sparseRows[r].getIndexContainer();
+			for(int i=0; i<that.sparseRows[r].size(); i++)
+			{
+				denseBlock[start+cols[i]]=values[i];
+			}
+			start+=clen;
+		}
 	}
 	
-	private void copyDenseToSparse(MatrixBlock1D that)
+	private void copyDenseToSparse(MatrixBlockDSM that)
 	{
-		//LOG.info("**** copyDenseToSparse: "+that.getNumRows()+"x"+that.getNumColumns()+"  nonZeros: "+that.nonZeros);
-		this.nonZeros=0;//set value will increase the nonZeros
+		this.nonZeros=that.nonZeros;
 		if(that.denseBlock==null)
 		{
-			if(sparseBlock!=null)
-				sparseBlock.clear();
+			resetSparse();
 			return;
 		}
 		
-		if(sparseBlock==null)
-			sparseBlock=new HashMap<CellIndex, Double>(that.nonZeros);
-		else
-			sparseBlock.clear();
-		
+		if(sparseRows==null ||  sparseRows.length<rlen)
+			sparseRows=new SparseRow[rlen];
+	
 		int n=0;
 		for(int r=0; r<rlen; r++)
+		{
+			int nzrs=0;
 			for(int c=0; c<clen; c++)
 			{
 				if(that.denseBlock[n]!=0)
-					setValue(r, c, that.denseBlock[n]);
+					nzrs++;
 				n++;
 			}
+			if(sparseRows[r]==null)
+				sparseRows[r]=new SparseRow(nzrs);
+			else if(sparseRows[r].capacity()<nzrs)
+				sparseRows[r].recap(nzrs);
+			n-=clen;
+			for(int c=0; c<clen; c++)
+			{
+				if(that.denseBlock[n]!=0)
+					sparseRows[r].append(c, that.denseBlock[n]);
+				n++;
+			}
+		}
 	}
 	
 	public void copy(MatrixValue thatValue) 
 	{
-		MatrixBlock1D that;
+		MatrixBlockDSM that;
 		try {
 			that = checkType(thatValue);
 		} catch (DMLUnsupportedOperationException e) {
@@ -305,47 +339,54 @@ public class MatrixBlock1D extends MatrixValue{
 		return denseBlock;
 	}
 	
+	//TODO: this function is used in many places, but may not be the right api to expose sparse cells.
 	public HashMap<CellIndex, Double> getSparseMap()
 	{
-		if(!sparse)
+		if(!sparse || sparseRows==null)
 			return null;
-		return sparseBlock;
+		HashMap<CellIndex, Double> map=new HashMap<CellIndex, Double>(nonZeros);
+		for(int r=0; r<sparseRows.length; r++)
+		{
+			if(sparseRows[r]==null) continue;
+			double[] values=sparseRows[r].getValueContainer();
+			int[] cols=sparseRows[r].getIndexContainer();
+			for(int i=0; i<sparseRows[r].size(); i++)
+				map.put(new CellIndex(r, cols[i]), values[i]);
+		}
+		return map;
 	}
 	
 	public int getNonZeros()
 	{
-		if(sparse)
-		{
-			if(sparseBlock!=null)
-				return sparseBlock.size();
-			else
-				return 0;
-		}
-		else
-		{
-			if(denseBlock!=null)
-				return nonZeros;
-			else
-				return 0;
-		}
+		return nonZeros;
 	}
 	
 	//only apply to non zero cells
-	public void sparseScalarOperationsInPlace(ScalarOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void sparseScalarOperationsInPlace(ScalarOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if(sparse)
 		{
-			if(sparseBlock==null)
+			if(sparseRows==null)
 				return;
-			Iterator<Entry<CellIndex, Double>> iter=sparseBlock.entrySet().iterator();
-			while(iter.hasNext())
+			
+			for(int r=0; r<sparseRows.length; r++)
 			{
-				Entry<CellIndex, Double> e=iter.next();
-				double v=op.executeScalar(e.getValue());
-				if(v==0)
-					iter.remove();
-				else
-					e.setValue(new Double(v));
+				if(sparseRows[r]==null) continue;
+				double[] values=sparseRows[r].getValueContainer();
+				int[] cols=sparseRows[r].getIndexContainer();
+				int pos=0;
+				for(int i=0; i<sparseRows[r].size(); i++)
+				{
+					double v=op.executeScalar(values[i]);
+					if(v!=0)
+					{
+						values[pos]=v;
+						cols[pos]=cols[i];
+						pos++;
+					}
+				}
+				sparseRows[r].truncate(pos);
 			}
 		}else
 		{
@@ -363,22 +404,33 @@ public class MatrixBlock1D extends MatrixValue{
 	}
 	
 	//only apply to non zero cells
-	public void sparseUnaryOperationsInPlace(UnaryOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void sparseUnaryOperationsInPlace(UnaryOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if(sparse)
 		{
-			if(sparseBlock==null)
+			if(sparseRows==null)
 				return;
-			Iterator<Entry<CellIndex, Double>> iter=sparseBlock.entrySet().iterator();
-			while(iter.hasNext())
+			
+			for(int r=0; r<sparseRows.length; r++)
 			{
-				Entry<CellIndex, Double> e=iter.next();
-				double v=op.fn.execute(e.getValue());
-				if(v==0)
-					iter.remove();
-				else
-					e.setValue(new Double(v));
+				if(sparseRows[r]==null) continue;
+				double[] values=sparseRows[r].getValueContainer();
+				int[] cols=sparseRows[r].getIndexContainer();
+				int pos=0;
+				for(int i=0; i<sparseRows[r].size(); i++)
+				{
+					double v=op.fn.execute(values[i]);
+					if(v!=0)
+					{
+						values[pos]=v;
+						cols[pos]=cols[i];
+						pos++;
+					}
+				}
+				sparseRows[r].truncate(pos);
 			}
+			
 		}else
 		{
 			if(denseBlock==null)
@@ -394,8 +446,8 @@ public class MatrixBlock1D extends MatrixValue{
 		}
 	}
 	
-
-	public void denseScalarOperationsInPlace(ScalarOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void denseScalarOperationsInPlace(ScalarOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		double v;
 		for(int r=0; r<rlen; r++)
@@ -406,7 +458,8 @@ public class MatrixBlock1D extends MatrixValue{
 			}	
 	}
 	
-	public void denseUnaryOperationsInPlace(UnaryOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void denseUnaryOperationsInPlace(UnaryOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		double v;
 		for(int r=0; r<rlen; r++)
@@ -417,11 +470,11 @@ public class MatrixBlock1D extends MatrixValue{
 			}	
 	}
 	
-	private static MatrixBlock1D checkType(MatrixValue block) throws DMLUnsupportedOperationException
+	private static MatrixBlockDSM checkType(MatrixValue block) throws DMLUnsupportedOperationException
 	{
-		if( block!=null && !(block instanceof MatrixBlock1D))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not MatrixBlock1D!");
-		return (MatrixBlock1D) block;
+		if( block!=null && !(block instanceof MatrixBlockDSM))
+			throw new DMLUnsupportedOperationException("the Matrix Value is not MatrixBlockDSM!");
+		return (MatrixBlockDSM) block;
 	}
 
 	
@@ -430,17 +483,18 @@ public class MatrixBlock1D extends MatrixValue{
 	{
 		checkType(result);
 		if(result==null)
-			result=new MatrixBlock1D(rlen, clen, sparse);
+			result=new MatrixBlockDSM(rlen, clen, sparse);
 		result.copy(this);
 		
 		if(op.sparseSafe)
-			((MatrixBlock1D)result).sparseScalarOperationsInPlace(op);
+			((MatrixBlockDSM)result).sparseScalarOperationsInPlace(op);
 		else
-			((MatrixBlock1D)result).denseScalarOperationsInPlace(op);
+			((MatrixBlockDSM)result).denseScalarOperationsInPlace(op);
 		return result;
 	}
 	
-	public void scalarOperationsInPlace(ScalarOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void scalarOperationsInPlace(ScalarOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if(op.sparseSafe)
 			this.sparseScalarOperationsInPlace(op);
@@ -454,17 +508,18 @@ public class MatrixBlock1D extends MatrixValue{
 	{
 		checkType(result);
 		if(result==null)
-			result=new MatrixBlock1D(rlen, clen, sparse);
+			result=new MatrixBlockDSM(rlen, clen, sparse);
 		result.copy(this);
 		
 		if(op.sparseSafe)
-			((MatrixBlock1D)result).sparseUnaryOperationsInPlace(op);
+			((MatrixBlockDSM)result).sparseUnaryOperationsInPlace(op);
 		else
-			((MatrixBlock1D)result).denseUnaryOperationsInPlace(op);
+			((MatrixBlockDSM)result).denseUnaryOperationsInPlace(op);
 		return result;
 	}
 	
-	public void unaryOperationsInPlace(UnaryOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException
+	public void unaryOperationsInPlace(UnaryOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if(op.sparseSafe)
 			this.sparseUnaryOperationsInPlace(op);
@@ -472,11 +527,12 @@ public class MatrixBlock1D extends MatrixValue{
 			this.denseUnaryOperationsInPlace(op);
 	}
 	
-	private MatrixBlock1D denseBinaryHelp(BinaryOperator op, MatrixBlock1D that, MatrixBlock1D result) throws DMLRuntimeException 
+	private MatrixBlockDSM denseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
+	throws DMLRuntimeException 
 	{
 		boolean resultSparse=checkSparcityOnBinary(this, that);
 		if(result==null)
-			result=new MatrixBlock1D(rlen, clen, resultSparse);
+			result=new MatrixBlockDSM(rlen, clen, resultSparse);
 		else
 			result.reset(rlen, clen, resultSparse);
 		
@@ -494,60 +550,176 @@ public class MatrixBlock1D extends MatrixValue{
 		return result;
 	}
 	
-	private MatrixBlock1D sparseBinaryHelp(BinaryOperator op, MatrixBlock1D that, MatrixBlock1D result) throws DMLRuntimeException 
+	private static void mergeForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int size1, 
+			double[] values2, int[] cols2, int size2, int resultRow, MatrixBlockDSM result) 
+	throws DMLRuntimeException
+	{
+		int p1=0, p2=0, column;
+		double v;
+		//merge
+		while(p1<size1 && p2< size2)
+		{
+			if(cols1[p1]<cols2[p2])
+			{
+				v=op.fn.execute(values1[p1], 0);
+				column=cols1[p1];
+				p1++;
+			}else if(cols1[p1]==cols2[p2])
+			{
+				v=op.fn.execute(values1[p1], values2[p2]);
+				column=cols1[p1];
+				p1++;
+				p2++;
+			}else
+			{
+				v=op.fn.execute(0, values2[p2]);
+				column=cols2[p2];
+				p2++;
+			}
+			if(v==0) continue;
+			
+			if(result.sparse)
+				result.sparseRows[resultRow].append(column, v);
+			else
+				result.setValue(resultRow, column, v);	
+		}
+		
+		//add left over
+		appendLeftForSparseBinary(op, values1, cols1, size1, p1, resultRow, result);
+		appendRightForSparseBinary(op, values2, cols2, size2, p2, resultRow, result);
+	}
+	
+	private static void appendLeftForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int size1, 
+			int startPosition, int resultRow, MatrixBlockDSM result) 
+	throws DMLRuntimeException
+	{
+		int column;
+		double v;
+		int p1=startPosition;
+		//take care of left over
+		while(p1<size1)
+		{
+			v=op.fn.execute(values1[p1], 0);
+			column=cols1[p1];
+			p1++;
+			
+			if(result.sparse)
+				result.sparseRows[resultRow].append(column, v);
+			else
+				result.setValue(resultRow, column, v);
+		}
+	}
+	
+	private static void appendRightForSparseBinary(BinaryOperator op, double[] values2, int[] cols2, int size2, 
+			int startPosition, int resultRow, MatrixBlockDSM result) throws DMLRuntimeException
+	{
+		int column;
+		double v;
+		int p2=startPosition;
+		while(p2<size2)
+		{
+			v=op.fn.execute(0, values2[p2]);
+			column=cols2[p2];
+			p2++;
+			if(result.sparse)
+				result.sparseRows[resultRow].append(column, v);
+			else
+				result.setValue(resultRow, column, v);
+		}
+	}
+	
+	private MatrixBlockDSM sparseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
+	throws DMLRuntimeException 
 	{
 		boolean resultSparse=checkSparcityOnBinary(this, that);
 		if(result==null)
-			result=new MatrixBlock1D(rlen, clen, resultSparse);
+			result=new MatrixBlockDSM(rlen, clen, resultSparse);
 		else
 			result.reset(rlen, clen, resultSparse);
 		
 		if(this.sparse && that.sparse)
 		{
 			//special case, if both matrices are all 0s, just return
-			if(this.sparseBlock==null && that.sparseBlock==null)
+			if(this.sparseRows==null && that.sparseRows==null)
 				return result;
 			
-			if(result.sparseBlock==null)
-				result.sparseBlock=new HashMap<CellIndex, Double>();
-			
-			Iterator<Entry<CellIndex, Double>> iter;
-			//first, go through the first matrix, and apply operaitons on the nonzero cells
-			if(this.sparseBlock!=null)
+			if(result.sparse && (result.sparseRows==null || result.sparseRows.length<rlen))
+				result.sparseRows=new SparseRow[result.rlen];
+				
+			if(this.sparseRows!=null && that.sparseRows!=null)
 			{
-				iter=this.sparseBlock.entrySet().iterator();
-				while(iter.hasNext())
+				for(int r=0; r<rlen; r++)
 				{
-					Entry<CellIndex, Double> e=iter.next();
-					if(e.getValue()==0)
+					
+					if(this.sparseRows[r]==null && that.sparseRows[r]==null)
 						continue;
-					double v=op.fn.execute(e.getValue(), that.getValue(e.getKey()));
-					if(v!=0)
-						result.setValue(e.getKey(), v);
+					
+					if(result.sparse)
+					{
+						int estimateSize=0;
+						if(this.sparseRows[r]!=null)
+							estimateSize+=this.sparseRows[r].size();
+						if(that.sparseRows[r]!=null)
+							estimateSize+=that.sparseRows[r].size();
+						estimateSize=Math.min(clen, estimateSize);
+						if(result.sparseRows[r]==null)
+							result.sparseRows[r]=new SparseRow(estimateSize);
+						else if(result.sparseRows[r].capacity()<estimateSize)
+							result.sparseRows[r].recap(estimateSize);
+					}
+					
+					if(this.sparseRows[r]!=null && that.sparseRows[r]!=null)
+					{
+						mergeForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
+								this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(),
+								that.sparseRows[r].getValueContainer(), 
+								that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), r, result);
+						
+					}else if(this.sparseRows[r]==null)
+					{
+						appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
+								that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, result);
+					}else
+					{
+						appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
+								this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, result);
+					}
+				}
+			}else if(this.sparseRows==null)
+			{
+				for(int r=0; r<rlen; r++)
+				{
+					if(that.sparseRows[r]==null)
+						continue;
+					if(result.sparse)
+					{
+						if(result.sparseRows[r]==null)
+							result.sparseRows[r]=new SparseRow(that.sparseRows[r].size());
+						else if(result.sparseRows[r].capacity()<that.sparseRows[r].size())
+							result.sparseRows[r].recap(that.sparseRows[r].size());
+					}
+					appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
+							that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, result);
+				}
+			}else
+			{
+				for(int r=0; r<rlen; r++)
+				{
+					if(this.sparseRows[r]==null)
+						continue;
+					if(result.sparse)
+					{
+						if(result.sparseRows[r]==null)
+							result.sparseRows[r]=new SparseRow(this.sparseRows[r].size());
+						else if(result.sparseRows[r].capacity()<that.sparseRows[r].size())
+							result.sparseRows[r].recap(this.sparseRows[r].size());
+					}
+					appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
+							this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, result);
 				}
 			}
-			
-			//now, go through the second matrix, and apply operations on the ones 
-			//that do not have a corresponding cell in the first matrix
-			if(that.sparseBlock!=null)
-			{
-				iter=that.sparseBlock.entrySet().iterator();
-				while(iter.hasNext())
-				{
-					Entry<CellIndex, Double> e=iter.next();
-					
-					if(e.getValue()==0)
-						continue;
-					
-					if(this.getValue(e.getKey())!=0)
-						continue;
-					
-					double v=op.fn.execute(0, e.getValue());
-					if(v!=0)
-						result.setValue(e.getKey(), v);
-				}
-			}
-		}else
+		}
+		else
 		{
 			double thisvalue, thatvalue, resultvalue;
 			for(int r=0; r<rlen; r++)
@@ -568,7 +740,7 @@ public class MatrixBlock1D extends MatrixValue{
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		MatrixBlock1D that=checkType(thatValue);
+		MatrixBlockDSM that=checkType(thatValue);
 		checkType(result);
 		if(this.rlen!=that.rlen || this.clen!=that.clen)
 			throw new RuntimeException("block sizes are not matched for binary " +
@@ -576,9 +748,133 @@ public class MatrixBlock1D extends MatrixValue{
 					+that.clen);
 		
 		if(op.sparseSafe)
-			return sparseBinaryHelp(op, that, (MatrixBlock1D)result);
+			return sparseBinaryHelp(op, that, (MatrixBlockDSM)result);
 		else
-			return denseBinaryHelp(op, that, (MatrixBlock1D)result);
+			return denseBinaryHelp(op, that, (MatrixBlockDSM)result);
+	}
+	
+	
+	
+	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		MatrixBlockDSM that=checkType(thatValue);
+		if(this.rlen!=that.rlen || this.clen!=that.clen)
+			throw new RuntimeException("block sizes are not matched for binary " +
+					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"
+					+that.clen);
+		
+		if(op.sparseSafe)
+			sparseBinaryInPlaceHelp(op, that);
+		else
+			denseBinaryInPlaceHelp(op, that);
+	}
+	
+	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
+	{
+		boolean resultSparse=checkSparcityOnBinary(this, that);
+		if(resultSparse && !this.sparse)
+			denseToSparse();
+		else if(!resultSparse && this.sparse)
+			sparseToDense();
+		
+		double v;
+		for(int r=0; r<rlen; r++)
+			for(int c=0; c<clen; c++)
+			{
+				v=op.fn.execute(this.getValue(r, c), that.getValue(r, c));
+				setValue(r, c, v);
+			}
+	}
+	
+	private void sparseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
+	{
+		boolean resultSparse=checkSparcityOnBinary(this, that);
+		if(resultSparse && !this.sparse)
+			denseToSparse();
+		else if(!resultSparse && this.sparse)
+			sparseToDense();
+		
+		if(this.sparse && that.sparse)
+		{
+			//special case, if both matrices are all 0s, just return
+			if(this.sparseRows==null && that.sparseRows==null)
+				return;
+	
+			if(this.sparseRows!=null && that.sparseRows!=null)
+			{
+				for(int r=0; r<rlen; r++)
+				{
+					if(this.sparseRows[r]==null && that.sparseRows[r]==null)
+						continue;
+					
+					if(that.sparseRows[r]==null)
+					{
+						double[] values=this.sparseRows[r].getValueContainer();
+						for(int i=0; i<this.sparseRows[r].size(); i++)
+							values[i]=op.fn.execute(values[i], 0);
+					}else
+					{
+						int estimateSize=0;
+						if(this.sparseRows[r]!=null)
+							estimateSize+=this.sparseRows[r].size();
+						if(that.sparseRows[r]!=null)
+							estimateSize+=that.sparseRows[r].size();
+						estimateSize=Math.min(clen, estimateSize);
+						
+						//temp
+						SparseRow thisRow=this.sparseRows[r];
+						this.sparseRows[r]=new SparseRow(estimateSize);
+						
+						if(thisRow!=null)
+						{
+							mergeForSparseBinary(op, thisRow.getValueContainer(), 
+									thisRow.getIndexContainer(), thisRow.size(),
+									that.sparseRows[r].getValueContainer(), 
+									that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), r, this);
+							
+						}else
+						{
+							appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
+									that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, this);
+						}
+					}
+				}	
+			}else if(this.sparseRows==null)
+			{
+				this.sparseRows=new SparseRow[rlen];
+				for(int r=0; r<rlen; r++)
+				{
+					if(that.sparseRows[r]==null)
+						continue;
+					
+					this.sparseRows[r]=new SparseRow(that.sparseRows[r].size());
+					appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
+							that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, this);
+				}
+				
+			}else
+			{
+				for(int r=0; r<rlen; r++)
+				{
+					if(this.sparseRows[r]==null)
+						continue;
+					appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
+							this.sparseRows[r].getIndexContainer(), this.sparseRows[r].size(), 0, r, this);
+				}
+			}
+		}else
+		{
+			double thisvalue, thatvalue, resultvalue;
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++)
+				{
+					thisvalue=this.getValue(r, c);
+					thatvalue=that.getValue(r, c);
+					resultvalue=op.fn.execute(thisvalue, thatvalue);
+					this.setValue(r, c, resultvalue);
+				}	
+		}
 	}
 	
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
@@ -586,8 +882,8 @@ public class MatrixBlock1D extends MatrixValue{
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		assert(aggOp.correctionExists);
-		MatrixBlock1D cor=checkType(correction);
-		MatrixBlock1D newWithCor=checkType(newWithCorrection);
+		MatrixBlockDSM cor=checkType(correction);
+		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
 		if(aggOp.correctionLocation==1)
@@ -674,7 +970,7 @@ public class MatrixBlock1D extends MatrixValue{
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		assert(aggOp.correctionExists);
-		MatrixBlock1D newWithCor=checkType(newWithCorrection);
+		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
 		if(aggOp.correctionLocation==1)
@@ -753,84 +1049,8 @@ public class MatrixBlock1D extends MatrixValue{
 		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
-	
-	
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		MatrixBlock1D that=checkType(thatValue);
-		if(this.rlen!=that.rlen || this.clen!=that.clen)
-			throw new RuntimeException("block sizes are not matched for binary " +
-					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"
-					+that.clen);
-		
-		if(op.sparseSafe)
-			sparseBinaryInPlaceHelp(op, that);
-		else
-			denseBinaryInPlaceHelp(op, that);
-	}
-	
-	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlock1D that) throws DMLRuntimeException 
-	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
-		if(resultSparse && !this.sparse)
-			denseToSparse();
-		else if(!resultSparse && this.sparse)
-			sparseToDense();
-		
-		double v;
-		for(int r=0; r<rlen; r++)
-			for(int c=0; c<clen; c++)
-			{
-				v=op.fn.execute(this.getValue(r, c), that.getValue(r, c));
-				setValue(r, c, v);
-			}
-	}
-	
-	private void sparseBinaryInPlaceHelp(BinaryOperator op, MatrixBlock1D that) throws DMLRuntimeException 
-	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
-		if(resultSparse && !this.sparse)
-			denseToSparse();
-		else if(!resultSparse && this.sparse)
-			sparseToDense();
-		
-		if(this.sparse && that.sparse)
-		{
-			//special case, if both matrices are all 0s, just return
-			if(this.sparseBlock==null && that.sparseBlock==null)
-				return;
-			
-			if(this.sparseBlock==null)
-				this.sparseBlock=new HashMap<CellIndex, Double>();
-			
-			HashSet<CellIndex> allIndexes=new HashSet<CellIndex> ();
-			allIndexes.addAll(this.sparseBlock.keySet());
-			if(that.sparseBlock!=null)
-				allIndexes.addAll(that.sparseBlock.keySet());
-			
-			double thisvalue, thatvalue, resultvalue;
-			for(CellIndex index: allIndexes)
-			{
-				thisvalue=this.getValue(index);
-				thatvalue=that.getValue(index);
-				resultvalue=op.fn.execute(thisvalue, thatvalue);
-				this.setValue(index, resultvalue);
-			}
-			
-		}else
-		{
-			double thisvalue, thatvalue, resultvalue;
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					thisvalue=this.getValue(r, c);
-					thatvalue=that.getValue(r, c);
-					resultvalue=op.fn.execute(thisvalue, thatvalue);
-					this.setValue(r, c, resultvalue);
-				}	
-		}
-	}
+
+	/////////////////////////////////////////////////////
 	
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length)
@@ -2211,7 +2431,7 @@ public class MatrixBlock1D extends MatrixValue{
 			{
 				for(Entry<CellIndex, Double> e: sparseBlock.entrySet())
 				{
-					if(UtilFunctions.isIn(e.getKey().row, range.rowStart, range.rowEnd)
+					if(UtilFunctions.isIn(e.getKey().row, range.rowStart, range.colStart)
 					   && UtilFunctions.isIn(e.getKey().column, range.colStart, range.colEnd))
 						result.setValue(e.getKey().row, e.getKey().column, e.getValue());
 				}

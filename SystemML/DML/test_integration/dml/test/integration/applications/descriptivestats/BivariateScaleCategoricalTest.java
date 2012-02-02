@@ -233,7 +233,7 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis()) ; // System.currentTimeMillis());
         round(A);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 1, System.currentTimeMillis()) ; // System.currentTimeMillis()+1);
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis()) ; // System.currentTimeMillis()+1);
 
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("Y", Y, true);
@@ -285,7 +285,7 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 98734); // System.currentTimeMillis());
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 1, 7895); // System.currentTimeMillis());
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, 7895); // System.currentTimeMillis());
         double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, 234); // System.currentTimeMillis());
         round(A);
         round(WM);

@@ -14,7 +14,7 @@ import dml.runtime.matrix.MatrixDimensionsMetaData;
 import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.mapred.tentative.ABMR;
+import dml.runtime.matrix.mapred.obsolete.ABMR;
 import dml.runtime.test.GenerateTestMatrixBlock;
 import dml.runtime.util.MapReduceTool;
 

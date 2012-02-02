@@ -283,6 +283,7 @@ public class TestUtils {
 			while ((line = compareIn.readLine()) != null) {
 				String[] rcv = line.split(" ");
 				if(rcv.length==3) {
+					if(Double.parseDouble(rcv[2])==0.0) continue;
 					expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
 								.parseDouble(rcv[2]));
 					if ( matrixType == 2 )
@@ -410,6 +411,7 @@ public class TestUtils {
 				countErrorIdentical++;
 				if (!compareCellValue(first.get(index), second.get(index), tolerance)) {
 					countErrorWithinTolerance++;
+					System.out.println(first.get(index)+" <--> "+second.get(index));
 				}
 			} else {
 				countIdentical++;
@@ -1015,13 +1017,14 @@ public class TestUtils {
 			if (isR) {
 				/** add R header */
 				pw.println("%%MatrixMarket matrix coordinate real general");
-				pw.println("" + matrix.length + " " + matrix[0].length + " " + nzcount);
+				pw.println("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length);
 			}
 			if (nzcount > 0) {
 				for (int i = 0; i < matrix.length; i++) {
 					for (int j = 0; j < matrix[i].length; j++) {
-						if (matrix[i][j] != 0)
-							pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
+						if (!isR && matrix[i][j] == 0)
+							continue;
+						pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
 					}
 				}
 			} else {

@@ -5,10 +5,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.Vector;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -27,7 +23,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import dml.runtime.instructions.CPInstructions.ScalarObject;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.MatrixDimensionsMetaData;
 import dml.runtime.matrix.MetaData;
@@ -40,6 +35,7 @@ import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
+import dml.runtime.matrix.sort.ReadWithZeros;
 
 public class MapReduceTool {
 	// private static final Log LOG = LogFactory.getLog(AggregateReducer.class);
@@ -444,17 +440,25 @@ public class MapReduceTool {
 		
 		if(fileToRead==null)
 			throw new RuntimeException("cannot read partition "+currentPart);
-	    
-	    FSDataInputStream currentStream=fs.open(fileToRead);
+		
+		FSDataInputStream currentStream=fs.open(fileToRead);
 	    DoubleWritable readKey=new DoubleWritable();
 	    IntWritable readValue=new IntWritable();
 	    
+		boolean contain0s=false;
+		long numZeros=0;
+		if(currentPart==metadata.getPartitionOfZero())
+		{
+			contain0s=true;
+			numZeros=metadata.getNumberOfZero();
+		}
+	    ReadWithZeros reader=new ReadWithZeros(currentStream, contain0s, numZeros);
+
 	    int numRead=0;
 	    while(numRead<=offset)
 		{
-			readKey.readFields(currentStream);
-			readValue.readFields(currentStream);
-		//	System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
+	    	reader.readNextKeyValuePairs(readKey, readValue);
+			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
 			numRead+=readValue.get();
 		}
 	   	
@@ -463,4 +467,10 @@ public class MapReduceTool {
 		
 	}
 	
+	public static int extractNumberFromOutputFile(String name)
+	{
+		int i=name.indexOf("part-");
+		assert(i>=0);
+		return Integer.parseInt(name.substring(i+5));
+	}
 }

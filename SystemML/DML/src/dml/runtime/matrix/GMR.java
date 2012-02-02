@@ -91,6 +91,8 @@ public class GMR{
 			PickFromCompactInputFormat.setKeyValueClasses(job, (Class<? extends WritableComparable>) inputInfos[ins.input1].inputKeyClass, 
 					inputInfos[ins.input1].inputValueClass);
 		    job.setInputFormat(PickFromCompactInputFormat.class);
+		    PickFromCompactInputFormat.setZeroValues(job, (NumItemsByEachReducerMetaData)inputInfos[ins.input1].metadata);
+		    
 			if(ins.isValuePick)
 			{
 				double[] probs=MapReduceTool.readColumnVectorFromHDFS(inputs[ins.input2], inputInfos[ins.input2], rlens[ins.input2], 

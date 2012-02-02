@@ -1,18 +1,15 @@
 package dml.runtime.test;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapred.Counters.Group;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 import dml.runtime.matrix.GMR;
 import dml.runtime.matrix.MMCJMR;
-import dml.runtime.matrix.ReblockMR;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.mapred.tentative.ABMR;
+import dml.runtime.matrix.mapred.obsolete.ABMR;
 
 public class Test extends Configured implements Tool{
 	InputInfo textinputinfo;

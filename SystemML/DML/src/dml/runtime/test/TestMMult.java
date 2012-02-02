@@ -11,7 +11,7 @@ import dml.runtime.matrix.MMCJMR;
 import dml.runtime.matrix.MMRJMR;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.mapred.tentative.ABMR;
+import dml.runtime.matrix.mapred.obsolete.ABMR;
 
 public class TestMMult extends Configured implements Tool{
 	InputInfo inputinfo;

@@ -25,7 +25,7 @@ anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
 anova_den = sum( (CFreq-1)*CVars )/(W-R);
 ANOVAF = anova_num/anova_den;
 
-#print2("W = " + W + ", R = " + R + ", Anova num " + anova_num + ", Anova den " + anova_den);
+#print("W = " + W + ", R = " + R + ", Anova num " + anova_num + ", Anova den " + anova_den);
 
 /*
 # Category Frequencies

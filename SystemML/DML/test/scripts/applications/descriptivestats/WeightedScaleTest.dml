@@ -38,10 +38,10 @@ SE = std_dev/sqrt(wt)
 cv = std_dev/mu
 
 # harmonic means (note: may generate out of memory for large sparse matrices becauses of NaNs)
-har_mu = wt/(sum((1.0/V)*W))
+#har_mu = wt/(sum((1.0/V)*W))
 
 # geometric means is not currently supported.
-geom_mu = wt*exp(sum(log(V)*W)/wt)
+#geom_mu = wt*exp(sum(log(V)*W)/wt)
 
 # min and max
 mn=min(V)
@@ -80,8 +80,8 @@ stdHelper=std_dev*Helper
 SEHelper=SE*Helper
 varHelper=var*Helper
 cvHelper=cv*Helper
-harHelper=har_mu*Helper
-geomHelper=geom_mu*Helper
+#harHelper=har_mu*Helper
+#geomHelper=geom_mu*Helper
 minHelper=mn*Helper
 maxHelper=mx*Helper
 rngHelper=rng*Helper
@@ -97,8 +97,8 @@ write(stdHelper, "$$outdir$$std_weight", format="text");
 write(SEHelper, "$$outdir$$se_weight", format="text");
 write(varHelper, "$$outdir$$var_weight", format="text");
 write(cvHelper, "$$outdir$$cv_weight", format="text");
-write(harHelper, "$$outdir$$har_weight", format="text");
-write(geomHelper, "$$outdir$$geom_weight", format="text");
+#write(harHelper, "$$outdir$$har_weight", format="text");
+#write(geomHelper, "$$outdir$$geom_weight", format="text");
 write(minHelper, "$$outdir$$min_weight", format="text");
 write(maxHelper, "$$outdir$$max_weight", format="text");
 write(rngHelper, "$$outdir$$rng_weight", format="text");

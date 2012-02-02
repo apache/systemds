@@ -32,10 +32,10 @@ public class JobReturn {
 		}
 	}
 
-	public JobReturn(MatrixCharacteristics mc, long[] items, boolean success) {
+	public JobReturn(MatrixCharacteristics mc, long[] items, int partition0, long number0s, boolean success) {
 		successful = success;
 		metadata = new NumItemsByEachReducerMetaData[1];
-		metadata[0] = new NumItemsByEachReducerMetaData(mc, items);
+		metadata[0] = new NumItemsByEachReducerMetaData(mc, items, partition0, number0s);
 	}
 
 	public boolean checkReturnStatus() throws DMLRuntimeException {

@@ -36,9 +36,17 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 	public static final String SELECTED_POINTS_PREFIX="selected.points.in.";
 	//public static final String KEY_CLASS="key.class.to.read";
 	public static final String VALUE_CLASS="value.class.to.read";
+	public static final String PARTITION_OF_ZERO="partition.of.zero";
+	public static final String NUMBER_OF_ZERO="number.of.zero";
 	
 	protected  boolean isSplitable(FileSystem fs, Path filename) {
 		return false;
+	}
+	
+	public static void setZeroValues(JobConf job, NumItemsByEachReducerMetaData metadata)
+	{
+		job.setInt(PARTITION_OF_ZERO, metadata.getPartitionOfZero());
+		job.setLong(NUMBER_OF_ZERO, metadata.getNumberOfZero());
 	}
 	
 	public static void setValueIsWeight(JobConf job, boolean viw)
@@ -215,6 +223,14 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		private int index=0;
 		private int currentRepeat=0;
 		
+		//to handle zeros
+		ReadWithZeros reader=null;
+		/*private boolean contain0s=false;
+		private boolean justFound0=false;
+		private DoubleWritable keyAfterZero;
+		private Writable valueAfterZero; 
+		private long numZeros=0;*/
+		
 		private int getIndexInTheArray(String name)
 		{
 			int i=name.indexOf("part-");
@@ -249,7 +265,40 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 				throw new RuntimeException(e);
 			}
 			valueIsWeight=job.getBoolean(VALUE_IS_WEIGHT, true);
+			
+			int part0=job.getInt(PARTITION_OF_ZERO, -1);
+			boolean contain0s=false;
+			long numZeros =0;
+	    	if(part0==partIndex)
+	    	{
+	    		contain0s = true;
+	    		numZeros = job.getLong(NUMBER_OF_ZERO, 0);
+	    	}
+	    	reader=new ReadWithZeros(currentStream, contain0s, numZeros);
 		}
+		/*
+		private void readNextKeyValuePairs()throws IOException 
+		{
+			if(contain0s && justFound0)
+			{
+				readKey=keyAfterZero;
+				readValue=valueAfterZero;
+				contain0s=false;
+			}else
+			{
+				readKey.readFields(currentStream);
+				readValue.readFields(currentStream);
+			}
+			
+			if(contain0s && !justFound0 && readKey.get()>=0)
+			{
+				justFound0=true;
+				keyAfterZero=readKey;
+				valueAfterZero=readValue;
+				readKey=new DoubleWritable(0);
+				readValue=new IntWritable((int)numZeros);
+			}
+		}*/
 		
 		public boolean next(MatrixIndexes key, MatrixCell value)
 		throws IOException {
@@ -261,9 +310,8 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			while(rawKeyValuesRead+currentRepeat<=startPos)
 			{
 				rawKeyValuesRead+=currentRepeat;
-				readKey.readFields(currentStream);
-				readValue.readFields(currentStream);
-			//	System.out.println("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
+				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
+				//System.out.println("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
 			//	LOG.info("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
 				if(valueIsWeight)
 					currentRepeat=((IntWritable)readValue).get();
@@ -278,8 +326,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			
 			if(currentRepeat<=0)
 			{
-				readKey.readFields(currentStream);
-				readValue.readFields(currentStream);
+				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
 			//	System.out.println("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
 			//	LOG.info("**** numRead "+rawKeyValuesRead+" -- "+readKey+": "+readValue);
 				if(valueIsWeight)
@@ -306,7 +353,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		@Override
 		public void close() throws IOException {
 			//DO Nothing
-			
+			currentStream.close();
 		}
 
 		@Override
@@ -352,6 +399,14 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 		private int numRead=0;
 		private boolean noRecordsNeeded=false;
 		
+		//to handle zeros
+		ReadWithZeros reader=null;
+		/*private boolean contain0s=false;
+		private boolean justFound0=false;
+		private DoubleWritable keyAfterZero;
+		private Writable valueAfterZero; 
+		private long numZeros=0;*/
+		
 		private int getIndexInTheArray(String name)
 		{
 			int i=name.indexOf("part-");
@@ -391,6 +446,16 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 				throw new RuntimeException(e);
 			}
 			valueIsWeight=job.getBoolean(VALUE_IS_WEIGHT, true);
+			
+			int part0=job.getInt(PARTITION_OF_ZERO, -1);
+			boolean contain0s=false;
+			long numZeros =0;
+	    	if(part0==partIndex)
+	    	{
+	    		contain0s = true;
+	    		numZeros = job.getLong(NUMBER_OF_ZERO, 0);
+	    	}
+	    	reader=new ReadWithZeros(currentStream, contain0s, numZeros);
 		}
 		
 		public boolean next(MatrixIndexes key, MatrixCell value)
@@ -407,8 +472,7 @@ public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, M
 			//System.out.println("numRead="+numRead+" pos["+posIndex+"]="+pos[posIndex]);
 			while(numRead<=pos[posIndex])
 			{
-				readKey.readFields(currentStream);
-				readValue.readFields(currentStream);
+				reader.readNextKeyValuePairs(readKey, (IntWritable)readValue);
 			//	System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
 				if(valueIsWeight)
 					numRead+=((IntWritable)readValue).get();

@@ -18,6 +18,7 @@ public class OrderStatisticsTest extends AutomatedTestBase {
 		availableTestConfigurations.put("IQMTest",
 				new TestConfiguration("IQMTest", new String[] { "iqm", "weighted_iqm" }));
 		
+		
 	}
 	
 	public static double quantile(double[] vector, double p)

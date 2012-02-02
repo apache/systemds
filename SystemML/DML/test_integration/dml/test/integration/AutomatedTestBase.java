@@ -42,7 +42,6 @@ public abstract class AutomatedTestBase {
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
 	protected static final boolean DEBUG = false;
-	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
 	
 	protected static String baseDirectory;
@@ -441,7 +440,7 @@ public abstract class AutomatedTestBase {
 		testVariables.put("basedir", baseDirectory);
 		testVariables.put("indir", baseDirectory + INPUT_DIR);
 		testVariables.put("outdir", baseDirectory + OUTPUT_DIR);
-		testVariables.put("readhelper", "Helper = readMM(\"" + baseDirectory + INPUT_DIR + "helper/in\", "
+		testVariables.put("readhelper", "Helper = read(\"" + baseDirectory + INPUT_DIR + "helper/in\", "
 				+ "rows=1, cols=2, format=\"text\");");
 		testVariables.put("Routdir", baseDirectory + EXPECTED_DIR);
 
@@ -613,12 +612,8 @@ public abstract class AutomatedTestBase {
 			TestUtils.printDMLScript(executionFile);
 
 		try {
-			if (DEBUG) {
-				if(VISUALIZE)
-					DMLScript.main(new String[] { "-f" ,executionFile, "-d", "-visualize" });
-				else
-					DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
-			}
+			if (DEBUG)
+				DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
 			else
 				DMLScript.main(new String[] { "-f", executionFile });
 

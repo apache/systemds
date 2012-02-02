@@ -9,7 +9,7 @@ import dml.runtime.matrix.GMR;
 import dml.runtime.matrix.MMCJMR;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.mapred.tentative.ABMR;
+import dml.runtime.matrix.mapred.obsolete.ABMR;
 
 public class PageRank extends Configured implements Tool{
 

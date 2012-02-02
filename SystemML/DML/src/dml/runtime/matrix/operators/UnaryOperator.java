@@ -11,7 +11,7 @@ public class UnaryOperator  extends Operator {
 		if(fn instanceof Builtin)
 		{
 			Builtin f=(Builtin)fn;
-			if(f.bFunc==Builtin.BuiltinFunctionCode.SIN || f.bFunc==Builtin.BuiltinFunctionCode.TAN)
+			if(f.bFunc==Builtin.BuiltinFunctionCode.SIN || f.bFunc==Builtin.BuiltinFunctionCode.TAN || f.bFunc==Builtin.BuiltinFunctionCode.ROUND)
 				sparseSafe=true;
 		}else
 			sparseSafe=false;

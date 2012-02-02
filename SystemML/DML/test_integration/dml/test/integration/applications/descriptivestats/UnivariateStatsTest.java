@@ -42,7 +42,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 		loadTestConfiguration(config);
 
 		createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows1, 1, min, max, 1, System.currentTimeMillis());
+        double[][] vector = getRandomMatrix(rows1, 1, min, max, 0.4, System.currentTimeMillis());
      //   double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
       //  OrderStatisticsTest.round(weight);
         double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());
@@ -84,7 +84,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 		loadTestConfiguration(config);
 
 		createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows1, 1, min, max, 1, 10);//System.currentTimeMillis());
+        double[][] vector = getRandomMatrix(rows1, 1, min, max, 0.4, 10);//System.currentTimeMillis());
         double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, 20);//System.currentTimeMillis());
         OrderStatisticsTest.round(weight);
         double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());

@@ -1,4 +1,3 @@
-# JUnit test class: dml.test.integration.applications.GNMFTest.java
 
 V = read("$$indir$$v", rows=$$m$$, cols=$$n$$, format="text");
 W = read("$$indir$$w", rows=$$m$$, cols=$$k$$, format="text");

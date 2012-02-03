@@ -10,12 +10,6 @@ B = read("$$indir$$B", rows=$$rows$$, cols=1, format="text");
 F = ctable(A,B);
 
 # Chi-Squared
-#W = sum(F);
-#idr = 1/rowSums(F);
-#idc = 1/colSums(F);
-#E = (rowSums(F) %*% colSums(F))/W;
-#chi_squared = t(idr) %*% F^2 %*% idc + sum(E) - 2*W;
-
 W = sum(F);
 r = rowSums(F);
 c = colSums(F);

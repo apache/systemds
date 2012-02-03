@@ -6,7 +6,6 @@ kMeansWithInit = externalFunction(Matrix[Double] D, Integer k, Matrix[Double] in
 return (Matrix[Double] C)
 implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
 
-
 M = read( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
 initialCenters = read( "$$indir$$initCenters", rows=5, cols=$$cols$$, format="text");
 

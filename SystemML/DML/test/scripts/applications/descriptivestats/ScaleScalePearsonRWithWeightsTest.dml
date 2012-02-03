@@ -24,33 +24,3 @@ R = covXY / (sigmaX*sigmaY);
 
 PearsonRHelper = R * Helper;
 write(PearsonRHelper, "$$outdir$$outPearsonR", format="text");
-
-/*
-
-#----- Unstable Version ----
-
-W = sum(WM);
-
-s1XW = sum(X*WM);
-s1YW = sum(Y*WM);
-
-s2XW = sum(X^2*WM);
-s2YW = sum(Y^2*WM);
-
-# means
-mx = s1XW/W;
-my = s1YW/W;
-
-# standard deviation 
-sigmaX = sqrt( (s2XW/W - mx*mx) * (W/(W-1)) )
-sigmaY = sqrt( (s2YW/W - my*my) * (W/(W-1)) )
-
-# covariance
-covXY = sum( WM*(X-mx)*(Y-my) )/(W-1);
-
-# Pearson's R
-R = covXY / (sigmaX*sigmaY);
-
-PearsonRHelper = R * Helper;
-write(PearsonRHelper, "$$outdir$$outPearsonR", format="text");
-*/

@@ -1,4 +1,3 @@
-# JUnit test class: dml.test.integration.applications.LinearRegressionTest.java
 
 V = read("$$indir$$v", rows=$$rows$$, cols=$$cols$$, format="text");
 y = read("$$indir$$y", rows=$$rows$$, cols=1, format="text");

@@ -1,4 +1,3 @@
-# JUnit test class: dml.test.integration.applications.L2SVMTest.java
 
 X = read("$$indir$$X", rows=$$rows$$, cols=$$cols$$, format="text")
 Y = read("$$indir$$y", rows=$$rows$$, cols=1, format="text")

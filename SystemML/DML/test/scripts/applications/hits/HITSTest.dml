@@ -1,23 +1,14 @@
-# JUnit test class: dml.test.integration.applications.HITSTest.java
 
 G = read("$$indir$$graph2.mtx",rows=$$rows$$, cols=$$cols$$, format="text");
 
 authorities=read("$$indir$$init_authorities2.mtx",rows=$$rows$$, cols=1, format="text");
-
 
 maxiter = $$maxiter$$;
 tol = $$tol$$;
 
 hubs  = authorities;
 
-#N = nrow(G)
-#D = ncol(G)
-
- 
 # HITS = power iterations to compute leading left/right singular vectors
- 
-#authorities = matrix(1.0/N,N,1)
-#hubs = matrix(1.0/N,N,1)
 
 converge = false
 iter = 0
@@ -39,7 +30,6 @@ while(!converge) {
 	converge = ((abs(delta_hubs) < tol) & (abs(delta_authorities) < tol) | (iter>maxiter))
 	
 	iter = iter + 1
-	#print(paste("Iterations :", iter, " delta_hubs :", delta_hubs, " delta_authorities :", delta_authorities))
 }
 
 write(hubs,"$$outdir$$hubs",format="text")

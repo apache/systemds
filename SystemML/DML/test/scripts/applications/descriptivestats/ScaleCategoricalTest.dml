@@ -25,41 +25,6 @@ anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
 anova_den = sum( (CFreq-1)*CVars )/(W-R);
 ANOVAF = anova_num/anova_den;
 
-#print("W = " + W + ", R = " + R + ", Anova num " + anova_num + ", Anova den " + anova_den);
-
-/*
-# Category Frequencies
-CFreq = ctable(A,1);
-W = nrow(A);
-
-# univariate stats by categories
-# (mean,variance,sigma) for each category
-FY1 = ctable(A,1,Y);
-FY2 = ctable(A,1,Y^2);
-
-CMeans = FY1/CFreq;
-CStdDev = sqrt((FY2/CFreq - CMeans^2)*(CFreq/(CFreq-1)));
-CVars = CStdDev^2;
-
-# (mean,variance,sigma) over all categories
-my = sum(Y)/W;
-sigmaY = sqrt((sum(Y^2)/W - my*my)*(W/(W-1)));
-varY = sigmaY^2;
-
-CVars = groupedCentralMoment(Y,A,2);
-
-
-# Eta and ANOVA F Measure
-Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ))
-
-R = nrow(CFreq);
-anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
-anova_den = sum( (CFreq-1)*CVars )/(W-R);
-ANOVAF = anova_num/anova_den;
-#ANOVAF = exp(log(anova_num)-log(anova_den));
-*/
-
-# ---------------------------------------------------------
 # output required statistics
 varYHelper = varY * Helper;
 write(varYHelper, "$$outdir$$outVarY", format="text");

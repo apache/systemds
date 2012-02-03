@@ -1,4 +1,3 @@
-# JUnit test class: dml.test.integration.applications.PageRankTest.java
 
 G = read("test/scripts/applications/page_rank/in/g", rows=1000, cols=1000, format="text");
 # dense

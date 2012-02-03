@@ -55,6 +55,7 @@ public class DMLScript {
 			// COMMENT OUT FOR BIRelease
 			//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
 			+ " [-d | -debug]: (optional) output debug info \n"
+			// COMMENT OUT -v option before RELEASE
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 

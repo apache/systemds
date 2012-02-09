@@ -94,6 +94,7 @@ public class RandMR
 		FileSystem fs = FileSystem.get(job);
 		Random random=new Random(System.currentTimeMillis());
 		String randInsStr="";
+		int numblocks=0;
 		for(int i = 0; i < randInstructions.length; i++)
 		{
 			randInsStr=randInsStr+","+randInstructions[i];
@@ -117,6 +118,7 @@ public class RandMR
 					sb.append(curBlockRowSize + ",");
 					sb.append(curBlockColSize + ",");
 					pw.println(sb.toString());
+					numblocks++;
 				}
 			}
 			pw.close();
@@ -155,9 +157,12 @@ public class RandMR
 			
 			//set up the replication factor for the results
 			job.setInt("dfs.replication", replication);
+		
 			
-			//TODO: 
-			int nmapers=job.getInt("mapred.map.tasks", 1);
+			JobClient client=new JobClient(job);
+			int capcity=client.getClusterStatus().getMaxMapTasks()-client.getClusterStatus().getMapTasks();
+			int dfsblocksize=job.getInt("dfs.block.size", 67108864);
+			int nmapers=Math.min((int)(8*1024*1024*(long)numblocks/(long)dfsblocksize), capcity);
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer

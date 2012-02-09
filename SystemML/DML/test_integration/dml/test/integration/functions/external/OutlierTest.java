@@ -1,11 +1,8 @@
 package dml.test.integration.functions.external;
 
 import org.junit.Test;
-import org.netlib.lapack.LAPACK;
-
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
-import dml.test.utils.TestUtils;
 
 /**
  * 

@@ -1,3 +1,0 @@
-A = Rand (rows=100000,cols=20000,sparsity=0.001);
-#A = Rand (rows=3100,cols=240);
-write (A, "./scripts/AnInput", format="binary");

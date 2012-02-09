@@ -6,8 +6,8 @@ general.localmode=true
 general.libpath=lib/ant
 
 #SystemML
-systemml.version=0.3
-release.notes=Notes go here.
+systemml.version=0.0.1
+release.notes=Preliminary build.
 
 #BUILD
 build.jarnamejunit=JunitSystemML.jar

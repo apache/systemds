@@ -1,0 +1,22 @@
+# command line invocation assuming $GNMF_HOME is set to the home of the dml script
+# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml 
+#        -args '$GNMF_HOME/in/v' '$GNMF_HOME/in/w' '$GNMF_HOME/in/h'
+#               2000,1500,50,3,
+#              '$GNMF_HOME/out/w' 'GNMF_HOME/out/h'
+# This script may change further once we have string concat support in read/write 
+V = read($1, rows=$4, cols=$5, format="text");
+W = read($2, rows=$4, cols=$6, format="text");
+H = read($3, rows=$6, cols=$5, format="text");
+max_iteration = $7;
+i = 0;
+
+Eps = 10^-8;
+
+while(i < max_iteration) {
+	H = H * ((t(W) %*% V) / (((t(W) %*% W) %*% H)+Eps)) ;
+	W = W * ((V %*% t(H)) / ((W %*% (H %*% t(H)))+Eps));
+	i = i + 1;
+}
+
+write(W, $8, format="text");
+write(H, $9, format="text");

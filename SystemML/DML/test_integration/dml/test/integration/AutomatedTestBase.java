@@ -32,8 +32,6 @@ import dml.utils.Statistics;
  * <li>clean up after test run</li>
  * </ul>
  * 
- * @author schnetter
- * @author Felix Hamborg
  */
 public abstract class AutomatedTestBase {
 	protected static final String SCRIPT_DIR = "./test/scripts/";
@@ -46,8 +44,15 @@ public abstract class AutomatedTestBase {
 	
 	protected static String baseDirectory;
 	protected HashMap<String, TestConfiguration> availableTestConfigurations;
-	protected HashMap<String, String> testVariables;
+	
+	/* For testing in the old way */
+	protected HashMap<String, String> testVariables; /* variables and their values */
 
+	/* For testing in the new way */
+	protected String[] dmlArgs;            /* args to DMLScript.main */
+	protected String[] dmlArgsDebug;       /* args to DMLScript.main with -d option */
+	protected String rCmd;                 /* Rscript foo.R arg1, arg2 ...          */
+	
 	protected String selectedTest;
 	protected String[] outputDirectories;
 	protected String[] comparisonFiles;
@@ -469,26 +474,45 @@ public abstract class AutomatedTestBase {
 		loadTestConfiguration(config);
 	}
 
-	/**
-	 * Runs an R script
+	/** 
+	 * Runs an R script, default to the old way
 	 */
 	protected void runRScript() {
-		String executionFile = baseDirectory + selectedTest + ".Rt";
-
-		if (System.getProperty("os.name").contains("Windows"))
-			//executionFile = executionFile.substring(2).replace('/', '\\');
-			executionFile = executionFile.replace('/', '\\');
+		runRScript(false);
 		
-		String cmd = "R -f " + executionFile;
-
+	}
+	/**
+	 * Runs an R script in the old or the new way
+	 */
+	protected void runRScript(boolean newWay) {
+	
+		String executionFile = baseDirectory + selectedTest + ".R"; 
+		
+		String cmd;
+		if (newWay == false) {
+			executionFile = executionFile + "t";
+			cmd = "R -f " + executionFile;
+		}
+		else {
+			cmd = rCmd;
+		}
+		
+		if (System.getProperty("os.name").contains("Windows")) {
+			cmd = cmd.replace('/', '\\');                        
+			executionFile = executionFile.replace('/', '\\');
+		}
+		
+		if (newWay == false) {
 		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
-		//TestUtils.setVariablesInScript(strScriptDirectory, strScriptFile, variables);//  setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
+		}
+	
 		if (DEBUG);
 			TestUtils.printRScript(executionFile);
+			
 		try {
 			System.out.println("starting R script");
-			System.out.println("cmd: " + cmd);
-			Process child = Runtime.getRuntime().exec(cmd);
+			System.out.println("cmd: " + cmd);           
+			Process child = Runtime.getRuntime().exec(cmd);     
 			String outputR = "";
 			int c = 0;
 
@@ -578,7 +602,7 @@ public abstract class AutomatedTestBase {
 	 * Runs a test for which the exception expectation can be specified as well
 	 * as the specific expectation which is expected.
 	 * </p>
-	 * 
+	 *
 	 * @param exceptionExpected
 	 *            exception expected
 	 * @param expectedException
@@ -587,14 +611,14 @@ public abstract class AutomatedTestBase {
 	protected void runTest(boolean exceptionExpected, Class<?> expectedException) {
 		runTest(exceptionExpected, expectedException, -1);
 	}
-
+	
 	/**
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified as well
 	 * as the specific expectation which is expected. If SystemML executes more
 	 * MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
-	 * 
+	 *
 	 * @param exceptionExpected
 	 *            exception expected
 	 * @param expectedException
@@ -604,19 +628,51 @@ public abstract class AutomatedTestBase {
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
-		String executionFile = baseDirectory + selectedTest + ".dmlt";
-
-		TestUtils.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
-
+		runTest(false, exceptionExpected, expectedException, maxMRJobs);
+	}
+		
+	/**
+	 * <p>
+	 * Runs a test for which the exception expectation can be specified as well
+	 * as the specific expectation which is expected. If SystemML executes more
+	 * MR jobs than specified in maxMRJobs this test will fail.
+	 * </p>
+	 * @param newWay
+	 * 			  in the new way if it is set to true
+	 * @param exceptionExpected
+	 *            exception expected
+	 * @param expectedException
+	 *            expected exception
+	 * @param maxMRJobs
+	 *            specifies a maximum limit for the number of MR jobs. If set to
+	 *            -1 there is no limit.
+	 */
+	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
+		
+		String executionFile = baseDirectory + selectedTest + ".dml";
+		
+		if (newWay == false) {
+			executionFile = executionFile + "t";
+			ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
+		}
+			
 		if (DEBUG)
 			TestUtils.printDMLScript(executionFile);
-
+		
 		try {
-			if (DEBUG)
-				DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
-			else
-				DMLScript.main(new String[] { "-f", executionFile });
-
+				if (newWay == false) {
+					if (DEBUG)
+						DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
+					else
+						DMLScript.main(new String[] { "-f", executionFile });
+				}
+				else {
+					if (DEBUG)
+						DMLScript.main(dmlArgsDebug);
+					else
+						DMLScript.main(dmlArgs);
+				}
+		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
 				fail("Limit of MR jobs exceeded: expected: " + maxMRJobs + ", occured: "
@@ -643,7 +699,7 @@ public abstract class AutomatedTestBase {
 	protected void runSQL()
 	{
 		String executionFile = baseDirectory + selectedTest + ".dmlt";
-
+		
 		TestUtils.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
 		
 		try {

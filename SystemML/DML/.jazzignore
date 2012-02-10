@@ -26,4 +26,5 @@ core.ignore= \
 	{1319585826421.-1945863460} \
 	{42843f7c} \
 	{75ce52cf} \
-	{bin} 
+	{bin} \
+	{scratch_space} 

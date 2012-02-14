@@ -68,7 +68,6 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("amean") ) {
-			// example: amean°1·DOUBLE°4·DOUBLE°true°4
 			boolean corExists=Boolean.parseBoolean(parts[3]);
 			byte loc=Byte.parseByte(parts[4]);
 			

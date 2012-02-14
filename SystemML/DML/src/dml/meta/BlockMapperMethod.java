@@ -3,17 +3,13 @@ package dml.meta;
 import java.io.IOException;
 
 import org.apache.commons.math.random.Well1024a;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import dml.runtime.matrix.io.MatrixBlock;
-import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
-import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.Pair;
-import dml.runtime.matrix.io.PartialBlock;
 
 public abstract class BlockMapperMethod {
 	MatrixIndexes mi = new MatrixIndexes() ;

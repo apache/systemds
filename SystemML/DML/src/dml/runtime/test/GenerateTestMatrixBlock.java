@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math.special.Beta;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -22,15 +20,12 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.hadoop.mapred.lib.IdentityReducer;
 
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.util.MapReduceTool;
 
-import cern.jet.random.Beta;
-import cern.jet.random.Exponential;
-import cern.jet.random.engine.RandomEngine;
+
 
 public class GenerateTestMatrixBlock{
 
@@ -108,18 +103,20 @@ public class GenerateTestMatrixBlock{
 		double alpha=1.0/(1-sparcity);
 		double beta=1.0/sparcity;
 		
+		// DOUG: RANDOM ISSUE
 		//double lambda=1.5;//1.0/sparcity/blockRowSize/blockColumnsSize;
 		//Exponential exp=new Exponential(lambda, RandomEngine.makeDefault());
-		Beta dist=new Beta(alpha, beta, RandomEngine.makeDefault());
+		//Beta dist=new Beta(alpha, beta, RandomEngine.makeDefault());
 		
 		for(long i=0; i<numRows; i+=blockRowSize)
 		{
 			long realBlockRlen=Math.min(blockRowSize, numRows-i);
 			for(long j=0; j<numColumns; j+=blockColumnsSize)
 			{
-				double realsparsity=dist.nextDouble();
+				// DOUG: RANDOM ISSUE
+				//double realsparsity=dist.nextDouble();
 				long realBlockClen=Math.min(blockColumnsSize, numColumns-j);
-				out.println((i/blockRowSize+1) + "," + (j/blockColumnsSize+1) + "," + realBlockRlen+","+ realBlockRlen +","+(seed+i*numRows+j)+","+realsparsity);
+				//out.println((i/blockRowSize+1) + "," + (j/blockColumnsSize+1) + "," + realBlockRlen+","+ realBlockRlen +","+(seed+i*numRows+j)+","+realsparsity);
 			}
 		}
 		out.close();

@@ -1,10 +1,7 @@
 package dml.meta;
 
 import java.io.IOException;
-import java.util.Vector;
 
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -18,7 +15,6 @@ import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
-import dml.runtime.util.MapReduceTool;
 
 public class PartitionBlockHashMapMapper extends MapReduceBase
 implements Mapper<Writable, Writable, BlockHashMapMapOutputKey, BlockHashMapMapOutputValue> {

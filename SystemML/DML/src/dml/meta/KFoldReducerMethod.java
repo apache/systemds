@@ -2,13 +2,11 @@ package dml.meta;
 import java.io.IOException;
 
 import org.apache.commons.math.random.Well1024a;
-import org.apache.hadoop.io.LongWritable ;
-
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import dml.runtime.matrix.io.MatrixBlock;
-import dml.runtime.matrix.io.MatrixIndexes;
 
 public class KFoldReducerMethod extends ReducerMethod {
 	public KFoldReducerMethod(PartitionParams pp, MultipleOutputs multipleOutputs) {

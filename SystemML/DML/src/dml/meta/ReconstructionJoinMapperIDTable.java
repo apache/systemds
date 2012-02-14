@@ -2,7 +2,6 @@ package dml.meta;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -12,12 +11,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import dml.runtime.matrix.io.Converter;
-import dml.runtime.matrix.io.MatrixBlock;
-import dml.runtime.matrix.io.MatrixIndexes;
-import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
-import dml.runtime.util.MapReduceTool;
 
 public class ReconstructionJoinMapperIDTable extends MapReduceBase
 implements Mapper<Writable, Writable, LongWritable, ReconstructionJoinMapOutputValue> { //TODO change read key/val format

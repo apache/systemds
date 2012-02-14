@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -20,7 +19,6 @@ import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
-import dml.runtime.util.MapReduceTool;
 
 public class PartitionBlockJoinMapperMatrix extends MapReduceBase
 implements Mapper<Writable, Writable, LongWritable, BlockJoinMapOutputValue> {

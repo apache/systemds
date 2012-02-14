@@ -6,7 +6,6 @@ import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
@@ -24,7 +23,6 @@ import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.Pair;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
-import dml.runtime.util.MapReduceTool;
 
 public class ReconstructionHashMapMapper extends MapReduceBase
 implements Mapper<Writable, Writable, LongWritable, ReconstructionHashMapMapOutputValue> {

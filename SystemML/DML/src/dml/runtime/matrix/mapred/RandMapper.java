@@ -2,13 +2,13 @@ package dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.util.MapReduceTool;
@@ -17,7 +17,7 @@ public class RandMapper extends GMRMapper
 implements Mapper<Writable, Writable, Writable, Writable>
 {
 //	private static int maxRandom = 5000;
-	private WELL1024 random = new WELL1024();
+	private Well1024a random = new Well1024a();
 	
 	private MatrixIndexes indexes=new MatrixIndexes();
 	private MatrixBlock block=new MatrixBlock();
@@ -81,7 +81,9 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		super.configure(job);
 	
 		int id=MapReduceTool.getUniqueMapperId(job, true);
-		for(int i=0; i<id; i++)
-			random.resetNextSubstream();
+		for(int i=0; i<id; i++){
+			// DOUG: RANDOM SUBSTREAM
+			//random.resetNextSubstream();
+		}
 	}
 }

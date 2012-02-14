@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.commons.math.random.RandomData;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,9 +23,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
-
-import cern.jet.random.Normal;
-import cern.jet.random.engine.RandomEngine;
 
 import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
@@ -49,18 +47,20 @@ public class GenerateTestMatrixNormal {
 			long numColumn=Long.parseLong(strs[2]);
 			long seed=Long.parseLong(strs[3]);
 		
-			RandomEngine eng=RandomEngine.makeDefault();
-			Normal dist_r=new Normal((double)numRows/2, (double)numRows/6, eng);
-			Normal dist_c=new Normal((double)numColumn/2, (double)numColumn/6, eng);
+			//RandomData eng=RandomEngine.makeDefault();
+			//Normal dist_r=new Normal((double)numRows/2, (double)numRows/6, eng);
+			//Normal dist_c=new Normal((double)numColumn/2, (double)numColumn/6, eng);
 			random=new Random(seed);
 			for(int i=0; i<realNum; i++)
 			{
 				long r, c;
 				do{
-					r=(long)dist_r.nextDouble();
+					// DOUG: RANDOM ISSUE
+					r=0 ; //(long)dist_r.nextDouble();
 				}while(r<0 || r>= numRows);
 				do{
-					c=(long)dist_c.nextDouble();
+					// DOUG: RANDOM ISSUE
+					c=0; //(long)dist_c.nextDouble();
 				}while(c<0 || c>=numColumn);
 				
 				indexes.setIndexes(r, c);

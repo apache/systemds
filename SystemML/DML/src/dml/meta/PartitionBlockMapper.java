@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;

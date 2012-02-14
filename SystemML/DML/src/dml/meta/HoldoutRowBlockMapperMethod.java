@@ -2,12 +2,12 @@ package dml.meta;
 
 import java.io.IOException;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.Pair;
@@ -21,7 +21,7 @@ public class HoldoutRowBlockMapperMethod extends BlockMapperMethod {
 	}
 
 	@Override
-	void execute(WELL1024 currRandom, Pair<MatrixIndexes, MatrixBlock> pair,
+	void execute(Well1024a currRandom, Pair<MatrixIndexes, MatrixBlock> pair,
 			Reporter reporter, OutputCollector out) throws IOException {
 		IntWritable obj = new IntWritable() ;		
 		int numtimes = (pp.toReplicate == true) ? pp.numIterations : 1;

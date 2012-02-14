@@ -2,12 +2,11 @@ package dml.meta;
 
 import java.io.IOException;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
-
-import umontreal.iro.lecuyer.rng.WELL1024;
 
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
@@ -22,19 +21,19 @@ public class KFoldRowBlockMapperMethod extends BlockMapperMethod {
 	}
 	
 	@Override
-	void execute(WELL1024 currRandom, Pair<MatrixIndexes, MatrixBlock> pair,
+	void execute(Well1024a currRandom, Pair<MatrixIndexes, MatrixBlock> pair,
 			Reporter reporter, OutputCollector out) throws IOException {
 		
 		if (pp.toReplicate == false){
 			block = pair.getValue() ;
-			int partId = currRandom.nextInt(0,pp.numFolds-1) ;
+			int partId = currRandom.nextInt(pp.numFolds) ;
 			obj.set(partId) ;
 			out.collect(obj, block) ;
 		}
 		
 		else {
 			block = pair.getValue() ;
-			int partId = currRandom.nextInt(0,pp.numFolds-1) ;
+			int partId = currRandom.nextInt(pp.numFolds) ;
 			obj.set(2*partId) ;
 			out.collect(obj, block) ;
 			

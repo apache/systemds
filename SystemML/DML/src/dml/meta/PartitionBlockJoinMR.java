@@ -18,7 +18,6 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.lib.MultipleInputs;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
 
 import dml.runtime.matrix.JobReturn;
 import dml.runtime.matrix.MatrixCharacteristics;

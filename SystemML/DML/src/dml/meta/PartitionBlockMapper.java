@@ -2,6 +2,7 @@ package dml.meta;
 
 import java.io.IOException;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
@@ -12,7 +13,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
 import dml.runtime.matrix.io.Converter;
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
@@ -22,8 +22,8 @@ import dml.runtime.util.MapReduceTool;
 
 public class PartitionBlockMapper extends MapReduceBase
 implements Mapper<Writable, Writable, IntWritable, MatrixBlock> {
-	private WELL1024[] random ;
-	private WELL1024 currRandom ;
+	private Well1024a[] random ;
+	private Well1024a currRandom ;
 	
 	private Converter inputConverter=null;
 	PartitionParams pp = new PartitionParams() ;
@@ -44,7 +44,7 @@ implements Mapper<Writable, Writable, IntWritable, MatrixBlock> {
 		while(inputConverter.hasNext()) {
 			Pair<MatrixIndexes, MatrixBlock> pair=inputConverter.next();
 			block = pair.getValue() ;
-			currRandom = new WELL1024();
+			currRandom = new Well1024a();
 			if(pp.idToStratify == -1)
 				currRandom = random[0] ;
 			else {
@@ -74,7 +74,7 @@ implements Mapper<Writable, Writable, IntWritable, MatrixBlock> {
 
 		if(pp.isEL == false && pp.pt == PartitionParams.PartitionType.submatrix) {
 			bmm = new SubMatrixBlockMapperMethod(pp, multipleOutputs, numRows, numColumns, brlen, bclen);
-			random = new WELL1024[1] ; random[0] = new WELL1024() ;
+			random = new Well1024a[1] ; random[0] = new Well1024a() ;
 		}
 		else if(pp.isEL == true || (pp.isEL == false && pp.pt == PartitionParams.PartitionType.row)) {
 			if(pp.isEL == false && pp.cvt == PartitionParams.CrossvalType.kfold)
@@ -85,14 +85,17 @@ implements Mapper<Writable, Writable, IntWritable, MatrixBlock> {
 			
 			int mapperId = MapReduceTool.getUniqueMapperId(job, true) ;
 			int numSeedsReqd = pp.getNumSeedsPerMapper() ;
-			random = new WELL1024[numSeedsReqd] ;
+			random = new Well1024a[numSeedsReqd] ;
 			// Skip random[0] by numSeedsReqd * mapperId ;
-			random[0] = new WELL1024() ;
-			for(int i = 0 ; i < numSeedsReqd * mapperId; i++)
-				random[0].resetNextSubstream() ;
+			random[0] = new Well1024a() ;
+			for(int i = 0 ; i < numSeedsReqd * mapperId; i++){
+				// DOUG: RANDOM SUBSTREAM
+				//random[0].resetNextSubstream() ;
+			}
 			for(int i = 1 ; i < random.length; i++) {
-				random[i] = random[i-1].clone() ;
-				random[i].resetNextSubstream() ;
+				// DOUG: RANDOM SUBSTREAM
+				//random[i] = (Well1024a)random[i-1].clone() ;
+				//random[i].resetNextSubstream() ;
 			}
 		}
 	}

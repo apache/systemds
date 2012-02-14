@@ -18,8 +18,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
-
 import dml.runtime.matrix.JobReturn;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.io.Converter;

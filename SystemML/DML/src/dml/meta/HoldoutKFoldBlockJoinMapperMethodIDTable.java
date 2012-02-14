@@ -8,7 +8,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.Pair;

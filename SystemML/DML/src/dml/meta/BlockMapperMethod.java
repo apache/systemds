@@ -2,12 +2,11 @@ package dml.meta;
 
 import java.io.IOException;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
-
-import umontreal.iro.lecuyer.rng.WELL1024;
 
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixCell;
@@ -26,6 +25,6 @@ public abstract class BlockMapperMethod {
 		this.multipleOutputs = multipleOutputs ;
 	}
 	
-	abstract void execute(WELL1024 currRandom, Pair<MatrixIndexes, MatrixBlock> pair, Reporter reporter, OutputCollector out)
+	abstract void execute(Well1024a currRandom, Pair<MatrixIndexes, MatrixBlock> pair, Reporter reporter, OutputCollector out)
 	throws IOException ;
 }

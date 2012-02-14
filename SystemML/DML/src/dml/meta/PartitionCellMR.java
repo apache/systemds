@@ -4,29 +4,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-import umontreal.iro.lecuyer.rng.WELL1024;
-
-import dml.meta.PartitionParams.CrossvalType;
-import dml.meta.PartitionParams.PartitionType;
 import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.OutputInfo;
@@ -37,7 +29,7 @@ import dml.runtime.util.MapReduceTool;
 public class PartitionCellMR{
 	static class SequenceOutMapper extends MapReduceBase implements Mapper<LongWritable, Text, MatrixIndexes, MatrixCell> {
 		MultipleOutputs multipleOutputs ;
-		private WELL1024 random = new WELL1024() ;
+		private Well1024a random = new Well1024a() ;
 		private Text textbuf=new Text();
 		int numIterations ;
 		MatrixIndexes mi = new MatrixIndexes() ;
@@ -74,8 +66,10 @@ public class PartitionCellMR{
 			multipleOutputs = new MultipleOutputs(job) ;
 			numIterations = job.getInt("numIterations", 1) ;
 			int mapperId = MapReduceTool.getUniqueMapperId(job, true) ;
-			for(int i = 0 ; i < mapperId; i++)
-				random.resetNextSubstream() ;
+			for(int i = 0 ; i < mapperId; i++){
+				// DOUG: RANDOM
+				//random.resetNextSubstream() ;
+			}
 		}
 	}
 

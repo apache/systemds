@@ -101,8 +101,16 @@
 	</target>
 	<target depends="build-subprojects,build-project" name="build" />
 	<target name="build-subprojects" />
-	<target depends="init" name="build-project">
+	<!-- Make sure javacc is called to generate parser -->
+	<target name="parser"> 
+		<echo message="Running JavaCC on DMLQLParser.jj"/>
+		<javacc target="src/dml/parser/DMLQLParser.jj"
+		        javacchome="lib/javacc"/>
+	</target>
+	<target depends="parser,init" name="build-project">
 		<echo message="${ant.project.name}: ${ant.file}" />
+		<!-- Double check the java compiler version -->
+		<echo message="Using java version ${ant.java.version}."/> 
 		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}">
 			<src path="src" />
 			<classpath refid="DML.classpath" />

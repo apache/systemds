@@ -9,7 +9,6 @@
 	<classpathentry kind="lib" path="lib/commons-httpclient-3.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/JSON4J.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.0.4.jar"/>
-	<classpathentry kind="lib" path="lib/ssj.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/hadoop-0.20.2-core.jar" sourcepath="C:/Documents and Settings/Felix/My Documents/IBM/PE/4/Hadoop/hadoop-0.20.2/src"/>
 	<classpathentry kind="lib" path="lib/nimble.jar"/>

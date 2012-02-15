@@ -3,6 +3,7 @@ package dml.runtime.matrix;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -92,16 +93,22 @@ public class RandMR
 		long[] clens=new long[randInstructions.length];
 		
 		FileSystem fs = FileSystem.get(job);
-		Random random=new Random(System.currentTimeMillis());
+		Random random=new Random();
+		Well1024a bigrand=new Well1024a();
 		String randInsStr="";
 		int numblocks=0;
 		for(int i = 0; i < randInstructions.length; i++)
 		{
 			randInsStr=randInsStr+","+randInstructions[i];
-			inputs[i]=System.currentTimeMillis()+"."+random.nextInt();
+			inputs[i]=System.currentTimeMillis()+".randinput";//+random.nextInt();
 			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 			PrintWriter pw = new PrintWriter(fsOut);
 			RandInstruction ins=(RandInstruction)RandInstruction.parseInstruction(randInstructions[i]);
+			random.setSeed(ins.seed);
+			int[] seeds=new int[32];
+			for(int s=0; s<seeds.length; s++)
+				seeds[s]=random.nextInt();
+			bigrand.setSeed(seeds);
 			if(ins==null)
 				throw new RuntimeException("bad rand instruction: "+randInstructions[i]);
 			rlens[i]=ins.rows;
@@ -117,6 +124,7 @@ public class RandMR
 					sb.append(((c / bclens[i]) + 1) + ",");
 					sb.append(curBlockRowSize + ",");
 					sb.append(curBlockColSize + ",");
+					sb.append(bigrand.nextLong());
 					pw.println(sb.toString());
 					numblocks++;
 				}
@@ -157,7 +165,6 @@ public class RandMR
 			
 			//set up the replication factor for the results
 			job.setInt("dfs.replication", replication);
-		
 			
 			JobClient client=new JobClient(job);
 			int capcity=client.getClusterStatus().getMaxMapTasks()-client.getClusterStatus().getMapTasks();

@@ -1,8 +1,8 @@
 package dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.Random;
 
-import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
@@ -11,14 +11,11 @@ import org.apache.hadoop.mapred.Reporter;
 
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
-import dml.runtime.util.MapReduceTool;
 
 public class RandMapper extends GMRMapper 
 implements Mapper<Writable, Writable, Writable, Writable>
 {
-//	private static int maxRandom = 5000;
-	private Well1024a random = new Well1024a();
-	
+	private Random random=new Random();	
 	private MatrixIndexes indexes=new MatrixIndexes();
 	private MatrixBlock block=new MatrixBlock();
 	
@@ -33,13 +30,13 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		//for each represenattive matrix, read the record and apply instructions
 		for(int i = 0; i < representativeMatrixes.size(); i++)
 		{
-			
-			byte thisMatrix = representativeMatrixes.get(i);
+		//	byte thisMatrix = representativeMatrixes.get(i);
 			String[] params = valueString.toString().split(",");
 			long blockRowNumber = Long.parseLong(params[0]);
 			long blockColNumber = Long.parseLong(params[1]);
 			int blockRowSize = Integer.parseInt(params[2]);
 			int blockColSize = Integer.parseInt(params[3]);
+			long seed=Long.parseLong(params[4]);
 			double minValue = rand_instructions.get(i).minValue;
 			double maxValue = rand_instructions.get(i).maxValue;
 			double sparsity = rand_instructions.get(i).sparsity;
@@ -51,6 +48,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				block.reset(blockRowSize, blockColSize, true);
 			
 			double currentValue;
+			random.setSeed(seed);
 			for(int r = 0; r < blockRowSize; r++)
 			{
 				for(int c = 0; c < blockColSize; c++)
@@ -79,11 +77,8 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	public void configure(JobConf job)
 	{
 		super.configure(job);
-	
-		int id=MapReduceTool.getUniqueMapperId(job, true);
-		for(int i=0; i<id; i++){
-			// DOUG: RANDOM SUBSTREAM
-			//random.resetNextSubstream();
-		}
+	//	int id=MapReduceTool.getUniqueMapperId(job, true);
+	//	System.out.println("mapper "+ MapReduceTool.getUniqueMapperId(job, true));
+	//	System.out.println(job.getNumMapTasks());
 	}
 }

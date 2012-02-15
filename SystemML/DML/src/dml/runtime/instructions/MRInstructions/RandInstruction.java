@@ -16,6 +16,7 @@ public class RandInstruction extends UnaryMRInstructionBase
 	public double maxValue;
 	public double sparsity;
 	public String probabilityDensityFunction;
+	public long seed=0;
 	
 	public RandInstruction ( Operator op, byte in, byte out, long rows, long cols, double minValue, double maxValue,
 				double sparsity, String probabilityDensityFunction, String istr ) {

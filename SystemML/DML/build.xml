@@ -36,7 +36,6 @@
 		<pathelement location="lib/commons-httpclient-3.0.1.jar" />             
 		<pathelement location="lib/commons-math-2.2.jar" />   <!-- for math computations -->
 		<pathelement location="lib/log4j-1.2.15.jar" />       <!-- for logging setup in DMLScript -->
-		<pathelement location="lib/ssj.jar" />                <!-- WILL GO AWAY -->
 		<pathelement location="lib/arpack-combo-0.1.jar" />   <!-- for intW in EigenWrappper -->
 		<pathelement location="lib/netlib-java-0.9.2.jar" />  <!-- for using lapack etc., mainly used by nimble-related stuff -->
 		<pathelement location="lib/nimble.jar" />             
@@ -105,7 +104,7 @@
 	<target name="parser"> 
 		<echo message="Running JavaCC on DMLQLParser.jj"/>
 		<javacc target="src/dml/parser/DMLQLParser.jj"
-		        javacchome="lib/javacc"/>
+		        javacchome="${build.sharedlib}/javacc"/>
 	</target>
 	<target depends="parser,init" name="build-project">
 		<echo message="${ant.project.name}: ${ant.file}" />
@@ -182,7 +181,6 @@
 	<target name="junitjar">
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
 			<fileset dir="lib">
-				<include name="ssj.jar" />
 				<include name="commons-math-2.2.jar" />
 				<include name="nimble.jar" />
 				<include name="JSON4J.jar" />
@@ -205,10 +203,10 @@
 			</manifest>
 		</jar>
 	</target>
-	<target name="jar">
+	<!-- Make sure jar depends on build -->
+	<target name="jar" depends="build">
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
 			<fileset dir="lib">
-				<include name="ssj.jar" />
 				<include name="commons-math-2.2.jar" />
 				<include name="nimble.jar" />
 				<include name="JSON4J.jar" />

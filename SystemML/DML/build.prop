@@ -9,6 +9,10 @@ general.libpath=lib/ant
 systemml.version=0.0.1
 release.notes=Preliminary build.
 
+#Lib
+build.sharedlib=../DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib
+build.ownlib=lib
+
 #BUILD
 build.jarnamejunit=JunitSystemML.jar
 build.jarnamerun=SystemML.jar

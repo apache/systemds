@@ -6,24 +6,30 @@ import dml.utils.LanguageException;
 
 public class IterablePredicate extends Expression {
 	private DataIdentifier _iterVar;	// variable being iterated over
-	private int _from;
-	private int _to;
-	private int _increment;
+	private Expression _fromExpr;
+	private Expression _toExpr;
+	private Expression _incrementExpr;
+	private HashMap<String,String> _parforParams;
 		
-	public IterablePredicate(DataIdentifier iterVar, int from, int to, int increment){
+	public IterablePredicate(DataIdentifier iterVar, Expression fromExpr, Expression toExpr, Expression incrementExpr, HashMap<String,String> parForParamValues)
+	{
 		_iterVar = iterVar;
-		_from = from;
-		_to = to;
-		_increment = (_from < _to) ? increment : (increment * -1);
-		
-		// create the expression to initialize the variable 
-		
-		// create the expression to increment the variable
+		_fromExpr = fromExpr;
+		_toExpr = toExpr;
+		_incrementExpr = incrementExpr;
 		
 	}
-			
+		
 	public String toString(){
-		return "(" + _iterVar + " in seq(" + _from + "," + _to + "," + _increment + ")";
+		
+		String retVal = "(" + _iterVar + " in seq(" + _fromExpr.toString() + "," + _toExpr.toString() + "," + _incrementExpr.toString();
+		if (_parforParams != null && _parforParams.size() > 0){
+			for (String key : _parforParams.keySet()){
+				retVal += "," + key + "=" + _parforParams.get(key).toString();
+			}
+		}
+		retVal = retVal + ")";
+		return retVal;
 	}
 	
 	 
@@ -41,8 +47,9 @@ public class IterablePredicate extends Expression {
 
 	@Override
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-		DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
-		return new IterablePredicate(newIterVar, _from, _to, _increment);
+		//DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
+		//return new IterablePredicate(newIterVar, _from, _to, _increment);
+		throw new LanguageException("rewriteExpression not supported for IterablePredicate");
 		
 	}
 
@@ -72,28 +79,32 @@ public class IterablePredicate extends Expression {
 		_iterVar = iterVar;
 	}
 
-	public int getFrom() {
-		return _from;
+	public Expression getFromExpr() {
+		return _fromExpr;
 	}
 
-	public void setFrom(int from) {
-		_from = from;
+	public void setFromExpr(Expression from) {
+		_fromExpr = from;
 	}
 
-	public int getTo() {
-		return _to;
+	public Expression getToExpr() {
+		return _toExpr;
 	}
 
-	public void setTo(int to) {
-		_to = to;
+	public void setToExpr(Expression to) {
+		_toExpr = to;
 	}
 
-	public int getIncrement() {
-		return _increment;
+	public Expression getIncrementExpr() {
+		return _incrementExpr;
 	}
 
-	public void setIncrement(int increment) {
-		_increment = increment;
+	public void setIncrementExpr(Expression increment) {
+		_incrementExpr = increment;
+	}
+	
+	public HashMap<String,String> getParForParams(){
+		return _parforParams;
 	}
 
 } // end class

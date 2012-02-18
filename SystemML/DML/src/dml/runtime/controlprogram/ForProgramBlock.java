@@ -139,11 +139,14 @@ public class ForProgramBlock extends ProgramBlock {
 
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicate.getIterVar().getName();
-		IntObject iterValue = new IntObject(iterVarName, _iterablePredicate.getFrom());
+		// TODO: DRB: broken
+		IntObject iterValue = null; //new IntObject(iterVarName, _iterablePredicate.getFromExpr());
 		_variables.put(iterValue.getName(), iterValue);
 		ScalarObject predResult = (ScalarObject)this._variables.get(iterVarName);
 		
-		while(predResult.getIntValue() <= _iterablePredicate.getTo()){
+		// TODO: DRB: broken
+		while(predResult.getIntValue() <= 100){
+	//	while(predResult.getIntValue() <= _iterablePredicate.getTo()){
 						
 			// for each program block
 			for (ProgramBlock pb : this._childBlocks){
@@ -159,8 +162,9 @@ public class ForProgramBlock extends ProgramBlock {
 			if (_variables.get(iterVarName) == null || !(_variables.get(iterVarName) instanceof IntObject))
 				throw new DMLRuntimeException("iter predicate " + iterVarName + " must be remain of type scalar int");
 			
-			int newValue = ((ScalarObject)_variables.get(iterVarName)).getIntValue() + _iterablePredicate.getIncrement();
-			_variables.put(iterVarName, new IntObject(iterVarName,newValue));
+			//TODO: DRB: broken
+			//int newValue = ((ScalarObject)_variables.get(iterVarName)).getIntValue() + _iterablePredicate.getIncrement();
+			//_variables.put(iterVarName, new IntObject(iterVarName,newValue));
 			predResult = (ScalarObject)_variables.get(iterVarName);
 			
 		}

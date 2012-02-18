@@ -293,7 +293,8 @@ TOKEN :
 	// The name of an optree or an existing annotation type.
 	// Note that the lexer has a funny regex syntax.  See:
 	// http://www.cs.utsa.edu/~danlo/teaching/cs4713/lecture/node12.html
-	| <ID : ["a"-"z","A"-"Z","_","$"](["a"-"z","A"-"Z","0"-"9","_"])* >
+	| <ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","0"-"9","_"])* >
+	| <DOLLAR_ID : "$"(["a"-"z","A"-"Z","0"-"9","_"])* >
 	
 	// A number with no decimal point -- minus sign is a separate token
 	//|	<INTEGER : ("-")? (["0"-"9"])+>
@@ -955,6 +956,7 @@ IfStatement IfStatement() :
 	}
 }
 
+
 ForStatement ForStatement() :
 {
 	ForStatement fs = new ForStatement();
@@ -1014,6 +1016,7 @@ ForStatement ForStatement() :
 		return fs;
 	}
 }
+
 
 WhileStatement WhileStatement() :
 {
@@ -1077,57 +1080,54 @@ WhileStatement WhileStatement() :
 IterablePredicate IterablePredicate() :
 {
 	DataIdentifier iterVar = null;
-	int from = 0, to = 0;
-	int increment = 1;
-	ArrayList<String> params = null;
-	ArrayList<Expression> exprParams = null; 
+	Expression fromExpr = null, toExpr = null, incrementExpr = null;
+	FunctionCallIdentifier fci = null;
+	Token paramName = null, paramVal = null;
+	HashMap<String,String> parforParamValues = new HashMap<String,String>();
+	ArrayList<Expression> exprParams = new ArrayList<Expression>(); 
 }
 {
 	<LEFTPAREN>
 	
-		iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> params = ReadList()) )
+		iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> fci = FunctionCall()) )
+			(<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
+		
 		{
-
-			if (params == null && exprParams == null)
+			if (fci == null && exprParams == null)
 			{
 				throw new ParseException("iterable predicate in for loop must specify parameters"); 
 			}
 
-			if (params != null)
+			// 
+			if (fci != null)
 			{
-				// use params from seq(from, to, [increment]?)
-				if (params.size() <  2 || params.size() > 3)
+				ArrayList<Expression> seqExprs = fci.getParamExpressions();
+				if (seqExprs.size() <  2 || seqExprs.size() > 3)
 				{
 					throw new ParseException("for seq, must specify both from and to value and cannot specify more than 3 args to seq");
 				}
 				else
 				{
-					from = new Integer(params.get(0));
-					to   = new Integer(params.get(1));
-					increment = (params.size() == 3) ? new Integer(params.get(2)) : 1;  
+					fromExpr = seqExprs.get(0);
+					toExpr   = seqExprs.get(1); 
+					incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : new IntIdentifier(1);  
 				} 
 				
 			}
 			else {
 				// use exprParams
-				if (exprParams.size() !=2 && exprParams.get(0) instanceof IntIdentifier && exprParams.get(1) instanceof IntIdentifier)
-				{
-					throw new ParseException("for predicate can only specify two integer predicates --- value of from and to ");
-				}
-
-				IntIdentifier fromExpr = (IntIdentifier)exprParams.get(0);
-				IntIdentifier toExpr   = (IntIdentifier)exprParams.get(1);
-				from = new Long(fromExpr.getValue()).intValue();
-				to = new Long(toExpr.getValue()).intValue();
-				increment = 1;
+				fromExpr = exprParams.get(0);
+				toExpr   = exprParams.get(1);
+				incrementExpr = new IntIdentifier(1);
 			}
 		  
 		//	if (params.size() > 2)
 		}
 		
 	<RIGHTPAREN>
-	{return new IterablePredicate(iterVar, from, to, increment);}
+	{return new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);}
 }
+
 
 ConditionalPredicate ConditionalPredicate() :  
 {
@@ -1347,62 +1347,67 @@ Expression PrimaryExpression() :
 Identifier IdentifierOrConstant() :
 {
  	Identifier id = null;
+ 	Token t1 = null;
 }
 
 {
 	(
-	   id = Identifier()
-	
-		///////// BEGIN handle variable param ///////////////
-		{
-		  
-			if (((DataIdentifier)id).getName().startsWith("$")){
-				// replace with constant of appropriate type
-				String argVal = commandArgs.get(((DataIdentifier)id).getName());
 
-				if (argVal == null)
-					System.out.println("ERROR: value for " + ((DataIdentifier)id).getName() + " is undefined ");
-				
-				
-				try {
-					Long longVal = new Long(argVal);
-					id = new IntIdentifier(longVal);
-					id.setDimensions(0,0);
-		    		id.computeDataType();
-		    		id.setValueType(ValueType.INT);
-				
-				} catch(Exception e1){
-				  	try {
-				  	  	Double doubleVal = new Double(argVal);
-				  	  	id = new DoubleIdentifier(doubleVal);
-					  	id.setDimensions(0,0);
-		    		  	id.computeDataType();
-		    		  	id.setValueType(ValueType.DOUBLE);
-				  	  
-				  	} catch (Exception e2) {
+		t1 = <DOLLAR_ID>			{		
+				///////// BEGIN handle variable param ///////////////
+				{
+				  String argVal = commandArgs.get(t1.image);
+		
+					if (argVal == null)
+						System.out.println("ERROR: value for " + t1.image + " is undefined ");
+										
+					try {
+					  	// try to assign to long value
+						Long longVal = new Long(argVal);
+						id = new IntIdentifier(longVal);
+						id.setDimensions(0,0);
+				    	id.computeDataType();
+				    	id.setValueType(ValueType.INT);
 						
-						if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-							Boolean boolVal = new Boolean(argVal);
-				  	  		id = new BooleanIdentifier(boolVal);
-							id.setDimensions(0,0);
-		    				id.computeDataType();
-		    				id.setValueType(ValueType.BOOLEAN);
-						}
-						else {
-							id = new StringIdentifier(dequoteStr('\"',argVal));
-							id.setDimensions(0,0);
-		    				id.computeDataType();
-		    				id.setValueType(ValueType.STRING);
-						}	
+					} catch(Exception e1){
+						  	try {
+						  	  	// try to assign to double value
+						  	  	Double doubleVal = new Double(argVal);
+						  	  	id = new DoubleIdentifier(doubleVal);
+							  	id.setDimensions(0,0);
+				    		  	id.computeDataType();
+				    		  	id.setValueType(ValueType.DOUBLE);
+						  	  
+						  	} catch (Exception e2) {
 
-				  	} // end catch e2
-				  						  	 
-				} // end catch e1
-			}  // end if	
-	   	}
-		///////// END handle variable param ///////////////
+								// try to assign to boolean value
+								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+									Boolean boolVal = new Boolean(argVal);
+						  	  		id = new BooleanIdentifier(boolVal);
+									id.setDimensions(0,0);
+				    				id.computeDataType();
+				    				id.setValueType(ValueType.BOOLEAN);
+								}
+								else {
+								  	// try to assign to string value
+									id = new StringIdentifier(dequoteStr('\"',argVal));
+									id.setDimensions(0,0);
+				    				id.computeDataType();
+				    				id.setValueType(ValueType.STRING);
+								}	
+		
+						  	} // end catch e2
+						  						  	 
+						} // end catch e1
+					}  // end if	
+			   	}
+				///////// END handle variable param ///////////////
+		|	id = Identifier()
+	   	| 	id = Constant()
+		   
+	
 
-	   | id = Constant()
+	   
 	 )
 	{ 
 		return id; 
@@ -1694,6 +1699,7 @@ InputStatement ReadInputStatementParamList() :
 	Token t1 = null;
 	Token t2 = null;
 	DataIdentifier t3 = null;
+	Token t4 = null;
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
 } 
@@ -1703,17 +1709,13 @@ InputStatement ReadInputStatementParamList() :
 	 (
 	   t1 = <DBLQUOTE_STRING_LITERAL>  {is.setFileName(dequoteStr('\"',t1.image));}
 	 	| t2 = <ID>
-	 	{
-	 	  
-			if (t2.image.startsWith("$")){
-						  
-				String argVal = commandArgs.get(t2.image);
-				if (argVal == null)
-					System.out.println("ERROR: value for " + t2.image + " is undefined ");
-				
-					
-				is.setFileName(dequoteStr('\"',argVal));
-			}
+		| t4 = <DOLLAR_ID>
+	 	{			  
+			String argVal = commandArgs.get(t4.image);
+			if (argVal == null)
+				System.out.println("ERROR: value for " + t4.image + " is undefined ");	
+			is.setFileName(dequoteStr('\"',argVal));
+			
 	 	}  
 	 )
 	 ( <COMMA> t1 = <ID> <ASSIGN> 
@@ -1721,45 +1723,39 @@ InputStatement ReadInputStatementParamList() :
 			  LOOKAHEAD(2) intid = IntConstant() { is.addStringParam(t1.image, intid.toString()); }
 				| doubleid = DoubleConstant() { is.addStringParam(t1.image, doubleid.toString()); }
 				| t2 = <DBLQUOTE_STRING_LITERAL> { is.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier() 
+				| t3 = Identifier() { is.addVarParam(t1.image, t3.getName()); }
+				| t4 = <DOLLAR_ID> 
 
 					///////// BEGIN handle variable param ///////////////
 					{
-						if (t3.getName().startsWith("$")){
-							// replace
-							String argVal = commandArgs.get(t3.getName());
-							if (argVal == null)
-								System.out.println("ERROR: value for " + t3.getName() + " is undefined ");
-				
-							try {
-								Long longVal = new Long(argVal);
-								is.addStringParam(t1.image, longVal.toString()); 
+						String argVal = commandArgs.get(t4.image);
+						if (argVal == null)
+							System.out.println("ERROR: value for " + t4.image + " is undefined ");
+			
+						try {
+							Long longVal = new Long(argVal);
+							is.addStringParam(t1.image, longVal.toString()); 
+							
+						} catch(Exception e1){
+						  	try {
+						  	  Double doubleVal = new Double(argVal);
+						  	  is.addStringParam(t1.image, doubleVal.toString());
+						  	  
+						  	} catch (Exception e2) {
 								
-							} catch(Exception e1){
-							  	try {
-							  	  Double doubleVal = new Double(argVal);
-							  	  is.addStringParam(t1.image, doubleVal.toString());
-							  	  
-							  	} catch (Exception e2) {
-									
-									if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-										Boolean boolVal = new Boolean(argVal);
-							  	  		is.addStringParam(t1.image, argVal.toString());
-									}
-									else {
-										is.addStringParam(t1.image, dequoteStr('\"', argVal));
-									}	
-		
-							  	} // end catch e2
-							  						  	 
-							} // end catch e1
-								
-						} // end if
-						else {
-							is.addVarParam(t1.image, t3.getName()); 
-						}
-				  	}
+								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+									Boolean boolVal = new Boolean(argVal);
+						  	  		is.addStringParam(t1.image, argVal.toString());
+								}
+								else {
+									is.addStringParam(t1.image, dequoteStr('\"', argVal));
+								}	
 	
+						  	} // end catch e2
+						  						  	 
+						} // end catch e1
+							
+					} 
 				  	///////// END handle variable param ///////////////
 				  	
 		)
@@ -1773,6 +1769,7 @@ OutputStatement OutputStatement() :
 	 DataIdentifier fn = null;
 	 Token t1 = null, t2 = null;
 	 DataIdentifier t3 = null;
+	 Token t4 = null;
 	 OutputStatement os;
 	 IntIdentifier intid = null;
 	 DoubleIdentifier doubleid = null;
@@ -1790,17 +1787,14 @@ OutputStatement OutputStatement() :
  		(
 		  	t1 = <DBLQUOTE_STRING_LITERAL>  {os.setFileName(dequoteStr('\"',t1));}
 		  		| t3 = Identifier()
-
+				| t4 = <DOLLAR_ID>
 			  		///////// BEGIN handle variable param ///////////////
 					{
-
-						if (t3.getName().startsWith("$")){
-							String argVal = commandArgs.get(t3.getName());
-							if (argVal == null)
-								System.out.println("ERROR: value for " + t3.getName() + " is undefined ");
-				
-							os.setFileName(dequoteStr('\"',argVal));
-						}
+						String argVal = commandArgs.get(t4.image);
+						if (argVal == null)
+							System.out.println("ERROR: value for " + t4.image + " is undefined ");
+						os.setFileName(dequoteStr('\"',argVal));
+						
 					}
 		  			///////// END handle variable param ///////////////
 		)
@@ -1811,46 +1805,40 @@ OutputStatement OutputStatement() :
 			  LOOKAHEAD(2) intid = IntConstant() { os.addStringParam(t1.image, intid.toString()); }
 				| doubleid = DoubleConstant() { os.addStringParam(t1.image, doubleid.toString()); }
 				| t2 = <DBLQUOTE_STRING_LITERAL> { os.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier()
+				| t3 = Identifier() {os.addVarParam(t1.image, t3.getName());}
+				| t4 = <DOLLAR_ID>
 				
-					
 					///////// BEGIN handle variable param ///////////////
 					{
-						if (t3.getName().startsWith("$")){
-							// replace
-							String argVal = commandArgs.get(t3.getName());
-							if (argVal == null)
-								System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");
-							  
-							try {
-								Long longVal = new Long(argVal);
-								os.addStringParam(t1.image, longVal.toString()); 
-								
-							} catch(Exception e1){
-							  	try {
-							  	  Double doubleVal = new Double(argVal);
-							  	  os.addStringParam(t1.image, doubleVal.toString());
-							  	  
-							  	} catch (Exception e2) {
-									
-									if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-										Boolean boolVal = new Boolean(argVal);
-							  	  		os.addStringParam(t1.image, argVal.toString());
-									}
-									else {
-										os.addStringParam(t1.image, dequoteStr('\"', argVal));
-									}	
 		
-							  	} // end catch e2
-							  						  	 
-							} // end catch e1
+						String argVal = commandArgs.get(t4.image);
+						if (argVal == null)
+							System.out.println("ERROR: Variable " + t4.image + " is undefined ");
+						  
+						try {
+							Long longVal = new Long(argVal);
+							os.addStringParam(t1.image, longVal.toString()); 
+							
+						} catch(Exception e1){
+						  	try {
+						  	  Double doubleVal = new Double(argVal);
+						  	  os.addStringParam(t1.image, doubleVal.toString());
+						  	  
+						  	} catch (Exception e2) {
 								
-						} // end if
-						else {
-							os.addVarParam(t1.image, t3.getName()); 
-						}
-				  	}
+								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+									Boolean boolVal = new Boolean(argVal);
+						  	  		os.addStringParam(t1.image, argVal.toString());
+								}
+								else {
+									os.addStringParam(t1.image, dequoteStr('\"', argVal));
+								}	
 	
+						  	} // end catch e2
+						  						  	 
+						} // end catch e1
+							
+					} 
 				  	///////// END handle variable param ///////////////
 				
 		)
@@ -1909,6 +1897,7 @@ RandStatement RandStatement() :
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
 	DataIdentifier t3;
+	Token t4 = null;
 }
 {
 	id = Identifier() <ASSIGN> <RAND> <LEFTPAREN>
@@ -1917,46 +1906,40 @@ RandStatement RandStatement() :
 	}
 	(
 		( t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN>
+
 		(
 			  LOOKAHEAD(2) intid = IntConstant() { rs.addLongParam(t1.image, intid.getValue()); }
 			| doubleid = DoubleConstant() { rs.addDoubleParam(t1.image, doubleid.getValue()); }
 			| t2 = <DBLQUOTE_STRING_LITERAL> { rs.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-			| t3 = Identifier()
+			| t3 = Identifier()  { rs.addVarParam(t1.image, t3); }
+			| t4 = <DOLLAR_ID> 
 				///////// BEGIN handle variable param ///////////////
 				{
-					if (t3.getName().startsWith("$")){
-						// replace
-						String argVal = commandArgs.get(t3.getName());
-							System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");
-						try {
-							Long longVal = new Long(argVal);
-							rs.addLongParam(t1.image, longVal.longValue()); 
+					String argVal = commandArgs.get(t4.image);
+					if (argVal == null)
+						System.out.println("ERROR: Value of " + t4.image + " is undefined ");
+			
+					try {
+						Long longVal = new Long(argVal);
+						rs.addLongParam(t1.image, longVal.longValue()); 
+						
+					} catch(Exception e1){
+					  	try {
+					  	  Double doubleVal = new Double(argVal);
+					  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
+					  	  
+					  	} catch (Exception e2) {
 							
-						} catch(Exception e1){
-						  	try {
-						  	  Double doubleVal = new Double(argVal);
-						  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
-						  	  
-						  	} catch (Exception e2) {
-								
-								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-									Boolean boolVal = new Boolean(argVal);
-						  	  		rs.addStringParam(t1.image, argVal);
-								}
-								else {
-									rs.addStringParam(t1.image, dequoteStr('\"', argVal));
-								}	
-	
-						  	} // end catch e2
-						  						  	 
-						} // end catch e1
-							
-					}
-					else {
-						rs.addVarParam(t1.image, t3);
-					}
-			  	}
-
+							if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+								Boolean boolVal = new Boolean(argVal);
+					  	  		rs.addStringParam(t1.image, argVal);
+							}
+							else {
+								rs.addStringParam(t1.image, dequoteStr('\"', argVal));
+							}
+					  	} // end catch e2		  	 
+					} // end catch e1		
+				}
 			  	///////// END handle variable param ///////////////
 		)
 		(
@@ -1965,44 +1948,34 @@ RandStatement RandStatement() :
 				LOOKAHEAD(2)  intid = IntConstant() { rs.addLongParam(t1.image, intid.getValue()); }
 				| doubleid = DoubleConstant() { rs.addDoubleParam(t1.image, doubleid.getValue()); }
 				| t2 = <DBLQUOTE_STRING_LITERAL> { rs.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier()
+				| t3 = Identifier() {rs.addVarParam(t1.image, t3);}				| t4 = <DOLLAR_ID>
 				
 					///////// BEGIN handle variable param ///////////////
 					{
-						if (t3.getName().startsWith("$")){
-							String argVal = commandArgs.get(t3.getName());
-								System.out.println("ERROR: Variable " + t3.getName() + " is undefined ");
-								
-							try {
-								Long longVal = new Long(argVal);
-								rs.addLongParam(t1.image, longVal.longValue()); 
-								
-							} catch(Exception e1){
-							  	try {
-							  	  Double doubleVal = new Double(argVal);
-							  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
-							  	  
-							  	} catch (Exception e2) {
-									
-									if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-										Boolean boolVal = new Boolean(argVal);
-							  	  		rs.addStringParam(t1.image, argVal);
-									}
-									else {
-										rs.addStringParam(t1.image, dequoteStr('\"', argVal));
-									}	
-		
-							  	} // end catch e2
-							  						  	 
-							} // end catch e1
-								
-						}
-						else {
-							rs.addVarParam(t1.image, t3);
-						}
+
+						String argVal = commandArgs.get(t4.image);
+						if (argVal == null)
+							System.out.println("ERROR: Value of " + t4.image + " is undefined ");
+													
+						try {
+							Long longVal = new Long(argVal);
+							rs.addLongParam(t1.image, longVal.longValue()); 
+						} catch(Exception e1){
+						  	try {
+						  	  Double doubleVal = new Double(argVal);
+						  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
+						  	} catch (Exception e2) {
+								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+									Boolean boolVal = new Boolean(argVal);
+						  	  		rs.addStringParam(t1.image, argVal);
+								}
+								else {
+									rs.addStringParam(t1.image, dequoteStr('\"', argVal));
+								}
+						  	} // end catch e2	  						  	 
+						} // end catch e1								
 				  	}
 				  	///////// END handle variable param ///////////////
-				
 			)
 		)*
 	)?
@@ -2013,7 +1986,6 @@ RandStatement RandStatement() :
 		return rs;
 	}
 }
-
 
 
 /**

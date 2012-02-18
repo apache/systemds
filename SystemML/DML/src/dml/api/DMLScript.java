@@ -60,7 +60,9 @@ public class DMLScript {
 			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-			+ "<args-list>: (optional) args to DML script; use single-ticks to denote string args ";
+			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
+			+ "<args-list>: (optional) args to DML script; use double-quotes to denote string args. \n" 
+			+ "NOTE: Double-quotes will have to be escaped with slash -- i.e., \"string-arg\" ";
 					
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;
@@ -151,17 +153,12 @@ public class DMLScript {
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
 				
-			// handle the args to DML Script -- rest of args will be
+			// handle the args to DML Script -- rest of args will be passed here to 
 			} else if (args[argid].startsWith("-args")) {
 			
 				argid++;
 				int index = 1;
 				while( argid < args.length){
-					
-					// use a single tick (') to indicate that a string is required
-					if (args[argid].startsWith("'")){
-						args[argid] = "\"" + args[argid].substring(1,args[argid].length()-1) + "\"";
-					}
 					argVals.put("$"+index ,args[argid]);
 					argid++;
 					index++;

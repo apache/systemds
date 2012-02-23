@@ -292,7 +292,6 @@ TOKEN :
 	
 	// The name of an optree or an existing annotation type.
 	// Note that the lexer has a funny regex syntax.  See:
-	// http://www.cs.utsa.edu/~danlo/teaching/cs4713/lecture/node12.html
 	| <ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","0"-"9","_"])* >
 	| <DOLLAR_ID : "$"(["a"-"z","A"-"Z","0"-"9","_"])* >
 	

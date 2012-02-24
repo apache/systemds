@@ -13,6 +13,9 @@ release.notes=Preliminary build.
 build.sharedlib=../DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib
 build.ownlib=lib
 
+#javacc
+javacc.home=${build.sharedlib}/javacc-5.0
+
 #BUILD
 build.jarnamejunit=JunitSystemML.jar
 build.jarnamerun=SystemML.jar

@@ -104,7 +104,7 @@
 	<target name="parser"> 
 		<echo message="Running JavaCC on DMLQLParser.jj"/>
 		<javacc target="src/dml/parser/DMLQLParser.jj"
-		        javacchome="${build.sharedlib}"/>
+		        javacchome="${javacc.home}"/>
 	</target>
 	<target depends="parser,init" name="build-project">
 		<echo message="${ant.project.name}: ${ant.file}" />

@@ -42,6 +42,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	public void map(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, 
 			Reporter reporter) throws IOException 
 	{
+	//	System.out.println("in mapper: \n"+rawValue);
 		commonMap(rawKey, rawValue, out, reporter);
 	}
 	

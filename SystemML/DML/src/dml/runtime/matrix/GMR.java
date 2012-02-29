@@ -170,8 +170,26 @@ public class GMR{
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, aggInstructionsInReducer, 
 				otherInstructionsInReducer, resultIndexes);
 		
+		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
+				instructionsInMapper, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
+		
+		// Update resultDimsUnknown based on computed "stats"
+		for ( int i=0; i < resultIndexes.length; i++ ) { 
+			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+				if ( resultDimsUnknown[i] != (byte) 1 ) {
+					throw new Exception("Unexpected error while configuring GMR job.");
+				}
+			}
+			else {
+				resultDimsUnknown[i] = (byte) 0;
+			}
+		}
+		//MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
+		
+		
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GMRMapper.class);
@@ -196,22 +214,6 @@ public class GMR{
 		//configure reducer
 		job.setReducerClass(GMRReducer.class);
 		//job.setReducerClass(PassThroughReducer.class);
-		
-		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
-		
-		// Update resultDimsUnknown based on computed "stats"
-		for ( int i=0; i < resultIndexes.length; i++ ) { 
-			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 ) {
-					throw new Exception("Unexpected error while configuring GMR job.");
-				}
-			}
-			else {
-				resultDimsUnknown[i] = (byte) 0;
-			}
-		}
-		MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		// By default, the job executes in "cluster" mode.
 		// Determine if we can optimize and run it in "local" mode.

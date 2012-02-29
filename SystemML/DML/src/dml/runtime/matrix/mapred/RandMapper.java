@@ -11,6 +11,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
+import dml.runtime.util.MapReduceTool;
 
 public class RandMapper extends GMRMapper 
 implements Mapper<Writable, Writable, Writable, Writable>

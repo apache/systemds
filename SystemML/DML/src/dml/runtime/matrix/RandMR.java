@@ -175,6 +175,22 @@ public class RandMR
 			//set up what matrices are needed to pass from the mapper to reducer
 			MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  randInsStr, instructionsInMapper, null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 			
+			stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
+					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
+			
+			// Update resultDimsUnknown based on computed "stats"
+			for ( int i=0; i < resultIndexes.length; i++ ) { 
+				if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+					if ( resultDimsUnknown[i] != (byte) 1 ) {
+						throw new Exception("Unexpected error while configuring GMR job.");
+					}
+				}
+				else {
+					resultDimsUnknown[i] = (byte) 0;
+				}
+			}
+			MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+			
 			//set up the multiple output files, and their format information
 			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true);
 			
@@ -198,22 +214,6 @@ public class RandMR
 			//configure reducer
 			job.setReducerClass(GMRReducer.class);
 			//job.setReducerClass(PassThroughReducer.class);
-			
-			stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
-					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
-			
-			// Update resultDimsUnknown based on computed "stats"
-			for ( int i=0; i < resultIndexes.length; i++ ) { 
-				if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-					if ( resultDimsUnknown[i] != (byte) 1 ) {
-						throw new Exception("Unexpected error while configuring GMR job.");
-					}
-				}
-				else {
-					resultDimsUnknown[i] = (byte) 0;
-				}
-			}
-			MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 
 			// By default, the job executes in "cluster" mode.
 			// Determine if we can optimize and run it in "local" mode.

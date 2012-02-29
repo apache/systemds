@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
@@ -285,40 +286,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
-	public MatrixValue tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2,
-			MatrixValue result) throws DMLUnsupportedOperationException,
-			DMLRuntimeException {
-		// Tertiary (currently, just ctable) can not be done over cells
-		// because we can not change the index of "result"
-		// ideally, result.set( this.getValue(), that.getValue(), that2.getValue());
-		throw new DMLRuntimeException("tertiaryOperations(): can not execute on cells");
-	}
-
-	@Override
-	public MatrixValue tertiaryOperations(Operator op, MatrixValue that,
-			double scalarThat2, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// Tertiary (currently, just ctable) can not be done over cells
-		throw new DMLRuntimeException("tertiaryOperations(): can not execute on cells");
-	}
-	
-	@Override
-	public MatrixValue tertiaryOperations(Operator op, double scalarThat,
-			double scalarThat2, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// Tertiary (currently, just ctable) can not be done over cells
-		throw new DMLRuntimeException("tertiaryOperations(): can not execute on cells");
-	}
-
-	@Override
-	public MatrixValue tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// Tertiary (currently, just ctable) can not be done over cells
-		throw new DMLRuntimeException("tertiaryOperations(): can not execute on cells");
-	}
-
-	@Override
 	public int getMaxColumn() throws DMLRuntimeException {
 		throw new DMLRuntimeException("getMaxColumn() can not be executed on cells");
 	}
@@ -378,6 +345,42 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 			MatrixValue newWithCorrection)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
+	}
+
+	@Override
+	public void tertiaryOperations(Operator op, MatrixValue that,
+			MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		MatrixCell c2=checkType(that);
+		MatrixCell c3=checkType(that2);
+		updateCtable(this.value, c2.value, c3.value, ctableResult);
+		
+	}
+
+	@Override
+	public void tertiaryOperations(Operator op, MatrixValue that,
+			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		MatrixCell c2=checkType(that);
+		updateCtable(this.value, c2.value, scalarThat2, ctableResult);
+		
+	}
+
+	@Override
+	public void tertiaryOperations(Operator op, double scalarThat,
+			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		updateCtable(this.value, scalarThat, scalarThat2, ctableResult);
+		
+	}
+
+	@Override
+	public void tertiaryOperations(Operator op, double scalarThat,
+			MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		MatrixCell c3=checkType(that2);
+		updateCtable(this.value, scalarThat, c3.value, ctableResult);
+		
 	}
 
 }

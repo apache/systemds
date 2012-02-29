@@ -65,8 +65,14 @@ public class GroupedAggMR {
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, null, null, 
 				grpAggInstructions, resultIndexes);
 		
+		byte[] resultDimsUnknown=new byte[resultIndexes.length];
+		// Update resultDimsUnknown based on computed "stats"
+		for ( int i=0; i < resultIndexes.length; i++ )  
+			resultDimsUnknown[i] = (byte) 2;
+	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, new byte[resultIndexes.length], outputs, outputInfos, false);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, false);
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GroupedAggMRMapper.class);
@@ -80,12 +86,6 @@ public class GroupedAggMR {
 		
 	//	MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
 	//			null, null, grpAggInstructions, null, resultIndexes);
-		
-		byte[] resultDimsUnknown=new byte[resultIndexes.length];
-		// Update resultDimsUnknown based on computed "stats"
-		for ( int i=0; i < resultIndexes.length; i++ )  
-			resultDimsUnknown[i] = (byte) 2;
-		MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//TODO: need to recompute the statistics
 		

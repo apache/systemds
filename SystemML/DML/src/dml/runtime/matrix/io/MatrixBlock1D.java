@@ -37,11 +37,9 @@ public class MatrixBlock1D extends MatrixValue{
 	private boolean sparse;
 	private double[] denseBlock=null;
 	private int nonZeros=0;
-	public static final double SPARCITY_TURN_POINT=0.1;
-	//private static final int THRESHOLD_K= (int)(1/(1+Math.log(1+SPARCITY_TURN_POINT)/Math.log(1-SPARCITY_TURN_POINT)));
-	
+	public static final double SPARCITY_TURN_POINT=0.4;
+	//private static final int THRESHOLD_K= (int)(1/(1+Math.log(1+SPARCITY_TURN_POINT)/Math.log(1-SPARCITY_TURN_POINT)));	
 	private HashMap<CellIndex, Double> sparseBlock=null;
-	private CellIndex tempCellIndex=new CellIndex(0, 0);
 	
 	public static boolean checkSparcityOnAggBinary(MatrixBlock1D m1, MatrixBlock1D m2)
 	{
@@ -57,12 +55,13 @@ public class MatrixBlock1D extends MatrixValue{
 	private static boolean checkSparcityOnBinary(MatrixBlock1D m1, MatrixBlock1D m2)
 	{
 		double n=m1.getNumRows();
-		double k=m1.getNumColumns();
-		double m=m2.getNumColumns();
+		double m=m1.getNumColumns();
 		double nz1=m1.getNonZeros();
 		double nz2=m2.getNonZeros();
 		//1-(1-p)*(1-q)
-		return ( 1- (n*k-nz1)*(k*m-nz2)/n/k/k/m < SPARCITY_TURN_POINT);
+		double estimated=1- (1-nz1/n/m)*(1-nz2/n/m);
+		return ( 1- (1-nz1/n/m)*(1-nz2/n/m) < SPARCITY_TURN_POINT);
+		
 		
 	}
 	
@@ -919,18 +918,10 @@ public class MatrixBlock1D extends MatrixValue{
 	 *  D = ctable(A,v2,W)
 	 *  this <- A; scalarThat <- v2; that2 <- W; result <- D
 	 */
-	public MatrixValue tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2, MatrixValue result)
+	public void tertiaryOperations(Operator op, double scalarThat,
+			MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		checkType(result);
 		
-		// TODO: this is very specific to contingency tables
-		// Contingency Tables: Always produce the output in sparse format
-		if(result==null)
-			throw new DMLRuntimeException("Unexpected error in tertiaryOperations() while executing ctable_transform instruction: result block can not be null.");
-		else
-			result.reset(1,1,true);
-
 		/*
 		 * (i1,j1,v1) from input1 (this)
 		 * (v2) from sclar_input2 (scalarThat)
@@ -949,7 +940,7 @@ public class MatrixBlock1D extends MatrixValue{
 					// output (v1,v2,w)
 					v1 = e.getValue();
 					w = that2.getValue(e.getKey().row, e.getKey().column);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 		}else
@@ -964,31 +955,22 @@ public class MatrixBlock1D extends MatrixValue{
 					c=i%clen;
 					v1 = this.getValue(r, c);
 					w = that2.getValue(r, c);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 			
 		}
-		
-		return result;	}
+	}
 
 	/*
 	 *  D = ctable(A,v2,w)
 	 *  this <- A; scalar_that <- v2; scalar_that2 <- w; result <- D
 	 */
 	@Override
-	public MatrixValue tertiaryOperations(Operator op, double scalarThat,
-			double scalarThat2, MatrixValue result)
+	public void tertiaryOperations(Operator op, double scalarThat,
+			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		checkType(result);
 		
-		// TODO: this is very specific to contingency tables
-		// Contingency Tables: Always produce the output in sparse format
-		if(result==null)
-			throw new DMLRuntimeException("Unexpected error in tertiaryOperations() while executing ctable_transform instruction: result block can not be null.");
-		else
-			result.reset(1,1,true);
-
 		/*
 		 * (i1,j1,v1) from input1 (this)
 		 * (v2) from sclar_input2 (scalarThat)
@@ -1006,7 +988,7 @@ public class MatrixBlock1D extends MatrixValue{
 				{
 					// output (v1,v2,w)
 					v1 = e.getValue();
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 		}else
@@ -1020,13 +1002,12 @@ public class MatrixBlock1D extends MatrixValue{
 					r=i/clen;
 					c=i%clen;
 					v1 = this.getValue(r, c);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 			
 		}
 		
-		return result;
 	}
 
 	/*
@@ -1034,18 +1015,10 @@ public class MatrixBlock1D extends MatrixValue{
 	 *  this <- A; that <- B; scalar_that2 <- w; result <- D
 	 */
 	@Override
-	public MatrixValue tertiaryOperations(Operator op, MatrixValue that,
-			double scalarThat2, MatrixValue result)
+	public void tertiaryOperations(Operator op, MatrixValue that,
+			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		checkType(result);
-		
-		// TODO: this is very specific to contingency tables
-		// Contingency Tables: Always produce the output in sparse format
-		if(result==null)
-			throw new DMLRuntimeException("Unexpected error in tertiaryOperations() while executing ctable_transform instruction: result block can not be null.");
-		else
-			result.reset(1,1,true);
-
+	
 		/*
 		 * (i1,j1,v1) from input1 (this)
 		 * (i1,j1,v2) from input2 (that)
@@ -1063,7 +1036,7 @@ public class MatrixBlock1D extends MatrixValue{
 					// output (v1,v2,w)
 					v1 = e.getValue();
 					v2 = that.getValue(e.getKey().row, e.getKey().column);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 		}else
@@ -1078,30 +1051,21 @@ public class MatrixBlock1D extends MatrixValue{
 					c=i%clen;
 					v1 = this.getValue(r, c);
 					v2 = that.getValue(r, c);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 			
 		}
 		
-		return result;
 	}
 	
 	/*
 	 *  D = ctable(A,B,W)
 	 *  this <- A; that <- B; that2 <- W; result <- D
 	 */
-	public MatrixValue tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, MatrixValue result)
+	public void tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
-		checkType(result);
-		
-		if(result==null)
-			throw new DMLRuntimeException("Unexpected error in tertiaryOperations() while executing ctable_transform instruction: result block can not be null.");
-			// result=new MatrixBlock1D( ); // by default, the block is created in sparse format
-		else
-			result.reset(1,1,true);
-
 		/*
 		 * (i1,j1,v1) from input1 (this)
 		 * (i1,j1,v2) from input2 (that)
@@ -1119,7 +1083,7 @@ public class MatrixBlock1D extends MatrixValue{
 					v1 = e.getValue();
 					v2 = that.getValue(e.getKey().row, e.getKey().column);
 					w = that2.getValue(e.getKey().row, e.getKey().column);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 		}else
@@ -1135,12 +1099,11 @@ public class MatrixBlock1D extends MatrixValue{
 					v1 = this.getValue(r, c);
 					v2 = that.getValue(r, c);
 					w = that2.getValue(r, c);
-					updateCtable(v1, v2, w, result);
+					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
 			
 		}
-		return result;
 	}
 	
 	
@@ -2232,5 +2195,4 @@ public class MatrixBlock1D extends MatrixValue{
 		
 		return result;
 	}
-	
 }

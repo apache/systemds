@@ -749,7 +749,7 @@ public class MRJobConfiguration {
 	}
 	
 	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
-			OutputInfo[] outputInfos, boolean inBlockRepresentation) 
+			OutputInfo[] outputInfos, boolean inBlockRepresentation, boolean mayContainCtable) 
 	throws Exception
 	{
 		if(resultIndexes.length!=outputs.length)
@@ -765,7 +765,12 @@ public class MRJobConfiguration {
 		for(int i=0; i<outputs.length; i++)
 		{
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(outputs[i]), job);
-			setOutputInfo(job, i, outputInfos[i], inBlockRepresentation);
+			if ( mayContainCtable && resultDimsUnknwon[i] == (byte) 1 ) 
+			{
+				setOutputInfo(job, i, outputInfos[i], false);
+			}
+			else
+				setOutputInfo(job, i, outputInfos[i], inBlockRepresentation);
 			MultipleOutputs.addNamedOutput(job, Integer.toString(i), 
 					outputInfos[i].outputFormatClass, outputInfos[i].outputKeyClass, 
 					outputInfos[i].outputValueClass);
@@ -779,6 +784,14 @@ public class MRJobConfiguration {
 		
 	/*	FileOutputFormat.setCompressOutput(job, true);
 		SequenceFileOutputFormat.setOutputCompressionType(job, SequenceFile.CompressionType.BLOCK); */
+	}
+	
+	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
+			OutputInfo[] outputInfos, boolean inBlockRepresentation) 
+	throws Exception
+	{
+		setUpMultipleOutputs(job, resultIndexes, resultDimsUnknwon, outputs, 
+				outputInfos, inBlockRepresentation, false);
 	}
 	
 	public static MatrixCharacteristics[] computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 

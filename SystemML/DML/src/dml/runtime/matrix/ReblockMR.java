@@ -79,17 +79,6 @@ public class ReblockMR {
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, 
 				reblockInstructions, null, otherInstructionsInReducer, resultIndexes);
 		
-		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true);
-		
-		// configure mapper and the mapper output key value pairs
-		job.setMapperClass(ReblockMapper.class);
-		job.setMapOutputKeyClass(MatrixIndexes.class);
-		job.setMapOutputValueClass(TaggedPartialBlock.class);
-		
-		//configure reducer
-		job.setReducerClass(ReblockReducer.class);
-		
 		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
 				instructionsInMapper, reblockInstructions, null, null, otherInstructionsInReducer, resultIndexes);
 		
@@ -104,7 +93,19 @@ public class ReblockMR {
 				resultDimsUnknown[i] = (byte) 0;
 			}
 		}
-		MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+		
+		//set up the multiple output files, and their format information
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true);
+		
+		// configure mapper and the mapper output key value pairs
+		job.setMapperClass(ReblockMapper.class);
+		job.setMapOutputKeyClass(MatrixIndexes.class);
+		job.setMapOutputValueClass(TaggedPartialBlock.class);
+		
+		//configure reducer
+		job.setReducerClass(ReblockReducer.class);
+		
 		
 		// By default, the job executes in "cluster" mode.
 		// Determine if we can optimize and run it in "local" mode.

@@ -53,6 +53,10 @@ public class MMCJMR {
 		JobConf job;
 		job = new JobConf(MMCJMR.class);
 		
+		byte []resultDimsUnknown_arr = new byte[1];
+		resultDimsUnknown_arr[0] = resultDimsUnknown;
+	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown_arr);
+		
 		MatrixCharacteristics[] stats=commonSetup(job, inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, numReducers, 
 				replication, resultDimsUnknown, output, outputinfo);
@@ -67,9 +71,6 @@ public class MMCJMR {
 		else {
 			resultDimsUnknown = (byte) 0;
 		}
-		byte []resultDimsUnknown_arr = new byte[1];
-		resultDimsUnknown_arr[0] = resultDimsUnknown;
-		MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown_arr);
 		
 		//get the total amount of jvm memory
 		int partialAggCacheSize=MRJobConfiguration.getJVMMaxMemSize(job);

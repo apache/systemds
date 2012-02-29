@@ -200,7 +200,7 @@ public class TestUtils {
 			//	System.out.println("actual value: "+actualValue+", expected value: "+expectedValue);
 				
 				if (!compareCellValue(expectedValue, actualValue, epsilon)) {
-					System.out.println("mismatch: expected " + expectedValue + ", actual " + actualValue);
+					System.out.println(expectedFile+": "+index+" mismatch: expected " + expectedValue + ", actual " + actualValue);
 					countErrors++;
 				}
 			}
@@ -1025,6 +1025,7 @@ public class TestUtils {
 						if (!isR && matrix[i][j] == 0)
 							continue;
 						pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
+						//System.out.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
 					}
 				}
 			} else {

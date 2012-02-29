@@ -2,6 +2,7 @@ package dml.runtime.matrix.io;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
@@ -136,19 +137,19 @@ public abstract class MatrixValue implements WritableComparable {
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where all three inputs are matrices
-	public abstract MatrixValue tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, MatrixValue result)
+	public abstract void tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
-	public abstract MatrixValue tertiaryOperations(Operator op, MatrixValue that, double scalar_that2, MatrixValue result)
+	public abstract void tertiaryOperations(Operator op, MatrixValue that, double scalar_that2, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
-	public abstract MatrixValue tertiaryOperations(Operator op, double scalar_that, double scalar_that2, MatrixValue result)
+	public abstract void tertiaryOperations(Operator op, double scalar_that, double scalar_that2, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	// tertiary where first and third inputs are matrices and second is a scalar
-	public abstract MatrixValue tertiaryOperations(Operator op, double scalarThat, MatrixValue that2, MatrixValue result)
+	public abstract void tertiaryOperations(Operator op, double scalarThat, MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
@@ -174,4 +175,27 @@ public abstract class MatrixValue implements WritableComparable {
 
 	public abstract MatrixValue selectOperations(MatrixValue valueOut, IndexRange range)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
+
+	protected CellIndex tempCellIndex=new CellIndex(0, 0);
+	protected void updateCtable(double v1, double v2, double w, HashMap<CellIndex, Double> ctableResult) throws DMLRuntimeException {
+		int _row, _col;
+		// If any of the values are NaN (i.e., missing) then 
+		// we skip this tuple, proceed to the next tuple
+		if ( Double.isNaN(v1) || Double.isNaN(v2) || Double.isNaN(w) ) {
+			return;
+		}
+		else {
+			_row = (int)v1;
+			_col = (int)v2;
+			
+			if ( _row <= 0 || _col <= 0 ) {
+				throw new DMLRuntimeException("Erroneous input while computing the contingency table (one of the value <= zero).");
+			} 
+			CellIndex temp=new CellIndex(_row, _col);
+			Double oldw=ctableResult.get(temp);
+			if(oldw==null)
+				oldw=0.0;
+			ctableResult.put(temp, oldw+w);
+		}
+	}
 }

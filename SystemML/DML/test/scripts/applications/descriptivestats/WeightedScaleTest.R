@@ -3,7 +3,7 @@ is.installed <- function(mypkg) is.element(mypkg, installed.packages()[,1])
 
 is_plotrix = is.installed("plotrix");
 if ( !is_plotrix ) {
-install.package("plotrix");
+install.packages("plotrix");
 } 
 library("plotrix");
 

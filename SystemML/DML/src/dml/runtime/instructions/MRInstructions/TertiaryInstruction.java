@@ -1,5 +1,7 @@
 package dml.runtime.instructions.MRInstructions;
 
+import java.util.HashMap;
+
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.InstructionUtils;
 import dml.runtime.matrix.io.MatrixBlock;
@@ -7,6 +9,7 @@ import dml.runtime.matrix.io.MatrixBlock1D;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.OperationsOnMatrixValues;
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.mapred.CachedValueMap;
 import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.Operator;
@@ -97,12 +100,69 @@ public class TertiaryInstruction extends MRInstruction {
 		}
 	}
 	
+	public void processInstruction(Class<? extends MatrixValue> valueClass,
+			CachedValueMap cachedValues, IndexedMatrixValue zeroInput, HashMap<Byte, HashMap<CellIndex, Double>> cacheForCtable)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		
+		String opcode = InstructionUtils.getOpCode(instString);
+		
+		HashMap<CellIndex, Double> ctableResult=cacheForCtable.get(output);
+		if(ctableResult==null)
+		{
+			ctableResult=new HashMap<CellIndex, Double>();
+			cacheForCtable.put(output, ctableResult);
+		}
+		
+		IndexedMatrixValue in1, in2, in3 = null;
+		in1 = cachedValues.get(input1);
+		if ( opcode.equalsIgnoreCase("ctabletransform") ) {
+			in2 = cachedValues.get(input2);
+			in3 = cachedValues.get(input3);
+			if(in1==null || in2==null || in3 == null )
+				return;
+		}
+		else if ( opcode.equalsIgnoreCase("ctabletransformscalarweight")) {
+			// 3rd input is a scalar
+			in2 = cachedValues.get(input2);
+			in3 = null;
+			if(in1==null || in2==null )
+				return;
+		} else if (opcode.equalsIgnoreCase("ctabletransformhistogram")) {
+			// 2nd and 3rd inputs are scalars
+			in2 = null;
+			in3 = null;
+			if(in1==null )
+				return;
+		} else if (opcode.equalsIgnoreCase("ctabletransformweightedhistogram")) {
+			// 2nd and 3rd inputs are scalars
+			in2 = null;
+			in3 = cachedValues.get(input3);
+			if(in1==null || in3==null)
+				return;
+		} else {
+			throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);
+		}
+		
+		//process instruction
+		if ( opcode.equalsIgnoreCase("ctabletransform") ) {
+			OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), in3.getIndexes(), in3.getValue(), ctableResult, optr);
+		} else if ( opcode.equalsIgnoreCase("ctabletransformscalarweight") ) {
+			OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), in2.getIndexes(), in2.getValue(), scalar_input3, ctableResult, optr);
+		} else if ( opcode.equalsIgnoreCase("ctabletransformhistogram") ) {
+			OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), scalar_input2, scalar_input3, ctableResult, optr);
+		} else if ( opcode.equalsIgnoreCase("ctabletransformweightedhistogram") ) {
+			OperationsOnMatrixValues.performTertiary(in1.getIndexes(), in1.getValue(), scalar_input2, in3.getIndexes(), in3.getValue(), ctableResult, optr);
+		}
+		
+	}
+	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+		throw new DMLRuntimeException("this function should not be called!");
+		/*
 		if ( valueClass != MatrixBlock1D.class && valueClass != MatrixBlock.class ) {
 			throw new DMLRuntimeException("Unexpected value class for TertiaryInstruction.");
 		}
@@ -181,8 +241,8 @@ public class TertiaryInstruction extends MRInstruction {
 		out.getIndexes().setIndexes(finalIndexes);
 		
 		// Dirty hack to make maxrow and maxcolumn in ReduceBase.collectOutput_N_Increase_Counter() work
-		((MatrixBlock1D) out.getValue()).setNumRows(1);
-		((MatrixBlock1D) out.getValue()).setNumColumns(1);
+		((MatrixBlock) out.getValue()).setNumRows(1);
+		((MatrixBlock) out.getValue()).setNumColumns(1);
 		
 		//process instruction
 		if ( opcode.equalsIgnoreCase("ctabletransform") ) {
@@ -199,7 +259,7 @@ public class TertiaryInstruction extends MRInstruction {
 			throw new DMLRuntimeException("ctable_transform.processInstruction(): unexpected error.");
 			// cachedValues.set(output, out);
 		}
-		
+		*/
 	}
 
 	@Override

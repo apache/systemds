@@ -26,7 +26,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	protected HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
 	
 	//temporary variables
-	private IndexedMatrixValue tempValue=null;
+	protected IndexedMatrixValue tempValue=null;
 	protected IndexedMatrixValue zeroInput=null;
 
 	public void configure(JobConf job)

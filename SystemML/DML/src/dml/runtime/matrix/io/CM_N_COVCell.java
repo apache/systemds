@@ -9,7 +9,6 @@ import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
 import dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
-import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;

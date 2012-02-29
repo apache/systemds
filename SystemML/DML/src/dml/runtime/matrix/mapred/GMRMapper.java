@@ -14,7 +14,6 @@ import org.apache.hadoop.mapred.Reporter;
 import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.MatrixPackedCell;
-import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.TaggedMatrixPackedCell;
 import dml.runtime.matrix.io.TaggedMatrixValue;
 

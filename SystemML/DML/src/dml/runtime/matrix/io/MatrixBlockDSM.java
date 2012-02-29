@@ -16,7 +16,6 @@ import dml.runtime.functionobjects.Plus;
 import dml.runtime.functionobjects.SwapIndex;
 import dml.runtime.instructions.CPInstructions.KahanObject;
 import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
-import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;

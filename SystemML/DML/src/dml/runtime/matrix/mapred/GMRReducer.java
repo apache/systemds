@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;

@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Vector;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;

@@ -1,19 +1,10 @@
 package dml.runtime.matrix.io;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
-
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapred.Reporter;
-
 import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
-import dml.runtime.matrix.mapred.CollectMultipleConvertedOutputs;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;

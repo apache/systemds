@@ -4,9 +4,6 @@ import java.util.HashMap;
 
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.InstructionUtils;
-import dml.runtime.matrix.io.MatrixBlock;
-import dml.runtime.matrix.io.MatrixBlock1D;
-import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.OperationsOnMatrixValues;
 import dml.runtime.matrix.io.MatrixValue.CellIndex;

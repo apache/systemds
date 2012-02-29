@@ -1,7 +1,5 @@
 package dml.parser;
 
-import java.util.HashMap;
-
 import dml.utils.LanguageException;
  
 public class PrintStatement extends Statement{

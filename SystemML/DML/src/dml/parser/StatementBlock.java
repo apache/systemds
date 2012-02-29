@@ -5,10 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import dml.hops.Hops;
-import dml.lops.DoubleVal;
-import dml.lops.IndexPair;
 import dml.lops.Lops;
-import dml.lops.VAL;
 import dml.parser.Expression.DataType;
 import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.utils.HopsException;

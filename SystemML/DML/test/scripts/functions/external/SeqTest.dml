@@ -1,4 +1,4 @@
-seq = externalFunction(Matrix[Double] A, Double sup, Double max_level) 
+seqMini = externalFunction(Matrix[Double] A, Double sup, Double max_level) 
 return (Matrix[Double] B, Matrix[Double] C) 
 implemented in (classname="dml.packagesupport.SequenceMinerWrapper",execlocation="master");
  
@@ -7,7 +7,7 @@ max_level=5.0;
 
 M = read( "$$indir$$M", rows=$$rows$$, cols=$$cols$$, format="text");
 
-[A,B] = seq(M,minsup,max_level);
+[A,B] = seqMini(M,minsup,max_level);
 
 write(A, "$$outdir$$fseq", format="text");
 write(B, "$$outdir$$sup", format="text");

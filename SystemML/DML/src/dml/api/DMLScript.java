@@ -497,13 +497,8 @@ public class DMLScript {
 		// read in configuration files
 		NimbleConfig config = new NimbleConfig();
 
-
-		if(dmlCfg.getTextValue("NimbleSystemConfigFile") == null)
-			return null;
-
-
 		try {
-			config.parseSystemDocuments(dmlCfg.getTextValue("NimbleSystemConfigFile"));
+			config.parseSystemDocuments(dmlCfg.getConfig_file_name());
 		} catch (ConfigurationException e) {
 			throw new PackageRuntimeException ("Error parsing Nimble configuration files");
 		}

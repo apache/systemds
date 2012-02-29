@@ -18,6 +18,10 @@ public class DMLConfig
     public static final int DEFAULT_BLOCK_SIZE = 1000;
     public static final int DEFAULT_NUM_REDUCERS = 75;
 	String config_file_name;
+	
+	public String getConfig_file_name() {
+		return config_file_name;
+	}
 	Element xml_root;
 	
 	/**

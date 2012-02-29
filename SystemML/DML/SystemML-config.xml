@@ -2,5 +2,10 @@
 <numreducers>10</numreducers>
 <scratch>scratch_space</scratch>
 <defaultblocksize>1000</defaultblocksize>
-<NimbleSystemConfigFile>./scripts/system.xml</NimbleSystemConfigFile>
+<NumMergeTasks>4</NumMergeTasks>
+<NumberOfSowThreads>1</NumberOfSowThreads>
+<NumberOfReapThreads>1</NumberOfReapThreads>
+<SowerWaitInterval>1000</SowerWaitInterval>
+<ReaperWaitInterval>1000</ReaperWaitInterval>
+<NimbleScratch>nimbleoutput</NimbleScratch>
 </root>

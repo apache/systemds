@@ -9,7 +9,7 @@ matMult = function(Int dim, Int dim2) return ( Matrix[Double]  tempm)
 	F = rowSums(E);
 	Fsum = sum(F);
 
-	print("F in matMutl is ", Fsum);
+	print("F in matMutl is " + Fsum);
 	i = 0;
 	while (i < 1){
 		i = i + 2;
@@ -25,7 +25,7 @@ dim2 = 5;
 F = matMult(dim, dim2)
 
 
-print("D should be 2 ", D);
+print("D should be 2 " + D);
 fsum = sum(F);
-print("fsum is ", fsum);
+print("fsum is " + fsum);
 #write ( F, "F.output", format="text");

@@ -11,5 +11,5 @@ dim2 = 10;
 
 F = matMult(dim, dim2)
 fsum = sum(F);
-print("fsum is ", fsum);
+print("fsum is " + fsum);
 #write ( F, "F.output", format="text");

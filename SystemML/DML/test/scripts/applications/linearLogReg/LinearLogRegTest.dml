@@ -62,9 +62,9 @@ while(!converge) {
 	
 	norm_grad = sqrt(sum(grad*grad))
 	
-	print("-- Outer Iteration =", iter)
+	print("-- Outer Iteration = " + iter)
 	objScalar = castAsScalar(obj)
-	#print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
+	print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
 	
 	# SOLVE TRUST REGION SUB-PROBLEM
 	s = zeros_D
@@ -125,7 +125,7 @@ while(!converge) {
 		}
 	}  
 	
-	print("      --- Inner CG Iteration = ", inneriter)
+	print("      --- Inner CG Iteration =  " + inneriter)
 	# END TRUST REGION SUB-PROBLEM
 	# compute rho, update w, obtain delta
 	gs = t(s) %*% grad
@@ -142,7 +142,7 @@ while(!converge) {
 	qkScalar = castAsScalar(qk)
 	rhoScalar = castAsScalar(rho);
 	snorm = sqrt(sum( s * s ))
-	print("     Actual = ", actredScalar)
+	print("     Actual    = " + actredScalar)
 	print("     Predicted = " + qkScalar)
 	
 	if (iter==0) {
@@ -194,11 +194,11 @@ while(!converge) {
 	iter = iter + 1
 	converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
 
-	print("     Delta = ", delta)
-	print("     Accuracy = ",  accuracy)
-	print("     Correct = ", correct)
-	print("     OuterIter = ", iter)
-	print("     Converge = ", converge)
+	print("     Delta =  " + delta)
+	print("     Accuracy =  " +  accuracy)
+	print("     Correct =  " + correct)
+	print("     OuterIter =  " + iter)
+	print("     Converge =  " + converge)
 } 
 
 write(w, "$$outdir$$w", format="text");

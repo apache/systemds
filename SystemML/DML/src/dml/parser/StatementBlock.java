@@ -562,6 +562,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				throw new LanguageException("control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error");
 			}
 			
+			/**
 			else if (current instanceof PrintStatement){
 				PrintStatement pstmt = (PrintStatement) current;
 				DataIdentifier id = (pstmt._id == null) ? null : ids.getVariable(pstmt._id.getName());
@@ -569,9 +570,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 					throw new LanguageException("print statement mentions undefined variable: " + pstmt._id.getName());
 				pstmt._id = id;
 			}
-			
-			else if (current instanceof Print2Statement){
-				Print2Statement pstmt = (Print2Statement) current;
+			**/
+			else if (current instanceof PrintStatement){
+				PrintStatement pstmt = (PrintStatement) current;
 				Expression expr = pstmt.getExpression();
 				expr.validateExpression(ids.getVariables());
 			}

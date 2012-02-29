@@ -234,7 +234,6 @@ TOKEN :
 	| <DMLPATH : "dml-path">  
 
 	| <PRINT : "print">
-//	| <PRINT2 : "print2">
 //	| <CROSSVAL  : "crossval">
 //	| <ENSEMBLE  : "ensemble">
 
@@ -355,7 +354,6 @@ DMLProgram __inputInternal() :
 			| LOOKAHEAD(3) current = ExternalFunctionStatement()
 			| current = OutputStatement()
 			| current = PrintStatement()
-		//	| current = Print2Statement()
 			| current = WhileStatement()
 			| current = ForStatement()
 			| current = IfStatement()
@@ -559,7 +557,6 @@ FunctionStatement FunctionStatement() :
 			| LOOKAHEAD(3) current = FunctionStatement()
 			| current = OutputStatement()
 			| current = PrintStatement()
-		//	| current = Print2Statement()
 			| current = WhileStatement()
 			| current = ForStatement()
 			| current = IfStatement()
@@ -859,7 +856,6 @@ IfStatement IfStatement() :
 			|  LOOKAHEAD(3) current = InputStatement() 
 			|  current = OutputStatement()
 			|  current = PrintStatement()
-		//	|  current = Print2Statement()
 			|  LOOKAHEAD(2) current = WhileStatement()
 			|  current = ForStatement()
 			|  current = IfStatement()
@@ -908,7 +904,6 @@ IfStatement IfStatement() :
 			| LOOKAHEAD(3) current = InputStatement() 
 			|  current = OutputStatement()
 			|  current = PrintStatement()
-		//	|  current = Print2Statement()
 			|  LOOKAHEAD(2) current = WhileStatement()
 			|  current = ForStatement()
 			|  current = IfStatement()
@@ -971,7 +966,6 @@ ForStatement ForStatement() :
 		| LOOKAHEAD(3) current = InputStatement() 
 		|  current = OutputStatement()
 		|  current = PrintStatement()
-   //   |  current = Print2Statement()
 		|  LOOKAHEAD(2) current = WhileStatement()
 		|  current = ForStatement()
 		|  current = IfStatement()
@@ -1031,7 +1025,6 @@ WhileStatement WhileStatement() :
 		| LOOKAHEAD(3) current = InputStatement() 
 		|  current = OutputStatement()
 		|  current = PrintStatement()
-	//	|  current = Print2Statement()
 		|  LOOKAHEAD(2) current = WhileStatement()
 		|  current = ForStatement()
 		|  current = IfStatement()
@@ -1846,6 +1839,7 @@ OutputStatement OutputStatement() :
 	{return os;}
 }
 
+/*
 PrintStatement PrintStatement() :
 {
 	 DataIdentifier id = null;
@@ -1867,20 +1861,19 @@ PrintStatement PrintStatement() :
 	<RIGHTPAREN>  [<SEMICOLON>]
 	{return ps;}
 }
+*/
 
-/*
-Print2Statement Print2Statement() :
+PrintStatement PrintStatement() :
 {
 	 Expression source;
 }
 {
-	    <PRINT2> <LEFTPAREN> source = Expression()  
-		<RIGHTPAREN>  [<SEMICOLON>]
+	    <PRINT><LEFTPAREN> source = Expression()  <RIGHTPAREN>  [<SEMICOLON>]
 		{
-			return new Print2Statement(source);
+			return new PrintStatement(source);
 		}
 }
-*/
+
 
 void RelationalOp() : {}
 {

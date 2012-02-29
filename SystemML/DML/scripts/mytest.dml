@@ -34,8 +34,8 @@ iqmw = interQuartileMean (A,W);
 #write (iqwl, "myiqw1", format ="text");
 #write (iqws, "myiqws", format ="text");
 
-print ("IQM =", iqm);
-print ("IQMW =", iqmw);
+print ("IQM = " + iqm);
+print ("IQMW = " + iqmw);
 
 #W = read ("mytestB.data", rows= 5, cols = 1, format="text");
 
@@ -45,7 +45,7 @@ print ("IQMW =", iqmw);
 #c = ncol(C);
 
 #write (C, "mytestC.data", format="text");
-#print ("Nrow = ", r);
-#print ("Ncol = ", c);
+#print ("Nrow = " + r);
+#print ("Ncol = " + c);
 
 

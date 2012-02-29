@@ -52,7 +52,7 @@ while(!outer_converge & outeriter < maxouteriter) {
 	while (!inner_converge & inneriter < maxinneriter) {
 		
 		inneriter = inneriter + 1;
-		print ( " ___inneriter: ", inneriter);
+		print ( " ___inneriter = " + inneriter);
 		
 		### BEGIN : xnew = SolveProximalSubproblem(x - g / alpha, tau / alpha);
 		u = x - g / alpha;
@@ -98,8 +98,8 @@ while(!outer_converge & outeriter < maxouteriter) {
 
 		objNewScalar = castAsScalar(objnew);
 		
-		print(" ___objNewScalar ", objNewScalar);
-		print(" ___objthreshold ", objthreshold);
+		print(" ___objNewScalar " + objNewScalar);
+		print(" ___objthreshold " + objthreshold);
 		
 		if (objNewScalar <  objthreshold) {
 			x = xnew;
@@ -142,5 +142,5 @@ while(!outer_converge & outeriter < maxouteriter) {
 
 write(x, "X.SpaRSA.result", format="text");
 sumx = sum(x);
-print(" ___sum x ", x); 
+print(" ___sum x " + x); 
 	

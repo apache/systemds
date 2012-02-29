@@ -3,6 +3,6 @@ i=0
 x=0
 while (i<2) {
 x = x+sum(B)
-print("Sum = ", x)
+print("Sum = " + x)
 i = i+1
 } 

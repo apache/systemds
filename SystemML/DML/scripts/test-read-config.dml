@@ -5,9 +5,9 @@ B = read("./temp2input1", rows = 10, cols = 10);
 C = A + 1;
 
 sumC = sum(C);
-print("sumc ", sumC);
+print("sumc " + sumC);
 
 D = B + 1;
 sumD = sum(D);
 
-print("sumD ", sumD);
+print("sumD " + sumD);

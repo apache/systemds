@@ -9,20 +9,20 @@ univar = function (string INPUTFILE, int ROWS, string OUTFILE)
 
    #s = V + ones;
    #s_sum = sum(s);
-   #print("s_sum", s_sum);
+   #print("s_sum" + s_sum);
 
   
    #SUMones = sum(ones);
    #Helper = Rand(rows=1, cols=1, min=1.0, max=1.0);
 
-   #print("sum(ones) should be 10 and is ", SUMones )
+   #print("sum(ones) should be 10 and is " + SUMones )
 
    # a set of number of values specify the number of cases of each categorical
    #Nc = ctable(V,ones);
 
    #SUMNc = sum(Nc);
 	
-   #print("sum(SUMNc) should be ? and is ", SUMNc )
+   #print("sum(SUMNc) should be ? and is " + SUMNc )
 
    # the number of categories of a categorical variable
    # R = nrow(Nc)

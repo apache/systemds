@@ -1,17 +1,17 @@
 foo = function(Double C) return ( Double  C)
 {
-	print("foo in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA", C);
+	print("foo in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA " + C);
 	C = C + 2;
 }
 
 bar = function(Double C) return ( Double  C)
 {
-	print("bar in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA", C);
+	print("bar in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA " + C);
 	C = C + 3;
 }
 
 baz = function(Double C) return ( Double  C)
 {
-	print("baz in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA", C);
+	print("baz in testAAA.dml in matMult is ~/packages/dirA/dirAA/dirAAA " + C);
 	C = C + 4;
 }

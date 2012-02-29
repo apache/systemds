@@ -50,7 +50,7 @@ while ( (eps > 0.1) & (i <= max_iter) ) {
     prev_potential = potential;
     potential = sum(y) + sum(x)/mu;
     
-    print("Iteration",i);
+    print("Iteration " + i);
     
     i = i+1;
 

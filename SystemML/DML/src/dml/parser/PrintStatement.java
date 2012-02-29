@@ -5,20 +5,15 @@ import java.util.HashMap;
 import dml.utils.LanguageException;
  
 public class PrintStatement extends Statement{
-	protected DataIdentifier _id;
-	protected String _msg;
+	protected Expression _expr;
 
-	public PrintStatement(String msg,DataIdentifier id){
-		_id = id;
-		msg = msg.replaceAll(":", " ");
-		_msg = msg;
+	public PrintStatement(Expression expr){
+		_expr = expr; 
 	}
 	 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		DataIdentifier newId = new DataIdentifier(_id);
-		String newIdName = prefix + _id.getName();
-		newId.setName(newIdName);
-		return new PrintStatement(_msg, newId);
+		Expression newExpr = _expr.rewriteExpression(prefix);
+		return new Print2Statement(newExpr);
 	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}
@@ -27,6 +22,7 @@ public class PrintStatement extends Statement{
 		return lo;
 	}
 	
+	/*
 	public String toString(){
 		 StringBuffer sb = new StringBuffer();
 		 boolean first = true;
@@ -45,14 +41,12 @@ public class PrintStatement extends Statement{
 		 sb.append(");");
 		 return sb.toString(); 
 	}
+	*/
 	
 	@Override
 	public VariableSet variablesRead() {
-		VariableSet result = new VariableSet();
-		if (_id != null){
-			result.addVariable(_id.getName(),_id);
-		}
- 		return result;
+		VariableSet result =  _expr.variablesRead();
+		return result;
 	}
 
 	@Override
@@ -66,14 +60,9 @@ public class PrintStatement extends Statement{
 		 
 		return false;
 	}
-	
-	public DataIdentifier getIdentifier(){
-		return _id;
-	}
-	
-	public String getMessage(){
-		return _msg;
-	}
-	
+
+	public Expression getExpression(){
+		return _expr;
+	}	
 	 
 }

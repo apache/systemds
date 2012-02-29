@@ -13,6 +13,6 @@ Q = quantile(V, P);
 # inter-quartile mean
 iqm = interQuartileMean(V);
 
-print("median: ", median);
-print("inter-quartile mean: ", iqm);
+print("median =  " + median);
+print("inter-quartile mean =  " + iqm);
 write(Q, $6, format="text");

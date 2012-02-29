@@ -40,9 +40,9 @@ Dsum = sum(D);
 
 
 
-print ("Bsum should be 70 and is ", Bsum)
-print ("Csum should be 60 and is ", Csum)
-print ("Dsum should be 40 and is ", Dsum)
+print ("Bsum should be 70 and is " + Bsum)
+print ("Csum should be 60 and is " + Csum)
+print ("Dsum should be 40 and is " + Dsum)
 
 
 ################ test 2: nested if-else statements #################
@@ -66,8 +66,8 @@ if (pred1){
 
 Bsum = sum(B);
 
-print ("Bsum should be 10 and is ", Bsum)
-print ("pred1 should be true and is ", pred1)
+print ("Bsum should be 10 and is " + Bsum)
+print ("pred1 should be true and is " + pred1)
 
 
 

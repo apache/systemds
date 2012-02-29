@@ -1587,6 +1587,7 @@ public class DMLTranslator {
 				output.add(write);
 			}
 
+			/**
 			if (current instanceof PrintStatement) {
 				PrintStatement ps = (PrintStatement) current;
 				DataIdentifier id = ps.getIdentifier();
@@ -1608,9 +1609,9 @@ public class DMLTranslator {
 					}
 				}
 			}
-
-			if (current instanceof Print2Statement) {
-				Print2Statement ps = (Print2Statement) current;
+			**/
+			if (current instanceof PrintStatement) {
+				PrintStatement ps = (PrintStatement) current;
 				Expression source = ps.getExpression();
 				
 				DataIdentifier target = createTarget();

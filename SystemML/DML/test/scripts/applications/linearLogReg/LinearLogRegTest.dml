@@ -64,7 +64,7 @@ while(!converge) {
 	
 	print("-- Outer Iteration =", iter)
 	objScalar = castAsScalar(obj)
-	print2("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
+	#print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
 	
 	# SOLVE TRUST REGION SUB-PROBLEM
 	s = zeros_D
@@ -142,7 +142,8 @@ while(!converge) {
 	qkScalar = castAsScalar(qk)
 	rhoScalar = castAsScalar(rho);
 	snorm = sqrt(sum( s * s ))
-	print2("     Actual :" + actredScalar + "Predicted :" + qkScalar)
+	print("     Actual = ", actredScalar)
+	print("     Predicted = " + qkScalar)
 	
 	if (iter==0) {
 	   delta = min(delta, snorm)
@@ -193,8 +194,9 @@ while(!converge) {
 	iter = iter + 1
 	converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
 
-	print2("     Delta = " + delta)
-	print2("     Accuracy = " +  accuracy + ", Correct = " + correct)
+	print("     Delta = ", delta)
+	print("     Accuracy = ",  accuracy)
+	print("     Correct = ", correct)
 	print("     OuterIter = ", iter)
 	print("     Converge = ", converge)
 } 

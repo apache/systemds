@@ -11,7 +11,7 @@ public class PrintStatement extends Statement{
 	 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		Expression newExpr = _expr.rewriteExpression(prefix);
-		return new Print2Statement(newExpr);
+		return new PrintStatement(newExpr);
 	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}

@@ -5,7 +5,7 @@
 # Note this script is externalized to customers, please do not change w/o consulting component owner.
 # How to invoke this dml script LinearLogReg.dml?
 # Assume LLR_HOME is set to the home of the dml script
-# Assume input and output directories are on hdfs as NPUT_DIR and OUTPUT_DIR
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 100 and cols = 50 for x, rows_test= 25 and cols_test = 50 for Xt
 # hadoop jar SystemML.jar -f $LLR_HOME/LinearLogReg.dml -args "$INPUT_DIR/X" 100 50 "$INPUT_DIR/Xt" 25 50 "$INPUT_DIR/y" "$INPUT_DIR/yt" "$OUTPUT_DIR/w"
 

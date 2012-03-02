@@ -12,7 +12,7 @@ import dml.test.utils.TestUtils;
 public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/descriptivestats/";
-	private final static String TEST_NOMINAL_NOMINAL = "CategoricalCategoricalTest";
+	private final static String TEST_NOMINAL_NOMINAL = "CategoricalCategorical";
 	private final static String TEST_NOMINAL_NOMINAL_WEIGHTS = "CategoricalCategoricalWithWeightsTest";
 
 	private final static double eps = 1e-9;
@@ -23,7 +23,7 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, "CategoricalCategoricalTest", new String[] { "outPValue", "outCramersV" }));
+		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, new String[] { "outPValue", "outCramersV" }));
 		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "CategoricalCategoricalWithWeightsTest", new String[] { "outPValue", "outCramersV" }));
 	}
 	
@@ -129,6 +129,24 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 		
 		config.addVariable("rows", rows);
 
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String CC_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", CC_HOME + TEST_NOMINAL_NOMINAL + ".dml",
+				               "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
+				                        Integer.toString(rows),
+				                        "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
+				                        "\"" + CC_HOME + OUTPUT_DIR + "pvalue" + "\"", 
+				                        "\"" + CC_HOME + OUTPUT_DIR + "cramers_v" + "\""};
+		dmlArgsDebug = new String[]{"-f", CC_HOME + TEST_NOMINAL_NOMINAL + ".dml", "-d",
+	                                "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
+	                                         Integer.toString(rows),
+	                                         "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
+	                                         "\"" + CC_HOME + OUTPUT_DIR + "pvalue" + "\"", 
+	                                         "\"" + CC_HOME + OUTPUT_DIR + "cramers_v" + "\""};
+		
+		rCmd = "Rscript" + " " + CC_HOME + TEST_NOMINAL_NOMINAL + ".R" + " " + 
+		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;
+		
 		loadTestConfiguration(config);
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
@@ -148,9 +166,9 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 		 */
 		//boolean exceptionExpected = false;
 		//int expectedNumberOfJobs = 5;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runTest();
-		runRScript();
+		runTest(true, false, null, -1);
+		
+		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
 		{

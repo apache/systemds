@@ -1,7 +1,7 @@
 # Note this script is externalized to customer, please do not change w/o consulting component owner.
-# How to invoke this dml script LinearLogReg.dml?
+# How to invoke this dml script LinearRegression.dml?
 # Assume LR_HOME is set to the home of the dml script
-# Assume input and output directories are on hdfs as NPUT_DIR and OUTPUT_DIR
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 50 and cols = 30 for v, eps = 0.00000001
 # hadoop jar SystemML.jar -f $LR_HOME/LinearRegression.dml -args "$INPUT_DIR/v" 50 30 "$INPUT_DIR/y" 0.00000001 "$OUTPUT_DIR/w"
 

@@ -42,12 +42,12 @@ public class LinearRegressionTest extends AutomatedTestBase
 				                        "\"" + LR_HOME + INPUT_DIR + "y" + "\"", 
 				                        Double.toString(Math.pow(10,-8)), 
 				                        "\"" + LR_HOME + OUTPUT_DIR + "w" + "\""};
-		dmlArgs = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml", "-d",
-	               "-args", "\"" + LR_HOME + INPUT_DIR + "v" + "\"", 
-	                        Integer.toString(rows), Integer.toString(cols),
-	                        "\"" + LR_HOME + INPUT_DIR + "y" + "\"", 
-	                        Double.toString(Math.pow(10,-8)), 
-	                        "\"" + LR_HOME + OUTPUT_DIR + "w" + "\""};
+		dmlArgsDebug = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml", "-d",
+	                                "-args", "\"" + LR_HOME + INPUT_DIR + "v" + "\"", 
+	                                         Integer.toString(rows), Integer.toString(cols),
+	                                         "\"" + LR_HOME + INPUT_DIR + "y" + "\"", 
+	                                         Double.toString(Math.pow(10,-8)), 
+	                                         "\"" + LR_HOME + OUTPUT_DIR + "w" + "\""};
 		
 		rCmd = "Rscript" + " " + LR_HOME + TEST_LINEAR_REGRESSION + ".R" + " " + 
 		       LR_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + LR_HOME + EXPECTED_DIR;

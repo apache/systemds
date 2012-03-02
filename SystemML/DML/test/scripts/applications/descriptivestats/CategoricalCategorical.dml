@@ -1,0 +1,34 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script CategoricalCategorical.dml?
+# Assume CC_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for both A and B
+# hadoop jar SystemML.jar -f $CC_HOME/CategoricalCategorical.dml -args "$INPUT_DIR/in/A" 10000 "$INPUT_DIR/in/B" "$OUPUT_DIR/out/pvalue" "$OUTPUT_DIR/out/cramers_v"
+
+A = read($1, rows=$2, cols=1, format="text");
+B = read($3, rows=$2, cols=1, format="text");
+
+# Contingency Table
+F = ctable(A,B);
+
+# Chi-Squared
+W = sum(F);
+r = rowSums(F);
+c = colSums(F);
+E = (r %*% c)/W;
+T = (F-E)^2/E;
+chi_squared = sum(T);
+
+# compute p-value
+degFreedom = (nrow(F)-1)*(ncol(F)-1);
+pValue = 1 - cumulativeProbability(target=chi_squared, dist="chisq", df=degFreedom);
+
+# Cramer's V
+R = nrow(F);
+C = ncol(F);
+q = min(R,C);
+cramers_v = sqrt(chi_squared/(W*(q-1)));
+
+write(pValue, $4);
+write(cramers_v, $5);
+

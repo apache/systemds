@@ -1,9 +1,10 @@
-# command line invocation assuming $GNMF_HOME is set to the home of the dml script
-# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml 
-#        -args '$GNMF_HOME/in/v' '$GNMF_HOME/in/w' '$GNMF_HOME/in/h'
-#               2000,1500,50,3,
-#              '$GNMF_HOME/out/w' 'GNMF_HOME/out/h'
-# This script may change further once we have string concat support in read/write 
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script LinearLogReg.dml?
+# Assume GNMF_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as NPUT_DIR and OUTPUT_DIR
+# Assume rows = 2000 and cols = 1500 for v,  rows = 2000 and cols = 50 for w, rows = 50 and cols = 1500 for h, max_iteration = 3
+# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/in/v" "$INPUT_DIR/in/w" "$INPUT_DIR/in/h" 2000 1500 50 3 "$OUPUT_DIR/out/w" "$OUTPUT_DIR/out/h"
+
 V = read($1, rows=$4, cols=$5, format="text");
 W = read($2, rows=$4, cols=$6, format="text");
 H = read($3, rows=$6, cols=$5, format="text");

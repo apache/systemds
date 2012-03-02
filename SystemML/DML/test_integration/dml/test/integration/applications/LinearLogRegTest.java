@@ -17,14 +17,14 @@ public class LinearLogRegTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/linearLogReg/";
-    private final static String TEST_LINEAR_LOG_REG = "LinearLogRegTest";
+    private final static String TEST_LINEAR_LOG_REG = "LinearLogReg";
 
 
     @Override
     public void setUp()
     {
     	setUpBase();
-    	addTestConfiguration(TEST_LINEAR_LOG_REG, new TestConfiguration(TEST_DIR, "LinearLogRegTest",
+    	addTestConfiguration(TEST_LINEAR_LOG_REG, new TestConfiguration(TEST_DIR, TEST_LINEAR_LOG_REG,
                 new String[] { "w" }));
     }
     
@@ -41,6 +41,28 @@ public class LinearLogRegTest extends AutomatedTestBase
         config.addVariable("cols", cols);
         config.addVariable("rows_test", rows_test);
         config.addVariable("cols_test", cols_test);
+        
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String LLR_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", LLR_HOME + TEST_LINEAR_LOG_REG + ".dml",
+				               "-args", "\"" + LLR_HOME + INPUT_DIR + "X" + "\"", 
+				                        Integer.toString(rows), Integer.toString(cols),
+				                        "\"" + LLR_HOME + INPUT_DIR + "Xt" + "\"", 
+				                        Integer.toString(rows_test), Integer.toString(cols_test),
+				                        "\"" + LLR_HOME + INPUT_DIR + "y" + "\"",
+				                        "\"" + LLR_HOME + INPUT_DIR + "yt" + "\"",
+				                        "\"" + LLR_HOME + OUTPUT_DIR + "w" + "\""};
+		dmlArgs = new String[]{"-f", LLR_HOME + TEST_LINEAR_LOG_REG + ".dml", "-d",
+	               "-args", "\"" + LLR_HOME + INPUT_DIR + "X" + "\"", 
+	                        Integer.toString(rows), Integer.toString(cols),
+	                        "\"" + LLR_HOME + INPUT_DIR + "Xt" + "\"", 
+	                        Integer.toString(rows_test), Integer.toString(cols_test),
+	                        "\"" + LLR_HOME + INPUT_DIR + "y" + "\"",
+	                        "\"" + LLR_HOME + INPUT_DIR + "yt" + "\"",
+	                        "\"" + LLR_HOME + OUTPUT_DIR + "w" + "\""};
+		
+		rCmd = "Rscript" + " " + LLR_HOME + TEST_LINEAR_LOG_REG + ".R" + " " + 
+		       LLR_HOME + INPUT_DIR + " " + LLR_HOME + EXPECTED_DIR;
       
         loadTestConfiguration(TEST_LINEAR_LOG_REG);
 
@@ -90,10 +112,10 @@ public class LinearLogRegTest extends AutomatedTestBase
 		 * While loop iteration - 9 jobs
 		 * Final output write - 1 job
 		 */
-		//int expectedNumberOfJobs = 31;
-		runTest();
+		int expectedNumberOfJobs = 31;
+		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
         
-		runRScript();
+		runRScript(true);
         
         HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");

@@ -1,0 +1,32 @@
+# Note this script is externalized to customer, please do not change w/o consulting component owner.
+# How to invoke this dml script LinearLogReg.dml?
+# Assume LR_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as NPUT_DIR and OUTPUT_DIR
+# Assume rows = 50 and cols = 30 for v, eps = 0.00000001
+# hadoop jar SystemML.jar -f $LR_HOME/LinearRegression.dml -args "$INPUT_DIR/v" 50 30 "$INPUT_DIR/y" 0.00000001 "$OUTPUT_DIR/w"
+
+V = read($1, rows=$2, cols=$3, format="text");
+y = read($4, rows=$2, cols=1, format="text");
+
+eps = $5;
+
+r = -(t(V) %*% y);
+p = -r;
+norm_r2 = sum(r * r);
+w = Rand(rows = $3, cols = 1, min = 0, max = 0);
+
+max_iteration = 3;
+i = 0;
+while(i < max_iteration) {
+	q = ((t(V) %*% (V %*% p)) + eps  * p);
+	alpha = norm_r2 / castAsScalar(t(p) %*% q);
+	w = w + alpha * p;
+	old_norm_r2 = norm_r2;
+	r = r + alpha * q;
+	norm_r2 = sum(r * r);
+	beta = norm_r2 / old_norm_r2;
+	p = -r + beta * p;
+	i = i + 1;
+}
+
+write(w, $6, format="text");

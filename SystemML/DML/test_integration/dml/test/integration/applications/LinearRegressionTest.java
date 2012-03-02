@@ -13,13 +13,13 @@ public class LinearRegressionTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/linear_regression/";
-    private final static String TEST_LINEAR_REGRESSION = "LinearRegressionTest";
+    private final static String TEST_LINEAR_REGRESSION = "LinearRegression";
 
 
     @Override
     public void setUp()
     {
-        addTestConfiguration(TEST_LINEAR_REGRESSION, new TestConfiguration(TEST_DIR, "LinearRegressionTest",
+        addTestConfiguration(TEST_LINEAR_REGRESSION, new TestConfiguration(TEST_DIR, TEST_LINEAR_REGRESSION,
                 new String[] { "w" }));
     }
     
@@ -33,6 +33,24 @@ public class LinearRegressionTest extends AutomatedTestBase
         config.addVariable("rows", rows);
         config.addVariable("cols", cols);
         config.addVariable("eps", Math.pow(10, -8));
+        
+        /* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String LR_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml",
+				               "-args", "\"" + LR_HOME + INPUT_DIR + "v" + "\"", 
+				                        Integer.toString(rows), Integer.toString(cols),
+				                        "\"" + LR_HOME + INPUT_DIR + "y" + "\"", 
+				                        Double.toString(Math.pow(10,-8)), 
+				                        "\"" + LR_HOME + OUTPUT_DIR + "w" + "\""};
+		dmlArgs = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml", "-d",
+	               "-args", "\"" + LR_HOME + INPUT_DIR + "v" + "\"", 
+	                        Integer.toString(rows), Integer.toString(cols),
+	                        "\"" + LR_HOME + INPUT_DIR + "y" + "\"", 
+	                        Double.toString(Math.pow(10,-8)), 
+	                        "\"" + LR_HOME + OUTPUT_DIR + "w" + "\""};
+		
+		rCmd = "Rscript" + " " + LR_HOME + TEST_LINEAR_REGRESSION + ".R" + " " + 
+		       LR_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + LR_HOME + EXPECTED_DIR;
       
         loadTestConfiguration(TEST_LINEAR_REGRESSION);
 
@@ -50,9 +68,9 @@ public class LinearRegressionTest extends AutomatedTestBase
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 16;
-		runTest(exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
         
-		runRScript();
+		runRScript(true);
         
         HashMap<CellIndex, Double> wR = this.readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= this.readDMLMatrixFromHDFS("w");

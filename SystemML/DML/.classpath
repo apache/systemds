@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="dml/api/JaqlUdf.java" kind="src" path="src"/>
+	<classpathentry excluding="dml/api/JaqlUdf.java|dml/packagesupport/EigenWrapper.java" kind="src" path="src"/>
 	<classpathentry kind="src" path="examples"/>
 	<classpathentry excluding="scripts/" kind="src" path="test"/>
-	<classpathentry kind="src" path="test_integration"/>
+	<classpathentry excluding="dml/test/integration/functions/external/EigenTest.java" kind="src" path="test_integration"/>
 	<classpathentry kind="lib" path="lib/commons-math-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="lib/commons-httpclient-3.0.1.jar"/>

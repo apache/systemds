@@ -110,7 +110,7 @@
 		<echo message="${ant.project.name}: ${ant.file}" />
 		<!-- Double check the java compiler version -->
 		<echo message="Using java version ${ant.java.version}."/> 
-		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}">
+		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}" excludes="**/packagesupport/EigenWrapper.java" >
 			<src path="src" />
 			<classpath refid="DML.classpath" />
 		</javac>
@@ -123,7 +123,7 @@
 			<exclude name="scripts/" />
 			<classpath refid="DML.classpath" />
 		</javac>
-		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}" excludes="**/test/integration/alpha/**">
+		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}" excludes="**/test/integration/alpha/**|**/test/integration/functions/external/EigenTest.java">
 			<src path="test_integration" />
 			<classpath refid="DML.classpath" />
 		</javac>

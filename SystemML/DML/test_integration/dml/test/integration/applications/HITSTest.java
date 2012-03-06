@@ -12,11 +12,11 @@ import dml.test.utils.TestUtils;
 public class HITSTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/hits/";
-	private final static String TEST_HITS = "HITSTest";
+	private final static String TEST_HITS = "HITS";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_HITS, new TestConfiguration(TEST_DIR, "HITSTest", new String[] { "hubs", "authorities" }));
+		addTestConfiguration(TEST_HITS, new TestConfiguration(TEST_DIR, "HITS", new String[] { "hubs", "authorities" }));
 	}
 
 	@Test
@@ -24,15 +24,35 @@ public class HITSTest extends AutomatedTestBase {
 		int rows = 10000;
 		int cols = 10000;
 		int maxiter = 2;
-		double tol = 1e-6;
+
 		
 		TestConfiguration config = getTestConfiguration(TEST_HITS);
-		config.addVariable("tol", tol);
+		
+		/* This is for running the junit test the old way */
 		config.addVariable("maxiter", maxiter);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		double Eps = Math.pow(10, -8);
+		
 
+		/* This is for running the junit test by constructing the arguments directly */
+		String HITS_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", HITS_HOME + TEST_HITS + ".dml",
+				               "-args", "\"" + HITS_HOME + INPUT_DIR + "graph2.mtx" + "\"", 
+				                        "\"" + HITS_HOME + INPUT_DIR + "init_authorities2.mtx" + "\"", 
+				                        Integer.toString(maxiter), Integer.toString(rows), Integer.toString(cols),
+				                        Double.toString(Math.pow(10, -6)),
+				                        "\"" + HITS_HOME + OUTPUT_DIR + "hubs" + "\"", 
+				                        "\"" + HITS_HOME + OUTPUT_DIR + "authorities" + "\""};
+		dmlArgsDebug = new String[]{"-f", HITS_HOME + TEST_HITS + ".dml", "-d",
+							   "-args", "\"" + HITS_HOME + INPUT_DIR + "graph2.mtx" + "\"", 
+                                        "\"" + HITS_HOME + INPUT_DIR + "init_authorities2.mtx" + "\"", 
+                                        Integer.toString(maxiter), Integer.toString(rows), Integer.toString(cols),
+                                        Double.toString(Math.pow(10, -6)),
+                                        "\"" + HITS_HOME + OUTPUT_DIR + "hubs" + "\"", 
+                                        "\"" + HITS_HOME + OUTPUT_DIR + "authorities" + "\""};
+		rCmd = "Rscript" + " " + HITS_HOME + TEST_HITS + ".R" + " " + 
+		       HITS_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + Double.toString(Math.pow(10, -6))+ " " + HITS_HOME + EXPECTED_DIR;
+		
 		loadTestConfiguration(config);
 
 		
@@ -44,9 +64,9 @@ public class HITSTest extends AutomatedTestBase {
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 11;
-		runTest(exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 		
-		runRScript();
+		runRScript(true);
 		disableOutAndExpectedDeletion();
 
 		HashMap<CellIndex, Double> hubsDML = readDMLMatrixFromHDFS("hubs");

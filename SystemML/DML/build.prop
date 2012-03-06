@@ -8,6 +8,7 @@ general.libpath=lib/ant
 #SystemML
 systemml.version=0.0.1
 release.notes=Preliminary build.
+release.detica=Releases/2012_Detica/machine-learning
 
 #Lib
 build.sharedlib=../DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib

@@ -1,0 +1,26 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script kMeans.dml?
+# Assume KMEANS2_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 100, cols = 10, clusters = 5
+# hadoop jar SystemML.jar -f $KMEANS2_HOME/kMeans2.dml -args "$INPUT_DIR/in/M" 100 10 "$INPUT_DIR/in/initCenters" "$OUPUT_DIR/out/kcenters" "$OUTPUT_DIR/out/kcentersWithInit"
+
+kMeans = externalFunction(Matrix[Double] D, Integer k) 
+return (Matrix[Double] C) 
+implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
+
+kMeansWithInit = externalFunction(Matrix[Double] D, Integer k, Matrix[Double] initK)
+return (Matrix[Double] C)
+implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
+
+M = read($1, rows=$2, cols=$3, format="text");
+initialCenters = read($4, rows=5, cols=$3, format="text");
+
+k = 5;
+
+kcenters = kMeans(M,k)
+kcentersWithInit = kMeansWithInit(M,k,initialCenters);
+
+write(kcenters, $5, format="text");
+write(kcentersWithInit, $6, format="text");
+

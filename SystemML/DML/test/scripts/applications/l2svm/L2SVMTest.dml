@@ -42,7 +42,7 @@ while(continue == 1)  {
 	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
 	g_new = t(X) %*% (out * Y) - lambda * w
 	
-	print("OBJ = ",obj)
+	print("OBJ = " + obj)
 	
 	tmp = sum(s * g_old)
 	if(step_sz*tmp < epsilon*obj){

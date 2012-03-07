@@ -36,17 +36,15 @@ public class L2SVMTest extends AutomatedTestBase {
         double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.01, -1);
         double[][] y = getRandomMatrix(rows, 1, -1, 1, 1, -1);
         for(int i=0; i<rows; i++)
-        	for(int j=0; j<cols; j++)
-        		y[i][j] = (y[i][j] > 0) ? 1 : -1;
+        	y[i][0] = (y[i][0] > 0) ? 1 : -1;
         
         writeInputMatrix("X", X, true);
         writeInputMatrix("y", y, true);
         
         runTest();
+        runRScript();
         
-		runRScript();
-        
-        HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
+		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
         TestUtils.compareMatrices(wR, wDML, Math.pow(10, -14), "wR", "wDML");
 	}

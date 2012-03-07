@@ -20,6 +20,7 @@ javacc.home=${build.sharedlib}/javacc-5.0
 #BUILD
 build.jarnamejunit=JunitSystemML.jar
 build.jarnamerun=SystemML.jar
+build.configfile=SystemML-config.xml
 build.folder=bin
 
 #HADOOP

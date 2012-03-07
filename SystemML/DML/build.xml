@@ -238,8 +238,10 @@
 	<!-- Make sure release Detica depends on jar, copy over SystemML.jar and DML scripts -->
 	<target name="Detica" depends="jar">
 		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.detica}" overwrite="true"/>
+		<copy file="${build.configfile}" todir="${release.detica}" overwrite="true"/>
 		<copy file="test/scripts/applications/descriptivestats/CategoricalCategorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
 		<copy file="test/scripts/applications/gnmf/GNMF.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
+		<copy file="test/scripts/applications/hits/HITS.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/applications/linear_regression/LinearRegression.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/applications/linearLogReg/LinearLogReg.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/functions/external/kMeans.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>

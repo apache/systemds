@@ -1791,6 +1791,7 @@ public class MatrixBlock1D extends MatrixValue{
 			c=i%clen;
 			sparseBlock.put(new CellIndex(r,c), v);
 		}
+		sparse=true;
 	}
 	public void sparseToDense() {
 		

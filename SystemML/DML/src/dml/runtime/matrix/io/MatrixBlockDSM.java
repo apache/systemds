@@ -1837,6 +1837,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		double temp;
 		double[] a = matrixA.getDenseArray();
 		double[] b = matrixB.getDenseArray();
+		if(a==null || b==null)
+			return;
 		if(resultMatrix.denseBlock==null)
 			resultMatrix.denseBlock = new double[resultMatrix.rlen * resultMatrix.clen];
 		Arrays.fill(resultMatrix.denseBlock, 0, resultMatrix.denseBlock.length, 0);
@@ -1909,7 +1911,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			double v;
 			double[] a = m1.getDenseArray();
 			double[] b = m2.getDenseArray();
-			
+			if(a==null || b==null)
+				return;
 			for(l = 0; l < m1.clen; l++)
 			{
 				aIndex = l;
@@ -2170,7 +2173,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void denseToSparse() {
 		
 		//LOG.info("**** denseToSparse: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
-		
+		sparse=true;
 		adjustSparseRows(rlen-1);
 		if(denseBlock==null)
 			return;
@@ -2191,11 +2194,11 @@ public class MatrixBlockDSM extends MatrixValue{
 				index++;
 			}
 		}
-		sparse=true;
 	}
 	public void sparseToDense() {
 		
 		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
+		sparse=false;
 		int limit=rlen*clen;
 		if(denseBlock==null || denseBlock.length < limit )
 			denseBlock=new double[limit];
@@ -2217,7 +2220,6 @@ public class MatrixBlockDSM extends MatrixValue{
 				nonZeros++;
 			}
 		}
-		sparse=false;
 	}
 	
 	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 

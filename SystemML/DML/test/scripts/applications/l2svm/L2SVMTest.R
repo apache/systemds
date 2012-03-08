@@ -47,4 +47,4 @@ while(continue){
 	g_old = g_new
 }
 
-writeMM(w, "$$Routdir$$w");
+writeMM(as(w,"CsparseMatrix"), "$$Routdir$$w", format="text");

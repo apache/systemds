@@ -1,0 +1,19 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script Outlier.dml?
+# Assume OUTLIER_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 100, cols = 10 for input matrix M
+# hadoop jar SystemML.jar -f $OUTLIER_HOME/Outlier.dml -args "$INPUT_DIR/M" 100 10 "$OUPUT_DIR/o"
+
+outliers = externalFunction(Matrix[Double] D, Integer m, Integer k) 
+return (Matrix[Double] C) 
+implemented in (classname="dml.packagesupport.OutlierWrapper",execlocation="master")
+
+M = read( $1, rows=$2, cols=$3, format="text");
+
+k = 2;
+m = 5;
+
+o = outliers(M,m,k);
+
+write(o, $4, format="text");

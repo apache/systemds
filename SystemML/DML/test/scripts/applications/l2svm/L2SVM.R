@@ -1,10 +1,15 @@
 # JUnit test class: dml.test.integration.applications.L2SVMTest.java
+# command line invocation assuming $L2SVM_HOME is set to the home of the R script
+# Rscript $L2SVM_HOME/L2SVM.R $L2SVM_HOME/in/ 0.00000001 1 $L2SVM_HOME/expected/
+
+args <- commandArgs(TRUE)
 library("Matrix")
 
-X = readMM("$$indir$$X.mtx")
-Y = readMM("$$indir$$Y.mtx")
-epsilon = $$eps$$
-lambda = $$lambda$$
+X = readMM(paste(args[1], "X.mtx", sep=""));
+Y = readMM(paste(args[1], "Y.mtx", sep=""));
+
+epsilon = args[2];
+lambda = 1;
 
 N = nrow(X)
 D = ncol(X)
@@ -47,4 +52,4 @@ while(continue){
 	g_old = g_new
 }
 
-writeMM(as(w,"CsparseMatrix"), "$$Routdir$$w", format="text");
+writeMM(as(w,"CsparseMatrix"), paste(args[4], "w", sep=""));

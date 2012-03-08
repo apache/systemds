@@ -10,21 +10,42 @@ public class PageRankTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/page_rank/";
-    private final static String TEST_PAGE_RANK = "PageRankTest";
+    private final static String TEST_PAGE_RANK = "PageRank";
 
 
     @Override
     public void setUp()
     {
-        addTestConfiguration(TEST_PAGE_RANK, new TestConfiguration(TEST_DIR, "PageRankTest", new String[] { "p" }));
+        addTestConfiguration(TEST_PAGE_RANK, new TestConfiguration(TEST_DIR, "PageRank", new String[] { "p" }));
     }
 
     @Test
     public void testPageRank()
     {
-    	int rows = 100;
-    	int cols = 100;
+    	int rows = 1000;
+    	int cols = 1000;
+    	int maxiter = 3;
+    	double alpha = 0.85;
     	
+    	/* This is for running the junit test by constructing the arguments directly */
+		String PAGE_RANK_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml",
+				               "-args", "\"" + PAGE_RANK_HOME + INPUT_DIR + "g" + "\"", 
+				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "p" + "\"", 
+				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "e" + "\"",
+				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "u" + "\"",
+				                        Integer.toString(rows), Integer.toString(cols),
+				                        Double.toString(alpha), Integer.toString(maxiter),
+				                        "\"" + PAGE_RANK_HOME + OUTPUT_DIR + "p" + "\""};
+		dmlArgsDebug = new String[]{"-f", PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml", "-d",
+							   "-args", "\"" + PAGE_RANK_HOME + INPUT_DIR + "g" + "\"", 
+                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "p" + "\"", 
+                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "e" + "\"",
+                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "u" + "\"",
+                                        Integer.toString(rows), Integer.toString(cols),
+                                        Double.toString(alpha), Integer.toString(maxiter),
+                                        "\"" + PAGE_RANK_HOME + OUTPUT_DIR + "p" + "\""};
+		
         loadTestConfiguration(TEST_PAGE_RANK);
 
         double[][] g = getRandomMatrix(rows, cols, 1, 1, 0.000374962, -1);
@@ -36,7 +57,6 @@ public class PageRankTest extends AutomatedTestBase
         writeInputMatrix("e", e);
         writeInputMatrix("u", u);
         
-        double alpha = 0.85;
         for(int i = 0; i < 3; i++) {
         	double[][] gp = TestUtils.performMatrixMultiplication(g, p);
         	double[][] eu = TestUtils.performMatrixMultiplication(e, u);
@@ -56,7 +76,7 @@ public class PageRankTest extends AutomatedTestBase
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 8;
-		runTest(exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
         
         compareResults();
     }

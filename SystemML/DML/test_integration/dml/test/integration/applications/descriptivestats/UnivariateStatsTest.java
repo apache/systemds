@@ -28,7 +28,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 				new String[] {"mean_weight", "std_weight", "se_weight", "var_weight", "cv_weight", "har_weight", /*"geom_weight",*/ 
 				"min_weight", "max_weight", "rng_weight", "g1_weight", "se_g1_weight", "g2_weight", "se_g2_weight", 
 				"out_minus_weight", "out_plus_weight", "median_weight", "quantile_weight", "iqm_weight"}));
-		addTestConfiguration("CategoricalTest", new TestConfiguration(TEST_DIR, "CategoricalTest", 
+		addTestConfiguration("Categorical", new TestConfiguration(TEST_DIR, "Categorical", 
 				new String[] {"Nc", "R", "Pc", "C", "Mode"}));
 		addTestConfiguration("WeightedCategoricalTest", new TestConfiguration(TEST_DIR, "WeightedCategoricalTest", 
 				new String[] {"Nc_weight", "R_weight", "Pc_weight", "C_weight", "Mode_weight"}));
@@ -120,8 +120,29 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 	@Test
 	public void testCategoricalWithR() {
 	
-        TestConfiguration config = getTestConfiguration("CategoricalTest");
+        TestConfiguration config = getTestConfiguration("Categorical");
         config.addVariable("rows1", rows1);
+        
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String C_HOME = SCRIPT_DIR + TEST_DIR;	
+		dmlArgs = new String[]{"-f", C_HOME + "Categorical" + ".dml",
+	               "-args", "\"" + C_HOME + INPUT_DIR + "vector" + "\"", 
+	                        Integer.toString(rows1),
+	                        "\"" + C_HOME + OUTPUT_DIR + "Nc" + "\"", 
+	                        "\"" + C_HOME + OUTPUT_DIR + "R" + "\"", 
+	                        "\"" + C_HOME + OUTPUT_DIR + "Pc" + "\"",
+	                        "\"" + C_HOME + OUTPUT_DIR + "C" + "\"",
+	                        "\"" + C_HOME + OUTPUT_DIR + "Mode" + "\""};
+		dmlArgsDebug = new String[]{"-f", C_HOME + "Categorical" + ".dml", "-d",
+	               "-args", "\"" + C_HOME + INPUT_DIR + "vector" + "\"", 
+	                        Integer.toString(rows1),
+	                        "\"" + C_HOME + OUTPUT_DIR + "Nc" + "\"", 
+	                        "\"" + C_HOME + OUTPUT_DIR + "R" + "\"", 
+	                        "\"" + C_HOME + OUTPUT_DIR + "Pc" + "\"",
+	                        "\"" + C_HOME + OUTPUT_DIR + "C" + "\"",
+	                        "\"" + C_HOME + OUTPUT_DIR + "Mode" + "\""};
+		rCmd = "Rscript" + " " + C_HOME + "Categorical" + ".R" + " " + 
+		       C_HOME + INPUT_DIR + " " + C_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 
@@ -137,12 +158,11 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 		 * While loop iteration - 10 jobs
 		 * Final output write - 1 job
 		 */
-        //boolean exceptionExpected = false;
-		//int expectedNumberOfJobs = 12;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runTest();
+        boolean exceptionExpected = false;
+		int expectedNumberOfJobs = 12;
+		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 		
-		runRScript();
+		runRScript(true);
 		//disableOutAndExpectedDeletion();
 	
 		for(String file: config.getOutputFiles())

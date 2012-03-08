@@ -3,7 +3,7 @@
 # Assume KMEANS2_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 100, cols = 10, clusters = 5
-# hadoop jar SystemML.jar -f $KMEANS2_HOME/kMeans2.dml -args "$INPUT_DIR/in/M" 100 10 "$INPUT_DIR/in/initCenters" "$OUPUT_DIR/out/kcenters" "$OUTPUT_DIR/out/kcentersWithInit"
+# hadoop jar SystemML.jar -f $KMEANS2_HOME/kMeans2.dml -args "$INPUT_DIR/M" 100 10 "$INPUT_DIR/initCenters" "$OUPUT_DIR/kcenters" "$OUTPUT_DIR/kcentersWithInit"
 
 kMeans = externalFunction(Matrix[Double] D, Integer k) 
 return (Matrix[Double] C) 

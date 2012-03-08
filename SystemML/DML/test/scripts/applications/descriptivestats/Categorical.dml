@@ -1,0 +1,32 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script Categorical.dml?
+# Assume C_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for vector
+# hadoop jar SystemML.jar -f $C_HOME/Categorical.dml -args "$INPUT_DIR/vector" 10000 "$OUTPUT_DIR/Nc" "$OUPUT_DIR/R" "$OUTPUT_DIR/Pc" "$OUTPUT_DIR/C" "$OUTPUT_DIR/Mode"
+V = read($1, rows=$2, cols=1, format="text")
+
+# a set of number of values specify the number of cases of each categorical
+Nc = ctable(V,1);
+
+# the number of categories of a categorical variable
+R = nrow(Nc)
+
+# total count
+s = sum(Nc)
+
+# percentage values of each categorical compare to the total case number
+Pc = Nc / s
+
+# all categorical values of a categorical variable
+C = ppred(Nc, 0, ">")
+
+# mode
+mx = max(Nc)
+Mode =  ppred(Nc, mx, "==")
+
+write(Nc, $3)
+write(R, $4)
+write(Pc, $5)
+write(C, $6)
+write(Mode, $7)

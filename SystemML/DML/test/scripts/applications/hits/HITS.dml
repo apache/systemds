@@ -3,7 +3,7 @@
 # Assume HITS_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 and cols = 10000 for G,  rows = 10000 and cols = 1 for authorities, max_iteration = 2
-# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/in/graph2.mtx" "$INPUT_DIR/in/init_authorities2.mtx" 2 10000 10000 0.000001 "$OUPUT_DIR/out/hubs" "$OUTPUT_DIR/out/authorities"
+# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/graph2.mtx" "$INPUT_DIR/init_authorities2.mtx" 2 10000 10000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
 
 G = read($1,rows=$4, cols=$5, format="text");
 

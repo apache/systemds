@@ -1,19 +1,14 @@
 package dml.test.integration.applications.descriptivestats;
 
-import java.util.HashMap;
-
 import org.junit.Test;
 
-import dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
-import dml.test.utils.TestUtils;
 
 public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/descriptivestats/";
-	private final static String TEST_ORDINAL_ORDINAL = "OrdinalOrdinalTest";
+	private final static String TEST_ORDINAL_ORDINAL = "OrdinalOrdinal";
 	private final static String TEST_ORDINAL_ORDINAL_WEIGHTS = "OrdinalOrdinalWithWeightsTest";
 
 	private final static double eps = 1e-9;
@@ -24,7 +19,7 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_ORDINAL_ORDINAL, new TestConfiguration(TEST_DIR, "OrdinalOrdinalTest", new String[] { "outSpearman" }));
+		addTestConfiguration(TEST_ORDINAL_ORDINAL, new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, new String[] { "outSpearman" }));
 		addTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "OrdinalOrdinalWithWeightsTest", new String[] { "outSpearman" }));
 	}
 	
@@ -156,6 +151,21 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL);
 		
 		config.addVariable("rows", rows);
+		
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
+		dmlArgs = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml",
+	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
+	                        Integer.toString(rows),
+	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
+	                        "\"" + OO_HOME + OUTPUT_DIR + "outSpearman" + "\""};
+		dmlArgsDebug = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml", "-d", 
+	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
+	                        Integer.toString(rows),
+	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
+	                        "\"" + OO_HOME + OUTPUT_DIR + "outSpearman" + "\""};
+		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL + ".R" + " " + 
+		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 
@@ -179,14 +189,13 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		 * While loop iteration - 7 jobs
 		 * Final output write - 1 job
 		 */
-		//int expectedNumberOfJobs = 5;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runTest();
+		// int expectedNumberOfJobs = 5;
+		runTest(true, exceptionExpected, null, -1);
 		
 		compareResults(eps);
 
 		/*
-		runRScript();
+		runRScript(true);
 		for(String file: config.getOutputFiles())
 		{
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);

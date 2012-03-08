@@ -1,4 +1,4 @@
-# JUnit test class: dml.test.integration.descriptivestats.CategoricalTest.java
+# JUnit test class: dml.test.integration.descriptivestats.UnivariateStatsTest.java
 # command line invocation assuming $C_HOME is set to the home of the R script
 # Rscript $C_HOME/Categorical.R $C_HOME/in/ $C_HOME/expected/
 args <- commandArgs(TRUE)

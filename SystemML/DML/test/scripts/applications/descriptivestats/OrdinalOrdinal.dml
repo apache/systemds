@@ -1,0 +1,14 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script OrdinalOrdinal.dml?
+# Assume OO_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for A and B
+# hadoop jar SystemML.jar -f $OO_HOME/OrdinalOrdinal.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$OUPUT_DIR/outSpearman"
+
+A = read($1, rows=$2, cols=1, format="text");
+B = read($3, rows=$2, cols=1, format="text");
+
+sp = spearman(A,B);
+
+write(sp, $4);
+

@@ -1,0 +1,20 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script SeqMiner.dml?
+# Assume SEQMINER_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 5, cols = 10 for input matrix M
+# hadoop jar SystemML.jar -f $OUTLIER_HOME/SeqMiner.dml -args "$INPUT_DIR/M" 5 10 "$OUPUT_DIR/fseq" "$OUPUT_DIR/sup"
+
+seqMini = externalFunction(Matrix[Double] A, Double sup, Double max_level) 
+return (Matrix[Double] B, Matrix[Double] C) 
+implemented in (classname="dml.packagesupport.SequenceMinerWrapper",execlocation="master");
+ 
+minsup = 0.004;
+max_level=5.0;
+
+M = read( $1, rows=$2, cols=$3, format="text");
+
+[A,B] = seqMini(M,minsup,max_level);
+
+write(A, $4, format="text");
+write(B, $5, format="text");

@@ -19,7 +19,7 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_ORDINAL_ORDINAL, new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, new String[] { "outSpearman" }));
+		addTestConfiguration(TEST_ORDINAL_ORDINAL, new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, new String[] { "Spearman" }));
 		addTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "OrdinalOrdinalWithWeightsTest", new String[] { "outSpearman" }));
 	}
 	
@@ -158,12 +158,12 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
 	                        Integer.toString(rows),
 	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
-	                        "\"" + OO_HOME + OUTPUT_DIR + "outSpearman" + "\""};
+	                        "\"" + OO_HOME + OUTPUT_DIR + "Spearman" + "\""};
 		dmlArgsDebug = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml", "-d", 
 	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
 	                        Integer.toString(rows),
 	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
-	                        "\"" + OO_HOME + OUTPUT_DIR + "outSpearman" + "\""};
+	                        "\"" + OO_HOME + OUTPUT_DIR + "Spearman" + "\""};
 		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL + ".R" + " " + 
 		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
 
@@ -180,7 +180,7 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
         
         CTable ct = computeCTable(A,B,null,rows);
 		double spearman = computeSpearman(ct.table, ct.R, ct.S);
-		writeExpectedHelperMatrix("outSpearman", spearman);
+		writeExpectedHelperMatrix("Spearman", spearman);
         
 		boolean exceptionExpected = false;
 		/*

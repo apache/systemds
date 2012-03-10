@@ -23,7 +23,7 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, new String[] { "outPValue", "outCramersV" }));
+		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, new String[] { "PValue", "CramersV" }));
 		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "CategoricalCategoricalWithWeightsTest", new String[] { "outPValue", "outCramersV" }));
 	}
 	
@@ -135,14 +135,14 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 				               "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
 				                        Integer.toString(rows),
 				                        "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
-				                        "\"" + CC_HOME + OUTPUT_DIR + "pvalue" + "\"", 
-				                        "\"" + CC_HOME + OUTPUT_DIR + "cramers_v" + "\""};
+				                        "\"" + CC_HOME + OUTPUT_DIR + "PValue" + "\"", 
+				                        "\"" + CC_HOME + OUTPUT_DIR + "CramersV" + "\""};
 		dmlArgsDebug = new String[]{"-f", CC_HOME + TEST_NOMINAL_NOMINAL + ".dml", "-d",
 	                                "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
 	                                         Integer.toString(rows),
 	                                         "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
-	                                         "\"" + CC_HOME + OUTPUT_DIR + "pvalue" + "\"", 
-	                                         "\"" + CC_HOME + OUTPUT_DIR + "cramers_v" + "\""};
+	                                         "\"" + CC_HOME + OUTPUT_DIR + "PValue" + "\"", 
+	                                         "\"" + CC_HOME + OUTPUT_DIR + "CramersV" + "\""};
 		
 		rCmd = "Rscript" + " " + CC_HOME + TEST_NOMINAL_NOMINAL + ".R" + " " + 
 		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;

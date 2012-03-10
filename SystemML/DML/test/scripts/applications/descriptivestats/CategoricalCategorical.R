@@ -8,7 +8,7 @@ library("Matrix")
 A = readMM(paste(args[1], "A.mtx", sep=""));
 B = readMM(paste(args[1], "B.mtx", sep=""));
 
-Helper=matrix(1, 2, 1)
+Helper=matrix(1, 2, 1);
 
 F = table(A[,1],B[,1]);
 
@@ -20,12 +20,12 @@ chi_squared = as.numeric(cst[1]);
 pValue = as.numeric(cst[3]);
 
 PValueHelper = pValue * Helper;
-writeMM(as(t(PValueHelper),"CsparseMatrix"), paste(args[2], "outPValue", format="text"));
+writeMM(as(t(PValueHelper),"CsparseMatrix"), paste(args[2], "PValue", sep=""), format="text");
 
 q = min(dim(F));
 W = sum(F);
 cramers_v = sqrt(chi_squared/(W*(q-1)));
 
 CramersVHelper = cramers_v * Helper;
-writeMM(as(t(CramersVHelper),"CsparseMatrix"), paste(args[2], "outCramersV", format="text"));
+writeMM(as(t(CramersVHelper),"CsparseMatrix"), paste(args[2], "CramersV", sep=""), format="text");
 

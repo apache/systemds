@@ -1,0 +1,46 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script ScaleCategorical.dml?
+# Assume SC_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for A and Y, A is categorical variable and Y is scale variable
+# hadoop jar SystemML.jar -f $SC_HOME/ScaleCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/Y" 
+#         "$OUPUT_DIR/VarY" "$OUTPUT_DIR/MeanY" "$OUTPUT_DIR/CFreqs" "$OUTPUT_DIR/CMeans" "$OUTPUT_DIR/CVars" 
+#         "$OUTPUT_DIR/Eta", "$OUTPUT_DIR/AnovaF"
+
+A = read($1, rows=$2, cols=1, format="text");
+Y = read($3, rows=$2, cols=1, format="text");
+Helper = Rand(rows=1,cols=2,min=1,max=1);
+
+# mean and variance in target variable
+W = nrow(A);
+my = mean(Y);
+varY = centralMoment(Y,2) * W/(W-1.0)
+
+# category-wise (frequencies, means, variances)
+CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
+CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+CVars = groupedAggregate(target=Y, groups=A, fn="variance");
+
+# number of categories
+R = nrow(CFreqs);
+
+Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
+
+anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreqs-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+# output required statistics
+varYHelper = varY * Helper;
+write(varYHelper, $4, format="text");
+myHelper = my * Helper;
+write(myHelper, $5, format="text");
+
+write(CFreqs, $6, format="text");
+write(CMeans, $7, format="text");
+write(CVars, $8, format="text");
+
+EtaHelper = Eta * Helper;
+write(EtaHelper, $9, format="text");
+AnovaFHelper = ANOVAF * Helper;
+write(AnovaFHelper, $10, format="text");

@@ -13,7 +13,7 @@ import dml.test.utils.TestUtils;
 public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/descriptivestats/";
-	private final static String TEST_SCALE_NOMINAL = "ScaleCategoricalTest";
+	private final static String TEST_SCALE_NOMINAL = "ScaleCategorical";
 	private final static String TEST_SCALE_NOMINAL_WEIGHTS = "ScaleCategoricalWithWeightsTest";
 
 	private final static double eps = 1e-9;
@@ -25,7 +25,8 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_NOMINAL, new TestConfiguration(TEST_DIR, "ScaleCategoricalTest", new String[] { "outEta", "outAnovaF", "outVarY", "outMeanY", "outCatFreqs", "outCatMeans", "outCatVars" }));
+		addTestConfiguration(TEST_SCALE_NOMINAL, new TestConfiguration(TEST_DIR, TEST_SCALE_NOMINAL, 
+													new String[] { "Eta", "AnovaF", "VarY", "MeanY", "CFreqs", "CMeans", "CVars" }));
 		addTestConfiguration(TEST_SCALE_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "ScaleCategoricalWithWeightsTest", new String[] { "outEta", "outAnovaF", "outVarY", "outMeanY", "outCatFreqs", "outCatMeans", "outCatVars" }));
 	}
 	
@@ -225,40 +226,56 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 	
 	@Test
 	public void testScaleCategorical() {
+		
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_NOMINAL);
 		
 		config.addVariable("rows", rows);
+		
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String SC_HOME = SCRIPT_DIR + TEST_DIR;	
+		dmlArgs = new String[]{"-f", SC_HOME + TEST_SCALE_NOMINAL + ".dml",
+	               "-args", "\"" + SC_HOME + INPUT_DIR + "A" + "\"", 
+	                        Integer.toString(rows),
+	                        "\"" + SC_HOME + INPUT_DIR + "Y" + "\"", 
+	                        "\"" + SC_HOME + OUTPUT_DIR + "VarY" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "MeanY" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "CFreqs" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "CMeans" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "CVars" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "Eta" + "\"",
+	                        "\"" + SC_HOME + OUTPUT_DIR + "AnovaF" + "\""};
+		dmlArgsDebug = new String[]{"-f", SC_HOME + TEST_SCALE_NOMINAL + ".dml", "-d",
+	               "-args", "\"" + SC_HOME + INPUT_DIR + "A" + "\"", 
+	               			Integer.toString(rows),
+	               			"\"" + SC_HOME + INPUT_DIR + "Y" + "\"", 
+	               			"\"" + SC_HOME + OUTPUT_DIR + "VarY" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "MeanY" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "CFreqs" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "CMeans" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "CVars" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "Eta" + "\"",
+	               			"\"" + SC_HOME + OUTPUT_DIR + "AnovaF" + "\""};
+		rCmd = "Rscript" + " " + SC_HOME + TEST_SCALE_NOMINAL + ".R" + " " + 
+		       SC_HOME + INPUT_DIR + " " + SC_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis()) ; // System.currentTimeMillis());
+        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis()) ; 
         round(A);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis()) ; // System.currentTimeMillis()+1);
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis()) ; 
 
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("Y", Y, true);
 
-        createHelperMatrix();
-        
-        //ScaleCategoricalStats stats = computeScaleCategoricalStats(A,Y,null,rows);
-        ScaleCategoricalStats stats = computeScaleCategoricalStats_IncrementalApproach(A,Y,null,rows);
-        
-        writeExpectedHelperMatrix("outEta", stats.Eta);
-        writeExpectedHelperMatrix("outAnovaF", stats.AnovaF);
-        writeExpectedHelperMatrix("outVarY", stats.yvar);
-        writeExpectedHelperMatrix("outMeanY", stats.ybar);
-        writeExpectedMatrix("outCatMeans", stats.catMeans);
-        writeExpectedMatrix("outCatVars", stats.catVars);
-        writeExpectedMatrix("outCatFreqs", stats.catFreqs);
-		
-		// boolean exceptionExpected = false;
+ 
+		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
 		 */
-		//int expectedNumberOfJobs = 5;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runTest();
-		runRScript();
+		// int expectedNumberOfJobs = 5;
+		runTest(true, exceptionExpected, null, -1);
+		
+		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
 		{
@@ -266,9 +283,6 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
-		
-		// compareResults(eps);
-
 	}
 	
 	private void round(double[][] weight) {

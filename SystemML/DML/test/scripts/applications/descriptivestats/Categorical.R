@@ -23,8 +23,7 @@ s = sum(Nc)
 Pc = Nc / s
 
 # all categorical values of a categorical variable
-#C = t(as.matrix(as.numeric(Nc > 0)))
-C= (Nc > 0)
+C = (Nc > 0)
 
 # mode
 mx = max(Nc)

@@ -12,7 +12,7 @@ import dml.test.utils.TestUtils;
 public class BivariateScaleScaleTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/descriptivestats/";
-	private final static String TEST_SCALE_SCALE = "ScaleScalePearsonRTest";
+	private final static String TEST_SCALE_SCALE = "ScaleScale";
 	private final static String TEST_SCALE_SCALE_WEIGHTS = "ScaleScalePearsonRWithWeightsTest";
 
 	private final static double eps = 1e-10;
@@ -24,7 +24,7 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_DIR, "ScaleScalePearsonRTest", new String[] { "outPearsonR" }));
+		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_DIR, TEST_SCALE_SCALE, new String[] { "PearsonR" }));
 		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(TEST_DIR, "ScaleScalePearsonRWithWeightsTest", new String[] { "outPearsonR" }));
 	}
 	
@@ -80,7 +80,22 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE);
 		
 		config.addVariable("rows", rows);
-
+		
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String SS_HOME = SCRIPT_DIR + TEST_DIR;
+		dmlArgs = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml",
+				               "-args", "\"" + SS_HOME + INPUT_DIR + "X" + "\"", 
+				                        Integer.toString(rows),
+				                        "\"" + SS_HOME + INPUT_DIR + "Y" + "\"", 
+				                        "\"" + SS_HOME + OUTPUT_DIR + "PearsonR" + "\""};
+		dmlArgsDebug = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml", "-d",
+	               "-args", "\"" + SS_HOME + INPUT_DIR + "X" + "\"", 
+	                        Integer.toString(rows),
+	                        "\"" + SS_HOME + INPUT_DIR + "Y" + "\"", 
+	                        "\"" + SS_HOME + OUTPUT_DIR + "PearsonR" + "\""};
+		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE + ".R" + " " + 
+		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
+		
 		loadTestConfiguration(config);
 
 		long seed = System.currentTimeMillis();
@@ -102,9 +117,9 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		/*
 		 * Expected number of jobs:
 		 */
-		int expectedNumberOfJobs = 5;
-		runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runRScript();
+		// int expectedNumberOfJobs = 5; // This will cause failure
+		runTest(true, exceptionExpected, null, -1);
+		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
 		{

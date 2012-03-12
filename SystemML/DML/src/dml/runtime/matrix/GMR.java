@@ -189,8 +189,6 @@ public class GMR{
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
 		
-		
-		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GMRMapper.class);
 		if(numReducers==0)

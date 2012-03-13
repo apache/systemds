@@ -1,9 +1,13 @@
 package dml.test.integration.applications.descriptivestats;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
+import dml.test.utils.TestUtils;
 
 public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 
@@ -19,7 +23,9 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_ORDINAL_ORDINAL, new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, new String[] { "Spearman" }));
+		addTestConfiguration(TEST_ORDINAL_ORDINAL, 
+								new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, 
+									new String[] { "Spearman"+".scalar" }));
 		addTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "OrdinalOrdinalWithWeightsTest", new String[] { "outSpearman" }));
 	}
 	
@@ -176,12 +182,15 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
         
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
+		
+		/* TZ: Why not compare with R before?
         createHelperMatrix();
         
         CTable ct = computeCTable(A,B,null,rows);
 		double spearman = computeSpearman(ct.table, ct.R, ct.S);
 		writeExpectedHelperMatrix("Spearman", spearman);
-        
+        */
+		
 		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
@@ -192,17 +201,26 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		// int expectedNumberOfJobs = 5;
 		runTest(true, exceptionExpected, null, -1);
 		
-		compareResults(eps);
+		// compareResults(eps); // TZ: Why not compare with R before?
 
-		/*
 		runRScript(true);
+	
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
-		*/
 	}
 	
 	private void round(double[][] weight) {

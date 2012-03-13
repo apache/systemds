@@ -7,10 +7,8 @@ library("Matrix")
 
 A = readMM(paste(args[1], "A.mtx", sep=""))
 B = readMM(paste(args[1], "B.mtx", sep=""))
-Helper=matrix(1, 2, 1)
 
 spearman = cor(A[,1],B[,1], method="spearman");
 
-SpearmanHelper = spearman * Helper;
-writeMM(as(t(SpearmanHelper),"CsparseMatrix"), paste(args[2], "Spearman", sep=""), format="text");
+write(spearman, paste(args[2], "Spearman", sep=""));
 

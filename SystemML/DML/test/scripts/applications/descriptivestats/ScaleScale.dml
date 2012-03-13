@@ -7,7 +7,6 @@
 
 X = read($1, rows=$2, cols=1, format="text");
 Y = read($3, rows=$2, cols=1, format="text");
-Helper = Rand(rows=1,cols=2,min=1,max=1);
 
 W = nrow(X);
 
@@ -23,7 +22,6 @@ sigmaY = sqrt(m2Y * (W/(W-1.0)) );
 # Pearson's R
 R = covXY / (sigmaX*sigmaY);
 
-PearsonRHelper = R * Helper;
-write(PearsonRHelper, $4, format="text");
+write(R, $4);
 
 

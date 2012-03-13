@@ -7,12 +7,10 @@ library("Matrix")
 
 X = readMM(paste(args[1], "X.mtx", sep=""))
 Y = readMM(paste(args[1], "Y.mtx", sep=""))
-Helper=matrix(1, 2, 1)
 
 # cor.test returns a list containing t-statistic, df, p-value, and R
 cort = cor.test(X[,1], Y[,1]);
 
 R = as.numeric(cort[4]);
 
-RHelper = R * Helper;
-writeMM(as(t(RHelper),"CsparseMatrix"), paste(args[2], "PearsonR", sep=""), format="text");
+write(R, paste(args[2], "PearsonR", sep=""));

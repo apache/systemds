@@ -24,7 +24,9 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_DIR, TEST_SCALE_SCALE, new String[] { "PearsonR" }));
+		addTestConfiguration(TEST_SCALE_SCALE, 
+				new TestConfiguration(TEST_DIR, TEST_SCALE_SCALE, 
+						new String[] { "PearsonR"+".scalar" }));
 		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(TEST_DIR, "ScaleScalePearsonRWithWeightsTest", new String[] { "outPearsonR" }));
 	}
 	
@@ -105,14 +107,7 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 
 		writeInputMatrix("X", X, true);
 		writeInputMatrix("Y", Y, true);
-        createHelperMatrix();
 
-		/*
-        double PearsonR = 0.0;
-		PearsonR = computePearsonR(X,Y, null, rows);
-        writeExpectedHelperMatrix("outPearsonR", PearsonR);
-		*/
-        
 		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
@@ -123,8 +118,18 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
 	}

@@ -412,7 +412,16 @@ public abstract class AutomatedTestBase {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + fileName);
 	}
+	
+	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
+		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
+	}
 
+	public static HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
+		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
+		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+	
 	/**
 	 * <p>
 	 * Loads a test configuration with its parameters. Adds the output

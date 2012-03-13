@@ -7,7 +7,6 @@ args <- commandArgs(TRUE)
 library("Matrix")
 
 V = readMM(paste(args[1], "vector.mtx", sep=""))
-Helper=matrix(1, 2, 1)
 
 tab = table(V[,1])
 cat = t(as.numeric(names(tab)))
@@ -29,9 +28,8 @@ C = (Nc > 0)
 mx = max(Nc)
 Mode = (Nc == mx)
 
-RHelper=R*Helper
 writeMM(as(t(Nc),"CsparseMatrix"), paste(args[2], "Nc", sep=""), format="text");
-writeMM(as(t(RHelper),"CsparseMatrix"), paste(args[2], "R", sep=""), format="text");
+write(R, paste(args[2], "R", sep=""));
 writeMM(as(t(Pc),"CsparseMatrix"), paste(args[2], "Pc", sep=""), format="text");
 writeMM(as(t(C),"CsparseMatrix"), paste(args[2], "C", sep=""), format="text");
 writeMM(as(t(Mode),"CsparseMatrix"), paste(args[2], "Mode", sep=""), format="text");

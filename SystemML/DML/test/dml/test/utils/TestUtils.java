@@ -300,6 +300,51 @@ public class TestUtils {
 		}
 		return null;
 	}
+	
+	/**
+	 * Reads a scalar value in DML format from HDFS
+	 */
+	public static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String filePath) {
+		FileSystem fs;
+		try {
+			fs = FileSystem.get(conf);
+			Path outDirectory = new Path(filePath);
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
+					expectedValues.put(new CellIndex(0, 0), Double.parseDouble(line));
+				}
+				outIn.close();
+			}
+			return expectedValues;
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+		return null;
+	}
+
+	/**
+	 * Reads a scalar value in R format from OS's FS
+	 */
+	public static HashMap<CellIndex, Double> readRScalarFromFS(String filePath) {
+		BufferedReader compareIn;
+		try {
+			compareIn = new BufferedReader(new FileReader(filePath));
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+			while ((line = compareIn.readLine()) != null) { // only 1 scalar value in file
+				expectedValues.put(new CellIndex(0,0), Double.parseDouble(line));
+			}
+			compareIn.close();
+			return expectedValues;
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+		return null;
+	}
 
 	/**
 	 * Compares two double values regarding tolerance t. If one or both of them

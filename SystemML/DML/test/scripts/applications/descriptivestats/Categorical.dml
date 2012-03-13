@@ -6,7 +6,6 @@
 # hadoop jar SystemML.jar -f $C_HOME/Categorical.dml -args "$INPUT_DIR/vector" 10000 "$OUTPUT_DIR/Nc" "$OUPUT_DIR/R" "$OUTPUT_DIR/Pc" "$OUTPUT_DIR/C" "$OUTPUT_DIR/Mode"
 
 V = read($1, rows=$2, cols=1, format="text")
-Helper = Rand(rows=1,cols=2,min=1,max=1);
 
 # a set of number of values specify the number of cases of each categorical
 Nc = ctable(V,1);
@@ -27,9 +26,8 @@ C = ppred(Nc, 0, ">")
 mx = max(Nc)
 Mode =  ppred(Nc, mx, "==")
 
-RHelper=R*Helper
 write(Nc, $3, format="text")
-write(RHelper, $4, format="text")
+write(R, $4)
 write(Pc, $5, format="text")
 write(C, $6, format="text")
 write(Mode, $7, format="text")

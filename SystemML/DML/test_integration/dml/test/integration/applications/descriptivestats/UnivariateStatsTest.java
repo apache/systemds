@@ -29,7 +29,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 				"min_weight", "max_weight", "rng_weight", "g1_weight", "se_g1_weight", "g2_weight", "se_g2_weight", 
 				"out_minus_weight", "out_plus_weight", "median_weight", "quantile_weight", "iqm_weight"}));
 		addTestConfiguration("Categorical", new TestConfiguration(TEST_DIR, "Categorical", 
-				new String[] {"Nc", "R", "Pc", "C", "Mode"}));
+				new String[] {"Nc", "R"+".scalar", "Pc", "C", "Mode"})); // Indicate some file is scalar
 		addTestConfiguration("WeightedCategoricalTest", new TestConfiguration(TEST_DIR, "WeightedCategoricalTest", 
 				new String[] {"Nc_weight", "R_weight", "Pc_weight", "C_weight", "Mode_weight"}));
 	}
@@ -167,10 +167,18 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 	
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
-		//	System.out.println(file+"-DML: "+dmlfile);
-		//	System.out.println(file+"-R: "+rfile);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 		}
 	}

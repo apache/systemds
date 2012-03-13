@@ -239,7 +239,12 @@
 	<target name="Detica" depends="jar">
 		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.detica}" overwrite="true"/>
 		<copy file="${build.configfile}" todir="${release.detica}" overwrite="true"/>
+		<copy file="test/scripts/applications/descriptivestats/Categorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
+		<copy file="test/scripts/applications/descriptivestats/Scale.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
 		<copy file="test/scripts/applications/descriptivestats/CategoricalCategorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
+		<copy file="test/scripts/applications/descriptivestats/ScaleScale.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
+		<copy file="test/scripts/applications/descriptivestats/ScaleCategorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
+		<copy file="test/scripts/applications/descriptivestats/OrdinalOrdinal.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
 		<copy file="test/scripts/applications/gnmf/GNMF.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/applications/hits/HITS.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/applications/l2svm/L2SVM.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
@@ -249,6 +254,7 @@
 		<copy file="test/scripts/functions/external/kMeans.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/functions/external/Outlier.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
 		<copy file="test/scripts/functions/external/SeqMiner.dml" todir="${release.detica}/DMLScripts" overwrite="true"/>
+		<tar basedir="${release.detica}" destfile="${release.detica}/../machine-learning.tar.gz" compression="gzip"/>
 	</target>
 	<target name="hdfstestdataupload">
 		<!--will be executed successfully only on cluster or in general on linux OS 

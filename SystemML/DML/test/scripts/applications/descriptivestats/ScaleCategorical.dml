@@ -9,7 +9,6 @@
 
 A = read($1, rows=$2, cols=1, format="text");
 Y = read($3, rows=$2, cols=1, format="text");
-Helper = Rand(rows=1,cols=2,min=1,max=1);
 
 # mean and variance in target variable
 W = nrow(A);
@@ -31,16 +30,12 @@ anova_den = sum( (CFreqs-1)*CVars )/(W-R);
 ANOVAF = anova_num/anova_den;
 
 # output required statistics
-varYHelper = varY * Helper;
-write(varYHelper, $4, format="text");
-myHelper = my * Helper;
-write(myHelper, $5, format="text");
+write(varY, $4);
+write(my, $5);
 
 write(CFreqs, $6, format="text");
 write(CMeans, $7, format="text");
 write(CVars, $8, format="text");
 
-EtaHelper = Eta * Helper;
-write(EtaHelper, $9, format="text");
-AnovaFHelper = ANOVAF * Helper;
-write(AnovaFHelper, $10, format="text");
+write(Eta, $9);
+write(ANOVAF, $10);

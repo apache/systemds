@@ -7,7 +7,6 @@ library("Matrix")
 
 A = readMM(paste(args[1], "A.mtx", sep=""));
 Y = readMM(paste(args[1], "Y.mtx", sep=""));
-Helper=matrix(1,2,1)
 
 Av = A[,1];
 Yv = Y[,1];
@@ -32,27 +31,17 @@ ANOVAF = anova_num/anova_den;
 print(anova_num, digits=15);
 print(anova_den, digits=15);
 
-EtaHelper = Eta * Helper;
-writeMM(as(t(EtaHelper),"CsparseMatrix"), paste(args[2], "Eta", sep=""), format="text");
-print(EtaHelper, digits=15);
+write(Eta, paste(args[2], "Eta", sep=""));
 
-AnovaFHelper = ANOVAF * Helper;
-writeMM(as(t(AnovaFHelper), "CsparseMatrix"), paste(args[2], "AnovaF", sep=""), format="text");
-print(AnovaFHelper, digits=15);
+write(ANOVAF, paste(args[2], "AnovaF", sep=""));
 
-VarYHelper = varY * Helper;
-writeMM(as(t(VarYHelper), "CsparseMatrix"), paste(args[2], "VarY", sep=""), format="text");
-print(VarYHelper, digits=15);
+write(varY, paste(args[2], "VarY", sep=""));
 
-MeanYHelper = my * Helper;
-writeMM(as(t(MeanYHelper), "CsparseMatrix"), paste(args[2], "MeanY", sep=""), format="text");
-print(MeanYHelper, digits=15);
+write(my, paste(args[2], "MeanY", sep=""));
 
 writeMM(as(CVars,"CsparseMatrix"), paste(args[2], "CVars", sep=""), format="text");
 writeMM(as(CFreqs,"CsparseMatrix"), paste(args[2], "CFreqs", sep=""), format="text");
 writeMM(as(CMeans,"CsparseMatrix"), paste(args[2], "CMeans", sep=""), format="text");
-print(CVars, digits=15);
-print(CFreqs, digits=15);
-print(CMeans, digits=15);
+
 
 

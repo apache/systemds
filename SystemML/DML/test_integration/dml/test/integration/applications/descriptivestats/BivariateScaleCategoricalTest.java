@@ -25,8 +25,9 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_NOMINAL, new TestConfiguration(TEST_DIR, TEST_SCALE_NOMINAL, 
-													new String[] { "Eta", "AnovaF", "VarY", "MeanY", "CFreqs", "CMeans", "CVars" }));
+		addTestConfiguration(TEST_SCALE_NOMINAL, 
+				new TestConfiguration(TEST_DIR, TEST_SCALE_NOMINAL, 
+					new String[] { "Eta"+".scalar", "AnovaF"+".scalar", "VarY"+".scalar", "MeanY"+".scalar", "CFreqs", "CMeans", "CVars" }));
 		addTestConfiguration(TEST_SCALE_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "ScaleCategoricalWithWeightsTest", new String[] { "outEta", "outAnovaF", "outVarY", "outMeanY", "outCatFreqs", "outCatMeans", "outCatVars" }));
 	}
 	
@@ -279,8 +280,18 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 		
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
 	}

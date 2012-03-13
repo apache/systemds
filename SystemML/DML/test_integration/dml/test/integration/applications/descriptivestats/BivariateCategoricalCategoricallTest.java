@@ -23,7 +23,8 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, new String[] { "PValue", "CramersV" }));
+		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, 
+				new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
 		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "CategoricalCategoricalWithWeightsTest", new String[] { "outPValue", "outCramersV" }));
 	}
 	
@@ -156,7 +157,6 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
         
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
-		createHelperMatrix();
 
 		/*
 		 * Expected number of jobs:
@@ -172,8 +172,18 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 		
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
 		

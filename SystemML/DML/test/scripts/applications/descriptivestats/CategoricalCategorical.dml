@@ -7,7 +7,6 @@
 
 A = read($1, rows=$2, cols=1, format="text");
 B = read($3, rows=$2, cols=1, format="text");
-Helper = Rand(rows=1,cols=2,min=1,max=1);
 
 # Contingency Table
 F = ctable(A,B);
@@ -30,10 +29,7 @@ C = ncol(F);
 q = min(R,C);
 cramers_v = sqrt(chi_squared/(W*(q-1)));
 
-PValueHelper = pValue * Helper;
-write(PValueHelper, $4, format="text");
-
-CramersVHelper = cramers_v * Helper;
-write(CramersVHelper, $5, format="text");
+write(pValue, $4);
+write(cramers_v, $5);
 
 

@@ -146,7 +146,6 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 
 		loadTestConfiguration(config);
 
-		createHelperMatrix();
         double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
         OrderStatisticsTest.round(vector);
         

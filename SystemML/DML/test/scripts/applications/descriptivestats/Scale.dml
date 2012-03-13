@@ -1,0 +1,93 @@
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script Scale.dml?
+# Assume S_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for V and rows = 5 for P
+# hadoop jar SystemML.jar -f $S_HOME/Scale.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/prob 5
+# "$OUTPUT_DIR/mean" "$OUTPUT_DIR/std" "$OUTPUT_DIR/se" "$OUTPUT_DIR/var" "$OUTPUT_DIR/cv"
+# "$OUTPUT_DIR/min" "$OUTPUT_DIR/max" "$OUTPUT_DIR/rng" 
+# "$OUTPUT_DIR/g1" "$OUTPUT_DIR/se_g1" "$OUTPUT_DIR/g2" "$OUTPUT_DIR/se_g2" 
+# "$OUTPUT_DIR/median" "$OUTPUT_DIR/iqm"
+# "OUTPUT_DIR/out_minus" "$OUTPUT_DIR/out_plus" "$OUTPUT_DIR/quantile" 
+
+V = read($1, rows=$2, cols=1, format="text")
+P = read($3, rows=$4, cols=1, format="text")
+
+n = nrow(V)
+
+# sum
+s1 = sum(V)
+
+# 2nd central moment
+m2 = centralMoment(V, 2)
+
+# 3rd central moment
+m3 = centralMoment(V, 3)
+
+# 4th central moment
+m4 = centralMoment(V, 4)
+
+# mean
+mu = mean(V)
+
+# variances
+var = n/(n-1.0)*m2
+
+# standard deviations
+std_dev = sqrt(var)
+
+# standard errors of mean
+SE = std_dev/sqrt(n)
+
+# coefficients of variation
+cv = std_dev/mu
+
+# min and max
+mn=min(V)
+mx=max(V)
+
+# range
+rng = mx - mn
+
+# Skewness
+g1 = m3/(std_dev^3)
+
+# standard error of skewness (not sure how it is defined without the weight)
+se_g1=sqrt( 6*n*(n-1.0) / ((n-2.0)*(n+1.0)*(n+3.0)) )
+
+# Kurtosis (using binomial formula)
+g2 = m4/(std_dev^4) - 3
+
+# Standard error of Kurtosis (not sure how it is defined without the weight)
+se_g2= sqrt( (4*(n^2-1)*se_g1^2)/((n+5.0)*(n-3.0)) )
+
+# median
+md = quantile(V, 0.5)
+
+# quantile
+Q = quantile(V, P)
+
+# inter-quartile mean
+iqm = interQuartileMean(V)
+
+# outliers use ppred to describe it
+out_minus = ppred(V, mu-5*std_dev, "<")*V 
+out_plus = ppred(V, mu+5*std_dev, ">")*V
+
+write(mu, $5);
+write(std_dev, $6);
+write(SE, $7);
+write(var, $8);
+write(cv, $9);
+write(mn, $10);
+write(mx, $11);
+write(rng, $12);
+write(g1, $13);
+write(se_g1, $14);
+write(g2, $15);
+write(se_g2, $16);
+write(md, $17);
+write(iqm, $18);
+write(out_minus, $19, format="text");
+write(out_plus, $20, format="text");
+write(Q, $21, format="text");

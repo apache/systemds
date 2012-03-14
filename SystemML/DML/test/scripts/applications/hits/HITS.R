@@ -9,8 +9,8 @@ args <- commandArgs(TRUE)
 library("Matrix")
 
 
-maxiter = args[2];
-tol = args[3];
+maxiter = as.integer(args[2]);
+tol = as.double(args[3]);
 
 G = readMM(paste(args[1], "graph.mtx", sep=""));
 authorities = readMM(paste(args[1], "init_authorities.mtx", sep=""));

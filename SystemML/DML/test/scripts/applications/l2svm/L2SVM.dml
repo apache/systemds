@@ -3,7 +3,7 @@
 # Assume L2SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 1000 and cols = 100 for X,  rows = 1000 and cols = 1 for Y, epsilon = 10^-8, lambda = 1, maxiterations = 100
-# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Y" 1000 100 0.00000001 1 100 "$OUPUT_DIR/w" 
+# hadoop jar SystemML.jar -f $L2SVM_HOME/L2SVM.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Y" 1000 100 0.00000001 1 100 "$OUPUT_DIR/w" 
 
 X = read($1, rows=$3, cols=$4, format="text")
 Y = read($2, rows=$3, cols=1, format="text")

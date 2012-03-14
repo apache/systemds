@@ -7,7 +7,7 @@ library(Matrix)
 V = readMM(paste(args[1], "v.mtx", sep=""));
 W = readMM(paste(args[1], "w.mtx", sep=""));
 H = readMM(paste(args[1], "h.mtx", sep=""));
-max_iteration = args[2];
+max_iteration = as.integer(args[2]);
 i = 0;
 
 Eps = 10^-8;

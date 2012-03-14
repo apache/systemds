@@ -3,7 +3,7 @@
 # Assume SEQMINER_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 5, cols = 10 for input matrix M
-# hadoop jar SystemML.jar -f $OUTLIER_HOME/SeqMiner.dml -args "$INPUT_DIR/M" 5 10 "$OUPUT_DIR/fseq" "$OUPUT_DIR/sup"
+# hadoop jar SystemML.jar -f $SEQMINER_HOME/SeqMiner.dml -args "$INPUT_DIR/M" 5 10 "$OUPUT_DIR/fseq" "$OUPUT_DIR/sup"
 
 seqMini = externalFunction(Matrix[Double] A, Double sup, Double max_level) 
 return (Matrix[Double] B, Matrix[Double] C) 

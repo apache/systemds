@@ -1,12 +1,8 @@
 package dml.test.components.runtime.matrix.operations;
 
-import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import dml.runtime.instructions.MRInstructions.ScalarInstruction;
-import dml.utils.DMLException;
-import dml.utils.DMLUnsupportedOperationException;
 
 public class ScalarTest {
 

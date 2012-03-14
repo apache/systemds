@@ -1,16 +1,8 @@
 package dml.test.components.runtime.matrix;
 
-import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import dml.runtime.matrix.MetaData;
-import dml.runtime.matrix.ReblockMR;
-import dml.runtime.matrix.io.InputInfo;
-import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.MatrixCharacteristics;
-import dml.test.BinaryMatrixCharacteristics;
-import dml.test.utils.TestUtils;
 
 public class ReblockMRTest {
 

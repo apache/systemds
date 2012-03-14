@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRInstructions.RandInstruction;
-import dml.utils.DMLException;
 
 public class RandTest {
 

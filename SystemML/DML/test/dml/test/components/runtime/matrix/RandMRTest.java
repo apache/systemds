@@ -2,11 +2,6 @@ package dml.test.components.runtime.matrix;
 
 import org.junit.Test;
 
-import dml.runtime.matrix.RandMR;
-import dml.runtime.matrix.io.OutputInfo;
-import dml.test.BinaryMatrixCharacteristics;
-import dml.test.utils.TestUtils;
-
 public class RandMRTest {
 
     @Test

@@ -1,11 +1,8 @@
 package dml.test.components.runtime.matrix.operations;
 
-import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import dml.runtime.instructions.MRInstructions.ReorgInstruction;
-import dml.utils.DMLException;
 
 public class ReorgTest {
 

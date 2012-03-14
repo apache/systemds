@@ -79,7 +79,8 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			////////////////////////////////////////
 			taggedValueBuffer.setTag(output);
 			out.collect(indexBuffer, taggedValueBuffer);
-		//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
+			//if(output!=0)
+			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
 		}	
 	}
 	

@@ -25,7 +25,7 @@ public class CachedMap<T extends CachedMapElement> {
 			cache.add((T) value.duplicate());
 		map.put(index, numValid);
 		numValid++;
-		return cache.lastElement();
+		return cache.get(numValid-1);
 	}
 	
 	public void reset()

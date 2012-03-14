@@ -36,7 +36,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		commonSetup(reporter);
 		
 		cachedValues.reset();
-//		LOG.info("before aggregation: \n"+cachedValues);
+	//	LOG.info("before aggregation: \n"+cachedValues);
 		//perform aggregate operations first
 		processAggregateInstructions(indexes, values);
 		

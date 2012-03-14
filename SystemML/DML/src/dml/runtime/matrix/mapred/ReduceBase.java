@@ -388,7 +388,8 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			byte input=value.getTag();
 			Vector<AggregateInstruction> instructions=agg_instructions.get(input);
 			
-		//	System.out.println("value to aggregate: "+value);
+			//System.out.println(indexes);
+			//System.out.println("value to aggregate: "+value);
 			
 			//if there is no specified aggregate operation on an input, by default apply sum
 			try{
@@ -408,7 +409,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			{
 				throw new IOException(e);
 			}
-		//	System.out.println("current cachedValues: \n"+cachedValues);
+//			System.out.println("current cachedValues: \n"+cachedValues);
 		}
 	}
 	

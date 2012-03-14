@@ -130,6 +130,10 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1.getValue(), 
 				in2.getValue(), out.getValue(), ((BinaryOperator)optr));
 		
+	//	System.out.println(this.toString());
+	//	System.out.println("in1: "+in1);
+	//	System.out.println("in1: "+in2);
+	//	System.out.println("out: "+out);
 		//put the output value in the cache
 		if(out==tempValue)
 			cachedValues.set(output, out);

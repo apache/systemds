@@ -510,6 +510,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			((MatrixBlockDSM)result).sparseScalarOperationsInPlace(op);
 		else
 			((MatrixBlockDSM)result).denseScalarOperationsInPlace(op);
+//		System.out.println(result);
 		return result;
 	}
 	
@@ -1007,6 +1008,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 		if(sparse)
 		{
+			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
+				return;
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow();
@@ -2175,6 +2178,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		//LOG.info("**** denseToSparse: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
 		sparse=true;
 		adjustSparseRows(rlen-1);
+		reset();
 		if(denseBlock==null)
 			return;
 		int index=0;
@@ -2182,8 +2186,6 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow();
-			else
-				sparseRows[r].reset();
 			for(int c=0; c<clen; c++)
 			{
 				if(denseBlock[index]!=0)
@@ -2374,8 +2376,8 @@ public class MatrixBlockDSM extends MatrixValue{
 	public String toString()
 	{
 		String ret="sparse? = "+sparse+"\n" ;
-		if(!sparse)
-			ret+="nonzeros = "+nonZeros+"\n";
+		ret+="nonzeros = "+nonZeros+"\n";
+		boolean toprint=false;
 		if(sparse)
 		{
 			int len=0;
@@ -2385,6 +2387,12 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(; i<len; i++)
 			{
 				ret+="row +"+i+": "+sparseRows[i]+"\n";
+				if(sparseRows[i]!=null)
+				{
+					for(int j=0; j<sparseRows[i].size(); j++)
+						if(sparseRows[i].getValueContainer()[j]!=0.0)
+							toprint=true;
+				}
 			}
 			for(; i<rlen; i++)
 			{
@@ -2393,17 +2401,22 @@ public class MatrixBlockDSM extends MatrixValue{
 		}else
 		{
 			int start=0;
+			if(this.denseBlock==null)
+				return ret;
 			for(int i=0; i<rlen; i++)
 			{
 				for(int j=0; j<clen; j++)
 				{
+					if(this.denseBlock[start+j]!=0.0)
+						toprint=true;
 					ret+=this.denseBlock[start+j]+"\t";
 				}
 				ret+="\n";
 				start+=clen;
 			}
 		}
-		
+		if(!toprint)
+			return "sparse? = "+sparse+"\nnonzeros = "+nonZeros+"\n";
 		return ret;
 	}
 	

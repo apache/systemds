@@ -1,7 +1,6 @@
 package dml.runtime.matrix.mapred;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.Map.Entry;

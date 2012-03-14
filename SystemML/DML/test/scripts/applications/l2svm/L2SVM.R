@@ -8,7 +8,7 @@ library("Matrix")
 X = readMM(paste(args[1], "X.mtx", sep=""));
 Y = readMM(paste(args[1], "Y.mtx", sep=""));
 
-epsilon = args[2];
+epsilon = as.double(args[2]);
 lambda = 1;
 
 N = nrow(X)

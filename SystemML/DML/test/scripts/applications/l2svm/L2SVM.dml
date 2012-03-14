@@ -2,13 +2,14 @@
 # How to invoke this dml script L2SVM.dml?
 # Assume L2SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume rows = 1000 and cols = 100 for X,  rows = 1000 and cols = 1 for Y, epsilon = 10^-8, and lambda = 1
-# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Y" 1000 100 0.00000001 1 "$OUPUT_DIR/w" 
+# Assume rows = 1000 and cols = 100 for X,  rows = 1000 and cols = 1 for Y, epsilon = 10^-8, lambda = 1, maxiterations = 100
+# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Y" 1000 100 0.00000001 1 100 "$OUPUT_DIR/w" 
 
 X = read($1, rows=$3, cols=$4, format="text")
 Y = read($2, rows=$3, cols=1, format="text")
 epsilon = $5
 lambda = $6
+maxiterations = $7
 
 num_samples = nrow(X)
 dimensions = ncol(X)
@@ -19,7 +20,7 @@ w = Rand(rows=dimensions, cols=1, min=0, max=0, pdf="uniform")
 
 iter = 0
 continue = 1
-while(continue == 1)  {
+while(continue == 1 & iter < maxiterations)  {
 	# minimizing primal obj along direction s
 	step_sz = 0
 	Xd = X %*% s
@@ -63,4 +64,4 @@ while(continue == 1)  {
 	iter = iter + 1
 }
 
-write(w, $7, format="text")
+write(w, $8, format="text")

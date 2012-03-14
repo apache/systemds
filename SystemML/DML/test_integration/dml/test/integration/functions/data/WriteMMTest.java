@@ -78,8 +78,8 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		//compareResults();
 		
-		//BinaryMatrixCharacteristics matrix = TestUtils.readCellsFromSequenceFile(baseDirectory + OUTPUT_DIR + "a");
-		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
+		BinaryMatrixCharacteristics matrix = TestUtils.readCellsFromSequenceFile(baseDirectory + OUTPUT_DIR + "a");
+		//BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
 		assertEquals(rows, matrix.getRows());
 		assertEquals(cols, matrix.getCols());
 		double[][] matrixValues = matrix.getValues();

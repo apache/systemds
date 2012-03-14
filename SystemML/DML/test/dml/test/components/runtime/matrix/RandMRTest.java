@@ -11,7 +11,7 @@ public class RandMRTest {
 
     @Test
     public void testRunJob() {
-    	long[] numRows = new long[] { 10, 50 };
+    /*	long[] numRows = new long[] { 10, 50 };
     	long[] numCols = new long[] { 10, 50 };
     	int[] blockRowSize = new int[] { 2, 10000 };
     	int[] blockColSize = new int[] { 2, 10000 };
@@ -43,7 +43,7 @@ public class RandMRTest {
 				blockRowSize[1], blockColSize[1]);
 		TestUtils.checkMatrix(randMatrix, numRows[1], numCols[1], minValue[1], maxValue[1]);
 		
-		TestUtils.removeTemporaryFiles();
+		TestUtils.removeTemporaryFiles();*/
     }
 
 }

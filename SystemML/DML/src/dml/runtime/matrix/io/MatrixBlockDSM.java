@@ -1019,6 +1019,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			
 		}else
 		{
+			if(denseBlock==null && v==0.0)
+				return;
+			
 			int limit=rlen*clen;
 			if(denseBlock==null)
 			{
@@ -2377,6 +2380,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		String ret="sparse? = "+sparse+"\n" ;
 		ret+="nonzeros = "+nonZeros+"\n";
+		ret+="size: "+rlen+" X "+clen+"\n";
 		boolean toprint=false;
 		if(sparse)
 		{

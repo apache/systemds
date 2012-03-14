@@ -12,7 +12,6 @@ public class RandTest {
 
     @Test
     public void testParseOperation() {
-        fail("RandTest.testParseOperation() is not implemented.");
         /*
     	try {
             assertEquals(Rand.SupportedOperation.RAND, Rand.parseOperation("Rand"));

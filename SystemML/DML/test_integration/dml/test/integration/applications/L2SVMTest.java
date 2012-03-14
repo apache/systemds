@@ -24,8 +24,11 @@ public class L2SVMTest extends AutomatedTestBase {
     public void testL2SVM(){
 		int rows = 1000;
         int cols = 100;
-        int lambda = 1;
-       
+        double epsilon = 1.0e-8;
+        double lambda = 1.0;
+        int maxiterations = 3;
+        int maxNumberOfMRJobs = 21;
+        
         /* this is old way of running the test by passing the variable over to the dml script */
         TestConfiguration config = getTestConfiguration(TEST_L2SVM);
         config.addVariable("rows", rows);
@@ -39,16 +42,16 @@ public class L2SVMTest extends AutomatedTestBase {
 				               "-args", "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
 				                        "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
 				                        Integer.toString(rows), Integer.toString(cols),
-				                        Double.toString(Math.pow(10, -8)), Integer.toString(lambda),
+				                        Double.toString(epsilon), Double.toString(lambda), Integer.toString(maxiterations),
 				                        "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
 		dmlArgsDebug = new String[]{"-f", L2SVM_HOME + TEST_L2SVM + ".dml", "-d",
 							   "-args", "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
                                         "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
                                         Integer.toString(rows), Integer.toString(cols),
-                                        Double.toString(Math.pow(10, -8)), Integer.toString(lambda), 
+                                        Double.toString(Math.pow(10, -8)), Double.toString(lambda), Integer.toString(maxiterations), 
                                         "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
 		rCmd = "Rscript" + " " + L2SVM_HOME + TEST_L2SVM + ".R" + " " + 
-		       L2SVM_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + Integer.toString(lambda) + " " + L2SVM_HOME + EXPECTED_DIR;
+		       L2SVM_HOME + INPUT_DIR + " " + Double.toString(epsilon) + " " + Double.toString(lambda) + " " + Integer.toString(maxiterations) + " " + L2SVM_HOME + EXPECTED_DIR;
 		
         loadTestConfiguration(config);
 
@@ -62,8 +65,7 @@ public class L2SVMTest extends AutomatedTestBase {
      
         boolean exceptionExpected = false;
 		
-        /* no calculation of expectedNumberOfJobs as for now, set to default temporarily */
-		runTest(true, exceptionExpected, null, -1);
+        runTest(true, exceptionExpected, null, maxNumberOfMRJobs);
 		
 		runRScript(true);
 		disableOutAndExpectedDeletion();

@@ -8,7 +8,7 @@ library("Matrix");
 V = readMM(paste(args[1], "v.mtx", sep=""));
 y = readMM(paste(args[1], "y.mtx", sep=""));
 
-eps  = args[2];
+eps  = as.double(args[2]);
 
 r = -(t(V) %*% y);
 p = -r;

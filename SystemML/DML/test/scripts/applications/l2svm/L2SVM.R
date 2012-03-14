@@ -1,6 +1,6 @@
 # JUnit test class: dml.test.integration.applications.L2SVMTest.java
 # command line invocation assuming $L2SVM_HOME is set to the home of the R script
-# Rscript $L2SVM_HOME/L2SVM.R $L2SVM_HOME/in/ 0.00000001 1 $L2SVM_HOME/expected/
+# Rscript $L2SVM_HOME/L2SVM.R $L2SVM_HOME/in/ 0.00000001 1 100 $L2SVM_HOME/expected/
 
 args <- commandArgs(TRUE)
 library("Matrix")
@@ -9,7 +9,8 @@ X = readMM(paste(args[1], "X.mtx", sep=""));
 Y = readMM(paste(args[1], "Y.mtx", sep=""));
 
 epsilon = as.double(args[2]);
-lambda = 1;
+lambda = as.double(args[3]);
+maxiterations = as.integer(args[4]);
 
 N = nrow(X)
 D = ncol(X)
@@ -19,8 +20,9 @@ w = matrix(0,D,1)
 g_old = t(X) %*% Y
 s = g_old
 
+iter = 0
 continue = TRUE
-while(continue){
+while(continue && iter < maxiterations){
 	t = 0
 	Xd = X %*% s
 	wd = lambda * sum(w * s)
@@ -50,6 +52,8 @@ while(continue){
 	be = sum(g_new * g_new)/sum(g_old * g_old)
 	s = be * s + g_new
 	g_old = g_new
+	
+	iter = iter + 1
 }
 
-writeMM(as(w,"CsparseMatrix"), paste(args[4], "w", sep=""));
+writeMM(as(w,"CsparseMatrix"), paste(args[5], "w", sep=""));

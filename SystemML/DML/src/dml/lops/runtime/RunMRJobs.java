@@ -448,14 +448,14 @@ public class RunMRJobs {
 				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
 			}
 			else {
-				if ( rows[i] == -1 )
+				//if ( rows[i] == -1 )
 					newrows[i] = matchar.numRows;
-				else {
-					if ( rows[i] != matchar.numRows ) 
-						throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
-					else
-						newrows[i] = matchar.numRows;
-				}
+				//else {
+				//	if ( rows[i] != matchar.numRows ) 
+				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
+				//	else
+				//		newrows[i] = matchar.numRows;
+				//}
 			}
 		}
 		return newrows;
@@ -475,14 +475,14 @@ public class RunMRJobs {
 				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
 			}
 			else {
-				if ( cols[i] == -1 )
+				//if ( cols[i] == -1 )
 					newcols[i] = matchar.numColumns;
-				else {
-					if ( cols[i] != matchar.numColumns ) 
-						throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
-					else
-						newcols[i] = matchar.numColumns;
-				}
+				//else {
+				//	if ( cols[i] != matchar.numColumns ) 
+				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
+				//	else
+				//		newcols[i] = matchar.numColumns;
+				//}
 			}
 		}
 		return newcols;

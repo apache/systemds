@@ -31,6 +31,8 @@ public class RandStatement extends Statement
 		MAX("max"),
 		/** sparsity of the random object */
 		SPARSITY("sparsity"),
+		/** optional seed to random number generator */
+		SEED("seed"),
 		/** probability density function */
 		PDF("pdf");
 		
@@ -71,6 +73,8 @@ public class RandStatement extends Statement
 	private double maxValue = 1.0;
 	/** sparsity of the random object */
 	private double sparsity = 1.0;
+	/** optional seed to random number generator. default value of -1 indicates not set **/
+	private long seed = -1;
 	/** probability density function used to produce the sparsity */
 	private String probabilityDensityFunction = "uniform";
 	/** list of required variables */
@@ -161,6 +165,16 @@ public class RandStatement extends Statement
 			maxValue = (double) paramValue;
 			return;
 		}
+		if (paramName.equalsIgnoreCase(Param.SPARSITY.getParamName()))
+		{
+			sparsity = new Long(paramValue).doubleValue();
+			return;
+		}
+		if (paramName.equalsIgnoreCase(Param.SEED.getParamName()))
+		{
+			seed = new Long(paramValue).longValue();
+			return;
+		}
 		
 		throw new ParseException("unexpected long parameter \"" + paramName + "\"");
 	}
@@ -204,27 +218,56 @@ public class RandStatement extends Statement
 	{
 		if(paramName.equalsIgnoreCase(Param.ROWS.getParamName()))
 		{
-			rows = Long.parseLong(paramValue);
+			try {
+				rows = Long.parseLong(paramValue);
+			} catch (NumberFormatException e){
+				throw new ParseException("in Rand statement, rows must have long value");
+			}
 			return;
 		}
 		if(paramName.equalsIgnoreCase(Param.COLS.getParamName()))
 		{
-			cols = Long.parseLong(paramValue);
+			try {
+				cols = Long.parseLong(paramValue);
+			} 
+			catch (NumberFormatException e){
+				throw new ParseException("in Rand statement, cols must have long value");
+			}
 			return;
 		}
 		if(paramName.equalsIgnoreCase(Param.MIN.getParamName()))
 		{
-			minValue = Double.parseDouble(paramValue);
+			try {
+				minValue = Double.parseDouble(paramValue);
+			}
+			catch (NumberFormatException e){
+				throw new ParseException("in Rand statement, min must have double value");
+			}
 			return;
 		}
 		if(paramName.equalsIgnoreCase(Param.MAX.getParamName()))
 		{
-			maxValue = Double.parseDouble(paramValue);
+			try {
+				maxValue = Double.parseDouble(paramValue);
+			}
+			catch (NumberFormatException e){
+				throw new ParseException("in Rand statement, max must have double value");
+			}
 			return;
 		}
 		if(paramName.equalsIgnoreCase(Param.SPARSITY.getParamName()))
 		{
 			sparsity = Double.parseDouble(paramValue);
+			return;
+		}
+		if(paramName.equalsIgnoreCase(Param.SEED.getParamName()))
+		{
+			try {
+				seed = Long.parseLong(paramValue);
+			}
+			catch (NumberFormatException e){
+				throw new ParseException("in Rand statement, seed must have double value");
+			}
 			return;
 		}
 		if(paramName.equalsIgnoreCase(Param.PDF.getParamName()))
@@ -325,6 +368,16 @@ public class RandStatement extends Statement
 	}
 	
 	/**
+	 * <p>Returns the value of the seed associated with the random object.</p>
+	 * 
+	 * @return sparsity
+	 */
+	public double getSeed()
+	{
+		return seed;
+	}
+	
+	/**
 	 * <p>Returns the probability densitfy function used to generate the random object.</p>
 	 * 
 	 * @return probability density function
@@ -420,7 +473,10 @@ public class RandStatement extends Statement
         sb.append(", max=" + maxValue);
         sb.append(", sparsity=" + sparsity);
         sb.append(", pdf=" + probabilityDensityFunction);
-        
+        if (seed == -1)
+        	sb.append(", seed=RANDOM");
+        else
+        	sb.append(", seed=" + seed);
         sb.append(");");
         return sb.toString();
     }

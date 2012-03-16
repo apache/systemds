@@ -30,7 +30,7 @@ public class ExpressionTest {
         assertEquals(RelationalOp.GREATER, Expression.getRelationalOp(">"));
         assertEquals(RelationalOp.GREATEREQUAL, Expression.getRelationalOp(">="));
         assertEquals(RelationalOp.EQUAL, Expression.getRelationalOp("=="));
-        assertEquals(RelationalOp.NOTEQUAL, Expression.getRelationalOp("<>"));
+        assertEquals(RelationalOp.NOTEQUAL, Expression.getRelationalOp("!="));
         assertEquals(RelationalOp.INVALID, Expression.getRelationalOp("wrong"));
     }
     

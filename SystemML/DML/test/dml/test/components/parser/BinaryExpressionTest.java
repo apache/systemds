@@ -27,8 +27,8 @@ public class BinaryExpressionTest {
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
         beToTest.validateExpression(ids);
-        assertEquals(100, beToTest.getOutput().getDim1());
-        assertEquals(101, beToTest.getOutput().getDim2());
+        assertEquals(-1, beToTest.getOutput().getDim1());
+        assertEquals(-1, beToTest.getOutput().getDim2());
         
         beToTest = new BinaryExpression(BinaryOp.MATMULT);
         beToTest.setLeft(new DataIdentifier("left"));
@@ -37,7 +37,7 @@ public class BinaryExpressionTest {
         try {
             beToTest.validateExpression(ids);
             fail("dimensions do not match for matrix multiplication");
-        } catch(RuntimeException e) { }
+        } catch(Exception e) { }
         
         right.setDimensions(101, 102);
         beToTest = new BinaryExpression(BinaryOp.MATMULT);
@@ -53,14 +53,14 @@ public class BinaryExpressionTest {
         try {
             beToTest.validateExpression(ids);
             fail("left expression not validated");
-        } catch(RuntimeException e) { }
+        } catch(Exception e) { }
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("left", left);
         try {
             beToTest.validateExpression(ids);
             fail("right expression not validated");
-        } catch(RuntimeException e) { }
+        } catch(Exception e) { }
     }
 
     @Test

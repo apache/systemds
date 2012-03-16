@@ -43,14 +43,17 @@ public class InputStatementTest {
         
         isToTest.addStringParam("rows", "100");
         isToTest.addStringParam("cols", "101");
+        
+        
         isToTest.addStringParam("rows_in_block", "102");
         isToTest.addStringParam("columns_in_block", "103");
         isToTest.addStringParam("value_type", "double");
+        
         isToTest.processParams(false);
         assertEquals(100, isToTest.getIdentifier().getDim1());
         assertEquals(101, isToTest.getIdentifier().getDim2());
-        assertEquals(102, isToTest.getIdentifier().getRowsInBlock());
-        assertEquals(103, isToTest.getIdentifier().getColumnsInBlock());
+        assertEquals(-1, isToTest.getIdentifier().getRowsInBlock());
+        assertEquals(-1, isToTest.getIdentifier().getColumnsInBlock());
         assertEquals(ValueType.DOUBLE, isToTest.getIdentifier().getValueType());
         
         isToTest.addStringParam("value_type", "string");
@@ -62,36 +65,29 @@ public class InputStatementTest {
         assertEquals(ValueType.INT, isToTest.getIdentifier().getValueType());
         
         isToTest.addStringParam("value_type", "other");
-        isToTest.processParams(false);
-        assertEquals(ValueType.UNKNOWN, isToTest.getIdentifier().getValueType());
+        try {
+        	isToTest.processParams(false);
+        	assertEquals(ValueType.UNKNOWN, isToTest.getIdentifier().getValueType());
+        } catch (LanguageException e) {}
+        	
 
         target = new DataIdentifier("target");
         isToTest = new InputStatement(target, "filename");
         isToTest.addStringParam("rows", "104");
+        isToTest.addStringParam("cols", "105");
         isToTest.processParams(false);
-        assertEquals(-1, isToTest.getIdentifier().getDim1());
-        assertEquals(-1, isToTest.getIdentifier().getDim2());
+        assertEquals(104, isToTest.getIdentifier().getDim1());
+        assertEquals(105, isToTest.getIdentifier().getDim2());
 
         target = new DataIdentifier("target");
         isToTest = new InputStatement(target, "filename");
         isToTest.addStringParam("cols", "105");
-        isToTest.processParams(false);
+        try {
+        	isToTest.processParams(false);
+        } catch (LanguageException e){}
         assertEquals(-1, isToTest.getIdentifier().getDim1());
         assertEquals(-1, isToTest.getIdentifier().getDim2());
 
-        target = new DataIdentifier("target");
-        isToTest = new InputStatement(target, "filename");
-        isToTest.addStringParam("rows_in_block", "106");
-        isToTest.processParams(false);
-        assertEquals(-1, isToTest.getIdentifier().getRowsInBlock());
-        assertEquals(-1, isToTest.getIdentifier().getColumnsInBlock());
-
-        target = new DataIdentifier("target");
-        isToTest = new InputStatement(target, "filename");
-        isToTest.addStringParam("columns_in_block", "107");
-        isToTest.processParams(false);
-        assertEquals(-1, isToTest.getIdentifier().getRowsInBlock());
-        assertEquals(-1, isToTest.getIdentifier().getColumnsInBlock());
     }
 
 }

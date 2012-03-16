@@ -24,7 +24,7 @@ public class BooleanExpressionTest {
         ids.put("left", left);
         ids.put("right", right);
         
-        BooleanExpression beToTest = new BooleanExpression(BooleanOp.CONDITIONALAND);
+        BooleanExpression beToTest = new BooleanExpression(BooleanOp.LOGICALAND);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
         beToTest.validateExpression(ids);
@@ -35,14 +35,14 @@ public class BooleanExpressionTest {
         try {
             beToTest.validateExpression(ids);
             fail("left expression not validated");
-        } catch(RuntimeException e) { }
+        } catch(Exception e) { }
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("left", left);
         try {
             beToTest.validateExpression(ids);
             fail("right expression not validated");
-        } catch(RuntimeException e) { }
+        } catch(Exception e) { }
     }
 
     @Test

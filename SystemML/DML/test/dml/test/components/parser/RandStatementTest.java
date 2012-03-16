@@ -169,7 +169,7 @@ public class RandStatementTest {
         DataIdentifier id = rs.getIdentifier();
         assertEquals(FormatType.BINARY, id.getFormatType());
         assertEquals(ValueType.DOUBLE, id.getValueType());
-        assertEquals(DataType.SCALAR, id.getDataType());
+        assertEquals(DataType.MATRIX, id.getDataType());
         assertEquals(1, id.getDim1());
         assertEquals(1, id.getDim2());
         

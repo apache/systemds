@@ -89,8 +89,8 @@ public class IdentifierTest {
         idToTest.setBooleanProperties();
         assertEquals(DataType.SCALAR, idToTest.getDataType());
         assertEquals(ValueType.BOOLEAN, idToTest.getValueType());
-        assertEquals(1, idToTest.getDim1());
-        assertEquals(1, idToTest.getDim2());
+        assertEquals(0, idToTest.getDim1());
+        assertEquals(0, idToTest.getDim2());
         assertEquals(1, idToTest.getRowsInBlock());
         assertEquals(1, idToTest.getColumnsInBlock());
         assertEquals(1, idToTest.getNnzs());
@@ -135,17 +135,18 @@ public class IdentifierTest {
     public void testComputeDataType() throws ParseException {
         DataIdentifier idToTest = new DataIdentifier("idToTest");
         
-        idToTest.setDimensions(1, 1);
+        idToTest.setDimensions(0, 0);
         idToTest.computeDataType();
         assertEquals(DataType.SCALAR, idToTest.getDataType());
        
-        idToTest.setDimensions(2, 2);
+        idToTest.setDimensions(1, 2);
         idToTest.computeDataType();
         assertEquals(DataType.MATRIX, idToTest.getDataType());
         
         idToTest.setDimensions(-1, -1);
         idToTest.computeDataType();
         assertEquals(DataType.UNKNOWN, idToTest.getDataType());
+          
     }
     
     private void checkIdentifierProperties(Identifier idToTest, long rows, long cols, long rowsInBlock, long colsInBlock,

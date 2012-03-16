@@ -2,15 +2,15 @@
 # How to invoke this dml script HITS.dml?
 # Assume HITS_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume rows = 10000 and cols = 10000 for G,  rows = 10000 and cols = 1 for authorities, max_iteration = 2
-# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/graph2.mtx" "$INPUT_DIR/init_authorities2.mtx" 2 10000 10000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
+# Assume rows = 1000 and cols = 1000 for G,  rows = 1000 and cols = 1 for authorities, max_iteration = 2
+# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/G" 2 1000 1000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
 
-G = read($1,rows=$4, cols=$5, format="text");
+G = read($1,rows=$3, cols=$4, format="text");
 
-authorities=read($2,rows=$4, cols=1, format="text");
+authorities=round(G);
 
-maxiter = $3;
-tol = $6;
+maxiter = $2;
+tol = $5;
 
 hubs  = authorities;
 
@@ -38,5 +38,5 @@ while(!converge) {
 	iter = iter + 1
 }
 
-write(hubs,$7,format="text")
-write(authorities,$8,format="text")
+write(hubs,$6,format="text")
+write(authorities,$7,format="text")

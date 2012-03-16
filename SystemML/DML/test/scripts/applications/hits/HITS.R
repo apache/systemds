@@ -12,8 +12,8 @@ library("Matrix")
 maxiter = as.integer(args[2]);
 tol = as.double(args[3]);
 
-G = readMM(paste(args[1], "graph.mtx", sep=""));
-authorities = readMM(paste(args[1], "init_authorities.mtx", sep=""));
+G = readMM(paste(args[1], "G.mtx", sep=""));
+authorities = round(G);
 hubs = authorities
 
 #N = nrow(G)

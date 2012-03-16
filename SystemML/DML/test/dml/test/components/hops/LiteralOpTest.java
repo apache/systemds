@@ -21,7 +21,7 @@ public class LiteralOpTest {
 		try {
 			lit_hop_d.constructLops();
 			assertEquals(
-					"File_Name: null Label: 10.0 Operation: = READ Format: BINARYDatatype: SCALARValuetype: ?!?!? Amol please add  num_rows = -1 num_cols = -1",
+					"File_Name: null Label: 10.0 Operation: = READ Format: BINARY Datatype: SCALAR Valuetype: DOUBLE num_rows = -1 num_cols = -1",
 					lit_hop_d.get_lops().toString());
 		} catch (HopsException e) {
 			assertEquals(e.getMessage(),

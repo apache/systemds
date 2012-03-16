@@ -38,20 +38,38 @@ public class L2SVMTest extends AutomatedTestBase {
       
         /* This is for running the junit test by constructing the arguments directly */
 		String L2SVM_HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", L2SVM_HOME + TEST_L2SVM + ".dml",
-				               "-args", "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
-				                        "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
-				                        Integer.toString(rows), Integer.toString(cols),
-				                        Double.toString(epsilon), Double.toString(lambda), Integer.toString(maxiterations),
-				                        "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
-		dmlArgsDebug = new String[]{"-f", L2SVM_HOME + TEST_L2SVM + ".dml", "-d",
-							   "-args", "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
-                                        "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
-                                        Integer.toString(rows), Integer.toString(cols),
-                                        Double.toString(Math.pow(10, -8)), Double.toString(lambda), Integer.toString(maxiterations), 
-                                        "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
-		rCmd = "Rscript" + " " + L2SVM_HOME + TEST_L2SVM + ".R" + " " + 
-		       L2SVM_HOME + INPUT_DIR + " " + Double.toString(epsilon) + " " + Double.toString(lambda) + " " + Integer.toString(maxiterations) + " " + L2SVM_HOME + EXPECTED_DIR;
+		dmlArgs = new String[]{"-f", 
+							   L2SVM_HOME + TEST_L2SVM + ".dml",
+				               "-args", 
+				               "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
+				               "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
+				               Integer.toString(rows), 
+				               Integer.toString(cols),
+				               Double.toString(epsilon), 
+				               Double.toString(lambda), 
+				               Integer.toString(maxiterations),
+				               "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
+	
+		dmlArgsDebug = new String[]{"-f", 
+									L2SVM_HOME + TEST_L2SVM + ".dml", 
+									"-d",
+									"-args", 
+									"\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
+                                    "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
+                                    Integer.toString(rows), 
+                                    Integer.toString(cols),
+                                    Double.toString(Math.pow(10, -8)), 
+                                    Double.toString(lambda), 
+                                    Integer.toString(maxiterations), 
+                                    "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
+		
+		rCmd = "Rscript" + " " + 
+			   L2SVM_HOME + TEST_L2SVM + ".R" + " " + 
+		       L2SVM_HOME + INPUT_DIR + " " + 
+		       Double.toString(epsilon) + " " + 
+		       Double.toString(lambda) + " " + 
+		       Integer.toString(maxiterations) + " " + 
+		       L2SVM_HOME + EXPECTED_DIR;
 		
         loadTestConfiguration(config);
 
@@ -73,6 +91,6 @@ public class L2SVMTest extends AutomatedTestBase {
 		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
         boolean success = TestUtils.compareMatrices(wR, wDML, Math.pow(10, -14), "wR", "wDML");
-        System.out.println(success+"");
+        //System.out.println(success+"");
 	}
 }

@@ -5,8 +5,15 @@
 # Assume rows = 1000 and cols = 100 for X,  rows = 1000 and cols = 1 for Y, epsilon = 10^-8, lambda = 1, maxiterations = 100
 # hadoop jar SystemML.jar -f $L2SVM_HOME/L2SVM.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Y" 1000 100 0.00000001 1 100 "$OUPUT_DIR/w" 
 
+# Note about inputs: 
+# The code assumes that labels (entries in Y) are set to either
+# -1 or +1 (this assumption is standard for supervised binary
+# classifiers). If this does not hold then the script will bail
+# after throwing out an error message.
+
 X = read($1, rows=$3, cols=$4, format="text")
 Y = read($2, rows=$3, cols=1, format="text")
+
 epsilon = $5
 lambda = $6
 maxiterations = $7
@@ -14,54 +21,64 @@ maxiterations = $7
 num_samples = nrow(X)
 dimensions = ncol(X)
 
-g_old = t(X) %*% Y
-s = g_old
-w = Rand(rows=dimensions, cols=1, min=0, max=0, pdf="uniform")
+#checking Y's correctness
+max_y = max(Y)
+min_y = min(Y)
+sum_abs_y = sum(abs(Y))
 
-iter = 0
-continue = 1
-while(continue == 1 & iter < maxiterations)  {
-	# minimizing primal obj along direction s
-	step_sz = 0
-	Xd = X %*% s
-	wd = lambda * sum(w * s)
-	dd = lambda * sum(s * s)
-	continue1 = 1
-	while(continue1 == 1){
-		tmp_w = w + step_sz*s
-		out = 1 - Y * (X %*% tmp_w)
-		sv = ppred(out, 0, ">")
-		out = out * sv
-		g = wd + step_sz*dd - sum(out * Y * Xd)
-		h = dd + sum(Xd * sv * Xd)
-		step_sz = step_sz - g/h
-		if (g*g/h < 0.0000000001){
-			continue1 = 0
+if(max_y == 1 & min_y == -1 & sum_abs_y == num_samples){
+	g_old = t(X) %*% Y
+	s = g_old
+	w = Rand(rows=dimensions, cols=1, min=0, max=0, pdf="uniform")
+
+	iter = 0
+	continue = 1
+	while(continue == 1 & iter < maxiterations)  {
+		# minimizing primal obj along direction s
+		step_sz = 0
+		Xd = X %*% s
+		wd = lambda * sum(w * s)
+		dd = lambda * sum(s * s)
+		continue1 = 1
+		while(continue1 == 1){
+			tmp_w = w + step_sz*s
+			out = 1 - Y * (X %*% tmp_w)
+			sv = ppred(out, 0, ">")
+			out = out * sv
+			g = wd + step_sz*dd - sum(out * Y * Xd)
+			h = dd + sum(Xd * sv * Xd)
+			step_sz = step_sz - g/h
+			if (g*g/h < 0.0000000001){
+				continue1 = 0
+			}
 		}
-	}
 	
-	#update weights
-	w = w + step_sz*s
+		#update weights
+		w = w + step_sz*s
 	
-	out = 1 - Y * (X %*% w)
-	sv = ppred(out, 0, ">")
-	out = sv * out
-	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
-	g_new = t(X) %*% (out * Y) - lambda * w
+		out = 1 - Y * (X %*% w)
+		sv = ppred(out, 0, ">")
+		out = sv * out
+		obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+		g_new = t(X) %*% (out * Y) - lambda * w
 	
-	print("OBJ = " + obj)
+		print("OBJ = " + obj)
 	
-	tmp = sum(s * g_old)
-	if(step_sz*tmp < epsilon*obj){
-		continue = 0
-	}
+		tmp = sum(s * g_old)
+		if(step_sz*tmp < epsilon*obj){
+			continue = 0
+		}
 	
-	#non-linear CG step
-	be = sum(g_new * g_new)/sum(g_old * g_old)
-	s = be * s + g_new
-	g_old = g_new
+		#non-linear CG step
+		be = sum(g_new * g_new)/sum(g_old * g_old)
+		s = be * s + g_new
+		g_old = g_new
 
-	iter = iter + 1
+		iter = iter + 1
+	}
+
+	write(w, $8, format="text")
+}else{
+	print("Training labels (Y) can only be -1 or +1 (binary classification). "
+		  + "Please ensure that before invoking L2SVM.dml");
 }
-
-write(w, $8, format="text")

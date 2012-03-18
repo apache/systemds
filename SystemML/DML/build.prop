@@ -2,7 +2,6 @@
 
 #GENERAL
 general.localmode=true
-#general.libpath=/home/hadoop/bin/ant/lib
 general.libpath=lib/ant
 
 #SystemML

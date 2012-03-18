@@ -228,7 +228,6 @@
 				<section name="versioninfo">
 					<attribute name="SystemML" value="${systemml.version}" />
 					<attribute name="BuildTime" value="${release.timestamp}" />
-					<attribute name="Builtby" value="${user.name}" />
 					<attribute name="ReleaseNotes" value="${release.notes}" />
 				</section>
 			</manifest>
@@ -239,6 +238,7 @@
 	<target name="Detica" depends="jar">
 		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.detica}" overwrite="true"/>
 		<copy file="${build.configfile}" todir="${release.detica}" overwrite="true"/>
+		<copy file="docs/DML.html" todir="${release.detica}" overwrite="true"/>
 		<copy file="test/scripts/applications/descriptivestats/Categorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
 		<copy file="test/scripts/applications/descriptivestats/Scale.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>
 		<copy file="test/scripts/applications/descriptivestats/CategoricalCategorical.dml" todir="${release.detica}/DMLScripts/descriptivestats" overwrite="true"/>

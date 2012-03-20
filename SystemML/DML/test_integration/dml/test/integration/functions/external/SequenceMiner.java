@@ -15,7 +15,7 @@ public class SequenceMiner extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/external/";
-		availableTestConfigurations.put("SeqMiner", new TestConfiguration(baseDirectory, "SeqMiner", new String[] { "fseq", "sup" }));
+		availableTestConfigurations.put(TEST_SEQMINER, new TestConfiguration(TEST_SEQMINER, new String[] { "fseq", "sup"}));
 	}
 
 	@Test

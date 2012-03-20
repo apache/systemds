@@ -15,7 +15,7 @@ public class OutlierTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/external/";
-		availableTestConfigurations.put("Outlier", new TestConfiguration(baseDirectory, "Outlier", new String[] { "o" }));
+		availableTestConfigurations.put(TEST_OUTLIER, new TestConfiguration(TEST_OUTLIER, new String[] { "o"}));
 	}
 
 	@Test

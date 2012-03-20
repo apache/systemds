@@ -1,0 +1,14 @@
+$$readhelper$$
+
+V = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text")
+W = read("$$indir$$weight", rows=$$rows$$, cols=1, format="text")
+
+# median
+md = quantile(V, 0.5)
+medianHelper1 = md * Helper;
+write(medianHelper1, "$$outdir$$median", format="text");
+
+# weighted median
+wmd = quantile(V, W, 0.5)
+medianHelper2 = wmd * Helper;
+write(medianHelper2, "$$outdir$$weighted_median", format="text");

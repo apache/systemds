@@ -2,6 +2,7 @@
 # command line invocation assuming $OO_HOME is set to the home of the R script
 # Rscript $OO_HOME/OrdinalOrdinal.R $OO_HOME/in/ $OO_HOME/expected/
 args <- commandArgs(TRUE)
+options(digits=22)
 
 library("Matrix")
 

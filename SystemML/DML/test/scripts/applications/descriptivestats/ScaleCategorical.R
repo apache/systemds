@@ -2,6 +2,7 @@
 # command line invocation assuming $SC_HOME is set to the home of the R script
 # Rscript $SC_HOME/ScaleCategorical.R $SC_HOME/in/ $SC_HOME/expected/
 args <- commandArgs(TRUE)
+options(digits=22)
 
 library("Matrix")
 

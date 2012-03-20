@@ -2,6 +2,7 @@
 # command line invocation assuming $S_HOME is set to the home of the R script
 # Rscript $S_HOME/Scale.R $S_HOME/in/ $S_HOME/expected/
 args <- commandArgs(TRUE)
+options(digits=22)
 
 options(repos="http://cran.stat.ucla.edu/") 
 is.installed <- function(mypkg) is.element(mypkg, installed.packages()[,1])

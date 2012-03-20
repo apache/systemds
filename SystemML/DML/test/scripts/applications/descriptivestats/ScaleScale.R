@@ -2,6 +2,7 @@
 # command line invocation assuming $SS_HOME is set to the home of the R script
 # Rscript $SS_HOME/ScaleScale.R $SS_HOME/in/ $SS_HOME/expected/
 args <- commandArgs(TRUE)
+options(digits=22)
 
 library("Matrix")
 

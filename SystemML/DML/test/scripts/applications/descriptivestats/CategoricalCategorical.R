@@ -2,6 +2,7 @@
 # command line invocation assuming $CC_HOME is set to the home of the R script
 # Rscript $CC_HOME/CategoricalCategorical.R $CC_HOME/in/ $CC_HOME/expected/
 args <- commandArgs(TRUE)
+options(digits=22)
 
 library("Matrix")
 

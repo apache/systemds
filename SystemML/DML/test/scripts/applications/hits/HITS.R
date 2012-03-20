@@ -48,5 +48,5 @@ while(!converge) {
 	print(paste("Iterations :", iter, " delta_hubs :", delta_hubs, " delta_authorities :", delta_authorities))
 }
 
-writeMM(as(hubs,"CsparseMatrix"),paste(args[3], "hubs", sep=""),format="text")
-writeMM(as(authorities,"CsparseMatrix"),paste(args[3], "authorities",sep=""),format="text")
+writeMM(as(hubs,"CsparseMatrix"),paste(args[4], "hubs", sep=""));
+writeMM(as(authorities,"CsparseMatrix"),paste(args[4], "authorities",sep=""));

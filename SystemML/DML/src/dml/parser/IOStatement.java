@@ -198,7 +198,7 @@ public abstract class IOStatement extends Statement{
 		if(_stringParams.size() > 1 || 
 				(_stringParams.size() == 1 && getStringParam(FORMAT_TYPE) == null ) ) 
 			throw new LanguageException("Invalid parameters in write statement: " +
-					toString() + ". Only format is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					toString() + ". Only the parameter format is allowed.  Please refer to the language guide for further details", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 
 		// TODO: statiko -- this logic has to be updated to remove the call to setDimensionValueProperties() in StatementBlock
 		// and to support binaryBlock as well as binaryCell in read() and write() statements

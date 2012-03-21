@@ -46,6 +46,6 @@
 		hc = hc * ((t(wd) %*% y) /  ( (t(wd) %*% wd) %*% hc))
 		i = i + 1
 	}
-	write (wb,"$$outdir$$nmf.wb.result", rows_in_block = 1, columns_in_block = 1, format="binary");
-	write (hc,"$$outdir$$nmf.hc.result", rows_in_block = 1, columns_in_block = 1, format="binary");
+	write (wb,"$$outdir$$nmf.wb.result", format="binary");
+	write (hc,"$$outdir$$nmf.hc.result", format="binary");
 	

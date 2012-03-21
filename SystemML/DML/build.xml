@@ -2,12 +2,12 @@
 <!-- Ant script to build and test systemml-->
 <project basedir="." default="build" name="DML">
 	<property environment="env" />
-	<property name="junit.output.dir" value="junit" />
 	<property name="debuglevel" value="source,lines,vars" />
 	<property name="target" value="1.6" />
 	<property name="source" value="1.6" />
-
 	<property file="build.prop" />
+	
+	<property name="junit.output.dir" value="junit" />
 	<property name="junit.antlibpathname" value="${general.libpath}/junit.jar" />
 	<property name="junit.report.dir" value="junit_reports" />
 
@@ -78,6 +78,7 @@
 			</fileset>
 		</copy>
 	</target>
+	
 	<target name="deleteall">
 		<delete includeemptydirs="true">
 			<fileset dir="lib" defaultexcludes="false">
@@ -93,11 +94,13 @@
 			</fileset>
 		</delete>
 	</target>
+	
 	<target name="clean">
 		<delete dir="${build.folder}" failonerror="false" />
 		<delete dir="junit" failonerror="false" />
 		<delete dir="junit_reports" failonerror="false" />
 	</target>
+	
 	<target depends="build-subprojects,build-project" name="build" />
 	<target name="build-subprojects" />
 	<!-- Make sure javacc is called to generate parser -->
@@ -127,9 +130,10 @@
 			<src path="test_integration" />
 			<classpath refid="DML.classpath" />
 		</javac>
-
 	</target>
+	
 	<target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects" />
+	
 	<target name="junitall">
 		<mkdir dir="${junit.output.dir}" />
 		<if>

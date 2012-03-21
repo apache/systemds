@@ -404,6 +404,11 @@ public abstract class AutomatedTestBase {
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
 	}
 
+	protected void writeExpectedScalar(String name, double value) {
+		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + name, value);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+	}
+	
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
@@ -788,7 +793,15 @@ public abstract class AutomatedTestBase {
 	 */
 	protected void compareResults(double epsilon) {
 		for (int i = 0; i < comparisonFiles.length; i++) {
-			TestUtils.compareDMLMatrixWithJavaMatrix(comparisonFiles[i], outputDirectories[i], epsilon);
+			/* Note that DML scripts may generate a file with only scalar value */
+			if (outputDirectories[i].endsWith(".scalar")) {
+			   String javaFile = comparisonFiles[i].replace(".scalar", "");
+			   String dmlFile = outputDirectories[i].replace(".scalar", "");
+			   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
+			}
+			else {
+				TestUtils.compareDMLMatrixWithJavaMatrix(comparisonFiles[i], outputDirectories[i], epsilon);
+			}
 		}
 	}
 

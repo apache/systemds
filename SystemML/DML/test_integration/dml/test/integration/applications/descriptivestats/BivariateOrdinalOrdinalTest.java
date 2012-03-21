@@ -1,13 +1,9 @@
 package dml.test.integration.applications.descriptivestats;
 
-import java.util.HashMap;
-
 import org.junit.Test;
 
-import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
-import dml.test.utils.TestUtils;
 
 public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 
@@ -182,14 +178,12 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
         
 		writeInputMatrix("A", A, true);
 		writeInputMatrix("B", B, true);
-		
-		/* TZ: Why not compare with R before?
-        createHelperMatrix();
+
+		/* Please note that we need to support generate both scalar and matrix*/
         
         CTable ct = computeCTable(A,B,null,rows);
 		double spearman = computeSpearman(ct.table, ct.R, ct.S);
-		writeExpectedHelperMatrix("Spearman", spearman);
-        */
+		writeExpectedScalar("Spearman", spearman);
 		
 		boolean exceptionExpected = false;
 		/*
@@ -200,27 +194,27 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		 */
 		// int expectedNumberOfJobs = 5;
 		runTest(true, exceptionExpected, null, -1);
-		
-		// compareResults(eps); // TZ: Why not compare with R before?
+		compareResults(eps); 
 
-		runRScript(true);
+		// TZ: According to Shirish, R and DML has different spearman definition/results, not ready to compare yet
+		// runRScript(true);
 	
-		for(String file: config.getOutputFiles())
-		{
-			/* NOte that some files do not contain matrix, but just a single scalar value inside */
-			HashMap<CellIndex, Double> dmlfile;
-			HashMap<CellIndex, Double> rfile;
-			if (file.endsWith(".scalar")) {
-				file = file.replace(".scalar", "");
-				dmlfile = readDMLScalarFromHDFS(file);
-				rfile = readRScalarFromFS(file);
-			}
-			else {
-				dmlfile = readDMLMatrixFromHDFS(file);
-				rfile = readRMatrixFromFS(file);
-			}
-			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
-		}
+		// for(String file: config.getOutputFiles())
+		// {
+		//	/* NOte that some files do not contain matrix, but just a single scalar value inside */
+		//	HashMap<CellIndex, Double> dmlfile;
+		//	HashMap<CellIndex, Double> rfile;
+		//	if (file.endsWith(".scalar")) {
+		//		file = file.replace(".scalar", "");
+		//		dmlfile = readDMLScalarFromHDFS(file);
+		//		rfile = readRScalarFromFS(file);
+		//	}
+		//	else {
+		//		dmlfile = readDMLMatrixFromHDFS(file);
+		//		rfile = readRMatrixFromFS(file);
+		//	}
+		//	TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
+		// }
 	}
 	
 	private void round(double[][] weight) {

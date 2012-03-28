@@ -242,7 +242,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			return;
 		}
 	
-		adjustSparseRows(that.rlen);
+		adjustSparseRows(Math.min(that.rlen, that.sparseRows.length)-1);
 		for(int i=0; i<that.sparseRows.length; i++)
 		{
 			if(that.sparseRows[i]!=null)

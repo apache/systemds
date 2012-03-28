@@ -1,4 +1,4 @@
-package dml.runtime.test;
+package dml.runtime.matrix.io;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

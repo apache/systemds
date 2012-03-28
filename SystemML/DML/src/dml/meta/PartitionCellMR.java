@@ -19,13 +19,14 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
+import dml.runtime.matrix.io.MapPerLineTextInputFormat;
 import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.runtime.matrix.mapred.MRJobConfiguration;
-import dml.runtime.test.MapPerLineTextInputFormat;
 import dml.runtime.util.MapReduceTool;
 
+@SuppressWarnings("deprecation")
 public class PartitionCellMR{
 	static class SequenceOutMapper extends MapReduceBase implements Mapper<LongWritable, Text, MatrixIndexes, MatrixCell> {
 		MultipleOutputs multipleOutputs ;

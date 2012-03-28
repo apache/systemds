@@ -25,7 +25,6 @@ import dml.runtime.matrix.operators.Operator;
 import dml.runtime.matrix.operators.ReorgOperator;
 import dml.runtime.matrix.operators.ScalarOperator;
 import dml.runtime.matrix.operators.UnaryOperator;
-import dml.runtime.test.ObjectFactory;
 import dml.runtime.util.UtilFunctions;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;

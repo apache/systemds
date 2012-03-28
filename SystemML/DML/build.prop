@@ -26,5 +26,5 @@ build.folder=bin
 hadoop.cluster.path=/home/hadoop/bin/hadoop/hadoop-0.20.2-core.jar
 hadoop.local.path=lib/hadoop-0.20.2-core.jar
 hadoop.jvmargs.cluster=-Xmx1000m -Dhadoop.log.dir=/local/IHC-0.20/logs -Dhadoop.log.file=hadoop.log -Dhadoop.home.dir=/home/hadoop/bin/hadoop/bin/.. -Dhadoop.id.str= -Dhadoop.root.logger=INFO,console -Djava.library.path=/home/hadoop/bin/hadoop/bin/../lib/native/Linux-amd64-64 -Dhadoop.policy.file=hadoop-policy.xml
-hadoop.jvmargs.localmode=-Xmx750m
+hadoop.jvmargs.localmode=-Xmx1250m
 hadoop.hdfs.basepath=/user/hadoop

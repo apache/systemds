@@ -118,7 +118,11 @@ public class PartialAggregate extends Lops {
 								+ direction);
 			}
 			break;
-
+		
+		case MaxIndex:
+			loc = 5;
+			break;
+		
 		default:
 			// this function is valid only when kahanSum or stableMean is
 			// computed
@@ -170,6 +174,9 @@ public class PartialAggregate extends Lops {
 		} else if (operation == Aggregate.OperationTypes.Mean
 				&& direction == DirectionTypes.Col) {
 			opString += "uacmean";
+		} else if (operation == Aggregate.OperationTypes.MaxIndex
+				&& direction == DirectionTypes.Row) {
+			opString += "uarimax";
 		}
 
 		// instructions that use kahanSum are similar to ua+,uar+,uac+

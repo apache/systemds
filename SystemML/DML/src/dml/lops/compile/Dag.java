@@ -2751,6 +2751,9 @@ public class Dag<N extends Lops> {
 			if (node.getInputs().size() == 2)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
+			if (node.getInputs().size() == 3)
+				instructionsInMapper.add(node.getInstructions(inputIndices
+						.get(0), inputIndices.get(1), inputIndices.get(2), output_index));
 
 			return output_index;
 

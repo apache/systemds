@@ -4,7 +4,10 @@ import dml.lops.Aggregate;
 import dml.lops.Group;
 import dml.lops.Lops;
 import dml.lops.PartialAggregate;
+import dml.lops.ReBlock;
 import dml.lops.Transform;
+import dml.lops.Append;
+import dml.lops.UnaryCP;
 import dml.lops.LopProperties.ExecType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -33,6 +36,17 @@ public class ReorgOp extends Hops {
 		op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
+
+	}
+
+	public ReorgOp(String l, DataType dt, ValueType vt, ReorgOp o, Hops inp1, Hops inp2) {
+		super(Kind.ReorgOp, l, dt, vt);
+		
+		op = o;
+		getInput().add(0, inp1);
+		getInput().add(1, inp2);
+		inp1.getParent().add(this);
+		inp2.getParent().add(this);
 
 	}
 
@@ -105,6 +119,36 @@ public class ReorgOp extends Hops {
 				} catch (LopsException e) {
 					throw new HopsException(e);
 				}
+			} else if(op == ReorgOp.APPEND){
+				UnaryCP offset = new UnaryCP(getInput().get(0).constructLops(),
+						 UnaryCP.OperationTypes.NCOL,
+						 DataType.SCALAR,
+						 ValueType.DOUBLE);
+
+				Append append = new Append(getInput().get(0).constructLops(), 
+										   getInput().get(1).constructLops(), 
+										   offset,
+										   get_dataType(),
+										   get_valueType());
+				
+				append.getOutputParameters().setDimensions(get_dim1(), 
+														   get_dim2(), 
+														   get_rows_per_block(), 
+														   get_cols_per_block());
+				
+				ReBlock reblock = null;
+				try {
+					reblock = new ReBlock(
+							append, (long) get_rows_per_block(),
+							(long) get_cols_per_block(), get_dataType(), get_valueType());
+				} catch (Exception e) {
+					throw new HopsException(e);
+				}
+				reblock.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+						get_rows_per_block(), get_cols_per_block());
+		
+				set_lops(reblock);
+				
 			} else {
 				Transform transform1 = new Transform(
 						getInput().get(0).constructLops(), HopsTransf2Lops

@@ -58,8 +58,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	protected void processMixedInstructions(Vector<MRInstruction> mixed_instructions) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(mixed_instructions==null || mixed_instructions.isEmpty())
+		if(mixed_instructions==null || mixed_instructions.isEmpty()){
 			return;
+		}
 		for(MRInstruction ins: mixed_instructions)
 			processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}

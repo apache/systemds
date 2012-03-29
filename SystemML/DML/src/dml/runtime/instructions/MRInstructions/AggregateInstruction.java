@@ -59,6 +59,10 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			return new AggregateInstruction(agg, in, out, str);
 		}
+		else if (opcode.equalsIgnoreCase("arimax")){
+			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, (byte)5);
+			return new AggregateInstruction(agg, in, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("amax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
 			return new AggregateInstruction(agg, in, out, str);

@@ -638,11 +638,11 @@ abstract public class Hops {
 		QUANTILE, INTERQUANTILE, CTABLE, SPEARMAN, CENTRALMOMENT, COVARIANCE, INVALID
 	};
 	public enum AggOp {
-		SUM, MIN, MAX, TRACE, PROD, MEAN
+		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX
 	};
 
 	public enum ReorgOp {
-		TRANSPOSE, DIAG_V2M, DIAG_M2V
+		APPEND, TRANSPOSE, DIAG_V2M, DIAG_M2V
 	};
 
 	public enum ParamBuiltinOp {
@@ -689,6 +689,7 @@ abstract public class Hops {
 		HopsAgg2Lops.put(AggOp.TRACE, dml.lops.Aggregate.OperationTypes.KahanTrace);
 		HopsAgg2Lops.put(AggOp.MIN, dml.lops.Aggregate.OperationTypes.Min);
 		HopsAgg2Lops.put(AggOp.MAX, dml.lops.Aggregate.OperationTypes.Max);
+		HopsAgg2Lops.put(AggOp.MAXINDEX, dml.lops.Aggregate.OperationTypes.MaxIndex);
 		HopsAgg2Lops.put(AggOp.PROD, dml.lops.Aggregate.OperationTypes.Product);
 		HopsAgg2Lops.put(AggOp.MEAN, dml.lops.Aggregate.OperationTypes.Mean);
 	}
@@ -902,6 +903,7 @@ abstract public class Hops {
 		HopsAgg2String.put(AggOp.PROD, "*");
 		HopsAgg2String.put(AggOp.MIN, "min");
 		HopsAgg2String.put(AggOp.MAX, "max");
+		HopsAgg2String.put(AggOp.MAXINDEX, "maxindex");
 		HopsAgg2String.put(AggOp.TRACE, "trace");
 		HopsAgg2String.put(AggOp.MEAN, "mean");
 	}
@@ -910,6 +912,7 @@ abstract public class Hops {
 	static {
 		HopsTransf2String = new HashMap<Hops.ReorgOp, String>();
 		HopsTransf2String.put(ReorgOp.TRANSPOSE, "T");
+		HopsTransf2String.put(ReorgOp.APPEND, "APP");
 		HopsTransf2String.put(ReorgOp.DIAG_M2V, "diagM2V");
 		HopsTransf2String.put(ReorgOp.DIAG_V2M, "diagV2M");
 	}

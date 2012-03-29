@@ -17,7 +17,7 @@ public class Aggregate extends Lops
 	
 	/** Aggregate operation types **/
 	
-	public enum OperationTypes {Sum,Product,Min,Max,Trace,DiagM2V,KahanSum,KahanTrace,Mean};	
+	public enum OperationTypes {Sum,Product,Min,Max,MaxIndex,Trace,DiagM2V,KahanSum,KahanTrace,Mean};	
 	OperationTypes operation;
  
 	private boolean isCorrectionUsed = false;
@@ -106,7 +106,8 @@ public class Aggregate extends Lops
 			opString += "amin"; break;
 		case Max: 
 			opString += "amax"; break;
-		
+		case MaxIndex:
+			opString += "arimax"; break;
 		case KahanSum:
 		case KahanTrace: 
 			isCorrectionApplicable = true; 

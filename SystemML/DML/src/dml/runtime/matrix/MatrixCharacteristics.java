@@ -5,6 +5,7 @@ import java.util.HashMap;
 import dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
+import dml.runtime.instructions.MRInstructions.AppendInstruction;
 import dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
 import dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
@@ -107,6 +108,12 @@ public class MatrixCharacteristics{
 		{
 			ReorgInstruction realIns=(ReorgInstruction)ins;
 			reorg(dims.get(realIns.input), (ReorgOperator)realIns.getOperator(), dim_out);
+		}else if(ins instanceof AppendInstruction)
+		{
+			AppendInstruction realIns = (AppendInstruction)ins;
+			MatrixCharacteristics in_dim1 = dims.get(realIns.input1);
+			MatrixCharacteristics in_dim2 = dims.get(realIns.input2);
+			dim_out.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
 		}else if(ins instanceof AggregateUnaryInstruction)
 		{
 			AggregateUnaryInstruction realIns=(AggregateUnaryInstruction)ins;

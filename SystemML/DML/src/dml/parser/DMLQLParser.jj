@@ -216,6 +216,7 @@ TOKEN :
  | <SUM      : "sum">
  | <MEAN     : "mean">
  | <TRANS  : "t">
+ | <APPEND : "append">
  | <RANGE  : "range">
  | <PROD  : "prod">
  | <ROWSUM  : "rowSums">
@@ -223,6 +224,7 @@ TOKEN :
  | <ROWMIN  : "rowMins">
  | <COLMIN  : "colMins">
  | <ROWMAX  : "rowMaxs">
+ | <ROWINDEXMAX : "rowIndexMax">
  | <COLMAX  : "colMaxs">
  | <ROWMEAN  : "rowMeans">
  | <COLMEAN  : "colMeans">
@@ -1733,6 +1735,7 @@ Expression BuiltInFunction():
  | <MEAN> { bifop = Expression.BuiltinFunctionOp.MEAN;}
  | <TRACE> { bifop = Expression.BuiltinFunctionOp.TRACE;}
  | <TRANS> { bifop = Expression.BuiltinFunctionOp.TRANS;}
+ | <APPEND> { bifop = Expression.BuiltinFunctionOp.APPEND;}
  | <RANGE> { bifop = Expression.BuiltinFunctionOp.RANGE;}
  | <PROD> { bifop = Expression.BuiltinFunctionOp.PROD;}
  | <ROWSUM> { bifop = Expression.BuiltinFunctionOp.ROWSUM;}
@@ -1740,7 +1743,7 @@ Expression BuiltInFunction():
  | <ROWMIN> { bifop = Expression.BuiltinFunctionOp.ROWMIN;}
  | <COLMIN> { bifop = Expression.BuiltinFunctionOp.COLMIN;}
  | <ROWMAX> { bifop = Expression.BuiltinFunctionOp.ROWMAX;}
-
+ | <ROWINDEXMAX> { bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;}
  | <COLMAX> { bifop = Expression.BuiltinFunctionOp.COLMAX;}
  | <ROWMEAN> { bifop = Expression.BuiltinFunctionOp.ROWMEAN;}
  | <COLMEAN> { bifop = Expression.BuiltinFunctionOp.COLMEAN;}

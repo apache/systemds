@@ -13,7 +13,7 @@ import dml.utils.DMLUnsupportedOperationException;
 
 public class Builtin extends ValueFunction {
 	
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2 };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX  };
 	public BuiltinFunctionCode bFunc;
 	
 	
@@ -27,6 +27,7 @@ public class Builtin extends ValueFunction {
 		String2BuiltinFunctionCode.put( "log"    , BuiltinFunctionCode.LOG);
 		String2BuiltinFunctionCode.put( "min"    , BuiltinFunctionCode.MIN);
 		String2BuiltinFunctionCode.put( "max"    , BuiltinFunctionCode.MAX);
+		String2BuiltinFunctionCode.put( "maxindex"    , BuiltinFunctionCode.MAXINDEX);
 		String2BuiltinFunctionCode.put( "abs"    , BuiltinFunctionCode.ABS);
 		String2BuiltinFunctionCode.put( "sqrt"   , BuiltinFunctionCode.SQRT);
 		String2BuiltinFunctionCode.put( "exp"    , BuiltinFunctionCode.EXP);
@@ -40,7 +41,7 @@ public class Builtin extends ValueFunction {
 	}
 	
 	// We should create one object for every builtin function that we support
-	private static Builtin sinObj = null, cosObj = null, tanObj = null, logObj = null, minObj = null, maxObj = null;
+	private static Builtin sinObj = null, cosObj = null, tanObj = null, logObj = null, minObj = null, maxObj = null, maxindexObj = null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, print2Obj = null;
 	
@@ -74,6 +75,10 @@ public class Builtin extends ValueFunction {
 			if ( maxObj == null )
 				maxObj = new Builtin(BuiltinFunctionCode.MAX);
 			return maxObj;
+		case MAXINDEX:
+			if ( maxindexObj == null )
+				maxindexObj = new Builtin(BuiltinFunctionCode.MAXINDEX);
+			return maxindexObj;
 		case MIN:
 			if ( minObj == null )
 				minObj = new Builtin(BuiltinFunctionCode.MIN);
@@ -142,6 +147,7 @@ public class Builtin extends ValueFunction {
 		case LENGTH:
 		case ROUND:
 		case PRINT2:
+		case MAXINDEX:
 			return (_arity == 1);
 		
 		case LOG:
@@ -210,6 +216,7 @@ public class Builtin extends ValueFunction {
 			return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
 		case MIN:
 			return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
+		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
 		
 		case LOG:
 			if ( in1 <= 0 )
@@ -226,6 +233,7 @@ public class Builtin extends ValueFunction {
 		
 		case MAX:    return (in1 >= in2 ? in1 : in2); 
 		case MIN:    return (in1 <= in2 ? in1 : in2); 
+		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");

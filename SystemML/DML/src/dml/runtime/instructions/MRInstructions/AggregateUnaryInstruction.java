@@ -1,7 +1,5 @@
 package dml.runtime.instructions.MRInstructions;
 
-import dml.api.DMLScript;
-import dml.parser.DMLTranslator;
 import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.KahanPlus;
 import dml.runtime.functionobjects.Multiply;
@@ -73,6 +71,13 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		} 
+		
+		else if ( opcode.equalsIgnoreCase("uarimax") ) {
+			// returns col index of max in row
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("maxindex"), true, (byte)5);
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+			return new AggregateUnaryInstruction(aggun, in, out, str);
+		}
 		
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans

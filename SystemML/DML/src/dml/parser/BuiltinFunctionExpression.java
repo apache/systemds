@@ -2,7 +2,6 @@ package dml.parser;
 
 import java.util.HashMap;
 
-import dml.parser.Expression.DataType;
 import dml.utils.LanguageException;
 
 public class BuiltinFunctionExpression extends Expression {
@@ -95,6 +94,7 @@ public class BuiltinFunctionExpression extends Expression {
 			break;
 		case ROWSUM:
 		case ROWMAX:
+		case ROWINDEXMAX:
 		case ROWMIN:
 		case ROWMEAN:
 			checkNumParameters(1, true);
@@ -158,6 +158,15 @@ public class BuiltinFunctionExpression extends Expression {
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setValueType(id.getValueType());
+			break;
+		case APPEND:
+			checkNumParameters(2, true);
+			checkMatrixParam(_first);
+			checkMatrixParam(_second);
+			//checkMatchingDimensions();
+			output.setDataType(id.getDataType());
+			output.setValueType(id.getValueType());
+			output.setDimensions(-1, -1); // unknown output dimensions at compile time
 			break;
 		case PMIN:
 		case PMAX:

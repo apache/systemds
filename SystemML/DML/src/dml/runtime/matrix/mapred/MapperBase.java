@@ -12,7 +12,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.MRInstruction;
 import dml.runtime.instructions.MRInstructions.RandInstruction;
 import dml.runtime.instructions.MRInstructions.ReblockInstruction;
@@ -21,7 +20,6 @@ import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.Pair;
-import dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import dml.runtime.matrix.io.TaggedMatrixValue;
 import dml.runtime.matrix.io.TaggedPartialBlock;
 import dml.runtime.util.UtilFunctions;
@@ -232,6 +230,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 				for(MRInstruction ins: allMapperIns)
 				{
 					try {
+						/*
 						boolean toAdd=true;
 						for(byte input: ins.getInputIndexes())
 							if(!set.contains(input))
@@ -239,6 +238,15 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 								toAdd=false;
 								break;
 							}
+							*/
+						boolean toAdd=false;
+						for(byte input : ins.getInputIndexes())
+							if(set.contains(input))
+							{
+								toAdd=true;
+								break;
+							}
+						
 						if(toAdd)
 						{
 							opsForThisMatrix.add(ins);

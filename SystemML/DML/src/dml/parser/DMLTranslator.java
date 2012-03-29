@@ -2212,6 +2212,11 @@ public class DMLTranslator {
 					Direction.Row, expr);
 			break;
 
+		case ROWINDEXMAX:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MAXINDEX,
+					Direction.Row, expr);
+			break;
+		
 		case ROWMIN:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MIN,
 					Direction.Row, expr);
@@ -2352,7 +2357,12 @@ public class DMLTranslator {
 			// currBop = new AggUnaryOp(targetName,AggOp.SUM,TransfOp.ColKey,
 			// expr);
 			break;
-
+			
+		case APPEND:
+			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), 
+										Hops.ReorgOp.APPEND, expr, expr2);
+			break;
+		
 		case DIAG:
 			// If either of the input is a vector, then output is a matrix
 			if (expr.get_dim1() == 1  || expr.get_dim2() == 1) {

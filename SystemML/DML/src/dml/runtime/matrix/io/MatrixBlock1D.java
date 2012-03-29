@@ -663,8 +663,21 @@ public class MatrixBlock1D extends MatrixValue{
 					cor.setValue(r, 0, n);
 					cor.setValue(r, 1, buffer._correction);
 				}
-		}
-		else
+		}else if(aggOp.correctionLocation == 5)
+                {
+		    for(int r=0; r<rlen; r++)
+			{
+			    double currMaxValue = cor.getValue(r, 0);
+			    long newMaxIndex = (long)newWithCor.getValue(r, 0);
+			    double newMaxValue = newWithCor.getValue(r, 1);
+			    double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
+			    
+			    if(update == 1){
+				setValue(r, 0, newMaxIndex);
+				cor.setValue(r, 0, newMaxValue);
+			    }
+			}
+		}else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
@@ -748,8 +761,20 @@ public class MatrixBlock1D extends MatrixValue{
 					setValue(r, c+1, n);
 					setValue(r, c+2, buffer._correction);
 				}
-		}
-		else
+		}else if(aggOp.correctionLocation == 5)
+		{
+		    for(int r = 0; r < rlen; r++){
+			double currMaxValue = getValue(r, 1);
+			long newMaxIndex = (long)newWithCor.getValue(r, 0);
+			double newMaxValue = newWithCor.getValue(r, 1);
+			double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
+			
+			if(update == 1){
+			    setValue(r, 0, newMaxIndex);
+			    setValue(r, 1, newMaxValue);
+			}
+		    }
+		}else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
@@ -1190,6 +1215,7 @@ public class MatrixBlock1D extends MatrixValue{
 			case 2: tempCellIndex.column++; break;
 			case 3: tempCellIndex.row+=2; break;
 			case 4: tempCellIndex.column+=2; break;
+			case 5: tempCellIndex.column++; break; 
 			default:
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}
@@ -1324,7 +1350,19 @@ public class MatrixBlock1D extends MatrixValue{
 			{
 				result.tempCellIndex.set(i, j);
 				op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-				incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex, getValue(i,j), buffer);
+				
+				if(op.aggOp.correctionExists && op.aggOp.correctionLocation == 5){
+				    double currMaxValue = result.getValue(i, 1);
+				    long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), maxcolumn, j);
+				    double newMaxValue = getValue(i, j);
+				    double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
+				    
+				    if(update == 1){
+					result.setValue(i, 0, newMaxIndex);
+					result.setValue(i, 1, newMaxValue);
+				    }
+				}else
+				    incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex, getValue(i,j), buffer);
 			}
 	}
 	

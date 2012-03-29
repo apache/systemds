@@ -74,6 +74,17 @@ public class OperationsOnMatrixValues {
 		
 	}
 	
+	public static void performAppend(MatrixIndexes indexes_in, MatrixValue value_in, 
+			MatrixIndexes indexes_out, MatrixValue value_out, ReorgOperator op) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//operates only on indexes
+		op.fn.execute(indexes_in, indexes_out);
+		
+		//operation on the cells inside the value
+		value_out=value_in.reorgOperations(op, value_out, 0, 0, 0);
+	}
+	
 	public static void performSelect(MatrixIndexes indexes_in, MatrixValue value_in, 
 			MatrixIndexes indexes_out, MatrixValue value_out, SelectInstruction.IndexRange range) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -167,6 +178,12 @@ public class OperationsOnMatrixValues {
 					outCol=clen-2;
 					corRow=rlen;
 					corCol=2;
+					break;
+				case 5:
+					outRow = rlen;
+					outCol = 1;
+					corRow = rlen;
+					corCol = 1;
 					break;
 				default:
 						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);

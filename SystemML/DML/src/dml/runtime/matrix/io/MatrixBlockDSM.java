@@ -1375,7 +1375,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			if(sparseRows!=null)
 			{
-				for(int r=0; r<sparseRows.length; r++)
+				for(int r=0; r<Math.min(sparseRows.length, rlen); r++)
 				{
 					if(sparseRows[r]==null) continue;
 					int[] cols=sparseRows[r].getIndexContainer();

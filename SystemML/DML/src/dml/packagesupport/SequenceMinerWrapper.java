@@ -30,6 +30,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 
 	Matrix freq_sequences;
 	Matrix seq_support;
+	
 
 	final long entries_in_memory = 1000000;
 	final long data_block_size = 10000000;
@@ -37,9 +38,9 @@ public class SequenceMinerWrapper extends PackageFunction {
 	final int numPhysicalFiles = 10;
 	final long in_memory_scratch_size = 1000000;
 	final long max_projection_size = 10000000;
-	final String NIMBLEoutFile = "seq_scratch/SequenceMinerWrapperOutput";
-	public String freq_seq_file = "seq_scratch/FreqSeqFile";
-	public String seq_support_file = "seq_scratch/FreqSeqSupportFile";
+	final String NIMBLEoutFile = "PackageSupport/seq_scratch/SequenceMinerWrapperOutput";
+	public String freq_seq_file = "PackageSupport/seq_scratch/FreqSeqFile";
+	public String seq_support_file = "PackageSupport/seq_scratch/FreqSeqSupportFile";
 	
 
 	@Override
@@ -65,6 +66,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 	public void execute() {
 
 		try {
+			
 			// preprocess matrix to convert to sequences
 			Matrix m = (Matrix) this.getFunctionInput(0);
 
@@ -122,6 +124,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 			DataOutputStream ostream2 = HDFSFileManager.getOutputStreamStatic(seq_support_file, true);
 			
 		
+			boolean empty_file = true;
 			LongComparableSerializable max_col = new LongComparableSerializable(0);
 			String line;
 			long seq_id = 1;
@@ -131,22 +134,34 @@ public class SequenceMinerWrapper extends PackageFunction {
 				BufferedReader br = new BufferedReader(new InputStreamReader(inStrm));
 
 				while ((line = br.readLine()) != null) {
-            	
+					empty_file = false;
 					writeOutSequence(seq_id, ostream1, ostream2, line, max_col);
 					seq_id++;
             	
 				}
 				br.close();
-				inStrm.close();
-				
+				inStrm.close();	
+			}
+			
+			if(empty_file)
+			{
+				ostream1.writeBytes("1 1 0.0");
+				ostream2.writeBytes("1 1 0.0");
 			}
 						
 			ostream1.close();
 			ostream2.close();
 			
-			freq_sequences = new Matrix(freq_seq_file, seq_id-1 , max_col.getLong(), ValueType.Double);
-			seq_support = new Matrix(seq_support_file, seq_id-1, 2, ValueType.Double);
-			
+			if(empty_file)
+			{
+				freq_sequences = new Matrix(freq_seq_file, 1 , 1, ValueType.Double);
+				seq_support = new Matrix(seq_support_file, 1, 1, ValueType.Double);
+			}
+			else
+			{
+				freq_sequences = new Matrix(freq_seq_file, seq_id-1 , max_col.getLong(), ValueType.Double);
+				seq_support = new Matrix(seq_support_file, seq_id-1, 2, ValueType.Double);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new PackageRuntimeException("Error execution sequence miner");

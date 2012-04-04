@@ -1,8 +1,16 @@
 package dml.test.integration.functions.external;
 
+import java.util.HashMap;
+
 import org.junit.Test;
+
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
+import dml.test.utils.TestUtils;
+
+
+
 
 /**
  * 
@@ -50,12 +58,25 @@ public class SequenceMiner extends AutomatedTestBase {
 		
 		writeInputMatrix("M", M);
 		
+		HashMap<CellIndex, Double> fseq = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/freqSeqFile");
+		HashMap<CellIndex, Double> sup = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/freqSeqSupportFile");
+		
+		
+		double [][] expected_fseq = TestUtils.convertHashMapToDoubleArray(fseq);
+		double [][] expected_sup = TestUtils.convertHashMapToDoubleArray(sup);
+		
+		
+		
+		writeExpectedMatrix("fseq", expected_fseq);
+		writeExpectedMatrix("sup", expected_sup);
+		
+		
+		
 		loadTestConfiguration(config);
 
 		// no expected number of M/R jobs are calculated, set to default for now
 		runTest(true, false, null, -1);
 
-		
-		checkForResultExistence();
+		compareResultsRowsOutOfOrder(0.0);
 	}
 }

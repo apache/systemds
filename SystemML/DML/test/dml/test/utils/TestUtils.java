@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Random;
@@ -166,6 +167,72 @@ public class TestUtils {
 		}
 	}
 	
+	/**
+	 * Compares contents of an expected file with the actual file, where rows may be permuted
+	 * @param expectedFile
+	 * @param actualDir
+	 * @param epsilon
+	 */
+	public static void compareDMLMatrixWithJavaMatrixRowsOutOfOrder(String expectedFile, String actualDir, double epsilon)
+	{
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(actualDir);
+			Path compareFile = new Path(expectedFile);
+			FSDataInputStream compareIn = fs.open(compareFile);
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+						.parseDouble(rcv[2]));
+			}
+			compareIn.close();
+
+			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
+
+			assertTrue(fs.getFileStatus(outDirectory).isDir());
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+
+			long cellCounter = 0;
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+							.parseDouble(rcv[2]));
+					cellCounter++;
+				}
+				outIn.close();
+			}
+
+			ArrayList<Double> e_list = new ArrayList <Double>();
+			for (CellIndex index : expectedValues.keySet()) {
+				Double expectedValue = expectedValues.get(index);
+				if(expectedValue != 0.0)
+					e_list.add(expectedValue);
+			}
+			
+			ArrayList<Double> a_list = new ArrayList <Double>();
+			for (CellIndex index : actualValues.keySet()) {
+				Double actualValue = actualValues.get(index);
+				if(actualValue != 0.0)
+					a_list.add(actualValue);
+			}
+			
+			Collections.sort(e_list);
+			Collections.sort(a_list);
+			
+			assertTrue("Matrix nzs not equal", e_list.size() == a_list.size());
+			for(int i=0; i < e_list.size(); i++)
+			{
+				assertTrue("Matrix values not equals", Math.abs(e_list.get(i) - a_list.get(i)) <= epsilon);
+			}
+			
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
 	/**
 	 * <p>
 	 * Compares the expected values calculated in Java by testcase and which are
@@ -521,6 +588,39 @@ public class TestUtils {
 		}
 
 		return hmMatrix;
+	}
+	
+	/**
+	 * Method to convert a hashmap of matrix entries into a double array
+	 * @param matrix
+	 * @return
+	 */
+	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix)
+	{
+		int max_rows = -1, max_cols= -1;
+		for(CellIndex ci :matrix.keySet())
+		{
+			if(ci.row > max_rows)
+			{
+				max_rows = ci.row;
+			}
+			if(ci.column > max_cols)
+			{
+				max_cols = ci.column;
+			}
+		}
+		
+		double [][] ret_arr = new double[max_rows][max_cols];
+		
+		for(CellIndex ci:matrix.keySet())
+		{
+			int i = ci.row-1;
+			int j = ci.column-1;
+			ret_arr[i][j] = matrix.get(ci);
+		}
+		
+		return ret_arr;
+		
 	}
 
 	/**

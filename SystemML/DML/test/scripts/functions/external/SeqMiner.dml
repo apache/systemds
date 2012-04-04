@@ -9,7 +9,7 @@ seqMini = externalFunction(Matrix[Double] A, Double sup, Double max_level)
 return (Matrix[Double] B, Matrix[Double] C) 
 implemented in (classname="dml.packagesupport.SequenceMinerWrapper",execlocation="master");
  
-minsup = 0.004;
+minsup = 0.001;
 max_level=5.0;
 
 M = read( $1, rows=$2, cols=$3, format="text");

@@ -1,9 +1,13 @@
 package dml.test.integration.functions.external;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.test.integration.AutomatedTestBase;
 import dml.test.integration.TestConfiguration;
+import dml.test.utils.TestUtils;
 
 /**
  * 
@@ -41,14 +45,22 @@ public class kMeansTest extends AutomatedTestBase {
 	                                         Integer.toString(rows), Integer.toString(cols), 
 	                                         "\"" + KMEANS_HOME + OUTPUT_DIR + "kcenters" + "\""};
 		
-		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, -1);
+		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, 10);
 		
 		writeInputMatrix("M", M);
 		
+		HashMap<CellIndex, Double> expected_kmeans = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "kMeans/kMeansWrapperOutput");
+		
+		
+		double [][] expected_means_arr = TestUtils.convertHashMapToDoubleArray(expected_kmeans);
+		
+		writeExpectedMatrix("kCenters", expected_means_arr);
+		
+				
 		loadTestConfiguration(config);
 
 		runTest(true, false, null, -1);
 
-		checkForResultExistence();
+		compareResults(0.0001);
 	}
 }

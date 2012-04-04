@@ -804,6 +804,26 @@ public abstract class AutomatedTestBase {
 			}
 		}
 	}
+	
+	
+	/**
+	 * Compare results of the computation with the expected results where rows may be permuted.
+	 * @param epsilon
+	 */
+	protected void compareResultsRowsOutOfOrder(double epsilon)
+	{
+		for (int i = 0; i < comparisonFiles.length; i++) {
+			/* Note that DML scripts may generate a file with only scalar value */
+			if (outputDirectories[i].endsWith(".scalar")) {
+			   String javaFile = comparisonFiles[i].replace(".scalar", "");
+			   String dmlFile = outputDirectories[i].replace(".scalar", "");
+			   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
+			}
+			else {
+				TestUtils.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(comparisonFiles[i], outputDirectories[i], epsilon);
+			}
+		}
+	}
 
 	/**
 	 * <p>

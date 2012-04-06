@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 /**
@@ -38,7 +39,7 @@ public class Group extends Lops
 		boolean aligner = true;
 		boolean definesMRJob = true;
 		
-		this.lps.setProperties ( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties ( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override

@@ -16,7 +16,9 @@ public class ScalarOperator  extends Operator {
 		else
 			sparseSafe=false;
 	}
-	
+	public void setConstant(double cst) {
+		constant = cst;
+	}
 	public double executeScalar(double in) throws DMLRuntimeException {
 		throw new DMLRuntimeException("executeScalar(): can not be invoked from base class.");
 	}

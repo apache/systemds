@@ -1,7 +1,10 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Lops;
 import dml.lops.ReBlock;
+import dml.lops.LopProperties.ExecType;
 import dml.sql.sqllops.SQLLops;
 import dml.sql.sqllops.SQLLops.GENERATES;
 import dml.utils.HopsException;
@@ -71,13 +74,18 @@ public class Reblock extends Hops {
 		if (get_lops() == null) {
 
 			try {
-			ReBlock reblock = new ReBlock(
-					getInput().get(0).constructLops(),
-					(long) get_rows_per_block(), (long) get_cols_per_block(), get_dataType(), get_valueType());
-			reblock.getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-			set_lops(reblock);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					ReBlock reblock = new ReBlock(
+						getInput().get(0).constructLops(),
+						(long) get_rows_per_block(), (long) get_cols_per_block(), get_dataType(), get_valueType());
+					reblock.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+		
+					set_lops(reblock);
+				}
+				else 
+					throw new HopsException("Invalid ExecType (" + et + ") for Reblock.");
 			} catch ( Exception e ) {
 				throw new HopsException(e);
 			}
@@ -97,7 +105,6 @@ public class Reblock extends Hops {
 	
 	@Override
 	public String getOpString() {
-		// TODO Auto-generated method stub
 		return "reblock";
 	}
 
@@ -118,6 +125,16 @@ public class Reblock extends Hops {
 		
 		this.set_sqllops(lop);
 		return this.get_sqllops();
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			throw new HopsException("REBLOCKing is an invalid operation when runtime = SINGLE_NODE");
+		
+		// Reblock operation always gets executed in MR. 
+		// It may not be meaningful to perform it in CP.
+		return ExecType.MR;
 	}
 
 }

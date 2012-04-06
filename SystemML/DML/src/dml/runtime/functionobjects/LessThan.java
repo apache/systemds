@@ -20,6 +20,11 @@ public class LessThan extends ValueFunction {
 	}
 
 	@Override
+	public double execute(double in1, double in2) {
+		return (Double.compare(in1, in2) < 0 ? 1.0 : 0.0);
+	}
+	
+	@Override
 	public boolean compare(double in1, double in2) {
 		return (Double.compare(in1, in2) < 0);
 	}

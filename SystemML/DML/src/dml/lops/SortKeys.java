@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -28,7 +29,7 @@ public class SortKeys extends Lops
 		boolean definesMRJob = true;
 
 		lps.addCompatibility(JobType.SORT);
-		this.lps.setProperties( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 	}
 
 	@Override
@@ -39,7 +40,7 @@ public class SortKeys extends Lops
 	@Override
 	public String getInstructions(int input_index, int output_index)
 	{
-		String opString = new String("");
+		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		opString += "sortkeys";
 		
 		String inst = new String("");

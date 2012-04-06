@@ -60,12 +60,6 @@ public class CVProgramBlock extends ProgramBlock {
 				Entry<String,Data> pairs = it.next();
 			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
 			}
-			System.out.println("___ Matrices ____");
-			Iterator<Entry<String, MetaData>> mit = _matrices.entrySet().iterator();
-			while (mit.hasNext()) {
-				Entry<String,MetaData> pairs = mit.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
 			System.out.println("____________________________________");
 		}
 		updateMatrixLabels();		//basically replaces ##..## stuff with actual file names of matr varbls
@@ -93,7 +87,8 @@ public class CVProgramBlock extends ProgramBlock {
 				}
 				//Populate returned stats into symbol table of matrices
 				for ( int index=0; index < jb.getMetaData().length; index++) {
-					_matrices.put(new String("" + currMRInst.getIv_outputs()[index]), jb.getMetaData(index));
+					// TODO: Fix This
+					//_matrices.put(new String("" + currMRInst.getIv_outputs()[index]), jb.getMetaData(index));
 				}
 				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 			} else if (currInst instanceof CPInstruction) {
@@ -163,7 +158,8 @@ public class CVProgramBlock extends ProgramBlock {
 		}
 		//Populate returned stats into symbol table of matrices; also delete pre-reblk files from hdfs and entries in vars and mats
 		for ( int index=0; index < jb.getMetaData().length; index++) {
-			_matrices.put(new String("" + _pp.getOutputStrings()[index] + "re"), jb.getMetaData(index));
+			// TODO: Fix This
+			//_matrices.put(new String("" + _pp.getOutputStrings()[index] + "re"), jb.getMetaData(index));
 			
 			String filepathname = "" + _pp.getOutputStrings()[index];
 			//if(filexists on hdfs)	//#### how?! TODO ####

@@ -152,10 +152,8 @@ public class ForProgramBlock extends ProgramBlock {
 			for (ProgramBlock pb : this._childBlocks){
 				
 				pb.setVariables(_variables);
-				pb.setMetaData(_matrices);
 				pb.execute(ec);
 				_variables = pb._variables;
-				_matrices = pb.getMetaData();
 			}
 			
 			// update the iterable predicate variable 

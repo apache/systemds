@@ -96,7 +96,7 @@ public class ReblockMR {
 	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, true);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true);
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(ReblockMapper.class);
@@ -127,8 +127,6 @@ public class ReblockMR {
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		Group rowgroup, colgroup;
 		
-		InputInfo[] infos = new InputInfo[resultIndexes.length];
-		
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -154,11 +152,9 @@ public class ReblockMR {
 				stats[i].numRows = maxrow;
 				stats[i].numColumns = maxcol;
 			}
-			
-			infos[i] = OutputInfo.getMatchingInputInfo(outputInfos[i]);
 		}
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	
 }

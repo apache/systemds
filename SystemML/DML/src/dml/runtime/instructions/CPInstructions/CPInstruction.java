@@ -9,13 +9,13 @@ import dml.utils.DMLUnsupportedOperationException;
 
 public class CPInstruction extends Instruction {
 
-	public enum CPINSTRUCTION_TYPE { INVALID, Scalar, Arithmetic, Boolean, Relational, Builtin, File, Variable, External, ParameterizedBuiltin }; 
-	
+	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, Reorg, RelationalBinary, File, Variable, External, ParameterizedBuiltin, Builtin}; 
 	CPINSTRUCTION_TYPE cptype;
 	
 	Operator optr;
 	
 	public CPInstruction(Operator op) {
+		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
 		optr = op;
 	}
 	

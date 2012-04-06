@@ -2,6 +2,7 @@ package dml.lops;
 
 import dml.utils.LopsException;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 
@@ -26,35 +27,57 @@ public class PartialAggregate extends Lops {
 	 * 
 	 * @param input
 	 * @param op
+	 * @return 
 	 * @throws LopsException
 	 */
 
+	private void init(Lops input,
+			Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et) {
+		operation = op;
+		direction = direct;
+		this.addInput(input);
+		input.addOutput(this);
+
+		boolean breaksAlignment = true;
+		boolean aligner = false;
+		boolean definesMRJob = false;
+		
+		if ( et == ExecType.MR ) {
+			/*
+			 * This lop CAN NOT be executed in PARTITION, SORT, STANDALONE MMCJ:
+			 * only in mapper.
+			 */
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.REBLOCK_BINARY);
+			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			lps.addCompatibility(JobType.MMCJ);
+			lps.addCompatibility(JobType.MMRJ);
+			this.lps.setProperties(et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+		} 
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
+	}
+	
 	public PartialAggregate(
 			Lops input,
 			Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
 			throws LopsException {
 		super(Lops.Type.PartialAggregate, dt, vt);
-		operation = op;
-		direction = direct;
-		this.addInput(input);
-		input.addOutput(this);
+		init(input, op, direct, dt, vt, ExecType.MR);
+	}
 
-		/*
-		 * This lop CAN NOT be executed in PARTITION, SORT, STANDALONE MMCJ:
-		 * only in mapper.
-		 */
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.RAND);
-		lps.addCompatibility(JobType.REBLOCK_BINARY);
-		lps.addCompatibility(JobType.REBLOCK_TEXT);
-		lps.addCompatibility(JobType.MMCJ);
-		lps.addCompatibility(JobType.MMRJ);
-		this.lps.setProperties(ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+	public PartialAggregate(
+			Lops input,
+			Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et)
+			throws LopsException {
+		super(Lops.Type.PartialAggregate, dt, vt);
+		init(input, op, direct, dt, vt, et);
 	}
 
 	/**
@@ -118,11 +141,11 @@ public class PartialAggregate extends Lops {
 								+ direction);
 			}
 			break;
-		
+			
 		case MaxIndex:
 			loc = 5;
 			break;
-		
+			
 		default:
 			// this function is valid only when kahanSum or stableMean is
 			// computed
@@ -146,37 +169,28 @@ public class PartialAggregate extends Lops {
 	public String toString() {
 		return "Partial Aggregate " + operation;
 	}
-
-	@Override
-	public String getInstructions(int input_index, int output_index)
-			throws LopsException {
-
-		/** Sum row col **/
-		String opString = new String("");
-
+	
+	private String getOpcode() {
 		if (operation == Aggregate.OperationTypes.Sum
 				&& direction == DirectionTypes.RowCol) {
-			opString += "ua+";
+			return "ua+";
 		} else if (operation == Aggregate.OperationTypes.Sum
 				&& direction == DirectionTypes.Row) {
-			opString += "uar+";
+			return "uar+";
 		} else if (operation == Aggregate.OperationTypes.Sum
 				&& direction == DirectionTypes.Col) {
-			opString += "uac+";
+			return "uac+";
 		}
 
 		if (operation == Aggregate.OperationTypes.Mean
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uamean";
+			return "uamean";
 		} else if (operation == Aggregate.OperationTypes.Mean
 				&& direction == DirectionTypes.Row) {
-			opString += "uarmean";
+			return "uarmean";
 		} else if (operation == Aggregate.OperationTypes.Mean
 				&& direction == DirectionTypes.Col) {
-			opString += "uacmean";
-		} else if (operation == Aggregate.OperationTypes.MaxIndex
-				&& direction == DirectionTypes.Row) {
-			opString += "uarimax";
+			return "uacmean";
 		}
 
 		// instructions that use kahanSum are similar to ua+,uar+,uac+
@@ -184,59 +198,73 @@ public class PartialAggregate extends Lops {
 		// sums.
 		else if (operation == Aggregate.OperationTypes.KahanSum
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uak+";
+			return "uak+";
 		} else if (operation == Aggregate.OperationTypes.KahanSum
 				&& direction == DirectionTypes.Row) {
-			opString += "uark+";
+			return "uark+";
 		} else if (operation == Aggregate.OperationTypes.KahanSum
 				&& direction == DirectionTypes.Col) {
-			opString += "uack+";
+			return "uack+";
 		}
 
 		else if (operation == Aggregate.OperationTypes.Product
 				&& direction == DirectionTypes.RowCol) {
-			opString += "ua*";
+			return "ua*";
 		}
 
 		else if (operation == Aggregate.OperationTypes.Max
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uamax";
+			return "uamax";
 		} else if (operation == Aggregate.OperationTypes.Max
 				&& direction == DirectionTypes.Row) {
-			opString += "uarmax";
+			return "uarmax";
 		} else if (operation == Aggregate.OperationTypes.Max
 				&& direction == DirectionTypes.Col) {
-			opString += "uacmax";
+			return "uacmax";
 		}
 
 		else if (operation == Aggregate.OperationTypes.Min
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uamin";
+			return "uamin";
 		} else if (operation == Aggregate.OperationTypes.Min
 				&& direction == DirectionTypes.Row) {
-			opString += "uarmin";
+			return "uarmin";
 		} else if (operation == Aggregate.OperationTypes.Min
 				&& direction == DirectionTypes.Col) {
-			opString += "uacmin";
+			return "uacmin";
 		}
 
 		else if (operation == Aggregate.OperationTypes.Trace
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uatrace";
+			return "uatrace";
 		} else if (operation == Aggregate.OperationTypes.KahanTrace
 				&& direction == DirectionTypes.RowCol) {
-			opString += "uaktrace";
+			return "uaktrace";
 		} else if (operation == Aggregate.OperationTypes.DiagM2V
 				&& direction == DirectionTypes.Col) {
-			opString += "rdiagM2V";
+			return "rdiagM2V";
 		} else {
 			throw new UnsupportedOperationException(
 					"Instruction is not defined for PartialAggregate operation "
 							+ operation);
 		}
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
+		String opcode = getOpcode(); 
+		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
+		        input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+		return inst;
+	}
+	
+	@Override
+	public String getInstructions(int input_index, int output_index)
+			throws LopsException {
 
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + input_index + VALUETYPE_PREFIX
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+		inst += getOpcode() + OPERAND_DELIMITOR + input_index + VALUETYPE_PREFIX
 				+ this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
 				+ output_index + VALUETYPE_PREFIX + this.get_valueType();
 

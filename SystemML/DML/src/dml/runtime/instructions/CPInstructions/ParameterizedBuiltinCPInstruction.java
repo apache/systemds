@@ -21,7 +21,7 @@ import dml.runtime.matrix.operators.SimpleOperator;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
 
-public class ParameterizedBuiltinCPInstruction extends ScalarCPInstruction {
+public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	int arity;
 	HashMap<String,String> params;
 	

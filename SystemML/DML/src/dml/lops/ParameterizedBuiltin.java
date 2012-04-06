@@ -3,6 +3,7 @@ package dml.lops;
 import java.util.HashMap;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -57,12 +58,12 @@ public class ParameterizedBuiltin extends Lops {
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties(ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 	}
 
 	// @Override
 	public String getInstructions(String output) throws LopsException {
-		StringBuilder inst = new StringBuilder();
+		StringBuilder inst = new StringBuilder(getExecType() + Lops.OPERAND_DELIMITOR);
 
 		switch(operation) {
 		case CDF:

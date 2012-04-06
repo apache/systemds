@@ -9,35 +9,49 @@ import dml.utils.DMLUnsupportedOperationException;
 public class InstructionUtils {
 
 
-	public static int checkNumFields ( String str, int exp ) throws DMLRuntimeException {
+	public static int checkNumFields ( String str, int expected ) throws DMLRuntimeException {
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
 		
-		if ( parts.length - 1 != exp ) // -1 for opcode
-			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + exp + ") != is not equal to actual number(" + (parts.length-1) + ").");
+		if ( parts.length - 2 != expected ) // -2 accounts for execType and opcode
+			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected + ") != is not equal to actual number(" + (parts.length-2) + ").");
 		
-		return parts.length - 1; 
+		return parts.length - 2; 
 	}
 	
+	/**
+	 * Parse the instruction string, and return opcode as well as all operands
+	 * i.e., ret.length = parts.length-1 (-1 accounts for execution type)
+	 * 
+	 * @param str
+	 * @return 
+	 */
 	public static String[] getInstructionParts ( String str ) {
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		String[] ret = new String[parts.length];
-		ret[0] = parts[0];
+		String[] ret = new String[parts.length-1]; // -1 accounts for exec type
 		
+		ret[0] = parts[1]; // opcode
 		String[] f;
-		for ( int i=1; i < parts.length; i++ ) {
+		for ( int i=2; i < parts.length; i++ ) {
 			f = parts[i].split(Instruction.VALUETYPE_PREFIX);
-			ret[i] = f[0];
+			ret[i-1] = f[0];
 		}
 		return ret;
 	}
 	
 	public static String[] getInstructionPartsWithValueType ( String str ) {
-		return str.split(Instruction.OPERAND_DELIM);
+		String[] parts = str.split(Instruction.OPERAND_DELIM);
+		String[] ret = new String[parts.length-1];
+		
+		ret[0] = parts[1]; // opcode
+		for ( int i=2; i < parts.length; i++ ) {
+			ret[i-1] = parts[i];
+		}
+		return ret;
 	}
 	
 	public static String getOpCode ( String str ) {
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		return parts[0];
+		return parts[1]; // parts[0] is the execution type
 	}
 	
 	

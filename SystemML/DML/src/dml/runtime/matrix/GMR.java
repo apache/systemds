@@ -189,6 +189,8 @@ public class GMR{
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
 		
+		
+		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GMRMapper.class);
 		if(numReducers==0)
@@ -231,8 +233,6 @@ public class GMR{
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		Group rowgroup, colgroup;
 		
-		InputInfo[] infos = new InputInfo[resultIndexes.length];
-		
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -258,7 +258,6 @@ public class GMR{
 				stats[i].numRows = maxrow;
 				stats[i].numColumns = maxcol;
 			}
-			infos[i] = OutputInfo.getMatchingInputInfo(outputInfos[i]);
 		}
 		
 		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
@@ -268,6 +267,6 @@ public class GMR{
 		////	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		//}
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 }

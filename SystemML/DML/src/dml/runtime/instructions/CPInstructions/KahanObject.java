@@ -4,11 +4,15 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import dml.parser.Expression.DataType;
+import dml.parser.Expression.ValueType;
+
 public class KahanObject extends Data {
 	public double _sum;
 	public double _correction;
 
 	public KahanObject(double sum, double cor){
+		super(DataType.OBJECT, ValueType.UNKNOWN);
 		_sum=sum;
 		_correction=cor;
 	}

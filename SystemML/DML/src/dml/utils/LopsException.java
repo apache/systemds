@@ -9,4 +9,8 @@ public class LopsException extends DMLException
 		super(message);
 	}
 
+	public LopsException(Exception e) {
+		super(e);
+	}
+
 }

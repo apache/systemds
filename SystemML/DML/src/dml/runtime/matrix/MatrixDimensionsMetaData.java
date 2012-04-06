@@ -10,8 +10,13 @@ public class MatrixDimensionsMetaData extends MetaData {
 	public MatrixDimensionsMetaData(MatrixCharacteristics mc) {
 		matchar = mc;
 	}
+	
 	public MatrixCharacteristics getMatrixCharacteristics() {
 		return matchar;
+	}
+	
+	public void setMatrixCharacteristics(MatrixCharacteristics mc) {
+		matchar = mc;
 	}
 	
 	public String toString() {

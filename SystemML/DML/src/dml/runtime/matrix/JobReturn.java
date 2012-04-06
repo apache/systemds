@@ -2,6 +2,7 @@ package dml.runtime.matrix;
 
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
+import dml.runtime.matrix.io.OutputInfo;
 import dml.utils.DMLRuntimeException;
 
 public class JobReturn {
@@ -23,15 +24,21 @@ public class JobReturn {
 		}
 	}
 
-	public JobReturn(MatrixCharacteristics[] sts, InputInfo[] infos,
-			boolean success) {
+	public JobReturn(MatrixCharacteristics[] sts, OutputInfo[] infos,
+			boolean success) throws DMLRuntimeException {
 		successful = success;
-		metadata = new InputInfoMetaData[sts.length];
+		metadata = new MatrixFormatMetaData[sts.length];
 		for (int i = 0; i < sts.length; i++) {
-			metadata[i] = new InputInfoMetaData(sts[i], infos[i]);
+			metadata[i] = new MatrixFormatMetaData(sts[i], infos[i], OutputInfo.getMatchingInputInfo(infos[i]));
 		}
 	}
 
+	public JobReturn(MatrixCharacteristics sts, OutputInfo info, boolean success) throws DMLRuntimeException {
+		successful = success;
+		metadata = new MatrixFormatMetaData[1];
+		metadata[0] = new MatrixFormatMetaData(sts, info, OutputInfo.getMatchingInputInfo(info));
+	}
+	
 	public JobReturn(MatrixCharacteristics mc, long[] items, int partition0, long number0s, boolean success) {
 		successful = success;
 		metadata = new NumItemsByEachReducerMetaData[1];

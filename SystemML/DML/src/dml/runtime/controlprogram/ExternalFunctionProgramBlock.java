@@ -2,7 +2,6 @@ package dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -10,6 +9,8 @@ import org.nimble.control.DAGQueue;
 import org.nimble.exception.NimbleCheckedRuntimeException;
 import org.nimble.task.AbstractTask;
 
+import dml.api.DMLScript;
+import dml.lops.Lops;
 import dml.lops.ReBlock;
 import dml.lops.compile.JobType;
 import dml.packagesupport.ExternalFunctionInvokationInstruction;
@@ -27,18 +28,19 @@ import dml.parser.DMLTranslator;
 import dml.parser.DataIdentifier;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
+import dml.runtime.instructions.CPInstructionParser;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
 import dml.runtime.instructions.CPInstructions.BooleanObject;
 import dml.runtime.instructions.CPInstructions.Data;
 import dml.runtime.instructions.CPInstructions.DoubleObject;
-import dml.runtime.instructions.CPInstructions.FileObject;
 import dml.runtime.instructions.CPInstructions.IntObject;
+import dml.runtime.instructions.CPInstructions.MatrixObject;
 import dml.runtime.instructions.CPInstructions.ScalarObject;
 import dml.runtime.instructions.CPInstructions.StringObject;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.MatrixDimensionsMetaData;
-import dml.runtime.matrix.MetaData;
+import dml.runtime.matrix.MatrixFormatMetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
@@ -54,8 +56,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	final int ROWS_PER_BLOCK = DMLTranslator.DMLBlockSize;
 	final int COLS_PER_BLOCK = DMLTranslator.DMLBlockSize;
 
-	MRJobInstruction block2CellInst;
-	MRJobInstruction cell2BlockInst;
+	ArrayList<Instruction> block2CellInst; 
+	ArrayList<Instruction> cell2BlockInst; 
 
 	// holds other key value parameters specified in function declaration
 	private HashMap<String, String> _otherParams;
@@ -98,7 +100,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// convert block to cell
 		ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
-		tempInst.add(block2CellInst);
+		tempInst.addAll(block2CellInst);
 		try {
 			this.execute(tempInst,ec);
 		} catch (Exception e) {
@@ -107,25 +109,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 					+ tempInst.toString());
 		}
 
-		// attach variables again.
-
-		for (String varName : _unblockedFileNames.keySet()) {
-			FileObject oldObject = (FileObject) this.getVariables()
-					.get(varName);
-			MatrixDimensionsMetaData m = (MatrixDimensionsMetaData) this
-					.getMetaData().get(oldObject.getFilePath());
-			this.getVariables().put(varName,
-					new FileObject(varName, _unblockedFileNames.get(varName)));
-			// add to meta data
-			MatrixDimensionsMetaData metaData = new MatrixDimensionsMetaData(
-					new MatrixCharacteristics(
-							m.getMatrixCharacteristics().numRows,
-							m.getMatrixCharacteristics().numColumns, -1, -1));
-			this.getMetaData().put(_unblockedFileNames.get(varName), metaData);
-		}
-
 		// now execute package function
-
 		for (int i = 0; i < _inst.size(); i++) {
 
 			if (_inst.get(i) instanceof ExternalFunctionInvokationInstruction) {
@@ -146,29 +130,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// convert cell to block
 		try {
 			tempInst.clear();
-			tempInst.add(cell2BlockInst);
+			tempInst.addAll(cell2BlockInst);
 			this.execute(tempInst, ec);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new PackageRuntimeException("Failed to execute instruction "
 					+ cell2BlockInst.toString());
-		}
-
-		// attach variables again
-		for (String varName : _blockedFileNames.keySet()) {
-			FileObject oldObject = (FileObject) this.getVariables()
-					.get(varName);
-			MatrixDimensionsMetaData m = (MatrixDimensionsMetaData) this
-					.getMetaData().get(oldObject.getFilePath());
-			this.getVariables().put(varName,
-					new FileObject(varName, _blockedFileNames.get(varName)));
-			// add to meta data
-			MatrixDimensionsMetaData metaData = new MatrixDimensionsMetaData(
-					new MatrixCharacteristics(
-							m.getMatrixCharacteristics().numRows,
-							m.getMatrixCharacteristics().numColumns,
-							ROWS_PER_BLOCK, COLS_PER_BLOCK));
-			this.getMetaData().put(_blockedFileNames.get(varName), metaData);
 		}
 	}
 
@@ -260,9 +227,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param blockedFileNames
 	 * @return
 	 */
-	private MRJobInstruction getCell2BlockInstructions(
+	private ArrayList<Instruction> getCell2BlockInstructions(
 			ArrayList<DataIdentifier> outputParams,
 			HashMap<String, String> blockedFileNames) {
+		ArrayList<Instruction> c2binst = new ArrayList<Instruction>();
+
+		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+		//	return c2binst;
+		//}
 
 		MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK_BINARY);
 		
@@ -289,8 +261,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		int[] numColsPerBlock = new int[matrices.size()];
 		byte[] resultIndex = new byte[matrices.size()];
 		byte[] resultDimsUnknown = new byte[matrices.size()];
-		HashSet<String> inLabels = new HashSet<String>();
-		HashSet<String> outLabels = new HashSet<String>();
+		ArrayList<String> inLabels = new ArrayList<String>();
+		ArrayList<String> outLabels = new ArrayList<String>();
 		String reblock = "";
 
 		// create a RBLK job that transforms each of these matrices from cell to
@@ -303,6 +275,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			inputInfo[i] = textCellInputInfo;
 			outputInfo[i] = binaryBlockOutputInfo;
 			inLabels.add(matrices.get(i).getName());
+			outLabels.add(matrices.get(i).getName() + "_extFnOutput");
 			numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
 			resultIndex[i] = (byte) i;
 			resultDimsUnknown[i] = 1;
@@ -310,21 +283,52 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			if (i > 0)
 				reblock += ",";
 
-			reblock += "rblk" + ReBlock.OPERAND_DELIMITOR + i
+			reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + i
 					+ ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType()
 					+ ReBlock.OPERAND_DELIMITOR + i + ReBlock.VALUETYPE_PREFIX
 					+ matrices.get(i).getValueType()
 					+ ReBlock.OPERAND_DELIMITOR + ROWS_PER_BLOCK
 					+ ReBlock.OPERAND_DELIMITOR + COLS_PER_BLOCK;
-
+			
+			// create metadata instructions to populate symbol table 
+			// with variables that hold blocked matrices
+	  		StringBuilder mtdInst = new StringBuilder();
+			mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
+	 		mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
+	  		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
+	  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
+		
+	  		try {
+				c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
+			} catch (Exception e) {
+				throw new PackageRuntimeException(e);
+			}
 		}
 
 		reblkInst.setReBlockInstructions(inputs, inputInfo, numRows, numCols,
 				numRowsPerBlock, numColsPerBlock, "", reblock, "", outputs,
 				outputInfo, resultIndex, resultDimsUnknown, 1, 1, inLabels,
 				outLabels);
+		c2binst.add(reblkInst);
 
-		return reblkInst;
+		// generate instructions that rename the output variables of REBLOCK job
+		for (int i = 0; i < matrices.size(); i++) {
+			try {
+				c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
+			} catch (Exception e) {
+				throw new PackageRuntimeException(e);
+			}
+		}
+		
+		//print instructions
+		if (DMLScript.DEBUG) {
+			System.out.println("--- Cell-2-Block Instructions ---");
+			for(Instruction i : c2binst) {
+				System.out.println(i.toString());
+			}
+		}
+		
+		return c2binst;
 	}
 
 	/**
@@ -334,10 +338,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param inputParams
 	 * @return
 	 */
-	private MRJobInstruction getBlock2CellInstructions(
+	private ArrayList<Instruction> getBlock2CellInstructions(
 			ArrayList<DataIdentifier> inputParams,
 			HashMap<String, String> unBlockedFileNames) {
-
+		ArrayList<Instruction> b2cinst = new ArrayList<Instruction>();
+		
+		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+		//	return b2cinst;
+		//}		
+		
 		MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
 
 		//list of input matrices
@@ -364,30 +373,64 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		int[] numColsPerBlock = new int[matrices.size()];
 		byte[] resultIndex = new byte[matrices.size()];
 		byte[] resultDimsUnknown = new byte[matrices.size()];
-		HashSet<String> inLabels = new HashSet<String>();
-		HashSet<String> outLabels = new HashSet<String>();
+		ArrayList<String> inLabels = new ArrayList<String>();
+		ArrayList<String> outLabels = new ArrayList<String>();
 
 		// create a GMR job that transforms each of these matrices from block to
 		// cell
 		for (int i = 0; i < matrices.size(); i++) {
-
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
 			outputs[i] = _otherParams.get(CLASSNAME) + i + "Input";
 			unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = binBlockInputInfo;
 			outputInfo[i] = textCellOutputInfo;
 			inLabels.add(matrices.get(i).getName());
+			outLabels.add(matrices.get(i).getName()+"_extFnInput");
 			numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
 			resultIndex[i] = (byte) i;
 			resultDimsUnknown[i] = 1;
+		
+			// create metadata instructions to populate symbol table 
+			// with variables that hold unblocked matrices
+		 	StringBuilder mtdInst = new StringBuilder();
+			mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
+				mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
+		 		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
+		 		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
+			
+		  	try {
+				b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
+			} catch (Exception e) {
+				throw new PackageRuntimeException(e);
+			}
 		}
-
+	
+		// Finally, generate GMR instruction that performs block2cell conversion
 		gmrInst.setGMRInstructions(inputs, inputInfo, numRows, numCols,
 				numRowsPerBlock, numColsPerBlock, "", "", "", "", outputs,
 				outputInfo, resultIndex, resultDimsUnknown, 0, 1, inLabels,
 				outLabels);
-		return gmrInst;
-
+			
+		b2cinst.add(gmrInst);
+	
+		// generate instructions that rename the output variables of GMR job
+		for (int i = 0; i < matrices.size(); i++) {
+			try {
+				String s = "CP" + Lops.OPERAND_DELIMITOR + "mvvar"+ Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName(); 
+				b2cinst.add(CPInstructionParser.parseSingleInstruction(s));
+			} catch (Exception e) {
+				throw new PackageRuntimeException(e);
+			}
+		}
+	
+		//print instructions
+		if (DMLScript.DEBUG) {
+			System.out.println("--- Block-2-Cell Instructions ---");
+			for(Instruction i : b2cinst) {
+				System.out.println(i.toString());
+			}
+		}
+		return b2cinst;
 	}
 
 	/**
@@ -425,8 +468,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// add inputs to this package function based on input parameter
 		// and their mappings.
-		setupInputs(func, inst.getInputParams(), this.getVariables(),
-				this.getMetaData());
+		setupInputs(func, inst.getInputParams(), this.getVariables());
 		func.setConfiguration(configFile);
 
 		AbstractTask t = null;
@@ -496,16 +538,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 							"Function output does not match with declaration");
 				}
 
-				// add to variableMapping
-				FileObject matrix = new FileObject(tokens.get(1),
-						m.getFilePath());
-				this.getVariables().put(tokens.get(1), matrix);
-
-				// add to meta data
-				MatrixDimensionsMetaData metaData = new MatrixDimensionsMetaData(
-						new MatrixCharacteristics(m.getNumRows(),
-								m.getNumCols(), -1, -1));
-				this.getMetaData().put(m.getFilePath(), metaData);
+				// add result to variableMapping
+				MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
+				//MatrixDimensionsMetaData mtd = new MatrixDimensionsMetaData(mc);
+				MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);
+				MatrixObject result_matrix = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
+				this.getVariables().put(tokens.get(1), result_matrix);
 				continue;
 			}
 
@@ -594,12 +632,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param variableMapping
 	 */
 	private void setupInputs(PackageFunction func, String inputParams,
-			HashMap<String, Data> variableMapping,
-			HashMap<String, MetaData> metaData) {
+			HashMap<String, Data> variableMapping) {
 
 		ArrayList<String> inputs = getParameters(inputParams);
-		ArrayList<FIO> inputObjects = getInputObjects(inputs, variableMapping,
-				metaData);
+		ArrayList<FIO> inputObjects = getInputObjects(inputs, variableMapping);
 		func.setNumFunctionInputs(inputObjects.size());
 		for (int i = 0; i < inputObjects.size(); i++)
 			func.setInput(inputObjects.get(i), i);
@@ -617,8 +653,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 */
 
 	private ArrayList<FIO> getInputObjects(ArrayList<String> inputs,
-			HashMap<String, Data> variableMapping,
-			HashMap<String, MetaData> metaData) {
+			HashMap<String, Data> variableMapping) {
 		ArrayList<FIO> inputObjects = new ArrayList<FIO>();
 
 		for (int i = 0; i < inputs.size(); i++) {
@@ -630,10 +665,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 			if (tokens.get(0).equals("Matrix")) {
 				String varName = tokens.get(1);
-				FileObject fo = (FileObject) variableMapping.get(varName);
-				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) metaData
-						.get(fo.getFilePath());
-				Matrix m = new Matrix(fo.getFilePath(),
+				MatrixObject mobj = (MatrixObject) variableMapping.get(varName);
+				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) mobj.getMetaData();
+				Matrix m = new Matrix(mobj.getFileName(),
 						md.getMatrixCharacteristics().numRows,
 						md.getMatrixCharacteristics().numColumns,
 						getMatrixValueType(tokens.get(2)));

@@ -2,6 +2,7 @@ package dml.hops;
 
 import dml.lops.Lops;
 import dml.lops.PartitionLop;
+import dml.lops.LopProperties.ExecType;
 import dml.meta.PartitionParams;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -50,6 +51,12 @@ public class PartitionOp extends Hops {
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
 		// TODO Auto-generated method stub
 		return null;
 	}

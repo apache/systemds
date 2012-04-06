@@ -3,6 +3,7 @@ package dml.lops;
 import java.util.ArrayList;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.Dag;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -23,9 +24,9 @@ public abstract class Lops {
 	};
 
 	public enum Type {
-		Append, Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
+		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
-		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg
+		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, Append
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
@@ -254,6 +255,15 @@ public abstract class Lops {
 	 */
  	public ExecLocation getExecLocation() {
 		return lps.getExecLocation();
+	}
+ 
+	/**
+	 * Method to get the execution type (CP or MR) of LOP
+	 * 
+	 * @return
+	 */
+ 	public ExecType getExecType() {
+		return lps.getExecType();
 	}
  
 	/**

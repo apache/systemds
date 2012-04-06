@@ -2,6 +2,7 @@ package dml.lops;
 
 import dml.utils.LopsException;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.OutputParameters.Format;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
@@ -42,7 +43,7 @@ public class ReBlock extends Lops
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 		else
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
-		this.lps.setProperties( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -54,7 +55,7 @@ public class ReBlock extends Lops
 	@Override
 	public String getInstructions(int input_index, int output_index) throws LopsException
 	{
-		String opString = new String("");
+		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		opString += "rblk";
 		
 		String inst = new String("");

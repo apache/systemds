@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 import dml.utils.LopsException;
@@ -48,7 +49,7 @@ public class Tertiary extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		this.lps.setProperties( ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -71,7 +72,7 @@ public class Tertiary extends Lops
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException
 	{
-		String inst = "";
+		String inst = getExecType() + Lops.OPERAND_DELIMITOR;
 		switch(operation) {
 		/* Arithmetic */
 		case CTABLE_TRANSFORM:

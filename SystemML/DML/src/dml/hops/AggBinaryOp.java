@@ -1,6 +1,9 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Aggregate;
+import dml.lops.BinaryCP;
 import dml.lops.Group;
 import dml.lops.Lops;
 import dml.lops.MMCJ;
@@ -55,40 +58,50 @@ public class AggBinaryOp extends Hops {
 
 		if (get_lops() == null) {
 			if ( isMatrixMultiply() ) {
-				MMultMethod method = optimization_CpmmOrRmm ( 
-						getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-						getInput().get(0).get_rows_per_block(), getInput().get(0).get_cols_per_block(),    
-						getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
-						getInput().get(1).get_rows_per_block(), getInput().get(1).get_cols_per_block());
-				if ( method == MMultMethod.CPMM ) {
-					MMCJ mmcj = new MMCJ(
-							getInput().get(0).constructLops(), getInput().get(1)
-									.constructLops(), get_dataType(), get_valueType());
-					mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-							get_rows_per_block(), get_cols_per_block());
-					
-					Group grp = new Group(
-							mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-					grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-							get_rows_per_block(), get_cols_per_block());
-					
-					Aggregate agg1 = new Aggregate(
-							grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-					agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-							get_rows_per_block(), get_cols_per_block());
-					
-					// aggregation uses kahanSum but the inputs do not have correction values
-					agg1.setupCorrectionLocation((byte)0);  
-					
-					set_lops(agg1);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.CP ) {
+					BinaryCP bcp = new BinaryCP(getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
+					bcp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_per_block(), get_cols_per_block());
+					set_lops(bcp);
 				}
-				else if (method == MMultMethod.RMM ) {
-					MMRJ rmm = new MMRJ(
-							getInput().get(0).constructLops(), getInput().get(1)
-							.constructLops(), get_dataType(), get_valueType());
-					rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-							get_rows_per_block(), get_cols_per_block());
-					set_lops(rmm);
+				else if ( et == ExecType.MR ) {
+				
+					MMultMethod method = optFindMMultMethod ( 
+							getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
+							getInput().get(0).get_rows_per_block(), getInput().get(0).get_cols_per_block(),    
+							getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
+							getInput().get(1).get_rows_per_block(), getInput().get(1).get_cols_per_block());
+					if ( method == MMultMethod.CPMM ) {
+						MMCJ mmcj = new MMCJ(
+								getInput().get(0).constructLops(), getInput().get(1)
+										.constructLops(), get_dataType(), get_valueType());
+						mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_per_block(), get_cols_per_block());
+						
+						Group grp = new Group(
+								mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_per_block(), get_cols_per_block());
+						
+						Aggregate agg1 = new Aggregate(
+								grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_per_block(), get_cols_per_block());
+						
+						// aggregation uses kahanSum but the inputs do not have correction values
+						agg1.setupCorrectionLocation((byte)0);  
+						
+						set_lops(agg1);
+					}
+					else if (method == MMultMethod.RMM ) {
+						MMRJ rmm = new MMRJ(
+								getInput().get(0).constructLops(), getInput().get(1)
+								.constructLops(), get_dataType(), get_valueType());
+						rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_per_block(), get_cols_per_block());
+						set_lops(rmm);
+					}
 				}
 			} 
 			else  {
@@ -118,12 +131,39 @@ public class AggBinaryOp extends Hops {
 		set_visited(VISIT_STATUS.DONE);
 	}
 
+	private boolean isOuterProduct() {
+		if ( getInput().get(0).isVector() && getInput().get(1).isVector() ) {
+			if ( getInput().get(0).get_dim1() == 1 && getInput().get(0).get_dim1() > 1
+					&& getInput().get(1).get_dim1() > 1 && getInput().get(1).get_dim2() == 1 )
+				return true;
+			else
+				return false;
+		}
+		return false;
+	}
+	
+	@Override
+	protected ExecType optFindExecType() {
+		
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
+		// OR if it is vector-vector inner product
+		if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+				|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
+			return ExecType.CP;
+		else
+			return ExecType.MR;
+	}
+	
 	/*
 	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce -- CPMM or RMM.
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
 	 */
-	private static MMultMethod optimization_CpmmOrRmm ( long m1_rows, long m1_cols, int m1_rpb, int m1_cpb, long m2_rows, long m2_cols, int m2_rpb, int m2_cpb ) {
+	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, int m1_rpb, int m1_cpb, long m2_rows, long m2_cols, int m2_rpb, int m2_cpb ) {
+		
 		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
 		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
 		
@@ -153,13 +193,6 @@ public class AggBinaryOp extends Hops {
 			//System.out.println("RMM --> c(rmm)=" + (rmm_shuffle+rmm_io) + ", c(cpmm)=" + (cpmm_shuffle+cpmm_io) ); 
 			return MMultMethod.RMM;
 		}
-		
-		/*
-		if ( (m1_rows <= m1_rpb && m1_cols <= m1_cpb) ||  (m2_rows <= m2_rpb && m2_cols <= m2_cpb))
-			return MMultMethod.RMM;
-		else
-			return MMultMethod.CPMM;
-		*/
 	}
 
 	@Override
@@ -328,6 +361,7 @@ public class AggBinaryOp extends Hops {
 			if(this.outerOp == AggOp.PROD)
 			{
 				// This is only a temporary solution.
+				// Based on http://www.infosoft.biz/PDF/Product_Function_extends_SQL.pdf
 				// Idea is that ln(x1 * x2 * ... * xn) = ln(x1) + ln(x2) + ... + ln(xn)
 				// So that x1 * x2 * ... * xn = exp( ln(x1) + ln(x2) + ... + ln(xn) )
 				// Which is EXP(SUM(LN(v)))

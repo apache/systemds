@@ -4,6 +4,7 @@ import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.utils.LopsException;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 
 /**
@@ -30,9 +31,17 @@ public class Unary extends Lops {
 	 * @param op
 	 */
 
-	public Unary(Lops input1, Lops input2, OperationTypes op, DataType dt,
-			ValueType vt) {
+	public Unary(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lops.Type.UNARY, dt, vt);
+		init(input1, input2, op, dt, vt, et);
+	}
+	
+	public Unary(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt) {
+		super(Lops.Type.UNARY, dt, vt);
+		init(input1, input2, op, dt, vt, ExecType.MR);
+	}
+	
+	private void init(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 
 		if (input1.get_dataType() == DataType.MATRIX)
@@ -42,26 +51,30 @@ public class Unary extends Lops {
 
 		this.addInput(input1);
 		input1.addOutput(this);
-
 		this.addInput(input2);
 		input2.addOutput(this);
-
-		/*
-		 * This lop CAN NOT be executed in PARTITION, SORT, CM_COV, and COMBINE
-		 * jobs MMCJ: only in mapper.
-		 */
-		lps.addCompatibility(JobType.ANY);
-		lps.removeCompatibility(JobType.PARTITION);
-		lps.removeCompatibility(JobType.SORT);
-		lps.removeCompatibility(JobType.CM_COV);
-		lps.removeCompatibility(JobType.COMBINE);
 
 		// By definition, this lop should not break alignment
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 
-		this.lps.setProperties(ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+		if ( et == ExecType.MR ) {
+			/*
+			 * This lop CAN NOT be executed in PARTITION, SORT, CM_COV, and COMBINE
+			 * jobs MMCJ: only in mapper.
+			 */
+			lps.addCompatibility(JobType.ANY);
+			lps.removeCompatibility(JobType.PARTITION);
+			lps.removeCompatibility(JobType.SORT);
+			lps.removeCompatibility(JobType.CM_COV);
+			lps.removeCompatibility(JobType.COMBINE);
+			this.lps.setProperties(et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+		}
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
 	}
 
 	/**
@@ -70,9 +83,17 @@ public class Unary extends Lops {
 	 * @param input1
 	 * @param op
 	 */
-
+	public Unary(Lops input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lops.Type.UNARY, dt, vt);
+		init(input1, op, dt, vt, et);
+	}
+	
 	public Unary(Lops input1, OperationTypes op, DataType dt, ValueType vt) {
 		super(Lops.Type.UNARY, dt, vt);
+		init(input1, op, dt, vt, ExecType.MR);
+	}
+	
+	private void init(Lops input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 
 		valInput = null;
@@ -80,18 +101,23 @@ public class Unary extends Lops {
 		this.addInput(input1);
 		input1.addOutput(this);
 
-		/*
-		 * This lop can be executed in all jobs except for PARTITION. MMCJ: only
-		 * in mapper. GroupedAgg: only in reducer.
-		 */
-		lps.addCompatibility(JobType.ANY);
-		lps.removeCompatibility(JobType.PARTITION);
-
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 
-		this.lps.setProperties(ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+		if ( et == ExecType.MR ) {
+			/*
+			 * This lop can be executed in all jobs except for PARTITION. MMCJ: only
+			 * in mapper. GroupedAgg: only in reducer.
+			 */
+			lps.addCompatibility(JobType.ANY);
+			lps.removeCompatibility(JobType.PARTITION);
+			this.lps.setProperties(et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+		}
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
 	}
 
 	@Override
@@ -105,53 +131,88 @@ public class Unary extends Lops {
 			return " Operation: " + operation + " " + "Label: N/A";
 	}
 
-	public String getInstructions(int input_index, int output_index)
-			throws LopsException {
-		String opString = new String("");
+	private String getOpcode() throws LopsException {
+		switch (operation) {
+		case NOT:
+			return "!";
+		case ABS:
+			return "abs";
+		case SIN:
+			return "sin";
+		case COS:
+			return "cos";
+		case TAN:
+			return "tan";
+		case SQRT:
+			return "sqrt";
+		case EXP:
+			return "exp";
+		
+		case LOG:
+			return "log";
+		
+		case ROUND:
+			return "round";
 
+		case ADD:
+			return "+";
+
+		case SUBTRACT:
+			return "-";
+
+		case SUBTRACTRIGHT:
+			return "s-r";
+
+		case MULTIPLY:
+			return "*";
+
+		case DIVIDE:
+			return "/";
+
+		case Over:
+			return "so";
+
+		case POW:
+			return "^";
+
+		case GREATER_THAN:
+			return ">";
+
+		case GREATER_THAN_OR_EQUALS:
+			return ">=";
+
+		case LESS_THAN:
+			return "<";
+
+		case LESS_THAN_OR_EQUALS:
+			return "<=";
+
+		case EQUALS:
+			return "==";
+
+		case NOT_EQUALS:
+			return "!=";
+
+		case MAX:
+			return "max";
+
+		case MIN:
+			return "min";
+		
+		default:
+			throw new LopsException(
+					"Instruction not defined for Unary operation: " + operation);
+		}
+	}
+	public String getInstructions(String input1, String output) throws LopsException {
+
+		// Unary operators with one input
 		if (this.getInputs().size() == 1) {
-			// Unary operators with one input
-			switch (operation) {
-			case NOT:
-				opString += "!";
-				break;
-			case ABS:
-				opString += "abs";
-				break;
-			case SIN:
-				opString += "sin";
-				break;
-			case COS:
-				opString += "cos";
-				break;
-			case TAN:
-				opString += "tan";
-				break;
-			case SQRT:
-				opString += "sqrt";
-				break;
-			case EXP:
-				opString += "exp";
-				break;
-			case LOG:
-				opString += "log";
-				break;
-			case ROUND:
-				opString += "round";
-				break;
-
-			default:
-				throw new LopsException(
-						"Instruction not defined for Unary operation: "
-								+ operation);
-			}
-			String inst = new String("");
-			inst += opString + OPERAND_DELIMITOR + input_index
-					+ VALUETYPE_PREFIX
-					+ this.getInputs().get(0).get_valueType()
-					+ OPERAND_DELIMITOR + output_index + VALUETYPE_PREFIX
-					+ this.get_valueType();
-
+			
+			String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+			inst += getOpcode() 
+					+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
+					+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() +  VALUETYPE_PREFIX + this.get_valueType();
 			return inst;
 
 		} else {
@@ -160,13 +221,26 @@ public class Unary extends Lops {
 					+ operation);
 		}
 	}
+	
+	public String getInstructions(String input1, String input2, String output) throws LopsException {
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+		
+		inst += getOpcode() 
+				+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
+				+ OPERAND_DELIMITOR + input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(1).get_valueType()
+				+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() +  VALUETYPE_PREFIX + this.get_valueType();
+		
+		return inst;
+	}
+	
+	public String getInstructions(int input_index, int output_index)
+			throws LopsException {
+		return getInstructions(""+input_index, ""+output_index);
+	}
 
 	@Override
 	public String getInstructions(int inputIndex1, int inputIndex2,
 			int outputIndex) throws LopsException {
-		String valueString;
-		String opString = new String("");
-
 		if (this.getInputs().size() == 2) {
 			// Unary operators with two inputs
 
@@ -197,109 +271,20 @@ public class Unary extends Lops {
 			 * if it is a literal, copy val, else surround with the label with
 			 * ## symbols. these will be replaced at runtime.
 			 */
+			String valueString;
 			if (this.getInputs().get(scalarIndex).getExecLocation() == ExecLocation.Data
 					&& ((Data) this.getInputs().get(scalarIndex)).isLiteral())
 				valueString = "" + valueLabel;
 			else
 				valueString = "##" + valueLabel + "##";
 
-			switch (operation) {
-			case ADD:
-				opString += "s+";
-				break;
-
-			case SUBTRACT:
-				opString += "s-";
-				break;
-
-			case SUBTRACTRIGHT:
-				opString += "s-r";
-				break;
-
-			case MULTIPLY:
-				opString += "s*";
-				break;
-
-			case DIVIDE:
-				opString += "s/";
-				break;
-
-			case Over:
-				opString += "so";
-				break;
-
-			case POW:
-				opString += "s^";
-				break;
-
-			case GREATER_THAN:
-				opString += "s>";
-				break;
-
-			case GREATER_THAN_OR_EQUALS:
-				opString += "s>=";
-				break;
-
-			case LESS_THAN:
-				opString += "s<";
-				break;
-
-			case LESS_THAN_OR_EQUALS:
-				opString += "s<=";
-				break;
-
-			case EQUALS:
-				opString += "s==";
-				break;
-
-			case NOT_EQUALS:
-				opString += "s!=";
-				break;
-
-			case LOG:
-				// Unlike other Unary Lops, Scalar LOG (slog) is translated to
-				// UnaryInstruction as opposed ScalarInstructions
-				opString += "slog";
-				break;
-
-			case MAX:
-				// TODO: does it make sense to say MAX(A,2) ?
-				opString += "smax";
-				break;
-
-			case MIN:
-				// TODO: does it make sense to say MIN(A,2) ?
-				opString += "smin";
-				break;
-
-			default:
-				throw new LopsException(
-						"Instruction not defined for Unary opration: "
-								+ operation);
-			}
-
-			String inst = new String("");
 			if (scalarIndex == 1) {
 				// second input is the scalar
-				inst += opString + OPERAND_DELIMITOR + inputIndex1
-						+ VALUETYPE_PREFIX
-						+ this.getInputs().get(0).get_valueType()
-						+ OPERAND_DELIMITOR + valueString + VALUETYPE_PREFIX
-						+ this.getInputs().get(1).get_valueType()
-						+ OPERAND_DELIMITOR + outputIndex + VALUETYPE_PREFIX
-						+ this.get_valueType();
+				return getInstructions(""+inputIndex1, valueString, ""+outputIndex);
 			} else {
 				// first input is the scalar
-				inst += opString + OPERAND_DELIMITOR + inputIndex2
-						+ VALUETYPE_PREFIX
-						+ this.getInputs().get(1).get_valueType()
-						+ OPERAND_DELIMITOR + valueString + VALUETYPE_PREFIX
-						+ this.getInputs().get(0).get_valueType()
-						+ OPERAND_DELIMITOR + outputIndex + VALUETYPE_PREFIX
-						+ this.get_valueType();
+				return getInstructions(""+inputIndex2, valueString, ""+outputIndex);
 			}
-
-			return inst;
 		} else {
 			throw new LopsException("Invalid number of operands ("
 					+ this.getInputs().size() + ") for an Unary opration: "

@@ -2,6 +2,7 @@ package dml.hops;
 
 import dml.lops.Data;
 import dml.lops.Lops;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.SQLLopProperties;
@@ -187,5 +188,12 @@ public class LiteralOp extends Hops {
 			this.set_sqllops(sqllop);
 		}
 		return this.get_sqllops();
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		// Since a Literal hop does not represent any computation, 
+		// this function is not applicable. 
+		return null;
 	}
 }

@@ -1,12 +1,14 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Aggregate;
+import dml.lops.Append;
 import dml.lops.Group;
 import dml.lops.Lops;
 import dml.lops.PartialAggregate;
 import dml.lops.ReBlock;
 import dml.lops.Transform;
-import dml.lops.Append;
 import dml.lops.UnaryCP;
 import dml.lops.LopProperties.ExecType;
 import dml.parser.Expression.DataType;
@@ -49,7 +51,7 @@ public class ReorgOp extends Hops {
 		inp2.getParent().add(this);
 
 	}
-
+	
 	public void printMe() throws HopsException {
 		if (get_visited() != VISIT_STATUS.DONE) {
 			super.printMe();
@@ -75,10 +77,8 @@ public class ReorgOp extends Hops {
 
 		if (get_lops() == null) {
 			if (op == ReorgOp.DIAG_M2V) {
-				/*
-				 * TODO: this code must be revisited once the selection
-				 * operations are supported
-				 */
+				// TODO: this code must be revisited once the support 
+				// for matrix indexing is implemented. 
 
 				try {
 					// Handle M2V case separately
@@ -150,13 +150,12 @@ public class ReorgOp extends Hops {
 				set_lops(reblock);
 				
 			} else {
+				ExecType et = optFindExecType();
 				Transform transform1 = new Transform(
 						getInput().get(0).constructLops(), HopsTransf2Lops
-								.get(op), get_dataType(), get_valueType());
-
+								.get(op), get_dataType(), get_valueType(), et);
 				transform1.getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
 				set_lops(transform1);
 			}
 		}
@@ -203,5 +202,17 @@ public class ReorgOp extends Hops {
 		prop.setAggType(AGGREGATIONTYPE.NONE);
 		prop.setOpString(HopsTransf2String.get(op) + "(" + input.get_sqllops().get_tableName() + ")");
 		return prop;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		// Choose CP, if the input dimensions are below threshold or if the input is a vector
+		if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			return ExecType.CP;
+		else 
+			return ExecType.MR;
 	}
 }

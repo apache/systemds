@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import dml.api.DMLScript;
 import dml.lops.Lops;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.StatementBlock;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -16,11 +17,12 @@ abstract public class Hops {
 
 	public static boolean BREAKONSCALARS = false;
 	public static boolean SPLITLARGEMATRIXMULT = true;
-	
+	public static long CPThreshold = 2000;
 	
 	
 	public enum Kind {
-		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, RandOp, GenericFunctionOp, TertiaryOp, ParameterizedBuiltinOp
+		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, RandOp, GenericFunctionOp, 
+		TertiaryOp, ParameterizedBuiltinOp, Indexing
 	};
 
 	public enum VISIT_STATUS {
@@ -96,8 +98,18 @@ abstract public class Hops {
 	
 	abstract public SQLLops constructSQLLOPs() throws HopsException; 
 
+	abstract protected ExecType optFindExecType() throws HopsException;
+	
 	abstract public String getOpString();
 
+	protected boolean isVector() {
+		return (_dim1 == 1 || _dim2 == 1 );
+	}
+	
+	protected boolean areDimsBelowThreshold() {
+		return (_dim1 <= Hops.CPThreshold && _dim2 <= Hops.CPThreshold );
+	}
+	
 	public void resetVisitStatus() {
 		if (this.get_visited() == Hops.VISIT_STATUS.NOTVISITED)
 			return;
@@ -642,7 +654,7 @@ abstract public class Hops {
 	};
 
 	public enum ReorgOp {
-		APPEND, TRANSPOSE, DIAG_V2M, DIAG_M2V
+		TRANSPOSE, DIAG_V2M, DIAG_M2V, APPEND
 	};
 
 	public enum ParamBuiltinOp {

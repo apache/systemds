@@ -14,4 +14,8 @@ public class PackageRuntimeException extends RuntimeException {
 		super(msg);
 	}
 
+	public PackageRuntimeException(Exception e) {
+		super(e);
+	}
+
 }

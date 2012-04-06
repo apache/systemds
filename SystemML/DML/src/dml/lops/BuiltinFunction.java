@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.OutputParameters.Format;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
@@ -60,7 +61,8 @@ public class BuiltinFunction extends Lops
 		boolean definesMRJob = false;
 		
 		// Currently, none of the builtin functions break alignment
-		this.lps.setProperties(execLoc, breaksAlignment, aligner, definesMRJob);
+		// TODO: set to execute always in MR.. check it!
+		this.lps.setProperties(ExecType.MR, execLoc, breaksAlignment, aligner, definesMRJob);
 
 		// TODO: add block size
 //		this.getOutputParameters().num_rows_per_block = new Long(GenericFunction.BLOCK_ROW_SIZE);
@@ -113,7 +115,7 @@ public class BuiltinFunction extends Lops
 	@Override
 	public String getInstructions(int input_index, int output_index)
 	{
-		String opString = new String("");
+		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		
 		switch(function)
 		{

@@ -15,7 +15,7 @@ public class DataConverterTest {
 	int rows = 220;
 	String matrix = "scripts/a";
 
-	@Test
+/*	@Test
 	public void testReadDouble1DArrayMatrixFromHDFSBlock() {
 		double[][] arrIn = TestUtils.createNonRandomMatrixValues(rows, cols, false);
 		double[] arrExp = TestUtils.convert2Dto1DDoubleArray(arrIn);
@@ -34,8 +34,8 @@ public class DataConverterTest {
 			fail(e.getMessage());
 		}
 	}
-
-	@Test
+*/
+/*	@Test
 	public void testReadDouble1DArrayMatrixFromHDFSCell() {
 		double[][] arrIn = TestUtils.createNonRandomMatrixValues(rows, cols, false);
 		double[] arrExp = TestUtils.convert2Dto1DDoubleArray(arrIn);
@@ -53,4 +53,4 @@ public class DataConverterTest {
 			fail(e.getMessage());
 		}
 	}
-}
+*/}

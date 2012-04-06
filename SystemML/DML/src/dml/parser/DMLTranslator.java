@@ -4,15 +4,20 @@ package dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map.Entry;
+
+import dml.parser.*;
 
 import dml.hops.AggBinaryOp;
 import dml.hops.AggUnaryOp;
 import dml.hops.BinaryOp;
 import dml.hops.DataOp;
 import dml.hops.Hops;
+// TODO: YY -- UNCOMMENT
+//import dml.hops.IndexingOp;
 import dml.hops.LiteralOp;
-import dml.hops.ParameterizedBuiltinOp;
 import dml.hops.RandOp;
 import dml.hops.ReorgOp;
 import dml.hops.TertiaryOp;
@@ -25,15 +30,20 @@ import dml.hops.Hops.OpOp2;
 import dml.hops.Hops.OpOp3;
 import dml.hops.Hops.ParamBuiltinOp;
 import dml.hops.Hops.VISIT_STATUS;
+import dml.hops.ParameterizedBuiltinOp;
+import dml.lops.DoubleVal;
+import dml.lops.IndexPair;
 import dml.lops.Lops;
+import dml.lops.VAL;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import dml.sql.sqlcontrolprogram.SQLCleanup;
-import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
+import dml.sql.sqlcontrolprogram.SQLCreateBase;
 import dml.sql.sqlcontrolprogram.SQLCreateTable;
 import dml.sql.sqlcontrolprogram.SQLDeclare;
+import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLIfElseProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLOverwriteScalar;
 import dml.sql.sqlcontrolprogram.SQLOverwriteTable;
@@ -308,6 +318,7 @@ public class DMLTranslator {
 				lops.add(hop.constructLops());
 			}
 			sb.set_lops(lops);
+			
 		}
 		
 	} // end method
@@ -1587,29 +1598,6 @@ public class DMLTranslator {
 				output.add(write);
 			}
 
-			/**
-			if (current instanceof PrintStatement) {
-				PrintStatement ps = (PrintStatement) current;
-				DataIdentifier id = ps.getIdentifier();
-				DataIdentifier target = createTarget();
-				target.setDataType(DataType.SCALAR);
-				LiteralOp lop = new LiteralOp(target.getName(), ps.getMessage());
-
-				if (id != null) {
-					String name = ps.getIdentifier().getName();
-					Hops idHop = _ids.get(name);
-					Hops printHop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(),OpOp2.PRINT, idHop, lop);
-					output.add(printHop);
-				} else {
-					try {
-						Hops printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.PRINT, lop);
-						output.add(printHop);
-					} catch ( HopsException e ) {
-						e.printStackTrace();
-					}
-				}
-			}
-			**/
 			if (current instanceof PrintStatement) {
 				PrintStatement ps = (PrintStatement) current;
 				Expression source = ps.getExpression();
@@ -1660,7 +1648,7 @@ public class DMLTranslator {
 					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
 					StringBuilder inst = new StringBuilder();
 
-					inst.append("extfunct");
+					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
 					inst.append(Lops.OPERAND_DELIMITOR);
 					
 					inst.append(fstmt.getName());
@@ -1699,7 +1687,7 @@ public class DMLTranslator {
 				FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
 				StringBuilder inst = new StringBuilder();
 
-				inst.append("extfunct");
+				inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
 				inst.append(Lops.OPERAND_DELIMITOR);
 
 				inst.append(fstmt.getName());
@@ -1926,7 +1914,11 @@ public class DMLTranslator {
 		} else if (source.getKind() == Expression.Kind.BooleanOp) {
 			return processBooleanExpression((BooleanExpression) source, target, hops);
 		} else if (source.getKind() == Expression.Kind.Data) {
-			if (source instanceof IntIdentifier) {
+			if (source instanceof IndexedIdentifier){
+		// TODO: YY -- UNCOMMENT
+		//		IndexedIdentifier sourceIndexed = (IndexedIdentifier) source;
+		//		return processIndexingExpression(sourceIndexed,target,hops);
+			} else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(Long.toString(sourceInt.getValue()), sourceInt.getValue());
 				setIdentifierParams(litop, sourceInt);
@@ -1980,6 +1972,39 @@ public class DMLTranslator {
 		return target;
 	}
 
+	// TODO: YY -- UNCOMMENT
+	/** 
+	private Hops processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hops> hops) 
+		throws ParseException {
+	
+		// process 
+		Hops rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
+		
+		if (source.getRowLowerBound() != null){
+			rowLowerHops = processExpression(source.getRowLowerBound(),null,hops);
+		}	
+		if (source.getRowUpperBound() != null){
+			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
+		}
+		if (source.getColLowerBound() != null){
+			colLowerHops = processExpression(source.getColLowerBound(),null,hops);
+		}
+		if (source.getColUpperBound() != null){
+			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
+		}
+		
+		if (target == null) {
+			target = createTarget(source);
+		}
+		
+		Hops indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
+				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+	
+	
+		return indexOp;
+	}
+	**/
+	
 	/**
 	 * Construct Hops from parse tree : Process Binary Expression in an
 	 * assignment statement
@@ -1989,12 +2014,12 @@ public class DMLTranslator {
 	private Hops processBinaryExpression(BinaryExpression source, DataIdentifier target, HashMap<String, Hops> hops)
 			throws ParseException {
 
-		Hops left = processExpression(source.getLeft(), null, hops);
+		Hops left  = processExpression(source.getLeft(),  null, hops);
 		Hops right = processExpression(source.getRight(), null, hops);
 
 		if (left == null || right == null){
 			System.out.println("broken");
-			left = processExpression(source.getLeft(), null, hops);
+			left  = processExpression(source.getLeft(),  null, hops);
 			right = processExpression(source.getRight(), null, hops);
 		}
 	

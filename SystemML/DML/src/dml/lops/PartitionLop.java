@@ -2,6 +2,7 @@ package dml.lops;
 
 import dml.utils.LopsException;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.meta.PartitionParams;
 import dml.parser.Expression.*;
@@ -27,7 +28,7 @@ public class PartitionLop extends Lops {
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.PARTITION);
-		this.lps.setProperties( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 	}
 
 	@Override

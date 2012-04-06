@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 import dml.utils.LopsException;
@@ -28,24 +29,40 @@ public class Binary extends Lops
 	 * @param op
 	 */
 
-	public Binary(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt) 
-	{
+	public Binary(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lops.Type.Binary, dt, vt);
+		init(input1, input2, op, dt, vt, et);
+		
+	}
+	
+	public Binary(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt) {
 		super(Lops.Type.Binary, dt, vt);	
+		init(input1, input2, op, dt, vt, ExecType.MR);
+	}
+	
+	private void init(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	{
 		operation = op;
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.RAND);
-		lps.addCompatibility(JobType.REBLOCK_BINARY);
-		lps.addCompatibility(JobType.REBLOCK_TEXT);
-		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
-		this.lps.setProperties( ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		
+		if ( et == ExecType.MR ) {
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.REBLOCK_BINARY);
+			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			this.lps.setProperties( et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else if ( et == ExecType.CP ){
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -65,54 +82,64 @@ public class Binary extends Lops
 		return operation;
 	}
 
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
-	{
-		String opString = new String("");
+	private String getOpcode() {
 		switch(operation) {
 		/* Arithmetic */
 		case ADD:
-			opString += "b+"; break;
+			return "+";
 		case SUBTRACT:
-			opString += "b-"; break;
+			return "-";
 		case MULTIPLY:
-			opString += "b*"; break;
+			return "*";
 		case DIVIDE:
-			opString += "b/"; break;
+			return "/";
 		
 		/* Relational */
 		case LESS_THAN:
-			opString += "b<"; break;
+			return "<";
 		case LESS_THAN_OR_EQUALS:
-			opString += "b<="; break;
+			return "<=";
 		case GREATER_THAN:
-			opString += "b>"; break;
+			return ">";
 		case GREATER_THAN_OR_EQUALS:
-			opString += "b>="; break;
+			return ">=";
 		case EQUALS:
-			opString += "b=="; break;
+			return "==";
 		case NOT_EQUALS:
-			opString += "b!="; break;
+			return "!=";
 		
 			/* Boolean */
 		case AND:
-			opString += "b&&"; break;
+			return "&&";
 		case OR:
-			opString += "b||"; break;
+			return "||";
 		
 		
 		/* Builtin Functions */
 		case MIN:
-			opString += "bmin"; break;
+			return "min";
 		case MAX:
-			opString += "bmax"; break;
+			return "max";
 			
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + operation);
 		}
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String output) throws LopsException {
+		String inst = getExecType() + OPERAND_DELIMITOR + getOpcode() + OPERAND_DELIMITOR + 
+		input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
+		return inst;
+	}
+	
+	@Override
+	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
+	{
+		String inst = getExecType() + OPERAND_DELIMITOR + getOpcode() + OPERAND_DELIMITOR + 
 				input_index1 + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
 				input_index2 + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
 		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;

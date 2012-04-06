@@ -12,21 +12,20 @@ public class InstructionParser {
 		if ( str == null || str.isEmpty() )
 			return null;
 		
-		// It is responsibility of the caller to know whether "str" is a MR instruction or a CP instruction
-		
-		MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
-		CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
-		
-		if ( mrtype != null ) {
+		String execType = str.split(Instruction.OPERAND_DELIM)[0]; 
+		if ( execType.equalsIgnoreCase("CP") ) {
+			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
+			return CPInstructionParser.parseSingleInstruction (cptype, str);
+		} 
+		else if ( execType.equalsIgnoreCase("MR") ) {
+			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
+			if ( mrtype == null )
+				throw new DMLRuntimeException("Can not determine MRType for instruction: " + str);
 			return MRInstructionParser.parseSingleInstruction (mrtype, str);
 		}
-		else if ( cptype != null ) {
-			return CPInstructionParser.parseSingleInstruction (cptype, str);
-		}
 		else {
-			throw new DMLRuntimeException("Encountered unknown instruction type while parsing \"" + str + "\".");
+			throw new DMLRuntimeException("Unknown execution type in instruction: " + str);
 		}
-			
 	}
 	
 	public static Instruction[] parseMixedInstructions ( String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {

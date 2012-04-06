@@ -27,7 +27,7 @@ public class RandTest {
     @Test
     public void testParseInstruction() {
         try {
-        	StringBuilder instruction = new StringBuilder("Rand");
+        	StringBuilder instruction = new StringBuilder("MR" + Instruction.OPERAND_DELIM + "Rand");
         	instruction.append(Instruction.OPERAND_DELIM + 0);
         	instruction.append(Instruction.OPERAND_DELIM + 1);
         	instruction.append(Instruction.OPERAND_DELIM + "rows=10");

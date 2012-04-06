@@ -10,11 +10,11 @@ import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.controlprogram.WhileProgramBlock;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
-import dml.runtime.instructions.CPInstructions.ArithmeticCPInstruction;
-import dml.runtime.instructions.CPInstructions.BuiltinCPInstruction;
+import dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
+import dml.runtime.instructions.CPInstructions.BuiltinBinaryCPInstruction;
 import dml.runtime.instructions.CPInstructions.CPInstruction;
+import dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import dml.runtime.instructions.CPInstructions.FileCPInstruction;
-import dml.runtime.instructions.CPInstructions.ScalarCPInstruction;
 import dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -163,8 +163,8 @@ public class InstructionGraph {
 						lastVar = idStr;
 						s += edge;
 					}
-				} else if (simpleInst instanceof ScalarCPInstruction) {
-					if (simpleInst instanceof ArithmeticCPInstruction) {
+				} else if (simpleInst instanceof ComputationCPInstruction) {
+					if (simpleInst instanceof ArithmeticBinaryCPInstruction) {
 
 						String in1 = getInput(instStr, 1);
 						String in2 = getInput(instStr, 2);
@@ -181,8 +181,8 @@ public class InstructionGraph {
 							s += edge;
 						}
 					}
-					else if (simpleInst instanceof BuiltinCPInstruction ) {
-						BuiltinCPInstruction binst = (BuiltinCPInstruction) simpleInst;
+					else if (simpleInst instanceof BuiltinBinaryCPInstruction ) {
+						BuiltinBinaryCPInstruction binst = (BuiltinBinaryCPInstruction) simpleInst;
 						int arity = binst.getArity();
 						if ( arity == 1 ) {
 							String in1 = getInput(instStr, 1);

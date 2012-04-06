@@ -18,7 +18,6 @@ import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.OperationsOnMatrixValues;
 import dml.runtime.matrix.mapred.CachedValueMap;
 import dml.runtime.matrix.mapred.IndexedMatrixValue;
-import dml.runtime.matrix.operators.BinaryOperator;
 import dml.runtime.matrix.operators.LeftScalarOperator;
 import dml.runtime.matrix.operators.Operator;
 import dml.runtime.matrix.operators.RightScalarOperator;
@@ -48,49 +47,49 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 		cst = Double.parseDouble(parts[2]);
 		out = Byte.parseByte(parts[3]);
 		
-		if ( opcode.equalsIgnoreCase("s+") ) {
+		if ( opcode.equalsIgnoreCase("+") ) {
 			return new ScalarInstruction(new RightScalarOperator(Plus.getPlusFnObject(), cst), in, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("s-") ) {
+		else if ( opcode.equalsIgnoreCase("-") ) {
 			return new ScalarInstruction(new RightScalarOperator(Minus.getMinusFnObject(), cst), in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("s-r") ) {
 			return new ScalarInstruction(new LeftScalarOperator(Minus.getMinusFnObject(), cst), in, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("s*") ) {
+		else if ( opcode.equalsIgnoreCase("*") ) {
 			return new ScalarInstruction(new RightScalarOperator(Multiply.getMultiplyFnObject(), cst), in, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("s/") ) {
+		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new ScalarInstruction(new RightScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("so") ) {
 			return new ScalarInstruction(new LeftScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("s^") ) {
+		else if ( opcode.equalsIgnoreCase("^") ) {
 			return new ScalarInstruction(new RightScalarOperator(Power.getPowerFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("smax") ) {
+		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("max"), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("smin") ) {
+		else if ( opcode.equalsIgnoreCase("min") ) {
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("min"), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s>") ) {
+		else if ( opcode.equalsIgnoreCase(">") ) {
 			return new ScalarInstruction(new RightScalarOperator(GreaterThanReturnDouble.getGreaterThanReturnDoubleFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s>=") ) {
+		else if ( opcode.equalsIgnoreCase(">=") ) {
 			return new ScalarInstruction(new RightScalarOperator(GreaterThanEqualsReturnDouble.getGreaterThanEqualsReturnDoubleFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s<") ) {
+		else if ( opcode.equalsIgnoreCase("<") ) {
 			return new ScalarInstruction(new RightScalarOperator(LessThanReturnDouble.getLessThanReturnDoubleFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s<=") ) {
+		else if ( opcode.equalsIgnoreCase("<=") ) {
 			return new ScalarInstruction(new RightScalarOperator(LessThanEqualsReturnDouble.getLessThanEqualsReturnDoubleFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s==") ) {
+		else if ( opcode.equalsIgnoreCase("==") ) {
 			return new ScalarInstruction(new RightScalarOperator(EqualsReturnDouble.getEqualsReturnDoubleFnObject(), cst), in, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("s!=") ) {
+		else if ( opcode.equalsIgnoreCase("!=") ) {
 			return new ScalarInstruction(new RightScalarOperator(NotEqualsReturnDouble.getNotEqualsReturnDoubleFnObject(), cst), in, out, str);
 		}
 		

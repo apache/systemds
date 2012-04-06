@@ -2,15 +2,18 @@ package dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
 
+import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.InstructionUtils;
-import dml.runtime.matrix.InputInfoMetaData;
+import dml.runtime.matrix.MatrixFormatMetaData;
 import dml.runtime.matrix.MatrixCharacteristics;
+import dml.runtime.matrix.MatrixDimensionsMetaData;
 import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
+import dml.runtime.matrix.io.OutputInfo;
 import dml.runtime.util.MapReduceTool;
 import dml.runtime.util.UtilFunctions;
 import dml.utils.DMLRuntimeException;
@@ -29,25 +32,31 @@ public class VariableCPInstruction extends CPInstruction {
 	 *	    rename x as y (same as assignvar followed by rmvar, types are not required)
 	 *	4) rmfilevar x:type b:type
 	 *	    remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
-	 *	5) assignvarwithfile FP x
-	 *	    assign x with the first value in file FP
+	 *	5) assignvarwithfile FN x
+	 *	    assign x with the first value from the file whose name=FN
 	 *	6) attachfiletovar FP x
 	 *	    allocate a new file object with name FP, and associate it with variable x
+	 *     createvar x FP [dimensions] [formatinfo]
 	 */
 	
 	private enum VariableOperationCode {
-		AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, AttachFileToVariable, ValuePickCP, IQSize, SpearmanHelper, writeScalar, readScalar
+		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePickCP, IQSize, SpearmanHelper, Write, Read, SetFileName
 	}
 	
 	VariableOperationCode opcode;
 	private CPOperand input1;
 	private CPOperand input2;
+	private CPOperand input3;
 	private CPOperand output;
+	private MetaData metadata;
 	int arity;
 	
 	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLUnsupportedOperationException {
 		
-		if ( str.equalsIgnoreCase("assignvar"))
+		if ( str.equalsIgnoreCase("createvar"))
+			return VariableOperationCode.CreateVariable;
+		
+		else if ( str.equalsIgnoreCase("assignvar"))
 			return VariableOperationCode.AssignVariable;
 		
 		else if ( str.equalsIgnoreCase("rmvar") ) 
@@ -62,9 +71,6 @@ public class VariableCPInstruction extends CPInstruction {
 		else if ( str.equalsIgnoreCase("assignvarwithfile") ) 
 			return VariableOperationCode.AssignVariableWithFirstValue;
 		
-		else if ( str.equalsIgnoreCase("attachfiletovar") ) 
-			return VariableOperationCode.AttachFileToVariable;
-		
 		else if ( str.equalsIgnoreCase("valuepickCP") ) 
 			return VariableOperationCode.ValuePickCP;
 		
@@ -74,11 +80,14 @@ public class VariableCPInstruction extends CPInstruction {
 		else if ( str.equalsIgnoreCase("spearmanhelper") ) 
 			return VariableOperationCode.SpearmanHelper;
 		
-		else if ( str.equalsIgnoreCase("writeScalar") ) 
-			return VariableOperationCode.writeScalar;
+		else if ( str.equalsIgnoreCase("write") ) 
+			return VariableOperationCode.Write;
 		
-		else if ( str.equalsIgnoreCase("readScalar") ) 
-			return VariableOperationCode.readScalar;
+		else if ( str.equalsIgnoreCase("read") ) 
+			return VariableOperationCode.Read;
+		
+		else if ( str.equalsIgnoreCase("setfilename") ) 
+			return VariableOperationCode.SetFileName;
 		
 		else
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
@@ -86,6 +95,9 @@ public class VariableCPInstruction extends CPInstruction {
 	
 	private static String toString ( VariableOperationCode code ) {
 		switch(code) {
+		case CreateVariable:
+			return "createvar";
+		
 		case AssignVariable:
 			return "assignvar";
 			
@@ -101,9 +113,6 @@ public class VariableCPInstruction extends CPInstruction {
 		case AssignVariableWithFirstValue:
 			return "assignvarwithfile";
 			
-		case AttachFileToVariable:
-			return "attachfiletovar";
-		
 		case ValuePickCP:
 			return "valuepickCP";
 		
@@ -113,11 +122,14 @@ public class VariableCPInstruction extends CPInstruction {
 		case SpearmanHelper:
 			return "spearmanhelper";
 		
-		case readScalar:
-			return "readScalar";
+		case Read:
+			return "read";
 		
-		case writeScalar:
-			return "writeScalar";
+		case Write:
+			return "write";
+			
+		case SetFileName:
+			return "setfilename";
 		
 		default:
 			return null;
@@ -147,25 +159,95 @@ public class VariableCPInstruction extends CPInstruction {
 		instString = istr;
 	}
 
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, String istr )
+	{
+		super(null);
+		cptype = CPINSTRUCTION_TYPE.Variable;
+		opcode = op;
+		input1 = in1;
+		input2 = in2;
+		input3 = in3;
+		output = null;
+		arity = 3;
+		instString = istr;
+	}
+
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, MetaData md, int _arity, String istr )
+	{
+		super(null);
+		cptype = CPINSTRUCTION_TYPE.Variable;
+		opcode = op;
+		input1 = in1;
+		input2 = in2;
+		output = null;
+		metadata = md;
+		arity = _arity;
+		instString = istr;
+	}
+
+	private static int getArity(VariableOperationCode op) {
+		switch(op) {
+		case RemoveVariable:
+			return 1;
+		case IQSize:
+		case ValuePickCP:
+		case Write:
+		case SetFileName:
+			return 3;
+		default:
+			return 2;
+		}
+	}
+	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		String opcode = InstructionUtils.getOpCode(str);
-		
-		int _arity = 2;
-		if ( opcode.equalsIgnoreCase("rmvar") )
-			_arity = 1;
-		else if ( opcode.equalsIgnoreCase("valuepickCP") || opcode.equalsIgnoreCase("iqsize"))
-			_arity = 3;
-		
-		InstructionUtils.checkNumFields ( str, _arity ); // no output
-		
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
-		
-		CPOperand in1=null, in2=null, out=null;
 		VariableOperationCode voc = getVariableOperationCode(opcode);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
+		int _arity = -1;
+		
+		if ( voc == VariableOperationCode.CreateVariable ){
+			if ( parts.length != 3 && parts.length != 4 && parts.length != 8 && parts.length != 9 )
+				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+		}
+		else {
+			_arity = getArity(voc);
+			InstructionUtils.checkNumFields ( str, _arity ); // no output
+		}
+		
+		CPOperand in1=null, in2=null, in3=null, out=null;
 		
 		switch (voc) {
 		
+		case CreateVariable:
+			in1 = new CPOperand(parts[1]);
+			in2 = new CPOperand(parts[2]);
+			if ( parts.length > 3 ) {
+				MatrixCharacteristics mc = new MatrixCharacteristics();
+				if ( parts.length == 4 ) {
+					// the last operand is the OutputInfo
+					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[3]);
+					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
+					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, iimd, parts.length, str);
+				}
+				mc.setDimension(Long.parseLong(parts[3]), Long.parseLong(parts[4]));
+				mc.setBlockSize(Integer.parseInt(parts[5]), Integer.parseInt(parts[6]));
+				mc.setNonZeros(Long.parseLong(parts[7]));
+				
+				if (parts.length > 8) {
+					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[8]);
+					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
+					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, iimd, parts.length, str);
+				}
+				else {
+					MatrixDimensionsMetaData mdmd = new MatrixDimensionsMetaData(mc);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, mdmd, parts.length, str);
+				}
+			}
+			break;
+			
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
@@ -174,14 +256,14 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case RemoveVariable:
-			in1 = new CPOperand(parts[1], ValueType.UNKNOWN);
+			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.SCALAR);
 			in2 = null;
 			break;
 			
 		case RenameVariable:
 			// Value types are not given here
-			in1 = new CPOperand(parts[1], ValueType.UNKNOWN);
-			in2 = new CPOperand(parts[2], ValueType.UNKNOWN);
+			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
+			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
 			break;
 			
 		case RemoveVariableAndFile:
@@ -193,15 +275,10 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case AssignVariableWithFirstValue:
-			in1 = new CPOperand(parts[1]); // first operand is a filename => string value type 
+			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
 			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
 			break;
 			
-		case AttachFileToVariable:
-			in1 = new CPOperand(parts[1], ValueType.STRING); // first operand is a filename => string value type 
-			in2 = new CPOperand(parts[2], ValueType.UNKNOWN); 
-			break;
-		
 		case ValuePickCP:
 		case IQSize:
 			in1 = new CPOperand(parts[1]); // first operand is a filename => string value type 
@@ -214,68 +291,79 @@ public class VariableCPInstruction extends CPInstruction {
 			out = new CPOperand(parts[2]); // output variable name
 			break;
 			
-		case writeScalar:
+		case Write:
+			in1 = new CPOperand(parts[1]);
+			in2 = new CPOperand(parts[2]);
+			in3 = new CPOperand(parts[3]);
+			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
+			
+		case Read:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			out = null;
 			break;
 			
-		case readScalar:
-			in1 = new CPOperand(parts[1]);
-			in2 = new CPOperand(parts[2]);
-			out = null;
-			break;
+		case SetFileName:
+			in1 = new CPOperand(parts[1]); // variable name
+			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN); // file name
+			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN); // option: remote or local
+			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
 		}
-		
 		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, out, _arity, str);
-		
 	}
 
 	@Override
 	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
 		
 		switch ( opcode ) {
+		case CreateVariable:
+			if ( input1.get_dataType() == DataType.MATRIX ) {
+				MatrixObject mobj = new MatrixObject(input1.get_valueType(), input2.get_name());
+				mobj.setDataType(DataType.MATRIX);
+				mobj.setMetaData(metadata);
+				pb.setVariable(input1.get_name(), mobj);
+			}
+			else if ( input1.get_dataType() == DataType.SCALAR ){
+				ScalarObject sobj = null;
+				pb.setVariable(input1.get_name(), sobj);
+			}
+			else {
+				throw new DMLRuntimeException("Unexpected data type: " + input1.get_dataType());
+			}
+			break;
+		
 		case AssignVariable:
 			// assign value of variable to the other
-			pb.setVariable(input2.get_name(), pb.getVariable(input1.get_name(), input1.get_valueType()));			
+			pb.setVariable(input2.get_name(), pb.getScalarVariable(input1.get_name(), input1.get_valueType()));			
 			break;
 			
 		case RemoveVariable:
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
-			
-			// if the variable corresponds to a file on HDFS, then delete it from program block's metadata structure
-			if ( pb.getMetaData(input1.get_name()) != null ) {
-				pb.removeMetaData(input1.get_name());
-			}
 			break;
 			
 		case RenameVariable:
-			// assign value of input1 to input2 
-			// we expect input1 to exist in the program block. 
-			// We pass value type as UNKNOWN so that getVariable() fails if input1 is not in the program block.
-			pb.setVariable(input2.get_name(), pb.getVariable(input1.get_name(), ValueType.UNKNOWN));
-			
-			// If input1 is a file, copy the corresponding metadata
-			MetaData md = null;
-			if ( (md = pb.getMetaData(input1.get_name())) != null ) {
-				pb.setMetaData(input2.get_name(), md);
-			}
+			Data dd = pb.getVariable(input1.get_name());
+			//if ( dd == null )
+			//	System.out.println("Here");
+			pb.setVariable(input2.get_name(), dd);
+			//pb.removeVariable(input1.get_name());
 			break;
 			
 		case RemoveVariableAndFile:
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
-			boolean del = ( (BooleanObject) pb.getVariable(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
+			boolean del = ( (BooleanObject) pb.getScalarVariable(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
 			if ( del == true ) {
 				// delete the file on disk
 				try {
-					FileObject fileObj = (FileObject) pb.getVariable( input1.get_name(), input1.get_valueType() );
-					MapReduceTool.deleteFileIfExistOnHDFS( fileObj.getFilePath() );
-					
-					// delete metadata associated with the file
-					pb.removeMetaData(input1.get_name());
-					MapReduceTool.deleteFileIfExistOnHDFS( fileObj.getFilePath() + ".mtd" ); // delete the metadata file on hdfs
+					String fpath = ((MatrixObject)pb.getVariable( input1.get_name())).getFileName();
+					if ( fpath != null ) {
+						MapReduceTool.deleteFileIfExistOnHDFS( fpath );
+						// delete metadata associated with the file
+						pb.removeMetaData(input1.get_name());
+						MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
+					}
 				}
 				catch ( IOException e ) {
 					throw new DMLRuntimeException(e);
@@ -288,7 +376,8 @@ public class VariableCPInstruction extends CPInstruction {
 		case AssignVariableWithFirstValue:
 			// Read the value from HDFS file, and assign it to a variable (used in CAST_TO_SCALAR)
 			try {
-				double value = MapReduceTool.readFirstNumberFromHDFSMatrix(input1.get_name());
+				MatrixObject mobj = (MatrixObject) pb.getVariable( input1.get_name() );
+				double value = MapReduceTool.readFirstNumberFromHDFSMatrix(mobj.getFileName());
 				pb.setVariable(input2.get_name(), new DoubleObject(value));
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -296,16 +385,13 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			break;
 			
-		case AttachFileToVariable:
-			pb.setVariable( input2.get_name(), new FileObject( input1.get_name()));
-			break;
-			
 		case ValuePickCP:
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick middle value from "temp3" and assign to Var0
 			
-			String fname = input1.get_name();
-			MetaData mdata = pb.getMetaData(fname);
+			MatrixObject mat = (MatrixObject)pb.getVariable(input1.get_name());
+			String fname = mat.getFileName();
+			MetaData mdata = mat.getMetaData();
 			ScalarObject pickindex = pb.getScalarVariable(input2.get_name(), input2.get_valueType());
 			
 			if ( mdata != null ) {
@@ -350,11 +436,13 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case SpearmanHelper:
 			// get otherMetadata associated with the matrix
-			String sh_fname = input1.get_name();
-			MetaData sh_md = pb.getMetaData(sh_fname);
+			//MatrixObject mobj = pb.getMatrixVariable(input1.get_name());
+			MatrixObject mobj = (MatrixObject)pb.getVariable(input1.get_name());
+			String sh_fname = mobj.getFileName();
+			MetaData sh_md = mobj.getMetaData();
 			
-			InputInfo ii = ((InputInfoMetaData)sh_md).getInputInfo();
-			MatrixCharacteristics mc = ((InputInfoMetaData)sh_md).getMatrixCharacteristics();
+			InputInfo ii = ((MatrixFormatMetaData)sh_md).getInputInfo();
+			MatrixCharacteristics mc = ((MatrixFormatMetaData)sh_md).getMatrixCharacteristics();
 			
 			try {
 				double[][] ctable = MapReduceTool.readMatrixFromHDFS(sh_fname, ii, mc.numRows, mc.numColumns, mc.numRowsPerBlock, mc.numColumnsPerBlock);
@@ -370,7 +458,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 			break;
 		
-		case readScalar:
+		case Read:
 			ScalarObject res = null;
 			try {
 				switch(input1.get_valueType()) {
@@ -400,27 +488,49 @@ public class VariableCPInstruction extends CPInstruction {
 			
 			break;
 			
-		case writeScalar:
-			ScalarObject scalar = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
-			try {
-				switch ( input1.get_valueType() ) {
-				case DOUBLE:
-					MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
-					break;
-				case INT:
-					MapReduceTool.writeIntToHDFS(scalar.getIntValue(), input2.get_name());
-					break;
-				case BOOLEAN:
-					MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());
-					break;
-				case STRING:
-					MapReduceTool.writeStringToHDFS(scalar.getStringValue(), input2.get_name());
-					break;
-				default:
-					throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") while processing writeScalar instruction.");
+		case Write:
+			if ( input1.get_dataType() == DataType.SCALAR ) {
+				ScalarObject scalar = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
+				try {
+					switch ( input1.get_valueType() ) {
+					case DOUBLE:
+						MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
+						break;
+					case INT:
+						MapReduceTool.writeIntToHDFS(scalar.getIntValue(), input2.get_name());
+						break;
+					case BOOLEAN:
+						MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());
+						break;
+					case STRING:
+						MapReduceTool.writeStringToHDFS(scalar.getStringValue(), input2.get_name());
+						break;
+					default:
+						throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
+					}
+				} catch ( IOException e ) {
+					throw new DMLRuntimeException(e);
 				}
-			} catch ( IOException e ) {
-				throw new DMLRuntimeException(e);
+			}
+			else {
+				MatrixObject mo = pb.getMatrixVariable(input1.get_name());
+				mo.writeInMemoryMatrixToHDFS(input2.get_name(), OutputInfo.stringToOutputInfo(input3.get_name()));
+			}
+			break;
+			
+		case SetFileName:
+			Data data = pb.getVariable(input1.get_name());
+			//if ( data == null )
+			//	System.out.println("Here");
+			if ( data.getDataType() == DataType.MATRIX ) {
+				if ( input3.get_name().equalsIgnoreCase("remote") ) {
+					((MatrixObject)data).setFileName(input2.get_name());
+				}
+				else {
+					throw new DMLRuntimeException("Invalid location (" + input3.get_name() + ") in SetFileName instruction: " + instString);
+				}
+			} else{
+				throw new DMLRuntimeException("Invalid data type (" + input1.get_dataType() + ") in SetFileName instruction: " + instString);
 			}
 			break;
 			

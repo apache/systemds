@@ -3,9 +3,7 @@ package dml.runtime.matrix;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.Counters.Group;
 
-import dml.lops.LopProperties;
 import dml.lops.compile.JobType;
 import dml.lops.runtime.RunMRJobs;
 import dml.lops.runtime.RunMRJobs.ExecMode;
@@ -101,14 +99,7 @@ public class CMCOVMR {
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
-		InputInfo[] infos = new InputInfo[resultIndexes.length];
-		
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			infos[i] = OutputInfo.getMatchingInputInfo(outputInfos[i]);
-		}
-		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
 }

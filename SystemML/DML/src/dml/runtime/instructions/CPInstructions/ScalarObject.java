@@ -1,10 +1,14 @@
 package dml.runtime.instructions.CPInstructions;
 
+import dml.parser.Expression.DataType;
+import dml.parser.Expression.ValueType;
+
 public abstract class ScalarObject extends Data {
 
 	private String _name;
 
-	public ScalarObject(String name) {
+	public ScalarObject(String name, ValueType vt) {
+		super(DataType.SCALAR, vt);
 		_name = name;
 	}
 

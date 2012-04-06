@@ -82,16 +82,11 @@ public class FileCPInstruction extends CPInstruction {
 		switch(code) {
 		case RemoveFile:
 			MapReduceTool.deleteFileIfExistOnHDFS(input1);
-			// delete associated metadata
-			pb.removeMetaData(input1);
 			MapReduceTool.deleteFileIfExistOnHDFS(input1+".mtd");
 			break;
 		case MoveFile:
 			MapReduceTool.renameFileOnHDFS(input1, input2);
-			// move the associated metadata
 			MapReduceTool.renameFileOnHDFS(input1+".mtd", input2+".mtd");
-			pb.setMetaData(input2, pb.getMetaData(input1));
-			pb.removeMetaData(input1);
 			break;
 			
 		default:

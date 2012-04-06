@@ -28,11 +28,13 @@ import dml.lops.Unary;
 import dml.lops.VAL;
 import dml.lops.Data.OperationTypes;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.Lops.Type;
 import dml.lops.OutputParameters.Format;
 import dml.meta.PartitionParams;
 import dml.parser.Expression;
 import dml.parser.Expression.DataType;
+import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.CPInstructionParser;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
@@ -72,6 +74,54 @@ public class Dag<N extends Lops> {
 	static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
 	static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
 
+	private class NodeOutput {
+		String fileName;
+		String varName;
+		OutputInfo outInfo;
+		ArrayList<Instruction> preInstructions;
+		ArrayList<Instruction> lastInstructions;
+		
+		NodeOutput() {
+			fileName = null;
+			varName = null;
+			outInfo = null;
+			preInstructions = new ArrayList<Instruction>(); 
+			lastInstructions = new ArrayList<Instruction>(); 
+		}
+		
+		public String getFileName() {
+			return fileName;
+		}
+		public void setFileName(String fileName) {
+			this.fileName = fileName;
+		}
+		public String getVarName() {
+			return varName;
+		}
+		public void setVarName(String varName) {
+			this.varName = varName;
+		}
+		public OutputInfo getOutInfo() {
+			return outInfo;
+		}
+		public void setOutInfo(OutputInfo outInfo) {
+			this.outInfo = outInfo;
+		}
+		public ArrayList<Instruction> getPreInstructions() {
+			return preInstructions;
+		}
+		public void addPreInstruction(Instruction inst) {
+			preInstructions.add(inst);
+		}
+		public ArrayList<Instruction> getLastInstructions() {
+			return lastInstructions;
+		}
+		public void addLastInstruction(Instruction inst) {
+			lastInstructions.add(inst);
+		}
+		
+	}
+	
 	/**
 	 * Constructor
 	 */
@@ -194,14 +244,14 @@ public class Dag<N extends Lops> {
 
 			} else {
 				if (DEBUG)
-					System.out.println("rmfilevar" + Lops.OPERAND_DELIMITOR
+					System.out.println("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR
 							+ label + Lops.VALUETYPE_PREFIX
 							+ Expression.ValueType.UNKNOWN
 							+ Lops.OPERAND_DELIMITOR + "true"
 							+ Lops.VALUETYPE_PREFIX
 							+ Expression.ValueType.BOOLEAN);
 				inst.add(CPInstructionParser
-								.parseSingleInstruction("rmfilevar"
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar"
 										+ Lops.OPERAND_DELIMITOR + label
 										+ Lops.VALUETYPE_PREFIX
 										+ Expression.ValueType.UNKNOWN
@@ -468,6 +518,45 @@ public class Dag<N extends Lops> {
 	}
 
 	/**
+	 * Method to generate instructions that create variables.
+	 * i.e., each instructions creates a new entry in the symbol table.
+	 * Every "data" input node in a LOPs DAG is translated into an instruction. 
+	 *    
+	 * @param nodes
+	 * @throws LopsException 
+	 */
+	private void generateInstructionsForInputVariables(Vector<N> nodes_v, ArrayList<Instruction> inst) throws LopsException {
+		for(N n : nodes_v) {
+			/*
+			 * ONLY persistent reads must be considered. For transient reads, previous program block 
+			 * would have already created appropriate entires in the symbol table. 
+			 * Therefore, no explicit createvar instruction is required.
+			 */
+			if (n.getExecLocation() == ExecLocation.Data
+					&& !((Data) n).isTransient() && ((Data) n).getOperationType() == OperationTypes.READ && n.get_dataType() == DataType.MATRIX) {
+				if ( !((Data)n).isLiteral() ) {
+					try {
+						String inst_string = n.getInstructions();
+						inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
+					} catch (DMLUnsupportedOperationException e) {
+						throw new LopsException(e);
+					} catch (DMLRuntimeException e) {
+						throw new LopsException(e);
+					}
+				}
+			}
+		}
+	}
+	
+	private boolean sendWriteLopToMR(N node) {
+		if( node.getInputs().get(0).getExecType() == ExecType.MR 
+				|| (node.getInputs().get(0).getExecLocation() == ExecLocation.Data 
+						&& node.getInputs().get(0).get_dataType() == DataType.MATRIX) )
+			return true;
+		else
+			return false;
+	}
+	/**
 	 * Method to group a vector of sorted lops.
 	 * 
 	 * @param node_v
@@ -506,6 +595,8 @@ public class Dag<N extends Lops> {
 		// remove files for transient reads that are updated.
 		deleteUpdatedTransientReadVariables(node_v, preWriteDeleteInst);
 
+		generateInstructionsForInputVariables(node_v, inst);
+		
 		boolean done = false;
 		String indent = "    ";
 
@@ -671,6 +762,7 @@ public class Dag<N extends Lops> {
 
 					Data.OperationTypes op = ((Data) node).getOperationType(); 
 					if ( op == OperationTypes.READ ) {
+						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
 						if ( node.get_dataType() == DataType.SCALAR 
 								&& node.getOutputParameters().getFile_name() != null ) {
 							// this lop corresponds to reading a scalar from HDFS file
@@ -681,10 +773,12 @@ public class Dag<N extends Lops> {
 					}
 					else if (op == OperationTypes.WRITE) {
 						execNodes.add(node);
-						// add this write lop to job specific vector ONLY IF
-						// it is NOT a "writeScalar" lop
-						if ( !(node.get_dataType() == DataType.SCALAR 
-								&& node.getOutputParameters().getFile_name() != null) ) {
+						/* WRITE lop must go into a mapreduce job if 
+						 * a) its input executes in MR; or
+						 * b) its input is a Matrix Data READ 
+						 * 
+						 */
+						if ( sendWriteLopToMR(node) ) {
 							addNodeByJobType(node, jobNodes, execNodes, false);
 						}
 					}
@@ -753,12 +847,29 @@ public class Dag<N extends Lops> {
 				// reduce node, make sure no parent needs reduce, else queue
 				if (node.getExecLocation() == ExecLocation.MapAndReduce) {
 
+					// boolean eliminate = false;
+					// eliminate = canEliminateLop(node, execNodes);
+					// if (eliminate || (!hasChildNode(node, execNodes,
+					// ExecLocation.MapAndReduce)) &&
+					// !hasMRJobChildNode(node,execNodes)) {
+
+					// TODO: statiko -- keep the middle condition
+					// discuss about having a lop that is MapAndReduce but does
+					// not define a job
 					if (DEBUG)
 						System.out.println(indent + "Adding -"
 								+ node.toString());
 					execNodes.add(node);
 					finishedNodes.add(node);
 					addNodeByJobType(node, jobNodes, execNodes, eliminate);
+
+					// } else {
+					// if (DEBUG)
+					// System.out.println("Queueing -" + node.toString());
+					// queuedNodes.add(node);
+					// removeNodesForNextIteration(node, finishedNodes,
+					// execNodes, queuedNodes, jobNodes);
+					// }
 					continue;
 				}
 
@@ -928,17 +1039,40 @@ public class Dag<N extends Lops> {
 			String label = it.next();
 
 			if (DEBUG)
-				System.out.println("rmfilevar" + Lops.OPERAND_DELIMITOR + label
+				System.out.println("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR + label
 						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN
 						+ Lops.OPERAND_DELIMITOR + "true"
 						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.BOOLEAN);
-			inst.add(CPInstructionParser.parseSingleInstruction("rmfilevar"
+			inst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar"
 					+ Lops.OPERAND_DELIMITOR + label + Lops.VALUETYPE_PREFIX
 					+ Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR
 					+ "true" + Lops.VALUETYPE_PREFIX
 					+ Expression.ValueType.BOOLEAN));
 		}
 	}
+  
+	String prepareVariableInstruction(String opcode, String varName, DataType dt, ValueType vt, String fileName, OutputParameters oparams, OutputInfo oinfo) {
+  		StringBuilder inst = new StringBuilder();
+  		
+		inst.append("CP" + Lops.OPERAND_DELIMITOR + opcode);
+  		if ( opcode == "createvar" ) {
+  			inst.append(Lops.OPERAND_DELIMITOR + varName + Lops.DATATYPE_PREFIX + dt + Lops.VALUETYPE_PREFIX + vt);
+  			inst.append(Lops.OPERAND_DELIMITOR + fileName + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_rows());
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_cols());
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_rows_per_block());
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_cols_per_block());
+  			inst.append(Lops.OPERAND_DELIMITOR + "0"); // TODO: should pass on correct NNZs
+  			inst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(oinfo) ) ;
+  		}
+  		
+  		return inst.toString();
+  	}
+
+	String prepareVariableInstruction(String opcode, N node) {
+		OutputParameters oparams = node.getOutputParameters();
+  		return prepareVariableInstruction(opcode, oparams.getLabel(), node.get_dataType(), node.get_valueType(), oparams.getFile_name(), oparams, getOutputInfo(node));
+  	}
 
 	/**
 	 * Method to generate instructions that are executed in Control Program. At
@@ -985,27 +1119,36 @@ public class Dag<N extends Lops> {
 				if (node.get_dataType() == DataType.SCALAR) {
 					// Output from lops with SCALAR data type must
 					// go into Temporary Variables (Var0, Var1, etc.)
-					node.getOutputParameters().setLabel("Var" + var_index);
-					var_deletions.add("Var" + var_index);
-					var_index++;
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP);
+					inst.addAll(out.getPreInstructions()); // dummy
+					deleteInst.addAll(out.getLastInstructions());
 				} else {
 					// Output from lops with non-SCALAR data type must
 					// go into Temporary Files (temp0, temp1, etc.)
-					node.getOutputParameters().setFile_name(
-							scratch + "temp" + job_id++);
-					// temp file has to be deleted at the end
-					deleteInst
-							.add(CPInstructionParser
-									.parseSingleInstruction("rm"
-											+ Lops.OPERAND_DELIMITOR
-											+ node.getOutputParameters()
-													.getFile_name()));
+					
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP);
+					inst.addAll(out.getPreInstructions());
+					
+					boolean hasTransientWriteParent = false;
+					for ( int pid=0; pid < node.getOutputs().size(); pid++ ) {
+						N parent = (N)node.getOutputs().get(pid); 
+						if ( parent.getExecLocation() == ExecLocation.Data 
+								&& ((Data)parent).getOperationType() == Data.OperationTypes.WRITE 
+								&& ((Data)parent).isTransient() ) {
+							hasTransientWriteParent = true;
+							break;
+						}
+					}
+					
+					if ( !hasTransientWriteParent )
+						deleteInst.addAll(out.getLastInstructions());
 				}
 
 				String inst_string = "";
 
 				// Since ParameterizedBuiltins have arbitrary number of inputs, we handle it separately
 				if (node.getType() == Lops.Type.ParameterizedBuiltin){
+					// TODO NEW: check why SCALAR and MATRIX have to be differentiated
 					if ( node.get_dataType() == DataType.SCALAR ) {
 						inst_string = ((ParameterizedBuiltin) node).getInstructions(node.getOutputParameters().getLabel());
 					}
@@ -1013,100 +1156,24 @@ public class Dag<N extends Lops> {
 						inst_string = ((ParameterizedBuiltin) node).getInstructions(node.getOutputParameters().getFile_name());
 					}
 					
-				} else if (node.getInputs().size() == 1) {
-					/*
-					 * Here: "node" can be of type castAsScalar or any regular
-					 * unary scalar instruction (y=log(x), y=!x, etc.) 
-					 * 
-					 * IF ("node" = castAsScalar ) input of "node" (say, Y) is a
-					 * HDFS file and it can be of two types:
-					 * 
-					 * 1) a temporary file (e.g., reblock followed by castAsScalar) 
-					 * Y.file_name !=null and Y.file_label = null 
-					 * 
-					 * 2) transient read (e.g., when castAsScalar is the first 
-					 * instruction in a statement block) Y.file_name = null and 
-					 * Y.file_label != null 
-					 * 
-					 * ELSE input of "node" (say, Z) is always a scalar Z.file_name 
-					 * = null and Y.file_label != null
-					 * 
-					 * Therefore, Z and case2 of Y are identical in terms of
-					 * file_name and file_label. Also, in case of both Y and Z,
-					 * file_name and file_label are mutually exclusive (side
-					 * note: only Transient Writes will have both file_name and
-					 * file_label as not null)
-					 */
-
-					// we generate instruction using file_name or file_label
-					// (whichever is not null) of input LOP
-					if (node.getInputs().get(0).getOutputParameters()
-							.getLabel() != null) {
-						/*
-						 * As noted above, the first input can either be a
-						 * matrix or a scalar variable If it is a matrix then a
-						 * placeholder label must be included, which gets
-						 * replaced with appropriate filename before the
-						 * instruction is executed
-						 */
-						if (node.getInputs().get(0).get_dataType() == DataType.MATRIX) {
-							inst_string = node.getInstructions("##"
-									+ node.getInputs().get(0)
-											.getOutputParameters().getLabel()
-									+ "##", node.getOutputParameters()
-									.getLabel());
-						} else {
-							inst_string = node.getInstructions(node.getInputs()
-									.get(0).getOutputParameters().getLabel(),
-									node.getOutputParameters().getLabel());
-						}
-					} else {
+				} 
+				else {
+					if (node.getInputs().size() == 1) {
 						inst_string = node.getInstructions(node.getInputs()
-								.get(0).getOutputParameters().getFile_name(),
+								.get(0).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
+					} 
+					else if (node.getInputs().size() == 2) {
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					} 
+					else {
+						throw new LopsException("Node with more than 2 inputs is not supported in CP yet!");
 					}
 				}
-
-				else if (node.getInputs().size() == 2) {
-					/*
-					 * First input can either be a MATRIX (e.g., pickvaluesCP,
-					 * iqsize) or a SCALAR (+,-) -- take either file_label or
-					 * file_name Second input is always a SCALAR -- take
-					 * file_label
-					 */
-					if (node.getInputs().get(0).getOutputParameters()
-							.getLabel() != null) {
-						/*
-						 * As noted above, the first input can either be a
-						 * matrix or a scalar variable If it is a matrix then a
-						 * placeholder label must be included, which gets
-						 * replaced with appropriate filename before the
-						 * instruction is executed
-						 */
-						if (node.getInputs().get(0).get_dataType() == DataType.MATRIX) {
-							inst_string = node.getInstructions("##"
-									+ node.getInputs().get(0)
-											.getOutputParameters().getLabel()
-									+ "##", node.getInputs().get(1)
-									.getOutputParameters().getLabel(), node
-									.getOutputParameters().getLabel());
-						} else {
-							inst_string = node.getInstructions(node.getInputs()
-									.get(0).getOutputParameters().getLabel(),
-									node.getInputs().get(1)
-											.getOutputParameters().getLabel(),
-									node.getOutputParameters().getLabel());
-						}
-					} else {
-						// first input is a MATRIX
-						inst_string = node.getInstructions(node.getInputs()
-								.get(0).getOutputParameters().getFile_name(),
-								node.getInputs().get(1).getOutputParameters()
-										.getLabel(), node.getOutputParameters()
-										.getLabel());
-					}
-				}
-
+				
 				try {
 					if (DEBUG)
 						System.out.println("Generating simple instruction - "
@@ -1119,73 +1186,58 @@ public class Dag<N extends Lops> {
 				}
 
 				markedNodes.add(node);
-
 				continue;
 			}
-
-			if (node.getExecLocation() == ExecLocation.Data 
-					&& ((Data) node).get_dataType() == DataType.SCALAR ) {
-				String scalar_inst = "";
-				if ( node.getOutputParameters().getFile_name() != null ) {
-					// "node" is either of type read/write lop for scalar from/to HDFS
-					if ( ((Data) node).getOperationType() == Data.OperationTypes.READ ) {
-						// generate a temp label to hold the scalar value that is read from HDFS
-						node.getOutputParameters().setLabel("Var" + var_index);
-						var_deletions.add("Var" + var_index);
-						var_index++;
-						
-						// generate instruction
-						scalar_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
-															node.getOutputParameters().getFile_name());
+			else if (node.getExecLocation() == ExecLocation.Data ) {
+				Data dnode = (Data)node;
+				Data.OperationTypes op = dnode.getOperationType();
+				
+				if ( op == Data.OperationTypes.WRITE ) {
+					NodeOutput out = null;
+					if ( sendWriteLopToMR(node) ) {
+						// In this case, Data WRITE lop goes into MR, and 
+						// we don't have to do anything here
 					}
-					else if (((Data) node).getOperationType() == Data.OperationTypes.WRITE) {
-						// get the label from the input of "node"
-						scalar_inst = node.getInstructions(
-								node.getInputs().get(0).getOutputParameters().getLabel(), 
-								node.getOutputParameters().getFile_name());
+					else {
+						out = setupNodeOutputs(node, ExecType.CP);
+						if ( dnode.get_dataType() == DataType.SCALAR ) {
+							// processing is same for both transient and persistent scalar writes 
+							writeInst.addAll(out.getLastInstructions());
+						}
+						else {
+							// setupNodeOutputs() handles both transient and persistent matrix writes 
+							if ( dnode.isTransient() ) {
+								//inst.addAll(out.getPreInstructions()); // dummy ?
+								deleteInst.addAll(out.getLastInstructions());
+							}
+							else {
+								// In case of persistent write lop, write() instruction will be generated 
+								// and that instruction must be added to <code>inst</code> so that it gets
+								// executed immediately. If it is added to <code>deleteInst</code> then it
+								// gets executed at the end of program block's execution
+								inst.addAll(out.getLastInstructions());
+							}
+						}
+						markedNodes.add(node);
+						continue;
 					}
-					if (DEBUG)
-						System.out
-								.println("Generating variable simple instruction - "
-										+ scalar_inst);
-
-					try {
-						inst.add(CPInstructionParser
-								.parseSingleInstruction(scalar_inst));
-					} catch (Exception e) {
-						throw new LopsException(
-								"Error in creating VariableSimpleInstructions: "
-										+ scalar_inst);
-					}
-					markedNodes.add(node);
-					continue;
 				}
-				else if (((Data) node).getOperationType() == Data.OperationTypes.WRITE
-							&& !((Data) node).isLiteral()) {
-					// generate assignment operations for final writes
-					scalar_inst = "assignvar"
-						+ Lops.OPERAND_DELIMITOR
-						+ node.getInputs().get(0).getOutputParameters()
-								.getLabel() + Lops.VALUETYPE_PREFIX
-						+ node.getInputs().get(0).get_valueType()
-						+ Lops.OPERAND_DELIMITOR
-						+ node.getOutputParameters().getLabel()
-						+ Lops.VALUETYPE_PREFIX + node.get_valueType();
-
-					if (DEBUG)
-						System.out
-								.println("Generating variable simple instruction - "
-										+ scalar_inst);
-	
-					try {
-						writeInst.add(CPInstructionParser
-								.parseSingleInstruction(scalar_inst));
-					} catch (Exception e) {
-						throw new LopsException(
-								"Error in creating VariableSimpleInstructions: "
-										+ scalar_inst);
+				else {
+					// generate a temp label to hold the value that is read from HDFS
+					if ( node.get_dataType() == DataType.SCALAR ) {
+						node.getOutputParameters().setLabel("Var" + var_index++);
+						String io_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
+								node.getOutputParameters().getFile_name());
+						inst.add(CPInstructionParser.parseSingleInstruction(io_inst));
+						
+						deleteInst.add(CPInstructionParser.parseSingleInstruction(
+								"CP" + Lops.OPERAND_DELIMITOR 
+								+ "rmvar" + Lops.OPERAND_DELIMITOR
+								+ node.getLevel()));
 					}
-	
+					else {
+						throw new LopsException("Matrix READs are not handled in CP yet!");
+					}
 					markedNodes.add(node);
 					continue;
 				}
@@ -1193,26 +1245,8 @@ public class Dag<N extends Lops> {
 		}
 
 		// delete all marked nodes
-
 		for (int i = 0; i < markedNodes.size(); i++) {
 			execNodes.remove(markedNodes.elementAt(i));
-		}
-
-		// generate instructions to delete variables
-		for (int i = 0; i < var_deletions.size(); i++) {
-			if (DEBUG)
-				System.out.println("Generating deletevar instruction "
-						+ "deletevariable " + var_deletions.elementAt(i));
-
-			try {
-				deleteInst.add(CPInstructionParser
-						.parseSingleInstruction("rmvar"
-								+ Lops.OPERAND_DELIMITOR
-								+ var_deletions.elementAt(i)));
-			} catch (Exception e) {
-				throw new LopsException(e.getMessage());
-			}
-
 		}
 
 	}
@@ -1291,6 +1325,7 @@ public class Dag<N extends Lops> {
 			//if(node.definesMRJob() && isChild(tmpNode,node) && (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) == 0)
 			//  continue;
 
+			// TODO: statiko -- check if this is too conservative?
 			if (child_queued) {
 				// if one of the children are queued, 
 				// remove some child nodes on other leg that may be needed later on. 
@@ -1733,6 +1768,7 @@ public class Dag<N extends Lops> {
 			if ( jt == JobType.INVALID || jt == JobType.ANY )
 				continue;
 			
+			// TODO: Following hardcoding of JobType.PARTITION must be removed
 			if ( jt == JobType.PARTITION ) {
 				if ( jobNodes.get(jt.getId()).size() > 0 )
 					generatePartitionJob(jobNodes.get(jt.getId()), inst, deleteinst);
@@ -1900,8 +1936,8 @@ public class Dag<N extends Lops> {
 		ArrayList<Long> numCols = new ArrayList<Long>();
 		ArrayList<Long> numRowsPerBlock = new ArrayList<Long>();
 		ArrayList<Long> numColsPerBlock = new ArrayList<Long>();
-		HashSet<String> inputLabels = new HashSet<String>();
-		HashSet<String> outputLabels = new HashSet<String>();
+		ArrayList<String> inputLabels = new ArrayList<String>();
+		ArrayList<String> outputLabels = new ArrayList<String>();
 		HashMap<String, dml.runtime.instructions.CPInstructions.Data> outputLabelValueMapping = new HashMap<String, dml.runtime.instructions.CPInstructions.Data>();
 
 		HashMap<N, Integer> nodeIndexMapping = new HashMap<N, Integer>();
@@ -1949,102 +1985,314 @@ public class Dag<N extends Lops> {
 				outputLabelValueMapping);
 		inst.add(mr);
 	}
-
+	
 	/**
-	 * Method to setup output filenames and outputInfos, and to generate related instructions
-	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
+	 * Method that determines the output format for a given node.
+	 * 
+	 * @param node
+	 * @return
 	 */
-	private void setupNodeOutputs(N rootNode, ArrayList<String> outputs, ArrayList<OutputInfo> outputInfos, ArrayList<Instruction> deleteinst, ArrayList<Instruction> renameInstructions) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	OutputInfo getOutputInfo(N node) {
+		OutputInfo oinfo = null;
 		
-		// If rootNode is NOT of type Data then we must generate a temporary file name
-		if (rootNode.getExecLocation() != ExecLocation.Data) {
-			
-			// generate temporary filename and attach it to the node
-			rootNode.getOutputParameters().setFile_name(scratch + "temp" + job_id++);
-			outputs.add(rootNode.getOutputParameters().getFile_name());
-
-			// temp file has to be deleted at the end
-			deleteinst.add(CPInstructionParser.parseSingleInstruction("rm" + Lops.OPERAND_DELIMITOR
-					+ rootNode.getOutputParameters().getFile_name()));
-
-		} 
-		// rootNode is of type Data
-		else {
-			// If it is a transient write, then we need to create a temporary file name 
-			// to write its output, which will be moved to a permanent file.
-			if (rootNode.getOutputParameters().getLabel() != null) {
-
-				// generate temporary filename and attach it to the node
-				rootNode.getOutputParameters().setFile_name(scratch + "temp" + job_id++);
-				outputs.add(rootNode.getOutputParameters().getFile_name());
-				OutputParameters oparams = rootNode.getOutputParameters();
-					
-				renameInstructions.add(CPInstructionParser
-							.parseSingleInstruction("rm"
-									+ Lops.OPERAND_DELIMITOR
-									+ oparams.getFile_name()
-									+ oparams.getLabel()));
-				renameInstructions.add(CPInstructionParser
-							.parseSingleInstruction("mv"
-									+ Lops.OPERAND_DELIMITOR
-									+ oparams.getFile_name()
-									+ Lops.OPERAND_DELIMITOR
-									+ oparams.getFile_name()
-									+ oparams.getLabel()));
-				renameInstructions.add(CPInstructionParser
-							.parseSingleInstruction("attachfiletovar"
-									+ Lops.OPERAND_DELIMITOR
-									+ oparams.getFile_name()
-									+ oparams.getLabel()
-									+ Lops.OPERAND_DELIMITOR
-									+ oparams.getLabel()));
-			} 
-			// rootNode is not a transient write. It is a persistent write.
-			else {
-				// simply attach the output file name to the rootNode
-				outputs.add(rootNode.getOutputParameters().getFile_name());
-			}
-		}
+		if ( node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP)
+			return null;
 		
-		/* Setup OutputInfo for this node */
-		OutputInfo rootOutputInfo = null;
-		if (rootNode.getOutputParameters().isBlocked_representation()) {
-			rootOutputInfo = OutputInfo.BinaryBlockOutputInfo;
+		if (node.getOutputParameters().isBlocked_representation()) {
+			oinfo = OutputInfo.BinaryBlockOutputInfo;
 		} else {
-			if (rootNode.getOutputParameters().getFormat() == Format.TEXT)
-				rootOutputInfo = OutputInfo.TextCellOutputInfo;
+			if (node.getOutputParameters().getFormat() == Format.TEXT)
+				oinfo = OutputInfo.TextCellOutputInfo;
 			else {
-				rootOutputInfo = OutputInfo.BinaryCellOutputInfo;
+				oinfo = OutputInfo.BinaryCellOutputInfo;
 			}
 		}
 
-		if (rootNode.getType() == Type.SortKeys) {
-			rootOutputInfo = new OutputInfo(CompactOutputFormat.class,
-					DoubleWritable.class, IntWritable.class);
-		} else if (rootNode.getType() == Type.CombineBinary) {
+		/* Instead of following hardcoding, one must get this information from Lops */
+		if (node.getType() == Type.SortKeys) {
+			oinfo = OutputInfo.OutputInfoForSortOutput; //new OutputInfo(CompactOutputFormat.class,
+					//DoubleWritable.class, IntWritable.class);
+		} else if (node.getType() == Type.CombineBinary) {
 			// Output format of CombineBinary (CB) depends on how the output is consumed
-			CombineBinary combine = (CombineBinary) rootNode;
+			CombineBinary combine = (CombineBinary) node;
 			if ( combine.getOperation() == dml.lops.CombineBinary.OperationTypes.PreSort ) {
-				rootOutputInfo = new OutputInfo(SequenceFileOutputFormat.class,
-						DoubleWritable.class, IntWritable.class);
+				oinfo = OutputInfo.OutputInfoForSortInput; //new OutputInfo(SequenceFileOutputFormat.class,
+						//DoubleWritable.class, IntWritable.class);
 			}
 			else if ( combine.getOperation() == dml.lops.CombineBinary.OperationTypes.PreCentralMoment 
 					  || combine.getOperation() == dml.lops.CombineBinary.OperationTypes.PreCovUnweighted 
 					  || combine.getOperation() == dml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
-				rootOutputInfo = OutputInfo.WeightedPairOutputInfo;
+				oinfo = OutputInfo.WeightedPairOutputInfo;
 			}
-		} else if ( rootNode.getType() == Type.CombineTertiary) {
-			rootOutputInfo = OutputInfo.WeightedPairOutputInfo;
-		} else if (rootNode.getType() == Type.CentralMoment
-				|| rootNode.getType() == Type.CoVariance 
-				|| rootNode.getType() == Type.GroupedAgg ) {
+		} else if ( node.getType() == Type.CombineTertiary) {
+			oinfo = OutputInfo.WeightedPairOutputInfo;
+		} else if (node.getType() == Type.CentralMoment
+				|| node.getType() == Type.CoVariance 
+				|| node.getType() == Type.GroupedAgg ) {
 			// CMMR ang GroupedAggMR always operate in "cell mode",
 			// and the output is always in cell format
-			rootOutputInfo = OutputInfo.BinaryCellOutputInfo;
+			oinfo = OutputInfo.BinaryCellOutputInfo;
 		}
 
-		outputInfos.add(rootOutputInfo);
+		return oinfo;
+	}
+
+	/** 
+	 * Method that determines the output format for a given node, 
+	 * and returns a string representation of OutputInfo. This 
+	 * method is primarily used while generating instructions that
+	 * execute in the control program.
+	 * 
+	 * @param node
+	 * @return
+	 */
+  	String getOutputFormat(N node) {
+  		return OutputInfo.outputInfoToString(getOutputInfo(node));
+  	}
+  	
+	/**
+	 * Method to setup output filenames and outputInfos, and to generate related instructions
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
+	 */
+	private NodeOutput setupNodeOutputs(N node, ExecType et) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException, LopsException {
+		
+		OutputParameters oparams = node.getOutputParameters();
+		NodeOutput out = new NodeOutput();
+		
+		// Compute the output format for this node
+		out.setOutInfo(getOutputInfo(node));
+		
+		// If node is NOT of type Data then we must generate 
+		// a variable to hold the value produced by this node
+		if (node.getExecLocation() != ExecLocation.Data) {
+			
+			if ( node.get_dataType() == DataType.SCALAR ) {
+				oparams.setLabel("Var"+ var_index++);
+				out.setVarName(oparams.getLabel());
+				out.addLastInstruction(
+						CPInstructionParser.parseSingleInstruction(
+								"CP" + Lops.OPERAND_DELIMITOR 
+								+ "rmvar" + Lops.OPERAND_DELIMITOR
+								+ oparams.getLabel() ) );
+			}
+			else {
+				// generate temporary filename and a variable name to hold the output produced by "rootNode"
+				oparams.setFile_name(scratch + "temp" + job_id++);
+				oparams.setLabel("mVar" + var_index++ );
+				
+				
+				// generate an instruction that creates a symbol table entry for the new variable
+				String createInst = prepareVariableInstruction("createvar", node);
+				out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+				
+				// temp file as well as the variable has to be deleted at the end
+				out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+						"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
+						+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
+						+ "true" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+	
+				// finally, add the generated filename and variable name to the list of outputs 
+				out.setFileName(oparams.getFile_name());
+				out.setVarName(oparams.getLabel());
+			}
+		} 
+		// rootNode is of type Data
+		else {
+			
+			if ( node.get_dataType() == DataType.SCALAR ) {
+				// generate assignment operations for final and transient writes
+				if ( oparams.getFile_name() == null ) {
+					String io_inst = "CP" + Lops.OPERAND_DELIMITOR + "assignvar"
+						+ Lops.OPERAND_DELIMITOR
+						+ node.getInputs().get(0).getOutputParameters().getLabel()
+						+ Lops.DATATYPE_PREFIX + node.getInputs().get(0).get_dataType()
+						+ Lops.VALUETYPE_PREFIX + node.getInputs().get(0).get_valueType()
+						+ Lops.OPERAND_DELIMITOR
+						+ node.getOutputParameters().getLabel()
+						+ Lops.DATATYPE_PREFIX + node.get_dataType()
+						+ Lops.VALUETYPE_PREFIX + node.get_valueType();
+					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+				}
+				else {
+					String io_inst = node.getInstructions(node.getInputs().get(0).getOutputParameters().getLabel(), oparams.getFile_name());
+					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+				}
+			}
+			else {
+				if ( ((Data)node).isTransient() ) {
+					
+					if ( et == ExecType.CP ) {
+						// If transient matrix write is in CP then its input MUST be executed in CP as well.
+						
+						// get variable and filename associated with the input
+						String inputFileName = node.getInputs().get(0).getOutputParameters().getFile_name();
+						String inputVarName = node.getInputs().get(0).getOutputParameters().getLabel();
+						
+						String constVarName = oparams.getLabel();
+						String constFileName = inputFileName + constVarName;
+						
+						/*
+						 * Symbol Table state must change as follows:
+						 * 
+						 * FROM:
+						 *     mvar1 -> temp21
+						 *  
+						 * TO:
+						 *     tVarH -> temp21tVarH
+						 */
+						// rename the temp variable to constant variable (e.g., mvvar mVar1 tVarH)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"
+										+ Lops.OPERAND_DELIMITOR
+										+ inputVarName
+										+ Lops.OPERAND_DELIMITOR
+										+ constVarName));
+						
+						// remove the old copy of transient file (rm temp21tVarH)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rm"
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName));
+						
+						// rename the new copy's name (e.g., mv temp21 temp21tVarA)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mv"
+										+ Lops.OPERAND_DELIMITOR
+										+ inputFileName
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName));
+						
+						// Now, tVarA refers to temporary filename temp21
+						// we need to update the file name (e.g., setfilename tVarA temp21tVarA remote)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "setfilename"
+										+ Lops.OPERAND_DELIMITOR
+										+ constVarName + Lops.DATATYPE_PREFIX + node.get_dataType() + Lops.VALUETYPE_PREFIX + node.get_valueType()
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName
+										+ Lops.OPERAND_DELIMITOR
+										+ "remote"));
+						out.setFileName(constFileName);
+					}
+					else {
+						/*
+						 * Since the "rootNode" is a transient data node, we first need to generate a 
+						 * temporary filename as well as a variable name to hold the <i>immediate</i> 
+						 * output produced by "rootNode". These generated HDFS filename and the 
+						 * variable name must be changed at the end of an iteration/program block 
+						 * so that the subsequent iteration/program block can correctly access the 
+						 * generated data. Therefore, we need to distinguish between the following:
+						 * 
+						 *   1) Temporary file name & variable name: They hold the immediate output 
+						 *   produced by "rootNode". Both names are generated below.
+						 *   
+						 *   2) Constant file name & variable name: They are constant across iterations. 
+						 *   Variable name is given by rootNode's label that is created in the upper layers.  
+						 *   File name is generated by concatenating "temporary file name" and "constant variable name".
+						 *   
+						 * Temporary files must be moved to constant files at the end of the iteration/program block.
+						 */
+						
+						// generate temporary filename & var name
+						String tempVarName = oparams.getLabel() + "temp";
+						String tempFileName = scratch + "temp" + job_id++;
+						
+						String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
+						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+						
+						String constVarName = oparams.getLabel();
+						String constFileName = tempFileName + constVarName;
+						
+						oparams.setFile_name(scratch + constFileName);
+						
+						/*
+						 * Since this is a node that denotes a transient read/write, we need to make sure 
+						 * that the data computed for a given variable in a given iteration is passed on 
+						 * to the next iteration. This is done by generating miscellaneous instructions 
+						 * that gets executed at the end of the program block.
+						 * 
+						 * The state of the symbol table must change 
+						 * 
+						 * FROM: 
+						 *     tVarA -> temp21tVarA (old copy of temp21)
+						 *     tVarAtemp -> temp21  (new copy that should override the old copy) 
+						 *
+						 * TO:
+						 *     tVarA -> temp21tVarA
+						 */
+						
+						// rename the temp variable to constant variable (e.g., mvvar tVarAtemp tVarA)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"
+										+ Lops.OPERAND_DELIMITOR
+										+ tempVarName
+										+ Lops.OPERAND_DELIMITOR
+										+ constVarName));
+						
+						// remove the old copy of transient file (rm temp21tVarA)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rm"
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName));
+						
+						// rename the new copy's name (e.g., mv temp21 temp21tVarA)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mv"
+										+ Lops.OPERAND_DELIMITOR
+										+ tempFileName
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName));
+						
+						// Now, tVarA refers to temporary filename temp21
+						// we need to update the file name (e.g., setfilename tVarA temp21tVarA remote)
+						out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "setfilename"
+										+ Lops.OPERAND_DELIMITOR
+										+ constVarName + Lops.DATATYPE_PREFIX + node.get_dataType() + Lops.VALUETYPE_PREFIX + node.get_valueType()
+										+ Lops.OPERAND_DELIMITOR
+										+ constFileName
+										+ Lops.OPERAND_DELIMITOR
+										+ "remote"));
+						
+						// finally, add the temporary filename and variable name to the list of outputs 
+						out.setFileName(tempFileName);
+						out.setVarName(tempVarName);
+					}
+				} 
+				// rootNode is not a transient write. It is a persistent write.
+				else {
+					if(et == ExecType.MR) {
+						// create a variable to hold the result produced by this "rootNode"
+						oparams.setLabel("pVar" + var_index++ );
+						
+						String createInst = prepareVariableInstruction("createvar", node);
+						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+							
+						// remove the variable
+						out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+								"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
+								+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
+								+ "false" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+							
+						// finally, add the filename and variable name to the list of outputs 
+						out.setFileName(oparams.getFile_name());
+						out.setVarName(oparams.getLabel());
+					}
+					else {
+						// generate a write instruction that writes matrix to HDFS
+						String io_inst = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(), 
+								node.getOutputParameters().getFile_name());
+						out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
+					}
+				}
+			}
+		}
+		
+		return out;
 	}
 	
 	/**
@@ -2077,9 +2325,10 @@ public class Dag<N extends Lops> {
 		ArrayList<String> recordReaderInstructions = new ArrayList<String>();
 		int numReducers = 0;
 		int replication = 1;
-		HashSet<String> inputLabels = new HashSet<String>();
-		HashSet<String> outputLabels = new HashSet<String>();
+		ArrayList<String> inputLabels = new ArrayList<String>();
+		ArrayList<String> outputLabels = new ArrayList<String>();
 		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
+		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
 		
 		
 		/* Find the nodes that produce an output */
@@ -2175,7 +2424,14 @@ public class Dag<N extends Lops> {
 			resultIndices.add(new Byte((byte) resultIndex));
 			
 			// setup output filenames and outputInfos and generate related instructions
-			setupNodeOutputs(rootNodes.elementAt(i), outputs, outputInfos, deleteinst, renameInstructions);
+			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR);
+			outputLabels.add(out.getVarName());
+			outputs.add(out.getFileName());
+			//if ( out.getFileName() == null )
+			//	System.err.println("error here .. ");
+			outputInfos.add(out.getOutInfo());
+			renameInstructions.addAll(out.getLastInstructions());
+			variableInstructions.addAll(out.getPreInstructions());
 			
 		}
 		
@@ -2247,6 +2503,7 @@ public class Dag<N extends Lops> {
 		mr.setOtherInstructionsInReducer(getCSVString(otherInstructionsReducer));
 
 		/* Add the prepared instructions to output set */
+		inst.addAll(variableInstructions);
 		inst.add(mr);
 		deleteinst.addAll(renameInstructions);
 
@@ -2391,7 +2648,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> aggInstructionsReducer,
 			ArrayList<String> otherInstructionsReducer,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			HashSet<String> inputLabels) throws LopsException
+			ArrayList<String> inputLabels) throws LopsException
 
 	{
 
@@ -2564,7 +2821,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings,
 			ArrayList<String> recordReaderInstructions,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			HashSet<String> inputLabels) throws LopsException
+			ArrayList<String> inputLabels) throws LopsException
 
 	{
 
@@ -2668,7 +2925,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings,
 			ArrayList<String> instructionsInMapper,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			HashSet<String> inputLabels) throws LopsException
+			ArrayList<String> inputLabels) throws LopsException
 
 	{
 
@@ -2751,9 +3008,6 @@ public class Dag<N extends Lops> {
 			if (node.getInputs().size() == 2)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
-			if (node.getInputs().size() == 3)
-				instructionsInMapper.add(node.getInstructions(inputIndices
-						.get(0), inputIndices.get(1), inputIndices.get(2), output_index));
 
 			return output_index;
 
@@ -2769,7 +3023,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings, ArrayList<InputInfo> inputInfos,
 			ArrayList<Long> numRows, ArrayList<Long> numCols,
 			ArrayList<Long> numRowsPerBlock, ArrayList<Long> numColsPerBlock,
-			HashMap<N, Integer> nodeIndexMapping, HashSet<String> inputLabels)
+			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels)
 			throws LopsException {
 		// treat rand as an input.
 		if (node.getType() == Type.RandLop && execNodes.contains(node)
@@ -2803,15 +3057,18 @@ public class Dag<N extends Lops> {
 						&& ((Data) node).getOperationType() == Data.OperationTypes.READ
 						&& ((Data) node).get_dataType() == DataType.MATRIX && !nodeIndexMapping
 						.containsKey(node))) {
-			// no label, so use file name
-			if (node.getOutputParameters().getLabel() == null) {
+			if (node.getOutputParameters().getFile_name() != null) {
 				inputStrings.add(node.getOutputParameters().getFile_name());
 			} else {
 				// use label name
 				inputStrings.add("##" + node.getOutputParameters().getLabel()
 						+ "##");
-				inputLabels.add(node.getOutputParameters().getLabel());
 			}
+			//if ( node.getType() == Lops.Type.Data && ((Data)node).isTransient())
+			//	inputStrings.add("##" + node.getOutputParameters().getLabel() + "##");
+			//else
+			//	inputStrings.add(node.getOutputParameters().getLabel());
+			inputLabels.add(node.getOutputParameters().getLabel());
 
 			numRows.add(node.getOutputParameters().getNum_rows());
 			numCols.add(node.getOutputParameters().getNum_cols());
@@ -2837,8 +3094,10 @@ public class Dag<N extends Lops> {
 			}
 
 			/*
-			 * Hardcode output Key and Value Classes for SortKeys. Ideally lops must encode this information.
+			 * Hardcode output Key and Value Classes for SortKeys
 			 */
+			// TODO: statiko -- remove this hardcoding -- i.e., lops must encode
+			// the information on key/value classes
 			if (node.getType() == Type.SortKeys) {
 				// SortKeys is the input to some other lop (say, L)
 				// InputInfo of L is the ouputInfo of SortKeys, which is
@@ -3055,6 +3314,7 @@ public class Dag<N extends Lops> {
 					throw new DMLRuntimeException(
 							"Unexpected error in topological sort.");
 				} catch (DMLRuntimeException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -3073,7 +3333,6 @@ public class Dag<N extends Lops> {
 		}
 
 	}
-
 
 	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, Vector<N> childNodes, ExecLocation type) {

@@ -1,7 +1,10 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Lops;
 import dml.lops.Rand;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.DataIdentifier;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.SQLLopProperties;
@@ -56,14 +59,20 @@ public class RandOp extends Hops
 	}
 	
 	@Override
-	public Lops constructLops()
+	public Lops constructLops() throws HopsException
 	{
 		if(get_lops() == null)
 		{
-			set_lops(new Rand(id, minValue, maxValue, sparsity,
-					probabilityDensityFunction, get_dataType(), get_valueType()));
-			get_lops().getOutputParameters().setDimensions(get_dim1(),
-					get_dim2(), get_rows_per_block(), get_cols_per_block());
+			ExecType et = optFindExecType();
+			if ( et == ExecType.MR ) {
+				set_lops(new Rand(id, minValue, maxValue, sparsity,
+						probabilityDensityFunction, get_dataType(), get_valueType()));
+				get_lops().getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_per_block(), get_cols_per_block());
+			}
+			else {
+				throw new HopsException("Invalid ExecType (" + et + ") for Rand.");
+			}
 		}
 		
 		return get_lops();
@@ -106,5 +115,15 @@ public class RandOp extends Hops
 		prop.setAggType(AGGREGATIONTYPE.NONE);
 		prop.setOpString("Rand");
 		return prop;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			throw new HopsException("Rand is not implemented for SINGLE_NODE runtime yet!");
+		
+		// Rand operation currently gets executed only in MR. 
+		// TODO: must implement it in CP, as well.
+		return ExecType.MR;
 	}
 }

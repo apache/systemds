@@ -57,6 +57,8 @@ class DAGFrame extends JFrame implements ActionListener
 	    gp.addGrappaListener(new GrappaAdapter());
 	    gp.setScaleToFit(false);
 	
+	    // java.awt.Rectangle bbox = graph.getBoundingBox().getBounds();
+	
 	    GridBagLayout gbl = new GridBagLayout();
 	    GridBagConstraints gbc = new GridBagConstraints();
 	
@@ -76,7 +78,7 @@ class DAGFrame extends JFrame implements ActionListener
 	
 	
 	public void actionPerformed(ActionEvent evt) {
-	    
+
 	}
 	
 }

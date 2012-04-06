@@ -18,6 +18,11 @@ public class GreaterThan extends ValueFunction {
 		// cloning is not supported for singleton classes
 		throw new CloneNotSupportedException();
 	}
+	
+	@Override
+	public double execute(double in1, double in2) {
+		return (Double.compare(in1, in2) > 0 ? 1.0 : 0.0);
+	}
 
 	@Override
 	public boolean compare(double in1, double in2) {

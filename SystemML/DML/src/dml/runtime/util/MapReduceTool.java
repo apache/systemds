@@ -24,8 +24,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import dml.runtime.matrix.MatrixCharacteristics;
-import dml.runtime.matrix.MatrixDimensionsMetaData;
-import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.Converter;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.MatrixBlock;
@@ -92,7 +90,17 @@ public class MapReduceTool {
 		JobConf job = new JobConf();
 		Path outpath = new Path(dir);
 		if (FileSystem.get(job).exists(outpath)) {
+			//System.err.println("Deleting " + outpath + " ... ");
 			FileSystem.get(job).delete(outpath, true);
+			//if ( ! FileSystem.get(job).delete(outpath, true) )
+				//System.err.println("delete failed: " + outpath );
+/*			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+*/			//System.out.println("deleted..");
 		}
 	}
 
@@ -132,7 +140,10 @@ public class MapReduceTool {
 	public static void renameFileOnHDFS(String originalDir, String newDir) throws IOException {
 		JobConf job = new JobConf();
 		Path originalpath = new Path(originalDir);
+		
+		deleteFileIfExistOnHDFS(newDir);
 		Path newpath = new Path(newDir);
+		
 		if (FileSystem.get(job).exists(originalpath)) {
 			FileSystem fs = FileSystem.get(job);
 			fs.rename(originalpath, newpath);
@@ -184,12 +195,15 @@ public class MapReduceTool {
 		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), new Path(filename), conf);
 		MatrixIndexes indexes = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
-		if (!reader.next(indexes, value))
+		if (!reader.next(indexes, value)) {
+			reader.close();
 			throw new IOException("no item to read!");
+		}
 		// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
 		assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
 		double ret = value.getValue();
 		assert (!reader.next(indexes, value));
+		reader.close();
 		return ret;
 	}
 
@@ -203,13 +217,16 @@ public class MapReduceTool {
 		
 		try {
 			MatrixBlock value = new MatrixBlock();
-			if (!reader.next(indexes, value))
+			if (!reader.next(indexes, value)) {
+				reader.close();
 				throw new IOException("no item to read!");
+			}
 			// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
 			assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
 
 			double ret = value.getValue(0, 0);
 			assert (!reader.next(indexes, value));
+			reader.close();
 			return ret;
 		} catch(Exception e) {
 			MatrixCell value = new MatrixCell();
@@ -220,6 +237,7 @@ public class MapReduceTool {
 
 			double ret = value.getValue(0, 0);
 			assert (!reader.next(indexes, value));
+			reader.close();
 			return ret;
 		}
 	}
@@ -232,12 +250,15 @@ public class MapReduceTool {
 		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), new Path(filename), conf);
 		MatrixIndexes indexes = new MatrixIndexes();
 		MatrixBlock value = new MatrixBlock();
-		if (!reader.next(indexes, value))
+		if (!reader.next(indexes, value)) {
+			reader.close();
 			throw new IOException("no item to read!");
+		}
 		// LOG.info("readSingleNumber from "+filename+": ("+indexes.getRowIndex()+indexes.getColumnIndex()+"): "+value.get());
 		assert (indexes.getColumnIndex() == 0 && indexes.getRowIndex() == 0);
 		double ret = value.getValue(0, 0);
 		assert (!reader.next(indexes, value));
+		reader.close();
 		return ret;
 	}
 	
@@ -313,8 +334,8 @@ public class MapReduceTool {
         br.close();
 	}
 	
-	public static void writeMetaDataFile ( String mtdfile, MetaData md, OutputInfo outinfo ) throws IOException {
-		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
+	public static void writeMetaDataFile ( String mtdfile, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {
+		//MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
         Path pt=new Path(mtdfile);
         FileSystem fs = FileSystem.get(new Configuration());
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
@@ -378,6 +399,7 @@ public class MapReduceTool {
 						array[(int)index.getRowIndex()-1][(int)index.getColumnIndex()-1]=cell.getValue();
 					}
 				}
+				reader.close();
 			}
 			
 		} catch (Exception e) {
@@ -461,7 +483,6 @@ public class MapReduceTool {
 			//System.out.println("**** numRead "+numRead+" -- "+readKey+": "+readValue);
 			numRead+=readValue.get();
 		}
-	   	
 	    currentStream.close();
 		return readKey.get();
 		

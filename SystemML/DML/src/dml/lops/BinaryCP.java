@@ -3,6 +3,7 @@ package dml.lops;
 
  
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.DataType;
  
@@ -25,7 +26,8 @@ public class BinaryCP extends Lops
 		AND, OR, 
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
-		Over
+		Over,
+		MATMULT
 	}
 	
 	OperationTypes operation;
@@ -53,7 +55,7 @@ public class BinaryCP extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties(ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -66,7 +68,7 @@ public class BinaryCP extends Lops
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		String opString = new String ("");
+		String opString = new String (getExecType() + Lops.OPERAND_DELIMITOR);
 		
 		ValueType vtype_input1 = this.getInputs().get(0).get_valueType();
 		
@@ -119,97 +121,29 @@ public class BinaryCP extends Lops
 			opString += "iqsize"; 
 			vtype_input1 = ValueType.STRING; // first input is a filename
 			break;
+		
+		case MATMULT:
+			opString += "ba+*";
 			
+			String mminst = opString + OPERAND_DELIMITOR + 
+			input1 + VALUETYPE_PREFIX + getInputs().get(0).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			input2 + VALUETYPE_PREFIX + getInputs().get(1).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+	        output + VALUETYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+
+			return mminst;
+
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + operation);
 		}
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-				input1 + VALUETYPE_PREFIX + vtype_input1 + OPERAND_DELIMITOR + 
-				input2 + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output + VALUETYPE_PREFIX + this.get_valueType() ;
+		String inst = opString + OPERAND_DELIMITOR + 
+				input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + vtype_input1 + OPERAND_DELIMITOR + 
+				input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 
 		return inst;
 		
 	}
-	
-	/*
-	@Override
-	public String getInstructions(String input1, String input2, String output) throws LopsException
-	{
-		String opString = new String ("");
-		DataType dtype_input1 = getInputs().get(0).get_dataType();
-		ValueType vtype_input1 = getInputs().get(0).get_valueType();
-		
-		opString += "CP" + Lops.OPERAND_DELIMITOR;
-		
-		switch ( operation ) {
-		
-		// Arithmetic 
-		case ADD:
-			opString += "+"; break;
-		case SUBTRACT:
-			opString += "-"; break;
-		case MULTIPLY:
-			opString += "*"; break;
-		case DIVIDE:
-			opString += "/"; break;
-		case POW:	
-			opString += "^"; break;
-			
-		// Relational 
-		case LESS_THAN:
-			opString += "<"; break;
-		case LESS_THAN_OR_EQUALS:
-			opString += "<="; break;
-		case GREATER_THAN:
-			opString += ">"; break;
-		case GREATER_THAN_OR_EQUALS:
-			opString += ">="; break;
-		case EQUALS:
-			opString += "=="; break;
-		case NOT_EQUALS:
-			opString += "!="; break;
-		
-		// Boolean 
-		case AND:
-			opString += "&&"; break;
-		case OR:
-			opString += "||"; break;
-		
-		// Builtin Functions 
-		case LOG:
-			opString += "log"; break;
-		case MIN:
-			opString += "min"; break;
-		case MAX:
-			opString += "max"; break;
-		
-		case PRINT:
-			opString += "print"; break;
-			
-		case IQSIZE:
-			opString += "iqsize"; 
-			vtype_input1 = ValueType.STRING; // first input is a filename
-			break;
-			
-		default:
-			throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + operation);
-		}
-		
-		opString += Lops.OPERAND_DELIMITOR;
-		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-				input1 + DATATYPE_PREFIX + dtype_input1 + VALUETYPE_PREFIX + vtype_input1 + OPERAND_DELIMITOR + 
-				input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
-
-		return inst;
-		
-	}
-	*/
 	
 	@Override
 	public dml.lops.Lops.SimpleInstType getSimpleInstructionType()

@@ -3,6 +3,7 @@ package dml.lops;
 import java.util.HashSet;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -39,7 +40,7 @@ public class CombineBinary extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.COMBINE);
-		this.lps.setProperties( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	/**
@@ -54,7 +55,7 @@ public class CombineBinary extends Lops
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
 	{
-		String inst = new String("");
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		
 		/* 
 		 * Determine whether or not the second input denotes weights vector.

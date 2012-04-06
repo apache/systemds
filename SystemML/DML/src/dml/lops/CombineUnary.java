@@ -3,6 +3,7 @@ package dml.lops;
 import java.util.HashSet;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 import dml.utils.LopsException;
@@ -34,7 +35,7 @@ public class CombineUnary extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.SORT);
-		this.lps.setProperties( ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	/**
@@ -49,7 +50,7 @@ public class CombineUnary extends Lops
 	@Override
 	public String getInstructions(int input_index1, int output_index) throws LopsException
 	{
-		String inst = new String("");
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += "combineunary" + OPERAND_DELIMITOR + 
 		        input_index1 + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
 		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;

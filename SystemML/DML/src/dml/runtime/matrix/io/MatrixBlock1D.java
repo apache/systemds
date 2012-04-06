@@ -1830,7 +1830,9 @@ public class MatrixBlock1D extends MatrixValue{
 			sparseBlock.put(new CellIndex(r,c), v);
 		}
 		sparse=true;
+		denseBlock = null;
 	}
+
 	public void sparseToDense() {
 		
 		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);

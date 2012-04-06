@@ -137,8 +137,6 @@ public class MMRJMR {
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		Group rowgroup, colgroup;
 		
-		InputInfo[] infos = new InputInfo[resultIndexes.length];
-		
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -164,7 +162,6 @@ public class MMRJMR {
 				stats[i].numRows = maxrow;
 				stats[i].numColumns = maxcol;
 			}
-			infos[i] = OutputInfo.getMatchingInputInfo(outputInfos[i]);
 		}
 		
 		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
@@ -174,7 +171,7 @@ public class MMRJMR {
 		////	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		//}
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 
 }

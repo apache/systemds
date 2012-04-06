@@ -2,10 +2,7 @@ package dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
-import dml.api.DMLScript;
 import dml.lops.compile.JobType;
 import dml.lops.runtime.RunMRJobs;
 import dml.meta.PartitionParams;
@@ -24,7 +21,6 @@ import dml.runtime.instructions.CPInstructions.FileObject;
 import dml.runtime.instructions.CPInstructions.IntObject;
 import dml.runtime.instructions.CPInstructions.StringObject;
 import dml.runtime.matrix.JobReturn;
-import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.utils.DMLRuntimeException;
@@ -51,23 +47,6 @@ public class ELProgramBlock extends ProgramBlock {
 	}
 
 	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
-		if ( DMLScript.DEBUG ) {
-			// print _variables map
-			System.out.println("____________________________________");
-			System.out.println("___ Variables ____");
-			Iterator<Entry<String, Data>> it = _variables.entrySet().iterator();
-			while (it.hasNext()) {
-				Entry<String,Data> pairs = it.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
-			System.out.println("___ Matrices ____");
-			Iterator<Entry<String, MetaData>> mit = _matrices.entrySet().iterator();
-			while (mit.hasNext()) {
-				Entry<String,MetaData> pairs = mit.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
-			System.out.println("____________________________________");
-		}
 		updateMatrixLabels();		//basically replaces ##..## stuff with actual file names of matr varbls
 		for (int i = 0; i < _inst.size(); i++) {	//only one itern occurs though
 			Instruction currInst = _inst.get(i);
@@ -90,7 +69,8 @@ public class ELProgramBlock extends ProgramBlock {
 				}
 				//Populate returned stats into symbol table of matrices
 				for ( int index=0; index < jb.getMetaData().length; index++) {
-					_matrices.put(new String("" + currMRInst.getIv_outputs()[index]), jb.getMetaData(index));
+					// TODO: Fix This
+					//_matrices.put(new String("" + currMRInst.getIv_outputs()[index]), jb.getMetaData(index));
 				}
 				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 			} else if (currInst instanceof CPInstruction) {
@@ -159,7 +139,8 @@ public class ELProgramBlock extends ProgramBlock {
 		}
 		//Populate returned stats into symbol table of matrices; also delete pre-reblk files from hdfs and entries in vars and mats
 		for ( int index=0; index < jb.getMetaData().length; index++) {
-			_matrices.put(new String("" + _pp.getOutputStrings()[index] + "re"), jb.getMetaData(index));
+			// TODO: Fix This
+			//_matrices.put(new String("" + _pp.getOutputStrings()[index] + "re"), jb.getMetaData(index));
 			
 			String filepathname = "" + _pp.getOutputStrings()[index];
 			FileCPInstruction instDelFile = null;

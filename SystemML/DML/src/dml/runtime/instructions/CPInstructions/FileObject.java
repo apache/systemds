@@ -1,5 +1,8 @@
 package dml.runtime.instructions.CPInstructions;
 
+import dml.parser.Expression.DataType;
+import dml.parser.Expression.ValueType;
+
 
 public class FileObject extends Data {
 
@@ -16,6 +19,7 @@ public class FileObject extends Data {
 	}
 
 	public FileObject(String name, String path){
+		super(DataType.SCALAR, ValueType.STRING);
  		_name = name;
 		_filePath = path;
 		_isLocal = false;

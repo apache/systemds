@@ -1,6 +1,7 @@
 package dml.lops.runtime;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -11,6 +12,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
 import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Lops;
 import dml.lops.compile.JobType;
 import dml.meta.PartitionBlockHashMapMR;
@@ -20,10 +22,11 @@ import dml.meta.PartitionCellMR;
 import dml.meta.PartitionParams;
 import dml.meta.PartitionSubMatrixMR;
 import dml.parser.DMLTranslator;
+import dml.parser.Expression.DataType;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.instructions.MRJobInstruction;
 import dml.runtime.instructions.CPInstructions.Data;
-import dml.runtime.instructions.CPInstructions.FileObject;
+import dml.runtime.instructions.CPInstructions.MatrixObject;
 import dml.runtime.instructions.CPInstructions.ScalarObject;
 import dml.runtime.matrix.CMCOVMR;
 import dml.runtime.matrix.CombineMR;
@@ -88,13 +91,13 @@ public class RunMRJobs {
 			if ( inst.getIv_outputs() != null )
 				updatedOutputLabels = updateLabels(inst.getIv_outputs(), inst.getOutputLabelValueMapping());
 			if ( inst.getIv_rows() != null && updatedInputLabels != null )
-				updatedRows = updateRows(inst.getIv_rows(), updatedInputLabels, pb.getMetaData());
+				updatedRows = updateRows(inst.getIv_rows(), updatedInputLabels, inst.getInputLabels(), pb);
 			if ( inst.getIv_cols() != null && updatedInputLabels != null )
-				updatedCols = updateCols(inst.getIv_cols(), updatedInputLabels, pb.getMetaData());
+				updatedCols = updateCols(inst.getIv_cols(), updatedInputLabels, inst.getInputLabels(), pb);
 			if ( inst.getIv_num_rows_per_block() != null && updatedInputLabels != null )
-				updatedRowsPerBlock = updateRowsPerBlock(inst.getIv_num_rows_per_block(), updatedInputLabels, pb.getMetaData());
+				updatedRowsPerBlock = updateRowsPerBlock(inst.getIv_num_rows_per_block(), updatedInputLabels, inst.getInputLabels(), pb);
 			if ( inst.getIv_num_cols_per_block() != null && updatedInputLabels != null )
-				updatedColsPerBlock = updateColsPerBlock(inst.getIv_num_cols_per_block(), updatedInputLabels, pb.getMetaData());
+				updatedColsPerBlock = updateColsPerBlock(inst.getIv_num_cols_per_block(), updatedInputLabels, inst.getInputLabels(), pb);
 			
 			if (inst.getJobType() == JobType.GMR) {
 				boolean blocked_rep = true;
@@ -159,12 +162,14 @@ public class RunMRJobs {
 					// look at the first instruction
 					String[] parts = ins[0].split(Lops.OPERAND_DELIMITOR);
 					
-					if ( parts[0].equalsIgnoreCase("valuepick") || parts[0].equalsIgnoreCase("rangepick")) {
-						String [] fields = parts[1].split(Lops.VALUETYPE_PREFIX);
+					if ( parts[1].equalsIgnoreCase("valuepick") || parts[1].equalsIgnoreCase("rangepick")) {
+						String [] fields = parts[2].split(Lops.VALUETYPE_PREFIX);
 						int input_index = Integer.parseInt(fields[0]); 
 						
 						String fname = inst.getIv_inputs()[input_index];
-						inst.getIv_inputInfos()[input_index].metadata = pb.getMetaData(fname);
+						String varname = inst.getInputLabels().get(input_index);
+						MatrixObject mobj = (MatrixObject)pb.getVariable(varname);
+						inst.getIv_inputInfos()[input_index].metadata = mobj.getMetaData();
 					}
 					else 
 						throw new DMLRuntimeException("Recordreader instructions for opcode=" + parts[0] + " are not supported yet.");
@@ -386,7 +391,7 @@ public class RunMRJobs {
 					}
 					
 					// write out metadata file
-					MapReduceTool.writeMetaDataFile(inst.getIv_outputs()[i] + ".mtd", ret.getMetaData(i), outinfo);
+					MapReduceTool.writeMetaDataFile(inst.getIv_outputs()[i] + ".mtd", ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 				}
 				return ret;
 			} catch (IOException e) {
@@ -406,20 +411,22 @@ public class RunMRJobs {
 			String label = it.next();
 			Data val = labelValueMapping.get(label);
 
-			String replacement = null;
-
-			if (val instanceof FileObject)
-				replacement = ((FileObject) val).getFilePath();
-
-			if (val instanceof ScalarObject)
-				replacement = "" + ((ScalarObject) val).getStringValue();
-
-			// System.out.println("Replacement string = " + replacement);
-			// System.out.println("Original string = " + updateInst + " label ="
-			// + label);
-			updateInst = updateInst.replaceAll("##" + label + "##", replacement);
-
-			//System.out.println("New string = " + updateInst);
+			if ( val != null ) {
+				String replacement = null;
+				if (val.getDataType() == DataType.MATRIX) {
+					replacement = ((MatrixObject)val).getFileName();
+				}
+	
+				if (val.getDataType() == DataType.SCALAR)
+					replacement = "" + ((ScalarObject) val).getStringValue();
+	
+				// System.out.println("Replacement string = " + replacement);
+				// System.out.println("Original string = " + updateInst + " label ="
+				// + label);
+				updateInst = updateInst.replaceAll("##" + label + "##", replacement);
+	
+				//System.out.println("New string = " + updateInst);
+			}
 		}
 
 		return updateInst;
@@ -433,8 +440,121 @@ public class RunMRJobs {
 
 		return str_array;
 	}
+	
+	private static long[] updateRows(long[] rows, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
+		
+		long[] newrows = new long[rows.length];
+		
+		MatrixCharacteristics matchar;
+		for ( int i=0; i < rows.length && inputVars.size() > 0; i++) {
+			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
+			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
+			
+			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
+			// it can not be NULL at this point
+			if ( matchar == null || matchar.numRows == -1 ) { 
+				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
+			}
+			else {
+			//	if ( rows[i] == -1 )
+					newrows[i] = matchar.numRows;
+			//	else {
+			//		if ( rows[i] != matchar.numRows ) 
+			//			throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
+			//		else
+			//			newrows[i] = matchar.numRows;
+			//	}
+			}
+		}
+		return newrows;
+	}
 
-	private static long[] updateRows(long[] rows, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
+	private static long[] updateCols(long[] cols, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
+
+		long[] newcols = new long[cols.length];
+		
+		MatrixCharacteristics matchar;
+		for ( int i=0; i < cols.length&& inputVars.size() > 0; i++) {
+			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
+			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
+			
+			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
+			// it can not be NULL at this point
+			if ( matchar == null || matchar.numColumns == -1 ) { 
+				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
+			}
+			else {
+			//	if ( cols[i] == -1 )
+					newcols[i] = matchar.numColumns;
+			//	else {
+			//		if ( cols[i] != matchar.numColumns ) 
+			//			throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
+			//		else
+			//			newcols[i] = matchar.numColumns;
+			//	}
+			}
+		}
+		return newcols;
+	}
+	
+	private static int[] updateRowsPerBlock(int[] rpb, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
+		
+		int[] newrpb = new int[rpb.length];
+		
+		MatrixCharacteristics matchar;
+		for ( int i=0; i < rpb.length&& inputVars.size() > 0; i++) {
+			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
+			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
+			
+			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
+			// it can not be NULL at this point
+			if ( matchar == null) { 
+				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
+			}
+			else {
+				//if ( rpb[i] == -1 )
+					newrpb[i] = matchar.numRowsPerBlock;
+				//else {
+				//	if ( rpb[i] != matchar.numRowsPerBlock ) 
+				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + rpb[i] + " != " + matchar.numRowsPerBlock);
+				//	else
+				//		newrpb[i] = matchar.numRowsPerBlock;
+				//}
+			}
+		}
+		return newrpb;
+	}
+
+	private static int[] updateColsPerBlock(int[] cpb, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
+		
+		int[] newcpb = new int[cpb.length];
+		
+		MatrixCharacteristics matchar;
+		for ( int i=0; i < cpb.length&& inputVars.size() > 0; i++) {
+			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
+			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
+			
+			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
+			// it can not be NULL at this point
+			if ( matchar == null) { 
+				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
+			}
+			else {
+				//if ( cpb[i] == -1 )
+					newcpb[i] = matchar.numColumnsPerBlock;
+				//else {
+				//	if ( cpb[i] != matchar.numColumnsPerBlock ) 
+				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + cpb[i] + " != " + matchar.numColumnsPerBlock);
+				//	else
+				//		newcpb[i] = matchar.numColumnsPerBlock;
+				//}
+			}
+		}
+		return newcpb;
+	}
+
+
+/*	private static long[] updateRows(long[] rows, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
 		
 		long[] newrows = new long[rows.length];
 		
@@ -448,14 +568,14 @@ public class RunMRJobs {
 				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
 			}
 			else {
-				//if ( rows[i] == -1 )
+				if ( rows[i] == -1 )
 					newrows[i] = matchar.numRows;
-				//else {
-				//	if ( rows[i] != matchar.numRows ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
-				//	else
-				//		newrows[i] = matchar.numRows;
-				//}
+				else {
+					if ( rows[i] != matchar.numRows ) 
+						throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
+					else
+						newrows[i] = matchar.numRows;
+				}
 			}
 		}
 		return newrows;
@@ -475,14 +595,14 @@ public class RunMRJobs {
 				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
 			}
 			else {
-				//if ( cols[i] == -1 )
+				if ( cols[i] == -1 )
 					newcols[i] = matchar.numColumns;
-				//else {
-				//	if ( cols[i] != matchar.numColumns ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
-				//	else
-				//		newcols[i] = matchar.numColumns;
-				//}
+				else {
+					if ( cols[i] != matchar.numColumns ) 
+						throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
+					else
+						newcols[i] = matchar.numColumns;
+				}
 			}
 		}
 		return newcols;
@@ -542,7 +662,7 @@ public class RunMRJobs {
 		return newcpb;
 	}
 
-	/**
+*/	/**
 	 * Method to determine whether to execute a particular job in local-mode or 
 	 * cluster-mode. This decision is take based on the "jobType" 
 	 * (GMR, Reblock, etc.) as well as the input matrix dimensions, 
@@ -554,6 +674,9 @@ public class RunMRJobs {
 	 * @throws DMLRuntimeException 
 	 */
 	public static ExecMode getExecMode(JobType jt, MatrixCharacteristics[] stats) throws DMLRuntimeException {
+		
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecMode.LOCAL;
 		
 		if ( flagLocalModeOpt == false )
 			return ExecMode.CLUSTER;

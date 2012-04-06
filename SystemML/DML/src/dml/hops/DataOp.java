@@ -2,6 +2,7 @@ package dml.hops;
 
 import dml.lops.Data;
 import dml.lops.Lops;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.SQLLopProperties;
@@ -77,7 +78,7 @@ public class DataOp extends Hops {
 
 			if (_dataop == DataOpTypes.PERSISTENTREAD) {
 				l = new Data(
-						getFileName(), HopsData2Lops.get(_dataop), null, null,
+						getFileName(), HopsData2Lops.get(_dataop), get_name(), null,
 						get_dataType(), get_valueType(), false);
 			} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
 				l = new Data(
@@ -86,7 +87,7 @@ public class DataOp extends Hops {
 			} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
 				l = new Data(
 						getFileName(), HopsData2Lops.get(_dataop), this
-								.getInput().get(0).constructLops(), null, null,
+								.getInput().get(0).constructLops(), get_name(), null,
 						get_dataType(), get_valueType(), false);
 			} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
 				l = new Data(
@@ -295,5 +296,12 @@ public class DataOp extends Hops {
 			}
 		}
 		return stmt;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		// Since a DATA hop does not represent any computation, 
+		// this function is not applicable. 
+		return null;
 	}
 }

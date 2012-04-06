@@ -9,6 +9,7 @@ import dml.lops.GroupedAggregate;
 import dml.lops.Lops;
 import dml.lops.ParameterizedBuiltin;
 import dml.lops.CombineBinary.OperationTypes;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.SQLLops;
@@ -166,6 +167,12 @@ public class ParameterizedBuiltinOp extends Hops {
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
 		// TODO Auto-generated method stub
 		return null;
 	}

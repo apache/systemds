@@ -14,6 +14,7 @@ import dml.parser.DataIdentifier;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.FormatType;
 import dml.parser.Expression.ValueType;
+import dml.utils.HopsException;
 import dml.utils.LopsException;
 
 public class RandOpTest {
@@ -28,7 +29,7 @@ public class RandOpTest {
 	private static final String PDF = "uniform";
 
 	@Test
-	public void testConstructLops() {
+	public void testConstructLops() throws HopsException {
 		RandOp ro = getRandOpInstance();
 		Lops lop = ro.constructLops();
 		if (!(lop instanceof Rand))
@@ -44,7 +45,7 @@ public class RandOpTest {
 		assertTrue(lop.getOutputParameters().isBlocked_representation());
 		assertEquals(Format.BINARY, lop.getOutputParameters().getFormat());
 		try {
-			assertEquals("Rand" + dml.lops.Lops.OPERAND_DELIMITOR + "0"
+			assertEquals("MR" + dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + dml.lops.Lops.OPERAND_DELIMITOR + "0"
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "1"
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "rows=" + NUM_ROWS
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "cols=" + NUM_COLS

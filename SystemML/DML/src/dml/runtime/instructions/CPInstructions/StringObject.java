@@ -1,5 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
+import dml.parser.Expression.ValueType;
+
 public class StringObject extends ScalarObject {
 	private String _value;
 
@@ -8,7 +10,7 @@ public class StringObject extends ScalarObject {
 	}
 
 	public StringObject(String name, String val){
-		super(name);
+		super(name, ValueType.STRING);
 		_value = val;
 	}
 

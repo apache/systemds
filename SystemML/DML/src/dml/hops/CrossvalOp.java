@@ -2,6 +2,7 @@ package dml.hops;
 
 import dml.lops.CrossvalLop;
 import dml.lops.Lops;
+import dml.lops.LopProperties.ExecType;
 import dml.parser.MetaLearningFunctionParameters;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -49,6 +50,12 @@ public class CrossvalOp extends Hops {
 
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
 		// TODO Auto-generated method stub
 		return null;
 	}

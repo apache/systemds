@@ -136,7 +136,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 		// execute the function block
 		fpb.setVariables(functionVariables);
-		fpb.setMetaData(pb.getMetaData());
 	
 		fpb.execute(null);
 		
@@ -152,12 +151,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 			pb.getVariables().put(boundVarName, boundValue);
 		}
-	
-		// this is the place where we can check if the function wrote any files out.
-		pb.setMetaData(fpb.getMetaData());
-			
-		//return result;
-		
 		return null;
 	}
 

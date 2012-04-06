@@ -1,5 +1,7 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Aggregate;
 import dml.lops.Binary;
 import dml.lops.BinaryCP;
@@ -75,7 +77,7 @@ public class BinaryOp extends Hops {
 							getInput().get(0).get_cols_per_block());
 
 					SortKeys sort = SortKeys.constructSortByValueLop(
-							(Lops) combine,
+							combine,
 							SortKeys.OperationTypes.WithNoWeights,
 							DataType.MATRIX, ValueType.DOUBLE);
 
@@ -150,7 +152,7 @@ public class BinaryOp extends Hops {
 			} else if (op == Hops.OpOp2.CENTRALMOMENT) {
 				CentralMoment cm = new CentralMoment(getInput().get(0)
 						.constructLops(), getInput().get(1).constructLops(),
-						get_dataType(), get_valueType());
+						DataType.MATRIX, get_valueType());
 
 				UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 						.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
@@ -242,46 +244,54 @@ public class BinaryOp extends Hops {
 								.get(1).get_dataType() == DataType.MATRIX))) {
 
 					// One operand is Matrix and the other is scalar
-
+					ExecType et = optFindExecType();
 					Unary unary1 = new Unary(getInput().get(0).constructLops(),
 							getInput().get(1).constructLops(), HopsOpOp2LopsU
-									.get(op), get_dataType(), get_valueType());
+									.get(op), get_dataType(), get_valueType(), et);
 					unary1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_per_block(),
 							get_cols_per_block());
-
 					set_lops(unary1);
-
 				} else {
 
 					// Both operands are Matrixes
 
-					Group group1, group2;
-					Binary binary = null;
-
-					group1 = group2 = null;
-
-					// Both operands are Matrixes
-					group1 = new Group(getInput().get(0).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-					group2 = new Group(getInput().get(1).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-
-					binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op),
-							get_dataType(), get_valueType());
-					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					group2.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					binary.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					set_lops(binary);
-
+					ExecType et = optFindExecType();
+					if ( et == ExecType.CP ) {
+						Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
+								get_dataType(), get_valueType(), et);
+						binary.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						set_lops(binary);
+					}
+					else {
+						Group group1, group2;
+						Binary binary = null;
+	
+						group1 = group2 = null;
+	
+						// Both operands are Matrixes
+						group1 = new Group(getInput().get(0).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+						group2 = new Group(getInput().get(1).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+	
+						binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op),
+								get_dataType(), get_valueType(), et);
+						group1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						group2.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						binary.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						set_lops(binary);
+					}
 				}
 			}
 		}
@@ -893,5 +903,34 @@ public class BinaryOp extends Hops {
 			throw new HopsException("Cannot create SQL for operation "
 					+ Hops.HopsOpOp2String.get(this.op));
 		return sql;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		DataType dt1 = getInput().get(0).get_dataType();
+		DataType dt2 = getInput().get(1).get_dataType();
+		if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
+			// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
+			// OR if both are vectors
+			if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+					|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
+				return ExecType.CP;
+		}
+		else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
+			if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+				return ExecType.CP;
+		}
+		else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
+			if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
+				return ExecType.CP;
+		}
+		else
+			return ExecType.CP;
+		
+		return ExecType.MR;
 	}
 }

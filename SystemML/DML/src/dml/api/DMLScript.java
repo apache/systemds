@@ -49,10 +49,10 @@ import dml.utils.visualize.DotGraph;
 public class DMLScript {
 
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + /*" (-nz)?" + */ " [-d | -debug]?" + " [-v | -visualize]?"  + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path \n"
 			+ " -s: <filename> will be interpreted as a DML script string \n"
-			// COMMENT OUT FOR BIRelease
+			//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
 			//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
 			+ " [-d | -debug]: (optional) output debug info \n"
 			// COMMENT OUT -v option before RELEASE
@@ -67,7 +67,7 @@ public class DMLScript {
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;
 	public static boolean LOG = false;	
-	public enum RUNTIME_PLATFORM { HADOOP, NZ, INVALID };
+	public enum RUNTIME_PLATFORM { HADOOP, NZ, SINGLE_NODE, INVALID };
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
@@ -148,7 +148,19 @@ public class DMLScript {
 			// handle config file
 			//} else if(args[argid].equalsIgnoreCase("-nz")){
 			//	rtplatform = RUNTIME_PLATFORM.NZ;
-		
+			} else if ( args[argid].equalsIgnoreCase("-exec")) {
+				argid++;
+				if ( args[argid].equalsIgnoreCase("hadoop")) 
+					rtplatform = RUNTIME_PLATFORM.HADOOP;
+				else if ( args[argid].equalsIgnoreCase("nz"))
+					rtplatform = RUNTIME_PLATFORM.NZ;
+				else if ( args[argid].equalsIgnoreCase("singlenode"))
+					rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+				else {
+					System.err.println("Unknown runtime platform: " + args[argid]);
+					return;
+				}
+			// handle config file
 			} else if (args[argid].startsWith("-config=")){
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
@@ -362,6 +374,17 @@ public class DMLScript {
 			System.out.println("INFO: dagQueue is not set");
 		}
 		
+		/*
+		if (DEBUG) {
+			System.out.println("********************** PIGGYBACKING DAG *******************");
+			dmlt.printLops(prog);
+			dmlt.resetLopsDAGVisitStatus(prog);
+
+			DotGraph gt = new DotGraph();
+			gt.drawLopsDAG(prog, "PiggybackingDAG", 200, 200, path_to_src, VISUALIZE);
+			dmlt.resetLopsDAGVisitStatus(prog);
+		}
+		*/
 		
 		rtprog.setDAGQueue(dagQueue);
 
@@ -496,6 +519,11 @@ public class DMLScript {
 		
 		// read in configuration files
 		NimbleConfig config = new NimbleConfig();
+
+
+		//if(dmlCfg.getTextValue("NimbleSystemConfigFile") == null)
+		//	return null;
+
 
 		try {
 			config.parseSystemDocuments(dmlCfg.getConfig_file_name());

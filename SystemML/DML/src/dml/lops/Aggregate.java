@@ -17,7 +17,7 @@ public class Aggregate extends Lops
 	
 	/** Aggregate operation types **/
 	
-	public enum OperationTypes {Sum,Product,Min,Max,MaxIndex,Trace,DiagM2V,KahanSum,KahanTrace,Mean};	
+	public enum OperationTypes {Sum,Product,Min,Max,Trace,DiagM2V,KahanSum,KahanTrace,Mean,MaxIndex};	
 	OperationTypes operation;
  
 	private boolean isCorrectionUsed = false;
@@ -51,11 +51,11 @@ public class Aggregate extends Lops
 			lps.addCompatibility(JobType.RAND);
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
-			this.lps.setProperties( ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 	
@@ -86,41 +86,50 @@ public class Aggregate extends Lops
 		return operation;
 	}
 	
+	
+	private String getOpcode() {
+		switch(operation) {
+		case Sum: 
+		case Trace: 
+			return "a+"; 
+		case Mean: 
+			return "amean"; 
+		case Product: 
+			return "a*"; 
+		case Min: 
+			return "amin"; 
+		case Max: 
+			return "amax"; 
+		
+		case KahanSum:
+		case KahanTrace: 
+			return "ak+"; 
+		default:
+			throw new UnsupportedOperationException("Instruction is not defined for Aggregate operation: " + operation);
+		}
+	}
+	
+	@Override
+	public String getInstructions(String input1, String output) throws LopsException {
+		String opcode = getOpcode(); 
+		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
+		        input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+		return inst;
+	}
+	
 	@Override
 	public String getInstructions(int input_index, int output_index) throws LopsException
 	{
 		boolean isCorrectionApplicable = false;
 		
-		String opString = new String("");
-		switch(operation) {
-		case Sum: 
-		case Trace: 
-			opString += "a+"; break;
-		case Mean: 
-			isCorrectionApplicable = true; 
-			opString += "amean"; 
-			break;
-		case Product: 
-			opString += "a*"; break;
-		case Min: 
-			opString += "amin"; break;
-		case Max: 
-			opString += "amax"; break;
-		case MaxIndex:
-			opString += "arimax"; break;
-		case KahanSum:
-		case KahanTrace: 
-			isCorrectionApplicable = true; 
-			opString += "ak+"; 
-			break;
-		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Aggregate operation: " + operation);
-		}
+		String opcode = getOpcode(); 
+		if (operation == OperationTypes.Mean || operation == OperationTypes.KahanSum || operation == OperationTypes.KahanTrace ) 
+			isCorrectionApplicable = true;
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-		        input_index + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
+		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
+		        input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		
 		if ( isCorrectionApplicable )
 			// add correction information to the instruction

@@ -2,16 +2,15 @@
 package dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.CPInstructions.BooleanObject;
 import dml.runtime.instructions.CPInstructions.CPInstruction;
-import dml.runtime.instructions.CPInstructions.Data;
-import dml.runtime.instructions.CPInstructions.ScalarCPInstruction;
+import dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
+import dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
+import dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
-import dml.runtime.matrix.MetaData;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
@@ -102,8 +101,8 @@ public class IfProgramBlock extends ProgramBlock {
 	private String findPredicateResultVar ( ) {
 		String result = null;
 		for ( Instruction si : _predicate ) {
-			if ( si instanceof ScalarCPInstruction ) {
-				result = ((ScalarCPInstruction) si).getOutputVariableName();  
+			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable ) {
+				result = ((ComputationCPInstruction) si).getOutputVariableName();  
 			}
 			else if(si instanceof SQLScalarAssignInstruction)
 				result = ((SQLScalarAssignInstruction)si).getVariableName();
@@ -117,8 +116,8 @@ public class IfProgramBlock extends ProgramBlock {
 		boolean isSQL = false;
 		// Execute all scalar simple instructions (relational expressions, etc.)
 		for (Instruction si : _predicate ) {
-			if ( si instanceof ScalarCPInstruction )
-				((ScalarCPInstruction)si).processInstruction(this);
+			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable )
+				((CPInstruction)si).processInstruction(this);
 			else if(si instanceof SQLScalarAssignInstruction)
 			{
 				((SQLScalarAssignInstruction)si).execute(ec);
@@ -133,7 +132,7 @@ public class IfProgramBlock extends ProgramBlock {
 		
 		// Execute all other instructions in the predicate (variableCPInstruction, etc.)
 		for (Instruction si : _predicate ) {
-			if ( ! (si instanceof ScalarCPInstruction) && (si instanceof CPInstruction))
+			if ( ! (si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable))
 				((CPInstruction)si).processInstruction(this);
 		}
 		
@@ -152,10 +151,8 @@ public class IfProgramBlock extends ProgramBlock {
 			for (ProgramBlock pb : this._childBlocksIfBody){
 				
 				pb.setVariables(_variables);
-				pb.setMetaData(_matrices);
 				pb.execute(ec);
 				_variables = pb._variables;
-				_matrices = pb.getMetaData();
 			}
 		}
 		else {
@@ -164,10 +161,8 @@ public class IfProgramBlock extends ProgramBlock {
 			for (ProgramBlock pb : this._childBlocksElseBody){
 				
 				pb.setVariables(_variables);
-				pb.setMetaData(_matrices);
 				pb.execute(ec);
 				_variables = pb._variables;
-				_matrices = pb.getMetaData();
 			}
 		}
 		

@@ -99,8 +99,6 @@ public class GroupedAggMR {
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
-		InputInfo[] infos = new InputInfo[resultIndexes.length];
-		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		Group rowgroup, colgroup;
 		
@@ -125,11 +123,9 @@ public class GroupedAggMR {
 			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
 			stats[i].numRows = maxrow;
 			stats[i].numColumns = maxcol;
-			
-			infos[i] = OutputInfo.getMatchingInputInfo(outputInfos[i]);
 			//System.out.println("stats: "+stats[i]);
 		}
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 }

@@ -34,15 +34,18 @@ public class RandInstruction extends UnaryMRInstructionBase
 	{
 		String[] s = str.split(Instruction.OPERAND_DELIM);
 		
+		// s[0]: CP or MR (exec type)
+		// s[1]: Rand (opcode)
+		
 		Operator op = null;
-		byte input = Byte.parseByte(s[1]);
-		byte output = Byte.parseByte(s[2]);
-		long rows = Long.parseLong(s[3].substring(5));
-		long cols = Long.parseLong(s[4].substring(5));
-		double minValue = Double.parseDouble(s[5].substring(4));
-		double maxValue = Double.parseDouble(s[6].substring(4));
-		double sparsity = Double.parseDouble(s[7].substring(9));
-		String pdf = s[8].substring(4);
+		byte input = Byte.parseByte(s[2]);
+		byte output = Byte.parseByte(s[3]);
+		long rows = Long.parseLong(s[4].substring(5));
+		long cols = Long.parseLong(s[5].substring(5));
+		double minValue = Double.parseDouble(s[6].substring(4));
+		double maxValue = Double.parseDouble(s[7].substring(4));
+		double sparsity = Double.parseDouble(s[8].substring(9));
+		String pdf = s[9].substring(4);
 		
 		return new RandInstruction(op, input, output, rows, cols, minValue, maxValue, sparsity, pdf, str);
 	}

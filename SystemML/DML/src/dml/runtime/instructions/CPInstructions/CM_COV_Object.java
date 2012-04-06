@@ -1,5 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
+import dml.parser.Expression.DataType;
+import dml.parser.Expression.ValueType;
 import dml.runtime.matrix.operators.CMOperator;
 import dml.runtime.matrix.operators.Operator;
 import dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
@@ -35,6 +37,7 @@ public class CM_COV_Object extends Data {
 	
 	public CM_COV_Object()
 	{
+		super(DataType.OBJECT, ValueType.UNKNOWN);
 		w=0;
 		mean=new KahanObject(0,0);
 		m2=new KahanObject(0,0);

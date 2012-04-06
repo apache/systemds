@@ -19,6 +19,7 @@ public class LopProperties {
 	 *   
 	 */
 	int ID, level;
+	ExecType execType;
 	ExecLocation execLoc;
 	int compatibleJobs;
 	boolean breaksAlignment;
@@ -31,6 +32,7 @@ public class LopProperties {
 	
 	public LopProperties() {
 		ID = getNextLopID();
+		execType = ExecType.INVALID;
 		execLoc = ExecLocation.INVALID;
 		compatibleJobs = JobType.INVALID.getBase();
 		breaksAlignment = true;
@@ -44,6 +46,10 @@ public class LopProperties {
 	
 	public ExecLocation getExecLocation() {
 		return execLoc;
+	}
+	
+	public ExecType getExecType() {
+		return execType;
 	}
 	
 	public int getCompatibleJobs() {
@@ -91,7 +97,8 @@ public class LopProperties {
 		isAligner = align;
 	}
 	
-	public void setProperties ( ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
+	public void setProperties ( ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
+		execType = et;
 		execLoc = el;
 		breaksAlignment = ba;
 		isAligner = aligner;

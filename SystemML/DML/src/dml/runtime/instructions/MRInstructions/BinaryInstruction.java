@@ -2,13 +2,19 @@ package dml.runtime.instructions.MRInstructions;
 
 import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.Divide;
+import dml.runtime.functionobjects.Equals;
 import dml.runtime.functionobjects.EqualsReturnDouble;
+import dml.runtime.functionobjects.GreaterThan;
+import dml.runtime.functionobjects.GreaterThanEquals;
 import dml.runtime.functionobjects.GreaterThanEqualsReturnDouble;
 import dml.runtime.functionobjects.GreaterThanReturnDouble;
+import dml.runtime.functionobjects.LessThan;
+import dml.runtime.functionobjects.LessThanEquals;
 import dml.runtime.functionobjects.LessThanEqualsReturnDouble;
 import dml.runtime.functionobjects.LessThanReturnDouble;
 import dml.runtime.functionobjects.Minus;
 import dml.runtime.functionobjects.Multiply;
+import dml.runtime.functionobjects.NotEquals;
 import dml.runtime.functionobjects.NotEqualsReturnDouble;
 import dml.runtime.functionobjects.Plus;
 import dml.runtime.instructions.Instruction;
@@ -44,37 +50,37 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		in2 = Byte.parseByte(parts[2]);
 		out = Byte.parseByte(parts[3]);
 		
-		if ( opcode.equalsIgnoreCase("b+") ) {
+		if ( opcode.equalsIgnoreCase("+") ) {
 			return new BinaryInstruction(new BinaryOperator(Plus.getPlusFnObject()), in1, in2, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("b-") ) {
+		else if ( opcode.equalsIgnoreCase("-") ) {
 			return new BinaryInstruction(new BinaryOperator(Minus.getMinusFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b*") ) {
+		else if ( opcode.equalsIgnoreCase("*") ) {
 			return new BinaryInstruction(new BinaryOperator(Multiply.getMultiplyFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b/") ) {
+		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new BinaryInstruction(new BinaryOperator(Divide.getDivideFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("bmax") ) {
+		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b>") ) {
+		else if ( opcode.equalsIgnoreCase(">") ) {
 			return new BinaryInstruction(new BinaryOperator(GreaterThanReturnDouble.getGreaterThanReturnDoubleFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b>=") ) {
+		else if ( opcode.equalsIgnoreCase(">=") ) {
 			return new BinaryInstruction(new BinaryOperator(GreaterThanEqualsReturnDouble.getGreaterThanEqualsReturnDoubleFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b<") ) {
+		else if ( opcode.equalsIgnoreCase("<") ) {
 			return new BinaryInstruction(new BinaryOperator(LessThanReturnDouble.getLessThanReturnDoubleFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b<=") ) {
+		else if ( opcode.equalsIgnoreCase("<=") ) {
 			return new BinaryInstruction(new BinaryOperator(LessThanEqualsReturnDouble.getLessThanEqualsReturnDoubleFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b==") ) {
+		else if ( opcode.equalsIgnoreCase("==") ) {
 			return new BinaryInstruction(new BinaryOperator(EqualsReturnDouble.getEqualsReturnDoubleFnObject()), in1, in2, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("b!=") ) {
+		else if ( opcode.equalsIgnoreCase("!=") ) {
 			return new BinaryInstruction(new BinaryOperator(NotEqualsReturnDouble.getNotEqualsReturnDoubleFnObject()), in1, in2, out, str);
 		}
 		return null;
@@ -124,10 +130,6 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1.getValue(), 
 				in2.getValue(), out.getValue(), ((BinaryOperator)optr));
 		
-	//	System.out.println(this.toString());
-	//	System.out.println("in1: "+in1);
-	//	System.out.println("in1: "+in2);
-	//	System.out.println("out: "+out);
 		//put the output value in the cache
 		if(out==tempValue)
 			cachedValues.set(output, out);

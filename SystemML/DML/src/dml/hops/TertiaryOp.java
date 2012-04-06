@@ -69,9 +69,9 @@ public class TertiaryOp extends Hops {
 						OperationTypes.PreCentralMoment, 
 						(Lops) getInput().get(0).constructLops(), 
 						(Lops) getInput().get(1).constructLops(), 
-						get_dataType(), get_valueType());
+						DataType.MATRIX, get_valueType());
 				CentralMoment cm = new CentralMoment(combine, (Lops) getInput()
-						.get(2).constructLops(), get_dataType(),
+						.get(2).constructLops(), DataType.MATRIX,
 						get_valueType());
 				UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 						.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
@@ -108,13 +108,13 @@ public class TertiaryOp extends Hops {
 								OperationTypes.PreSort,
 								(Lops) getInput().get(0).constructLops(),
 								(Lops) getInput().get(1).constructLops(),
-								get_dataType(), get_valueType());
+								DataType.MATRIX, get_valueType());
 
 				SortKeys sort = SortKeys
 						.constructSortByValueLop(
 								(Lops) combine,
 								SortKeys.OperationTypes.WithWeights,
-								get_dataType(), get_valueType());
+								DataType.MATRIX, get_valueType());
 
 				PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal> pick = new PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal>(
 						sort,
@@ -528,5 +528,11 @@ public class TertiaryOp extends Hops {
 		union.setSelect2(stmt2);
 		union.setUnionType(UNIONTYPE.UNIONALL);
 		return union;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -1,28 +1,15 @@
 package dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector ;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import dml.api.DMLScript;
 import dml.lops.runtime.RunMRJobs;
 import dml.meta.PartitionParams;
-import dml.meta.PartitionParams.PartitionType;
-import dml.parser.AssignmentStatement;
 import dml.parser.CVStatement;
-import dml.parser.DMLProgram;
-import dml.parser.DMLTranslator;
-import dml.parser.DataIdentifier;
-import dml.parser.FunctionStatementBlock;
-import dml.parser.InputStatement;
-import dml.parser.IntIdentifier;
 import dml.parser.MetaLearningFunctionParameters;
-import dml.parser.OutputStatement;
-import dml.parser.StatementBlock;
-import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.CPInstructionParser;
 import dml.runtime.instructions.Instruction;
@@ -32,22 +19,16 @@ import dml.runtime.instructions.CPInstructions.BooleanObject;
 import dml.runtime.instructions.CPInstructions.CPInstruction;
 import dml.runtime.instructions.CPInstructions.Data;
 import dml.runtime.instructions.CPInstructions.DoubleObject;
-import dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import dml.runtime.instructions.CPInstructions.IntObject;
-import dml.runtime.instructions.CPInstructions.ScalarCPInstruction;
 import dml.runtime.instructions.CPInstructions.StringObject;
 import dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import dml.runtime.matrix.JobReturn;
-import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.MetaData;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
-import dml.utils.DMLException;
- 
-import dml.utils.configuration.DMLConfig;
- 
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
 import dml.utils.Statistics;
+import dml.utils.configuration.DMLConfig;
  
 public class ELUseProgramBlock extends ProgramBlock {
 	
@@ -79,7 +60,8 @@ public class ELUseProgramBlock extends ProgramBlock {
 			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
 			}
 			System.out.println("___ Matrices ____");
-			Iterator<Entry<String, MetaData>> mit = _matrices.entrySet().iterator();
+			// TODO: Fix This
+			Iterator<Entry<String, MetaData>> mit = null; // _matrices.entrySet().iterator();
 			while (mit.hasNext()) {
 				Entry<String,MetaData> pairs = mit.next();
 			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
@@ -99,7 +81,8 @@ public class ELUseProgramBlock extends ProgramBlock {
 				
 				/* Populate returned stats into symbol table of matrices */
 				for ( int index=0; index < jb.getMetaData().length; index++) {
-					_matrices.put(currMRInst.getIv_outputs()[index], jb.getMetaData(index));
+					// TODO: Fix This
+					//_matrices.put(currMRInst.getIv_outputs()[index], jb.getMetaData(index));
 					
 					// TODO: DRB: need to add binding to variables here
 					
@@ -153,7 +136,8 @@ public class ELUseProgramBlock extends ProgramBlock {
 			
 			// execute the function block
 			testpb.setVariables(functionVariables);
-			testpb.setMetaData(this.getMetaData());
+			// TODO: Fix This
+			//testpb.setMetaData(this.getMetaData());
 			testpb.execute(ec);
 			HashMap<String, Data> returnedVariables = testpb.getVariables(); 
 			
@@ -170,7 +154,8 @@ public class ELUseProgramBlock extends ProgramBlock {
 			}
 
 			// this is the place where we can check if the function wrote any files out.
-			this.setMetaData(testpb.getMetaData());
+			// TODO: Fix This
+			//this.setMetaData(testpb.getMetaData());
 			
 			
 			/*************** aggregate errors ********************************************************/
@@ -181,9 +166,9 @@ public class ELUseProgramBlock extends ProgramBlock {
 			String testOutputName = _params.getTestFunctionReturnParams().get(0) ;
 			
 			VariableCPInstruction getError = (VariableCPInstruction) InstructionParser.parseSingleInstruction("assigndoublevar" + Instruction.OPERAND_DELIM + testOutputName + foldId + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM + "iter" + foldId + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE);
-			ScalarCPInstruction ssi = null;
+			CPInstruction ssi = null;
 			try {
-				ssi = (ScalarCPInstruction) InstructionParser.parseSingleInstruction("+" + Instruction.OPERAND_DELIM + "iter" + foldId + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM + outputVar + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM + outputVar + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE) ;
+				ssi = (CPInstruction) InstructionParser.parseSingleInstruction("+" + Instruction.OPERAND_DELIM + "iter" + foldId + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM + outputVar + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM + outputVar + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE) ;
 			}
 			catch ( Exception e ) {
 				e.printStackTrace();
@@ -195,11 +180,11 @@ public class ELUseProgramBlock extends ProgramBlock {
 		
 		// handle the aggregation of the errors across the folds to compute final error for CV
 		if(_params.getAgg() == CVStatement.AGG.avg) {
-			ScalarCPInstruction ssi = null;
+			CPInstruction ssi = null;
 			try {
 				//ssi = new ScalarSimpleInstructions("/:::" + outputVar + ":::" + pp.numFolds + ":::" + outputVar) ;
 				// ssi = (ScalarCPInstruction) InstructionParser.parseSingleInstruction("/:::" + outputVar + ":::" + pp.numFolds + ":::" + outputVar) ;
-				ssi = (ScalarCPInstruction) InstructionParser.parseSingleInstruction("/" + Instruction.OPERAND_DELIM + outputVar + Instruction.OPERAND_DELIM + _pp.numFolds + Instruction.OPERAND_DELIM + outputVar) ;
+				ssi = (CPInstruction) InstructionParser.parseSingleInstruction("/" + Instruction.OPERAND_DELIM + outputVar + Instruction.OPERAND_DELIM + _pp.numFolds + Instruction.OPERAND_DELIM + outputVar) ;
 			}
 			catch (Exception e) {
 				e.printStackTrace();

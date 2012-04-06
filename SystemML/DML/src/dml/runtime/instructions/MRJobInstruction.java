@@ -1,5 +1,6 @@
 package dml.runtime.instructions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -166,15 +167,15 @@ public class MRJobInstruction extends Instruction
 	}
 
 	
-	HashSet <String> inputLabels;
-	public HashSet<String> getInputLabels()
+	ArrayList <String> inputLabels;
+	public ArrayList<String> getInputLabels()
 	{
 		return inputLabels;
 	}
 
 
-	HashSet <String> outputLabels;
-	public HashSet<String> getOutputLabels()
+	ArrayList <String> outputLabels;
+	public ArrayList<String> getOutputLabels()
 	{
 		return outputLabels;
 	}
@@ -320,7 +321,7 @@ public class MRJobInstruction extends Instruction
 	 * @param inputLabels
 	 * @param outputLabels
 	 */
-	public void setInputOutputLabels(HashSet<String> inputLabels, HashSet<String> outputLabels) {
+	public void setInputOutputLabels(ArrayList<String> inputLabels, ArrayList<String> outputLabels) {
 		this.inputLabels = inputLabels;
 		this.outputLabels = outputLabels;
 	}
@@ -350,8 +351,8 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
-			long[] nr, long[] nc, int[] bnr, int[] bnc, byte[] resultIndexes, byte[] resultDimsUnknown, PartitionParams pp, HashSet <String> inLabels, 
-			HashSet <String> outLabels, HashMap <String, Data> outputLabelValueMapping) {
+			long[] nr, long[] nc, int[] bnr, int[] bnc, byte[] resultIndexes, byte[] resultDimsUnknown, PartitionParams pp, ArrayList <String> inLabels, 
+			ArrayList <String> outLabels, HashMap <String, Data> outputLabelValueMapping) {
 		this.iv_inputs = inputs ;
 		this.iv_inputInfos = inputInfo ;
 		this.iv_outputs = outputs ;
@@ -382,7 +383,7 @@ public class MRJobInstruction extends Instruction
 	public void setGMRInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
 			String recordReaderInstructions, String mapperInstructions, 
 			String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -410,7 +411,7 @@ public class MRJobInstruction extends Instruction
 	public void setRandInstructions(long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
 			String randInstructions, String mapperInstructions, 
 			String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown,
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			//setInputs(null, null);
@@ -459,7 +460,7 @@ public class MRJobInstruction extends Instruction
 
 	public void setMMCJInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 			String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -502,7 +503,7 @@ public class MRJobInstruction extends Instruction
 
 	public void setMMRJInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 			String shuffleInstructions, String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -549,7 +550,7 @@ public class MRJobInstruction extends Instruction
 	// It just has two inputs
 	public void setSORTKEYSInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block,  
 			String mapperInstructions, String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -592,7 +593,7 @@ public class MRJobInstruction extends Instruction
 
 	public void setCombineInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
 			String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -637,7 +638,7 @@ public class MRJobInstruction extends Instruction
 	
 	public void setCentralMomentInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
 			String mapperInstructions, String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -681,7 +682,7 @@ public class MRJobInstruction extends Instruction
 	
 	public void setGroupedAggInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
 			String shuffleInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);
@@ -726,7 +727,7 @@ public class MRJobInstruction extends Instruction
 	
 	public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 			String reblockInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
+			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
 	{
 		try {
 			setInputs(input, inputInfo);

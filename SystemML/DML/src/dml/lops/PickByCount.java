@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -34,16 +35,20 @@ extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		ExecLocation location = ExecLocation.RecordReader;
+		ExecType et = ExecType.MR;
+		
+		// TODO: this logic should happen in the hop layer
 		
 		if ( op == OperationTypes.VALUEPICK && input2.get_dataType() == DataType.SCALAR ) {
 			// if the second input to PickByCount == SCALAR then this lop should get executed in control program
 			location = ExecLocation.ControlProgram;
+			et = ExecType.CP;
 			lps.addCompatibility(JobType.INVALID);
 		}
 		else {
 			lps.addCompatibility(JobType.GMR);
 		}
-		this.lps.setProperties( location, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( et, location, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -66,7 +71,7 @@ extends Lops
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
 	{
-		String inst = new String("");
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		String opString = new String ("");
 		ValueType vtype1 = this.getInputs().get(0).get_valueType();
 		ValueType vtype2 = this.getInputs().get(1).get_valueType();
@@ -142,7 +147,7 @@ extends Lops
 			throw new LopsException("Instruction not defined for PickByCount opration: " + operation);
 		}
 		
-		String inst = new String("");
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += opString + OPERAND_DELIMITOR + 
 				input1 + VALUETYPE_PREFIX + vtype1 + OPERAND_DELIMITOR + 
 				input2 + VALUETYPE_PREFIX + vtype2 + OPERAND_DELIMITOR + 

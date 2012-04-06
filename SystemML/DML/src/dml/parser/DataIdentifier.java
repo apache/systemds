@@ -17,7 +17,7 @@ public class DataIdentifier extends Identifier {
 	
 	private Expression _rowLowerBound = null, _rowUpperBound = null, _colLowerBound = null, _colUpperBound = null;
 	
-	public void setIndices(ArrayList<ArrayList<Expression>> passed) {
+	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
 		if (passed.size() != 2) 
 			System.out.println("[E] indices wrong length -- should be 2");
 		ArrayList<Expression> rowIndices = passed.get(0);

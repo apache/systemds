@@ -17,13 +17,6 @@ public class Program {
 
 	protected HashMap<String, Data> _programVariables;
 	private HashMap<String, FunctionProgramBlock> _functionProgramBlocks;
-	
-	/*
-	 *  Data structure to store meta data (dimensions, etc.) associated with each matrix
-	 *  String: denotes the file name on HDFS. It corresponds to a matrix.
-	 *  MatrixCharacteristics: metadata 
-	 */
-	protected HashMap<String, MetaData> _matrices;
 
 	//handle to the nimble dag queue
 	private DAGQueue _dagQueue;
@@ -32,7 +25,6 @@ public class Program {
 		_functionProgramBlocks = new HashMap<String, FunctionProgramBlock>(); 
 		_programBlocks = new ArrayList<ProgramBlock>();
 		_programVariables = new HashMap<String, Data>();
-		_matrices = new HashMap<String, MetaData>();
 	}
 
 	public void addFunctionProgramBlock(String key, FunctionProgramBlock fpb){
@@ -68,11 +60,9 @@ public class Program {
 			// execute each top-level program block
 			ProgramBlock pb = _programBlocks.get(i);
 			pb.setVariables(_programVariables);
-			pb.setMetaData(_matrices);
 			
 			pb.execute(ec);
 			_programVariables = pb.getVariables();
-			_matrices = pb.getMetaData();
 		}
 	}
 	

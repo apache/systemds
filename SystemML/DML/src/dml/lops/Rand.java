@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.OutputParameters.Format;
 import dml.lops.compile.JobType;
 import dml.parser.DataIdentifier;
@@ -54,13 +55,14 @@ public class Rand extends Lops
 		boolean definesMRJob = true;
 		
 		lps.addCompatibility(JobType.RAND);
-		this.lps.setProperties( ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties( ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 	}
 
 	@Override
 	public String getInstructions(int inputIndex, int outputIndex)
 	{
 		StringBuilder inst = new StringBuilder();
+		inst.append(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst.append("Rand");
 		inst.append(OPERAND_DELIMITOR + inputIndex);
 		inst.append(OPERAND_DELIMITOR + outputIndex);

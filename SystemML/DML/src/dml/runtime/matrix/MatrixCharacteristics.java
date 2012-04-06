@@ -38,6 +38,11 @@ public class MatrixCharacteristics{
 		set(nr, nc, bnr, bnc);
 	}
 
+	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz)
+	{
+		set(nr, nc, bnr, bnc, nnz);
+	}
+
 	public MatrixCharacteristics() {
 	}
 
@@ -48,18 +53,41 @@ public class MatrixCharacteristics{
 		numColumnsPerBlock=bnc;
 	}
 	
+	public void set(long nr, long nc, int bnr, int bnc, long nnz) {
+		numRows=nr;
+		numColumns=nc;
+		numRowsPerBlock=bnr;
+		numColumnsPerBlock=bnc;
+		nonZeros = nnz;
+	}
+	
 	public void set(MatrixCharacteristics that) {
 		this.numRows=that.numRows;
 		this.numColumns=that.numColumns;
 		this.numRowsPerBlock=that.numRowsPerBlock;
 		this.numColumnsPerBlock=that.numColumnsPerBlock;
-		
+		this.nonZeros = that.nonZeros;
 	}
 	
+	public long get_rows(){
+		return numRows;
+	}
+
+	public long get_cols(){
+		return numColumns;
+	}
+	
+	public int get_rows_per_block() {
+		return numRowsPerBlock;
+	}
+	
+	public int get_cols_per_block() {
+		return numColumnsPerBlock;
+	}
 	public String toString()
 	{
-		return "Dimension: "+numRows+" x "+numColumns+" with "+nonZeros
-		+" nonzero cells (block size: "+numRowsPerBlock+" x "+numColumnsPerBlock+")";
+		return "["+numRows+" x "+numColumns+", nnz="+nonZeros
+		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}
 	
 	public void setDimension(long nr, long nc)
@@ -72,6 +100,10 @@ public class MatrixCharacteristics{
 	{
 		numRowsPerBlock=bnr;
 		numColumnsPerBlock=bnc;
+	}
+	
+	public void setNonZeros(long nnz) {
+		nonZeros = nnz;
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 

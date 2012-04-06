@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 
@@ -33,7 +34,7 @@ public class MMCJ extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.MMCJ);
-		this.lps.setProperties( ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override
@@ -45,7 +46,7 @@ public class MMCJ extends Lops
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index)
 	{
-		String opString = new String("");
+		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		opString += "cpmm";
 		
 		String inst = new String("");

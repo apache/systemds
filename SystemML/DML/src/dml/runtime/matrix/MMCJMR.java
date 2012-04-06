@@ -161,8 +161,6 @@ public class MMCJMR {
 		// number of non-zeros
 		stats[outputIndex].nonZeros=group.getCounter(Byte.toString(outputMatrixID));
 		
-		InputInfo[] infos = new InputInfo[stats.length];
-		
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
 			if ( resultDimsUnknown != (byte) 1 )
@@ -181,10 +179,9 @@ public class MMCJMR {
 			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
 			stats[outputIndex].numRows = maxrow;
 			stats[outputIndex].numColumns = maxcol;
-			infos[outputIndex] = OutputInfo.getMatchingInputInfo(outputinfo);
 		}
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
 	}
 	
 	private static MatrixCharacteristics[] commonSetup(JobConf job, boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -311,7 +308,6 @@ public class MMCJMR {
 		
 		// number of non-zeros
 		stats[outputIndex].nonZeros=group.getCounter(Byte.toString(outputMatrixID));
-		InputInfo[] infos = new InputInfo[stats.length];
 		
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
@@ -331,10 +327,9 @@ public class MMCJMR {
 			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
 			stats[outputIndex].numRows = maxrow;
 			stats[outputIndex].numColumns = maxcol;
-			infos[outputIndex] = OutputInfo.getMatchingInputInfo(outputinfo);
 		}
 
 		
-		return new JobReturn(stats, infos, runjob.isSuccessful());
+		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
 	}
 }

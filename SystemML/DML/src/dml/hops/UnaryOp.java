@@ -1,5 +1,7 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Aggregate;
 import dml.lops.BinaryCP;
 import dml.lops.CombineUnary;
@@ -181,10 +183,10 @@ public class UnaryOp extends Hops {
 				}
 
 			} else {
+				ExecType et = optFindExecType();
 				Unary unary1 = new Unary(
 						getInput().get(0).constructLops(), HopsOpOp1LopsU
-								.get(_op), get_dataType(), get_valueType());
-
+								.get(_op), get_dataType(), get_valueType(), et);
 				unary1.getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_per_block(), get_cols_per_block());
 				set_lops(unary1);
@@ -404,5 +406,17 @@ public class UnaryOp extends Hops {
 		else
 			throw new HopsException("Other unary operations than matrix and scalar operations are currently not supported");
 		return stmt;
+	}
+
+	@Override
+	protected ExecType optFindExecType() throws HopsException {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		// Choose CP, if the input dimensions are below threshold or if the input is a vector
+		if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			return ExecType.CP;
+		else 
+			return ExecType.MR;
 	}
 }

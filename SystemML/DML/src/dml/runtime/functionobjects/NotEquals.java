@@ -20,6 +20,11 @@ public class NotEquals extends ValueFunction {
 	}
 
 	@Override
+	public double execute(double in1, double in2) {
+		return (in1 != in2 ? 1.0 : 0.0);
+	}
+	
+	@Override
 	public boolean compare(boolean in1, boolean in2) {
 		return (in1 != in2);
 	}

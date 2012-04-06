@@ -1,5 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
+import dml.parser.Expression.ValueType;
+
 
 public class BooleanObject extends ScalarObject  {
 
@@ -10,7 +12,7 @@ public class BooleanObject extends ScalarObject  {
 	}
 
 	public BooleanObject(String name,boolean val){
-		super(name);
+		super(name, ValueType.BOOLEAN);
 		_value = val;
 	}
 

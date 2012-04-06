@@ -66,18 +66,18 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "rdiagM2V", MRINSTRUCTION_TYPE.AggregateUnary);
 
 		// BINARY Instruction Opcodes 
-		String2MRInstructionType.put( "b+"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b-"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b*"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b/"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "bmax"  , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "bmin"  , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b>"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b>="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b<"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b<="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b=="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "b!="   , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.Binary);
+		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.Binary);
 
 		// BUILTIN Instruction Opcodes 
 		String2MRInstructionType.put( "abs"  , MRINSTRUCTION_TYPE.Unary);
@@ -92,21 +92,21 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
 
 		// SCALAR Instruction Opcodes 
-		String2MRInstructionType.put( "s+"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s-"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.Scalar);
 		String2MRInstructionType.put( "s-r"   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s*"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s/"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.Scalar);
 		String2MRInstructionType.put( "so"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s^"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "smax"  , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "smin"  , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s>"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s>="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s<"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s<="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s=="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s!="   , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.Scalar);
+		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.Scalar);
 		// String2InstructionType.put( "sl"    , MRINSTRUCTION_TYPE.Scalar);
 
 		// REORG Instruction Opcodes 

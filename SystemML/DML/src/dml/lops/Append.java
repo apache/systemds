@@ -2,15 +2,27 @@ package dml.lops;
 
 import dml.utils.LopsException;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 
 public class Append extends Lops{
 
+	public Append(Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt, ExecType et) 
+	{
+		super(Lops.Type.Append, dt, vt);
+		init(input1, input2, input3, dt, vt, et);
+		
+	}
+	
 	public Append(Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt) 
 	{
 		super(Lops.Type.Append, dt, vt);		
-		
+		init(input1, input2, input3, dt, vt, ExecType.MR);
+	}
+	
+	public void init(Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt, ExecType et) 
+	{
 		this.addInput(input1);
 		input1.addOutput(this);
 
@@ -20,15 +32,20 @@ public class Append extends Lops{
 		this.addInput(input3);
 		input3.addOutput(this);
 		
-		//confirm this
-		lps.addCompatibility(JobType.REBLOCK_TEXT);
-		lps.addCompatibility(JobType.REBLOCK_BINARY);
-		
 		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		this.lps.setProperties( ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		if ( et == ExecType.MR ) {
+			//confirm this
+			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			lps.addCompatibility(JobType.REBLOCK_BINARY);
+			this.lps.setProperties( et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 	
 	@Override

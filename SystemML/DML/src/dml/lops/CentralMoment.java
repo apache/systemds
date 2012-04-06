@@ -1,6 +1,7 @@
 package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 
@@ -35,7 +36,7 @@ public class CentralMoment extends Lops {
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.CM_COV);
-		this.lps.setProperties(ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties(ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 	}
 
 	@Override
@@ -46,7 +47,7 @@ public class CentralMoment extends Lops {
 
 	@Override
 	public String getInstructions(int input_index, int output_index) {
-		String opString = new String("");
+		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		opString += "cm";
 
 		// get label for scalar input -- the "order" for central moment.

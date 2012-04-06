@@ -2,6 +2,7 @@ package dml.lops;
 
 import dml.hops.Hops.FileFormatTypes;
 import dml.lops.LopProperties.ExecLocation;
+import dml.lops.LopProperties.ExecType;
 import dml.lops.OutputParameters.Format;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
@@ -43,15 +44,15 @@ public class Data extends Lops
 			this.getOutputParameters().setLabel(literal);
 		}
 
-		
+		transient_var = isTransient;
 		if(name != null)
 		{
-			this.getOutputParameters().setLabel(name);
+			if ( transient_var )
+				this.getOutputParameters().setLabel(name); // tvar+name
+			else
+				this.getOutputParameters().setLabel("p"+op+name);
 		}
-		transient_var = isTransient;
-		
-		
-		
+
 		this.getOutputParameters().setFile_name(fName);
 
 		setLopProperties ( );
@@ -80,12 +81,14 @@ public class Data extends Lops
 			this.getOutputParameters().setLabel(literal);
 		}
 
-		
+		transient_var = isTransient;
 		if(name != null)
 		{
-			this.getOutputParameters().setLabel(name);
+			if ( transient_var )
+				this.getOutputParameters().setLabel(name);  // tvar+name
+			else
+				this.getOutputParameters().setLabel("p"+op+name);
 		}
-		transient_var = isTransient;
 		
 		this.getOutputParameters().setFile_name(fName);
 
@@ -121,7 +124,8 @@ public class Data extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		this.lps.setProperties ( ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
+		// ExecType is invalid for Data lop
+		this.lps.setProperties ( ExecType.INVALID, ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	/**
@@ -192,22 +196,81 @@ public class Data extends Lops
 	 */
 	@Override
 	public String getInstructions(String input1, String input2) throws LopsException {
-		if ( get_dataType() == DataType.SCALAR && getOutputParameters().getFile_name() != null) {
-			String str = "";
+		// get_dataType() == DataType.SCALAR && 
+		if ( getOutputParameters().getFile_name() != null) {
+			String str = "CP" + OPERAND_DELIMITOR;
 			if ( operation == OperationTypes.READ ) 
-				str += "readScalar";
+				str += "read";
 			else if ( operation == OperationTypes.WRITE)
-				str += "writeScalar";
+				str += "write";
 			else
 				throw new LopsException("Unknown operation: " + operation);
+			
 			str += OPERAND_DELIMITOR + 
 					input1 +  
+					DATATYPE_PREFIX + get_dataType() + 
 					VALUETYPE_PREFIX + get_valueType() + 
 					OPERAND_DELIMITOR +
 					input2 + 
+					DATATYPE_PREFIX + DataType.SCALAR + 
 					VALUETYPE_PREFIX + ValueType.STRING;
+
+			// attach outputInfo in case of matrices
+			if ( operation == OperationTypes.WRITE ) {
+				str += OPERAND_DELIMITOR;
+				if ( get_dataType() == DataType.MATRIX ) {
+					OutputParameters oparams = getOutputParameters();
+					if ( oparams.getFormat() == Format.TEXT )
+						str += "textcell";
+					else {
+						if ( oparams.getNum_rows_per_block() > 0 || oparams.getNum_cols_per_block() > 0 )
+							str += "binaryblock";
+						else
+							str += "binarycell";
+					}
+				}
+				else {
+					// scalars will always be written in text format
+					str += "textcell";
+				}
+				str += DATATYPE_PREFIX + DataType.SCALAR + 
+						VALUETYPE_PREFIX + ValueType.STRING;
+			}
 			return str;
 		}
 		throw new LopsException("Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
+	}
+	
+	/**
+	 * Method to generate an instruction that updates symbol table with metadata, hdfsfile name, etc.
+	 * 
+	 * @throws LopsException 
+	 */
+	public String getInstructions() throws LopsException {
+		String inst = "CP" + OPERAND_DELIMITOR + "createvar";
+		OutputParameters oparams = getOutputParameters();
+		if ( get_dataType() == DataType.MATRIX ) {
+			inst +=  OPERAND_DELIMITOR 
+					+ oparams.getLabel() + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR 
+					+ oparams.getFile_name() + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.STRING + OPERAND_DELIMITOR
+			        + oparams.getNum_rows() + OPERAND_DELIMITOR
+			        + oparams.getNum_cols() + OPERAND_DELIMITOR
+			        + oparams.getNum_rows_per_block() + OPERAND_DELIMITOR
+			        + oparams.getNum_cols_per_block() + OPERAND_DELIMITOR
+	        		+ "0" + OPERAND_DELIMITOR; // NNZs.. TODO: should pass the correct nnz from upper layers!
+			// TODO: following logic should change once we LOPs encode key-value-class information.
+			if ( oparams.getFormat() == Format.TEXT )
+				inst += "textcell";
+			else {
+				if ( oparams.getNum_rows_per_block() > 0 || oparams.getNum_cols_per_block() > 0 )
+					inst += "binaryblock";
+				else
+					inst += "binarycell";
+			}
+			return inst;
+		}
+		else {
+			throw new LopsException("Unexpected data type " + get_dataType());
+		}
 	}
 }

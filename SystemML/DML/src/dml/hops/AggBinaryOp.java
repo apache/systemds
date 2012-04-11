@@ -9,6 +9,7 @@ import dml.lops.Lops;
 import dml.lops.MMCJ;
 import dml.lops.MMRJ;
 import dml.lops.LopProperties.ExecType;
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.SQLCondition;
@@ -90,7 +91,7 @@ public class AggBinaryOp extends Hops {
 								get_rows_per_block(), get_cols_per_block());
 						
 						// aggregation uses kahanSum but the inputs do not have correction values
-						agg1.setupCorrectionLocation((byte)0);  
+						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
 						
 						set_lops(agg1);
 					}

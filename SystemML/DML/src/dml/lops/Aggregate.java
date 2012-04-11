@@ -2,6 +2,7 @@ package dml.lops;
 
 import dml.lops.LopProperties.ExecLocation;
 import dml.lops.LopProperties.ExecType;
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.lops.compile.JobType;
 import dml.parser.Expression.*;
 import dml.utils.LopsException;
@@ -21,7 +22,7 @@ public class Aggregate extends Lops
 	OperationTypes operation;
  
 	private boolean isCorrectionUsed = false;
-	private byte correctionLocation = -1;
+	private CorrectionLocationType correctionLocation = CorrectionLocationType.INVALID;
 
 	/**
 	 * @param input - input lop
@@ -60,7 +61,7 @@ public class Aggregate extends Lops
 	}
 	
 	// this function must be invoked during hop-to-lop translation
-	public void setupCorrectionLocation(byte loc) {
+	public void setupCorrectionLocation(CorrectionLocationType loc) {
 		if ( operation == OperationTypes.KahanSum || operation == OperationTypes.KahanTrace || operation == OperationTypes.Mean ) {
 			isCorrectionUsed = true;
 			correctionLocation = loc;

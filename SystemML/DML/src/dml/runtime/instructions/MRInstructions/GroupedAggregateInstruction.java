@@ -1,5 +1,6 @@
 package dml.runtime.instructions.MRInstructions;
 
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.functionobjects.CM;
 import dml.runtime.functionobjects.KahanPlus;
 import dml.runtime.instructions.Instruction;
@@ -57,7 +58,7 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase{
 		
 		switch(op) {
 		case SUM:
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)2);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			return new GroupedAggregateInstruction(agg, in, out, str);
 			
 		case COUNT:

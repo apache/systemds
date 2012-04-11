@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.instructions.MRInstructions.SelectInstruction;
 import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -149,42 +150,45 @@ public class OperationsOnMatrixValues {
 			{
 				switch(op.correctionLocation)
 				{
-				case 0:
+				case NONE:
 					outRow=rlen;
 					outCol=clen;
 					corRow=rlen;
 					corCol=clen;
 					break;
-				case 1:
+				case LASTROW:
 					outRow=rlen-1;
 					outCol=clen;
 					corRow=1;
 					corCol=clen;
 					break;
-				case 2:
+				case LASTCOLUMN:
 					outRow=rlen;
 					outCol=clen-1;
 					corRow=rlen;
 					corCol=1;
 					break;
-				case 3:
+				case LASTTWOROWS:
 					outRow=rlen-2;
 					outCol=clen;
 					corRow=2;
 					corCol=clen;
 					break;
-				case 4:
+				case LASTTWOCOLUMNS:
 					outRow=rlen;
 					outCol=clen-2;
 					corRow=rlen;
 					corCol=2;
 					break;
+				// TODO: fix MaxIndex
+				/*
 				case 5:
 					outRow = rlen;
 					outCol = 1;
 					corRow = rlen;
 					corCol = 1;
 					break;
+				*/
 				default:
 						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);
 				}
@@ -235,7 +239,7 @@ public class OperationsOnMatrixValues {
 	{
 		if(op.correctionExists)
 		{
-			if(!imbededCorrection || op.correctionLocation==0)
+			if(!imbededCorrection || op.correctionLocation==CorrectionLocationType.NONE)
 				value_agg.incrementalAggregate(op, correction, value_add);
 			else
 				value_agg.incrementalAggregate(op, value_add);

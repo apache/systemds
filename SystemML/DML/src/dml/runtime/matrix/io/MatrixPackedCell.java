@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.instructions.CPInstructions.KahanObject;
 import dml.runtime.matrix.operators.AggregateOperator;
 
@@ -69,7 +70,7 @@ public class MatrixPackedCell extends MatrixCell{
 
 		
 		MatrixPackedCell newWithCor=checkType(newWithCorrection);
-		if(aggOp.correctionLocation==0 || aggOp.correctionLocation==1 || aggOp.correctionLocation==2)
+		if(aggOp.correctionLocation==CorrectionLocationType.NONE || aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			checkAndAllocateSpace(1);
 			KahanObject buffer=new KahanObject(value, extras[0]);
@@ -77,7 +78,7 @@ public class MatrixPackedCell extends MatrixCell{
 			value=buffer._sum;
 			extras[0]=buffer._correction;
 		//	System.out.println("--- "+buffer);
-		}else if(aggOp.correctionLocation==3 || aggOp.correctionLocation==4)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
 		{
 			checkAndAllocateSpace(2);
 			KahanObject buffer=new KahanObject(value, extras[0]);

@@ -1,6 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
 import dml.runtime.functionobjects.Builtin;
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.functionobjects.KahanPlus;
@@ -40,41 +41,41 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 												   str);
 		}
 		else if ( opcode.equalsIgnoreCase("uak+") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)2);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uark+") ) {
 			// RowSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)2);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uack+") ) {
 			// ColSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)1);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("uamean") ) {
 			// Mean
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)4);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarmean") ) {
 			// RowMeans
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)4);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)3);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOROWS);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		}
@@ -124,7 +125,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, (byte)2);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			aggun.isTrace=true;
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);

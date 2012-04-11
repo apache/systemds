@@ -19,6 +19,7 @@ public class PartialAggregate extends Lops {
 		RowCol, Row, Col
 	};
 
+	public enum CorrectionLocationType { NONE, LASTROW, LASTCOLUMN, LASTTWOROWS, LASTTWOCOLUMNS, INVALID };
 	Aggregate.OperationTypes operation;
 	DirectionTypes direction;
 
@@ -80,6 +81,20 @@ public class PartialAggregate extends Lops {
 		init(input, op, direct, dt, vt, et);
 	}
 
+	public static CorrectionLocationType decodeCorrectionLocation(String loc) throws LopsException {
+		if ( loc.equals("NONE") )
+			return CorrectionLocationType.NONE;
+		else if ( loc.equals("LASTROW") )
+			return CorrectionLocationType.LASTROW;
+		else if ( loc.equals("LASTCOLUMN") )
+			return CorrectionLocationType.LASTCOLUMN;
+		else if ( loc.equals("LASTTWOROWS") )
+			return CorrectionLocationType.LASTTWOROWS;
+		else if ( loc.equals("LASTTWOCOLUMNS") )
+			return CorrectionLocationType.LASTTWOCOLUMNS;
+		else 
+			throw new LopsException("Unrecognized correction location: " + loc);
+	}
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.
@@ -96,9 +111,9 @@ public class PartialAggregate extends Lops {
 	 * appropriate aggregate operator is used at runtime (see:
 	 * dml.runtime.matrix.operator.AggregateOperator.java and dml.runtime.matrix)
 	 */
-	public byte getCorrectionLocaion() throws LopsException {
+	public CorrectionLocationType getCorrectionLocaion() throws LopsException {
 
-		byte loc;
+		CorrectionLocationType loc;
 
 		switch (operation) {
 		case KahanSum:
@@ -107,13 +122,13 @@ public class PartialAggregate extends Lops {
 			case Col:
 				// colSums: corrections will be present as a last row in the
 				// result
-				loc = 1;
+				loc = CorrectionLocationType.LASTROW;
 				break;
 			case Row:
 			case RowCol:
 				// rowSums, sum: corrections will be present as a last column in
 				// the result
-				loc = 2;
+				loc = CorrectionLocationType.LASTCOLUMN;
 				break;
 			default:
 				throw new LopsException(
@@ -128,12 +143,12 @@ public class PartialAggregate extends Lops {
 			switch (direction) {
 			case Col:
 				// colMeans: last row is correction 2nd last is count
-				loc = 3;
+				loc = CorrectionLocationType.LASTTWOROWS;
 				break;
 			case Row:
 			case RowCol:
 				// rowMeans, mean: last column is correction 2nd last is count
-				loc = 4;
+				loc = CorrectionLocationType.LASTTWOCOLUMNS;
 				break;
 			default:
 				throw new LopsException(
@@ -143,13 +158,11 @@ public class PartialAggregate extends Lops {
 			break;
 			
 		case MaxIndex:
-			loc = 5;
+			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
 			
 		default:
-			// this function is valid only when kahanSum or stableMean is
-			// computed
-			loc = 0;
+			loc = CorrectionLocationType.NONE;
 		}
 		return loc;
 	}

@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.Multiply;
 import dml.runtime.functionobjects.Plus;
@@ -781,7 +782,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
-		if(aggOp.correctionLocation==1)
+		if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)
 		{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -794,7 +795,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					cor.setValue(0, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==2)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -806,7 +807,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					setValue(r, c, buffer._sum);
 					cor.setValue(r, 0, buffer._correction);
 				}
-		}else if(aggOp.correctionLocation==0)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 		{
 			
 			for(int r=0; r<rlen; r++)
@@ -818,7 +819,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					setValue(r, c, buffer._sum);
 					cor.setValue(r, c, buffer._correction);
 				}
-		}else if(aggOp.correctionLocation==3)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
@@ -837,7 +838,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					cor.setValue(1, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==4)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
@@ -855,7 +856,10 @@ public class MatrixBlockDSM extends MatrixValue{
 					cor.setValue(r, 0, n);
 					cor.setValue(r, 1, buffer._correction);
 				}
-		}else if(aggOp.correctionLocation == 5)
+		}
+		// TODO: fix MaxIndex
+		/*
+		else if(aggOp.correctionLocation == 5)
 		{
 		    for(int r=0; r<rlen; r++)
 			{
@@ -869,7 +873,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			    	cor.setValue(r, 0, newMaxValue);
 			    }
 			}
-		}else
+		}
+		*/
+		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
@@ -881,7 +887,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
-		if(aggOp.correctionLocation==1)
+		if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)
 		{
 			for(int r=0; r<rlen-1; r++)
 				for(int c=0; c<clen; c++)
@@ -894,7 +900,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					setValue(r+1, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==2)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen-1; c++)
@@ -916,7 +922,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					//buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c));
 					setValue(r, c, this.getValue(r, c)+newWithCor.getValue(r, c));
 				}
-		}*/else if(aggOp.correctionLocation==3)
+		}*/else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen-2; r++)
@@ -935,7 +941,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					setValue(r+2, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==4)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
@@ -953,7 +959,10 @@ public class MatrixBlockDSM extends MatrixValue{
 					setValue(r, c+1, n);
 					setValue(r, c+2, buffer._correction);
 				}
-		}else if(aggOp.correctionLocation == 5)
+		}
+		// TODO: fix MaxIndex
+		/*
+		else if(aggOp.correctionLocation == 5)
 		{
 		    for(int r = 0; r < rlen; r++){
 		    	double currMaxValue = getValue(r, 1);
@@ -966,7 +975,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		    		setValue(r, 1, newMaxValue);
 		    	}
 		    }
-		}else
+		}
+		*/
+		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 
@@ -1584,9 +1595,9 @@ public class MatrixBlockDSM extends MatrixValue{
 						getValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
 			}
 			result.setValue(0, 0, buffer._sum);
-			if(op.aggOp.correctionLocation==1)//extra row
+			if(op.aggOp.correctionLocation==CorrectionLocationType.LASTROW)//extra row
 				result.setValue(1, 0, buffer._correction);
-			else if(op.aggOp.correctionLocation==2)
+			else if(op.aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 				result.setValue(0, 1, buffer._correction);
 			else
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);
@@ -1631,12 +1642,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(aggOp.correctionExists)
 		{
-			if(aggOp.correctionLocation==1 || aggOp.correctionLocation==2)
+			if(aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTROW)
 			{
 				int corRow=row, corCol=column;
-				if(aggOp.correctionLocation==1)//extra row
+				if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)//extra row
 					corRow++;
-				else if(aggOp.correctionLocation==2)
+				else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 					corCol++;
 				else
 					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
@@ -1646,19 +1657,19 @@ public class MatrixBlockDSM extends MatrixValue{
 				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newvalue);
 				result.setValue(row, column, buffer._sum);
 				result.setValue(corRow, corCol, buffer._correction);
-			}else if(aggOp.correctionLocation==0)
+			}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 			{
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 			}else// for mean
 			{
 				int corRow=row, corCol=column;
 				int countRow=row, countCol=column;
-				if(aggOp.correctionLocation==3)//extra row
+				if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 				{
 					countRow++;
 					corRow+=2;
 				}
-				else if(aggOp.correctionLocation==4)
+				else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
 				{
 					countCol++;
 					corCol+=2;
@@ -1740,6 +1751,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				result.tempCellIndex.set(i, j);
 				op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
 
+				// TODO: fix MaxIndex
+				/*
 				if(op.aggOp.correctionExists && op.aggOp.correctionLocation == 5){
 				    double currMaxValue = result.getValue(i, 1);
 				    long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), maxcolumn, j);
@@ -1751,6 +1764,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				    	result.setValue(i, 1, newMaxValue);
 				    }
 				}else
+				*/
 					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, getValue(i,j), buffer);
 			}
 	}
@@ -1764,11 +1778,10 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			switch(op.aggOp.correctionLocation)
 			{
-			case 1: tempCellIndex.row++; break;
-			case 2: tempCellIndex.column++; break;
-			case 3: tempCellIndex.row+=2; break;
-			case 4: tempCellIndex.column+=2; break;
-			case 5: tempCellIndex.column++; break; 
+			case LASTROW: tempCellIndex.row++; break;
+			case LASTCOLUMN: tempCellIndex.column++; break;
+			case LASTTWOROWS: tempCellIndex.row+=2; break;
+			case LASTTWOCOLUMNS: tempCellIndex.column+=2; break;
 			default:
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}

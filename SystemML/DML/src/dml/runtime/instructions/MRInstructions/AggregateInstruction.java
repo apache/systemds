@@ -1,5 +1,7 @@
 package dml.runtime.instructions.MRInstructions;
 
+import dml.lops.PartialAggregate;
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.KahanPlus;
 import dml.runtime.functionobjects.Multiply;
@@ -13,6 +15,7 @@ import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.Operator;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
+import dml.utils.LopsException;
 
 public class AggregateInstruction extends UnaryMRInstructionBase {
 	
@@ -39,7 +42,12 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 		
 		if ( opcode.equalsIgnoreCase("ak+") ) {
 			boolean corExists=Boolean.parseBoolean(parts[3]);
-			byte loc=Byte.parseByte(parts[4]);
+			CorrectionLocationType loc;
+			try {
+				loc = PartialAggregate.decodeCorrectionLocation(parts[4]);
+			} catch (LopsException e) {
+				throw new DMLRuntimeException(e);
+			}
 			
 			// if corrections are not available, then we must use simple sum
 			AggregateOperator agg = null; 
@@ -60,7 +68,7 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if (opcode.equalsIgnoreCase("arimax")){
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, (byte)5);
+			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("amax") ) {
@@ -73,7 +81,12 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 		}
 		else if ( opcode.equalsIgnoreCase("amean") ) {
 			boolean corExists=Boolean.parseBoolean(parts[3]);
-			byte loc=Byte.parseByte(parts[4]);
+			CorrectionLocationType loc;
+			try {
+				loc = PartialAggregate.decodeCorrectionLocation(parts[4]);
+			} catch (LopsException e) {
+				throw new DMLRuntimeException(e);
+			}
 			
 			// if corrections are not available, then we must use simple sum
 			AggregateOperator agg = null; 

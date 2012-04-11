@@ -16,6 +16,7 @@ import dml.lops.Tertiary;
 import dml.lops.UnaryCP;
 import dml.lops.CombineBinary.OperationTypes;
 import dml.lops.LopProperties.ExecType;
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.sql.sqllops.ISQLSelect;
@@ -252,7 +253,7 @@ public class TertiaryOp extends Hops {
 
 				// kahamSum is used for aggreagtion but inputs do not have
 				// correction values
-				agg1.setupCorrectionLocation((byte) 0);
+				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
 
 				// set_lops(agg1);
 
@@ -332,7 +333,7 @@ public class TertiaryOp extends Hops {
 
 				// kahamSum is used for aggreagtion but inputs do not have
 				// correction values
-				agg1.setupCorrectionLocation((byte) 0);
+				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
 
 				UnaryCP unary1 = new UnaryCP(
 						agg1, UnaryCP.OperationTypes.SPEARMANHELPER,

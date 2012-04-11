@@ -1,5 +1,6 @@
 package dml.runtime.matrix.operators;
 
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.functionobjects.Minus;
 import dml.runtime.functionobjects.Multiply;
 import dml.runtime.functionobjects.Plus;
@@ -11,9 +12,7 @@ public class AggregateOperator  extends Operator {
 	public BinaryOperator increOp;
 	
 	public boolean correctionExists=false;
-	public byte correctionLocation=0;//0 means none, 1 means the last row, 2 means the last column, 
-									//3 means last row is correction 2nd last is count
-	                                //4 means last column is correction 2nd last is count
+	public CorrectionLocationType correctionLocation=CorrectionLocationType.INVALID;
 	
 	public AggregateOperator(double initValue, ValueFunction op)
 	{
@@ -26,7 +25,7 @@ public class AggregateOperator  extends Operator {
 			sparseSafe=false;
 	}
 	
-	public AggregateOperator(double initValue, ValueFunction op, boolean correctionExists, byte correctionLocation)
+	public AggregateOperator(double initValue, ValueFunction op, boolean correctionExists, CorrectionLocationType correctionLocation)
 	{
 		this(initValue, op);
 		this.correctionExists=correctionExists;

@@ -120,6 +120,8 @@ public class ReorgOp extends Hops {
 					throw new HopsException(e);
 				}
 			} else if(op == ReorgOp.APPEND){
+				ExecType et = optFindExecType();
+				
 				UnaryCP offset = new UnaryCP(getInput().get(0).constructLops(),
 						 UnaryCP.OperationTypes.NCOL,
 						 DataType.SCALAR,
@@ -129,7 +131,7 @@ public class ReorgOp extends Hops {
 										   getInput().get(1).constructLops(), 
 										   offset,
 										   get_dataType(),
-										   get_valueType());
+										   get_valueType(), et);
 				
 				append.getOutputParameters().setDimensions(get_dim1(), 
 														   get_dim2(), 

@@ -15,6 +15,7 @@ import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
+import dml.runtime.instructions.CPInstructions.AppendCPInstruction;
 import dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import dml.utils.DMLRuntimeException;
@@ -36,6 +37,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "uacmean" , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uamax"   , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarmax"  , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uarimax", CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uacmax"  , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uamin"   , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarmin"  , CPINSTRUCTION_TYPE.AggregateUnary);
@@ -115,6 +117,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
 
 		String2CPInstructionType.put( "r'"   	, CPINSTRUCTION_TYPE.Reorg);
+		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		String2CPInstructionType.put( "rdiagV2M", CPINSTRUCTION_TYPE.Reorg);
 	}
 
@@ -159,6 +162,9 @@ public class CPInstructionParser extends InstructionParser {
 		case Reorg:
 			return (CPInstruction) ReorgCPInstruction.parseInstruction(str);
 
+		case Append:
+			return (CPInstruction) AppendCPInstruction.parseInstruction(str);
+			
 		case RelationalBinary:
 			return (CPInstruction) RelationalBinaryCPInstruction.parseInstruction(str);
 			

@@ -142,6 +142,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in, out, str);
 		} 
+		
+		else if (opcode.equalsIgnoreCase("uarimax") ) {
+			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+			return new AggregateUnaryCPInstruction(aggun, in, out, str);
+		}
+		
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());

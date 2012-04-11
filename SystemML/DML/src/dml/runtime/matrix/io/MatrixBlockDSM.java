@@ -1417,6 +1417,61 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		return result;
 	}
+	
+	public MatrixValue appendOperations(ReorgOperator op, MatrixValue result,
+			int startRow, int startColumn, int length)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		
+		checkType(result);
+		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
+		boolean sps;
+		if(reducedDim)
+			sps=false;
+		else
+			sps=checkRealSparcity(this);
+			
+		if(result==null)
+			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps);
+		else if(result.getNumRows()==0 && result.getNumColumns()==0)
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps);
+		
+		CellIndex temp = new CellIndex(0, 0);
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
+				{
+					if(sparseRows[r]==null) continue;
+					int[] cols=sparseRows[r].getIndexContainer();
+					double[] values=sparseRows[r].getValueContainer();
+					for(int i=0; i<sparseRows[r].size(); i++)
+					{
+						tempCellIndex.set(r, cols[i]);
+						op.fn.execute(tempCellIndex, temp);
+						result.setValue(temp.row, temp.column, values[i]);
+					}
+				}
+			}
+		}else
+		{
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen;
+				int r,c;
+				for(int i=0; i<limit; i++)
+				{
+					r=i/clen;
+					c=i%clen;
+					temp.set(r, c);
+					op.fn.execute(temp, temp);
+					result.setValue(temp.row, temp.column, denseBlock[i]);
+				}
+			}
+		}
+		
+		return result;
+	}
 
 /*	private void slideHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset)
 	{

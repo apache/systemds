@@ -9,7 +9,7 @@ import dml.utils.DMLUnsupportedOperationException;
 
 public class CPInstruction extends Instruction {
 
-	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, Reorg, RelationalBinary, File, Variable, External, ParameterizedBuiltin, Builtin}; 
+	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, Reorg, RelationalBinary, File, Variable, External, ParameterizedBuiltin, Builtin, Append}; 
 	CPINSTRUCTION_TYPE cptype;
 	
 	Operator optr;

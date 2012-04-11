@@ -10,8 +10,6 @@ import dml.runtime.matrix.MatrixFormatMetaData;
 import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.MatrixBlock;
-import dml.runtime.matrix.io.MatrixBlock1D;
-import dml.runtime.matrix.io.MatrixBlockDSM;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import dml.runtime.matrix.io.OutputInfo;
@@ -212,6 +210,21 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
+	public MatrixObject appendOperations(ReorgOperator r_op, MatrixObject result)
+		throws DMLRuntimeException, DMLUnsupportedOperationException{
+		MatrixBlock result_data = result.getData();
+		if(result_data == null)
+			result_data = (MatrixBlock) (_data.appendOperations(r_op, new MatrixBlock(), 0, 0, 0));
+		else 
+			result_data = (MatrixBlock) (_data.appendOperations(r_op, result_data, 0, 0, 0));
+		
+		result.setData(result_data);
+		// update the metadata for resulting matrix
+		result.updateMatrixMetaData();
+		
+		return result;
+	}
+	
 	public MatrixObject unaryOperations(UnaryOperator u_op, MatrixObject result)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		

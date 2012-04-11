@@ -6,7 +6,6 @@ import dml.runtime.functionobjects.Divide;
 import dml.runtime.functionobjects.Power;
 import dml.runtime.matrix.operators.BinaryOperator;
 import dml.runtime.matrix.operators.Operator;
-import dml.runtime.matrix.operators.SimpleOperator;
 import dml.utils.DMLRuntimeException;
 
 public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstruction{

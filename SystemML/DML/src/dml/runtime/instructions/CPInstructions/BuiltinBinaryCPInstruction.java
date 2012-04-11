@@ -7,7 +7,6 @@ import dml.runtime.functionobjects.ValueFunction;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.matrix.operators.BinaryOperator;
 import dml.runtime.matrix.operators.Operator;
-import dml.runtime.matrix.operators.SimpleOperator;
 import dml.runtime.matrix.operators.RightScalarOperator;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;

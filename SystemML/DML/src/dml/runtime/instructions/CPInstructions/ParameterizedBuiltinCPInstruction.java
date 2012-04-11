@@ -2,16 +2,8 @@ package dml.runtime.instructions.CPInstructions;
 
 import java.util.HashMap;
 
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.distribution.ChiSquaredDistributionImpl;
-import org.apache.commons.math.distribution.ExponentialDistributionImpl;
-import org.apache.commons.math.distribution.FDistributionImpl;
-import org.apache.commons.math.distribution.NormalDistributionImpl;
-import org.apache.commons.math.distribution.TDistributionImpl;
-
 import dml.lops.Lops;
 import dml.runtime.controlprogram.ProgramBlock;
-import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.ParameterizedBuiltin;
 import dml.runtime.functionobjects.ValueFunction;
 import dml.runtime.instructions.Instruction;

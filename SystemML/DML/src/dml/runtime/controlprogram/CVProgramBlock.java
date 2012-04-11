@@ -24,7 +24,6 @@ import dml.runtime.instructions.CPInstructions.FileObject;
 import dml.runtime.instructions.CPInstructions.IntObject;
 import dml.runtime.instructions.CPInstructions.StringObject;
 import dml.runtime.matrix.JobReturn;
-import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.utils.DMLRuntimeException;

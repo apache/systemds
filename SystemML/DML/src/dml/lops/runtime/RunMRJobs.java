@@ -37,7 +37,6 @@ import dml.runtime.matrix.MMCJMR;
 import dml.runtime.matrix.MMRJMR;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.MatrixDimensionsMetaData;
-import dml.runtime.matrix.MetaData;
 import dml.runtime.matrix.RandMR;
 import dml.runtime.matrix.ReblockMR;
 import dml.runtime.matrix.SortMR;

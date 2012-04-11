@@ -3,22 +3,15 @@ package dml.runtime.instructions.CPInstructions;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-//import org.netlib.lapack.LAPACK;
-
 import dml.api.DMLScript;
-import dml.lops.OutputParameters.Format;
 import dml.parser.DataIdentifier;
-import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.controlprogram.FunctionProgramBlock;
-import dml.runtime.controlprogram.Program;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.InstructionUtils;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
-import dml.utils.ExtBuiltinHelper;
-import dml.utils.LanguageException;
 
 /**
  * 

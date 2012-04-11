@@ -6,7 +6,6 @@ import java.util.HashMap;
 import org.nimble.control.DAGQueue;
 
 import dml.runtime.instructions.CPInstructions.Data;
-import dml.runtime.matrix.MetaData;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;

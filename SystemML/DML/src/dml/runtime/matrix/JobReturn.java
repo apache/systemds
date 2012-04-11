@@ -1,6 +1,5 @@
 package dml.runtime.matrix;
 
-import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.utils.DMLRuntimeException;

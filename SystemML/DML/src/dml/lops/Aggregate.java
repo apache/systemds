@@ -101,7 +101,9 @@ public class Aggregate extends Lops
 			return "amin"; 
 		case Max: 
 			return "amax"; 
-		
+		case MaxIndex:
+			return "arimax";
+			
 		case KahanSum:
 		case KahanTrace: 
 			return "ak+"; 

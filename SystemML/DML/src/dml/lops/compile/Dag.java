@@ -13,7 +13,6 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
 import dml.api.DMLScript;
 import dml.lops.CombineBinary;
@@ -40,7 +39,6 @@ import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
-import dml.runtime.matrix.sort.CompactOutputFormat;
 import dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
@@ -1169,8 +1167,15 @@ public class Dag<N extends Lops> {
 								node.getInputs().get(1).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					} 
+					else if (node.getInputs().size() == 3) {
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getInputs().get(2).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					}
 					else {
-						throw new LopsException("Node with more than 2 inputs is not supported in CP yet!");
+						throw new LopsException("Node with more than 3 inputs is not supported in CP yet!");
 					}
 				}
 				
@@ -3008,7 +3013,12 @@ public class Dag<N extends Lops> {
 			if (node.getInputs().size() == 2)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
-
+			if (node.getInputs().size() == 3)
+				instructionsInMapper.add(node.getInstructions(inputIndices.get(0), 
+															  inputIndices.get(1), 
+															  inputIndices.get(2), 
+															  output_index));
+			
 			return output_index;
 
 		}

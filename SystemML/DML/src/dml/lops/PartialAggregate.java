@@ -235,6 +235,11 @@ public class PartialAggregate extends Lops {
 				&& direction == DirectionTypes.Col) {
 			return "uacmax";
 		}
+		
+		else if (operation == Aggregate.OperationTypes.MaxIndex
+				 && direction == DirectionTypes.Row){
+			return "uarimax";
+		}
 
 		else if (operation == Aggregate.OperationTypes.Min
 				&& direction == DirectionTypes.RowCol) {

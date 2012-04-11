@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import dml.runtime.functionobjects.Builtin;
 import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.instructions.MRInstructions.SelectInstruction;
 import dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -163,10 +164,18 @@ public class OperationsOnMatrixValues {
 					corCol=clen;
 					break;
 				case LASTCOLUMN:
-					outRow=rlen;
-					outCol=clen-1;
-					corRow=rlen;
-					corCol=1;
+					if(op.increOp.fn instanceof Builtin 
+					   && ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
+						outRow = rlen;
+						outCol = 1;
+						corRow = rlen;
+						corCol = 1;
+					}else{
+						outRow=rlen;
+						outCol=clen-1;
+						corRow=rlen;
+						corCol=1;
+					}
 					break;
 				case LASTTWOROWS:
 					outRow=rlen-2;
@@ -180,15 +189,6 @@ public class OperationsOnMatrixValues {
 					corRow=rlen;
 					corCol=2;
 					break;
-				// TODO: fix MaxIndex
-				/*
-				case 5:
-					outRow = rlen;
-					outCol = 1;
-					corRow = rlen;
-					corCol = 1;
-					break;
-				*/
 				default:
 						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);
 				}

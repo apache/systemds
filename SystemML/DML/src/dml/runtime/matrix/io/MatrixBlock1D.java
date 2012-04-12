@@ -3,6 +3,7 @@ package dml.runtime.matrix.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 
 import dml.lops.PartialAggregate.CorrectionLocationType;
+import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -28,7 +30,7 @@ import dml.runtime.functionobjects.Builtin;
 import dml.runtime.functionobjects.Multiply;
 import dml.runtime.functionobjects.Plus;
 import dml.runtime.instructions.CPInstructions.KahanObject;
-import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 
 public class MatrixBlock1D extends MatrixValue{
 
@@ -679,7 +681,8 @@ public class MatrixBlock1D extends MatrixValue{
 					cor.setValue(r, 0, n);
 					cor.setValue(r, 1, buffer._correction);
 				}
-		}else
+		}
+		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
@@ -777,7 +780,8 @@ public class MatrixBlock1D extends MatrixValue{
 					setValue(r, c+1, n);
 					setValue(r, c+2, buffer._correction);
 				}
-		}else
+		}
+		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 	
@@ -1274,7 +1278,7 @@ public class MatrixBlock1D extends MatrixValue{
 			{
 				int corRow=index.row, corCol=index.column;
 				int countRow=index.row, countCol=index.column;
-				if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)//extra row
+				if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 				{
 					countRow++;
 					corRow+=2;
@@ -1837,7 +1841,6 @@ public class MatrixBlock1D extends MatrixValue{
 		sparse=true;
 		denseBlock = null;
 	}
-
 	public void sparseToDense() {
 		
 		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
@@ -2201,7 +2204,7 @@ public class MatrixBlock1D extends MatrixValue{
 	}
 
 	@Override
-	public MatrixValue selectOperations(MatrixValue result, IndexRange range)
+	public MatrixValue maskOperations(MatrixValue result, IndexRange range)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		checkType(result);
 		boolean sps;
@@ -2240,5 +2243,40 @@ public class MatrixBlock1D extends MatrixValue{
 		}
 		
 		return result;
+	}
+
+	@Override
+	public void slideOperations(ArrayList<IndexedMatrixValue> outlist,
+			IndexRange range, int rowCut, int colCut, int blockRowFactor,
+			int blockColFactor, int boundaryRlen, int boundaryClen)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throw new RuntimeException("operation not supported fro WeightedBlock1D");
+	}
+	
+	public boolean isBuffered(){
+		boolean ret;
+
+		if(sparse) ret = (sparseBlock == null) ; //|| sparseBlock.isEmpty();
+		//assumes the whole matrix is present
+		//in one (read: this) block
+		else ret = (denseBlock == null);
+
+		return !ret;
+	}
+	
+	public void addDummyZeroValue() {
+		if ( sparse ) {
+			if ( sparseBlock == null )
+				sparseBlock = new HashMap<CellIndex,Double>(); 
+			sparseBlock.put(new CellIndex(0, 0), 0.0);
+		}
+		else {
+/*			try {
+				throw new DMLRuntimeException("Unexpected.. ");
+			} catch (DMLRuntimeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+*/		}
 	}
 }

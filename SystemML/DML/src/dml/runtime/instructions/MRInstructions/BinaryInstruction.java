@@ -86,8 +86,8 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in1=cachedValues.get(input1);
-		IndexedMatrixValue in2=cachedValues.get(input2);
+		IndexedMatrixValue in1=cachedValues.getFirst(input1);
+		IndexedMatrixValue in2=cachedValues.getFirst(input2);
 		if(in1==null && in2==null)
 			return;
 		
@@ -126,7 +126,7 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		
 		//put the output value in the cache
 		if(out==tempValue)
-			cachedValues.set(output, out);
+			cachedValues.add(output, out);
 		
 	}
 

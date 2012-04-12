@@ -50,7 +50,7 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 		
 		boolean isSecondArg = (cachedValues.get(input1) != null) ? false : true;
 		
-		IndexedMatrixValue in = (isSecondArg) ? cachedValues.get(input2) : cachedValues.get(input1);
+		IndexedMatrixValue in = (isSecondArg) ? cachedValues.getFirst(input2) : cachedValues.getFirst(input1);
 			
 		if(in==null)
 			return;
@@ -77,6 +77,6 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 	
 		//put the output value in the cache
 		if(out==tempValue)
-			cachedValues.set(output, out);
+			cachedValues.add(output, out);
 	}
 }

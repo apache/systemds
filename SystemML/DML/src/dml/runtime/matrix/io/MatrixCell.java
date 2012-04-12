@@ -3,11 +3,13 @@ package dml.runtime.matrix.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
-import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -323,7 +325,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
-	public MatrixValue selectOperations(MatrixValue valueOut, IndexRange range)
+	public MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
 			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
@@ -372,6 +374,15 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		MatrixCell c3=checkType(that2);
 		updateCtable(this.value, scalarThat, c3.value, ctableResult);
+		
+	}
+
+	@Override
+	public void slideOperations(ArrayList<IndexedMatrixValue> outlist,
+			IndexRange range, int rowCut, int colCut, int blockRowFactor,
+			int blockColFactor, int boundaryRlen, int boundaryClen)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		
 	}
 

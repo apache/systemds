@@ -26,7 +26,7 @@ public abstract class Lops {
 	public enum Type {
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
-		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, Append
+		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, Append, RangeReIndex
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
@@ -334,6 +334,11 @@ public abstract class Lops {
 
 	/** Method should be overridden if needed **/
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException {
+		throw new LopsException("Should never be invoked in Baseclass");
+	}
+
+	/** Method should be overridden if needed **/
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) throws LopsException {
 		throw new LopsException("Should never be invoked in Baseclass");
 	}
 

@@ -8,7 +8,8 @@ import org.apache.hadoop.mapred.MapReduceBase;
 
 import dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import dml.runtime.instructions.MRInstructions.MRInstruction;
-import dml.runtime.instructions.MRInstructions.SelectInstruction;
+import dml.runtime.instructions.MRInstructions.MaskInstruction;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.io.MatrixValue;
@@ -58,9 +59,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	protected void processMixedInstructions(Vector<MRInstruction> mixed_instructions) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(mixed_instructions==null || mixed_instructions.isEmpty()){
+		if(mixed_instructions==null || mixed_instructions.isEmpty())
 			return;
-		}
 		for(MRInstruction ins: mixed_instructions)
 			processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}
@@ -69,7 +69,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(ins instanceof SelectInstruction || ins instanceof AggregateUnaryInstruction)
+		if(ins instanceof MaskInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
 			MatrixCharacteristics dim=dimensions.get(input);

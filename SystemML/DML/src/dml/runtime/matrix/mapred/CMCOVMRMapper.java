@@ -50,11 +50,11 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		for(byte tag: cmTags)
 		{
-			IndexedMatrixValue input = cachedValues.get(tag);
+			IndexedMatrixValue input = cachedValues.getFirst(tag);
 			if(input==null)
 				continue;
 			WeightedPair inputPair=(WeightedPair)input.getValue();
-			CM_N_COVCell cmValue = (CM_N_COVCell) cmNcovCache.get(tag).getValue();
+			CM_N_COVCell cmValue = (CM_N_COVCell) cmNcovCache.getFirst(tag).getValue();
 			try {
 				
 			//	System.out.println("~~~~~\nold: "+cmValue.getCM_N_COVObject());
@@ -68,12 +68,12 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		for(byte tag: covTags)
 		{
-			IndexedMatrixValue input = cachedValues.get(tag);
+			IndexedMatrixValue input = cachedValues.getFirst(tag);
 			if(input==null)
 				continue;
 			//System.out.println("*** cached Value:\n"+cachedValues);
 			WeightedPair inputPair=(WeightedPair)input.getValue();
-			CM_N_COVCell comValue = (CM_N_COVCell) cmNcovCache.get(tag).getValue();
+			CM_N_COVCell comValue = (CM_N_COVCell) cmNcovCache.getFirst(tag).getValue();
 			try {
 				
 				//System.out.println("~~~~~\nold: "+comValue.getCM_N_COVObject());
@@ -92,14 +92,14 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		{
 			for(byte tag: cmTags)
 			{
-				CM_N_COVCell cmValue = (CM_N_COVCell) cmNcovCache.get(tag).getValue();
+				CM_N_COVCell cmValue = (CM_N_COVCell) cmNcovCache.getFirst(tag).getValue();
 				cachedCollector.collect(new TaggedFirstSecondIndexes(1, tag, 1), cmValue);
 				//System.out.println("output to reducer with tag:"+tag+" and value: "+cmValue);
 			}
 			
 			for(byte tag: covTags)
 			{
-				CM_N_COVCell comValue = (CM_N_COVCell) cmNcovCache.get(tag).getValue();
+				CM_N_COVCell comValue = (CM_N_COVCell) cmNcovCache.getFirst(tag).getValue();
 				cachedCollector.collect(new TaggedFirstSecondIndexes(1, tag, 1), comValue);
 				//System.out.println("output to reducer with tag:"+tag+" and value: "+comValue);
 			}

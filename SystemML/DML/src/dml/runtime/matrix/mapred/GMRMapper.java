@@ -1,6 +1,7 @@
 package dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
@@ -66,21 +67,25 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.get(output);
-			if(result==null)
+			ArrayList<IndexedMatrixValue> results= cachedValues.get(output);
+			if(results==null)
 				continue;
-			indexBuffer.setIndexes(result.getIndexes());
-			////////////////////////////////////////
-		//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-			if(valueClass.equals(MatrixCell.class))
-				taggedValueBuffer.getBaseObject().copy(result.getValue());
-			else
-				taggedValueBuffer.setBaseObject(result.getValue());
-			////////////////////////////////////////
-			taggedValueBuffer.setTag(output);
-			out.collect(indexBuffer, taggedValueBuffer);
-			//if(output!=0)
+			for(IndexedMatrixValue result: results)
+			{
+				if(result==null)
+					continue;
+				indexBuffer.setIndexes(result.getIndexes());
+				////////////////////////////////////////
+			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
+				if(valueClass.equals(MatrixCell.class))
+					taggedValueBuffer.getBaseObject().copy(result.getValue());
+				else
+					taggedValueBuffer.setBaseObject(result.getValue());
+				////////////////////////////////////////
+				taggedValueBuffer.setTag(output);
+				out.collect(indexBuffer, taggedValueBuffer);
 			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
+			}
 		}	
 	}
 	

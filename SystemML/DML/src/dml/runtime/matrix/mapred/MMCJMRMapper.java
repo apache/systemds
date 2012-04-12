@@ -77,7 +77,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			OutputCollector<Writable, Writable> out) throws IOException
 	{
 		//output the key value pair for the left matrix
-		IndexedMatrixValue result=cachedValues.get(aggBinInstruction.input1);
+		IndexedMatrixValue result=cachedValues.getFirst(aggBinInstruction.input1);
 		if(result!=null)
 		{
 			taggedIndexes.setTag(tagForLeft);
@@ -88,7 +88,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		}
 		
 		//output the key value pair for the right matrix
-		result=cachedValues.get(aggBinInstruction.input2);
+		result=cachedValues.getFirst(aggBinInstruction.input2);
 		if(result!=null)
 		{
 			taggedIndexes.setTag(tagForRight);

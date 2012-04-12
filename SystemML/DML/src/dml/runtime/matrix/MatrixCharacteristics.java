@@ -13,6 +13,7 @@ import dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import dml.runtime.instructions.MRInstructions.MRInstruction;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import dml.runtime.instructions.MRInstructions.RandInstruction;
@@ -181,6 +182,14 @@ public class MatrixCharacteristics{
 		else if(ins instanceof CM_N_COVInstruction || ins instanceof GroupedAggregateInstruction )
 		{
 			dim_out.set(1, 1, 1, 1);
+		}
+		else if(ins instanceof RangeBasedReIndexInstruction)
+		{
+			RangeBasedReIndexInstruction realIns=(RangeBasedReIndexInstruction)ins;
+			MatrixCharacteristics in_dim=dims.get(realIns.input);
+			long nrow=realIns.indexRange.rowEnd-realIns.indexRange.rowStart+1;
+			long ncol=realIns.indexRange.colEnd-realIns.indexRange.colEnd+1;
+			dim_out.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
 		}
 		else { 
 			/*

@@ -1,10 +1,12 @@
 package dml.runtime.matrix.io;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
-import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -164,7 +166,11 @@ public abstract class MatrixValue implements WritableComparable {
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 
-	public abstract MatrixValue selectOperations(MatrixValue valueOut, IndexRange range)
+	public abstract MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
+	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	
+	public abstract void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
+			int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 
 	protected CellIndex tempCellIndex=new CellIndex(0, 0);

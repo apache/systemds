@@ -12,13 +12,19 @@ public class UtilFunctions {
 	//return one block index given the index in cell format and block size
 	public static long blockIndexCalculation(long cellIndex, int blockSize)
 	{
-		return (cellIndex-1)/blockSize+1;
+		if(cellIndex>0)
+			return (cellIndex-1)/blockSize+1;
+		else
+			return (long)Math.floor((double)(cellIndex-1)/(double)blockSize)+1;
 	}
 	
 	//return cell index in the block, for given index in the cell format and block size
 	public static int cellInBlockCalculation(long cellIndex, int blockSize)
 	{
-		return (int) ((cellIndex-1)%blockSize);
+		if(cellIndex>0)
+			return (int) ((cellIndex-1)%blockSize);
+		else
+			return (int) ((cellIndex-1)%blockSize)+blockSize;
 	}
 	
 	//given block index and block size and cells in block, return the index in cell format

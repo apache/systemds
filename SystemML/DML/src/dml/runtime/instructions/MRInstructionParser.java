@@ -5,12 +5,12 @@ import java.util.HashMap;
 import dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import dml.runtime.instructions.MRInstructions.AppendInstruction;
 import dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
-import dml.runtime.instructions.MRInstructions.SelectInstruction;
+import dml.runtime.instructions.MRInstructions.MaskInstruction;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
@@ -52,7 +52,6 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "uack+" , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uamean", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmean",MRINSTRUCTION_TYPE.AggregateUnary);
-		String2MRInstructionType.put( "uarimax",MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmean",MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "ua*"   , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uamax" , MRINSTRUCTION_TYPE.AggregateUnary);
@@ -111,7 +110,6 @@ public class MRInstructionParser extends InstructionParser {
 
 		// REORG Instruction Opcodes 
 		String2MRInstructionType.put( "r'"      , MRINSTRUCTION_TYPE.Reorg);
-		String2MRInstructionType.put( "append"      , MRINSTRUCTION_TYPE.Append);
 		String2MRInstructionType.put( "rdiagV2M", MRINSTRUCTION_TYPE.Reorg);
 		
 		// RAND Instruction Opcodes 
@@ -143,6 +141,9 @@ public class MRInstructionParser extends InstructionParser {
 		//groupedAgg Instruction Opcodes
 		String2MRInstructionType.put( "groupedagg"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
 		//String2MRInstructionType.put( "grpcm"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
+		
+		//rangereindexing
+		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
 	}
 	
 	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -182,9 +183,6 @@ public class MRInstructionParser extends InstructionParser {
 		case Reorg:
 			return (MRInstruction) ReorgInstruction.parseInstruction(str);
 			
-		case Append:
-			return (MRInstruction) AppendInstruction.parseInstruction(str);
-		
 		//case Replicate:
 		//	return (MRInstruction) ReplicateInstruction.parseInstruction(str);
 		
@@ -211,8 +209,8 @@ public class MRInstructionParser extends InstructionParser {
 	
 		case GroupedAggregate:
 			return (MRInstruction) GroupedAggregateInstruction.parseInstruction(str);
-		case Select:
-			return (MRInstruction) SelectInstruction.parseInstruction(str);
+		case RangeReIndex:
+			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

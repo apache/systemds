@@ -96,7 +96,7 @@ public class ReblockMR {
 	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, true);
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(ReblockMapper.class);

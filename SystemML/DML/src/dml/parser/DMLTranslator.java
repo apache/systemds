@@ -5,14 +5,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-
 import dml.hops.AggBinaryOp;
 import dml.hops.AggUnaryOp;
 import dml.hops.BinaryOp;
 import dml.hops.DataOp;
 import dml.hops.Hops;
+import dml.hops.IndexingOp;
 import dml.hops.LiteralOp;
-import dml.hops.ParameterizedBuiltinOp;
 import dml.hops.RandOp;
 import dml.hops.ReorgOp;
 import dml.hops.TertiaryOp;
@@ -25,15 +24,16 @@ import dml.hops.Hops.OpOp2;
 import dml.hops.Hops.OpOp3;
 import dml.hops.Hops.ParamBuiltinOp;
 import dml.hops.Hops.VISIT_STATUS;
+import dml.hops.ParameterizedBuiltinOp;
 import dml.lops.Lops;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import dml.sql.sqlcontrolprogram.SQLCleanup;
-import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLCreateTable;
 import dml.sql.sqlcontrolprogram.SQLDeclare;
+import dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLIfElseProgramBlock;
 import dml.sql.sqlcontrolprogram.SQLOverwriteScalar;
 import dml.sql.sqlcontrolprogram.SQLOverwriteTable;
@@ -1905,9 +1905,8 @@ public class DMLTranslator {
 			return processBooleanExpression((BooleanExpression) source, target, hops);
 		} else if (source.getKind() == Expression.Kind.Data) {
 			if (source instanceof IndexedIdentifier){
-		// TODO: YY -- UNCOMMENT
-		//		IndexedIdentifier sourceIndexed = (IndexedIdentifier) source;
-		//		return processIndexingExpression(sourceIndexed,target,hops);
+				IndexedIdentifier sourceIndexed = (IndexedIdentifier) source;
+				return processIndexingExpression(sourceIndexed,target,hops);
 			} else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
 				LiteralOp litop = new LiteralOp(Long.toString(sourceInt.getValue()), sourceInt.getValue());
@@ -1961,26 +1960,52 @@ public class DMLTranslator {
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		return target;
 	}
-
-	// TODO: YY -- UNCOMMENT
-	/** 
+	 
 	private Hops processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hops> hops) 
 		throws ParseException {
 	
 		// process 
 		Hops rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
 		
-		if (source.getRowLowerBound() != null){
+		if (source.getRowLowerBound() != null)
 			rowLowerHops = processExpression(source.getRowLowerBound(),null,hops);
-		}	
-		if (source.getRowUpperBound() != null){
+		else
+			rowLowerHops = new LiteralOp(Long.toString(1), 1);
+		
+		if (source.getRowUpperBound() != null)
 			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
+		else
+		{
+			if ( source.getDim1() != -1 ) 
+				rowUpperHops = new LiteralOp(Long.toString(source.getDim1()), source.getDim1());
+			else
+			{
+				try {
+					rowUpperHops = new UnaryOp(source.getName(), source.getDataType(), source.getValueType(), Hops.OpOp1.NROW, hops.get(source.getName()));
+				} catch (HopsException e) {
+					throw new RuntimeException(e);
+				}
+			}
 		}
-		if (source.getColLowerBound() != null){
+		if (source.getColLowerBound() != null)
 			colLowerHops = processExpression(source.getColLowerBound(),null,hops);
-		}
-		if (source.getColUpperBound() != null){
+		else
+			colLowerHops = new LiteralOp(Long.toString(1), 1);
+		
+		if (source.getColUpperBound() != null)
 			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
+		else
+		{
+			if ( source.getDim2() != -1 ) 
+				colUpperHops = new LiteralOp(Long.toString(source.getDim2()), source.getDim2());
+			else
+			{
+				try {
+					colUpperHops = new UnaryOp(source.getName(), source.getDataType(), source.getValueType(), Hops.OpOp1.NCOL, hops.get(source.getName()));
+				} catch (HopsException e) {
+					throw new RuntimeException(e);
+				}
+			}
 		}
 		
 		if (target == null) {
@@ -1993,7 +2018,7 @@ public class DMLTranslator {
 	
 		return indexOp;
 	}
-	**/
+	
 	
 	/**
 	 * Construct Hops from parse tree : Process Binary Expression in an

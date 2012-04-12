@@ -80,8 +80,8 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	//perform pairwise aggregate binary, and added to the aggregates
 	private void processAggBinaryPerGroup(MatrixIndexes indexes) throws IOException
 	{
-		IndexedMatrixValue left = cachedValues.get(aggBinInstruction.input1);
-		IndexedMatrixValue right= cachedValues.get(aggBinInstruction.input2);
+		IndexedMatrixValue left = cachedValues.getFirst(aggBinInstruction.input1);
+		IndexedMatrixValue right= cachedValues.getFirst(aggBinInstruction.input2);
 	//	System.out.println("left: \n"+left.getValue());
 	//	System.out.println("right: \n"+right.getValue());
 		if(left!=null && right!=null)
@@ -90,7 +90,7 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 				resultblock=left.getValue().aggregateBinaryOperations(left.getValue(), right.getValue(), 
 						resultblock, (AggregateBinaryOperator) aggBinInstruction.getOperator());
 		//		System.out.println("resultblock: \n"+resultblock);
-				IndexedMatrixValue out=cachedValues.get(aggBinInstruction.output);
+				IndexedMatrixValue out=cachedValues.getFirst(aggBinInstruction.output);
 				if(out==null)
 				{
 					out=cachedValues.holdPlace(aggBinInstruction.output, valueClass);

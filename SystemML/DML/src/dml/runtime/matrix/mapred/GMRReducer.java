@@ -36,7 +36,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		commonSetup(reporter);
 		
 		cachedValues.reset();
-	//	LOG.info("before aggregation: \n"+cachedValues);
+//		LOG.info("before aggregation: \n"+cachedValues);
 		//perform aggregate operations first
 		processAggregateInstructions(indexes, values);
 		
@@ -77,7 +77,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];
-			IndexedMatrixValue outValue=cachedValues.get(output);
+			IndexedMatrixValue outValue=cachedValues.getFirst(output);
 			if(outValue==null)
 				continue;
 			if(valueClass.equals(MatrixPackedCell.class))

@@ -115,9 +115,9 @@ public class CombineMR {
 
 		private void processTertiaryCombineInstruction(
 				CombineTertiaryInstruction ins, Reporter reporter) throws IOException{
-			IndexedMatrixValue in1=cachedValues.get(ins.input1);
-			IndexedMatrixValue in2=cachedValues.get(ins.input2);
-			IndexedMatrixValue in3=cachedValues.get(ins.input3);
+			IndexedMatrixValue in1=cachedValues.getFirst(ins.input1);
+			IndexedMatrixValue in2=cachedValues.getFirst(ins.input2);
+			IndexedMatrixValue in3=cachedValues.getFirst(ins.input3);
 			if(in1==null && in2==null && in3==null)
 				return;
 			int nr=0, nc=0;
@@ -191,8 +191,8 @@ public class CombineMR {
 		throws IOException 
 		{
 			
-			IndexedMatrixValue in1=cachedValues.get(ins.input1);
-			IndexedMatrixValue in2=cachedValues.get(ins.input2);
+			IndexedMatrixValue in1=cachedValues.getFirst(ins.input1);
+			IndexedMatrixValue in2=cachedValues.getFirst(ins.input2);
 			if(in1==null && in2==null)
 				return;
 			

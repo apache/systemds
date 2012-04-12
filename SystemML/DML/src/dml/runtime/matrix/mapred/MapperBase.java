@@ -1,6 +1,7 @@
 package dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
@@ -20,6 +21,7 @@ import dml.runtime.matrix.io.MatrixCell;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.MatrixValue;
 import dml.runtime.matrix.io.Pair;
+
 import dml.runtime.matrix.io.TaggedMatrixValue;
 import dml.runtime.matrix.io.TaggedPartialBlock;
 import dml.runtime.util.UtilFunctions;
@@ -305,7 +307,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		//apply reblock instructions
 		for(ReblockInstruction ins: reblock_instructions.get(index))
 		{
-			IndexedMatrixValue inValue=cachedValues.get(ins.input);
+			IndexedMatrixValue inValue=cachedValues.getFirst(ins.input);
 			if(inValue==null)
 				continue;
 			long bi=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getRowIndex(),ins.brlen);
@@ -327,17 +329,23 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.get(output);
-			if(result==null)
+			ArrayList<IndexedMatrixValue> results= cachedValues.get(output);
+			if(results==null)
 				continue;
-			indexBuffer.setIndexes(result.getIndexes());
-			////////////////////////////////////////
-		//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-			taggedValueBuffer.setBaseObject(result.getValue());
-			////////////////////////////////////////
-			taggedValueBuffer.setTag(output);
-			out.collect(indexBuffer, taggedValueBuffer);
-		//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
+			for(IndexedMatrixValue result: results)
+			{
+				if(result==null)
+					continue;
+				indexBuffer.setIndexes(result.getIndexes());
+				////////////////////////////////////////
+			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
+				taggedValueBuffer.setBaseObject(result.getValue());
+				////////////////////////////////////////
+				taggedValueBuffer.setTag(output);
+				out.collect(indexBuffer, taggedValueBuffer);
+			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
+			}
+			
 		}	
 	}
 	
@@ -347,7 +355,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	{
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.get(output);
+			IndexedMatrixValue result=cachedValues.getFirst(output);
 			if(result==null)
 				continue;
 			indexBuffer.setIndexes(result.getIndexes());

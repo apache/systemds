@@ -111,16 +111,16 @@ public class TertiaryInstruction extends MRInstruction {
 		}
 		
 		IndexedMatrixValue in1, in2, in3 = null;
-		in1 = cachedValues.get(input1);
+		in1 = cachedValues.getFirst(input1);
 		if ( opcode.equalsIgnoreCase("ctabletransform") ) {
-			in2 = cachedValues.get(input2);
-			in3 = cachedValues.get(input3);
+			in2 = cachedValues.getFirst(input2);
+			in3 = cachedValues.getFirst(input3);
 			if(in1==null || in2==null || in3 == null )
 				return;
 		}
 		else if ( opcode.equalsIgnoreCase("ctabletransformscalarweight")) {
 			// 3rd input is a scalar
-			in2 = cachedValues.get(input2);
+			in2 = cachedValues.getFirst(input2);
 			in3 = null;
 			if(in1==null || in2==null )
 				return;
@@ -133,7 +133,7 @@ public class TertiaryInstruction extends MRInstruction {
 		} else if (opcode.equalsIgnoreCase("ctabletransformweightedhistogram")) {
 			// 2nd and 3rd inputs are scalars
 			in2 = null;
-			in3 = cachedValues.get(input3);
+			in3 = cachedValues.getFirst(input3);
 			if(in1==null || in3==null)
 				return;
 		} else {

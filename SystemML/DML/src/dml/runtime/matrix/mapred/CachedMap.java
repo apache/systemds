@@ -1,28 +1,34 @@
 package dml.runtime.matrix.mapred;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Vector;
-import java.util.Map.Entry;
 
 
 public class CachedMap<T extends CachedMapElement> {
 
-	protected HashMap<Byte, Integer> map=new HashMap<Byte, Integer>();
-	protected Vector<T> cache=new Vector<T>();
+	protected HashMap<Byte, ArrayList<Integer>> map=new HashMap<Byte, ArrayList<Integer>>();
+	protected ArrayList<T> cache=new ArrayList<T>();
 	protected int numValid=0;
+	protected ArrayList<T> returnListCache=new ArrayList<T>(4);
 	
 	public CachedMap()
 	{}
 	
 	@SuppressWarnings("unchecked")
-	public T set(Byte index, T value)
+	public T add(Byte index, T value)
 	{
 		if(numValid<cache.size())	
-			cache.elementAt(numValid).set(value);
+			cache.get(numValid).set(value);
 		else
 			cache.add((T) value.duplicate());
-		map.put(index, numValid);
+		ArrayList<Integer> list=map.get(index);
+		if(list==null)
+		{
+			list=new ArrayList<Integer>(4);
+			map.put(index, list);
+		}
+		list.add(numValid);
 		numValid++;
 		return cache.get(numValid-1);
 	}
@@ -35,39 +41,56 @@ public class CachedMap<T extends CachedMapElement> {
 	
 	public void remove(byte index)
 	{
-		Integer cacheIndex=map.remove(index);
-		if(cacheIndex==null)
+		ArrayList<Integer> list=map.remove(index);
+		if(list==null)
 			return;
 		
-		if(cacheIndex==numValid-1)
+		for(Integer cacheIndex: list)
 		{
-			numValid--;
-			return;
-		}
-		//swap the last element and the element to remove
-		T lastElem=cache.elementAt(numValid-1);
-		cache.set(numValid-1, cache.get(cacheIndex));
-		cache.set(cacheIndex, lastElem);
-		//remap the indexes
-		for(Entry<Byte, Integer> entry: map.entrySet())
-		{
-			if(entry.getValue()==numValid-1)
+			if(cacheIndex==numValid-1)
 			{
-				entry.setValue(cacheIndex);
-				break;
+				numValid--;
+				return;
 			}
+			//swap the last element and the element to remove
+			T lastElem=cache.get(numValid-1);
+			cache.set(numValid-1, cache.get(cacheIndex));
+			cache.set(cacheIndex, lastElem);
+			//remap the indexes
+			for(ArrayList<Integer> lst: map.values())
+				for(int i=0; i<lst.size(); i++)
+				{
+					if(lst.get(i)==numValid-1)
+					{
+						lst.set(i, cacheIndex);
+						break;
+					}
+				}
+			numValid--;
 		}
-		numValid--;
 	}
 	
-	public T get(byte index)
+	public ArrayList<T> get(byte index)
 	{
-		Integer cacheIndex=map.get(index);
-		if(cacheIndex==null)
+		ArrayList<Integer> list=map.get(index);
+		if(list==null)
 			return null;
-		else
-			return cache.elementAt(cacheIndex);
+		
+		returnListCache.clear();
+		for(Integer i: list)
+			returnListCache.add(cache.get(i));
+		return returnListCache;
 	}
+	
+	public T getFirst(byte index)
+	{
+		ArrayList<Integer> list=map.get(index);
+		if(list!=null && !list.isEmpty())
+			return cache.get(list.get(0));
+		else
+			return null;
+	}
+	
 	public Set<Byte> getIndexesOfAll()
 	{
 		return map.keySet();

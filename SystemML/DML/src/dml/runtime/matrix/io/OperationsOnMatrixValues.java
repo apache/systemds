@@ -1,14 +1,15 @@
 package dml.runtime.matrix.io;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import dml.runtime.functionobjects.Builtin;
 import dml.lops.PartialAggregate.CorrectionLocationType;
-import dml.runtime.instructions.MRInstructions.SelectInstruction;
 import dml.runtime.matrix.io.MatrixValue.CellIndex;
+import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -75,7 +76,6 @@ public class OperationsOnMatrixValues {
 		value_out=value_in.reorgOperations(op, value_out, startRow, startColumn, length);
 		
 	}
-	
 	public static void performAppend(MatrixIndexes indexes_in, MatrixValue value_in, 
 			MatrixIndexes indexes_out, MatrixValue value_out, ReorgOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -87,11 +87,19 @@ public class OperationsOnMatrixValues {
 		value_out=value_in.reorgOperations(op, value_out, 0, 0, 0);
 	}
 	
-	public static void performSelect(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, SelectInstruction.IndexRange range) 
+	public static void performMask(MatrixIndexes indexes_in, MatrixValue value_in, 
+			MatrixIndexes indexes_out, MatrixValue value_out, IndexRange range) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		value_out=value_in.selectOperations(value_out, range);
+		value_out=value_in.maskOperations(value_out, range);
+	}
+	
+	public static void performSlide(MatrixIndexes indexes_in, MatrixValue value_in, 
+			ArrayList<IndexedMatrixValue> outlist, IndexRange range, 
+			int rowCut, int colCut, int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		value_in.slideOperations(outlist, range, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
 	}
 	
 	// ------------- Tertiary Operations -------------

@@ -3,12 +3,14 @@ package dml.runtime.matrix.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
 import dml.runtime.instructions.CPInstructions.CM_COV_Object;
-import dml.runtime.instructions.MRInstructions.SelectInstruction.IndexRange;
+import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -247,7 +249,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
-	public MatrixValue selectOperations(MatrixValue valueOut, IndexRange range)
+	public MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
@@ -283,5 +285,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 			HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
+	}
+
+	@Override
+	public void slideOperations(ArrayList<IndexedMatrixValue> outlist,
+			IndexRange range, int rowCut, int colCut, int blockRowFactor,
+			int blockColFactor, int boundaryRlen, int boundaryClen)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throw new RuntimeException("operation not supported fro WeightedCell");
+		
 	}
 }

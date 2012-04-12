@@ -1,6 +1,7 @@
 package dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -248,13 +249,16 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 	{
 		for(byte output: cachedValues.getIndexesOfAll())
 		{
-			IndexedMatrixValue outValue=cachedValues.get(output);
-			if(outValue==null)
+			ArrayList<IndexedMatrixValue> outValues=cachedValues.get(output);
+			if(outValues==null)
 				continue;
-			taggedbuffer.setBaseObject(outValue.getValue());
-			taggedbuffer.setTag(output);
-			out.collect(indexes, taggedbuffer);
-			//System.out.println("**** combiner output: "+indexes+", "+taggedbuffer);
+			for(IndexedMatrixValue outValue: outValues)
+			{
+				taggedbuffer.setBaseObject(outValue.getValue());
+				taggedbuffer.setTag(output);
+				out.collect(indexes, taggedbuffer);
+				//System.out.println("**** combiner output: "+indexes+", "+taggedbuffer);
+			}
 		}
 	}
 	
@@ -263,10 +267,11 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			byte output=resultIndexes[i];
-			IndexedMatrixValue outValue=cachedValues.get(output);
-			if(outValue==null)
+			ArrayList<IndexedMatrixValue> outValues=cachedValues.get(output);
+			if(outValues==null)
 				continue;
-			collectOutput_N_Increase_Counter(outValue.getIndexes(), 
+			for(IndexedMatrixValue outValue: outValues)
+				collectOutput_N_Increase_Counter(outValue.getIndexes(), 
 					outValue.getValue(), i, reporter);
 	//		LOG.info("output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
 		//	System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
@@ -281,7 +286,10 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			TaggedPartialBlock partial=values.next();
 		//	System.out.println("in Reducer: "+indexes+": "+partial);
 			Byte tag=partial.getTag();
-			IndexedMatrixValue block=cachedValues.get(tag);
+			
+			//there only one block in the cache for this output
+			IndexedMatrixValue block=cachedValues.getFirst(tag);
+			
 			if(block==null)
 			{
 				block=cachedValues.holdPlace(tag, valueClass);
@@ -342,10 +350,15 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 	{
 		AggregateOperator aggOp=(AggregateOperator)instruction.getOperator();
 		
-		IndexedMatrixValue out=cachedValues.get(instruction.output);
+		//there should be just one value in cache.
+		IndexedMatrixValue out=cachedValues.getFirst(instruction.output);
+	
 		IndexedMatrixValue correction=null;
 		if(aggOp.correctionExists)// && !imbededCorrection)
-			correction=correctionCache.get(instruction.output);
+		{
+			correction=correctionCache.getFirst(instruction.output);
+		}
+		
 		if(out==null)
 		{
 			out=cachedValues.holdPlace(instruction.output, valueClass);
@@ -388,8 +401,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			byte input=value.getTag();
 			Vector<AggregateInstruction> instructions=agg_instructions.get(input);
 			
-			//System.out.println(indexes);
-			//System.out.println("value to aggregate: "+value);
+		//	System.out.println("value to aggregate: "+value);
 			
 			//if there is no specified aggregate operation on an input, by default apply sum
 			try{
@@ -409,7 +421,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			{
 				throw new IOException(e);
 			}
-//			System.out.println("current cachedValues: \n"+cachedValues);
+		//	System.out.println("current cachedValues: \n"+cachedValues);
 		}
 	}
 	

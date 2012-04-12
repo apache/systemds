@@ -185,9 +185,7 @@ public class SparseRow {
 	public int searchIndexesFirstLTE(int col)
 	{
 		int index=binarySearch(col);
-		if(index>=size)
-			return -1;
-		else if(col==indexes[index])
+		if(index<size && col==indexes[index])
 			return index;
 		else if(index-1<0)
 			return -1;

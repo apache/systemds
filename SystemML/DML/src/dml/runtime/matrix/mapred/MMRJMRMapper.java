@@ -34,7 +34,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.get(output);
+			IndexedMatrixValue result=cachedValues.getFirst(output);
 			if(result==null)
 				continue;
 			

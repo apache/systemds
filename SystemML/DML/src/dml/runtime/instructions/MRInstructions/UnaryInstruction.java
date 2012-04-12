@@ -45,7 +45,7 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in=cachedValues.get(input);
+		IndexedMatrixValue in=cachedValues.getFirst(input);
 		if(in==null)
 			return;
 		
@@ -62,7 +62,7 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 		
 		//put the output value in the cache
 		if(out==tempValue)
-			cachedValues.set(output, out);
+			cachedValues.add(output, out);
 		
 	}
 

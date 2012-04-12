@@ -9,7 +9,6 @@ import dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
-import dml.runtime.instructions.MRInstructions.MaskInstruction;
 import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;

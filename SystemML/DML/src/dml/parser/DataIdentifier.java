@@ -1,8 +1,5 @@
 package dml.parser;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import dml.utils.LanguageException;
 
 public class DataIdentifier extends Identifier {

@@ -15,33 +15,6 @@ public class DataIdentifier extends Identifier {
 	private int _definedLine;
 	private int _definedCol;
 	
-	private Expression _rowLowerBound = null, _rowUpperBound = null, _colLowerBound = null, _colUpperBound = null;
-	
-	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
-		if (passed.size() != 2) 
-			System.out.println("[E] indices wrong length -- should be 2");
-		ArrayList<Expression> rowIndices = passed.get(0);
-		ArrayList<Expression> colIndices = passed.get(1);
-	
-		_rowLowerBound = rowIndices.get(0);
-		if (rowIndices.size() == 2) _rowUpperBound = rowIndices.get(1);
-		_colLowerBound = colIndices.get(0);
-		if (colIndices.size() == 2) _colUpperBound = colIndices.get(1);
-		
-		System.out.println(this);
-		
-	}
-	
-	public Expression getRowLowerBound(){ return this._rowLowerBound; }
-	public Expression getRowUpperBound(){ return this._rowUpperBound; }
-	public Expression getColLowerBound(){ return this._colLowerBound; }
-	public Expression getColUpperBound(){ return this._colUpperBound; }
-	
-	public void setRowLowerBound(Expression passed){ this._rowLowerBound = passed; }
-	public void setRowUpperBound(Expression passed){ this._rowUpperBound = passed; }
-	public void setColLowerBound(Expression passed){ this._colLowerBound = passed; }
-	public void setColUpperBound(Expression passed){ this._colUpperBound = passed; }
-	
 	
 	public DataIdentifier(DataIdentifier passed){
 		setProperties(passed);
@@ -49,22 +22,14 @@ public class DataIdentifier extends Identifier {
 		_name = passed.getName();
 		_valueTypeString = passed.getValueType().toString();	
 		_defaultValue = passed.getDefaultValue();
-		
-		_rowLowerBound = passed.getRowLowerBound();
-		_rowUpperBound = passed.getRowUpperBound();
-		_colLowerBound = passed.getColLowerBound();
-		_colUpperBound = passed.getColUpperBound();
-		
+			
 	}
 		
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		DataIdentifier newId = new DataIdentifier(this);
 		String newIdName = prefix + this._name;
 		newId.setName(newIdName);
-		
-		if (_rowLowerBound != null || _rowUpperBound != null || _colLowerBound != null || _colUpperBound != null)
-			throw new LanguageException("rewrite does not support indices yet");
-		
+				
 		return newId;
 	}
 	
@@ -140,29 +105,7 @@ public class DataIdentifier extends Identifier {
 	
 	public String toString() {
 		String retVal = new String();
-		retVal += _name;
-		if (_rowLowerBound != null || _rowUpperBound != null || _colLowerBound != null || _colUpperBound != null){
-				retVal += "[";
-				
-				if (_rowLowerBound == null && _rowUpperBound == null) 
-					retVal += ":";
-				else if (_rowLowerBound != null && _rowUpperBound != null)
-					retVal += _rowLowerBound.toString() + ":" + _rowUpperBound.toString();
-				else
-					retVal += _rowLowerBound.toString();
-					
-				retVal += ",";
-				
-				if (_colLowerBound == null && _colUpperBound == null) 
-					retVal += ":";
-				else if (_colLowerBound != null && _colUpperBound != null)
-					retVal += _colLowerBound.toString() + ":" + _colUpperBound.toString();
-				else
-					retVal += _colLowerBound.toString();
-				
-				retVal += "]";
-		}
-		
+		retVal += _name;		
 		return retVal;
 	}
 
@@ -170,16 +113,6 @@ public class DataIdentifier extends Identifier {
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
 		result.addVariable(_name, this);
-		
-		if (_rowLowerBound != null)
-			result.addVariables(_rowLowerBound.variablesRead());
-		if (_rowUpperBound != null)
-			result.addVariables(_rowUpperBound.variablesRead());
-		if (_colLowerBound != null)
-			result.addVariables(_colLowerBound.variablesRead());
-		if (_colUpperBound != null)
-			result.addVariables(_colUpperBound.variablesRead());
-		
 		return result;
 	}
 

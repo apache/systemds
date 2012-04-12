@@ -15,6 +15,7 @@ package dml.parser;
 
 import java.io.*;
 import java.util.*; 
+import java.util.regex.*;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.parser.Expression.FormatType;
@@ -805,16 +806,16 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 
 ArrayList<Expression> ColonDelimitedExpression() :
 {
- ArrayList<Expression> exprsList = new ArrayList<Expression>();
- Expression left = null, right = null;
+	ArrayList<Expression> exprsList = new ArrayList<Expression>();
+	Expression left = null, right = null;
 }
 {
- [left = Expression()] <COLON> [right = Expression()] 
- {
-  exprsList.add(left); 
-  exprsList.add(right); 
-  return exprsList;
- }
+ 	[left = Expression()] <COLON> [right = Expression()] 
+ 	{
+  		exprsList.add(left);
+  		exprsList.add(right); 
+  		return exprsList;
+	}
 }
 
 MultiAssignmentStatement MultiAssignmentStatement() :
@@ -1628,23 +1629,24 @@ DataIdentifier Identifier() :
 }
 
 {
- [LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
+    [LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
   
- {
-    id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
+ 	{
+    	  id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
   
-  if (functCall != null) {
-      String namespaceName = (tNamespace == null) ? null : tNamespace.image;
-     functCall.setFunctionNamespace(namespaceName);
-    functCall.setFunctionName(t.image);
-   return functCall;
-  } else if (exprListList != null){
-   id.setIndices(exprListList);
-   return id;
-  } else{
-   return id; 
-  }
- }
+		  if (functCall != null) {
+		  		String namespaceName = (tNamespace == null) ? null : tNamespace.image;
+		     	functCall.setFunctionNamespace(namespaceName);
+		    	functCall.setFunctionName(t.image);
+		   		return functCall;
+		  } else if (exprListList != null){
+				IndexedIdentifier iid = new IndexedIdentifier(id.getName());
+				iid.setIndices(exprListList);
+		   		return iid;
+		  } else{
+		   		return id; 
+		  }
+ 	}
 }
 
 

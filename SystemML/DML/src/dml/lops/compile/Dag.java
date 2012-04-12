@@ -131,8 +131,7 @@ public class Dag<N extends Lops> {
 
 		nodes = new ArrayList<N>();
 
-		/* Override num_reducers from cluster setup, if available. 
-		 * Default value is specified in DMLConfig class. */
+		/** get number of reducers from job config */
 		JobConf jConf = new JobConf();
 		total_reducers = jConf.getInt("mapred.reduce.tasks", DMLConfig.DEFAULT_NUM_REDUCERS);
 	}
@@ -152,7 +151,6 @@ public class Dag<N extends Lops> {
 
 		if (config != null) {
 			if (config.getTextValue("numreducers") != null)
-				// if the user has provided the number of reducers explicitly, then use that number.
 				total_reducers = Integer.parseInt(config
 						.getTextValue("numreducers"));
 
@@ -1332,9 +1330,9 @@ public class Dag<N extends Lops> {
 
 			// TODO: statiko -- check if this is too conservative?
 			if (child_queued) {
-				// if one of the children are queued, 
-				// remove some child nodes on other leg that may be needed later on. 
-				// For e.g. Group lop. 
+  	     // if one of the children are queued, 
+	       // remove some child nodes on other leg that may be needed later on. 
+	       // For e.g. Group lop. 
  
 			  if((tmpNode == node.getInputs().get(0) || tmpNode == node.getInputs().get(1)) && 
 			      tmpNode.isAligner())
@@ -3019,6 +3017,16 @@ public class Dag<N extends Lops> {
 															  inputIndices.get(2), 
 															  output_index));
 			
+			if ( node.getInputs().size() == 5) {
+				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u]
+				instructionsInMapper.add(node.getInstructions(
+						inputIndices.get(0),
+						inputIndices.get(1),
+						inputIndices.get(2),
+						inputIndices.get(3),
+						inputIndices.get(4),
+						output_index ));
+			}
 			return output_index;
 
 		}

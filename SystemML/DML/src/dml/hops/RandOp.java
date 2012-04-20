@@ -64,15 +64,11 @@ public class RandOp extends Hops
 		if(get_lops() == null)
 		{
 			ExecType et = optFindExecType();
-			if ( et == ExecType.MR ) {
-				set_lops(new Rand(id, minValue, maxValue, sparsity,
-						probabilityDensityFunction, get_dataType(), get_valueType()));
-				get_lops().getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-			}
-			else {
-				throw new HopsException("Invalid ExecType (" + et + ") for Rand.");
-			}
+			Rand rnd = new Rand(id, minValue, maxValue, sparsity,
+					probabilityDensityFunction, get_dataType(), get_valueType(), et);
+			rnd.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+					get_rows_per_block(), get_cols_per_block());
+			set_lops(rnd);
 		}
 		
 		return get_lops();
@@ -119,11 +115,12 @@ public class RandOp extends Hops
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			throw new HopsException("Rand is not implemented for SINGLE_NODE runtime yet!");
-		
-		// Rand operation currently gets executed only in MR. 
-		// TODO: must implement it in CP, as well.
-		return ExecType.MR;
+		if (DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
+			return ExecType.CP;
+
+		if (this.areDimsBelowThreshold() || this.isVector())
+			return ExecType.CP;
+		else
+			return ExecType.MR;
 	}
 }

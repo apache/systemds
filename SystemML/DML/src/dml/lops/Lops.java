@@ -358,6 +358,11 @@ public abstract class Lops {
 	}
 
 	/** Method should be overridden if needed **/
+	public String getInstructions(String output) throws LopsException {
+		throw new LopsException("Should never be invoked in Baseclass");
+	}
+
+	/** Method should be overridden if needed **/
 	public String getInstructions() throws LopsException {
 		throw new LopsException("Should never be invoked in Baseclass");
 	}

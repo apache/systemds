@@ -1,6 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
+import java.util.Random;
 
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
@@ -235,6 +236,33 @@ public class MatrixObject extends Data {
 		result.updateMatrixMetaData();
 		
 		return result;
+	}
+
+	public MatrixObject randOperations(long rows, long cols, double minValue, double maxValue, long seed, double sparsity) throws DMLRuntimeException{
+		Random random=new Random();
+		_data = new MatrixBlock();
+		
+		if(sparsity > MatrixBlock.SPARCITY_TURN_POINT)
+			_data.reset((int)rows, (int)cols, false);
+		else
+			_data.reset((int)rows, (int)cols, true);
+		
+		double currentValue;
+		random.setSeed(seed);
+		for(int r = 0; r < _data.getNumRows(); r++)
+		{
+			for(int c = 0; c < _data.getNumColumns(); c++)
+			{
+				if(random.nextDouble() > sparsity)
+					continue;
+				currentValue = random.nextDouble();//((double) random.nextInt(0, maxRandom) / (double) maxRandom);
+				currentValue = (currentValue * (maxValue - minValue) + minValue);
+				_data.setValue(r, c, currentValue);
+			}
+		}
+		updateMatrixMetaData();
+		
+		return this;
 	}
 
 	public void readMatrix() throws DMLRuntimeException {

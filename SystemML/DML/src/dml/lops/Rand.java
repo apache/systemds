@@ -36,6 +36,16 @@ public class Rand extends Lops
 	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, DataType dt, ValueType vt)
 	{
 		super(Type.RandLop, dt, vt);
+		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, ExecType.MR);
+	}
+
+	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, DataType dt, ValueType vt, ExecType et) {
+		super(Type.RandLop, dt, vt);
+		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, et);
+	}
+
+	public void init(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, ExecType et)
+	{
 		this.getOutputParameters().setFormat(Format.BINARY);
 		this.getOutputParameters().blocked_representation = true;
 		this.getOutputParameters().num_rows = id.getDim1();
@@ -47,17 +57,37 @@ public class Rand extends Lops
 		this.sparsity = sparsity;
 		this.probabilityDensityFunction = probabilityDensityFunction;
 		
-		/*
-		 * This lop can be executed only in RAND job.
-		 */
 		boolean breaksAlignment = false;
 		boolean aligner = false;
-		boolean definesMRJob = true;
+		boolean definesMRJob;
 		
-		lps.addCompatibility(JobType.RAND);
-		this.lps.setProperties( ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+		if ( et == ExecType.MR ) {
+			definesMRJob = true;
+			lps.addCompatibility(JobType.RAND);
+			this.lps.setProperties( et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+		}
+		else {
+			definesMRJob = false;
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
 	}
 
+	@Override 
+	public String getInstructions(String output) {
+		StringBuilder inst = new StringBuilder();
+		inst.append(getExecType() + Lops.OPERAND_DELIMITOR);
+		inst.append("Rand");
+		inst.append(OPERAND_DELIMITOR + "rows=" + this.getOutputParameters().num_rows);
+		inst.append(OPERAND_DELIMITOR + "cols=" + this.getOutputParameters().num_cols);
+		inst.append(OPERAND_DELIMITOR + "min=" + minValue);
+		inst.append(OPERAND_DELIMITOR + "max=" + maxValue);
+		inst.append(OPERAND_DELIMITOR + "sparsity=" + sparsity);
+		inst.append(OPERAND_DELIMITOR + "pdf=" + probabilityDensityFunction);
+		inst.append(OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType());
+		return inst.toString();
+	}
+	
 	@Override
 	public String getInstructions(int inputIndex, int outputIndex)
 	{

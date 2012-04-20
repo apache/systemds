@@ -1154,7 +1154,11 @@ public class Dag<N extends Lops> {
 					
 				} 
 				else {
-					if (node.getInputs().size() == 1) {
+					if ( node.getInputs().size() == 0 ) {
+						// currently, such a case exists only for Rand lop
+						inst_string = node.getInstructions(node.getOutputParameters().getLabel());
+					}
+					else if (node.getInputs().size() == 1) {
 						inst_string = node.getInstructions(node.getInputs()
 								.get(0).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
@@ -1173,7 +1177,7 @@ public class Dag<N extends Lops> {
 								node.getOutputParameters().getLabel());
 					}
 					else {
-						throw new LopsException("Node with more than 3 inputs is not supported in CP yet!");
+						throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in CP yet!");
 					}
 				}
 				

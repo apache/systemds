@@ -13,6 +13,7 @@ import dml.runtime.instructions.CPInstructions.CPInstruction;
 import dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
+import dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
 import dml.runtime.instructions.CPInstructions.AppendCPInstruction;
@@ -117,8 +118,11 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
 
 		String2CPInstructionType.put( "r'"   	, CPINSTRUCTION_TYPE.Reorg);
-		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		String2CPInstructionType.put( "rdiagV2M", CPINSTRUCTION_TYPE.Reorg);
+		
+		String2CPInstructionType.put( "append"  , CPINSTRUCTION_TYPE.Append);
+		
+		String2CPInstructionType.put( "Rand"  , CPINSTRUCTION_TYPE.Rand);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -173,6 +177,9 @@ public class CPInstructionParser extends InstructionParser {
 			
 		case Variable:
 			return (CPInstruction) VariableCPInstruction.parseInstruction(str);
+			
+		case Rand:
+			return (CPInstruction) RandCPInstruction.parseInstruction(str);
 			
 		case External:
 			//return (CPInstruction) ExtBuiltinCPInstruction.parseInstruction(str);

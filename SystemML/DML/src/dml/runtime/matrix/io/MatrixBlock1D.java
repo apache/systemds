@@ -920,6 +920,61 @@ public class MatrixBlock1D extends MatrixValue{
 		return result;
 	}
 	
+	public MatrixValue appendOperations(ReorgOperator op, MatrixValue result,
+			int startRow, int startColumn, int length)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		checkType(result);
+		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
+		boolean sps;
+		if(reducedDim)
+			sps=false;
+		else
+			sps=checkRealSparcity(this);
+			
+		if(result==null)
+			result=new MatrixBlock1D(tempCellIndex.row, tempCellIndex.column, sps);
+		else if(result.getNumRows() == 0 && result.getNumColumns() == 0)
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps);	
+		
+		//TODO: right now cannot handle matrix diag
+	/*	if(op==Reorg.SupportedOperation.REORG_MATRIX_DIAG)
+		{
+			
+			for(int i=0; i<length; i++)
+				result.setValue(startRow+i, 0, getValue(startRow+i, startColumn+i));
+			return result;
+		}*/
+		
+		CellIndex temp = new CellIndex(0, 0);
+		if(sparse)
+		{
+			if(sparseBlock!=null)
+			{
+				for(Entry<CellIndex, Double> e: sparseBlock.entrySet())
+				{
+					op.fn.execute(e.getKey(), temp);
+					result.setValue(temp.row, temp.column, e.getValue());
+				}
+			}
+		}else
+		{
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen;
+				int r,c;
+				for(int i=0; i<limit; i++)
+				{
+					r=i/clen;
+					c=i%clen;
+					temp.set(r, c);
+					op.fn.execute(temp, temp);
+					result.setValue(temp.row, temp.column, denseBlock[i]);
+				}
+			}
+		}
+		
+		return result;
+	}
 
 	private void updateCtable(double v1, double v2, double w, MatrixValue result) throws DMLRuntimeException {
 		int _row, _col;

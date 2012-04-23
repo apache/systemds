@@ -18,6 +18,7 @@ import dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import dml.runtime.instructions.MRInstructions.RandInstruction;
 import dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import dml.runtime.instructions.MRInstructions.ReorgInstruction;
+import dml.runtime.instructions.MRInstructions.AppendInstruction;
 import dml.runtime.instructions.MRInstructions.ScalarInstruction;
 import dml.runtime.instructions.MRInstructions.UnaryInstruction;
 import dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
@@ -58,6 +59,7 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "uatrace" , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uaktrace", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmax"  , MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uarimax"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmax"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
@@ -178,6 +180,9 @@ public class MRInstructionParser extends InstructionParser {
 			
 		case Reblock:
 			return (MRInstruction) ReblockInstruction.parseInstruction(str);
+			
+		case Append:
+			return (MRInstruction) AppendInstruction.parseInstruction(str);
 			
 		case Reorg:
 			return (MRInstruction) ReorgInstruction.parseInstruction(str);

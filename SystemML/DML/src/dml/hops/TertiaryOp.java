@@ -1,13 +1,13 @@
 package dml.hops;
 
+import dml.api.DMLScript;
+import dml.api.DMLScript.RUNTIME_PLATFORM;
 import dml.lops.Aggregate;
 import dml.lops.CentralMoment;
 import dml.lops.CoVariance;
 import dml.lops.CombineBinary;
 import dml.lops.CombineTertiary;
-import dml.lops.DoubleVal;
 import dml.lops.Group;
-import dml.lops.IndexPair;
 import dml.lops.Lops;
 import dml.lops.PickByCount;
 import dml.lops.ReBlock;
@@ -117,7 +117,7 @@ public class TertiaryOp extends Hops {
 								SortKeys.OperationTypes.WithWeights,
 								DataType.MATRIX, get_valueType());
 
-				PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal> pick = new PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal>(
+				PickByCount pick = new PickByCount(
 						sort,
 						getInput().get(2).constructLops(),
 						get_dataType(),
@@ -144,132 +144,150 @@ public class TertiaryOp extends Hops {
 				 * vector and two scalars (e.g., F=ctable(A))
 				 */
 
-				Group group1, group2, group3, group4;
-
-				group1 = group2 = group3 = group4 = null;
-
 				// identify the particular case
-				int type = 1; // F=ctable(A,B,W)
-				DataType dt2 = getInput().get(1).get_dataType(); // data type of
-				// 2nd input
-				DataType dt3 = getInput().get(2).get_dataType(); // data type of
-				// 3rd input
+				
+				// F=ctable(A,B,W)
+				
+				DataType dt1 = getInput().get(0).get_dataType(); 
+				DataType dt2 = getInput().get(1).get_dataType(); 
+				DataType dt3 = getInput().get(2).get_dataType(); 
+				Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+				
+				ExecType et = optFindExecType();
+				if ( et == ExecType.CP ) {
+					Tertiary tertiary = new Tertiary(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							getInput().get(2).constructLops(),
+							tertiaryOp,
+							get_dataType(), get_valueType(), et);
+					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
+					ReBlock reblock = null;
+					try {
+						reblock = new ReBlock(
+								tertiary, (long) get_rows_per_block(),
+								(long) get_cols_per_block(), get_dataType(),
+								get_valueType());
+					} catch (Exception e) {
+						throw new HopsException(e);
+					}
+					reblock.getOutputParameters().setDimensions(-1, -1,
+							get_rows_per_block(), get_cols_per_block());
 
-				if (dt2 == DataType.MATRIX && dt3 == DataType.SCALAR) {
-					type = 2; // F = ctable(A,B) or F = ctable(A,B,1)
-				} else if (dt2 == DataType.SCALAR && dt3 == DataType.SCALAR) {
-					type = 3; // F=ctable(A,1) or F = ctable(A,1,1)
-				} else if (dt2 == DataType.SCALAR && dt3 == DataType.MATRIX) {
-					type = 4; // F=ctable(A,1,W)
+					set_lops(reblock);
 				}
-
-				group1 = new Group(
-						getInput().get(0).constructLops(),
-						Group.OperationTypes.Sort, get_dataType(),
-						get_valueType());
-				group1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-				Tertiary tertiary = null;
-				// create "group" lops for MATRIX inputs
-				switch (type) {
-				case 1:
-					// F = ctable(A,B,W)
-					group2 = new Group(
-							getInput().get(1).constructLops(),
+				else {
+					Group group1, group2, group3, group4;
+					group1 = group2 = group3 = group4 = null;
+	
+					group1 = new Group(
+							getInput().get(0).constructLops(),
 							Group.OperationTypes.Sort, get_dataType(),
 							get_valueType());
-					group2.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					group3 = new Group(
-							getInput().get(2).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
+					group1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					Tertiary tertiary = null;
+					// create "group" lops for MATRIX inputs
+					switch (tertiaryOp) {
+					case CTABLE_TRANSFORM:
+						// F = ctable(A,B,W)
+						group2 = new Group(
+								getInput().get(1).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+						group2.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						group3 = new Group(
+								getInput().get(2).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+						group3.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+	
+						tertiary = new Tertiary(
+								group1, group2, group3,
+								tertiaryOp,
+								get_dataType(), get_valueType(), et);
+						break;
+	
+					case CTABLE_TRANSFORM_SCALAR_WEIGHT:
+						// F = ctable(A,B) or F = ctable(A,B,1)
+						group2 = new Group(
+								getInput().get(1).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+						group2.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						tertiary = new Tertiary(
+								group1,
+								group2,
+								getInput().get(2).constructLops(),
+								tertiaryOp,
+								get_dataType(), get_valueType(), et);
+						break;
+					case CTABLE_TRANSFORM_HISTOGRAM:
+						// F=ctable(A,1) or F = ctable(A,1,1)
+						tertiary = new Tertiary(
+								group1, getInput().get(1).constructLops(),
+								getInput().get(2).constructLops(),
+								tertiaryOp,
+								get_dataType(), get_valueType(), et);
+						break;
+					case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
+						// F=ctable(A,1,W)
+						group3 = new Group(
+								getInput().get(2).constructLops(),
+								Group.OperationTypes.Sort, get_dataType(),
+								get_valueType());
+						group3.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_per_block(),
+								get_cols_per_block());
+						tertiary = new Tertiary(
+								group1,
+								getInput().get(1).constructLops(),
+								group3,
+								tertiaryOp,
+								get_dataType(), get_valueType(), et);
+						break;
+					}
+	
+					// output dimensions are not known at compilation time
+					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
+	
+					group4 = new Group(
+							tertiary, Group.OperationTypes.Sort, get_dataType(),
 							get_valueType());
-					group3.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-
-					tertiary = new Tertiary(
-							group1, group2, group3,
-							Tertiary.OperationTypes.CTABLE_TRANSFORM,
-							get_dataType(), get_valueType());
-					break;
-
-				case 2:
-					// F = ctable(A,B) or F = ctable(A,B,1)
-					group2 = new Group(
-							getInput().get(1).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-					group2.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					tertiary = new Tertiary(
-							group1,
-							group2,
-							getInput().get(2).constructLops(),
-							Tertiary.OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT,
-							get_dataType(), get_valueType());
-					break;
-				case 3:
-					// F=ctable(A,1) or F = ctable(A,1,1)
-					tertiary = new Tertiary(
-							group1, getInput().get(1).constructLops(),
-							getInput().get(2).constructLops(),
-							Tertiary.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM,
-							get_dataType(), get_valueType());
-					break;
-				case 4:
-					// F=ctable(A,1,W)
-					group3 = new Group(
-							getInput().get(2).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-					group3.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
-					tertiary = new Tertiary(
-							group1,
-							getInput().get(1).constructLops(),
-							group3,
-							Tertiary.OperationTypes.CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM,
-							get_dataType(), get_valueType());
-					break;
+					group4.getOutputParameters().setDimensions(-1, -1, -1, -1);
+	
+					Aggregate agg1 = new Aggregate(
+							group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
+							get_valueType(), ExecType.MR);
+					agg1.getOutputParameters().setDimensions(-1, -1, -1, -1);
+	
+					// kahamSum is used for aggreagtion but inputs do not have
+					// correction values
+					agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
+	
+					// set_lops(agg1);
+	
+					ReBlock reblock = null;
+					try {
+						reblock = new ReBlock(
+								agg1, (long) get_rows_per_block(),
+								(long) get_cols_per_block(), get_dataType(),
+								get_valueType());
+					} catch (Exception e) {
+						throw new HopsException(e);
+					}
+					reblock.getOutputParameters().setDimensions(-1, -1,
+							get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(reblock);
 				}
-
-				// output dimensions are not known at compilation time
-				tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
-
-				group4 = new Group(
-						tertiary, Group.OperationTypes.Sort, get_dataType(),
-						get_valueType());
-				group4.getOutputParameters().setDimensions(-1, -1, -1, -1);
-
-				Aggregate agg1 = new Aggregate(
-						group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
-						get_valueType(), ExecType.MR);
-				agg1.getOutputParameters().setDimensions(-1, -1, -1, -1);
-
-				// kahamSum is used for aggreagtion but inputs do not have
-				// correction values
-				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
-
-				// set_lops(agg1);
-
-				ReBlock reblock = null;
-				try {
-					reblock = new ReBlock(
-							agg1, (long) get_rows_per_block(),
-							(long) get_cols_per_block(), get_dataType(),
-							get_valueType());
-				} catch (Exception e) {
-					throw new HopsException(e);
-				}
-				reblock.getOutputParameters().setDimensions(-1, -1,
-						get_rows_per_block(), get_cols_per_block());
-
-				set_lops(reblock);
 			} else if (op == OpOp3.SPEARMAN) {
 				Group group1, group2, group3, group4;
 
@@ -533,7 +551,15 @@ public class TertiaryOp extends Hops {
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		// TODO Auto-generated method stub
-		return null;
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		if ( (getInput().get(0).areDimsBelowThreshold() 
+				&& getInput().get(1).areDimsBelowThreshold()
+				&& getInput().get(2).areDimsBelowThreshold())
+			)
+			return ExecType.CP;
+		else
+			return ExecType.MR;
 	}
 }

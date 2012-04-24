@@ -10,9 +10,7 @@ import dml.lops.CoVariance;
 import dml.lops.CombineBinary;
 import dml.lops.CombineUnary;
 import dml.lops.Data;
-import dml.lops.DoubleVal;
 import dml.lops.Group;
-import dml.lops.IndexPair;
 import dml.lops.Lops;
 import dml.lops.PartialAggregate;
 import dml.lops.PickByCount;
@@ -92,7 +90,7 @@ public class BinaryOp extends Hops {
 							Double.toString(0.25), DataType.SCALAR,
 							get_valueType(), false);
 
-					PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal> pick = new PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal>(
+					PickByCount pick = new PickByCount(
 							sort, lit, DataType.MATRIX, get_valueType(),
 							PickByCount.OperationTypes.RANGEPICK);
 
@@ -215,7 +213,7 @@ public class BinaryOp extends Hops {
 						getInput().get(0).get_rows_per_block(),
 						getInput().get(0).get_cols_per_block());
 
-				PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal> pick = new PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal>(
+				PickByCount pick = new PickByCount(
 						sort,
 						getInput().get(1).constructLops(),
 						get_dataType(),

@@ -6,9 +6,7 @@ import dml.lops.Aggregate;
 import dml.lops.BinaryCP;
 import dml.lops.CombineUnary;
 import dml.lops.Data;
-import dml.lops.DoubleVal;
 import dml.lops.Group;
-import dml.lops.IndexPair;
 import dml.lops.Lops;
 import dml.lops.PartialAggregate;
 import dml.lops.PickByCount;
@@ -115,7 +113,7 @@ public class UnaryOp extends Hops {
 									.toString(0.25), DataType.SCALAR,
 							get_valueType(), false);
 
-					PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal> pick = new PickByCount<IndexPair, DoubleVal, IndexPair, DoubleVal>(
+					PickByCount pick = new PickByCount(
 							sort, lit, DataType.MATRIX, get_valueType(),
 							PickByCount.OperationTypes.RANGEPICK);
 

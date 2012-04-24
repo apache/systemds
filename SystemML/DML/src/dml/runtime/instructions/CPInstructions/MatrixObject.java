@@ -1,6 +1,7 @@
 package dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Random;
 
 import dml.parser.Expression.DataType;
@@ -14,11 +15,13 @@ import dml.runtime.matrix.io.MatrixBlock;
 import dml.runtime.matrix.io.MatrixIndexes;
 import dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import dml.runtime.matrix.io.OutputInfo;
+import dml.runtime.matrix.io.MatrixValue.CellIndex;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
 import dml.runtime.matrix.operators.AggregateUnaryOperator;
 import dml.runtime.matrix.operators.BinaryOperator;
 import dml.runtime.matrix.operators.ReorgOperator;
 import dml.runtime.matrix.operators.ScalarOperator;
+import dml.runtime.matrix.operators.SimpleOperator;
 import dml.runtime.matrix.operators.UnaryOperator;
 import dml.runtime.util.DataConverter;
 import dml.runtime.util.MapReduceTool;
@@ -238,6 +241,45 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
+	private MatrixObject finalizeCtableOperations(HashMap<CellIndex,Double> ctable, MatrixObject result) throws DMLRuntimeException {
+		MatrixBlock result_data = new MatrixBlock(ctable);
+		result.setData(result_data);
+		result.updateMatrixMetaData();
+		return result;
+	}
+	
+	// F=ctable(A,B,W)
+	public MatrixObject tertiaryOperations(SimpleOperator op, MatrixObject input2, MatrixObject input3, MatrixObject result)
+	throws DMLUnsupportedOperationException, DMLRuntimeException {
+		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
+		_data.tertiaryOperations(op, input2.getData(), input3.getData(), ctable);
+		return finalizeCtableOperations(ctable, result);
+	}
+
+	// F=ctable(A,B) or F=ctable(A,B,1);
+	public MatrixObject tertiaryOperations(SimpleOperator op, MatrixObject input2, ScalarObject input3, MatrixObject result)
+	throws DMLUnsupportedOperationException, DMLRuntimeException {
+		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
+		_data.tertiaryOperations(op, input2.getData(), input3.getDoubleValue(), ctable);
+		return finalizeCtableOperations(ctable, result);
+	}
+	
+	// F=ctable(A,1) or F = ctable(A,1,1)
+	public MatrixObject tertiaryOperations(SimpleOperator op, ScalarObject input2, ScalarObject input3, MatrixObject result)
+	throws DMLUnsupportedOperationException, DMLRuntimeException {
+		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
+		_data.tertiaryOperations(op, input2.getDoubleValue(), input3.getDoubleValue(), ctable);
+		return finalizeCtableOperations(ctable, result);
+	}
+
+	// F=ctable(A,1,W)
+	public MatrixObject tertiaryOperations(SimpleOperator op, ScalarObject input2, MatrixObject input3, MatrixObject result)
+	throws DMLUnsupportedOperationException, DMLRuntimeException {
+		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
+		_data.tertiaryOperations(op, input2.getDoubleValue(), input3.getData(), ctable);
+		return finalizeCtableOperations(ctable, result);
+	}
+
 	public MatrixObject randOperations(long rows, long cols, double minValue, double maxValue, long seed, double sparsity) throws DMLRuntimeException{
 		Random random=new Random();
 		_data = new MatrixBlock();
@@ -339,7 +381,6 @@ public class MatrixObject extends Data {
 						try {
 							throw new DMLRuntimeException("Unexpected input format");
 						} catch (DMLRuntimeException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}

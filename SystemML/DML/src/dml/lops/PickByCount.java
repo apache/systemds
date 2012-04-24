@@ -7,9 +7,7 @@ import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
 import dml.utils.LopsException;
 
-public class PickByCount <KIN extends KEY, VIN extends VAL, KOUT extends KEY, VOUT extends VAL> 
-extends Lops 
-{
+public class PickByCount extends Lops {
 	
 	public enum OperationTypes {VALUEPICK, RANGEPICK};	
 	OperationTypes operation;

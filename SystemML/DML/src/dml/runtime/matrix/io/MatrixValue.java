@@ -65,6 +65,10 @@ public abstract class MatrixValue implements WritableComparable {
 	public MatrixValue(MatrixValue that) {
 		this.copy(that);
 	}
+	
+	public MatrixValue(HashMap<CellIndex, Double> map) {
+		
+	}
 
 	public abstract int getNumRows();
 

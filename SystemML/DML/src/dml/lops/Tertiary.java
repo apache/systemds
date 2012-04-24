@@ -15,7 +15,7 @@ import dml.utils.LopsException;
 
 public class Tertiary extends Lops 
 {
-	public enum OperationTypes { CTABLE_TRANSFORM, CTABLE_TRANSFORM_SCALAR_WEIGHT, CTABLE_TRANSFORM_HISTOGRAM, CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM };	
+	public enum OperationTypes { CTABLE_TRANSFORM, CTABLE_TRANSFORM_SCALAR_WEIGHT, CTABLE_TRANSFORM_HISTOGRAM, CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, INVALID };	
 	OperationTypes operation;
 	
 
@@ -28,28 +28,45 @@ public class Tertiary extends Lops
 
 	public Tertiary(Lops input1, Lops input2, Lops input3, OperationTypes op, DataType dt, ValueType vt) 
 	{
-		super(Lops.Type.Tertiary, dt, vt);	
+		super(Lops.Type.Tertiary, dt, vt);
+		init(input1, input2, input3, op, ExecType.MR);
+	}
+	
+	public Tertiary(Lops input1, Lops input2, Lops input3, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	{
+		super(Lops.Type.Tertiary, dt, vt);
+		init(input1, input2, input3, op, et);
+	}
+	
+	private void init (Lops input1, Lops input2, Lops input3, OperationTypes op, ExecType et) 
+	{
 		operation = op;
 		this.addInput(input1);
-		this.addInput((Lops)input2);
-		this.addInput((Lops)input3);
+		this.addInput(input2);
+		this.addInput(input3);
 		input1.addOutput(this);
-		((Lops)input2).addOutput(this);
-		((Lops)input3).addOutput(this);
-		
-		/*
-		 *  This lop can be executed in GMR, RAND, REBLOCK jobs
-		 */
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.RAND);
-		lps.addCompatibility(JobType.REBLOCK_BINARY);
-		lps.addCompatibility(JobType.REBLOCK_TEXT);
+		input2.addOutput(this);
+		input3.addOutput(this);
 		
 		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		this.lps.setProperties( ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		if ( et == ExecType.MR ) {
+			/*
+			 *  This lop can be executed in GMR, RAND, REBLOCK jobs
+			 */
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.REBLOCK_BINARY);
+			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			
+			this.lps.setProperties( et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -57,6 +74,27 @@ public class Tertiary extends Lops
 	
 		return " Operation: " + operation;
 
+	}
+
+	public static OperationTypes findCtableOperationByInputDataTypes(DataType dt1, DataType dt2, DataType dt3) {
+		if ( dt1 == DataType.MATRIX ) {
+			if (dt2 == DataType.MATRIX && dt3 == DataType.SCALAR) {
+				// F = ctable(A,B) or F = ctable(A,B,1)
+				return OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT;
+			} else if (dt2 == DataType.SCALAR && dt3 == DataType.SCALAR) {
+				// F=ctable(A,1) or F = ctable(A,1,1)
+				return OperationTypes.CTABLE_TRANSFORM_HISTOGRAM;
+			} else if (dt2 == DataType.SCALAR && dt3 == DataType.MATRIX) {
+				// F=ctable(A,1,W)
+				return OperationTypes.CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM;
+			} else {
+				// F=ctable(A,B,W)
+				return OperationTypes.CTABLE_TRANSFORM;
+			}
+		}
+		else {
+			return OperationTypes.INVALID;
+		}
 	}
 
 	/**
@@ -67,6 +105,19 @@ public class Tertiary extends Lops
 	public OperationTypes getOperationType()
 	{
 		return operation;
+	}
+
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException
+	{
+		String inst = getExecType() + Lops.OPERAND_DELIMITOR;
+		inst += "ctable" + OPERAND_DELIMITOR + 
+		input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+		input3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
+		
+		return inst;
 	}
 
 	@Override

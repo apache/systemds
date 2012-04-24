@@ -1,5 +1,7 @@
 package dml.runtime.matrix.io;
 
+import java.util.HashMap;
+
 public class MatrixBlock extends MatrixBlockDSM{
 
 	public MatrixBlock(int i, int j, boolean sparse1) {
@@ -8,5 +10,9 @@ public class MatrixBlock extends MatrixBlockDSM{
 
 	public MatrixBlock() {
 		super();
+	}
+	
+	public MatrixBlock(HashMap<CellIndex, Double> map) {
+		super(map);
 	}
 }

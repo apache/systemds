@@ -2,9 +2,7 @@ package dml.lops.compile;
 
 import java.util.Comparator;
 
-import dml.lops.KEY;
 import dml.lops.Lops;
-import dml.lops.VAL;
 import dml.utils.DMLRuntimeException;
 
 /**

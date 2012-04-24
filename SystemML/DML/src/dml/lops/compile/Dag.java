@@ -17,14 +17,12 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import dml.api.DMLScript;
 import dml.lops.CombineBinary;
 import dml.lops.Data;
-import dml.lops.KEY;
 import dml.lops.Lops;
 import dml.lops.OutputParameters;
 import dml.lops.ParameterizedBuiltin;
 import dml.lops.PartitionLop;
 import dml.lops.PickByCount;
 import dml.lops.Unary;
-import dml.lops.VAL;
 import dml.lops.Data.OperationTypes;
 import dml.lops.LopProperties.ExecLocation;
 import dml.lops.LopProperties.ExecType;
@@ -2879,7 +2877,7 @@ public class Dag<N extends Lops> {
 			// only Ranagepick lop can contribute to labels
 			if (node.getType() == Type.PickValues) {
 
-				PickByCount<? extends KEY, ? extends VAL, ? extends KEY, ? extends VAL> pbc = (PickByCount<? extends KEY, ? extends VAL, ? extends KEY, ? extends VAL>) node;
+				PickByCount pbc = (PickByCount) node;
 				if (pbc.getOperationType() == PickByCount.OperationTypes.RANGEPICK) {
 					int scalarIndex = 1; // always the second input is a scalar
 

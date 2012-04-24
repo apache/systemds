@@ -17,6 +17,7 @@ import dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
 import dml.runtime.instructions.CPInstructions.AppendCPInstruction;
+import dml.runtime.instructions.CPInstructions.TertiaryCPInstruction;
 import dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import dml.utils.DMLRuntimeException;
@@ -120,9 +121,10 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "r'"   	, CPINSTRUCTION_TYPE.Reorg);
 		String2CPInstructionType.put( "rdiagV2M", CPINSTRUCTION_TYPE.Reorg);
 		
-		String2CPInstructionType.put( "append"  , CPINSTRUCTION_TYPE.Append);
+		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
 		String2CPInstructionType.put( "Rand"  , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Tertiary);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -150,6 +152,9 @@ public class CPInstructionParser extends InstructionParser {
 
 		case ArithmeticBinary:
 			return (CPInstruction) ArithmeticBinaryCPInstruction.parseInstruction(str);
+		
+		case Tertiary:
+			return (CPInstruction) TertiaryCPInstruction.parseInstruction(str);
 		
 		case BooleanBinary:
 			return (CPInstruction) BooleanBinaryCPInstruction.parseInstruction(str);

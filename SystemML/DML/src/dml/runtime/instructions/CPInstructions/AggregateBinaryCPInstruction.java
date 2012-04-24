@@ -43,8 +43,8 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 	public MatrixObject processInstruction(ProgramBlock pb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
 		
-		long st = System.currentTimeMillis();
-		long begin = st;
+		//long st = System.currentTimeMillis();
+		//long begin = st;
 		if(pb == null) System.err.println("pb is null");
 		
 		//System.out.println("MatMult in CP ...");
@@ -55,12 +55,12 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 		String output_name = output.get_name(); 
 
 		//System.out.println("    setup inputs: " + (System.currentTimeMillis()-st) + " msec.");
-		st = System.currentTimeMillis();
+		//st = System.currentTimeMillis();
 		
 		MatrixObject res = mat1.aggregateBinaryOperations(ab_op, mat2, (MatrixObject)pb.getVariable(output_name));
 		
 		//System.out.println("    compute result: " + (System.currentTimeMillis()-st) + " msec.");
-		st = System.currentTimeMillis();
+		//st = System.currentTimeMillis();
 		
 		pb.setVariableAndWriteToHDFS(output_name, res);
 		//System.out.println("    write to HDFS: " + (System.currentTimeMillis()-st) + " msec.");

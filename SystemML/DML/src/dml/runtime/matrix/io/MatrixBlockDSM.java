@@ -97,6 +97,30 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.copy(that);
 	}
 	
+	public MatrixBlockDSM(HashMap<CellIndex, Double> map) {
+		// compute dimensions from the map
+		int nrows=0, ncols=0;
+		for (CellIndex index : map.keySet()) {
+			nrows = (nrows < index.row ? index.row : nrows);
+			ncols = (ncols < index.column ? index.column : ncols);
+		}
+		
+		rlen = nrows;
+		clen = ncols;
+		sparse = true;
+		nonZeros = 0;
+		maxrow = nrows;
+		maxcolumn = ncols;
+		
+		for (CellIndex index : map.keySet()) {
+			double d  = map.get(index).doubleValue();
+			if ( d > 0 ) {
+				this.setValue(index.row-1, index.column-1, d);
+				//nonZeros++;
+			}
+		}
+	}
+	
 	public int getNumRows()
 	{
 		return rlen;
@@ -2162,13 +2186,15 @@ public class MatrixBlockDSM extends MatrixValue{
 	 *  this <- A; scalarThat <- v2; that2 <- W; result <- D
 	 */
 	public void tertiaryOperations(Operator op, double scalarThat,
-			MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
+			MatrixValue that2Val, HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		/*
 		 * (i1,j1,v1) from input1 (this)
 		 * (v2) from sclar_input2 (scalarThat)
 		 * (i3,j3,w)  from input3 (that2)
 		 */
+		
+		MatrixBlockDSM that2 = checkType(that2Val);
 		
 		double v1;
 		double v2 = scalarThat;
@@ -2234,7 +2260,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
-					int[] cols=sparseRows[r].getIndexContainer();
+					//int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
 					{
@@ -2268,7 +2294,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	 *  this <- A; that <- B; scalar_that2 <- w; result <- D
 	 */
 	@Override
-	public void tertiaryOperations(Operator op, MatrixValue that,
+	public void tertiaryOperations(Operator op, MatrixValue thatVal,
 			double scalarThat2, HashMap<CellIndex, Double> ctableResult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 
@@ -2277,6 +2303,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		 * (i1,j1,v2) from input2 (that)
 		 * (w)  from scalar_input3 (scalarThat2)
 		 */
+		
+		MatrixBlockDSM that = checkType(thatVal);
 		
 		double v1, v2;
 		double w = scalarThat2;
@@ -2320,7 +2348,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	 *  D = ctable(A,B,W)
 	 *  this <- A; that <- B; that2 <- W; result <- D
 	 */
-	public void tertiaryOperations(Operator op, MatrixValue that, MatrixValue that2, HashMap<CellIndex, Double> ctableResult)
+	public void tertiaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, HashMap<CellIndex, Double> ctableResult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{	
 		/*
@@ -2328,6 +2356,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		 * (i1,j1,v2) from input2 (that)
 		 * (i1,j1,w)  from input3 (that2)
 		 */
+		
+		MatrixBlockDSM that = checkType(thatVal);
+		MatrixBlockDSM that2 = checkType(that2Val);
 		
 		double v1, v2, w;
 		if(sparse)
@@ -2870,7 +2901,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
 		m.examSparsity();
 		System.out.println(m);
-		MatrixBlockDSM result=new MatrixBlockDSM(rows, cols, true);
+		//MatrixBlockDSM result=new MatrixBlockDSM(rows, cols, true);
 		//m.selectOperations(result, new IndexRange(3, rows-3, 3, cols-3));
 		
 		ArrayList<IndexedMatrixValue> results=new ArrayList<IndexedMatrixValue>();

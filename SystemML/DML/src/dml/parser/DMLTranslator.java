@@ -1981,7 +1981,8 @@ public class DMLTranslator {
 			else
 			{
 				try {
-					rowUpperHops = new UnaryOp(source.getName(), source.getDataType(), source.getValueType(), Hops.OpOp1.NROW, hops.get(source.getName()));
+					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
+					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(source.getName()));
 				} catch (HopsException e) {
 					throw new RuntimeException(e);
 				}
@@ -2001,7 +2002,7 @@ public class DMLTranslator {
 			else
 			{
 				try {
-					colUpperHops = new UnaryOp(source.getName(), source.getDataType(), source.getValueType(), Hops.OpOp1.NCOL, hops.get(source.getName()));
+					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(source.getName()));
 				} catch (HopsException e) {
 					throw new RuntimeException(e);
 				}

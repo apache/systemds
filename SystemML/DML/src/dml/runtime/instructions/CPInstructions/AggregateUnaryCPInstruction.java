@@ -176,23 +176,60 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		String opcode = InstructionUtils.getOpCode(instString);
 		if(opcode.equalsIgnoreCase("nrow")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
-			DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
+			ScalarObject ret = null;
+			if ( output.get_valueType() == ValueType.INT ) {
+				ret = new IntObject(output_name, (int) dims.getMatrixCharacteristics().get_rows());
+			}
+			else if ( output.get_valueType() == ValueType.DOUBLE ) {
+				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
+			}
 			pb.setVariable(output_name, ret);
 			return ret;
-		}
+			
+/*			if ( output.get_valueType() == ValueType.INT ) {
+				IntObject ret = new IntObject(output_name, (int) dims.getMatrixCharacteristics().get_rows());
+				pb.setVariable(output_name, ret);
+				return ret;
+			}
+			else if ( output.get_valueType() == ValueType.DOUBLE ) {
+				DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
+				pb.setVariable(output_name, ret);
+				return ret;
+			}
+*/		}
 		else if(opcode.equalsIgnoreCase("ncol")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
-			DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
+			ScalarObject ret = null;
+			if ( output.get_valueType() == ValueType.INT ) {
+				ret = new IntObject(output_name, (int) dims.getMatrixCharacteristics().get_cols());
+			}
+			else if ( output.get_valueType() == ValueType.DOUBLE ) {
+				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
+			}
 			pb.setVariable(output_name, ret);
 			return ret;
-		}
+/*			DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
+			pb.setVariable(output_name, ret);
+			return ret;
+*/		}
 		else if(opcode.equalsIgnoreCase("length")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
-			DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols()
+			ScalarObject ret = null;
+			if ( output.get_valueType() == ValueType.INT ) {
+				ret = new IntObject(output_name, (int) (dims.getMatrixCharacteristics().get_cols()
+						 * dims.getMatrixCharacteristics().get_rows()));
+			}
+			else if ( output.get_valueType() == ValueType.DOUBLE ) {
+				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols()
+						 * dims.getMatrixCharacteristics().get_rows());
+			}
+			pb.setVariable(output_name, ret);
+			return ret;
+/*			DoubleObject ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols()
 															 * dims.getMatrixCharacteristics().get_rows());
 			pb.setVariable(output_name, ret);
 			return ret;
-		}
+*/		}
 		
 		MatrixObject mat = pb.getMatrixVariable(input1.get_name());
 		AggregateUnaryOperator au_op = (AggregateUnaryOperator) optr;

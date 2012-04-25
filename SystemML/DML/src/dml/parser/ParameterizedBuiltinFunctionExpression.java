@@ -24,7 +24,13 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 	}
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
-		return new ParameterizedBuiltinFunctionExpression(_opcode, _varParams );
+		
+		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
+		for (String key : _varParams.keySet()){
+			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
+			newVarParams.put(key, newExpr);
+		}	
+		return new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams);
 	}
 
 	public void setOpcode(ParameterizedBuiltinFunctionOp op) {

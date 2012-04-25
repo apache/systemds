@@ -9,15 +9,11 @@ import dml.utils.LanguageException;
 
 /**
  * <p>Defines a Rand-Statement.</p>
- * 
- * @author schnetter
  */
 public class RandStatement extends Statement
 {
 	/**
 	 * <p>Defines the list of available parameters and their DML component.</p>
-	 * 
-	 * @author schnetter
 	 */
 	private enum Param
 	{
@@ -80,15 +76,21 @@ public class RandStatement extends Statement
 	/** list of required variables */
 	private HashMap<String, String> _requiredVariables;
 	
-	
+		
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
 		RandStatement newStatement = new RandStatement(this);
 		String newIdName = prefix + _id.getName();
 		newStatement._id.setName(newIdName);
+		
+		// handle rewritting required variables
+		for (String key : newStatement._requiredVariables.keySet()){
+			String rewrittenValue = prefix + newStatement._requiredVariables.get(key);
+			newStatement._requiredVariables.put(key, rewrittenValue);
+		}
+		
 		return newStatement;
 	}
-	
 	
 	
 	/**
@@ -112,6 +114,13 @@ public class RandStatement extends Statement
 		this._id = newId;
 		this._requiredVariables = newRequiredVariables;
 		
+		
+		this.rows = rand.rows;
+		this.cols = rand.cols;
+		this.minValue = rand.minValue;
+		this.maxValue = rand.maxValue;
+		this.sparsity = rand.sparsity;
+		this.probabilityDensityFunction = rand.probabilityDensityFunction;
 		
 	}
 	

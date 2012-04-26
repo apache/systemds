@@ -84,6 +84,11 @@ public class DMLTranslator {
 				}
 			
 				for (DataIdentifier currVar : fstmt.getInputParams()) {	
+					
+					if (currVar.getDataType() == DataType.SCALAR){
+						currVar.setDimensions(0, 0);
+					}
+					
 					vs.addVariable(currVar.getName(), currVar);
 				}
 				fblock.validate(dmlp, vs, constVars);

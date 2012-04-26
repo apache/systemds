@@ -125,12 +125,32 @@ public abstract class Identifier extends Expression{
 	
 	public void validateExpression(HashMap<String,DataIdentifier> ids) throws LanguageException {
 		Identifier out = this.getOutput();
+		
 		if (out instanceof DataIdentifier){
+			
+			// set properties for Data identifer
 			String name = ((DataIdentifier)out).getName();
 			Identifier id = ids.get(name);
 			if ( id == null )
 				LiveVariableAnalysis.throwUndefinedVar(name, "");
 			this.getOutput().setProperties(id);
+			
+			// validate IndexedIdentifier -- which is substype of DataIdentifer with index
+			if (out instanceof IndexedIdentifier){
+				
+				// validate the row / col index bounds (if defined)
+				IndexedIdentifier indexedIdentiferOut = (IndexedIdentifier)out;
+				if (indexedIdentiferOut.getRowLowerBound() != null) 
+					indexedIdentiferOut.getRowLowerBound().validateExpression(ids);
+				if (indexedIdentiferOut.getRowUpperBound() != null) 
+					indexedIdentiferOut.getRowUpperBound().validateExpression(ids);
+				if (indexedIdentiferOut.getColLowerBound() != null) 
+					indexedIdentiferOut.getColLowerBound().validateExpression(ids);	
+				if (indexedIdentiferOut.getColUpperBound() != null) 
+					indexedIdentiferOut.getColUpperBound().validateExpression(ids);
+					
+			}
+							
 		} else {
 			this.getOutput().setProperties(out);
 		}

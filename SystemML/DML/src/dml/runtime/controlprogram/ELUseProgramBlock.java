@@ -126,8 +126,8 @@ public class ELUseProgramBlock extends ProgramBlock {
 		for(int foldId = 0 ; foldId < foldCount; foldId++) {
 		
 			/*************************** Execute test function block *******************************/	
-		
-			FunctionProgramBlock testpb = _prog.getFunctionProgramBlock(_params.getTestFunctionName());
+			// THIS FUNCTION CALL NEEDS TO BE UPDATED
+			FunctionProgramBlock testpb = null; //_prog.getFunctionProgramBlock(_params.getTestFunctionName());
 
 			// create bindings to formal parameters for training function call
 			

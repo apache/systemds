@@ -15,23 +15,36 @@ public class Program {
 	public ArrayList<ProgramBlock> _programBlocks;
 
 	protected HashMap<String, Data> _programVariables;
-	private HashMap<String, FunctionProgramBlock> _functionProgramBlocks;
+	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
+	
 
 	//handle to the nimble dag queue
 	private DAGQueue _dagQueue;
 		
 	public Program() {
-		_functionProgramBlocks = new HashMap<String, FunctionProgramBlock>(); 
+		_namespaceFunctions = new HashMap<String, HashMap<String,FunctionProgramBlock>>(); 
 		_programBlocks = new ArrayList<ProgramBlock>();
 		_programVariables = new HashMap<String, Data>();
 	}
 
-	public void addFunctionProgramBlock(String key, FunctionProgramBlock fpb){
-		_functionProgramBlocks.put(key, fpb);
+	public void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
+		HashMap<String,FunctionProgramBlock> namespaceBlocks = _namespaceFunctions.get(namespace);
+		if (namespaceBlocks == null){
+			namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
+			_namespaceFunctions.put(namespace,namespaceBlocks);
+		}
+		namespaceBlocks.put(fname,fpb);
 	}
 	
-	public FunctionProgramBlock getFunctionProgramBlock(String key){
-		return _functionProgramBlocks.get(key);
+	public FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
+		
+		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
+		if (namespaceFunctBlocks == null)
+			throw new DMLRuntimeException("namespace " + namespace + " is undefined");
+		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
+		if (retVal == null)
+			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);
+		return retVal;
 	}
 	
 	public void addProgramBlock(ProgramBlock pb) {

@@ -2,6 +2,8 @@ package dml.parser;
 
 import java.util.ArrayList;
 
+import dml.utils.LanguageException;
+
 public class IndexedIdentifier extends DataIdentifier {
 
 	// stores the expressions containing the ranges for the 
@@ -13,6 +15,24 @@ public class IndexedIdentifier extends DataIdentifier {
    		_rowUpperBound = null; 
    		_colLowerBound = null; 
    		_colUpperBound = null;
+	}
+		
+	public Expression rewriteExpression(String prefix) throws LanguageException {
+		
+		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName());
+		newIndexedIdentifier.setProperties(this);
+		
+		newIndexedIdentifier._kind = Kind.Data;
+		newIndexedIdentifier._name = prefix + this._name;
+		newIndexedIdentifier._valueTypeString = this.getValueType().toString();	
+		newIndexedIdentifier._defaultValue = this._defaultValue;
+		
+		newIndexedIdentifier._rowLowerBound = (_rowLowerBound == null) ? null : _rowLowerBound.rewriteExpression(prefix);
+		newIndexedIdentifier._rowUpperBound = (_rowUpperBound == null) ? null : _rowUpperBound.rewriteExpression(prefix);
+		newIndexedIdentifier._colLowerBound = (_colLowerBound == null) ? null : _colLowerBound.rewriteExpression(prefix);
+		newIndexedIdentifier._colUpperBound = (_colUpperBound == null) ? null : _colUpperBound.rewriteExpression(prefix);
+		
+		return newIndexedIdentifier;
 	}
 		
 	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
@@ -65,7 +85,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 	public String toString() {
 		String retVal = new String();
-		retVal += _name;
+		retVal += this.getName();
 		if (_rowLowerBound != null || _rowUpperBound != null || _colLowerBound != null || _colUpperBound != null){
 				retVal += "[";
 				
@@ -105,7 +125,7 @@ public class IndexedIdentifier extends DataIdentifier {
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		result.addVariable(_name, this);
+		result.addVariable(this.getName(), this);
 		
 		if (_rowLowerBound != null)
 			result.addVariables(_rowLowerBound.variablesRead());

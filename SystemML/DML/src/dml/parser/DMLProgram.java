@@ -130,11 +130,15 @@ public class DMLProgram {
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
 		
-		for (String key : _functionBlocks.keySet()){
-			// add program block to program
-			FunctionStatementBlock fsb = _functionBlocks.get(key);
-			FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, debug, config);
-			rtprog.addFunctionProgramBlock(key,rtpb);
+		// for all namespaces, translate function statement blocks into function program blocks
+		for (String namespace : _namespaces.keySet()){
+		
+			for (String fname : getFunctionStatementBlocks(namespace).keySet()){
+				// add program block to program
+				FunctionStatementBlock fsb = getFunctionStatementBlocks(namespace).get(fname);
+				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, debug, config);
+				rtprog.addFunctionProgramBlock(namespace, fname,rtpb);
+			}
 		}
 		
 		// for each top-level block

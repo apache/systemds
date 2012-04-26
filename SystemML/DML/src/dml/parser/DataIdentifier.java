@@ -5,8 +5,8 @@ import dml.utils.LanguageException;
 public class DataIdentifier extends Identifier {
 
 	protected String _name;
-	private String 	_valueTypeString;	
-	private String 	_defaultValue;
+	protected String 	_valueTypeString;	
+	protected String 	_defaultValue;
 	
 	// Store information about where the data identifier has been defined in original DML script 
 	private int _definedLine;

@@ -1634,8 +1634,8 @@ public class DMLTranslator {
 					
 					/**
 					 * Instruction format extFunct:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
-					 * These are the "bound names" for the inputs / outputs.  For example, out1 = foo(in1, in2) yields
-					 * extFunct:::foo:::2:::1:::in1:::in2:::out1
+					 * These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
+					 * extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
 					 * 
 					 */
 
@@ -1644,6 +1644,9 @@ public class DMLTranslator {
 					StringBuilder inst = new StringBuilder();
 
 					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
+					inst.append(Lops.OPERAND_DELIMITOR);
+					
+					inst.append(fci.getNamespace());
 					inst.append(Lops.OPERAND_DELIMITOR);
 					
 					inst.append(fstmt.getName());
@@ -1668,7 +1671,7 @@ public class DMLTranslator {
 					inst.append(target.getName());
 					
 					// create the instruction for the function call
-					sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getName(), inParamNames,outParamNames, inst.toString()));
+					sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getNamespace(),fci.getName(), inParamNames,outParamNames, inst.toString()));
 					
 				}
 			}
@@ -1711,7 +1714,7 @@ public class DMLTranslator {
 						inst.append(Lops.OPERAND_DELIMITOR);
 				}
 				// create the instruction for the function call
-				sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getName(), inParamNames,outParamNames, inst.toString()));
+				sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getNamespace(),fci.getName(), inParamNames,outParamNames, inst.toString()));
 			}
 			
 			if (current instanceof RandStatement) {

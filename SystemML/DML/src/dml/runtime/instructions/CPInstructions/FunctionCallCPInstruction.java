@@ -18,7 +18,8 @@ import dml.utils.DMLUnsupportedOperationException;
  */
 public class FunctionCallCPInstruction extends CPInstruction {
 
-	public String _functionName;
+	private String _functionName;
+	private String _namespace;
 	
 	//private CPOperand _output;
 	
@@ -28,11 +29,12 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private ArrayList<String> _boundInputParamNames;
 	private ArrayList<String> _boundOutputParamNames;
 	
-	public FunctionCallCPInstruction(String functName, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
+	public FunctionCallCPInstruction(String namespace, String functName, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
 		super(null);
 		
 		cptype = CPINSTRUCTION_TYPE.External;
 		_functionName = functName;
+		_namespace = namespace;
 		instString = istr;
 		_boundInputParamNames = boundInParamNames;
 		_boundOutputParamNames = boundOutParamNames;
@@ -50,13 +52,14 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		HashMap<String, Data> ins = new HashMap<String,Data>(); 
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
-		String functionName = parts[1];
-		int numInputs = new Integer(parts[2]).intValue();
-		int numOutputs = new Integer(parts[3]).intValue();
+		String namespace = parts[1];
+		String functionName = parts[2];
+		int numInputs = new Integer(parts[3]).intValue();
+		int numOutputs = new Integer(parts[4]).intValue();
 		ArrayList<String> boundInParamNames = new ArrayList<String>();
 		ArrayList<String> boundOutParamNames = new ArrayList<String>();
 		
-		int FIRST_PARAM_INDEX = 4;
+		int FIRST_PARAM_INDEX = 5;
 		for (int i = 0; i < numInputs; i++) {
 			boundInParamNames.add(parts[FIRST_PARAM_INDEX + i]);
 		}
@@ -64,7 +67,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			boundOutParamNames.add(parts[FIRST_PARAM_INDEX + numInputs + i]);
 		}
 		
-		return new FunctionCallCPInstruction ( functionName, boundInParamNames, boundOutParamNames, str );
+		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
 	}
 
 	public Data processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
@@ -72,8 +75,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			System.out.println("executing instruction : " + this.toString());
 
 		// get the function program block (stored in the Program object)
-		FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(this._functionName);
-
+		FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(this._namespace, this._functionName);
+		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
 		HashMap<String, Data> functionVariables = new HashMap<String, Data>();

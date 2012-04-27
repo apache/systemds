@@ -1,0 +1,197 @@
+
+# ---------------------------------------------------------------
+# Package for Descriptive Statistics
+# Contains functions for both Univariate and Bivariate statistics
+# ---------------------------------------------------------------
+
+bivar_cc = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double Pval, Double Cramersv) {
+    A = Data[:,col1];
+    B = Data[:,col2];
+
+    # Contingency Table
+    F = ctable(A,B);
+
+    # Chi-Squared
+    W = sum(F);
+    r = rowSums(F);
+    c = colSums(F);
+    E = (r %*% c)/W;
+    T = (F-E)^2/E;
+    chi_squared = sum(T);
+
+    # compute p-value
+    degFreedom = (nrow(F)-1)*(ncol(F)-1);
+    pValue = 1 - cumulativeProbability(target=chi_squared, dist="chisq", df=degFreedom);
+
+    # Cramer's V
+    R = nrow(F);
+    C = ncol(F);
+    q = min(R,C);
+    cramers_v = sqrt(chi_squared/(W*(q-1)));
+
+    # Assign return values
+    Pval = pValue;
+    Cramersv = cramers_v;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_ss = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double R) {
+    X = Data[:,col1];
+    Y = Data[:,col2];
+
+    # Unweighted co-variance
+    covXY = cov(X,Y);
+
+    # compute standard deviations for both X and Y by computing 2^nd central moment
+    W = nrow(X);
+    m2X = centralMoment(X,2);
+    m2Y = centralMoment(Y,2);
+    sigmaX = sqrt(m2X * (W/(W-1.0)) );
+    sigmaY = sqrt(m2Y * (W/(W-1.0)) );
+
+    # Pearson's R
+    R = covXY / (sigmaX*sigmaY);
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+# col1 points to SCALE variable
+# col2 points to CATEGORICAL variable
+bivar_sc = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double Eta, Double AnovaF) {
+    Y = Data[:,col1];
+    A = Data[:,col2];
+
+    # mean and variance in target variable
+    W = nrow(A);
+    my = mean(Y);
+    varY = centralMoment(Y,2) * W/(W-1.0)
+
+    # category-wise (frequencies, means, variances)
+    CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
+    CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+    CVars = groupedAggregate(target=Y, groups=A, fn="variance");
+
+    # number of categories
+    R = nrow(CFreqs);
+
+    Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
+
+    anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+    anova_den = sum( (CFreqs-1)*CVars )/(W-R);
+    AnovaF = anova_num/anova_den;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+add = function(Integer x, Integer y) return (Integer z) {
+    i=0;
+    while(i<1) {
+        i = i+1;
+    }
+    z = x + y;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_oo = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double Sp) {
+    A = Data[:,col1];
+    B = Data[:,col2];
+
+    Sp = spearman(A,B);
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+/**
+ * Computes univariate statistics for a categorical variable V that is specified by column "col".
+ * Returns:
+ *   R  = Number of categories in V
+ *   Nc = Histogram of different categories in V
+ *   Pc = Same as Nc, except that the values denote percentages
+ *   Mode = Mode in V
+ */
+univar_c = function(Matrix[Double] Data, Integer col) return(Double R, Matrix[Double] Nc, Matrix[Double] Pc, Matrix[Double] Mode) {
+    V = Data[:,col];
+
+    # Histogram of distinct categories in V
+    Nc = ctable(V,1);
+
+    # the number of categories in V
+    R = nrow(Nc);
+
+    # total count
+    s = sum(Nc);
+
+    # percentage values of each categorical compare to the total case number
+    Pc = Nc / s;
+
+    # all categorical values of a categorical variable
+    C = ppred(Nc, 0, ">");
+
+    # mode
+    mx = max(Nc);
+    Mode =  ppred(Nc, mx, "==");
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+univar_s = function(Matrix[Double] Data, Integer col) return(Double Mu, Double Var, Double SD, Double CV){
+    V = Data[:,col];
+    
+    Mu = mean(V);
+
+    # variance
+    n = nrow(V);
+    m2 = centralMoment(V, 2);
+    Var = n/(n-1.0)*m2;
+
+    # standard deviations
+    SD = sqrt(Var);
+
+    # coefficients of variation
+    CV = SD/Mu;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+univar_moments = function(Matrix[Double] Data, Integer col) return(Double M2, Double M3, Double M4, Double Skew, Double Kurt){
+    V = Data[:,col];
+    
+    n = nrow(V);
+    M2 = centralMoment(V, 2);
+    M3 = centralMoment(V, 3);
+    M4 = centralMoment(V, 4);
+    SD = sqrt(n/(n-1.0)*M2);
+    Skew = M3/(SD^3);
+    Kurt = M4/(SD^4) - 3;
+    
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+univar_order = function(Matrix[Double] Data, Integer col) return(Double Min, Double Max, Double Rng, Double Median, Double IQM){
+    V = Data[:,col];
+    Min = min(V);
+    Max = max(V);
+    Rng = Max - Min;
+    Median = quantile(V, 0.5);
+    IQM = interQuartileMean(V);
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+univar_errors = function(Matrix[Double] Data, Integer col) return(Double SE_Mean, Double SE_Skew, Double SE_Kurt){
+    V = Data[:,col];
+    
+    #[mu, var, sd, cv] = stats::univar_s(Data, col);
+    n = nrow(V);
+    m2 = centralMoment(V, 2);
+    sd = sqrt(n/(n-1.0)*m2);
+    SE = sd/sqrt(n)
+    SE_Skew = sqrt( 6*n*(n-1.0) / ((n-2.0)*(n+1.0)*(n+3.0)) );
+    SE_Kurt = sqrt( (4*(n^2-1)*SE_Skew^2)/((n+5.0)*(n-3.0)) );
+}
+
+# -----------------------------------------------------------------------------------------------------------
+

@@ -28,13 +28,13 @@ public class DMLProgram {
 	private ArrayList<StatementBlock> _blocks;
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
-	
+	public static String DEFAULT_NAMESPACE = ".defaultNS";
 	
 	public DMLProgram(){
 		_blocks = new ArrayList<StatementBlock>();
 		_functionBlocks = new HashMap<String,FunctionStatementBlock>();
 		_namespaces = new HashMap<String,DMLProgram>();
-		_namespaces.put(null,this);
+		_namespaces.put(DMLProgram.DEFAULT_NAMESPACE,this);
 	}
 	
 	public HashMap<String,DMLProgram> getNamespaces(){

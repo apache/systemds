@@ -419,7 +419,7 @@ DMLProgram __inputInternal() :
        
       }
      
-      // set the key to be the name of the module or the alias
+      // set the key to be the name of the module or the alias      
       String namespaceKey = (importStmt.getAlias() == null) ? importStmt.getModuleName() : importStmt.getAlias();
 
       // IF (alias is defined OR no filter placed on functions to import) THEN
@@ -432,34 +432,34 @@ DMLProgram __inputInternal() :
     
        else {
         // attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
-        for (String fname : importedProg.getFunctionStatementBlocks(null).keySet()){
+        for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
          if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)
           throw new ParseException("function " + fname + " already defined in namespace " + namespaceKey);
          else 
-          dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(null, fname));   
+          dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
         }
        }
       }
         
       // import all functions into the current "null" namespace
       if(importStmt.getImportAll()){
-       for (String fname : importedProg.getFunctionStatementBlocks(null).keySet()){
-        if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))
+       for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
+        if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
          throw new ParseException("function " + fname + " is already defined in current namespace ");
         String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(null).get(fname));
+        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
        } 
       }
       
       // import named functions into current namespace. Named functions must NOT exist in current namespace ("null" namespace).
       else if (importStmt.getImportVarList().size() > 0){
        for (String fname : importStmt.getImportVarList()) {
-        if (dmlp.getFunctionStatementBlocks(null).containsKey(fname))
+        if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
          throw new ParseException("function " + fname + " is already defined in current namespace ");
-        if (!importedProg.getFunctionStatementBlocks(null).containsKey(fname))
+        if (!importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
          throw new ParseException("function " + fname + " not defined in module path " + importStmt.getModulePath());
         String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(null).get(fname));
+        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
        }
       }     
      }
@@ -482,9 +482,9 @@ DMLProgram __inputInternal() :
       FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
     try {
       // check if the function is defined in the current namespace
-      if (dmlp.getFunctionStatementBlocks(null).containsKey(first.getName()))
+      if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName()))
         throw new LanguageException("function " + first.getName() + " already defined in current namespace ");
-      dmlp.getFunctionStatementBlocks(null).put(first.getName(), (FunctionStatementBlock)sb);
+      dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
     } catch (LanguageException e) {
      throw new ParseException(e.getMessage());
     }
@@ -1635,7 +1635,7 @@ DataIdentifier Identifier() :
     	  id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
   
 		  if (functCall != null) {
-		  		String namespaceName = (tNamespace == null) ? null : tNamespace.image;
+		  		String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
 		     	functCall.setFunctionNamespace(namespaceName);
 		    	functCall.setFunctionName(t.image);
 		   		return functCall;

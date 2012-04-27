@@ -1688,6 +1688,9 @@ public class DMLTranslator {
 				inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
 				inst.append(Lops.OPERAND_DELIMITOR);
 
+				inst.append(fci.getNamespace());
+				inst.append(Lops.OPERAND_DELIMITOR);
+				
 				inst.append(fstmt.getName());
 				inst.append(Lops.OPERAND_DELIMITOR);
 				

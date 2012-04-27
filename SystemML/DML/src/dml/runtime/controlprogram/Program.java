@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import org.nimble.control.DAGQueue;
 
+import dml.parser.DMLProgram;
 import dml.runtime.instructions.CPInstructions.Data;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
 import dml.utils.DMLRuntimeException;
@@ -28,6 +29,9 @@ public class Program {
 	}
 
 	public void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
+		
+		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
+		
 		HashMap<String,FunctionProgramBlock> namespaceBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceBlocks == null){
 			namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
@@ -37,6 +41,8 @@ public class Program {
 	}
 	
 	public FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
+		
+		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
 		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceFunctBlocks == null)

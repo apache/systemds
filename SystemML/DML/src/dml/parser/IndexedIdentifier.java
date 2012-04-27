@@ -95,13 +95,14 @@ public class IndexedIdentifier extends DataIdentifier {
 					else 
 						retVal += _rowLowerBound.toString() + ":" + _rowUpperBound.toString();
 				}
-				else if (_rowLowerBound != null && _rowUpperBound == null)
-					retVal += _rowLowerBound.toString();
-				else if (_rowLowerBound == null && _rowUpperBound != null)
-					retVal += _rowUpperBound.toString();
-				else 
-					retVal += ":";	
-				
+				else {
+					if (_rowLowerBound != null)
+						retVal += _rowLowerBound.toString();
+					retVal += ":";
+					if (_rowUpperBound != null)
+						retVal += _rowUpperBound.toString();	
+				}
+					
 				retVal += ",";
 				
 				if (_colLowerBound != null && _colUpperBound != null){
@@ -110,12 +111,14 @@ public class IndexedIdentifier extends DataIdentifier {
 					else
 						retVal += _colLowerBound.toString() + ":" + _colUpperBound.toString();
 				}
-				else if (_colLowerBound != null && _colUpperBound == null)
-					retVal += _colLowerBound.toString();
-				else if (_colLowerBound == null && _colUpperBound != null)
-					retVal += _colUpperBound.toString();
-				else 
+				else {
+					if (_colLowerBound != null)
+						retVal += _colLowerBound.toString();
 					retVal += ":";
+					if (_colUpperBound != null)
+						retVal += _colUpperBound.toString();	
+				}
+					
 				
 				retVal += "]";
 		}

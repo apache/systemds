@@ -521,26 +521,22 @@ public class BuiltinFunctionExpression extends Expression {
 	}
 	
 	private boolean is1DMatrix(Expression e) {
-		return (e !=null && e.getOutput().getDataType() == DataType.MATRIX 
-				&& (e.getOutput().getDim1() == 1 || e.getOutput().getDim2() == 1 ));
+		return (e.getOutput().getDim1() == 1 || e.getOutput().getDim2() == 1 );
+	}
+	
+	private boolean dimsKnown(Expression e) {
+		return (e.getOutput().getDim1() != -1 && e.getOutput().getDim2() != -1);
 	}
 	
 	private void check1DMatrixParam(Expression e) throws LanguageException {
-	/*	if (e.getOutput().getDataType() != DataType.MATRIX 
-				|| (e.getOutput().getDim1() != 1 && e.getOutput().getDim2() != 1) ) {
+		// throw an exception, when e's output is NOT a one-dimensional matrix 
+		// the check must be performed only when the dimensions are known at compilation time
+		if ( isMatrix(e) && dimsKnown(e) && !is1DMatrix(e)) {
 			throw new LanguageException(
 					"Expecting one-dimensional matrix parameter for function "
 							+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
-		}*/
-		
-		if(e.getOutput().getDataType() == DataType.MATRIX && (e.getOutput().getDim1() == 1 || e.getOutput().getDim2() == 1 ))
-			return;
-		else
-			throw new LanguageException(
-					"Expecting one-dimensional matrix parameter for function "
-							+ this.getOpCode(),
-					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
 	}
 
 	private void checkMatchingDimensions(Expression expr1, Expression expr2) throws LanguageException {

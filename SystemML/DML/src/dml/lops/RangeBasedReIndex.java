@@ -102,15 +102,15 @@ public class RangeBasedReIndex extends Lops {
 			rowl = "##" + rowl + "##";
 		String rowu = this.getInputs().get(2).getOutputParameters().getLabel();
 		if (this.getInputs().get(2).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
+				|| !((Data) this.getInputs().get(2)).isLiteral())
 			rowu = "##" + rowu + "##";
 		String coll = this.getInputs().get(3).getOutputParameters().getLabel();
 		if (this.getInputs().get(3).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
+				|| !((Data) this.getInputs().get(3)).isLiteral())
 			coll = "##" + coll + "##";
 		String colu = this.getInputs().get(4).getOutputParameters().getLabel();
 		if (this.getInputs().get(4).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
+				|| !((Data) this.getInputs().get(4)).isLiteral())
 			colu = "##" + colu + "##";
 		
 		return getInstructions(Integer.toString(input_index1), rowl, rowu, coll, colu, Integer.toString(output_index));

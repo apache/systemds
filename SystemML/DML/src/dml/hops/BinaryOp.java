@@ -187,13 +187,13 @@ public class BinaryOp extends Hops {
 				// 1st arguments needs to be a 1-dimensional matrix
 				// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 				// For INTERQUANTILE: 2nd argument is always a scalar
-				if ((getInput().get(0).get_dim1() != 1 && getInput().get(0)
+/*				if ((getInput().get(0).get_dim1() != 1 && getInput().get(0)
 						.get_dim2() != 1)
 						|| (getInput().get(1).get_dataType() == DataType.MATRIX
 								&& getInput().get(1).get_dim1() != 1 && getInput()
 								.get(1).get_dim2() != 1))
 					throw new HopsException("Incorrect BinaryOp (" + op
-							+ ") while constructing LOPs!");
+							+ ") while constructing LOPs!");*/
 
 				CombineUnary combine = CombineUnary.constructCombineLop(
 						(Lops) getInput().get(0).constructLops(),

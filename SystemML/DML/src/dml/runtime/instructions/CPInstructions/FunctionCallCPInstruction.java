@@ -23,6 +23,14 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	
 	//private CPOperand _output;
 	
+	public String getFunctionName(){
+		return _functionName;
+	}
+	
+	public String getNamespace() {
+		return _namespace;
+	}
+	
 	private HashMap<String, Data> _inputs = new HashMap<String, Data>();
 	
 	// stores both the bound input and output parameters

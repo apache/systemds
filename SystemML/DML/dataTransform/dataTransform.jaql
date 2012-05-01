@@ -1,0 +1,76 @@
+
+  //
+  // this script is used to perform preprocessing of input
+  // data csv file using meta data information provided,
+  // output the result in a csv format or <i j v> csv matrix
+  // format.
+
+
+  // register eval function to parse the meta data
+  eval = javaudf("com.ibm.systemML.dataTransformation.metaDataParse");
+
+  import matrix;
+
+  metaData := read (file(metaFile));
+
+  inputFile = singleton(metaData -> transform $.inputFileName);
+
+  // schema of the input to be used to read the input
+  inputSchema = singleton(metaData -> transform $.inputSchema);
+
+  // input data delimiter
+  inputDelimiter = singleton(metaData-> transform $.inputDelimiter);
+  
+  // filter experssion used to filter out unqualified input data
+  filterFunc  = singleton (metaData -> transform $.filterFunc);
+
+  filterFunc = if (isnull(filterFunc)) null else eval(filterFunc);
+
+  // projection column list
+  projectionList := metaData -> transform $.projectionList;
+
+  // prepare the projection list column string
+  projectionListStr = projectionList -> expand
+                                     -> strJoin(",.");
+
+  projectionFunc = eval ('fn (r) r{.' + projectionListStr + '}');
+
+  // projection column array with column index
+  columnList = projectionList -> expand
+                              -> enumerate()
+                              -> transform {columnId: $[0]+1, columnName:$[1]};
+
+    // type of output file : CSV, or < i j v> CSV matrix
+  outputFileType  = singleton (metaData -> transform $.outputFileType);
+
+  outputFile = singleton (metaData -> transform $.outputFileName);
+
+  // read in input data based on given schema, then perform filtering
+  // and projection on the input
+  inputData = if (isnull(inputDelimiter))
+                read (del(location=inputFile,
+                    schema = eval(inputSchema) ) )
+              else
+                read (del(location=inputFile, delimiter=inputDelimiter,
+                    schema = eval(inputSchema) ) );
+
+  fltInputData = if (isnull(filterFunc)) inputData
+              else (inputData-> filter each e ( filterFunc(e)));
+
+  fltIputData = fltInputData
+               -> transform each r projectionFunc(r);
+
+  drvInputData = if ( compare(outputFileType, "CSVMatrix") == 0)
+                    (
+                    fltInputData
+                       -> enumerate() // add rowId
+                       -> transform {rowId: $[0]+1, $[1]}
+                       -> matrix::convertToMtx (columnList)
+                    )
+                   else
+                      fltInputData ;
+
+  drvInputData
+             ->write (del (outputFile,
+                       {delimiter: " ", quoted: false}));
+  

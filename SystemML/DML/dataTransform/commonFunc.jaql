@@ -1,0 +1,16 @@
+//
+// convert data to multi-column matrix in <i j v> format
+// NULL values are written as "NaN'.
+//
+
+convertToMtx = fn (data, columnList)
+(
+   data
+   -> expand each r (columnList
+                     -> transform each a [ r.rowId
+                                          ,a.columnId
+                                          ,r.(a.columnName)
+                                         ]
+                    )
+   -> transform [$[0], $[1], if (not isnull($[2])) ($[2]) else ("NaN")]
+);

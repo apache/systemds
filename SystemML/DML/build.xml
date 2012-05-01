@@ -122,10 +122,6 @@
 			<classpath refid="DML.classpath" />
 		</javac>
 		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}">
-			<src path="examples" />
-			<classpath refid="DML.classpath" />
-		</javac>
-		<javac debug="true" debuglevel="${debuglevel}" destdir="${build.folder}" source="${source}" target="${target}">
 			<src path="test" />
 			<exclude name="scripts/" />
 			<classpath refid="DML.classpath" />
@@ -134,6 +130,7 @@
 			<src path="test_integration" />
 			<classpath refid="DML.classpath" />
 		</javac>
+		<!-- Exclude dml/examples from build -->
 	</target>
 	
 	<!-- Make sure jar depends on build -->

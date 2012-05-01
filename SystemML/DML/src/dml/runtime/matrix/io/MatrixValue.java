@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
 
-import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;

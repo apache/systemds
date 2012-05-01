@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
+
+import dml.lops.PartialAggregate.CorrectionLocationType;
 import dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import dml.runtime.matrix.mapred.IndexedMatrixValue;
 import dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -151,6 +153,10 @@ public abstract class MatrixValue implements WritableComparable {
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int brlen, int bclen, MatrixIndexes indexesIn) throws DMLUnsupportedOperationException, DMLRuntimeException;
+	
+	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
+			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op) 

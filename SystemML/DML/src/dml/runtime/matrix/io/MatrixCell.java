@@ -386,4 +386,12 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 		
 	}
 
+	@Override
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
+			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
+			MatrixIndexes indexesIn, boolean inCP)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		return aggregateUnaryOperations(op,	result, blockingFactorRow, blockingFactorCol,indexesIn);
+	}
+
 }

@@ -2334,4 +2334,12 @@ public class MatrixBlock1D extends MatrixValue{
 			}
 */		}
 	}
+
+	@Override
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
+			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
+			MatrixIndexes indexesIn, boolean inCP)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throw new RuntimeException("operation not supported for MatrixBlock1D");
+	}
 }

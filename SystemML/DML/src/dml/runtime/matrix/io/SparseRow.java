@@ -32,8 +32,8 @@ public class SparseRow {
 	
 	public void truncate(int newsize)
 	{
-		if(newsize>size)
-			throw new RuntimeException("truncate size: "+newsize+" should <= size: "+size);
+		if(newsize>size || newsize<0)
+			throw new RuntimeException("truncate size: "+newsize+" should <= size: "+size+" and >=0");
 		size=newsize;
 	}
 	

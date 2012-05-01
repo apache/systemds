@@ -184,7 +184,7 @@ public class MatrixObject extends Data {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.aggregateUnaryOperations(
 				au_op, new MatrixBlock(), _data.getNumRows(), _data.getNumColumns(),
-				new MatrixIndexes(1, 1)));
+				new MatrixIndexes(1, 1), true));
 		result.setData(result_data);
 		result.updateMatrixMetaData();
 

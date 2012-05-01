@@ -1849,7 +1849,16 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) 
+			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		return aggregateUnaryOperations(op, result, 
+				blockingFactorRow, blockingFactorCol, indexesIn, false);
+	}
+	
+	
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
+			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
@@ -1887,7 +1896,94 @@ public class MatrixBlockDSM extends MatrixValue{
 		else
 			denseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
 		
+		if(op.aggOp.correctionExists && inCP)
+			((MatrixBlockDSM)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
 		return result;
+	}
+	
+	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) {
+		
+		if(correctionLocation==CorrectionLocationType.NONE || correctionLocation==CorrectionLocationType.INVALID)
+			return;
+		
+		int step=1;
+		if(correctionLocation==CorrectionLocationType.LASTTWOROWS || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+			step=2;
+		
+		if(correctionLocation==CorrectionLocationType.LASTROW || correctionLocation==CorrectionLocationType.LASTTWOROWS)
+		{
+			
+			if(sparse)
+			{
+				if(sparseRows!=null)
+				{
+					for(int i=1; i<=step; i++)
+					{
+						if(sparseRows[rlen-i]!=null)
+							this.nonZeros-=sparseRows[rlen-i].size();
+					}
+				}
+			}else
+			{
+				if(denseBlock!=null)
+				{
+					for(int i=rlen*(clen-step); i<rlen*clen; i++)
+					{
+						if(denseBlock[i]!=0)
+							this.nonZeros--;
+					}
+				}
+			}
+			//just need to shrink the dimension, the deleted rows won't be accessed
+			this.rlen-=step;
+		}
+		
+		if(correctionLocation==CorrectionLocationType.LASTCOLUMN || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+		{
+			if(sparse)
+			{
+				if(sparseRows!=null)
+				{
+					for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
+					{
+						if(sparseRows[r]!=null)
+						{
+							int newSize=sparseRows[r].searchIndexesFirstGTE(clen-step);
+							if(newSize>=0)
+							{
+								this.nonZeros-=sparseRows[r].size()-newSize;
+								sparseRows[r].truncate(newSize);
+							}
+						}
+					}
+				}
+			}else
+			{
+				if(this.denseBlock!=null)
+				{
+					//the first row doesn't need to be copied
+					int targetIndex=clen-step;
+					int sourceOffset=clen;
+					this.nonZeros=0;
+					for(int i=0; i<targetIndex; i++)
+						if(denseBlock[i]!=0)
+							this.nonZeros++;
+					
+					//start from the 2nd row
+					for(int r=1; r<rlen; r++)
+					{
+						for(int c=0; c<clen-step; c++)
+						{
+							if((denseBlock[targetIndex]=denseBlock[sourceOffset+c])!=0)
+								this.nonZeros++;
+							targetIndex++;
+						}
+						sourceOffset+=clen;
+					}
+				}
+			}
+			this.clen-=step;
+		}
 	}
 	
 	private static void sparseAggregateBinaryHelp(MatrixBlockDSM m1, MatrixBlockDSM m2, 
@@ -2649,17 +2745,20 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}else
 		{
-			int start=0;
-			for(int i=0; i<rlen; i++)
+			if(denseBlock!=null)
 			{
-				for(int j=0; j<clen; j++)
+				int start=0;
+				for(int i=0; i<rlen; i++)
 				{
-					ret+=this.denseBlock[start+j]+"\t";
-					if(this.denseBlock[start+j]!=0.0)
-						toprint=true;
+					for(int j=0; j<clen; j++)
+					{
+						ret+=this.denseBlock[start+j]+"\t";
+						if(this.denseBlock[start+j]!=0.0)
+							toprint=true;
+					}
+					ret+="\n";
+					start+=clen;
 				}
-				ret+="\n";
-				start+=clen;
 			}
 		}
 		if(!toprint)
@@ -2914,12 +3013,31 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
-		/*int rows=1000, cols=1000, runs=10;
-		double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
+		int rows=10, cols=10, runs=10;
+		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
 		for(double sparsity: sparsities)
 			onerun(rows, cols, sparsity, runs);
 			*/
-		testSelection(10, 10, 1);
+		//testSelection(10, 10, 1);
+		
+		double sparsity=0.5;
+	//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
+		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
+		//m.examSparsity();
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		m.dropLastRowsOrColums(CorrectionLocationType.LASTROW);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		m.dropLastRowsOrColums(CorrectionLocationType.LASTCOLUMN);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOROWS);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOCOLUMNS);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
 	}
 
 	public void addDummyZeroValue() {
@@ -2937,4 +3055,5 @@ public class MatrixBlockDSM extends MatrixValue{
 					}
 				}
 		*/	}
+
 }

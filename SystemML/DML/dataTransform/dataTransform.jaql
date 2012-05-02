@@ -1,15 +1,16 @@
 
+  
   //
-  // this script is used to perform preprocessing of input
-  // data csv file using meta data information provided,
-  // output the result in a csv format or <i j v> csv matrix
-  // format.
+  // this script is used to perform preprocessing of input 
+  // data csv file using meta data information provided, 
+  // output the result in a csv format or <i j v> csv matrix 
+  // format. 
 
 
   // register eval function to parse the meta data
   eval = javaudf("com.ibm.systemML.dataTransformation.metaDataParse");
 
-  import matrix;
+  import commonFunc;
 
   metaData := read (file(metaFile));
 
@@ -17,10 +18,10 @@
 
   // schema of the input to be used to read the input
   inputSchema = singleton(metaData -> transform $.inputSchema);
-
+ 
   // input data delimiter
   inputDelimiter = singleton(metaData-> transform $.inputDelimiter);
-  
+
   // filter experssion used to filter out unqualified input data
   filterFunc  = singleton (metaData -> transform $.filterFunc);
 
@@ -30,47 +31,63 @@
   projectionList := metaData -> transform $.projectionList;
 
   // prepare the projection list column string
-  projectionListStr = projectionList -> expand
-                                     -> strJoin(",.");
-
+  projectionListStr = projectionList -> expand 
+                                     -> strJoin(",."); 
+ 
   projectionFunc = eval ('fn (r) r{.' + projectionListStr + '}');
-
+ 
   // projection column array with column index
-  columnList = projectionList -> expand
-                              -> enumerate()
+  columnList = projectionList -> expand 
+                              -> enumerate() 
                               -> transform {columnId: $[0]+1, columnName:$[1]};
 
-    // type of output file : CSV, or < i j v> CSV matrix
+  // type of output file : CSV, or < i j v> CSV matrix
   outputFileType  = singleton (metaData -> transform $.outputFileType);
 
   outputFile = singleton (metaData -> transform $.outputFileName);
-
+ 
   // read in input data based on given schema, then perform filtering
   // and projection on the input
   inputData = if (isnull(inputDelimiter))
-                read (del(location=inputFile,
+              (
+                read (del(location=inputFile, 
                     schema = eval(inputSchema) ) )
+              )
               else
+              (
                 read (del(location=inputFile, delimiter=inputDelimiter,
-                    schema = eval(inputSchema) ) );
+                    schema = eval(inputSchema) ) ));
 
-  fltInputData = if (isnull(filterFunc)) inputData
+  fltInputData = if (isnull(filterFunc)) inputData 
               else (inputData-> filter each e ( filterFunc(e)));
-
+  
   fltIputData = fltInputData
                -> transform each r projectionFunc(r);
 
-  drvInputData = if ( compare(outputFileType, "CSVMatrix") == 0)
+  drvInputData = if ( compare(outputFileType, "CSVMatrix") == 0) 
                     (
-                    fltInputData
+                    fltInputData 
                        -> enumerate() // add rowId
                        -> transform {rowId: $[0]+1, $[1]}
-                       -> matrix::convertToMtx (columnList)
+                       -> commonFunc::convertToMtx (columnList)
                     )
                    else
                       fltInputData ;
 
   drvInputData
-             ->write (del (outputFile,
-                       {delimiter: " ", quoted: false}));
+             ->write (del (outputFile, 
+                       {delimiter: " ", quoted: false}));  
+
+  if ( compare(outputFileType, "CSVMatrix") == 0)
+       drvInputData -> group into (
+                        c = columnList -> group into count($),   
+                      { "rows": count($) 
+                        ,"cols": c[0]
+                        ,"rows_in_block": 1000,
+                        ,"cols_in_block": 1000,
+                        ,"nnz": 0
+                        ,"format": "text"
+                        ,"description": { "author": "SystemML" } 
+                      } )
+                 -> write(jsonText(outputFile + '.mtd'));
   

@@ -7,6 +7,6 @@
   projectionList: ['degree','rating'],
   attributeKind: ['continuous', 'ordinal'],
   outputFileType: 'CSVMatrix',
-  outputFileName: './data/output.mtx'
+  outputFileName: './data/output'
  }
 ]

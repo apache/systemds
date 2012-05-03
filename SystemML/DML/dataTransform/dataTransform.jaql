@@ -58,11 +58,27 @@
                 read (del(location=inputFile, delimiter=inputDelimiter,
                     schema = eval(inputSchema) ) ));
 
+  //apply filtering
   fltInputData = if (isnull(filterFunc)) inputData 
               else (inputData-> filter each e ( filterFunc(e)));
   
+  //apply projection
   fltIputData = fltInputData
                -> transform each r projectionFunc(r);
+
+  //output .mtd file for matrix format
+  if ( compare(outputFileType, "CSVMatrix") == 0)
+       fltInputData -> group into (
+                        c = columnList -> group into count($),
+                      { "rows": count($)
+                        ,"cols": c[0]
+                        ,"rows_in_block": 1000,
+                        ,"cols_in_block": 1000,
+                        ,"nnz": 0
+                        ,"format": "text"
+                        ,"description": { "author": "SystemML" }
+                      } )
+                 ->write(jsonText(outputFile + '.mtd'));
 
   drvInputData = if ( compare(outputFileType, "CSVMatrix") == 0) 
                     (
@@ -74,20 +90,8 @@
                    else
                       fltInputData ;
 
+   // write out to hdfs
   drvInputData
              ->write (del (outputFile, 
                        {delimiter: " ", quoted: false}));  
-
-  if ( compare(outputFileType, "CSVMatrix") == 0)
-       drvInputData -> group into (
-                        c = columnList -> group into count($),   
-                      { "rows": count($) 
-                        ,"cols": c[0]
-                        ,"rows_in_block": 1000,
-                        ,"cols_in_block": 1000,
-                        ,"nnz": 0
-                        ,"format": "text"
-                        ,"description": { "author": "SystemML" } 
-                      } )
-                 -> write(jsonText(outputFile + '.mtd'));
   

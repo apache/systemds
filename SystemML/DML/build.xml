@@ -7,7 +7,7 @@
 	<property name="source" value="1.6" />
 	<property file="build.prop" />
 	
-	<property name="junit.antlibpathname" value="${general.libpath}/junit.jar" />
+	<property name="junit.antlibpathname" value="${general.antpath}/junit.jar" />
 	<property name="junit.output.dir" value="junit" />
 	<property name="junit.report.dir" value="junit_reports" />
 
@@ -15,12 +15,12 @@
 		<format property="release.timestamp" pattern="yyyyMMdd" locale="en,UK" />
 	</tstamp>
 
+	<!-- Tian: What is this paragraph for? -->
 	<path id="general.classpath">
-		<fileset dir="${general.libpath}">
+		<fileset dir="${general.antpath}">
 			<include name="**/*.jar" />
 		</fileset>
 	</path>
-
 	<!-- load the svn task -->
 	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpathref="general.classpath" />
 	<!-- load the var task -->
@@ -33,15 +33,16 @@
 	<path id="BASE.classpath">
 		<pathelement location="lib/nimble.jar" />       
 		<pathelement location="lib/commons-math-2.2.jar" />       <!-- for math computations -->
-		<pathelement location="lib/JSON4J.jar" />                 <!-- for processing matrix metadata files -->
 		<pathelement location="lib/lapack_simple.jar" />          <!-- for eigen value decomposition -->
-		<pathelement location="lib/jaql.jar" />                   <!-- for dml/api.JaqlUdf -->
-		<pathelement location="lib/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
-		<pathelement location="lib/log4j-1.2.15.jar" />           <!-- import by DMLScript.java -->
-		<pathelement location="lib/commons-logging-1.0.4.jar" />  <!-- import by MatrixIndexes.java -->
-		<pathelement location="lib/commons-httpclient-3.0.1.jar" />  <!-- need for running test in local mode --> 
 		
-<!--	<pathelement location="lib/arpack-combo-0.1.jar" /> -->  <!-- for intW in EigenWrappper -->
+		<pathelement location="lib/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
+		<pathelement location="lib/log4j-1.2.15.jar" />           <!-- for org.apache.log4j.* imported by dml.api.DMLScript.java -->
+		<pathelement location="${build.sharedlib}/jaql-0.5/jaql.jar" />  <!-- for dml.api.JaqlUdf -->
+		<pathelement location="${build.sharedlib}/commons-logging-1.1/commons-logging-1.1.jar" />  <!-- for LogFactory used by dml.sgd.Summit.java -->
+		<pathelement location="${build.sharedlib}/commons-httpclient-3.0.1.jar" />  <!-- need for running test in local mode --> 
+		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in dml.parser.IOStatement.java -->
+		
+<!--	<pathelement location="lib/arpack-combo-0.1.jar" /> -->  <!-- for intW in hEigenWrappper -->
 <!-- 	<pathelement location="lib/netlib-java-0.9.2.jar" /> --> <!-- for using lapack etc., mainly used by nimble-related stuff -->
 
 		<path refid="JUnit 4.libraryclasspath" />

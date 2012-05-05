@@ -1,32 +1,42 @@
 # Property-File for ant build script, to build and test SystemML
 
-#Lib
+#local mode or cluster mode
+general.localmode=false
+
+#Lib - from shared lib or own lib
 build.sharedlib=../DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib
 build.ownlib=lib
-
-#GENERAL
-general.localmode=false
-general.antpath=${build.ownlib}/ant
 
 #javacc
 javacc.home=${build.sharedlib}/javacc-5.0
 
-# BUILD SystemML.jar and JunitSystemML.jar
-build.jarnamejunit=JunitSystemML.jar
-build.jarnamerun=SystemML.jar
-build.configfile=SystemML-config.xml
+#Tian: ant in sharedlib is quite different, need more investigation
+general.antpath=${build.ownlib}/ant
+
+#build folder
 build.folder=bin
 
-#HADOOP local mode
-hadoop.local.path=${build.sharedlib}/ibm-hadoop-1.0.0/hadoop-core-1.0.0.jar
+# SystemML configuration file
+build.configfile=SystemML-config.xml
+
+# SystemML.jar
+build.jarnamerun=SystemML.jar
+
+# JunitSystemML.jar
+build.jarnamejunit=JunitSystemML.jar
+
+#HADOOP local mode specific setting
+hadoop.local.path=../DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0
 hadoop.jvmargs.localmode=-Xmx1250m
 
-#HADOOP cluster mode
-hadoop.cluster.path=/opt/ibm/biginsights/IHC/hadoop-core-1.0.0.jar
-hadoop.jvmargs.cluster=-Xmx1200m -Dhadoop.log.dir=/local/IHC-1.0.0/logs -Dhadoop.log.file=hadoop.log -Dhadoop.home.dir=/opt/ibm/biginsights/IHC/bin/.. -Dhadoop.id.str= -Dhadoop.root.logger=INFO,console -Djava.library.path=/opt/ibm/biginsights/IHC/bin/../lib/native/Linux-amd64-64 -Dhadoop.policy.file=hadoop-policy.xml
+#HADOOP cluster mode specific setting
+hadoop.cluster.path=/opt/ibm/biginsights/IHC
+hadoop.jvmargs.cluster=-Xmx1250m -Dhadoop.log.dir=/local/IHC-1.0.0/logs -Dhadoop.log.file=hadoop.log -Dhadoop.home.dir=/opt/ibm/biginsights/IHC/ -Dhadoop.id.str= -Dhadoop.root.logger=INFO,console -Djava.library.path=/opt/ibm/biginsights/jdk -Dhadoop.policy.file=hadoop-policy.xml
+
+# HDFS
 hadoop.hdfs.basepath=/user/hadoop
 
-#SystemML for Detica release
+#SystemML specific for Detica release
 systemml.version=0.0.1
 release.notes=Preliminary build.
 release.detica=Releases/2012_Detica/machine-learning

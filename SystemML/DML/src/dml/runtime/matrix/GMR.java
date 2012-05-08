@@ -226,6 +226,8 @@ public class GMR{
 			job.set("mapred.job.tracker", "local");
 		}
 		
+		System.out.println("Check mode = " + mode);
+		
 		RunningJob runjob=JobClient.runJob(job);
 		
 		/* Process different counters */

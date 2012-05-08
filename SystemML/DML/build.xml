@@ -35,9 +35,9 @@
 	<path id="OWN.classpath">
 		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
 		<pathelement location="${build.ownlib}/commons-math-2.2.jar" />       <!-- for math computations -->
-		<pathelement location="${build.ownlib}/lapack_simple.jar" />          <!-- for eigen value decomposition -->
 		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
 		<pathelement location="${build.ownlib}/log4j-1.2.15.jar" />           <!-- for org.apache.log4j.* imported by dml.api.DMLScript.java -->
+<!--	<pathelement location="${build.ownlib}/lapack_simple.jar" /> -->  <!-- for eigen value decomposition -->
 <!--	<pathelement location="lib/arpack-combo-0.1.jar" /> -->  <!-- for intW in hEigenWrappper -->
 <!-- 	<pathelement location="lib/netlib-java-0.9.2.jar" /> --> <!-- for using lapack etc., mainly used by nimble-related stuff -->
 	</path>

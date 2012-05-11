@@ -110,17 +110,6 @@ public class RunMRJobs {
 					}
 				}
 				
-			/*	//TODO: added by Yuanyuan
-				for(int i=0; i<inst.getIv_num_cols_per_block().length; i++)
-				{
-					if(updatedRowsPerBlock[i]==1 && updatedColsPerBlock[i]==1)
-					{
-						blocked_rep=false;
-						if(inst.getIv_inputInfos()[i]== InputInfo.BinaryBlockInputInfo)
-							inst.getIv_inputInfos()[i]=InputInfo.BinaryCellInputInfo;
-					}
-				}*/
-				
 				// TODO: statiko -- how to remove this check?
 				if ( blocked_rep == false ) {
 					// Check if any outputs are of type BinaryBlock!
@@ -130,13 +119,6 @@ public class RunMRJobs {
 							inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
 						}
 					}
-					
-			/*		//TODO: added by Yuanyuan
-					for(int i=0; i<inst.getIv_inputInfos().length; i++)
-					{
-						updatedRowsPerBlock[i]=1;
-						updatedColsPerBlock[i]=1;
-					}*/
 				}
 				
 				if ( !inst.getIv_recordReaderInstructions().equals("") ) {

@@ -49,20 +49,19 @@ import dml.utils.visualize.DotGraph;
 public class DMLScript {
 
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
-			+ " -f: <filename> will be interpreted as a filename path \n"
-			+ " -s: <filename> will be interpreted as a DML script string \n"
-			//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
-			//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
-			+ " [-d | -debug]: (optional) output debug info \n"
-			// COMMENT OUT -v option before RELEASE
-			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ " [-l | -log]: (optional) output log info \n"
-			+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
-			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
-			+ "<args-list>: (optional) args to DML script; use double-quotes to denote string args. \n" 
-			+ "NOTE: Double-quotes will have to be escaped with slash -- i.e., \"string-arg\" ";
+	+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+	+ " -f: <filename> will be interpreted as a filename path \n"
+	+ " -s: <filename> will be interpreted as a DML script string \n"
+	//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
+	//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
+	+ " [-d | -debug]: (optional) output debug info \n"
+	// COMMENT OUT -v option before RELEASE
+	+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
+	+ " [-l | -log]: (optional) output log info \n"
+	+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
+	+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
+	+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
+	+ "<args-list>: (optional) args to DML script \n" ;
 					
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;

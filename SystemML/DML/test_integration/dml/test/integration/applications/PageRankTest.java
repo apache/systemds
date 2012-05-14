@@ -30,21 +30,21 @@ public class PageRankTest extends AutomatedTestBase
     	/* This is for running the junit test by constructing the arguments directly */
 		String PAGE_RANK_HOME = SCRIPT_DIR + TEST_DIR;
 		dmlArgs = new String[]{"-f", PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml",
-				               "-args", "\"" + PAGE_RANK_HOME + INPUT_DIR + "g" + "\"", 
-				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "p" + "\"", 
-				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "e" + "\"",
-				                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "u" + "\"",
+				               "-args",  PAGE_RANK_HOME + INPUT_DIR + "g" , 
+				                         PAGE_RANK_HOME + INPUT_DIR + "p" , 
+				                         PAGE_RANK_HOME + INPUT_DIR + "e" ,
+				                         PAGE_RANK_HOME + INPUT_DIR + "u" ,
 				                        Integer.toString(rows), Integer.toString(cols),
 				                        Double.toString(alpha), Integer.toString(maxiter),
-				                        "\"" + PAGE_RANK_HOME + OUTPUT_DIR + "p" + "\""};
+				                         PAGE_RANK_HOME + OUTPUT_DIR + "p" };
 		dmlArgsDebug = new String[]{"-f", PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml", "-d",
-							   "-args", "\"" + PAGE_RANK_HOME + INPUT_DIR + "g" + "\"", 
-                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "p" + "\"", 
-                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "e" + "\"",
-                                        "\"" + PAGE_RANK_HOME + INPUT_DIR + "u" + "\"",
+							   "-args",  PAGE_RANK_HOME + INPUT_DIR + "g" , 
+                                         PAGE_RANK_HOME + INPUT_DIR + "p" , 
+                                         PAGE_RANK_HOME + INPUT_DIR + "e" ,
+                                         PAGE_RANK_HOME + INPUT_DIR + "u" ,
                                         Integer.toString(rows), Integer.toString(cols),
                                         Double.toString(alpha), Integer.toString(maxiter),
-                                        "\"" + PAGE_RANK_HOME + OUTPUT_DIR + "p" + "\""};
+                                         PAGE_RANK_HOME + OUTPUT_DIR + "p" };
 		
         loadTestConfiguration(TEST_PAGE_RANK);
 

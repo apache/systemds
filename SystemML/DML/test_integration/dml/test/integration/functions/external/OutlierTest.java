@@ -37,13 +37,13 @@ public class OutlierTest extends AutomatedTestBase {
 		/* This is for running the junit test by constructing the arguments directly */
 		String OUTLIER_HOME = baseDirectory;
 		dmlArgs = new String[]{"-f", OUTLIER_HOME + TEST_OUTLIER + ".dml",
-				"-args", "\"" + OUTLIER_HOME + INPUT_DIR + "M" + "\"", 
+				"-args",  OUTLIER_HOME + INPUT_DIR + "M" , 
 				Integer.toString(rows), Integer.toString(cols), 
-				"\"" + OUTLIER_HOME + OUTPUT_DIR + "o" + "\""};
+				 OUTLIER_HOME + OUTPUT_DIR + "o" };
 		dmlArgsDebug = new String[]{"-f", OUTLIER_HOME + TEST_OUTLIER + ".dml", "-d", 
-				"-args", "\"" + OUTLIER_HOME + INPUT_DIR + "M" + "\"", 
+				"-args",  OUTLIER_HOME + INPUT_DIR + "M" , 
 				Integer.toString(rows), Integer.toString(cols), 
-				"\"" + OUTLIER_HOME + OUTPUT_DIR + "o" + "\""};
+				 OUTLIER_HOME + OUTPUT_DIR + "o" };
 
 		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, -1);
 

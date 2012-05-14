@@ -37,17 +37,17 @@ public class kMeans2Test extends AutomatedTestBase {
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String KMEANS_HOME = baseDirectory;
 		dmlArgs = new String[]{"-f", KMEANS_HOME + TEST_KMEANS + ".dml",
-				"-args", "\"" + KMEANS_HOME + INPUT_DIR + "M" + "\"", 
+				"-args",  KMEANS_HOME + INPUT_DIR + "M" , 
 				Integer.toString(rows), Integer.toString(cols), 
-				"\"" + KMEANS_HOME + INPUT_DIR + "initialCenters" + "\"", 
-				"\"" + KMEANS_HOME + OUTPUT_DIR + "kcenters" + "\"",
-				"\"" + KMEANS_HOME + OUTPUT_DIR + "kcentersWithInit" + "\""};
+				 KMEANS_HOME + INPUT_DIR + "initialCenters" , 
+				 KMEANS_HOME + OUTPUT_DIR + "kcenters" ,
+				 KMEANS_HOME + OUTPUT_DIR + "kcentersWithInit" };
 		dmlArgsDebug = new String[]{"-f", KMEANS_HOME + TEST_KMEANS + ".dml", "-d", 
-				"-args", "\"" + KMEANS_HOME + INPUT_DIR + "M" + "\"", 
+				"-args",  KMEANS_HOME + INPUT_DIR + "M" , 
 				Integer.toString(rows), Integer.toString(cols), 
-				"\"" + KMEANS_HOME + INPUT_DIR + "initialCenters" + "\"", 
-				"\"" + KMEANS_HOME + OUTPUT_DIR + "kcenters" + "\"",
-				"\"" + KMEANS_HOME + OUTPUT_DIR + "kcentersWithInit" + "\""};
+				 KMEANS_HOME + INPUT_DIR + "initialCenters" , 
+				 KMEANS_HOME + OUTPUT_DIR + "kcenters" ,
+				 KMEANS_HOME + OUTPUT_DIR + "kcentersWithInit" };
 
 		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, 10);
 		double[][] initCenters = getRandomMatrix(centers, cols, -1, 1, 0.9, 20);

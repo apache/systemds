@@ -45,21 +45,21 @@ public class LinearLogRegTest extends AutomatedTestBase
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String LLR_HOME = SCRIPT_DIR + TEST_DIR;
 		dmlArgs = new String[]{"-f", LLR_HOME + TEST_LINEAR_LOG_REG + ".dml",
-				               "-args", "\"" + LLR_HOME + INPUT_DIR + "X" + "\"", 
+				               "-args", LLR_HOME + INPUT_DIR + "X" , 
 				                        Integer.toString(rows), Integer.toString(cols),
-				                        "\"" + LLR_HOME + INPUT_DIR + "Xt" + "\"", 
+				                         LLR_HOME + INPUT_DIR + "Xt" , 
 				                        Integer.toString(rows_test), Integer.toString(cols_test),
-				                        "\"" + LLR_HOME + INPUT_DIR + "y" + "\"",
-				                        "\"" + LLR_HOME + INPUT_DIR + "yt" + "\"",
-				                        "\"" + LLR_HOME + OUTPUT_DIR + "w" + "\""};
+				                         LLR_HOME + INPUT_DIR + "y" ,
+				                         LLR_HOME + INPUT_DIR + "yt" ,
+				                         LLR_HOME + OUTPUT_DIR + "w" };
 		dmlArgsDebug = new String[]{"-f", LLR_HOME + TEST_LINEAR_LOG_REG + ".dml", "-d",
-	                                "-args", "\"" + LLR_HOME + INPUT_DIR + "X" + "\"", 
+	                                "-args",  LLR_HOME + INPUT_DIR + "X" , 
 	                                         Integer.toString(rows), Integer.toString(cols),
-	                                         "\"" + LLR_HOME + INPUT_DIR + "Xt" + "\"", 
+	                                          LLR_HOME + INPUT_DIR + "Xt" , 
 	                                         Integer.toString(rows_test), Integer.toString(cols_test),
-	                                         "\"" + LLR_HOME + INPUT_DIR + "y" + "\"",
-	                                         "\"" + LLR_HOME + INPUT_DIR + "yt" + "\"",
-	                                         "\"" + LLR_HOME + OUTPUT_DIR + "w" + "\""};
+	                                          LLR_HOME + INPUT_DIR + "y" ,
+	                                          LLR_HOME + INPUT_DIR + "yt" ,
+	                                          LLR_HOME + OUTPUT_DIR + "w" };
 		
 		rCmd = "Rscript" + " " + LLR_HOME + TEST_LINEAR_LOG_REG + ".R" + " " + 
 		       LLR_HOME + INPUT_DIR + " " + LLR_HOME + EXPECTED_DIR;

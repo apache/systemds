@@ -41,27 +41,27 @@ public class L2SVMTest extends AutomatedTestBase {
 		dmlArgs = new String[]{"-f", 
 							   L2SVM_HOME + TEST_L2SVM + ".dml",
 				               "-args", 
-				               "\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
-				               "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
+				               L2SVM_HOME + INPUT_DIR + "X", 
+				               L2SVM_HOME + INPUT_DIR + "Y", 
 				               Integer.toString(rows), 
 				               Integer.toString(cols),
 				               Double.toString(epsilon), 
 				               Double.toString(lambda), 
 				               Integer.toString(maxiterations),
-				               "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
+				               L2SVM_HOME + OUTPUT_DIR + "w"};
 	
 		dmlArgsDebug = new String[]{"-f", 
 									L2SVM_HOME + TEST_L2SVM + ".dml", 
 									"-d",
 									"-args", 
-									"\"" + L2SVM_HOME + INPUT_DIR + "X" + "\"", 
-                                    "\"" + L2SVM_HOME + INPUT_DIR + "Y" + "\"", 
+									L2SVM_HOME + INPUT_DIR + "X", 
+                                    L2SVM_HOME + INPUT_DIR + "Y", 
                                     Integer.toString(rows), 
                                     Integer.toString(cols),
                                     Double.toString(Math.pow(10, -8)), 
                                     Double.toString(lambda), 
                                     Integer.toString(maxiterations), 
-                                    "\"" + L2SVM_HOME + OUTPUT_DIR + "w" + "\""};
+                                    L2SVM_HOME + OUTPUT_DIR + "w"};
 		
 		rCmd = "Rscript" + " " + 
 			   L2SVM_HOME + TEST_L2SVM + ".R" + " " + 

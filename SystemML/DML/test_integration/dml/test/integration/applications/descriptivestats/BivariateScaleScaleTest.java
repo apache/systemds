@@ -86,15 +86,15 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String SS_HOME = SCRIPT_DIR + TEST_DIR;
 		dmlArgs = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml",
-				               "-args", "\"" + SS_HOME + INPUT_DIR + "X" + "\"", 
+				               "-args",  SS_HOME + INPUT_DIR + "X" , 
 				                        Integer.toString(rows),
-				                        "\"" + SS_HOME + INPUT_DIR + "Y" + "\"", 
-				                        "\"" + SS_HOME + OUTPUT_DIR + "PearsonR" + "\""};
+				                         SS_HOME + INPUT_DIR + "Y" , 
+				                         SS_HOME + OUTPUT_DIR + "PearsonR" };
 		dmlArgsDebug = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml", "-d",
-	               "-args", "\"" + SS_HOME + INPUT_DIR + "X" + "\"", 
+	               "-args",  SS_HOME + INPUT_DIR + "X" , 
 	                        Integer.toString(rows),
-	                        "\"" + SS_HOME + INPUT_DIR + "Y" + "\"", 
-	                        "\"" + SS_HOME + OUTPUT_DIR + "PearsonR" + "\""};
+	                         SS_HOME + INPUT_DIR + "Y" , 
+	                         SS_HOME + OUTPUT_DIR + "PearsonR" };
 		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE + ".R" + " " + 
 		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
 		

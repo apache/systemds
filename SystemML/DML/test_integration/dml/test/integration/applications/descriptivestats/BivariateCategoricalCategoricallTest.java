@@ -133,17 +133,17 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String CC_HOME = SCRIPT_DIR + TEST_DIR;
 		dmlArgs = new String[]{"-f", CC_HOME + TEST_NOMINAL_NOMINAL + ".dml",
-				               "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
+				               "-args",  CC_HOME + INPUT_DIR + "A" , 
 				                        Integer.toString(rows),
-				                        "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
-				                        "\"" + CC_HOME + OUTPUT_DIR + "PValue" + "\"", 
-				                        "\"" + CC_HOME + OUTPUT_DIR + "CramersV" + "\""};
+				                        CC_HOME + INPUT_DIR + "B" , 
+				                        CC_HOME + OUTPUT_DIR + "PValue" , 
+				                        CC_HOME + OUTPUT_DIR + "CramersV" };
 		dmlArgsDebug = new String[]{"-f", CC_HOME + TEST_NOMINAL_NOMINAL + ".dml", "-d",
-	                                "-args", "\"" + CC_HOME + INPUT_DIR + "A" + "\"", 
+	                                "-args", CC_HOME + INPUT_DIR + "A" , 
 	                                         Integer.toString(rows),
-	                                         "\"" + CC_HOME + INPUT_DIR + "B" + "\"", 
-	                                         "\"" + CC_HOME + OUTPUT_DIR + "PValue" + "\"", 
-	                                         "\"" + CC_HOME + OUTPUT_DIR + "CramersV" + "\""};
+	                                         CC_HOME + INPUT_DIR + "B", 
+	                                         CC_HOME + OUTPUT_DIR + "PValue", 
+	                                         CC_HOME + OUTPUT_DIR + "CramersV"};
 		
 		rCmd = "Rscript" + " " + CC_HOME + TEST_NOMINAL_NOMINAL + ".R" + " " + 
 		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;

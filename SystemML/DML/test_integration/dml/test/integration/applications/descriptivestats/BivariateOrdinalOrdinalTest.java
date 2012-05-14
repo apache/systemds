@@ -157,15 +157,15 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
 		dmlArgs = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml",
-	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
+	               "-args", OO_HOME + INPUT_DIR + "A", 
 	                        Integer.toString(rows),
-	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
-	                        "\"" + OO_HOME + OUTPUT_DIR + "Spearman" + "\""};
+	                        OO_HOME + INPUT_DIR + "B", 
+	                        OO_HOME + OUTPUT_DIR + "Spearman"};
 		dmlArgsDebug = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml", "-d", 
-	               "-args", "\"" + OO_HOME + INPUT_DIR + "A" + "\"", 
+	               "-args", OO_HOME + INPUT_DIR + "A", 
 	                        Integer.toString(rows),
-	                        "\"" + OO_HOME + INPUT_DIR + "B" + "\"", 
-	                        "\"" + OO_HOME + OUTPUT_DIR + "Spearman" + "\""};
+	                        OO_HOME + INPUT_DIR + "B", 
+	                        OO_HOME + OUTPUT_DIR + "Spearman"};
 		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL + ".R" + " " + 
 		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
 

@@ -235,27 +235,27 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase {
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String SC_HOME = SCRIPT_DIR + TEST_DIR;	
 		dmlArgs = new String[]{"-f", SC_HOME + TEST_SCALE_NOMINAL + ".dml",
-	               "-args", "\"" + SC_HOME + INPUT_DIR + "A" + "\"", 
+	               "-args",  SC_HOME + INPUT_DIR + "A" , 
 	                        Integer.toString(rows),
-	                        "\"" + SC_HOME + INPUT_DIR + "Y" + "\"", 
-	                        "\"" + SC_HOME + OUTPUT_DIR + "VarY" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "MeanY" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "CFreqs" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "CMeans" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "CVars" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "Eta" + "\"",
-	                        "\"" + SC_HOME + OUTPUT_DIR + "AnovaF" + "\""};
+	                         SC_HOME + INPUT_DIR + "Y" , 
+	                         SC_HOME + OUTPUT_DIR + "VarY" ,
+	                         SC_HOME + OUTPUT_DIR + "MeanY" ,
+	                         SC_HOME + OUTPUT_DIR + "CFreqs" ,
+	                         SC_HOME + OUTPUT_DIR + "CMeans" ,
+	                         SC_HOME + OUTPUT_DIR + "CVars" ,
+	                         SC_HOME + OUTPUT_DIR + "Eta" ,
+	                         SC_HOME + OUTPUT_DIR + "AnovaF" };
 		dmlArgsDebug = new String[]{"-f", SC_HOME + TEST_SCALE_NOMINAL + ".dml", "-d",
-	               "-args", "\"" + SC_HOME + INPUT_DIR + "A" + "\"", 
+	               "-args",  SC_HOME + INPUT_DIR + "A" , 
 	               			Integer.toString(rows),
-	               			"\"" + SC_HOME + INPUT_DIR + "Y" + "\"", 
-	               			"\"" + SC_HOME + OUTPUT_DIR + "VarY" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "MeanY" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "CFreqs" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "CMeans" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "CVars" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "Eta" + "\"",
-	               			"\"" + SC_HOME + OUTPUT_DIR + "AnovaF" + "\""};
+	               			 SC_HOME + INPUT_DIR + "Y" , 
+	               			 SC_HOME + OUTPUT_DIR + "VarY" ,
+	               			 SC_HOME + OUTPUT_DIR + "MeanY" ,
+	               			 SC_HOME + OUTPUT_DIR + "CFreqs" ,
+	               			 SC_HOME + OUTPUT_DIR + "CMeans" ,
+	               			 SC_HOME + OUTPUT_DIR + "CVars" ,
+	               			 SC_HOME + OUTPUT_DIR + "Eta" ,
+	               			 SC_HOME + OUTPUT_DIR + "AnovaF" };
 		rCmd = "Rscript" + " " + SC_HOME + TEST_SCALE_NOMINAL + ".R" + " " + 
 		       SC_HOME + INPUT_DIR + " " + SC_HOME + EXPECTED_DIR;
 

@@ -15,4 +15,10 @@ public class MatrixBlock extends MatrixBlockDSM{
 	public MatrixBlock(HashMap<CellIndex, Double> map) {
 		super(map);
 	}
+	
+	@Override
+	public long getObjectSizeInMemory ()
+	{
+		return 0 + super.getObjectSizeInMemory ();
+	}
 }

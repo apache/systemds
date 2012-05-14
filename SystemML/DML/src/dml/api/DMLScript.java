@@ -71,6 +71,20 @@ public class DMLScript {
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
+    public static final long maxCacheMemory = 1000000000;
+    public enum CACHE_EVICTION_POLICY { DEFAULT };
+    public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
+    public enum CACHE_EVICTION_STORAGE_TYPE { LOCAL, HDFS };
+    public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
+	
+    public static String cacheEvictionLocalFilePath = "C:\\YOUR_FAVORITE_LOCAL_PATH\\";
+    public static String cacheEvictionLocalFilePrefix = "cache";
+    public static String cacheEvictionLocalFileExtension = ".dat";
+
+    public static String cacheEvictionHDFSFilePath = "scratch_space/";
+    public static String cacheEvictionHDFSFilePrefix = "cache";
+    public static String cacheEvictionHDFSFileExtension = ".dat";
+	
 	// stores the path to the source
 	public static final String path_to_src = "./";
 	

@@ -7,6 +7,22 @@ public class SparseRow {
 	private double[] values=null;
 	private int[] indexes=null;
 	
+	/**
+	 * Computes the size of this {@link SparseRow} object in main memory,
+	 * in bytes, as precisely as possible.  Used for caching purposes.
+	 * 
+	 * @return the size of this object in bytes
+	 */
+	public long getObjectSizeInMemory ()
+	{
+		long all_size = 16;
+		if (values != null)
+			all_size += values.length * 8;
+		if (indexes != null)
+			all_size += indexes.length * 4;
+		return all_size;
+	}
+
 	public String toString()
 	{
 		String ret="";

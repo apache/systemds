@@ -46,6 +46,26 @@ public class MatrixBlockDSM extends MatrixValue{
 	private SparseRow[] sparseRows=null;
 	
 	
+	/**
+	 * Computes the size of this {@link MatrixBlockDSM} object in main memory,
+	 * in bytes, as precisely as possible.  Used for caching purposes.
+	 * 
+	 * @return the size of this object in bytes
+	 */
+	public long getObjectSizeInMemory ()
+	{
+		// TODO: Yuanyuan, please help me implement this function. --Sasha
+		long all_size = 32;
+		if (denseBlock != null)
+			all_size += denseBlock.length * 8;
+		if (sparseRows != null)
+		{
+			for (int i = 0; i < sparseRows.length; i++)
+				all_size += 8 + sparseRows [i].getObjectSizeInMemory ();
+		}
+		return all_size;
+	}
+	
 	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
 		double n=m1.getNumRows();

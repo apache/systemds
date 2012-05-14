@@ -148,7 +148,12 @@ public abstract class Identifier extends Expression{
 					indexedIdentiferOut.getColLowerBound().validateExpression(ids);	
 				if (indexedIdentiferOut.getColUpperBound() != null) 
 					indexedIdentiferOut.getColUpperBound().validateExpression(ids);
-					
+				
+				// update the size of the indexed expression output
+				((IndexedIdentifier)out).updateIndexedDimensions();
+				
+				
+				
 			}
 							
 		} else {

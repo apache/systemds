@@ -68,7 +68,7 @@ public class DMLTranslator {
 	public void validateParseTree(DMLProgram dmlp) throws LanguageException, IOException {
 		
 			
-		// hnadle functions in namespaces (current program has "null" namespace)
+		// hnadle functions in namespaces (current program has default namespace)
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
 		
 			// for each function defined in the namespace

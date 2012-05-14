@@ -9,14 +9,62 @@ public class IndexedIdentifier extends DataIdentifier {
 	// stores the expressions containing the ranges for the 
 	private Expression 	_rowLowerBound = null, _rowUpperBound = null, _colLowerBound = null, _colUpperBound = null;
 	
+	// stores whether row / col indices have same value (thus selecting either (1 X n) row-vector OR (n X 1) col-vector)
+	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
+	
 	public IndexedIdentifier(String name){
 		super(name);
 		_rowLowerBound = null; 
    		_rowUpperBound = null; 
    		_colLowerBound = null; 
    		_colUpperBound = null;
+   		_rowLowerEqualsUpper = false;
+   		_colLowerEqualsUpper = false;
 	}
 		
+	
+	public void updateIndexedDimensions(){
+		
+		// stores the updated row / col dimension info
+		long updatedRowDim = 1, updatedColDim = 1;
+		
+		///////////////////////////////////////////////////////////////////////
+		// update row dimensions
+		///////////////////////////////////////////////////////////////////////
+			
+		// CASE:  lower == upper --> updated row dim = 1
+		if (_rowLowerEqualsUpper) 
+			updatedRowDim = 1;
+		
+		// CASE: (lower == null || lower == const) && (upper == null || upper == const)
+		//	--> 1) (lower == null) ? lower = 1 : lower = const; 
+		//  --> 2) (upper == null) ? upper = current rows : lower 
+		else if (_rowLowerBound == null && _rowUpperBound == null){
+			updatedRowDim = this.getDim1(); 
+		}
+		else 
+			updatedRowDim = -1;
+		
+		//////////////////////////////////////////////////////////////////////
+		// update column dimensions
+		///////////////////////////////////////////////////////////////////////
+			
+		// CASE:  lower == upper --> updated col dim = 1
+		if (_colLowerEqualsUpper) 
+			updatedColDim = 1;
+		
+		// CASE: (lower == null || lower == const) && (upper == null || upper == const)
+		//	--> 1) (lower == null) ? lower = 1 : lower = const; 
+		//  --> 2) (upper == null) ? upper = current_rows : upper - const 
+		else if (_colLowerBound == null && _colUpperBound == null){
+			updatedColDim = this.getDim2(); 
+		}
+		else 
+			updatedColDim = -1;
+		
+		this.setDimensions(updatedRowDim, updatedColDim);
+	}
+	
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName());
@@ -37,7 +85,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
 		if (passed.size() != 2)
-			throw new ParseException("[E] matrix indices are wrong length -- should be length 2");
+			throw new ParseException("[E] matrix indices must be specified for 2 dimensions -- currently specified indices for " + passed.size() + " dimensions ");
 		
 		ArrayList<Expression> rowIndices = passed.get(0);
 		ArrayList<Expression> colIndices = passed.get(1);
@@ -51,9 +99,10 @@ public class IndexedIdentifier extends DataIdentifier {
 		else if (rowIndices.size() == 1){
 			_rowLowerBound = rowIndices.get(0);
 			_rowUpperBound = rowIndices.get(0);
+			_rowLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException("[E]  row indices are wrong length -- should be either length 1 or 2");
+			throw new ParseException("[E]  row indices are length " + rowIndices.size() + " -- should be either 1 or 2");
 		}
 		
 		// case: both upper and lower are defined
@@ -65,9 +114,10 @@ public class IndexedIdentifier extends DataIdentifier {
 		else if (colIndices.size() == 1){
 			_colLowerBound = colIndices.get(0);
 			_colUpperBound = colIndices.get(0);
+			_colLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException("[E] col indices are wrong length -- should be either length 1 or 2");
+			throw new ParseException("[E] col indices are length " + + colIndices.size() + " -- should be either 1 or 2");
 		}
 		System.out.println(this);
 	}

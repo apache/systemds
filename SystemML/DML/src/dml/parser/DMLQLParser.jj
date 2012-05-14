@@ -1485,7 +1485,7 @@ Identifier IdentifierOrConstant() :
 								}
 								else {
 								  	// try to assign to string value
-									id = new StringIdentifier(dequoteStr('\"',argVal));
+									id = new StringIdentifier(argVal);
 									id.setDimensions(0,0);
 				    				id.computeDataType();
 				    				id.setValueType(ValueType.STRING);
@@ -1812,7 +1812,7 @@ InputStatement ReadInputStatementParamList() :
 			String argVal = commandArgs.get(t4.image);
 			if (argVal == null)
 				System.out.println("ERROR: value for " + t4.image + " is undefined ");	
-			is.setFileName(dequoteStr('\"',argVal));
+			is.setFileName(argVal);
 			
 	 	}  
 	 )
@@ -1846,7 +1846,7 @@ InputStatement ReadInputStatementParamList() :
 						  	  		is.addStringParam(t1.image, argVal.toString());
 								}
 								else {
-									is.addStringParam(t1.image, dequoteStr('\"', argVal));
+									is.addStringParam(t1.image, argVal);
 								}	
 	
 						  	} // end catch e2
@@ -1884,14 +1884,14 @@ OutputStatement OutputStatement() :
 	     <COMMA>
  		(
 		  	t1 = <DBLQUOTE_STRING_LITERAL>  {os.setFileName(dequoteStr('\"',t1));}
-		  		| t3 = Identifier()
+		  		| t3 = Identifier(){throw new ParseException("ERROR: cannot specify variable for output filename");}
 				| t4 = <DOLLAR_ID>
 			  		///////// BEGIN handle variable param ///////////////
 					{
 						String argVal = commandArgs.get(t4.image);
 						if (argVal == null)
 							System.out.println("ERROR: value for " + t4.image + " is undefined ");
-						os.setFileName(dequoteStr('\"',argVal));
+						os.setFileName(argVal);
 						
 					}
 		  			///////// END handle variable param ///////////////
@@ -1929,7 +1929,7 @@ OutputStatement OutputStatement() :
 						  	  		os.addStringParam(t1.image, argVal.toString());
 								}
 								else {
-									os.addStringParam(t1.image, dequoteStr('\"', argVal));
+									os.addStringParam(t1.image, argVal);
 								}	
 	
 						  	} // end catch e2
@@ -2010,7 +2010,7 @@ RandStatement RandStatement() :
 					  	  		rs.addStringParam(t1.image, argVal);
 							}
 							else {
-								rs.addStringParam(t1.image, dequoteStr('\"', argVal));
+								rs.addStringParam(t1.image, argVal);
 							}
 					  	} // end catch e2		  	 
 					} // end catch e1		
@@ -2046,7 +2046,7 @@ RandStatement RandStatement() :
 						  	  		rs.addStringParam(t1.image, argVal);
 								}
 								else {
-									rs.addStringParam(t1.image, dequoteStr('\"', argVal));
+									rs.addStringParam(t1.image, argVal);
 								}
 						  	} // end catch e2	  						  	 
 						} // end catch e1								

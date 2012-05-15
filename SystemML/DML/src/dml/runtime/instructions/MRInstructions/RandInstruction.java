@@ -16,10 +16,11 @@ public class RandInstruction extends UnaryMRInstructionBase
 	public double maxValue;
 	public double sparsity;
 	public String probabilityDensityFunction;
+	public String baseDir;
 	public long seed=0;
 	
 	public RandInstruction ( Operator op, byte in, byte out, long rows, long cols, double minValue, double maxValue,
-				double sparsity, String probabilityDensityFunction, String istr ) {
+				double sparsity, String probabilityDensityFunction, String baseDir, String istr ) {
 		super(op, in, out);
 		this.rows = rows;
 		this.cols = cols;
@@ -27,6 +28,7 @@ public class RandInstruction extends UnaryMRInstructionBase
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
 		this.probabilityDensityFunction = probabilityDensityFunction;
+		this.baseDir = baseDir;
 		instString = istr;
 	}
 	
@@ -46,8 +48,9 @@ public class RandInstruction extends UnaryMRInstructionBase
 		double maxValue = Double.parseDouble(s[7].substring(4));
 		double sparsity = Double.parseDouble(s[8].substring(9));
 		String pdf = s[9].substring(4);
+		String baseDir = s[10].substring(4);
 		
-		return new RandInstruction(op, input, output, rows, cols, minValue, maxValue, sparsity, pdf, str);
+		return new RandInstruction(op, input, output, rows, cols, minValue, maxValue, sparsity, pdf, baseDir, str);
 	}
 
 	@Override

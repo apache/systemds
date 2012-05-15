@@ -33,6 +33,7 @@ import dml.parser.ParseException;
 import dml.runtime.controlprogram.Program;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.controlprogram.WhileProgramBlock;
+import dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import dml.runtime.instructions.CPInstructions.Data;
 import dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import dml.sql.sqlcontrolprogram.ExecutionContext;
@@ -278,6 +279,8 @@ public class DMLScript {
 			System.out.println("ERROR: failed to merge default ");
 			return;
 		}
+		
+		ConfigurationManager.setConfig(defaultConfig);
 		
 		//////////////////////////// parse script ///////////////////////////////
 		DMLProgram prog = null;

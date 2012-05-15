@@ -1,0 +1,9 @@
+a = 1;
+
+parfor( i in 1:(10+a) )
+{
+   b = i + a;
+   #print(b);
+}
+
+ 

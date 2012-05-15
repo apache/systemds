@@ -194,13 +194,18 @@ public class LopGraph {
 			}
 		}
 		else if (current instanceof ForStatementBlock) {
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			
 			// Handle Predicate
-			Hops predicateHops = ((ForStatementBlock) current).getPredicateHops();
-			String predicateString = prepareLopsNodeList(predicateHops.get_lops());
-			graphString += predicateString;
+			if (fsb.getFromLops() != null)
+				graphString += prepareLopsNodeList(fsb.getFromLops());
+			if (fsb.getToLops() != null)
+				graphString += prepareLopsNodeList(fsb.getToLops());
+			if (fsb.getIncrementLops() != null)
+				graphString += prepareLopsNodeList(fsb.getIncrementLops());
 			
 			// handle children
-			ForStatement fstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
 			for (StatementBlock sb : fstmt.getBody()){	
 				graphString += getLopGraphString(sb);
 			}
@@ -215,19 +220,6 @@ public class LopGraph {
 			}
 		}
 		
-		
-		else if (current instanceof ForStatementBlock) {
-			// Handle Predicate
-			Hops predicateHops = ((ForStatementBlock) current).getPredicateHops();
-			String predicateString = prepareLopsNodeList(predicateHops.get_lops());
-			graphString += predicateString;
-			
-			// handle children
-			ForStatement fstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : fstmt.getBody()){	
-				graphString += getLopGraphString(sb);
-			}
-		}
 		else if (current instanceof IfStatementBlock) {
 			// Handle Predicate
 			Hops predicateHops = ((IfStatementBlock) current).getPredicateHops();

@@ -22,6 +22,8 @@ public class Rand extends Lops
 	private double sparsity;
 	/** probability density function which is used to produce the sparsity */
 	private String probabilityDensityFunction;
+	/** base dir for rand input */
+	private String baseDir;
 	
 	
 	/**
@@ -33,18 +35,18 @@ public class Rand extends Lops
 	 * @param sparsity sparsity of the random object
 	 * @param probabilityDensityFunction probability density function
 	 */	
-	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, DataType dt, ValueType vt)
+	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, String baseDir, DataType dt, ValueType vt)
 	{
 		super(Type.RandLop, dt, vt);
-		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, ExecType.MR);
+		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, baseDir, ExecType.MR);
 	}
 
-	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, DataType dt, ValueType vt, ExecType et) {
+	public Rand(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, String baseDir, DataType dt, ValueType vt, ExecType et) {
 		super(Type.RandLop, dt, vt);
-		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, et);
+		init(id, minValue, maxValue, sparsity, probabilityDensityFunction, baseDir, et);
 	}
 
-	public void init(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, ExecType et)
+	public void init(DataIdentifier id, double minValue, double maxValue, double sparsity, String probabilityDensityFunction, String baseDir, ExecType et)
 	{
 		this.getOutputParameters().setFormat(Format.BINARY);
 		this.getOutputParameters().blocked_representation = true;
@@ -56,6 +58,7 @@ public class Rand extends Lops
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
 		this.probabilityDensityFunction = probabilityDensityFunction;
+		this.baseDir = baseDir;
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -84,6 +87,7 @@ public class Rand extends Lops
 		inst.append(OPERAND_DELIMITOR + "max=" + maxValue);
 		inst.append(OPERAND_DELIMITOR + "sparsity=" + sparsity);
 		inst.append(OPERAND_DELIMITOR + "pdf=" + probabilityDensityFunction);
+		inst.append(OPERAND_DELIMITOR + "dir=" + baseDir);
 		inst.append(OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType());
 		return inst.toString();
 	}
@@ -102,6 +106,7 @@ public class Rand extends Lops
 		inst.append(OPERAND_DELIMITOR + "max=" + maxValue);
 		inst.append(OPERAND_DELIMITOR + "sparsity=" + sparsity);
 		inst.append(OPERAND_DELIMITOR + "pdf=" + probabilityDensityFunction);
+		inst.append(OPERAND_DELIMITOR + "dir=" + baseDir);
 		return inst.toString();
 		
 		/*
@@ -130,6 +135,7 @@ public class Rand extends Lops
 		sb.append(" ; max=" + this.maxValue);
 		sb.append(" ; sparsity=" + this.sparsity);
 		sb.append(" ; pdf=" + this.probabilityDensityFunction);
+		sb.append(" ; dir=" + this.baseDir);
 		return sb.toString();
 	}
 }

@@ -13,7 +13,7 @@ import dml.api.DMLScript;
 import dml.lops.Lops;
 import dml.lops.ReBlock;
 import dml.lops.compile.JobType;
-import dml.packagesupport.ExternalFunctionInvokationInstruction;
+import dml.packagesupport.ExternalFunctionInvocationInstruction;
 import dml.packagesupport.FIO;
 import dml.packagesupport.Matrix;
 import dml.packagesupport.PackageFunction;
@@ -28,6 +28,8 @@ import dml.parser.DMLTranslator;
 import dml.parser.DataIdentifier;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
+import dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import dml.runtime.controlprogram.parfor.util.IDSequence;
 import dml.runtime.instructions.CPInstructionParser;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
@@ -47,7 +49,7 @@ import dml.sql.sqlcontrolprogram.ExecutionContext;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
-	int counter = 0;
+	protected static IDSequence _idSeq;
 
 	final String CLASSNAME = "classname";
 	final String EXECLOCATION = "execlocation";
@@ -60,11 +62,18 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	ArrayList<Instruction> cell2BlockInst; 
 
 	// holds other key value parameters specified in function declaration
-	private HashMap<String, String> _otherParams;
+	protected HashMap<String, String> _otherParams;
 
-	private HashMap<String, String> _unblockedFileNames;
-	private HashMap<String, String> _blockedFileNames;
+	protected HashMap<String, String> _unblockedFileNames;
+	protected HashMap<String, String> _blockedFileNames;
 
+	protected long _runID = -1; //ID for block of statements
+	
+	static
+	{
+		_idSeq = new IDSequence();
+	}
+	
 	/**
 	 * Constructor that also provides otherParams that are needed for external
 	 * functions. Remaining parameters will just be passed to constructor for
@@ -73,6 +82,13 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param eFuncStat
 	 */
 
+	protected ExternalFunctionProgramBlock(Program prog,
+			Vector<DataIdentifier> inputParams,
+			Vector<DataIdentifier> outputParams)
+	{
+		super(prog, inputParams, outputParams);
+	}
+	
 	public ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
 			Vector<DataIdentifier> outputParams,
@@ -88,16 +104,40 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		_blockedFileNames = new HashMap<String, String>();
 
 		// generate instructions
-		getInstructions();
+		createInstructions();
 	}
-
+	
+	private void changeTmpInput( long id )
+	{
+		ArrayList<DataIdentifier> inputParams = getInputParams();
+		block2CellInst = getBlock2CellInstructions(inputParams, _unblockedFileNames);
+	}
+	
+	/**
+	 * It is necessary to change the local temporary files as only file handles are passed out
+	 * by the external function program block.
+	 * 
+	 * @author mboehm
+	 * 
+	 * @param id
+	 */
+	private void changeTmpOutput( long id )
+	{
+		ArrayList<DataIdentifier> outputParams = getOutputParams();
+		cell2BlockInst = getCell2BlockInstructions(outputParams, _blockedFileNames);
+	}
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
 	 */
 
 	public void execute(ExecutionContext ec) {
-
+	
+		_runID = _idSeq.getNextID();
+		
+		changeTmpInput( _runID ); 
+		changeTmpOutput( _runID );
+				
 		// convert block to cell
 		ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
 		tempInst.addAll(block2CellInst);
@@ -112,10 +152,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// now execute package function
 		for (int i = 0; i < _inst.size(); i++) {
 
-			if (_inst.get(i) instanceof ExternalFunctionInvokationInstruction) {
+			if (_inst.get(i) instanceof ExternalFunctionInvocationInstruction) {
 				try {
 					executeInstruction(
-							(ExternalFunctionInvokationInstruction) _inst
+							(ExternalFunctionInvocationInstruction) _inst
 							.get(i),
 							this._prog.getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
@@ -147,7 +187,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @return
 	 */
 
-	private String getParameterString(ArrayList<DataIdentifier> params) {
+	protected String getParameterString(ArrayList<DataIdentifier> params) {
 		String parameterString = "";
 
 		for (int i = 0; i < params.size(); i++) {
@@ -186,7 +226,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	/**
 	 * method to get instructions
 	 */
-	private void getInstructions() {
+	protected void createInstructions() {
 
 		_inst = new ArrayList<Instruction>();
 
@@ -209,7 +249,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		String outputParameterString = getParameterString(getOutputParams());
 
 		// generate instruction
-		ExternalFunctionInvokationInstruction einst = new ExternalFunctionInvokationInstruction(
+		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
 				className, configFile, execLocation, inputParameterString,
 				outputParameterString);
 
@@ -270,7 +310,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		for (int i = 0; i < matrices.size(); i++) {
 
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = _otherParams.get(CLASSNAME) + i + "Output";
+			outputs[i] = ConfigurationManager.getConfig().getTextValue("scratch") + "/" +
+                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
 			blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = textCellInputInfo;
 			outputInfo[i] = binaryBlockOutputInfo;
@@ -380,7 +421,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// cell
 		for (int i = 0; i < matrices.size(); i++) {
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = _otherParams.get(CLASSNAME) + i + "Input";
+			outputs[i] = ConfigurationManager.getConfig().getTextValue("scratch") + "/" +
+                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
 			unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = binBlockInputInfo;
 			outputInfo[i] = textCellOutputInfo;
@@ -441,7 +483,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @throws NimbleCheckedRuntimeException
 	 */
 
-	public void executeInstruction(ExternalFunctionInvokationInstruction inst,
+	public void executeInstruction(ExternalFunctionInvocationInstruction inst,
 			DAGQueue dQueue) throws NimbleCheckedRuntimeException {
 
 		String className = inst.getClassName();
@@ -508,7 +550,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param returnFunc
 	 * @param outputParams
 	 */
-	private void verifyAndAttachOutputs(PackageFunction returnFunc,
+	protected void verifyAndAttachOutputs(PackageFunction returnFunc,
 			String outputParams) {
 
 		ArrayList<String> outputs = getParameters(outputParams);
@@ -609,7 +651,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @return
 	 */
 
-	private String getScalarValueTypeString(ScalarType scalarType) {
+	protected String getScalarValueTypeString(ScalarType scalarType) {
 
 		if (scalarType.equals(ScalarType.Double))
 			return "Double";
@@ -631,7 +673,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param metaData
 	 * @param variableMapping
 	 */
-	private void setupInputs(PackageFunction func, String inputParams,
+	protected void setupInputs(PackageFunction func, String inputParams,
 			HashMap<String, Data> variableMapping) {
 
 		ArrayList<String> inputs = getParameters(inputParams);
@@ -652,7 +694,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @return
 	 */
 
-	private ArrayList<FIO> getInputObjects(ArrayList<String> inputs,
+	protected ArrayList<FIO> getInputObjects(ArrayList<String> inputs,
 			HashMap<String, Data> variableMapping) {
 		ArrayList<FIO> inputObjects = new ArrayList<FIO>();
 
@@ -702,7 +744,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param string
 	 * @return
 	 */
-	private ScalarType getScalarValueType(String string) {
+	protected ScalarType getScalarValueType(String string) {
 		if (string.equals("Double"))
 			return ScalarType.Double;
 		if (string.equals("Integer"))
@@ -723,7 +765,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @return
 	 */
 
-	private String getMatrixValueTypeString(Matrix.ValueType t) {
+	protected String getMatrixValueTypeString(Matrix.ValueType t) {
 		if (t.equals(Matrix.ValueType.Double))
 			return "Double";
 
@@ -740,7 +782,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @return
 	 */
 
-	private dml.packagesupport.Matrix.ValueType getMatrixValueType(String string) {
+	protected dml.packagesupport.Matrix.ValueType getMatrixValueType(String string) {
 
 		if (string.equals("Double"))
 			return Matrix.ValueType.Double;
@@ -758,7 +800,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param inputParams
 	 * @return
 	 */
-	private ArrayList<String> getParameters(String inputParams) {
+	protected ArrayList<String> getParameters(String inputParams) {
 		ArrayList<String> inputs = new ArrayList<String>();
 
 		StringTokenizer tk = new StringTokenizer(inputParams, ",");
@@ -775,7 +817,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param d
 	 * @return
 	 */
-	private String getDataTypeString(DataType d) {
+	protected String getDataTypeString(DataType d) {
 		if (d.equals(DataType.MATRIX))
 			return "Matrix";
 
@@ -795,7 +837,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param t
 	 * @return
 	 */
-	private String getFIODataTypeString(Type t) {
+	protected String getFIODataTypeString(Type t) {
 		if (t.equals(Type.Matrix))
 			return "Matrix";
 
@@ -814,7 +856,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param v
 	 * @return
 	 */
-	private String getValueTypeString(ValueType v) {
+	protected String getValueTypeString(ValueType v) {
 		if (v.equals(ValueType.DOUBLE))
 			return "Double";
 
@@ -835,5 +877,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		for (Instruction i : this._inst) {
 			i.printMe();
 		}
+	}
+	
+	public HashMap<String,String> getOtherParams()
+	{
+		return _otherParams;
 	}
 }

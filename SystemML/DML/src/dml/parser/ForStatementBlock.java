@@ -11,10 +11,14 @@ import dml.utils.LanguageException;
 
 public class ForStatementBlock extends StatementBlock {
 	
-	private Hops _predicateHops;
-	private Lops _predicateLops = null;
+	protected Hops _fromHops        = null;
+	protected Hops _toHops          = null;
+	protected Hops _incrementHops   = null;
 	
-	
+	protected Lops _fromLops        = null;
+	protected Lops _toLops          = null;
+	protected Lops _incrementLops   = null;
+
 	public IterablePredicate getIterPredicate(){
 		return ((ForStatement)_statements.get(0)).getIterablePredicate();
 	}
@@ -49,7 +53,7 @@ public class ForStatementBlock extends StatementBlock {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1)
-			throw new LanguageException("ForStatementBlock should have only 1 statement (while statement)");
+			throw new LanguageException("ForStatementBlock should have only 1 statement (for statement)");
 		
 		
 		_read = new VariableSet();
@@ -58,9 +62,14 @@ public class ForStatementBlock extends StatementBlock {
 		
 		_gen = new VariableSet();
 		_gen.addVariables(fstmt.getIterablePredicate().variablesRead());
-				
+
+		// add the iterVar from iterable predicate to kill set 
+		_kill.addVariables(fstmt.getIterablePredicate().variablesUpdated());
+		
 		VariableSet current = new VariableSet();
 		current.addVariables(activeInPassed);
+		current.addVariables(_updated);
+		
 		
 		for (int  i = 0; i < fstmt.getBody().size(); i++){
 			
@@ -121,11 +130,7 @@ public class ForStatementBlock extends StatementBlock {
 		return loReturn;
 	
 	}
-	
-	public void set_predicate_hops(Hops hops) {
-		_predicateHops = hops;
-	}
-	
+
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
@@ -134,24 +139,32 @@ public class ForStatementBlock extends StatementBlock {
 		
 		return _hops;
 	}
+
+	public void setFromHops(Hops hops) { _fromHops = hops; }
+	public void setToHops(Hops hops) { _toHops = hops; }
+	public void setIncrementHops(Hops hops) { _incrementHops = hops; }
 	
-	public Hops getPredicateHops(){
-		return _predicateHops;
-	}
+	public Hops getFromHops()      { return _fromHops; }
+	public Hops getToHops()        { return _toHops; }
+	public Hops getIncrementHops() { return _incrementHops; }
+
+	public void setFromLops(Lops lops) { _fromLops = lops; }
+	public void setToLops(Lops lops) { _toLops = lops; }
+	public void setIncrementLops(Lops lops) { _incrementLops = lops; }
 	
-	public Lops get_predicateLops() {
-		return _predicateLops;
-	}
+	public Lops getFromLops()      { return _fromLops; }
+	public Lops getToLops()        { return _toLops; }
+	public Lops getIncrementLops() { return _incrementLops; }
+
 	
-	public void set_predicateLops(Lops predicateLops) {
-		_predicateLops = predicateLops;
-	}
 	
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
  		
 		VariableSet predVars = new VariableSet();
-		predVars.addVariables(((ForStatement)_statements.get(0)).getIterablePredicate().variablesRead());
-		predVars.addVariables(((ForStatement)_statements.get(0)).getIterablePredicate().variablesUpdated());
+		IterablePredicate ip = ((ForStatement)_statements.get(0)).getIterablePredicate(); 
+		
+		predVars.addVariables(ip.variablesRead());
+		predVars.addVariables(ip.variablesUpdated());
 		
 		VariableSet candidateLO = new VariableSet();
 		candidateLO.addVariables(loPassed);
@@ -183,7 +196,8 @@ public class ForStatementBlock extends StatementBlock {
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getDefinedLine() + " depends on for execution");
+			if( !ip.getIterVar().getName().equals( varName)  )
+				System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getDefinedLine() + " depends on for execution");
 		}
 		
 		// Cannot remove kill variables

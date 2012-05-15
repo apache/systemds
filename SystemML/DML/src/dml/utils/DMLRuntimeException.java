@@ -14,4 +14,8 @@ public class DMLRuntimeException extends DMLException {
 	public DMLRuntimeException(Exception e) {
 		super(e);
 	}
+
+	public DMLRuntimeException(String string, Exception ex){
+		super(string,ex);
+	}
 }

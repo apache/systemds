@@ -17,9 +17,10 @@ public class CM extends ValueFunction {
 	}
 	
 	public static CM getCMFnObject() {
-		if ( singleObj == null )
-			singleObj = new CM();
-		return singleObj;
+		return singleObj = new CM(); //changed for multi-threaded exec  
+		// if ( singleObj == null ) 
+		//	return singleObj = new CM();
+		//return singleObj;
 	}
 	
 	public Object clone() throws CloneNotSupportedException {

@@ -18,4 +18,8 @@ public class PackageRuntimeException extends RuntimeException {
 		super(e);
 	}
 
+	public PackageRuntimeException(String msg, Exception e) {
+		super(msg,e);
+	}
+
 }

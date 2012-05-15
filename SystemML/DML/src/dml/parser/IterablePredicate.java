@@ -2,9 +2,11 @@ package dml.parser;
 
 import java.util.HashMap;
 
+import dml.lops.Lops;
 import dml.utils.LanguageException;
 
-public class IterablePredicate extends Expression {
+public class IterablePredicate extends Expression 
+{
 	private DataIdentifier _iterVar;	// variable being iterated over
 	private Expression _fromExpr;
 	private Expression _toExpr;
@@ -18,30 +20,50 @@ public class IterablePredicate extends Expression {
 		_toExpr = toExpr;
 		_incrementExpr = incrementExpr;
 		
+		_parforParams = parForParamValues;
 	}
 		
-	public String toString(){
-		
-		String retVal = "(" + _iterVar + " in seq(" + _fromExpr.toString() + "," + _toExpr.toString() + "," + _incrementExpr.toString();
+	public String toString()
+	{ 
+		StringBuffer sb = new StringBuffer();
+		sb.append( "(");
+		sb.append( _iterVar.getName() );
+		sb.append(" in seq(");
+		sb.append(_fromExpr.toString());
+		sb.append(",");
+		sb.append(_toExpr.toString());
+		sb.append(",");
+		sb.append(_incrementExpr.toString());
 		if (_parforParams != null && _parforParams.size() > 0){
-			for (String key : _parforParams.keySet()){
-				retVal += "," + key + "=" + _parforParams.get(key).toString();
+			for (String key : _parforParams.keySet())
+			{
+				sb.append( "," );
+				sb.append( key );
+				sb.append( "=" );
+				sb.append( _parforParams.get(key).toString() );
 			}
 		}
-		retVal = retVal + ")";
-		return retVal;
+		sb.append( ")" );
+		return sb.toString();
 	}
 	
 	 
-	public VariableSet variablesRead() {
+	public VariableSet variablesRead() 
+	{
 		VariableSet result = new VariableSet();
+		result.addVariables( _fromExpr.variablesRead()      );
+		result.addVariables( _toExpr.variablesRead()        );
+		result.addVariables( _incrementExpr.variablesRead() );
+
 		return result;
 	}
 
 	 
-	public VariableSet variablesUpdated() {
+	public VariableSet variablesUpdated() 
+	{
 		VariableSet result = new VariableSet();
 		result.addVariable(_iterVar.getName(), _iterVar);
+		
 	 	return result;
 	}
 
@@ -54,13 +76,15 @@ public class IterablePredicate extends Expression {
 	}
 
 	@Override
-	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException {
+	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException 
+	{		
+		//1) VALIDATE ITERATION VARIABLE (index)
 		
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
 		if (ids.containsKey(_iterVar.getName())){
-			DataIdentifier otherIdentifier = ids.get(_iterVar.getName());
-			if (!otherIdentifier.getDataType().equals(DataType.SCALAR) || !otherIdentifier.getDataType().equals(ValueType.INT)){
-				throw new LanguageException("iterable predicate in for loop " + _iterVar.getName() + " must be a scalar integer");
+			DataIdentifier otherDI = ids.get(_iterVar.getName());
+			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT ){
+				throw new LanguageException("iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer");
 			}	
 		}
 		
@@ -69,6 +93,29 @@ public class IterablePredicate extends Expression {
 			
 		// add the iterVar to the variable set
 		ids.put(_iterVar.getName(), _iterVar);
+		
+		
+		//2) VALIDATE READ VARIABLES in (from, to, increment)
+		
+		VariableSet reads = variablesRead();
+		for( String var : reads.getVariableNames() )
+		{
+			// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
+			if (ids.containsKey( var )){
+				DataIdentifier otherDI = ids.get( var );
+				if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType()!=ValueType.INT ){
+					throw new LanguageException("iterable predicate in for loop '" + var + "' must be a scalar integer");
+				}	
+			}
+			
+			// set the values for DataIdentifer iterable variable
+			DataIdentifier varDI = reads.getVariable(var);
+			varDI.setIntProperties();
+				
+			// add the iterVar to the variable set
+			ids.put( var, varDI );
+		}
+		
 	}
 		
 	public DataIdentifier getIterVar() {
@@ -106,5 +153,26 @@ public class IterablePredicate extends Expression {
 	public HashMap<String,String> getParForParams(){
 		return _parforParams;
 	}
+	
+	public void setParForParams(HashMap<String,String> params){
+		_parforParams = params;
+	}
+	
+	public static String[] createIterablePredicateVariables( String varName, Lops from, Lops to, Lops incr )
+	{
+		String[] ret = new String[4]; //varname, from, to, incr
+		
+		ret[0] = varName;
+		
+		if( from.getType()==Lops.Type.Data )
+			ret[1] = from.getOutputParameters().getLabel();
+		if( to.getType()==Lops.Type.Data )
+			ret[2] = to.getOutputParameters().getLabel();
+		if( incr.getType()==Lops.Type.Data )
+			ret[3] = incr.getOutputParameters().getLabel();
+		
+		return ret;
+	}
+
 
 } // end class

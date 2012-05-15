@@ -289,6 +289,10 @@ public class MMCJMR {
 			job.set("mapred.job.tracker", "local");
 		}
 		
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		
+		
 		RunningJob runjob=JobClient.runJob(job);
 		
 		/*

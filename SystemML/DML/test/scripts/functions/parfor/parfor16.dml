@@ -1,0 +1,10 @@
+A = Rand(rows=20,cols=1,min=0,max=0);
+B = Rand(rows=20,cols=1);
+
+parfor( i in 1:10 )
+{ 
+   A[i,1] = B[i,1];
+   A[i*2,1] = B[i*2,1];
+}
+
+#print(A);

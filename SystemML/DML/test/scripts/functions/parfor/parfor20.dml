@@ -1,0 +1,12 @@
+A = Rand(rows=20,cols=1,min=0,max=0);
+B = Rand(rows=20,cols=1);
+
+#GCD false
+parfor( i in 10:15 )
+{ 
+
+   B[i,1] = A[i-10,1];
+   A[i,1] = B[i,1];
+}
+
+#print(A);

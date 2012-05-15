@@ -1,0 +1,11 @@
+A = Rand(rows=20,cols=1,min=0,max=0);
+B = Rand(rows=20,cols=1);
+
+#GCD true, Banerjee false
+parfor( i in 1:2 )
+{ 
+   A[2*i+10,1] = B[i,1];
+   A[5*i,1] = B[i,1];
+}
+
+#print(A);

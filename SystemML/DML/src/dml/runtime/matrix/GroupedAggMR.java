@@ -5,6 +5,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import dml.lops.runtime.RunMRJobs.ExecMode;
 import dml.runtime.matrix.io.InputInfo;
 import dml.runtime.matrix.io.OutputInfo;
 import dml.runtime.matrix.io.TaggedInt;
@@ -96,6 +97,11 @@ public class GroupedAggMR {
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
 		}*/
+		
+		ExecMode mode = ExecMode.CLUSTER; //default
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job, mode); //TODO see above
+		
 		
 		RunningJob runjob=JobClient.runJob(job);
 		

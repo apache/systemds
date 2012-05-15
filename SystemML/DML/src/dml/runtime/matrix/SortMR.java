@@ -280,6 +280,10 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 			job.set("mapred.job.tracker", "local");
 		}
 		
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		
+		
 	    RunningJob runjob=JobClient.runJob(job);
 		Group group=runjob.getCounters().getGroup(NUM_VALUES_PREFIX);
 		numReducers=job.getNumReduceTasks();

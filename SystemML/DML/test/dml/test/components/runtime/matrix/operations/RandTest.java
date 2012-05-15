@@ -36,6 +36,7 @@ public class RandTest {
         	instruction.append(Instruction.OPERAND_DELIM + "max=1.0");
         	instruction.append(Instruction.OPERAND_DELIM + "sparsity=0.5");
         	instruction.append(Instruction.OPERAND_DELIM + "pdf=uniform");
+        	instruction.append(Instruction.OPERAND_DELIM + "dir=scratch_space/_t0/");
         	RandInstruction instType = (RandInstruction)RandInstruction.parseInstruction(instruction.toString());
             //assertEquals(Rand.SupportedOperation.RAND, instType.operation);
             assertEquals(10, instType.rows);
@@ -46,6 +47,7 @@ public class RandTest {
             assertEquals(1.0, instType.maxValue, 0);
             assertEquals(0.5, instType.sparsity, 0);
             assertEquals("uniform", instType.probabilityDensityFunction);
+            assertEquals("scratch_space/_t0/", instType.baseDir);
         } catch (Exception e) {
             fail("Instruction parsing failed");
         }

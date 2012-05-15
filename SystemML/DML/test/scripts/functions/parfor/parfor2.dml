@@ -1,0 +1,12 @@
+a = 1;
+
+parfor( i in 1:10 )
+{
+   b = i + a;
+   a = b;
+   #print(a);
+   #print(b);
+}
+
+#print(a);
+ 

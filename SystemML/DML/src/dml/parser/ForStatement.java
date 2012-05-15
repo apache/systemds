@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import dml.utils.LanguageException;
 
-public class ForStatement extends Statement{
-	
-	private IterablePredicate _predicate;
-	private ArrayList<StatementBlock> _body;
+public class ForStatement extends Statement
+{	
+	protected IterablePredicate 		_predicate;
+	protected ArrayList<StatementBlock> _body;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		throw new LanguageException("should not call rewriteStatement for ForStatement");

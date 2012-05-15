@@ -149,9 +149,13 @@ public class HopGraph {
 		}
 		else if (current instanceof ForStatementBlock) {
 			// Handle Predicate
-			Hops predicateHops = ((ForStatementBlock) current).getPredicateHops();
-			String predicateString = prepareHopsNodeList(predicateHops);
-			graphString += predicateString;
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			if (fsb.getFromHops() != null)
+				graphString += prepareHopsNodeList(fsb.getFromHops());
+			if (fsb.getToHops() != null)
+				graphString += prepareHopsNodeList(fsb.getToHops());
+			if (fsb.getIncrementHops() != null)
+				graphString += prepareHopsNodeList(fsb.getIncrementHops());
 			
 			// handle children
 			ForStatement fstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);

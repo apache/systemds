@@ -61,12 +61,16 @@ public class SQLLopGraph {
 		}
 		else if (current instanceof ForStatementBlock) {
 			// Handle Predicate
-			SQLLops predicateSQLLop = ((ForStatementBlock) current).getPredicateHops().get_sqllops();
-			String predicateString = prepareSQLLopNodeList(predicateSQLLop);
-			graphString += predicateString;
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			if (fsb.getFromHops() != null)
+				graphString += prepareSQLLopNodeList(fsb.getFromHops().get_sqllops());
+			if (fsb.getToHops() != null)
+				graphString += prepareSQLLopNodeList(fsb.getToHops().get_sqllops());
+			if (fsb.getIncrementHops() != null)
+				graphString += prepareSQLLopNodeList(fsb.getIncrementHops().get_sqllops());
 			
 			// handle children
-			ForStatement fstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
 			for (StatementBlock sb : fstmt.getBody()){	
 				graphString += getSQLLopGraphString(sb);
 			}

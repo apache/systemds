@@ -12,7 +12,9 @@ import dml.utils.DMLRuntimeException;
 import dml.utils.DMLUnsupportedOperationException;
 
 public class Program {
-
+	
+	public static final String KEY_DELIM = "::";
+	
 	public ArrayList<ProgramBlock> _programBlocks;
 
 	protected HashMap<String, Data> _programVariables;
@@ -21,6 +23,7 @@ public class Program {
 
 	//handle to the nimble dag queue
 	private DAGQueue _dagQueue;
+
 		
 	public Program() {
 		_namespaceFunctions = new HashMap<String, HashMap<String,FunctionProgramBlock>>(); 
@@ -30,13 +33,20 @@ public class Program {
 
 	public void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
 		
-		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
+		if (namespace == null) 
+			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
-		HashMap<String,FunctionProgramBlock> namespaceBlocks = _namespaceFunctions.get(namespace);
-		if (namespaceBlocks == null){
-			namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
-			_namespaceFunctions.put(namespace,namespaceBlocks);
+		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
+		
+		synchronized( _namespaceFunctions )
+		{
+			namespaceBlocks = _namespaceFunctions.get(namespace);
+			if (namespaceBlocks == null){
+				namespaceBlocks = new HashMap<String,FunctionProgramBlock>();
+				_namespaceFunctions.put(namespace,namespaceBlocks);
+			}
 		}
+		
 		namespaceBlocks.put(fname,fpb);
 	}
 	
@@ -46,7 +56,7 @@ public class Program {
 		for (String namespace : _namespaceFunctions.keySet()){
 			HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
 			for (String fname : namespaceFSB.keySet()){
-				retVal.put(namespace+"::"+fname, namespaceFSB.get(fname));
+				retVal.put(namespace+KEY_DELIM+fname, namespaceFSB.get(fname));
 			}
 		}
 		return retVal;

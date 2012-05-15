@@ -1,9 +1,9 @@
 package dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Vector;
 
+import dml.lops.Lops;
 import dml.utils.LanguageException;
 
 public class FunctionStatement extends Statement{
@@ -111,5 +111,19 @@ public class FunctionStatement extends Statement{
 	public VariableSet variablesUpdated() {
 		System.out.println("[W] should not call variablesRead from FunctionStatement ");
 		return new VariableSet();
+	}
+	
+	public static String[] createFunctionCallVariables( ArrayList<Lops> lops )
+	{
+		String[] ret = new String[lops.size()]; //vars in order
+		
+		for( int i=0; i<lops.size(); i++ )
+		{	
+			Lops llops = lops.get(i);
+			if( llops.getType()==Lops.Type.Data )
+				ret[i] = llops.getOutputParameters().getLabel(); 
+		}
+		
+		return ret;
 	}
 }

@@ -15,9 +15,10 @@ public class KahanPlus extends ValueFunction {
 	}
 	
 	public static KahanPlus getKahanPlusFnObject() {
-		if ( singleObj == null )
-			singleObj = new KahanPlus();
-		return singleObj;
+		return singleObj = new KahanPlus(); //changed for multi-threaded exec
+		// if ( singleObj == null ) 
+		//	return singleObj = new KahanPlus();
+		//return singleObj;
 	}
 	
 	public Object clone() throws CloneNotSupportedException {

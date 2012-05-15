@@ -226,7 +226,11 @@ public class GMR{
 			job.set("mapred.job.tracker", "local");
 		}
 		
-		System.out.println("Check mode = " + mode);
+		//System.out.println("Check mode = " + mode);
+		
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job, mode);
+		
 		
 		RunningJob runjob=JobClient.runJob(job);
 		

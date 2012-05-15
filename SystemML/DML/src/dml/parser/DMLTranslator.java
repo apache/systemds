@@ -271,9 +271,11 @@ public class DMLTranslator {
 			((IfStatementBlock) sb).set_predicateLops(l);
 		}
 		
-		else if (sb instanceof ForStatementBlock){
-			ForStatement forStmt = (ForStatement)sb.getStatement(0);
-			ArrayList<StatementBlock> body = forStmt.getBody();
+		else if (sb instanceof ForStatementBlock) //NOTE: applies to ForStatementBlock and ParForStatementBlock
+		{
+			ForStatementBlock fsb =  (ForStatementBlock) sb;
+			ForStatement fs = (ForStatement)sb.getStatement(0);
+			ArrayList<StatementBlock> body = fs.getBody();
 						
 			if (sb.get_hops() != null && sb.get_hops().size() != 0) 
 				throw new HopsException("ForStatementBlock should not have hops");
@@ -283,10 +285,17 @@ public class DMLTranslator {
 				constructLops(stmtBlock);
 			
 			// handle for stmt predicate
-			Hops predicateHops = ((ForStatementBlock) sb).getPredicateHops();
-			if (predicateHops != null){
-				Lops l = ((ForStatementBlock) sb).getPredicateHops().constructLops();
-				((ForStatementBlock) sb).set_predicateLops(l);
+			if (fsb.getFromHops() != null){
+				Lops llobs = fsb.getFromHops().constructLops();
+				fsb.setFromLops(llobs);
+			}
+			if (fsb.getToHops() != null){
+				Lops llobs = fsb.getToHops().constructLops();
+				fsb.setToLops(llobs);
+			}
+			if (fsb.getIncrementHops() != null){
+				Lops llobs = fsb.getIncrementHops().constructLops();
+				fsb.setIncrementLops(llobs);
 			}
 		}
 		else if (sb instanceof FunctionStatementBlock){
@@ -330,7 +339,21 @@ public class DMLTranslator {
 			for (StatementBlock bl : wstmt.getBody())
 				constructSQLLops(bl);
 		}
-		if(sb instanceof IfStatementBlock)
+		else if(sb instanceof ForStatementBlock) //NOTE: applies to ForStatementBlock and ParForStatementBlock
+		{
+			ForStatementBlock fsb = (ForStatementBlock)sb;
+			ForStatement fs = (ForStatement)fsb.getStatement(0);
+			if(fsb.getFromHops()!=null)
+				fsb.getFromHops().constructSQLLOPs();
+			if(fsb.getToHops()!=null)
+				fsb.getToHops().constructSQLLOPs();
+			if(fsb.getIncrementHops()!=null)
+				fsb.getIncrementHops().constructSQLLOPs();
+			
+			for (StatementBlock bl : fs.getBody())
+				constructSQLLops(bl);
+		}
+		else if(sb instanceof IfStatementBlock)
 		{
 			IfStatement istmt = (IfStatement)((IfStatementBlock)sb).getStatement(0);
 			for (StatementBlock bl : istmt.getIfBody())
@@ -1050,14 +1073,27 @@ public class DMLTranslator {
 			
 			// print predicate lops 
 			ForStatementBlock fsb = (ForStatementBlock) current; 
-			Hops predicateHops = ((ForStatementBlock) current).getPredicateHops();
 			System.out.println("********************** PREDICATE LOPS *******************");
-			if (predicateHops != null){
-				Lops predicateLops = predicateHops.get_lops();
-				if (predicateLops != null) {
-					predicateLops = predicateHops.constructLops();
-					predicateLops.printMe();
-				}
+			if( fsb.getFromHops() != null ){
+				System.out.println("FROM:");
+				Lops llops = fsb.getFromLops();
+				if( llops == null )
+					llops = fsb.getFromHops().constructLops();
+				llops.printMe();
+			}
+			if( fsb.getToHops() != null ){
+				System.out.println("TO:");
+				Lops llops = fsb.getToLops();
+				if( llops == null )
+					llops = fsb.getToHops().constructLops();
+				llops.printMe();
+			}
+			if( fsb.getIncrementHops() != null ){
+				System.out.println("INCREMENT:");
+				Lops llops = fsb.getIncrementLops();
+				if( llops == null )
+					llops = fsb.getIncrementHops().constructLops();
+				llops.printMe();
 			}
 			
 			if (fsb.getNumStatements() > 1)
@@ -1171,14 +1207,15 @@ public class DMLTranslator {
 		if (current instanceof ForStatementBlock) {
 			
 			// print predicate hops
-			ForStatementBlock wstb = (ForStatementBlock) current; 
-			Hops predicateHops = wstb.getPredicateHops();
+			ForStatementBlock fsb = (ForStatementBlock) current; 
 			System.out.println("********************** PREDICATE HOPS *******************");
-			if (predicateHops != null) predicateHops.printMe();
-		
-			if (wstb.getNumStatements() > 1)
+			if (fsb.getFromHops() != null) fsb.getFromHops().printMe();
+			if (fsb.getToHops() != null) fsb.getToHops().printMe();
+			if (fsb.getIncrementHops() != null) fsb.getIncrementHops().printMe();
+			
+			if (fsb.getNumStatements() > 1)
 				System.out.println("error -- while stmt block has more than 1 stmt");
-			ForStatement ws = (ForStatement)wstb.getStatement(0);
+			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
 				printHops(sb);
@@ -1281,13 +1318,17 @@ public class DMLTranslator {
 		
 		if (current instanceof ForStatementBlock) {
 			// handle predicate
-			ForStatementBlock fstb = (ForStatementBlock) current;
-			if (fstb.getPredicateHops() != null) 
-				fstb.getPredicateHops().resetVisitStatus();
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			if (fsb.getFromHops() != null) 
+				fsb.getFromHops().resetVisitStatus();
+			if (fsb.getToHops() != null) 
+				fsb.getToHops().resetVisitStatus();
+			if (fsb.getIncrementHops() != null) 
+				fsb.getIncrementHops().resetVisitStatus();
 		
-			if (fstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
-			ForStatement ws = (ForStatement)fstb.getStatement(0);
+			if (fsb.getNumStatements() > 1)
+				System.out.println("error -- for stmt block has more than 1 stmt");
+			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
 				resetHopsDAGVisitStatus(sb);
@@ -1362,12 +1403,19 @@ public class DMLTranslator {
 		
 		if (current instanceof ForStatementBlock) {
 			// handle predicate
-			ForStatementBlock wstb = (ForStatementBlock) current;
-			wstb.getPredicateHops().get_sqllops().resetVisitStatus();
-		
-			if (wstb.getNumStatements() > 1)
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			
+			if (fsb.getFromHops() != null) 
+				fsb.getFromHops().get_sqllops().resetVisitStatus();
+			if (fsb.getToHops() != null) 
+				fsb.getToHops().get_sqllops().resetVisitStatus();
+			if (fsb.getIncrementHops() != null) 
+				fsb.getIncrementHops().get_sqllops().resetVisitStatus();
+			
+			
+			if (fsb.getNumStatements() > 1)
 				System.out.println("error -- while stmt block has more than 1 stmt");
-			ForStatement ws = (ForStatement)wstb.getStatement(0);
+			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
 				resetSQLLopsDAGVisitStatus(sb);
@@ -1443,8 +1491,14 @@ public class DMLTranslator {
 		
 		if (current instanceof ForStatementBlock) {
 			ForStatementBlock fsb = (ForStatementBlock) current;
-			if (fsb.get_predicateLops() != null)
-				fsb.get_predicateLops().resetVisitStatus();
+			
+			if (fsb.getFromLops() != null) 
+				fsb.getFromLops().resetVisitStatus();
+			if (fsb.getToLops() != null) 
+				fsb.getToLops().resetVisitStatus();
+			if (fsb.getIncrementLops() != null) 
+				fsb.getIncrementLops().resetVisitStatus();
+			
 			if (fsb.getNumStatements() > 1)
 				System.out.println("error -- for stmt block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
@@ -1468,7 +1522,7 @@ public class DMLTranslator {
 			return;
 		}
 		
-		if (sb instanceof ForStatementBlock) {
+		if (sb instanceof ForStatementBlock) { //NOTE: applies to ForStatementBlock and ParForStatementBlock
 			constructHopsForForControlBlock((ForStatementBlock) sb);
 			return;
 		}
@@ -1763,14 +1817,22 @@ public class DMLTranslator {
 		}
 	}
 	
-	
-	public void constructHopsForForControlBlock(ForStatementBlock sb) throws ParseException, LanguageException {
+	/**
+	 * Constructs Hops for a given ForStatementBlock or ParForStatementBlock, respectively.
+	 * 
+	 * @param sb
+	 * @throws ParseException
+	 * @throws LanguageException
+	 */
+	public void constructHopsForForControlBlock(ForStatementBlock sb) 
+		throws ParseException, LanguageException 
+	{
 		
-		ForStatement whilesb = (ForStatement) sb.getStatement(0);
-		ArrayList<StatementBlock> body = whilesb.getBody();
+		ForStatement fs = (ForStatement) sb.getStatement(0);
+		ArrayList<StatementBlock> body = fs.getBody();
 			
 		// construct hops for iterable predicate
-		//constructHopsForIterablePredicate(sb);
+		constructHopsForIterablePredicate(sb);
 			
 		for (int i = 0; i < body.size(); i++) {
 			StatementBlock current = body.get(i);
@@ -1855,50 +1917,48 @@ public class DMLTranslator {
 			((IfStatementBlock)passedSB).set_predicate_hops(predicateHops);
 	}
 
-	/*
-	public void constructHopsForIterablePredicate(StatementBlock passedSB) throws ParseException {
-
-		
+	
+	/**
+	 * Constructs all predicate Hops (for FROM, TO, INCREMENT) of an iterable predicate
+	 * and assigns these Hops to the passed statement block.
+	 * 
+	 * Method used for both ForStatementBlock and ParForStatementBlock.
+	 * 
+	 * @param passedSB
+	 * @throws ParseException
+	 */
+	public void constructHopsForIterablePredicate(StatementBlock passedSB) 
+		throws ParseException 
+	{
 		HashMap<String, Hops> _ids = new HashMap<String, Hops>();
 		
-		
 		// set iterable predicate
-		ForStatement fs = (ForStatement) ((ForStatementBlock)passedSB).getStatement(0);
+		ForStatementBlock fsb = (ForStatementBlock)passedSB;
+		ForStatement fs = (ForStatement) fsb.getStatement(0);
 		IterablePredicate ip = fs.getIterablePredicate();
 	
 		VariableSet varsRead = ip.variablesRead();
 		
 		for (String varName : varsRead.getVariables().keySet()) {
-		
+			
 			DataIdentifier var = passedSB.liveIn().getVariable(varName);
 			DataOp read = null;
 			if (var == null) {
-				throw new ParseException("variable " + varName + " is not available for iterable predicate");
-			} else {
+				throw new ParseException("variable '" + varName + "' is not available for iterable predicate");
+			}
+			else {
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
 						null, var.getDim1(), var.getDim2(), (int) var.getRowsInBlock(), (int) var.getColumnsInBlock());
 			}
 			_ids.put(varName, read);
 		}
-		
-		DataIdentifier target = new DataIdentifier(Expression.getTempName());
-		target.setDataType(DataType.SCALAR);
-		target.setValueType(ValueType.BOOLEAN);
-		Hops predicateHops = null;
-		Expression predicate = ip.getPredicate();
-		
-		if (predicate instanceof RelationalExpression) {
-			predicateHops = processRelationalExpression((RelationalExpression) ip.getPredicate(), target, _ids);
-		} else if (predicate instanceof BooleanExpression) {
-			predicateHops = processBooleanExpression((BooleanExpression) ip.getPredicate(), target, _ids);
-		} else if (predicate instanceof DataIdentifier) {
-			predicateHops = processExpression(ip.getPredicate(), null, _ids);
-		}
-		((ForStatementBlock)passedSB).set_predicate_hops(predicateHops);
-		
-		
+
+		//construct hops for from, to, and increment expressions		
+		fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
+		fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
+		fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));					
 	}
-	 */
+	 
 	
 	/**
 	 * Construct Hops from parse tree : Process Expression in an assignment
@@ -1972,6 +2032,25 @@ public class DMLTranslator {
 		return target;
 	}
 	 
+	/**
+	 * Constructs the Hops for arbitrary expressions that eventually evaluate to an INT scalar. 
+	 * 
+	 * @param source 
+	 * @param hops
+	 * @return
+	 * @throws ParseException
+	 */
+	private Hops processTempIntExpression( Expression source,  HashMap<String, Hops> hops ) 
+		throws ParseException
+	{
+		DataIdentifier tmpOut = createTarget();		
+		tmpOut.setDataType(DataType.SCALAR);
+		tmpOut.setValueType(ValueType.INT);		
+		source.setOutput(tmpOut);
+		
+		return processExpression(source, tmpOut, hops );	
+	}
+	
 	private Hops processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hops> hops) 
 		throws ParseException {
 	

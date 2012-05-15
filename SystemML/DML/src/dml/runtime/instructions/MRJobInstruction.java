@@ -895,4 +895,14 @@ public class MRJobInstruction extends Instruction
 	public byte[] getInputIndexes() throws DMLRuntimeException {
 		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
 	}
+	
+	public void setIv_inputs(String[] in)
+	{
+		iv_inputs=in;
+	}
+	
+	public void setIv_outputs(String[] out)
+	{
+		iv_outputs=out;
+	}
 }

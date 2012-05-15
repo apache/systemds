@@ -141,4 +141,9 @@ public class WhileProgramBlock extends ProgramBlock {
 	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
 	}
+	
+	public void setChildBlocks(ArrayList<ProgramBlock> childs) 
+	{
+		_childBlocks = childs;
+	}
 }

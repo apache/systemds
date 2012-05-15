@@ -1,0 +1,11 @@
+A = Rand(rows=20,cols=20,min=0,max=0);
+B = Rand(rows=20,cols=20,min=0,max=0);
+C = Rand(rows=20,cols=20,min=0,max=0);
+
+parfor( i in 1:20 )
+{
+   A[1:10,i]=i;
+   A[i,5]=i;
+}
+
+#print(C);

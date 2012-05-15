@@ -100,10 +100,10 @@ public class RandMR
 		for(int i = 0; i < randInstructions.length; i++)
 		{
 			randInsStr=randInsStr+","+randInstructions[i];
-			inputs[i]=System.currentTimeMillis()+".randinput";//+random.nextInt();
+			RandInstruction ins=(RandInstruction)RandInstruction.parseInstruction(randInstructions[i]);
+			inputs[i]=ins.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
 			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 			PrintWriter pw = new PrintWriter(fsOut);
-			RandInstruction ins=(RandInstruction)RandInstruction.parseInstruction(randInstructions[i]);
 			random.setSeed(ins.seed);
 			int[] seeds=new int[32];
 			for(int s=0; s<seeds.length; s++)
@@ -225,6 +225,10 @@ public class RandMR
 			if ( mode == ExecMode.LOCAL ) {
 				job.set("mapred.job.tracker", "local");
 			}
+
+			//set unique working dir
+			MRJobConfiguration.setUniqueWorkingDir(job, mode);
+			
 			
 			runjob=JobClient.runJob(job);
 			

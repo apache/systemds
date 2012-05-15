@@ -40,7 +40,9 @@ public abstract class Lops {
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
 	public static final String DATATYPE_PREFIX = "\u00b7" ; //":#:";
 	public static final String NAME_VALUE_SEPARATOR = "="; // e.g., used in parameterized builtins
-
+	public static final String VARIABLE_NAME_PLACEHOLDER = "##"; //TODO: use in LOPs 
+	
+	
 	/**
 	 * get visit status of node
 	 * 

@@ -10,12 +10,15 @@ import dml.runtime.controlprogram.CVProgramBlock;
 import dml.runtime.controlprogram.ELProgramBlock;
 import dml.runtime.controlprogram.ELUseProgramBlock;
 import dml.runtime.controlprogram.ExternalFunctionProgramBlock;
+import dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import dml.runtime.controlprogram.ForProgramBlock;
 import dml.runtime.controlprogram.FunctionProgramBlock;
 import dml.runtime.controlprogram.IfProgramBlock;
+import dml.runtime.controlprogram.ParForProgramBlock;
 import dml.runtime.controlprogram.Program;
 import dml.runtime.controlprogram.ProgramBlock;
 import dml.runtime.controlprogram.WhileProgramBlock;
+import dml.runtime.controlprogram.parfor.ProgramConverter;
 import dml.runtime.instructions.Instruction;
 import dml.utils.DMLException;
 import dml.utils.LanguageException;
@@ -269,52 +272,65 @@ public class DMLProgram {
 		}
 		
 		// process For Statement - add runtime program blocks to program
-		else if (sb instanceof ForStatementBlock){
-		
-			// create DAG for loop predicates
-			/*
-			pred_dag = new Dag<Lops>();
-			((ForStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
+		// NOTE: applies to ForStatementBlock and ParForStatementBlock
+		else if (sb instanceof ForStatementBlock) 
+		{ 
+			ForStatementBlock fsb = (ForStatementBlock) sb;
 			
-			// create instructions for loop predicates
-			pred_instruct = new ArrayList<Instruction>();
-			ArrayList<Instruction> pInst = pred_dag.getJobs(debug,config);
-			for (Instruction i : pInst ) {
-				pred_instruct.add(i);
-			}
-			*/
-			
+			// create DAGs for loop predicates 
+			Dag<Lops> fromDag = new Dag<Lops>();
+			Dag<Lops> toDag = new Dag<Lops>();
+			Dag<Lops> incrementDag = new Dag<Lops>();
+			if( fsb.getFromHops()!=null )
+				fsb.getFromLops().addToDag(fromDag);
+			if( fsb.getToHops()!=null )
+				fsb.getToLops().addToDag(toDag);		
+			if( fsb.getIncrementHops()!=null )
+				fsb.getIncrementLops().addToDag(incrementDag);		
+				
+			// create instructions for loop predicates			
+			ArrayList<Instruction> fromInstructions = fromDag.getJobs(debug,config);
+			ArrayList<Instruction> toInstructions = toDag.getJobs(debug,config);
+			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(debug,config);		
+
 			// create for program block
-			IterablePredicate iterPred = ((ForStatementBlock)sb).getIterPredicate();
-			ForProgramBlock rtpb = new ForProgramBlock(prog, iterPred);
+			String sbName = null;
+			ForProgramBlock rtpb = null;
+			IterablePredicate iterPred = fsb.getIterPredicate();
+			String [] iterPredData= IterablePredicate.createIterablePredicateVariables(iterPred.getIterVar().getName(),
+					                                                                   fsb.getFromLops(), fsb.getToLops(), fsb.getIncrementLops()); 
 			
-			/*
-			if (rtpb.getPredicateResultVar() == null ) {
-				// e.g case : FOR(continue)
-				if ( ((ForStatementBlock) sb).get_predicateLops().getExecLocation() == LopProperties.ExecLocation.Data ) {
-					String resultVar = ((ForStatementBlock) sb).get_predicateLops().getOutputParameters().getLabel();
-					rtpb.setPredicateResultVar( resultVar );
-				}
-				else
-					throw new LopsException("Error in translating the FOR predicate."); 
+			if( sb instanceof ParForStatementBlock )
+			{
+				sbName = "ParForStatementBlock";
+				rtpb = new ParForProgramBlock(prog, iterPredData,iterPred.getParForParams());
+				((ParForProgramBlock)rtpb).setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
 			}
-			*/
+			else //ForStatementBlock
+			{
+				sbName = "ForStatementBlock";
+				rtpb = new ForProgramBlock(prog, iterPredData);
+			}
+			 
+			rtpb.setFromInstructions(      fromInstructions      );
+			rtpb.setToInstructions(        toInstructions        );
+			rtpb.setIncrementInstructions( incrementInstructions );
+			
+			rtpb.setIterablePredicateVars( iterPredData );
 			
 			// process the body of the for statement block
-			ForStatementBlock fsb = (ForStatementBlock)sb;
 			if (fsb.getNumStatements() > 1)
-				throw new LopsException("ForStatementBlock should have 1 statement");
+				throw new LopsException( sbName+" should have 1 statement" );
 			
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			
-			for (StatementBlock sblock : fstmt.getBody()){
+			ForStatement fs = (ForStatement)fsb.getStatement(0);
+			for (StatementBlock sblock : fs.getBody()){
 				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
 				rtpb.addProgramBlock(childBlock); 
 			}
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (fsb.get_lops() != null && fsb.get_lops().size() > 0){
-				throw new LopsException("ForStatementBlock should have no Lops");
+				throw new LopsException( sbName+" should have no Lops" );
 			}
 			
 			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
@@ -323,6 +339,7 @@ public class DMLProgram {
 			return rtpb;
 		
 		}
+		
 		// process function statement block - add runtime program blocks to program
 		if (sb instanceof FunctionStatementBlock){
 			
@@ -335,16 +352,31 @@ public class DMLProgram {
 			if (fstmt instanceof ExternalFunctionStatement) {
 				 // create external function program block
 				
-				rtpb = new ExternalFunctionProgramBlock(prog, 
-								fstmt.getInputParams(), fstmt.getOutputParams(), 
-								((ExternalFunctionStatement) fstmt).getOtherParams());
+				String execLoc = ((ExternalFunctionStatement) fstmt)
+                				  .getOtherParams().get("execlocation");
+				boolean isCP = (execLoc!=null && execLoc.equals("CP")) ? true : false;
 				
+				if( isCP )
+				{
+					rtpb = new ExternalFunctionProgramBlockCP(prog, 
+							fstmt.getInputParams(), fstmt.getOutputParams(), 
+							((ExternalFunctionStatement) fstmt).getOtherParams(),
+							config.getTextValue("scratch")+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+                                                           ProgramConverter.CP_ROOT_THREAD_ID + 
+                                                           ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
+				}
+				else
+				{
+					rtpb = new ExternalFunctionProgramBlock(prog, 
+									fstmt.getInputParams(), fstmt.getOutputParams(), 
+									((ExternalFunctionStatement) fstmt).getOtherParams());
+				}
 				if (fstmt.getBody().size() > 0){
 					throw new LopsException("ExternalFunctionStatementBlock should have no statement blocks in body");
 				}
 			}
-			
-			else {
+			else 
+			{
 		
 				// create function program block
 				rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());

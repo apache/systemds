@@ -49,9 +49,14 @@ public class FunctionProgramBlock extends ProgramBlock {
 		_childBlocks.add(childBlock);
 	}
 	
+	public void setChildBlocks( ArrayList<ProgramBlock> pbs)
+	{
+		_childBlocks = pbs;
+	}
+	
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
-		
+				
 		// for each program block
 		for (int i=0; i < this._childBlocks.size(); i++){
 			ProgramBlock pb = this._childBlocks.get(i);

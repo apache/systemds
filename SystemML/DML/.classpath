@@ -26,5 +26,6 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/JSON4J.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0/hadoop-core-1.0.0.jar" sourcepath="/DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0/src"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0/lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/opencsv-1.8/opencsv-1.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

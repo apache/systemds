@@ -12,9 +12,10 @@ public class COV extends ValueFunction{
 	private static KahanPlus plus=KahanPlus.getKahanPlusFnObject();
 	
 	public static COV getCOMFnObject() {
-		if ( singleObj == null )
-			singleObj = new COV();
-		return singleObj;
+		return singleObj = new COV(); //changed for multi-threaded exec
+		// if ( singleObj == null ) 
+		//	return singleObj = new COV();
+		//return singleObj;
 	}
 	
 	private COV()

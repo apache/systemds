@@ -17,6 +17,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
+import dml.lops.runtime.RunMRJobs.ExecMode;
 import dml.meta.PartitionParams;
 import dml.runtime.matrix.MatrixCharacteristics;
 import dml.runtime.matrix.io.AddDummyWeightConverter;
@@ -36,6 +37,7 @@ import dml.runtime.matrix.io.TextToBinaryCellConverter;
 import dml.runtime.matrix.io.WeightedCellToSortInputConverter;
 import dml.runtime.matrix.io.hadoopfix.MultipleInputs;
 import dml.runtime.util.MapReduceTool;
+import dml.runtime.controlprogram.parfor.util.IDSequence;
 import dml.runtime.instructions.*;
 import dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import dml.runtime.instructions.MRInstructions.AggregateInstruction;
@@ -55,6 +57,8 @@ import dml.runtime.matrix.io.WeightedPair;
 public class MRJobConfiguration {
 	
 	//Job configurations
+	
+	public static IDSequence seq = new IDSequence();
 	
 	//input matrices
 	private static final String INPUT_MATRICIES_DIRS_CONFIG="input.matrices.dirs";
@@ -80,6 +84,8 @@ public class MRJobConfiguration {
 	private static final String RAND_INSTRUCTIONS_CONFIG="rand.instructions";
 	//matrix indexes to be outputted to reducer
 	private static final String OUTPUT_INDEXES_IN_MAPPER_CONFIG="output.indexes.in.mapper";
+	
+	private static final String PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG="programblocks.in.mapper";
 	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
@@ -133,6 +139,9 @@ public class MRJobConfiguration {
 	 * group name for the counters on number of output nonZeros
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
+	
+	public static final String PARFOR_NUMTASKS="numtasks";
+	public static final String PARFOR_NUMITERATOINS="numiterations";
 	
 	public static final int getMiscMemRequired(JobConf job)
 	{
@@ -244,6 +253,22 @@ public class MRJobConfiguration {
 			converterClass=IdenticalConverter.class;
 		
 		return converterClass;
+	}
+	
+	/**
+	 * Unique working dirs required for thread-safe submission of parallel jobs;
+	 * otherwise job.xml might be overridden.
+	 * 
+	 * @param job
+	 * @param mode
+	 */
+	public static void setUniqueWorkingDir( JobConf job, ExecMode mode )
+	{
+		//unique LocalJobTracker directory for each submitted job (local mode)
+		job.set("mapred.local.dir", job.get("mapred.local.dir")+"/"+seq.getNextID());			
+		
+		//unique system dir for each submitted job (cluster mode); e.g., job.xml is placed there
+		job.set("mapred.system.dir", job.get("mapred.system.dir")+"/"+seq.getNextID());
 	}
 	
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
@@ -371,6 +396,12 @@ public class MRJobConfiguration {
 		return instructions;
 	}
 	
+	public static String getProgramBlocksInMapper(JobConf job) 
+	{
+		String str = job.get(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG);
+		return str;
+	}
+	
 	public static byte[] getOutputIndexesInMapper(JobConf job)
 	{
 		String[] istrs=job.get(OUTPUT_INDEXES_IN_MAPPER_CONFIG).split(Instruction.INSTRUCTION_DELIM);
@@ -436,6 +467,11 @@ public class MRJobConfiguration {
 	public static void setInstructionsInMapper(JobConf job, String instructionsInMapper)
 	{
 		job.set(INSTRUCTIONS_IN_MAPPER_CONFIG, instructionsInMapper);
+	}
+	
+	public static void setProgramBlocksInMapper(JobConf job, String sProgramBlocks) 
+	{
+		job.set(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG, sProgramBlocks);
 	}
 	
 	public static void setAggregateInstructions(JobConf job, String aggInstructionsInReducer)

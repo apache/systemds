@@ -32,6 +32,7 @@ import dml.meta.PartitionParams;
 import dml.parser.Expression;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.ValueType;
+import dml.runtime.controlprogram.parfor.ProgramConverter;
 import dml.runtime.instructions.CPInstructionParser;
 import dml.runtime.instructions.Instruction;
 import dml.runtime.instructions.MRJobInstruction;
@@ -2085,7 +2086,9 @@ public class Dag<N extends Lops> {
 			}
 			else {
 				// generate temporary filename and a variable name to hold the output produced by "rootNode"
-				oparams.setFile_name(scratch + "temp" + job_id++);
+				oparams.setFile_name(scratch + ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+											   ProgramConverter.CP_ROOT_THREAD_ID + 
+											   ProgramConverter.CP_ROOT_THREAD_SEPARATOR + "temp" + job_id++);
 				oparams.setLabel("mVar" + var_index++ );
 				
 				
@@ -2203,7 +2206,9 @@ public class Dag<N extends Lops> {
 						
 						// generate temporary filename & var name
 						String tempVarName = oparams.getLabel() + "temp";
-						String tempFileName = scratch + "temp" + job_id++;
+						String tempFileName = scratch + ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+						                                ProgramConverter.CP_ROOT_THREAD_ID + 
+						                                ProgramConverter.CP_ROOT_THREAD_SEPARATOR +  "temp" + job_id++;
 						
 						String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
 						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
@@ -2211,7 +2216,9 @@ public class Dag<N extends Lops> {
 						String constVarName = oparams.getLabel();
 						String constFileName = tempFileName + constVarName;
 						
-						oparams.setFile_name(scratch + constFileName);
+						oparams.setFile_name(scratch +  ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+                                						ProgramConverter.CP_ROOT_THREAD_ID + 
+                                						ProgramConverter.CP_ROOT_THREAD_SEPARATOR +  constFileName);
 						
 						/*
 						 * Since this is a node that denotes a transient read/write, we need to make sure 
@@ -3081,8 +3088,8 @@ public class Dag<N extends Lops> {
 				inputStrings.add(node.getOutputParameters().getFile_name());
 			} else {
 				// use label name
-				inputStrings.add("##" + node.getOutputParameters().getLabel()
-						+ "##");
+				inputStrings.add(Lops.VARIABLE_NAME_PLACEHOLDER + node.getOutputParameters().getLabel()
+						               + Lops.VARIABLE_NAME_PLACEHOLDER);
 			}
 			//if ( node.getType() == Lops.Type.Data && ((Data)node).isTransient())
 			//	inputStrings.add("##" + node.getOutputParameters().getLabel() + "##");

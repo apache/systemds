@@ -357,8 +357,7 @@ DMLProgram __inputInternal() :
    | current = PrintStatement()
    | current = WhileStatement()
    | current = ForStatement()
-  // TODO: MATTHIAS UNCOMMENT
-  // | current = ParForStatement()
+   | current = ParForStatement()
    | current = IfStatement()
   // | current = CVStatement()
   // | current = ELStatement()
@@ -368,10 +367,9 @@ DMLProgram __inputInternal() :
    if (current instanceof WhileStatement) {
     sb = new WhileStatementBlock();
    }
-   // TODO: MATTHIAS UNCOMMENT
-   //else if (current instanceof ParForStatement) {
-   // sb = new ParForStatementBlock();
-   //}
+   else if (current instanceof ParForStatement) {
+    sb = new ParForStatementBlock();
+   }
    else if (current instanceof ForStatement) {
     sb = new ForStatementBlock();
    }
@@ -566,8 +564,7 @@ FunctionStatement FunctionStatement() :
    | current = PrintStatement()
    | current = WhileStatement()
    | current = ForStatement()
-// TODO: MATTHIAS UNCOMMENT
- //  | current = ParForStatement()
+   | current = ParForStatement()
    | current = IfStatement()
   // | current = CVStatement()
   // | current = ELStatement()
@@ -578,10 +575,9 @@ FunctionStatement FunctionStatement() :
    if (current instanceof WhileStatement) {
     sb = new WhileStatementBlock();
    }
-	// TODO: MATTHIAS UNCOMMENT
-   //else if (current instanceof ParForStatement) {
-   // sb = new ParForStatementBlock();
-   //}
+   else if (current instanceof ParForStatement) {
+    sb = new ParForStatementBlock();
+   }
    else if (current instanceof ForStatement) {
     sb = new ForStatementBlock();
    }
@@ -871,8 +867,7 @@ IfStatement IfStatement() :
    |  current = PrintStatement()
    |  LOOKAHEAD(2) current = WhileStatement()
    |  current = ForStatement()
-  // TODO: MATTHIAS UNCOMMENT
-  // |  current = ParForStatement()
+   |  current = ParForStatement()
    |  current = IfStatement()
    |  LOOKAHEAD(RandStatement()) current = RandStatement()
   // |  current = CVStatement()
@@ -887,10 +882,9 @@ IfStatement IfStatement() :
     else if (current instanceof IfStatement) {
      sb = new IfStatementBlock();
     }
-   // TODO: MATTHIAS UNCOMMENT
-   // else if (current instanceof ParForStatement) {
-   //  sb = new ParForStatementBlock();
-   // }
+    else if (current instanceof ParForStatement) {
+     sb = new ParForStatementBlock();
+    }
     else if (current instanceof ForStatement) {
      sb = new ForStatementBlock();
     }
@@ -925,8 +919,7 @@ IfStatement IfStatement() :
    |  current = PrintStatement()
    |  LOOKAHEAD(2) current = WhileStatement()
    |  current = ForStatement()
-   // TODO: MATTHIAS UNCOMMENT
-   //|  current = ParForStatement()
+   |  current = ParForStatement()
    |  current = IfStatement()
    | LOOKAHEAD(RandStatement()) current = RandStatement()
   // |  current = CVStatement()
@@ -941,10 +934,9 @@ IfStatement IfStatement() :
     else if (current instanceof IfStatement) {
      sb = new IfStatementBlock();
     }
-    // TODO: MATTHIAS UNCOMMENT
-    //else if (current instanceof ParForStatement) {
-    // sb = new ParForStatementBlock();
-    //}
+    else if (current instanceof ParForStatement) {
+     sb = new ParForStatementBlock();
+    }
     else if (current instanceof ForStatement) {
      sb = new ForStatementBlock();
     }
@@ -992,8 +984,7 @@ ForStatement ForStatement() :
   |  current = PrintStatement()
   |  LOOKAHEAD(2) current = WhileStatement()
   |  current = ForStatement()
-	// TODO: MATTHIAS UNCOMMENT
-  //|  current = ParForStatement()
+  |  current = ParForStatement()
   |  current = IfStatement()
   | LOOKAHEAD(RandStatement()) current = RandStatement()
  // |  current = CVStatement()
@@ -1008,10 +999,9 @@ ForStatement ForStatement() :
   else if (current instanceof IfStatement) {
    sb = new WhileStatementBlock();
   }
-  // TODO: MATTHIAS UNCOMMENT
-  //else if (current instanceof ParForStatement) {
-  // sb = new ParForStatementBlock();
-  //} 
+  else if (current instanceof ParForStatement) {
+   sb = new ParForStatementBlock();
+  } 
   else if (current instanceof ForStatement) {
    sb = new ForStatementBlock();
   }
@@ -1040,7 +1030,6 @@ ForStatement ForStatement() :
  }
 }
 
-/***** TODO: MATTHIAS UNCOMMENT ****
 ParForStatement ParForStatement() :
 {
  ParForStatement fs = new ParForStatement();
@@ -1105,7 +1094,6 @@ ParForStatement ParForStatement() :
  }
 }
 
-*****/
 
 WhileStatement WhileStatement() :
 {
@@ -1123,8 +1111,7 @@ WhileStatement WhileStatement() :
   |  current = PrintStatement()
   |  LOOKAHEAD(2) current = WhileStatement()
   |  current = ForStatement()
-  // TODO: MATTHIAS UNCOMMENT
-  //|  current = ParForStatement()
+  |  current = ParForStatement()
   |  current = IfStatement()
   | LOOKAHEAD(RandStatement()) current = RandStatement()
  // |  current = CVStatement()
@@ -1139,10 +1126,9 @@ WhileStatement WhileStatement() :
   else if (current instanceof IfStatement) {
    sb = new IfStatementBlock();
   }
-  // TODO: MATTHIAS UNCOMMENT
-  //else if (current instanceof ParForStatement) {
-  // sb = new ParForStatementBlock();
-  //}
+  else if (current instanceof ParForStatement) {
+   sb = new ParForStatementBlock();
+  }
   else if (current instanceof ForStatement) {
    sb = new ForStatementBlock();
   }

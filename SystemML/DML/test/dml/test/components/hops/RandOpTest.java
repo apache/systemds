@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+import dml.api.DMLScript;
 import dml.hops.RandOp;
 import dml.lops.Lops;
 import dml.lops.Rand;
@@ -14,8 +15,10 @@ import dml.parser.DataIdentifier;
 import dml.parser.Expression.DataType;
 import dml.parser.Expression.FormatType;
 import dml.parser.Expression.ValueType;
+import dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import dml.utils.HopsException;
 import dml.utils.LopsException;
+import dml.utils.configuration.DMLConfig;
 
 public class RandOpTest {
 
@@ -27,9 +30,11 @@ public class RandOpTest {
 	private static final double MAX_VALUE = 1.0;
 	private static final double SPARSITY = 0.5;
 	private static final String PDF = "uniform";
-
+	private static final String DIR = "scratch_space/_t0/";
+	
 	@Test
 	public void testConstructLops() throws HopsException {
+		setupConfiguration();
 		RandOp ro = getRandOpInstance();
 		Lops lop = ro.constructLops();
 		if (!(lop instanceof Rand))
@@ -45,14 +50,15 @@ public class RandOpTest {
 		assertTrue(lop.getOutputParameters().isBlocked_representation());
 		assertEquals(Format.BINARY, lop.getOutputParameters().getFormat());
 		try {
-			assertEquals("MR" + dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + dml.lops.Lops.OPERAND_DELIMITOR + "0"
+			assertEquals("CP" + dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + dml.lops.Lops.OPERAND_DELIMITOR + "0"
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "1"
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "rows=" + NUM_ROWS
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "cols=" + NUM_COLS
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "min=" + MIN_VALUE
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "max=" + MAX_VALUE
 					+ dml.lops.Lops.OPERAND_DELIMITOR + "sparsity=" + SPARSITY
-					+ dml.lops.Lops.OPERAND_DELIMITOR + "pdf=" + PDF, lop
+					+ dml.lops.Lops.OPERAND_DELIMITOR + "pdf=" + PDF
+					+ dml.lops.Lops.OPERAND_DELIMITOR + "dir=" + DIR, lop
 					.getInstructions(0, 1));
 		} catch (LopsException e) {
 			fail("failed to get instructions: " + e.getMessage());
@@ -74,4 +80,17 @@ public class RandOpTest {
 		return rand;
 	}
 
+	private void setupConfiguration(){
+		DMLConfig defaultConfig = null;
+		try 
+		{
+			defaultConfig = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}
+		ConfigurationManager.setConfig(defaultConfig);
+	}
+	
 }

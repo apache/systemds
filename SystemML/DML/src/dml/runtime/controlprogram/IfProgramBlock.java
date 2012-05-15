@@ -26,11 +26,17 @@ public class IfProgramBlock extends ProgramBlock {
 	public ArrayList<ProgramBlock> getChildBlocksIfBody()
 		{ return _childBlocksIfBody; }
 
+	public void setChildBlocksIfBody(ArrayList<ProgramBlock> blocks)
+		{ _childBlocksIfBody = blocks; }
+	
 	public void addProgramBlockIfBody(ProgramBlock pb)
 		{ _childBlocksIfBody.add(pb); }	
 	
 	public ArrayList<ProgramBlock> getChildBlocksElseBody()
 		{ return _childBlocksElseBody; }
+
+	public void setChildBlocksElseBody(ArrayList<ProgramBlock> blocks)
+		{ _childBlocksElseBody = blocks; }
 	
 	public void addProgramBlockElseBody(ProgramBlock pb)
 		{ _childBlocksElseBody.add(pb); }

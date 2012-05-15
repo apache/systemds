@@ -404,7 +404,7 @@ public class RunMRJobs {
 				// System.out.println("Replacement string = " + replacement);
 				// System.out.println("Original string = " + updateInst + " label ="
 				// + label);
-				updateInst = updateInst.replaceAll("##" + label + "##", replacement);
+				updateInst = updateInst.replaceAll(Lops.VARIABLE_NAME_PLACEHOLDER + label + Lops.VARIABLE_NAME_PLACEHOLDER, replacement);
 	
 				//System.out.println("New string = " + updateInst);
 			}

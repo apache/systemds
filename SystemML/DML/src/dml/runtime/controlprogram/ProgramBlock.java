@@ -99,9 +99,10 @@ public class ProgramBlock {
 		}
 		updateMatrixLabels();
 
-		for (int i = 0; i < inst.size(); i++) {
-			Instruction currInst = inst.get(i);
-			if (currInst instanceof MRJobInstruction) {
+		for(Instruction currInst : _inst) 
+		{
+			if (currInst instanceof MRJobInstruction) 
+			{
 				if ( DMLScript.DEBUG ) 
 					printSymbolTable();
 				
@@ -133,12 +134,25 @@ public class ProgramBlock {
 				}
 				
 				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
-			} else if (currInst instanceof CPInstruction) {
-				String updInst = RunMRJobs.updateLabels(currInst.toString(), _variables);
-				if ( DMLScript.DEBUG )
-					System.out.println("Processing CPInstruction: " + updInst);
-				CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
-				si.processInstruction(this);
+			} 
+			else if (currInst instanceof CPInstruction) 
+			{
+				if( currInst.requiresLabelUpdate() ) //update labels only if required
+				{
+					String currInstStr = currInst.toString();
+					String updInst = RunMRJobs.updateLabels(currInstStr, _variables);
+					if ( DMLScript.DEBUG )
+						System.out.println("Processing CPInstruction: " + updInst);
+					
+					CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
+					si.processInstruction(this);
+					
+					//note: no exchange of updated instruction as labels might change in the general case
+				}
+				else 
+				{
+					((CPInstruction) currInst).processInstruction(this); 
+				}
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{
@@ -325,6 +339,16 @@ public class ProgramBlock {
 	}
 	public Instruction getInstruction(int i) {
 		return _inst.get(i);
+	}
+	
+	public  ArrayList<Instruction> getInstructions() 
+	{
+		return _inst;
+	}
+	
+	public  void setInstructions( ArrayList<Instruction> inst ) 
+	{
+		_inst = inst;
 	}
 	
 	public void printMe() {

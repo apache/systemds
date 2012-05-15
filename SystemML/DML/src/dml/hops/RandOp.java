@@ -7,6 +7,8 @@ import dml.lops.Rand;
 import dml.lops.LopProperties.ExecType;
 import dml.parser.DataIdentifier;
 import dml.parser.Expression.ValueType;
+import dml.runtime.controlprogram.parfor.ProgramConverter;
+import dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import dml.sql.sqllops.SQLLopProperties;
 import dml.sql.sqllops.SQLLops;
 import dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
@@ -65,7 +67,12 @@ public class RandOp extends Hops
 		{
 			ExecType et = optFindExecType();
 			Rand rnd = new Rand(id, minValue, maxValue, sparsity,
-					probabilityDensityFunction, get_dataType(), get_valueType(), et);
+					probabilityDensityFunction, ConfigurationManager
+							.getConfig().getTextValue("scratch")
+							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR
+							+ ProgramConverter.CP_ROOT_THREAD_ID
+							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR,
+					get_dataType(), get_valueType(), et);
 			rnd.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 					get_rows_per_block(), get_cols_per_block());
 			set_lops(rnd);

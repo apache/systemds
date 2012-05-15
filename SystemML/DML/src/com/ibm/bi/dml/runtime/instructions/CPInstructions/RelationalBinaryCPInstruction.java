@@ -1,0 +1,81 @@
+package com.ibm.bi.dml.runtime.instructions.CPInstructions;
+
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
+
+
+public class RelationalBinaryCPInstruction extends BinaryCPInstruction {
+
+	public RelationalBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String istr )
+	{
+		super(op, in1, in2, out, istr);
+		cptype = CPINSTRUCTION_TYPE.RelationalBinary;
+	}
+	
+	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+		InstructionUtils.checkNumFields (str, 3);
+		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		String opcode = parseBinaryInstruction(str, in1, in2, out);
+		
+		// TODO: Relational operations need not have value type checking
+		ValueType vt1 = in1.get_valueType();
+		DataType dt1 = in1.get_dataType();
+		ValueType vt2 = in2.get_valueType();
+		DataType dt2 = in2.get_dataType();
+		ValueType vt3 = out.get_valueType();
+		DataType dt3 = out.get_dataType();
+		
+		//if ( vt3 != ValueType.BOOLEAN )
+		//	throw new DMLRuntimeException("Unexpected ValueType in RelationalCPInstruction: " + str);
+		
+		if ( vt1 == ValueType.BOOLEAN && !opcode.equalsIgnoreCase("==") && !opcode.equalsIgnoreCase("!=") ) 
+			throw new DMLRuntimeException("Operation " + opcode + " can not be applied on boolean values "
+					 					  + "(Instruction = " + str + ").");
+		
+		//prithvi TODO
+		//make sure these checks belong here
+		//if either input is a matrix, then output
+		//has to be a matrix
+		if((dt1 == DataType.MATRIX 
+			|| dt2 == DataType.MATRIX) 
+		   && dt3 != DataType.MATRIX)
+			throw new DMLRuntimeException("Element-wise matrix operations between variables "
+										  + in1.get_name()
+										  + " and "
+										  + in2.get_name()
+										  + " must produce a matrix, which "
+										  + out.get_name()
+										  + "is not");
+		
+		Operator operator = 
+			(dt1 != dt2) ?
+					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
+					: getBinaryOperator(opcode);
+		
+		//for scalar relational operations we only allow boolean operands
+		//or when both operands are numeric (int or double)
+		if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
+			if (!((vt1 == ValueType.BOOLEAN && vt2 == ValueType.BOOLEAN)
+					|| ((vt1 == ValueType.DOUBLE || vt1 == ValueType.INT) 
+						&& (vt2 == ValueType.DOUBLE || vt2 == ValueType.INT))))
+				throw new DMLRuntimeException("unexpected value-type in "
+											  + "Relational Binary Instruction "
+											  + "involving scalar operands.");
+			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, str);
+		
+		}else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
+			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
+				return new MatrixMatrixRelationalCPInstruction(operator, in1, in2, out, str);
+			else
+				return new ScalarMatrixRelationalCPInstruction(operator, in1, in2, out, str);
+		}
+		
+		return null;
+	}
+}

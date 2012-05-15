@@ -1,4 +1,4 @@
-# junit test class: dml.test.integration.functions.unary.matrix.NegationTest.java
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.matrix.NegationTest.java
 
 Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 NegativeVector = -Vector

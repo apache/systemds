@@ -7,7 +7,7 @@
 # declaration of external function that invokes JLapack
 eigen = externalFunction(Matrix[Double] A) 
 return (Matrix[Double] evec, Matrix[Double] eval) 
-implemented in (classname="dml.packagesupport.JLapackEigenWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.JLapackEigenWrapper",execlocation="master")
 
 A = read("my.data", rows=1000000, cols=1000, format="text");
 

@@ -1,10 +1,10 @@
 kMeans = externalFunction(Matrix[Double] D, Integer k) 
 return (Matrix[Double] C) 
-implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.kMeansWrapper",execlocation="master")
 
 kMeansWithInit = externalFunction(Matrix[Double] D, Integer k, Matrix[Double] initK)
 return (Matrix[Double] C)
-implemented in (classname="dml.packagesupport.kMeansWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.kMeansWrapper",execlocation="master")
 
 M = read( "scripts/llr_xfile", rows=10, cols=10, format="text"); 
 i = 5;

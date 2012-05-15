@@ -1,4 +1,4 @@
-# JUnit test class: dml.test.integration.functions.blocks.WhileTest.java
+# JUnit test class: com.ibm.bi.dml.test.integration.functions.blocks.WhileTest.java
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 i = 0;

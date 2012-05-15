@@ -1,5 +1,5 @@
 testFunc = externalFunction(Matrix[Double] D, Integer k) return (Matrix[Double] C, Integer l)
-	implemented in (className="dml.packagesupport.TestPackageFunctionMaster",execLocation="worker")
+	implemented in (className="com.ibm.bi.dml.packagesupport.TestPackageFunctionMaster",execLocation="worker")
 
 M = read( "scripts/llr_xfile", rows=10, cols=10, format="text");
 

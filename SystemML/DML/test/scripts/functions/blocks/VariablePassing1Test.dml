@@ -1,4 +1,4 @@
-# JUnit test class: dml.test.integration.functions.blocks.VariableTest.java
+# JUnit test class: com.ibm.bi.dml.test.integration.functions.blocks.VariableTest.java
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = read("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");

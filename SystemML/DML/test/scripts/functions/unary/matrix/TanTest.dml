@@ -1,4 +1,4 @@
-# junit test class: dml.test.integration.functions.unary.matrix.TanTest.java
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.matrix.TanTest.java
 
 Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 TanVector = tan(Vector);

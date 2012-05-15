@@ -1,4 +1,4 @@
-# JUnit test class: dml.test.integration.functions.blocks.VariableTest.jav
+# JUnit test class: com.ibm.bi.dml.test.integration.functions.blocks.VariableTest.jav
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = $$factor$$ * t(A);

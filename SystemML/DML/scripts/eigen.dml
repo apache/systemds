@@ -1,6 +1,6 @@
 eigen = externalFunction(Matrix[Double] A) 
 return (Matrix[Double] E, Matrix[Double] V) 
-implemented in (classname="dml.packagesupport.EigenWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper",execlocation="master")
  
 
 A = read("data/seqMiner.mtx", rows=50, cols=6, format="text");

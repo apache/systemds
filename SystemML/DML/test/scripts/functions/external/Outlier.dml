@@ -7,7 +7,7 @@
 
 outliers = externalFunction(Matrix[Double] D, Integer m, Integer k) 
 return (Matrix[Double] C) 
-implemented in (classname="dml.packagesupport.OutlierWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.OutlierWrapper",execlocation="master")
 
 M = read( $1, rows=$2, cols=$3, format="text");
 

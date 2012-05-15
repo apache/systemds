@@ -1,6 +1,6 @@
 sgd = externalFunction(Matrix[Double] V, Integer n, Integer m, Integer e, Integer factors)
 return (Matrix[Double] W, Matrix[Double] tH)
-implemented in (classname="dml.packagesupport.SGDWrapper", execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.SGDWrapper", execlocation="master")
 
 #n X m is the number of blocks the ratings matrix is divided into
 #each block is of size rows(V)/n X cols(V)/m cells 

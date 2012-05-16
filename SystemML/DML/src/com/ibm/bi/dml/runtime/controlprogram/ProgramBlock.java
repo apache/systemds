@@ -100,8 +100,11 @@ public class ProgramBlock {
 		}
 		updateMatrixLabels();
 
-		for(Instruction currInst : _inst) 
+		for (int i = 0; i < inst.size(); i++) 
 		{
+			//indexed access required due to dynamic add
+			Instruction currInst = inst.get(i);
+			
 			if (currInst instanceof MRJobInstruction) 
 			{
 				if ( DMLScript.DEBUG ) 

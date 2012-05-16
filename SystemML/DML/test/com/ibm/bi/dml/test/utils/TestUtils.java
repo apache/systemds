@@ -847,10 +847,30 @@ public class TestUtils {
 		try {
 			FileSystem fs = FileSystem.get(conf);
 			Path outDirectory = new Path(outDir);
-			assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
-			FileStatus[] outFiles = fs.listStatus(outDirectory);
-			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
+			//assertTrue(outDir + " is no directory", fs.getFileStatus(outDirectory).isDir());
+			assertTrue(outDir + " does not exist", fs.exists(outDirectory));
+			
+			if( fs.getFileStatus(outDirectory).isDir() )
+			{
+				FileStatus[] outFiles = fs.listStatus(outDirectory);
+				for (FileStatus file : outFiles) {
+					FSDataInputStream outIn = fs.open(file.getPath());
+					String line;
+					while ((line = outIn.readLine()) != null) {
+						String[] rcv = line.split(" ");
+						long row = Long.parseLong(rcv[0]);
+						long col = Long.parseLong(rcv[1]);
+						double value = Double.parseDouble(rcv[2]);
+						assertTrue("invalid row index", (row > 0 && row <= rows));
+						assertTrue("invlaid column index", (col > 0 && col <= cols));
+						assertTrue("invalid value", ((value >= min && value <= max) || value == 0));
+					}
+					outIn.close();
+				}
+			}
+			else
+			{
+				FSDataInputStream outIn = fs.open(outDirectory);
 				String line;
 				while ((line = outIn.readLine()) != null) {
 					String[] rcv = line.split(" ");

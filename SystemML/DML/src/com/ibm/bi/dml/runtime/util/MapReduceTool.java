@@ -23,7 +23,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
+//import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -40,10 +40,11 @@ import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 public class MapReduceTool {
 	// private static final Log LOG = LogFactory.getLog(AggregateReducer.class);
 	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
-		String nodePrefix = job.get("mapred.task.id");
-		return String.valueOf(IDHandler.extractLongID(nodePrefix));
-		
+		//TODO: investigate ID pattern, required for parallel jobs
 		/*String nodePrefix = job.get("mapred.task.id");
+		return String.valueOf(IDHandler.extractLongID(nodePrefix));*/
+		
+		String nodePrefix = job.get("mapred.task.id");
 		int i;
 		if (inMapper)
 			i = nodePrefix.indexOf("_m_");
@@ -52,7 +53,7 @@ public class MapReduceTool {
 		int j = nodePrefix.lastIndexOf("_");
 		nodePrefix = nodePrefix.substring(i + 3, j);
 		// remove all the leading 0s
-		return String.valueOf(Long.parseLong(nodePrefix));*/
+		return String.valueOf(Long.parseLong(nodePrefix));
 	}
 	
 	@Deprecated
@@ -70,14 +71,15 @@ public class MapReduceTool {
 
 	
 	public static int getUniqueMapperId(JobConf job, boolean inMapper) {
-		String nodePrefix = job.get("mapred.task.id");
-		return IDHandler.extractIntID(nodePrefix);
+		//TODO: investigate ID pattern, required for parallel jobs
+		/*String nodePrefix = job.get("mapred.task.id"); 
+		return IDHandler.extractIntID(nodePrefix);*/
 		
-		/*String nodePrefix = job.get("mapred.task.id");
+		String nodePrefix = job.get("mapred.task.id");
 		int j = nodePrefix.lastIndexOf("_");
 		nodePrefix = nodePrefix.substring(j + 1);
 		// System.out.println("nodePrefix = " + nodePrefix) ;
-		return (new Integer(nodePrefix)).intValue();*/
+		return (new Integer(nodePrefix)).intValue();
 	}
 
 	public static String getGloballyUniqueName(JobConf job) {

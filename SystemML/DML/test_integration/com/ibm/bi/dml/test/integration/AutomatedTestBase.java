@@ -15,10 +15,12 @@ import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -670,6 +672,9 @@ public abstract class AutomatedTestBase {
 			executionFile = executionFile + "t";
 			ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
 		}
+		
+		//cleanup scratch folder (prevent side effect between tests)
+		cleanupScratchSpace();
 			
 		if (DEBUG)
 			TestUtils.printDMLScript(executionFile);
@@ -733,6 +738,25 @@ public abstract class AutomatedTestBase {
 					errorMessage.append("\n>" + ste);
 				}
 				fail(errorMessage.toString());
+		}
+	}
+	
+	protected void cleanupScratchSpace()
+	{
+		try 
+		{
+			//parse config file
+			DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+
+			// delete the scratch_space and all contents
+			// (prevent side effect between tests)
+			String dir = conf.getTextValue("scratch");  
+			MapReduceTool.deleteFileIfExistOnHDFS(dir);
+		} 
+		catch (Exception ex) 
+		{
+			//ex.printStackTrace();
+			return; //no effect on tests
 		}
 	}
 	

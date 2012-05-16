@@ -120,7 +120,7 @@
 	<!-- Make sure javacc is called to generate DML parser after init -->
 	<target depends="init" name="parser"> 
 		<echo message="Running JavaCC on DMLQLParser.jj"/>
-		<javacc target="src/dml/parser/DMLQLParser.jj"
+		<javacc target="src/com/ibm/bi/dml/parser/DMLQLParser.jj"
 		        javacchome="${javacc.home}"/>
 	</target>
 	

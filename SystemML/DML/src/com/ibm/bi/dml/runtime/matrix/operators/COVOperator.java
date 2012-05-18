@@ -1,15 +1,15 @@
 package com.ibm.bi.dml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
+import com.ibm.bi.dml.runtime.functionobjects.COV;
 
 public class COVOperator extends Operator {
 
-	public ValueFunction increOp;
+	public COV fn;
 	public int constant;
 	
-	public COVOperator(ValueFunction op)
+	public COVOperator(COV op)
 	{
-		increOp=op;
-		sparseSafe=true;
+		fn=op;
+		sparseSafe=true; // TODO: check with YY
 	}
 }

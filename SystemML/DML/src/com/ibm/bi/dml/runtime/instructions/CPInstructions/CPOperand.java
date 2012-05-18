@@ -16,6 +16,12 @@ public class CPOperand {
 		//split_by_value_type_prefix(str);
 	}
 	
+	CPOperand() {
+		_name = "";
+		_valueType = ValueType.UNKNOWN;
+		_dataType = DataType.UNKNOWN;
+	}
+	
 	CPOperand(String name, ValueType vt, DataType dt ) {
 		_name = name;
 		_valueType = vt;

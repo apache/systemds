@@ -10,7 +10,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class CPInstruction extends Instruction {
 
-	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, Reorg, RelationalBinary, File, Variable, External, ParameterizedBuiltin, Builtin, Append, Rand}; 
+	public enum CPINSTRUCTION_TYPE { INVALID, AggregateBinary, AggregateUnary, ArithmeticBinary, Tertiary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, Reorg, RelationalBinary, File, Variable, External, ParameterizedBuiltin, Builtin, Append, Rand, Sort, RangeReIndex }; 
 	CPINSTRUCTION_TYPE cptype;
 	
 	Operator optr;

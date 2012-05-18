@@ -66,6 +66,17 @@ public class GroupedAggregate extends Lops {
 	}
 
 	@Override
+	public String getInstructions(String input1, String input2, String output) {
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+		inst += "groupedagg" + OPERAND_DELIMITOR
+		+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
+		+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType();
+		
+		inst += output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
+		return inst;
+	}
+	
+	@Override
 	public String getInstructions(int input_index, int output_index) {
 
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);

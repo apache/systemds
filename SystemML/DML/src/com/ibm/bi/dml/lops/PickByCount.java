@@ -12,14 +12,10 @@ public class PickByCount extends Lops {
 	
 	public enum OperationTypes {VALUEPICK, RANGEPICK};	
 	OperationTypes operation;
+	boolean inMemoryInput = false;
 	
-	/*
-	 * valuepick: first input is always a matrix, second input can either be a scalar or a matrix
-	 * rangepick: first input is always a matrix, second input is always a scalar
-	 */
-	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op) {
-		super(Lops.Type.PickValues, dt, vt);
-		
+	
+	private void init(Lops input1, Lops input2, OperationTypes op, ExecType et) {
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
@@ -33,21 +29,34 @@ public class PickByCount extends Lops {
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
-		ExecLocation location = ExecLocation.RecordReader;
-		ExecType et = ExecType.MR;
 		
-		// TODO: this logic should happen in the hop layer
-		
-		if ( op == OperationTypes.VALUEPICK && input2.get_dataType() == DataType.SCALAR ) {
-			// if the second input to PickByCount == SCALAR then this lop should get executed in control program
-			location = ExecLocation.ControlProgram;
-			et = ExecType.CP;
-			lps.addCompatibility(JobType.INVALID);
+		if ( et == ExecType.MR ) {
+			lps.addCompatibility(JobType.GMR);
+			this.lps.setProperties( et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
-			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
-		this.lps.setProperties( et, location, breaksAlignment, aligner, definesMRJob );
+	}
+	
+	/*
+	 * valuepick: first input is always a matrix, second input can either be a scalar or a matrix
+	 * rangepick: first input is always a matrix, second input is always a scalar
+	 */
+	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op) {
+		this(input1, input2, dt, vt, op, ExecType.MR);
+	}
+	
+	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
+		super(Lops.Type.PickValues, dt, vt);
+		init(input1, input2, op, et);
+	}
+
+	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op, ExecType et, boolean inMemoryInput) {
+		super(Lops.Type.PickValues, dt, vt);
+		this.inMemoryInput = inMemoryInput;
+		init(input1, input2, op, et);
 	}
 
 	@Override
@@ -70,22 +79,9 @@ public class PickByCount extends Lops {
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
 	{
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		String opString = new String ("");
-		ValueType vtype1 = this.getInputs().get(0).get_valueType();
-		ValueType vtype2 = this.getInputs().get(1).get_valueType();
 		
-		switch(operation) {
-		case VALUEPICK:	
-			opString = "valuepick";
-			inst += opString + OPERAND_DELIMITOR + 
-					input_index1 + VALUETYPE_PREFIX + vtype1 + OPERAND_DELIMITOR + 
-					input_index2 + VALUETYPE_PREFIX + vtype2 + OPERAND_DELIMITOR + 
-			        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
-			return inst;
-
-		case RANGEPICK:
-			// second input is a scalar
+		if ( operation == OperationTypes.RANGEPICK ) {
+			// check the scalar input
 			if ( this.getInputs().get(1).get_dataType() == DataType.SCALAR ) {
 				String valueLabel = this.getInputs().get(1).getOutputParameters().getLabel();
 				String valueString = "";
@@ -99,21 +95,10 @@ public class PickByCount extends Lops {
 					valueString = "" + valueLabel;
 				else
 					valueString = "##" + valueLabel + "##";
-				
-				opString = "rangepick";
-				inst += opString + OPERAND_DELIMITOR + 
-						input_index1 + VALUETYPE_PREFIX + vtype1 + OPERAND_DELIMITOR + 
-						valueString + VALUETYPE_PREFIX + vtype2 + OPERAND_DELIMITOR + 
-				        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
-				return inst;
+				return getInstructions(""+input_index1, valueString, ""+output_index);
 			}
-			else {
-				throw new LopsException("Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
-			}
-			
-		default:
-			throw new LopsException("Invalid operation while creating a PickByCount instruction: " + operation);
 		}
+		return getInstructions(""+input_index1, ""+input_index2, ""+output_index);
 
 	}
 
@@ -127,31 +112,25 @@ public class PickByCount extends Lops {
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		String opString = new String ("");
-		ValueType vtype1 = this.getInputs().get(0).get_valueType();
-		ValueType vtype2 = this.getInputs().get(1).get_valueType();
-		
-		switch(operation) {
-		case VALUEPICK:	
-			if ( this.getExecLocation() == ExecLocation.ControlProgram ) {
-				opString = "valuepickCP";
-				vtype1 = ValueType.STRING; // first input is a String (a filename)
-			}
-			else
-				throw new LopsException("Instruction not defined for PickByCount opration: " + operation);
-				
-			break;
-		
-		default:
-			throw new LopsException("Instruction not defined for PickByCount opration: " + operation);
-		}
 		
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		inst += opString + OPERAND_DELIMITOR + 
-				input1 + VALUETYPE_PREFIX + vtype1 + OPERAND_DELIMITOR + 
-				input2 + VALUETYPE_PREFIX + vtype2 + OPERAND_DELIMITOR + 
-		        output + VALUETYPE_PREFIX + this.get_valueType() ;
-		return inst;
+		String opString = new String ("");
+		if ( operation == OperationTypes.VALUEPICK)
+			opString = (inMemoryInput ? "inmem-valuepick" : "valuepick");
+		else if ( operation == OperationTypes.RANGEPICK ) {
+			//opString = "rangepick";
+			opString = (inMemoryInput ? "inmem-rangepick" : "rangepick");
+			if ( this.getInputs().get(1).get_dataType() != DataType.SCALAR  )
+				throw new LopsException("Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
+		}
+		else
+			throw new LopsException("Invalid operation specified for PickByCount: " + operation);
+		
+		inst += opString + OPERAND_DELIMITOR
+					+ input1 + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
+					+ input2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR;
+		inst += output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
 
+		return inst;
 	}
 }

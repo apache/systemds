@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
@@ -9,7 +11,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
-
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hops {
@@ -46,27 +47,33 @@ public class IndexingOp extends Hops {
 		if (get_lops() == null) {
 			try {
 				ExecType et = optFindExecType();
-				if(et!= ExecType.MR)
-					throw new HopsException("Indexing is not supporte in CP yet!");
-				
-				RangeBasedReIndex reindex = new RangeBasedReIndex(
-						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-						getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
-						DataType.MATRIX, get_valueType());
-
-				Group group1 = new Group(
-						reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-						get_valueType());
-				group1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-				Aggregate agg1 = new Aggregate(
-						group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-						get_valueType(), et);
-				agg1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-				set_lops(agg1);
+				if(et == ExecType.MR) {
+					RangeBasedReIndex reindex = new RangeBasedReIndex(
+							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
+							get_dataType(), get_valueType(), et);
+	
+					Group group1 = new Group(
+							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
+							get_valueType());
+					group1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					Aggregate agg1 = new Aggregate(
+							group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
+							get_valueType(), et);
+					agg1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(agg1);
+				}
+				else {
+					RangeBasedReIndex reindex = new RangeBasedReIndex(
+							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
+							get_dataType(), get_valueType(), et);
+					set_lops(reindex);
+				}
 			} catch (Exception e) {
 				throw new HopsException(e);
 			}
@@ -99,6 +106,12 @@ public class IndexingOp extends Hops {
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		
+		if ( getInput().get(0).areDimsBelowThreshold() )
+			return ExecType.CP;
+		
 		return ExecType.MR;
 	}
 }

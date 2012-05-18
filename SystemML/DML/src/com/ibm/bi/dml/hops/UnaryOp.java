@@ -100,7 +100,7 @@ public class UnaryOp extends Hops {
 							.constructSortByValueLop(
 									(Lops) combine,
 									SortKeys.OperationTypes.WithNoWeights,
-									DataType.MATRIX, ValueType.DOUBLE);
+									DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
 
 					// Sort dimensions are same as the first input
 					sort.getOutputParameters().setDimensions(

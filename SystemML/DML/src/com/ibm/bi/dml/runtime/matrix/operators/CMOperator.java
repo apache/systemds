@@ -9,15 +9,23 @@ public class CMOperator extends Operator {
 		SUM, COUNT, MEAN, CM, CM2, CM3, CM4, NORM, VARIANCE, INVALID
 	};
 
-	public ValueFunction increOp;
+	public ValueFunction fn;
 	public AggregateOperationTypes aggOpType;
 
 	public CMOperator(ValueFunction op, AggregateOperationTypes agg) {
-		increOp = op;
+		fn = op;
 		aggOpType = agg;
 		sparseSafe = true;
 	}
 
+	public AggregateOperationTypes getAggOpType() {
+		return aggOpType;
+	}
+	
+	public void setCMAggOp(int order) {
+		aggOpType = getCMAggOpType(order);
+	}
+	
 	public static AggregateOperationTypes getCMAggOpType ( int order ) {
 		if ( order == 2 )
 			return AggregateOperationTypes.CM2;

@@ -33,7 +33,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.sql.sqllops.SQLUnion.UNIONTYPE;
 import com.ibm.bi.dml.utils.HopsException;
-
+import com.ibm.bi.dml.utils.LopsException;
 
 /* Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
@@ -66,76 +66,130 @@ public class TertiaryOp extends Hops {
 	public Lops constructLops() throws HopsException {
 
 		if (get_lops() == null) {
+			try {
 			if (op == OpOp3.CENTRALMOMENT) {
-				CombineBinary combine = CombineBinary.constructCombineLop(
-						OperationTypes.PreCentralMoment, 
-						(Lops) getInput().get(0).constructLops(), 
-						(Lops) getInput().get(1).constructLops(), 
-						DataType.MATRIX, get_valueType());
-				CentralMoment cm = new CentralMoment(combine, (Lops) getInput()
-						.get(2).constructLops(), DataType.MATRIX,
-						get_valueType());
-				UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
-						.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
-						get_valueType());
-				set_lops(unary1);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					CombineBinary combine = CombineBinary.constructCombineLop(
+							OperationTypes.PreCentralMoment, 
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							DataType.MATRIX, get_valueType());
+					CentralMoment cm = new CentralMoment(combine, (Lops) getInput()
+							.get(2).constructLops(), DataType.MATRIX,
+							get_valueType(), et);
+					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
+							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
+							get_valueType());
+					set_lops(unary1);
+				} else {
+					//System.out.println("CM Tertiary executing in CP...");
+					CentralMoment cm = new CentralMoment(
+							getInput().get(0).constructLops(),
+							getInput().get(1).constructLops(),
+							getInput().get(2).constructLops(),
+							get_dataType(), get_valueType(), et);
+					cm.getOutputParameters().setDimensions(get_dim1(),
+							get_dim1(), get_rows_per_block(), get_cols_per_block());
+					set_lops(cm);
+				}
 
 			} else if (op == Hops.OpOp3.COVARIANCE) {
-				// combineTertiary -> CoVariance -> CastAsScalar
-				CombineTertiary combine = CombineTertiary
-						.constructCombineLop(
-								com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreCovWeighted,
-								(Lops) getInput().get(0).constructLops(),
-								(Lops) getInput().get(1).constructLops(),
-								(Lops) getInput().get(2).constructLops(),
-								DataType.MATRIX, get_valueType());
-
-				combine.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(),
-						getInput().get(0).get_rows_per_block(),
-						getInput().get(0).get_cols_per_block());
-
-				CoVariance cov = new CoVariance(
-						combine, DataType.MATRIX, get_valueType());
-
-				UnaryCP unary1 = new UnaryCP(
-						cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-						get_dataType(), get_valueType());
-				set_lops(unary1);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					// combineTertiary -> CoVariance -> CastAsScalar
+					CombineTertiary combine = CombineTertiary
+							.constructCombineLop(
+									CombineTertiary.OperationTypes.PreCovWeighted,
+									(Lops) getInput().get(0).constructLops(),
+									(Lops) getInput().get(1).constructLops(),
+									(Lops) getInput().get(2).constructLops(),
+									DataType.MATRIX, get_valueType());
+	
+					combine.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_per_block(),
+							getInput().get(0).get_cols_per_block());
+	
+					CoVariance cov = new CoVariance(
+							combine, DataType.MATRIX, get_valueType(), et);
+	
+					UnaryCP unary1 = new UnaryCP(
+							cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+							get_dataType(), get_valueType());
+					set_lops(unary1);
+				}
+				else {
+					//System.out.println("COV Tertiary executing in CP...");
+					CoVariance cov = new CoVariance(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							getInput().get(2).constructLops(), 
+							get_dataType(), get_valueType(), et);
+					cov.getOutputParameters().setDimensions(0, 0, 0, 0);
+					set_lops(cov);
+				}
 
 			} else if (op == OpOp3.QUANTILE || op == OpOp3.INTERQUANTILE) {
-				CombineBinary combine = CombineBinary
-						.constructCombineLop(
-								OperationTypes.PreSort,
-								(Lops) getInput().get(0).constructLops(),
-								(Lops) getInput().get(1).constructLops(),
-								DataType.MATRIX, get_valueType());
-
-				SortKeys sort = SortKeys
-						.constructSortByValueLop(
-								(Lops) combine,
-								SortKeys.OperationTypes.WithWeights,
-								DataType.MATRIX, get_valueType());
-
-				PickByCount pick = new PickByCount(
-						sort,
-						getInput().get(2).constructLops(),
-						get_dataType(),
-						get_valueType(),
-						(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-								: PickByCount.OperationTypes.RANGEPICK);
-
-				combine.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(), 1, 1);
-				sort.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(), 1, 1);
-				pick.getOutputParameters().setDimensions(get_dim1(),
-						get_dim1(), get_rows_per_block(), get_cols_per_block());
-
-				set_lops(pick);
+				ExecType et = optFindExecType();
+				
+				if ( et == ExecType.MR ) {
+					CombineBinary combine = CombineBinary
+							.constructCombineLop(
+									OperationTypes.PreSort,
+									getInput().get(0).constructLops(),
+									getInput().get(1).constructLops(),
+									DataType.MATRIX, get_valueType());
+	
+					SortKeys sort = SortKeys
+							.constructSortByValueLop(
+									combine,
+									SortKeys.OperationTypes.WithWeights,
+									DataType.MATRIX, get_valueType(), et);
+	
+					// If only a single quantile is computed, then "pick" operation executes in CP.
+					ExecType et_pick = (getInput().get(2).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
+					PickByCount pick = new PickByCount(
+							sort,
+							getInput().get(2).constructLops(),
+							get_dataType(),
+							get_valueType(),
+							(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
+	
+					combine.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(), 1, 1);
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(), 1, 1);
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim1(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(pick);
+				}
+				else {
+					SortKeys sort = SortKeys.constructSortByValueLop(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							SortKeys.OperationTypes.WithWeights, 
+							getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
+					PickByCount pick = new PickByCount(
+							sort,
+							getInput().get(2).constructLops(),
+							get_dataType(),
+							get_valueType(),
+							(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+									: PickByCount.OperationTypes.RANGEPICK, et, true);
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(), 1, 1);
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim1(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(pick);
+				}
 
 			} else if (op == OpOp3.CTABLE) {
 				/*
@@ -365,6 +419,9 @@ public class TertiaryOp extends Hops {
 			} else {
 				throw new HopsException("Incorrect TertiaryOp (" + op
 						+ ") while constructing LOPs!");
+			}
+			} catch(LopsException e) {
+				throw new HopsException(e);
 			}
 		}
 		return get_lops();

@@ -8,31 +8,74 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class UnaryCPInstruction extends ComputationCPInstruction{
-	public UnaryCPInstruction(Operator op,
-							  CPOperand in,
-							  CPOperand out,
-							  String instr){
-		super(op, in, null, out);
-		instString = instr;
-	}
-	
-	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out)
-		throws DMLRuntimeException{
-	
-		InstructionUtils.checkNumFields ( instr, 2 );
-	
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		String opcode = parts[0];
-		in.split(parts[1]);
-		out.split(parts[2]);
-		
-		return opcode;
+	public UnaryCPInstruction(Operator op, CPOperand in, CPOperand out,
+			String instr) {
+		this (op, in, null, null, out, instr);
 	}
 
-	static SimpleOperator getSimpleUnaryOperator(String opcode) throws DMLRuntimeException{
-		if(opcode.equalsIgnoreCase("!"))
-			return new SimpleOperator(Not.getNotFnObject());
+	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+			String instr) {
+		this (op, in1, in2, null, out, instr);
+	}
+
+	public UnaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			String instr) {
+		super(op, in1, in2, in3, out);
+		instString = instr;
+	}
+
+	static String parseUnaryInstruction(String instr, CPOperand in,
+			CPOperand out) throws DMLRuntimeException {
+		InstructionUtils.checkNumFields(instr, 2);
+		return parse(instr, in, null, null, out);
+	}
+
+	static String parseUnaryInstruction(String instr, CPOperand in1,
+			CPOperand in2, CPOperand out) throws DMLRuntimeException {
+		InstructionUtils.checkNumFields(instr, 3);
+		return parse(instr, in1, in2, null, out);
+	}
+
+	static String parseUnaryInstruction(String instr, CPOperand in1,
+			CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+		InstructionUtils.checkNumFields(instr, 4);
+		return parse(instr, in1, in2, in3, out);
+	}
+
+	private static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		
+		// first part is the opcode, last part is the output, middle parts are input operands
+		String opcode = parts[0];
+		out.split(parts[parts.length-1]);
+		
+		switch(parts.length) {
+		case 3:
+			in1.split(parts[1]);
+			in2 = null;
+			in3 = null;
+			break;
+		case 4:
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			in3 = null;
+			break;
+		case 5:
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			in3.split(parts[3]);
+			break;
+		default:
+			throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
+		}
+		return opcode;
+	}
+	
+	static SimpleOperator getSimpleUnaryOperator(String opcode)
+			throws DMLRuntimeException {
+		if (opcode.equalsIgnoreCase("!"))
+			return new SimpleOperator(Not.getNotFnObject());
+
 		throw new DMLRuntimeException("Unknown unary operator " + opcode);
 	}
 }

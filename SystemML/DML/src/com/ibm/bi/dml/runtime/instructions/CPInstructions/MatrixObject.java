@@ -19,6 +19,8 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -27,7 +29,6 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 /**
  * Represents a matrix in controlprogram. This class contains method to read
@@ -191,6 +192,22 @@ public class MatrixObject extends Data {
 
 		return result;
 	}
+	
+	public CM_COV_Object cmOperations(CMOperator cm_op) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return this._data.cmOperations(cm_op);
+	}
+
+	public CM_COV_Object cmOperations(CMOperator cm_op, MatrixObject weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return this._data.cmOperations(cm_op, weights._data);
+	}
+
+	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObject that) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return this._data.covOperations(cov_op, that._data);
+	}
+
+	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObject that, MatrixObject weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return this._data.covOperations(cov_op, that._data, weights._data);
+	}
 
 	public MatrixObject scalarOperations(ScalarOperator sc_op, MatrixObject result) throws DMLUnsupportedOperationException,
 			DMLRuntimeException {
@@ -240,6 +257,33 @@ public class MatrixObject extends Data {
 		result.updateMatrixMetaData();
 		
 		return result;
+	}
+	
+	public MatrixObject indexOperations(long rl, long ru, long cl, long cu, MatrixObject result) throws DMLRuntimeException {
+		MatrixBlock result_data = (MatrixBlock) _data.slideOperations(rl, ru, cl, cu, new MatrixBlock());
+		result.setData(result_data);
+		// update the metadata for resulting matrix
+		result.updateMatrixMetaData();
+		return result;
+	}
+
+	public MatrixObject sortOperations(MatrixObject weights, MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		MatrixBlock result_data = null;
+		if ( weights != null )
+			result_data = (MatrixBlock) (_data.sortOperations(weights._data, new MatrixBlock()));
+		else
+			result_data = (MatrixBlock) (_data.sortOperations(null, new MatrixBlock()));
+		result.setData(result_data);
+		// update the metadata for resulting matrix
+		result.updateMatrixMetaData();
+		return result;
+	}
+	
+	public double valuePick(double quantile) throws DMLRuntimeException {
+		if (quantile < 0 || quantile > 1) {
+			throw new DMLRuntimeException("Requested quantile (" + quantile + ") is invalid -- it must be between 0 and 1.");
+		}
+		return _data.pickValue(quantile);
 	}
 
 	private MatrixObject finalizeCtableOperations(HashMap<CellIndex,Double> ctable, MatrixObject result) throws DMLRuntimeException {
@@ -307,7 +351,7 @@ public class MatrixObject extends Data {
 		
 		return this;
 	}
-
+	
 	public void readMatrix() throws DMLRuntimeException {
 		//DataConverter.readDouble1DArrayMatrixFromHDFSText(_hdfsFileName, _data);
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData)_metaData;

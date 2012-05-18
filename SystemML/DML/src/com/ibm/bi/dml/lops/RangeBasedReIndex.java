@@ -58,8 +58,7 @@ public class RangeBasedReIndex extends Lops {
 	}
 
 	public RangeBasedReIndex(
-			Lops input,
-			DataType dt, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, ValueType vt, ExecType et)
+			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
 			throws LopsException {
 		super(Lops.Type.RangeReIndex, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
@@ -70,6 +69,7 @@ public class RangeBasedReIndex extends Lops {
 			return "rangeReIndex";
 	}
 	
+	@Override
 	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String output) throws LopsException {
 		String opcode = getOpcode(); 
 		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 

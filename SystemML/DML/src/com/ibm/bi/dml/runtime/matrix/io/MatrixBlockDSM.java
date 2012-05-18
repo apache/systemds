@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,6 +18,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -24,6 +26,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
@@ -111,12 +115,35 @@ public class MatrixBlockDSM extends MatrixValue{
 		clen=cl;
 		sparse=sp;
 		nonZeros=0;
-		maxrow = maxcolumn = 0;
+		maxrow = rl;
+		maxcolumn = cl;
 	}
 	
 	public MatrixBlockDSM(MatrixBlockDSM that)
 	{
 		this.copy(that);
+	}
+	
+	public void init(double[][] arr, int r, int c) throws DMLRuntimeException {
+		/* This method is designed only for dense representation */
+		if ( sparse )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
+		
+		if ( denseBlock == null 
+				|| (denseBlock != null && denseBlock.length<rlen*clen) ) {
+			denseBlock=null;
+			denseBlock = new double[r*c];
+		}
+		
+		int ind = 0;
+		for(int i=0; i < r; i++) {
+			for(int j=0; j < c; j++) {
+				denseBlock[ind++] = arr[i][j];
+				nonZeros++;
+			}
+		}
+		maxrow = r;
+		maxcolumn = c;
 	}
 	
 	public MatrixBlockDSM(HashMap<CellIndex, Double> map) {
@@ -1541,6 +1568,69 @@ public class MatrixBlockDSM extends MatrixValue{
 		return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
 	}
 	
+	/**
+	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
+	 * Extracted submatrix is returned as "result".
+	 * @throws DMLRuntimeException 
+	 */
+	public MatrixValue slideOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue result) throws DMLRuntimeException {
+		
+		// Check the validity of bounds
+		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
+				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
+					"["+rowLower+":"+rowUpper+"," + colLower+":"+colUpper+"] " +
+							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+".");
+		}
+		
+		int rl = (int)rowLower-1;
+		int ru = (int)rowUpper-1;
+		int cl = (int)colLower-1;
+		int cu = (int)colUpper-1;
+		
+		// Output matrix will have the same sparsity as that of the input matrix.
+		// (assuming a uniform distribution of non-zeros in the input)
+		boolean result_sparsity = this.sparse;
+		if(result==null)
+			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity);
+		else
+			result.reset(ru-rl+1, cu-cl+1, result_sparsity);
+		
+		if (sparse) {
+			if ( sparseRows != null ) {
+				for(int r=rl, result_r=0; r <= Math.min(ru,getNumRows()); r++, result_r++) {
+					if(sparseRows[r] != null) {
+						int[] cols=sparseRows[r].getIndexContainer();
+						double[] values=sparseRows[r].getValueContainer();
+						int j=0;
+						while(cols[j] < cl && j < sparseRows[r].size())
+							j++;
+						int result_c = 0;
+						while(cols[j] <= Math.min(cu,getNumColumns()) && j < sparseRows[r].size()) {
+							((MatrixBlockDSM)result).appendValue(result_r, result_c, values[j]);
+							result_c++;
+							j++;
+						}
+					}
+				}
+			}
+		}
+		else {
+			if(denseBlock!=null)
+			{
+				int i = rl*clen;
+				for(int r = rl, result_r=0; r <= Math.min(ru,getNumRows()); r++, result_r++) {
+					for(int c = cl, result_c=0; c <= Math.min(cu, getNumColumns()); c++, result_c++) {
+						result.setValue(result_r, result_c, denseBlock[i+c]);
+					}
+					i+=clen;
+				}
+			}
+		}
+		
+		return result;
+	}
+	
 	public void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
 	{
@@ -1868,6 +1958,282 @@ public class MatrixBlockDSM extends MatrixValue{
 				}else
 					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, getValue(i,j), buffer);
 			}
+	}
+	
+
+	public CM_COV_Object cmOperations(CMOperator op) throws DMLRuntimeException {
+		/* this._data must be a 1 dimensional vector */
+		if ( this.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Central Moment can not be computed on [" 
+					+ this.getNumRows() + "," + this.getNumColumns() + "] matrix.");
+		}
+		CM_COV_Object cmobj = new CM_COV_Object();
+		int nzcount = 0;
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
+				{
+					if(sparseRows[r]==null) continue;
+					//int[] cols=sparseRows[r].getIndexContainer();
+					double[] values=sparseRows[r].getValueContainer();
+					for(int i=0; i<sparseRows[r].size(); i++)
+					{
+						op.fn.execute(cmobj, values[i], 1.0);
+						nzcount++;
+					}
+				}
+				// account for zeros in the vector
+				op.fn.execute(cmobj, 0.0, this.getNumRows()-nzcount);
+			}
+		}
+		else {
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen;
+				for(int i=0; i<limit; i++)
+				{
+					op.fn.execute(cmobj, denseBlock[i], 1.0);
+				}
+			}
+		}
+		return cmobj;
+	}
+	
+	public CM_COV_Object cmOperations(CMOperator op, MatrixBlockDSM weights) throws DMLRuntimeException {
+		/* this._data must be a 1 dimensional vector */
+		if ( this.getNumColumns() != 1 || weights.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Central Moment can be computed only on 1-dimensional column matrices.");
+		}
+		if ( this.getNumRows() != weights.getNumRows() || this.getNumColumns() != weights.getNumColumns()) {
+			throw new DMLRuntimeException("Covariance: Mismatching dimensions between input and weight matrices - " +
+					"["+this.getNumRows()+","+this.getNumColumns() +"] != [" 
+					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
+		}
+		CM_COV_Object cmobj = new CM_COV_Object();
+		if (sparse) {
+			if(sparseRows!=null)
+			{
+				for(int r=0; r < this.getNumRows(); r++) {
+					op.fn.execute(cmobj, this.getValue(r,0), weights.getValue(r,0));
+				}
+/*				
+			int zerocount = 0, zerorows=0, nzrows=0;
+				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
+				{
+					// This matrix has only a single column
+					if(sparseRows[r]==null) {
+						zerocount += weights.getValue(r,0);
+						zerorows++;
+					}
+					//int[] cols=sparseRows[r].getIndexContainer();
+					double[] values=sparseRows[r].getValueContainer();
+					//x = sparseRows[r].size();
+					if ( sparseRows[r].size() == 0 ) 
+						zerorows++;
+					for(int i=0; i<sparseRows[r].size(); i++) {
+						//op.fn.execute(cmobj, values[i], weights.getValue(r,0));
+						nzrows++;
+					}
+				}
+				System.out.println("--> total="+this.getNumRows() + ", nzrows=" + nzrows + ", zerorows="+zerorows+"... zerocount="+zerocount);
+				// account for zeros in the vector
+				//op.fn.execute(cmobj, 0.0, zerocount);
+*/			}
+		}
+		else {
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen, r, c;
+				for(int i=0; i<limit; i++) {
+					r=i/clen;
+					c=i%clen;
+					op.fn.execute(cmobj, denseBlock[i], weights.getValue(r,c) );
+				}
+			}
+		}
+		return cmobj;
+	}
+	
+	public CM_COV_Object covOperations(COVOperator op, MatrixBlockDSM that) throws DMLRuntimeException {
+		/* this._data must be a 1 dimensional vector */
+		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 ) {
+			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 
+		}
+		if ( this.getNumRows() != that.getNumRows() || this.getNumColumns() != that.getNumColumns()) {
+			throw new DMLRuntimeException("Covariance: Mismatching input matrix dimensions - " +
+					"["+this.getNumRows()+","+this.getNumColumns() +"] != [" 
+					+ that.getNumRows() + "," + that.getNumColumns() +"]");
+		}
+		CM_COV_Object covobj = new CM_COV_Object();
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				for(int r=0; r < this.getNumRows(); r++ ) {
+					op.fn.execute(covobj, this.getValue(r,0), that.getValue(r,0), 1.0);
+				}
+			}
+		}
+		else {
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen, r, c;
+				for(int i=0; i<limit; i++)
+				{
+					r=i/clen;
+					c=i%clen;
+					op.fn.execute(covobj, denseBlock[i], that.getValue(r,c), 1.0);
+				}
+			}
+		}
+		return covobj;
+	}
+	
+	public CM_COV_Object covOperations(COVOperator op, MatrixBlockDSM that, MatrixBlockDSM weights) throws DMLRuntimeException {
+		/* this._data must be a 1 dimensional vector */
+		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 || weights.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 
+		}
+		if ( this.getNumRows() != that.getNumRows() || this.getNumColumns() != that.getNumColumns()) {
+			throw new DMLRuntimeException("Covariance: Mismatching input matrix dimensions - " +
+					"["+this.getNumRows()+","+this.getNumColumns() +"] != [" 
+					+ that.getNumRows() + "," + that.getNumColumns() +"]");
+		}
+		if ( this.getNumRows() != weights.getNumRows() || this.getNumColumns() != weights.getNumColumns()) {
+			throw new DMLRuntimeException("Covariance: Mismatching dimensions between input and weight matrices - " +
+					"["+this.getNumRows()+","+this.getNumColumns() +"] != [" 
+					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
+		}
+		CM_COV_Object covobj = new CM_COV_Object();
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				for(int r=0; r < this.getNumRows(); r++ ) {
+					op.fn.execute(covobj, this.getValue(r,0), that.getValue(r,0), weights.getValue(r,0));
+				}
+			}
+		}
+		else {
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen, r, c;
+				for(int i=0; i<limit; i++)
+				{
+					r=i/clen;
+					c=i%clen;
+					op.fn.execute(covobj, denseBlock[i], that.getValue(r,c), weights.getValue(r,c));
+				}
+			}
+		}
+		return covobj;
+	}
+
+	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		boolean wtflag = (weights!=null);
+		
+		MatrixBlockDSM wts= (weights == null ? null : checkType(weights));
+		checkType(result);
+		
+		if ( getNumColumns() != 1 ) {
+			throw new DMLRuntimeException("Invalid input dimensions (" + getNumRows() + "x" + getNumColumns() + ") to sort operation.");
+		}
+		if ( wts != null && wts.getNumColumns() != 1 ) {
+			throw new DMLRuntimeException("Invalid weight dimensions (" + wts.getNumRows() + "x" + wts.getNumColumns() + ") to sort operation.");
+		}
+		
+		// Copy the input elements into a temporary array for sorting
+		// #rows in temp matrix = 1 + #nnz in the input ( 1 is for the "zero" value)
+		int dim1 = 1+this.getNonZeros();
+		// First column is data and second column is weights
+		double[][] tdw = new double[dim1][2]; 
+		
+		double d, w, zero_wt=0;
+		if ( wtflag ) {
+			for ( int r=0, ind=1; r < getNumRows(); r++ ) {
+				d = getValue(r,0);
+				w = wts.getValue(r,0);
+				if ( d != 0 ) {
+					tdw[ind][0] = d;
+					tdw[ind][1] = w;
+					ind++;
+				}
+				else
+					zero_wt += w;
+			}
+			tdw[0][0] = 0.0;
+			tdw[0][1] = zero_wt;
+		} 
+		else {
+			tdw[0][0] = 0.0;
+			tdw[0][1] = getNumRows() - getNonZeros(); // number of zeros in the input data
+			
+			int ind = 1;
+			if(sparse) {
+				if(sparseRows!=null) {
+					for(int r=0; r<Math.min(rlen, sparseRows.length); r++) {
+						if(sparseRows[r]==null) continue;
+						//int[] cols=sparseRows[r].getIndexContainer();
+						double[] values=sparseRows[r].getValueContainer();
+						for(int i=0; i<sparseRows[r].size(); i++) {
+							tdw[ind][0] = values[i];
+							tdw[ind][1] = 1;
+							ind++;
+						}
+					}
+				}
+			}
+			else {
+				if(denseBlock!=null) {
+					int limit=rlen*clen;
+					for(int i=0; i<limit; i++) {
+						tdw[ind][0] = denseBlock[i];
+						tdw[ind][1] = 1;
+						ind++;
+					}
+				}
+			}
+		}
+		
+		// Sort td and tw based on values inside td (ascending sort)
+		Arrays.sort(tdw, new Comparator<double[]>(){
+			@Override
+			public int compare(double[] arg0, double[] arg1) {
+				return (arg0[0] < arg1[0] ? -1 : (arg0[0] == arg1[0] ? 0 : 1));
+			}} 
+		);
+		
+		// Copy the output from sort into "result"
+		// result is always dense (currently)
+		if(result==null)
+			result=new MatrixBlockDSM(dim1, 2, false);
+		else
+			result.reset(dim1, 2, false);
+		((MatrixBlockDSM) result).init(tdw, dim1, 2);
+		
+		return result;
+	}
+	
+	public double pickValue(double quantile) throws DMLRuntimeException {
+		double sum_wt = 0;
+		for (int i=0; i < getNumRows(); i++ )
+			sum_wt += getValue(i, 1);
+		
+		if ( (int)sum_wt != sum_wt ) {
+			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
+		}
+		
+		int pos = (int) Math.ceil(quantile*sum_wt);
+		
+		int t = 0, i=-1;
+		do {
+			i++;
+			t += getValue(i,1);
+		} while(t<pos && i < getNumRows());
+		
+		return getValue(i,0);
 	}
 	
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
@@ -3035,15 +3401,14 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
-		int rows=10, cols=10, runs=10;
+		int rows=10, cols=10;
 		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
 		for(double sparsity: sparsities)
 			onerun(rows, cols, sparsity, runs);
 			*/
 		//testSelection(10, 10, 1);
 		
-		double sparsity=0.5;
-	//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
+		//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
 		//m.examSparsity();
 		System.out.println("~~~~~~~~~~~~");

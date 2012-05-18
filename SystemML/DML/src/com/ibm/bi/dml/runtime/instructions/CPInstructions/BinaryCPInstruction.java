@@ -33,6 +33,16 @@ public class BinaryCPInstruction extends ComputationCPInstruction{
 		instString = istr;
 	}
 
+	public BinaryCPInstruction(Operator op, 
+			 CPOperand in1, 
+			 CPOperand in2, 
+			 CPOperand in3, 
+			 CPOperand out, 
+		     String istr ){
+		super(op, in1, in2, in3, out);
+		instString = istr;
+	}
+
 	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
 		throws DMLRuntimeException{
 		
@@ -43,6 +53,21 @@ public class BinaryCPInstruction extends ComputationCPInstruction{
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);
+		
+		return opcode;
+	}
+	
+	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
+	throws DMLRuntimeException{
+	
+		InstructionUtils.checkNumFields ( instr, 4 );
+		
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		in3.split(parts[3]);
+		out.split(parts[4]);
 		
 		return opcode;
 	}

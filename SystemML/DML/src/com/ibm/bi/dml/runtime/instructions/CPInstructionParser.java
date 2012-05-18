@@ -15,14 +15,15 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.RangeReIndexCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.SortCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.TertiaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 public class CPInstructionParser extends InstructionParser {
 
@@ -108,7 +109,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "assignvarwithfile", CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "valuepickCP" , CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "valuepick"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "iqsize"      , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "spearmanhelper", CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "read"  		, CPINSTRUCTION_TYPE.Variable);
@@ -126,6 +127,14 @@ public class CPInstructionParser extends InstructionParser {
 		
 		String2CPInstructionType.put( "Rand"  , CPINSTRUCTION_TYPE.Rand);
 		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Tertiary);
+		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
+		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
+		String2CPInstructionType.put( "inmem-valuepick"  , CPINSTRUCTION_TYPE.Variable);
+		//String2CPInstructionType.put( "inmem-rangepick"  , CPINSTRUCTION_TYPE.Variable);
+		
+		String2CPInstructionType.put( "rangeReIndex"  , CPINSTRUCTION_TYPE.RangeReIndex);
+		
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -193,6 +202,12 @@ public class CPInstructionParser extends InstructionParser {
 			
 		case ParameterizedBuiltin: 
 			return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
+		
+		case Sort: 
+			return (CPInstruction) SortCPInstruction.parseInstruction(str);
+		
+		case RangeReIndex: 
+			return (CPInstruction) RangeReIndexCPInstruction.parseInstruction(str);
 		
 		case Builtin: 
 			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);

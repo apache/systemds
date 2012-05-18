@@ -41,7 +41,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 */
 	
 	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePickCP, IQSize, SpearmanHelper, Write, Read, SetFileName
+		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemRangePick, IQSize, SpearmanHelper, Write, Read, SetFileName
 	}
 	
 	VariableOperationCode opcode;
@@ -72,8 +72,14 @@ public class VariableCPInstruction extends CPInstruction {
 		else if ( str.equalsIgnoreCase("assignvarwithfile") ) 
 			return VariableOperationCode.AssignVariableWithFirstValue;
 		
-		else if ( str.equalsIgnoreCase("valuepickCP") ) 
-			return VariableOperationCode.ValuePickCP;
+		else if ( str.equalsIgnoreCase("valuepick") ) 
+			return VariableOperationCode.ValuePick;
+		
+		else if ( str.equalsIgnoreCase("inmem-valuepick") ) 
+			return VariableOperationCode.InMemValuePick;
+		
+		else if ( str.equalsIgnoreCase("inmem-rangepick") ) 
+			return VariableOperationCode.InMemRangePick;
 		
 		else if ( str.equalsIgnoreCase("iqsize") ) 
 			return VariableOperationCode.IQSize;
@@ -114,8 +120,14 @@ public class VariableCPInstruction extends CPInstruction {
 		case AssignVariableWithFirstValue:
 			return "assignvarwithfile";
 			
-		case ValuePickCP:
-			return "valuepickCP";
+		case ValuePick:
+			return "valuepick";
+		
+		case InMemValuePick:
+			return "inmem-valuepick";
+		
+		case InMemRangePick:
+			return "inmem-rangepick";
 		
 		case IQSize:
 			return "iqsize";
@@ -191,7 +203,9 @@ public class VariableCPInstruction extends CPInstruction {
 		case RemoveVariable:
 			return 1;
 		case IQSize:
-		case ValuePickCP:
+		case ValuePick:
+		case InMemValuePick:
+		case InMemRangePick:
 		case Write:
 		case SetFileName:
 			return 3;
@@ -280,7 +294,8 @@ public class VariableCPInstruction extends CPInstruction {
 			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
 			break;
 			
-		case ValuePickCP:
+		case ValuePick:
+		case InMemValuePick: 
 		case IQSize:
 			in1 = new CPOperand(parts[1]); // first operand is a filename => string value type 
 			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double
@@ -386,9 +401,9 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			break;
 			
-		case ValuePickCP:
+		case ValuePick:
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
-			// pick middle value from "temp3" and assign to Var0
+			// pick a value from "temp3" and assign to Var0
 			
 			MatrixObject mat = (MatrixObject)pb.getVariable(input1.get_name());
 			String fname = mat.getFileName();
@@ -409,6 +424,12 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			break;
 			
+		case InMemValuePick:
+			MatrixObject inmat = (MatrixObject)pb.getVariable(input1.get_name());
+			ScalarObject quantile = pb.getScalarVariable(input2.get_name(), input2.get_valueType());
+			double picked = inmat.valuePick(quantile.getDoubleValue()); 
+			pb.setVariable(output.get_name(), (ScalarObject) new DoubleObject(picked));
+			break;
 			
 		case IQSize:
 			// example = iqsize:::temp3:DOUBLE:::0.25:DOUBLE:::Var0:DOUBLE

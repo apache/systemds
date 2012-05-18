@@ -1176,6 +1176,15 @@ public class Dag<N extends Lops> {
 								node.getInputs().get(2).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					}
+					else if (node.getInputs().size() == 5) {
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getInputs().get(2).getOutputParameters().getLabel(),
+								node.getInputs().get(3).getOutputParameters().getLabel(),
+								node.getInputs().get(4).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					}
 					else {
 						throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in CP yet!");
 					}
@@ -1188,6 +1197,7 @@ public class Dag<N extends Lops> {
 					inst.add(CPInstructionParser
 							.parseSingleInstruction(inst_string));
 				} catch (Exception e) {
+					e.printStackTrace();
 					throw new LopsException("Problem generating simple inst - "
 							+ inst_string);
 				}
@@ -2016,7 +2026,7 @@ public class Dag<N extends Lops> {
 		}
 
 		/* Instead of following hardcoding, one must get this information from Lops */
-		if (node.getType() == Type.SortKeys) {
+		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {
 			oinfo = OutputInfo.OutputInfoForSortOutput; //new OutputInfo(CompactOutputFormat.class,
 					//DoubleWritable.class, IntWritable.class);
 		} else if (node.getType() == Type.CombineBinary) {

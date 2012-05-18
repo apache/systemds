@@ -47,7 +47,7 @@ public class BinaryOp extends Hops {
 
 	public BinaryOp(String l, DataType dt, ValueType vt, Hops.OpOp2 o,
 			Hops inp1, Hops inp2) {
-		super(Hops.Kind.BinaryOp, l, dt, vt);
+		super(Kind.BinaryOp, l, dt, vt);
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -56,14 +56,13 @@ public class BinaryOp extends Hops {
 		inp2.getParent().add(this);
 	}
 
-	@SuppressWarnings("unchecked")
 	public Lops constructLops() throws HopsException {
 
 		if (get_lops() == null) {
 
+			try {
 			if (op == Hops.OpOp2.IQM) {
 
-				try {
 					CombineBinary combine = CombineBinary.constructCombineLop(
 							OperationTypes.PreSort, (Lops) getInput().get(0)
 									.constructLops(), (Lops) getInput().get(1)
@@ -78,7 +77,7 @@ public class BinaryOp extends Hops {
 					SortKeys sort = SortKeys.constructSortByValueLop(
 							combine,
 							SortKeys.OperationTypes.WithNoWeights,
-							DataType.MATRIX, ValueType.DOUBLE);
+							DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
 
 					// Sort dimensions are same as the first input
 					sort.getOutputParameters().setDimensions(
@@ -144,103 +143,148 @@ public class BinaryOp extends Hops {
 							get_cols_per_block());
 
 					set_lops(binScalar2);
-				} catch (Exception e) {
-					throw new HopsException(e);
-				}
 
 			} else if (op == Hops.OpOp2.CENTRALMOMENT) {
+				ExecType et = optFindExecType();
+				// The output data type is a SCALAR if central moment 
+				// gets computed in CP, and it will be MATRIX otherwise.
+				DataType dt = (et == ExecType.MR ? DataType.MATRIX : DataType.SCALAR );
 				CentralMoment cm = new CentralMoment(getInput().get(0)
 						.constructLops(), getInput().get(1).constructLops(),
-						DataType.MATRIX, get_valueType());
+						dt, get_valueType(), et);
 
-				UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
-						.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
-						get_valueType());
-				set_lops(unary1);
+				if ( et == ExecType.MR ) {
+					cm.getOutputParameters().setDimensions(1, 1, 0, 0);
+					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
+							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
+							get_valueType());
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0);
+					set_lops(unary1);
+				}
+				else {
+					//System.out.println("CM executing in CP...");
+					cm.getOutputParameters().setDimensions(0, 0, 0, 0);
+					set_lops(cm);
+				}
 
 			} else if (op == Hops.OpOp2.COVARIANCE) {
-				// combineBinary -> CoVariance -> CastAsScalar
-				CombineBinary combine = CombineBinary.constructCombineLop(
-						OperationTypes.PreCovUnweighted, (Lops) getInput().get(
-								0).constructLops(), (Lops) getInput().get(1)
-								.constructLops(), DataType.MATRIX,
-						get_valueType());
-
-				combine.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(),
-						getInput().get(0).get_rows_per_block(),
-						getInput().get(0).get_cols_per_block());
-
-				CoVariance cov = new CoVariance(combine, DataType.MATRIX,
-						get_valueType());
-				cov.getOutputParameters().setDimensions(1, 1, -1, -1);
-
-				UnaryCP unary1 = new UnaryCP(cov, HopsOpOp1LopsUS
-						.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
-						get_valueType());
-				unary1.getOutputParameters().setDimensions(0, 0, 0, 0);
-
-				set_lops(unary1);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					// combineBinary -> CoVariance -> CastAsScalar
+					CombineBinary combine = CombineBinary.constructCombineLop(
+							OperationTypes.PreCovUnweighted, getInput().get(
+									0).constructLops(), getInput().get(1)
+									.constructLops(), DataType.MATRIX,
+							get_valueType());
+	
+					combine.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_per_block(),
+							getInput().get(0).get_cols_per_block());
+	
+					CoVariance cov = new CoVariance(combine, DataType.MATRIX,
+							get_valueType(), et);
+					cov.getOutputParameters().setDimensions(1, 1, 0, 0);
+	
+					UnaryCP unary1 = new UnaryCP(cov, HopsOpOp1LopsUS
+							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
+							get_valueType());
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0);
+	
+					set_lops(unary1);
+				}
+				else {
+					//System.out.println("COV executing in CP...");
+					CoVariance cov = new CoVariance(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							get_dataType(), get_valueType(), et);
+					cov.getOutputParameters().setDimensions(0, 0, 0, 0);
+					set_lops(cov);
+				}
 
 			} else if (op == Hops.OpOp2.QUANTILE
 					|| op == Hops.OpOp2.INTERQUANTILE) {
 				// 1st arguments needs to be a 1-dimensional matrix
 				// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 				// For INTERQUANTILE: 2nd argument is always a scalar
-/*				if ((getInput().get(0).get_dim1() != 1 && getInput().get(0)
-						.get_dim2() != 1)
-						|| (getInput().get(1).get_dataType() == DataType.MATRIX
-								&& getInput().get(1).get_dim1() != 1 && getInput()
-								.get(1).get_dim2() != 1))
-					throw new HopsException("Incorrect BinaryOp (" + op
-							+ ") while constructing LOPs!");*/
-
-				CombineUnary combine = CombineUnary.constructCombineLop(
-						(Lops) getInput().get(0).constructLops(),
-						get_dataType(), get_valueType());
-
-				SortKeys sort = SortKeys.constructSortByValueLop(
-						(Lops) combine, SortKeys.OperationTypes.WithNoWeights,
-						DataType.MATRIX, ValueType.DOUBLE);
-
-				combine.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-				// Sort dimensions are same as the first input
-				sort.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(),
-						getInput().get(0).get_rows_per_block(),
-						getInput().get(0).get_cols_per_block());
-
-				PickByCount pick = new PickByCount(
-						sort,
-						getInput().get(1).constructLops(),
-						get_dataType(),
-						get_valueType(),
-						(op == Hops.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-								: PickByCount.OperationTypes.RANGEPICK);
-
-				pick.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
-
-				set_lops(pick);
+				
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					CombineUnary combine = CombineUnary.constructCombineLop(
+							getInput().get(0).constructLops(),
+							get_dataType(), get_valueType());
+	
+					SortKeys sort = SortKeys.constructSortByValueLop(
+							combine, SortKeys.OperationTypes.WithNoWeights,
+							DataType.MATRIX, ValueType.DOUBLE, et);
+	
+					combine.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					// Sort dimensions are same as the first input
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_per_block(),
+							getInput().get(0).get_cols_per_block());
+	
+					// If only a single quantile is computed, then "pick" operation executes in CP.
+					ExecType et_pick = (getInput().get(1).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
+					PickByCount pick = new PickByCount(
+							sort,
+							getInput().get(1).constructLops(),
+							get_dataType(),
+							get_valueType(),
+							(op == Hops.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
+	
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(pick);
+				}
+				else {
+					SortKeys sort = SortKeys.constructSortByValueLop(
+										getInput().get(0).constructLops(), 
+										SortKeys.OperationTypes.WithNoWeights, 
+										DataType.MATRIX, ValueType.DOUBLE, et );
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_per_block(),
+							getInput().get(0).get_cols_per_block());
+					PickByCount pick = new PickByCount(
+							sort,
+							getInput().get(1).constructLops(),
+							get_dataType(),
+							get_valueType(),
+							(op == Hops.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+									: PickByCount.OperationTypes.RANGEPICK, et, true);
+	
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(pick);
+				}
 			} else {
-				if (this.get_dataType() == DataType.SCALAR) {
+				/* Default behavior for BinaryOp */
+				// it depends on input data types
+				DataType dt1 = getInput().get(0).get_dataType();
+				DataType dt2 = getInput().get(1).get_dataType();
+				
+				if (dt1 == dt2 && dt1 == DataType.SCALAR) {
 
 					// Both operands scalar
-
 					BinaryCP binScalar1 = new BinaryCP(getInput().get(0)
 							.constructLops(),
 							getInput().get(1).constructLops(), HopsOpOp2LopsBS
 									.get(op), get_dataType(), get_valueType());
 					set_lops(binScalar1);
 
-				} else if (((getInput().get(0).get_dataType() == DataType.MATRIX) && (getInput()
-						.get(1).get_dataType() == DataType.SCALAR))
-						|| ((getInput().get(0).get_dataType() == DataType.SCALAR) && (getInput()
-								.get(1).get_dataType() == DataType.MATRIX))) {
+				} else if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
+						   || (dt1 == DataType.SCALAR && dt2 == DataType.MATRIX)) {
 
 					// One operand is Matrix and the other is scalar
 					ExecType et = optFindExecType();
@@ -251,10 +295,10 @@ public class BinaryOp extends Hops {
 							get_dim2(), get_rows_per_block(),
 							get_cols_per_block());
 					set_lops(unary1);
+					
 				} else {
 
 					// Both operands are Matrixes
-
 					ExecType et = optFindExecType();
 					if ( et == ExecType.CP ) {
 						Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
@@ -292,6 +336,9 @@ public class BinaryOp extends Hops {
 						set_lops(binary);
 					}
 				}
+			}
+			} catch (Exception e) {
+				throw new HopsException(e);
 			}
 		}
 		return get_lops();

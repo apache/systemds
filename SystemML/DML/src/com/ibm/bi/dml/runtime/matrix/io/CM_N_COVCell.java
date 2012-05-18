@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
-
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -22,7 +21,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 
@@ -251,7 +249,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
-	public MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}

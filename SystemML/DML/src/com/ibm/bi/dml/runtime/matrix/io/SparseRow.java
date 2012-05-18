@@ -208,4 +208,54 @@ public class SparseRow {
 		else
 			return index-1;
 	}
+	
+	public int searchIndexesFirstLT(int col)
+	{
+		int index=searchIndexesFirstGTE(col);
+		if(index>0) 
+			return index-1;
+		else 
+			return -1;
+	}
+	
+	public int searchIndexesFirstGT(int col)
+	{
+		int index=searchIndexesFirstLTE(col);
+		if(index>=0 && index<size-1) 
+			return index+1;
+		else 
+			return -1;
+	}
+	
+	public void deleteIndexRange(int lowerIndex, int upperIndex)
+	{
+		int start=searchIndexesFirstGTE(lowerIndex);
+		//System.out.println("start: "+start);
+		if(start<0) return;
+		int end=searchIndexesFirstGT(upperIndex);
+		//System.out.println("end: "+end);
+		if(end<0 || start>end) return;
+		for(int i=0; i<size-end; i++)
+		{
+			indexes[start+i]=indexes[end+i];
+			values[start+i]=values[end+i];
+		}
+		size-=(end-start);
+	}
+	
+	public void deleteIndexComplementaryRange(int lowerIndex, int upperIndex)
+	{
+		int start=searchIndexesFirstGTE(lowerIndex);
+		//System.out.println("start: "+start);
+		if(start<0) return;
+		int end=searchIndexesFirstGT(upperIndex);
+		//System.out.println("end: "+end);
+		if(end<0 || start>end) return;
+		for(int i=0; i<end-start; i++)
+		{
+			indexes[i]=indexes[start+i];
+			values[i]=values[start+i];
+		}
+		size=(end-start);
+	}
 }

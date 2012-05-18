@@ -7,10 +7,9 @@ import java.io.IOException;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
-
 
 public class MatrixPackedCell extends MatrixCell{
 

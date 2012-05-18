@@ -8,9 +8,9 @@ import org.apache.hadoop.mapred.MapReduceBase;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MaskInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -70,7 +70,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(ins instanceof MaskInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
+		if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
 			MatrixCharacteristics dim=dimensions.get(input);

@@ -48,7 +48,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MaskInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -865,7 +865,7 @@ public class MRJobConfiguration {
 			for(MRInstruction ins: insMapper)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof MaskInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
+				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
@@ -911,7 +911,7 @@ public class MRJobConfiguration {
 			for(MRInstruction ins: insReducer)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof MaskInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction)
+				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction)
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 

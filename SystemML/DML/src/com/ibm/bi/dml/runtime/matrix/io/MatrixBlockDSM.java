@@ -115,8 +115,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		clen=cl;
 		sparse=sp;
 		nonZeros=0;
-		maxrow = rl;
-		maxcolumn = cl;
+		maxrow = maxcolumn = 0;
 	}
 	
 	public MatrixBlockDSM(MatrixBlockDSM that)
@@ -1159,6 +1158,28 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
+	public void appendRow(int r, SparseRow values)
+	{
+		if(values==null)
+			return;
+		if(sparse)
+		{
+			adjustSparseRows(r);
+			if(sparseRows[r]==null)
+				sparseRows[r]=new SparseRow(values);
+			else
+				sparseRows[r].copy(values);
+			nonZeros+=values.size();
+			
+		}else
+		{
+			int[] cols=values.getIndexContainer();
+			double[] vals=values.getValueContainer();
+			for(int i=0; i<values.size(); i++)
+				setValue(r, cols[i], vals[i]);
+		}
+	}
+	
 	@Override
 	public void setValue(CellIndex index, double v) {
 		setValue(index.row, index.column, v);
@@ -1568,7 +1589,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
 	}
 	
-	/**
+		/**
 	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
 	 * Extracted submatrix is returned as "result".
 	 * @throws DMLRuntimeException 
@@ -1630,6 +1651,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		return result;
 	}
+	
+	
 	
 	public void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
@@ -1706,13 +1729,15 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
-	@Override
-	public MatrixValue maskOperations(MatrixValue result, IndexRange range)
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		checkType(result);
 		boolean sps;
-		if((double)nonZeros/(double)rlen/(double)clen*(double)(range.rowEnd-range.rowStart+1)*(double)(range.colEnd-range.colStart+1)
-				/(double)rlen/(double)clen< SPARCITY_TURN_POINT)
+		double estimatedSps=(double)nonZeros/(double)rlen/(double)clen*(double)(range.rowEnd-range.rowStart+1)
+		*(double)(range.colEnd-range.colStart+1)/(double)rlen/(double)clen;
+		if(!complementary)
+			estimatedSps=1-estimatedSps;
+		if(estimatedSps< SPARCITY_TURN_POINT)
 			sps=true;
 		else sps=false;
 			
@@ -1721,10 +1746,19 @@ public class MatrixBlockDSM extends MatrixValue{
 		else
 			result.reset(rlen, clen, sps);
 		
+		
 		if(sparse)
 		{
 			if(sparseRows!=null)
 			{
+				if(!complementary)//if zero out
+				{
+					for(int r=0; r<Math.min((int)range.rowStart, sparseRows.length); r++)
+						((MatrixBlockDSM) result).appendRow(r, sparseRows[r]);
+					for(int r=Math.min((int)range.rowEnd+1, sparseRows.length-1); r<Math.min(rlen, sparseRows.length); r++)
+						((MatrixBlockDSM) result).appendRow(r, sparseRows[r]);
+				}
+				
 				for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
 				{
 					if(sparseRows[r]==null) continue;
@@ -1734,13 +1768,23 @@ public class MatrixBlockDSM extends MatrixValue{
 					int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
 					//System.out.println("start: "+start);
 					if(start<0) continue;
-					int end=sparseRows[r].searchIndexesFirstLTE((int)range.colEnd);
+					int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
 					//System.out.println("end: "+end);
 					if(end<0 || start>end) continue;
-					for(int i=start; i<=end; i++)
+					
+					if(complementary)//if selection
 					{
-						((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
-					//	System.out.println("set "+r+", "+cols[i]+": "+values[i]);
+						for(int i=start; i<end; i++)
+						{
+							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
+						//	System.out.println("set "+r+", "+cols[i]+": "+values[i]);
+						}
+					}else
+					{
+						for(int i=0; i<start; i++)
+							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
+						for(int i=end; i<sparseRows[r].size(); i++)
+							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
 					}
 				}
 			}
@@ -1748,17 +1792,109 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			if(denseBlock!=null)
 			{
-				int i=((int)range.rowStart)*clen;
+				if(complementary)//if selection
+				{
+					int offset=((int)range.rowStart)*clen;
+					for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
+					{
+						for(int c=(int) range.colStart; c<=range.colEnd; c++)
+							((MatrixBlockDSM) result).appendValue(r, c, denseBlock[offset+c]);
+						offset+=clen;
+					}
+				}else
+				{
+					int offset=0;
+					int r=0;
+					for(; r<(int)range.rowStart; r++)
+						for(int c=0; c<clen; c++, offset++)
+							((MatrixBlockDSM) result).appendValue(r, c, denseBlock[offset]);
+					
+					for(; r<=(int)range.rowEnd; r++)
+					{
+						for(int c=0; c<(int)range.colStart; c++)
+							((MatrixBlockDSM) result).appendValue(r, c, denseBlock[offset+c]);
+						for(int c=(int)range.colEnd+1; c<clen; c++)
+							((MatrixBlockDSM) result).appendValue(r, c, denseBlock[offset+c]);
+						offset+=clen;
+					}
+					
+					for(; r<rlen; r++)
+						for(int c=0; c<clen; c++, offset++)
+							((MatrixBlockDSM) result).appendValue(r, c, denseBlock[offset]);
+				}
+				
+			}
+		}	
+		return result;
+	}
+	
+	//This function is not really used
+	public void zeroOutOperationsInPlace(IndexRange range, boolean complementary)
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//do not change the format of the block
+		if(sparse)
+		{
+			if(sparseRows==null) return;
+			
+			if(complementary)//if selection, need to remove unwanted rows
+			{
+				for(int r=0; r<Math.min((int)range.rowStart, sparseRows.length); r++)
+					if(sparseRows[r]!=null)
+					{
+						nonZeros-=sparseRows[r].size();
+						sparseRows[r].reset();
+					}
+				for(int r=Math.min((int)range.rowEnd+1, sparseRows.length-1); r<Math.min(rlen, sparseRows.length); r++)
+					if(sparseRows[r]!=null)
+					{
+						nonZeros-=sparseRows[r].size();
+						sparseRows[r].reset();
+					}
+			}
+			
+			for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
+			{
+				if(sparseRows[r]==null) continue;
+				int oldsize=sparseRows[r].size();
+				if(complementary)//if selection
+					sparseRows[r].deleteIndexComplementaryRange((int)range.colStart, (int)range.rowEnd);
+				else //if zeroout
+					sparseRows[r].deleteIndexRange((int)range.colStart, (int)range.rowEnd);
+				nonZeros-=(oldsize-sparseRows[r].size());
+			}
+			
+		}else
+		{		
+			if(denseBlock==null) return;
+			int start=(int)range.rowStart*clen;
+			
+			if(complementary)//if selection, need to remove unwanted rows
+			{
+				nonZeros=0;
+				Arrays.fill(denseBlock, 0, start, 0);
+				Arrays.fill(denseBlock, ((int)range.rowEnd+1)*clen, rlen*clen, 0);
+				for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
+				{
+					Arrays.fill(denseBlock, start, start+(int) range.colStart, 0);
+					Arrays.fill(denseBlock, start+(int)range.colEnd+1, start+clen, 0);
+					for(int c=(int) range.colStart; c<=range.colEnd; c++)
+						if(denseBlock[start+c]!=0)
+							nonZeros++;		
+					start+=clen;
+				}
+			}else
+			{
 				for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
 				{
 					for(int c=(int) range.colStart; c<=range.colEnd; c++)
-						result.setValue(r, c, denseBlock[i+c]);
-					i+=clen;
+						if(denseBlock[start+c]!=0)
+							nonZeros--;		
+					Arrays.fill(denseBlock, start+(int) range.colStart, start+(int)range.colEnd+1, 0);
+					start+=clen;
 				}
 			}
 		}
-		
-		return result;
 	}
 
 	private void traceHelp(AggregateUnaryOperator op, MatrixBlockDSM result, 
@@ -1960,7 +2096,59 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 	}
 	
-
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
+			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		return aggregateUnaryOperations(op, result, 
+				blockingFactorRow, blockingFactorCol, indexesIn, false);
+	}
+	
+	
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
+			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
+		if(op.aggOp.correctionExists)
+		{
+			switch(op.aggOp.correctionLocation)
+			{
+			case LASTROW: tempCellIndex.row++; break;
+			case LASTCOLUMN: tempCellIndex.column++; break;
+			case LASTTWOROWS: tempCellIndex.row+=2; break;
+			case LASTTWOCOLUMNS: tempCellIndex.column+=2; break;
+			default:
+				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
+			}
+		/*	
+			if(op.aggOp.correctionLocation==1)
+				tempCellIndex.row++;
+			else if(op.aggOp.correctionLocation==2)
+				tempCellIndex.column++;
+			else
+				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	*/
+		}
+		if(result==null)
+			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, false);
+		else
+			result.reset(tempCellIndex.row, tempCellIndex.column, false);
+		
+		//TODO: this code is hack to support trace, and should be removed when selection is supported
+		if(op.isTrace)
+			traceHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+		else if(op.isDiagM2V)
+			diagM2VHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+		else if(op.sparseSafe)
+			sparseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+		else
+			denseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+		
+		if(op.aggOp.correctionExists && inCP)
+			((MatrixBlockDSM)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
+		return result;
+	}
+	
 	public CM_COV_Object cmOperations(CMOperator op) throws DMLRuntimeException {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1) {
@@ -2236,58 +2424,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return getValue(i,0);
 	}
 	
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		return aggregateUnaryOperations(op, result, 
-				blockingFactorRow, blockingFactorCol, indexesIn, false);
-	}
 	
-	
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-		if(op.aggOp.correctionExists)
-		{
-			switch(op.aggOp.correctionLocation)
-			{
-			case LASTROW: tempCellIndex.row++; break;
-			case LASTCOLUMN: tempCellIndex.column++; break;
-			case LASTTWOROWS: tempCellIndex.row+=2; break;
-			case LASTTWOCOLUMNS: tempCellIndex.column+=2; break;
-			default:
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
-			}
-		/*	
-			if(op.aggOp.correctionLocation==1)
-				tempCellIndex.row++;
-			else if(op.aggOp.correctionLocation==2)
-				tempCellIndex.column++;
-			else
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	*/
-		}
-		if(result==null)
-			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, false);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		
-		//TODO: this code is hack to support trace, and should be removed when selection is supported
-		if(op.isTrace)
-			traceHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
-		else if(op.isDiagM2V)
-			diagM2VHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
-		else if(op.sparseSafe)
-			sparseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
-		else
-			denseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
-		
-		if(op.aggOp.correctionExists && inCP)
-			((MatrixBlockDSM)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
-		return result;
-	}
 	
 	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) {
 		
@@ -3401,14 +3538,15 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
-		int rows=10, cols=10;
+		int rows=10, cols=10, runs=10;
 		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
 		for(double sparsity: sparsities)
 			onerun(rows, cols, sparsity, runs);
 			*/
 		//testSelection(10, 10, 1);
 		
-		//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
+		double sparsity=0.5;
+	//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
 		//m.examSparsity();
 		System.out.println("~~~~~~~~~~~~");

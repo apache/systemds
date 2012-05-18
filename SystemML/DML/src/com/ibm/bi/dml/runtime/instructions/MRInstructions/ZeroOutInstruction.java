@@ -12,14 +12,17 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReIndexOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
-
-public class MaskInstruction extends UnaryMRInstructionBase{
+/*
+ * ZeroOut with complementary=false is to zero out a subregion inside a matrix
+ * ZeroOut with complementary=true is to select a subregion inside a matrix (zero out regions outside the selected range)
+ */
+public class ZeroOutInstruction extends UnaryMRInstructionBase{
 	
 	public IndexRange indexRange=null;
 	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
+	public boolean complementary=false;
 	
-	public MaskInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
+	public ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Select;
 		instString = istr;
@@ -62,7 +65,7 @@ public class MaskInstruction extends UnaryMRInstructionBase{
 		rng.rowEnd=parseEndBoundary(strs[1]);
 		rng.colStart=parseStartBoundary(strs[2]);
 		rng.colEnd=parseEndBoundary(strs[3]);
-		return new MaskInstruction(new ReIndexOperator(), in, out, rng, str);
+		return new ZeroOutInstruction(new ReIndexOperator(), in, out, rng, str);
 		
 	}
 
@@ -111,8 +114,14 @@ public class MaskInstruction extends UnaryMRInstructionBase{
 			return;
 		
 		tempRange=getSelectedRange(in, blockRowFactor, blockColFactor);
-		if(tempRange.rowStart==-1)
+		if(tempRange.rowStart==-1 && complementary)//just selection operation
 			return;
+		
+		if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
+		{
+			cachedValues.add(output, in);
+			return;
+		}
 		
 		//allocate space for the output value
 		IndexedMatrixValue out;
@@ -123,8 +132,8 @@ public class MaskInstruction extends UnaryMRInstructionBase{
 		
 		//process instruction
 		
-		OperationsOnMatrixValues.performMask(in.getIndexes(), in.getValue(), 
-				out.getIndexes(), out.getValue(), tempRange);
+		OperationsOnMatrixValues.performZeroOut(in.getIndexes(), in.getValue(), 
+				out.getIndexes(), out.getValue(), tempRange, complementary);
 		
 		//put the output value in the cache
 		if(out==tempValue)

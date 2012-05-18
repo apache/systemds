@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
-
 public abstract class MatrixValue implements WritableComparable {
 
 	static public class CellIndex {
@@ -176,7 +175,7 @@ public abstract class MatrixValue implements WritableComparable {
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 
-	public abstract MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
+	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	
 	public abstract void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 

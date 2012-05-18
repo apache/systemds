@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.io.WritableComparable;
-
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -21,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 @SuppressWarnings("unchecked")
 public class MatrixCell extends MatrixValue implements WritableComparable{
@@ -327,11 +325,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
-	public MatrixValue maskOperations(MatrixValue valueOut, IndexRange range)
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
 			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
-		MatrixCell c3=checkType(valueOut);
+		MatrixCell c3=checkType(result);
 		c3.setValue(value);
 		return c3;
 	}

@@ -14,11 +14,6 @@ import java.util.Vector;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
@@ -31,7 +26,11 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 
 public class MatrixBlock1D extends MatrixValue{
 
@@ -2260,45 +2259,9 @@ public class MatrixBlock1D extends MatrixValue{
 	}
 
 	@Override
-	public MatrixValue maskOperations(MatrixValue result, IndexRange range)
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		checkType(result);
-		boolean sps;
-		if(nonZeros/rlen/clen*(range.rowEnd-range.rowStart+1)*(range.colEnd-range.colStart+1)/rlen/clen< SPARCITY_TURN_POINT)
-			sps=true;
-		else sps=false;
-			
-		if(result==null)
-			result=new MatrixBlock1D(tempCellIndex.row, tempCellIndex.column, sps);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps);
-		
-		if(sparse)
-		{
-			if(sparseBlock!=null)
-			{
-				for(Entry<CellIndex, Double> e: sparseBlock.entrySet())
-				{
-					if(UtilFunctions.isIn(e.getKey().row, range.rowStart, range.rowEnd)
-					   && UtilFunctions.isIn(e.getKey().column, range.colStart, range.colEnd))
-						result.setValue(e.getKey().row, e.getKey().column, e.getValue());
-				}
-			}
-		}else
-		{
-			if(denseBlock!=null)
-			{
-				int i=0;
-				for(int r=(int) range.rowStart; r<=range.rowEnd; r++)
-				{
-					for(int c=(int) range.colStart; c<=range.colEnd; c++)
-						result.setValue(r, c, denseBlock[i+c]);
-					i+=clen;
-				}
-			}
-		}
-		
-		return result;
+		throw new RuntimeException("operations not supported for MatrixBlock1D");
 	}
 
 	@Override
@@ -2306,7 +2269,7 @@ public class MatrixBlock1D extends MatrixValue{
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		throw new RuntimeException("operation not supported fro WeightedBlock1D");
+		throw new RuntimeException("operation not supported fro MatrixBlock1D");
 	}
 	
 	public boolean isBuffered(){

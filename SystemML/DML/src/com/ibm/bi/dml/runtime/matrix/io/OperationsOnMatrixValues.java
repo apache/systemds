@@ -5,9 +5,9 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 public class OperationsOnMatrixValues {
 
@@ -88,11 +87,11 @@ public class OperationsOnMatrixValues {
 		value_out=value_in.reorgOperations(op, value_out, 0, 0, 0);
 	}
 	
-	public static void performMask(MatrixIndexes indexes_in, MatrixValue value_in, 
-			MatrixIndexes indexes_out, MatrixValue value_out, IndexRange range) 
+	public static void performZeroOut(MatrixIndexes indexes_in, MatrixValue value_in, 
+			MatrixIndexes indexes_out, MatrixValue value_out, IndexRange range, boolean complementary) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		value_out=value_in.maskOperations(value_out, range);
+		value_out=value_in.zeroOutOperations(value_out, range, complementary);
 	}
 	
 	public static void performSlide(MatrixIndexes indexes_in, MatrixValue value_in, 

@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.Expression.FormatType;
@@ -8,463 +7,247 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
-/**
- * <p>Defines a Rand-Statement.</p>
- */
 public class RandStatement extends Statement
 {
-	/**
-	 * <p>Defines the list of available parameters and their DML component.</p>
-	 */
-	private enum Param
-	{
-		/** number of rows */
-		ROWS("rows"),
-		/** number of columns */
-		COLS("cols"),
-		/** minimum of the random values */
-		MIN("min"),
-		/** maximum of the random values */
-		MAX("max"),
-		/** sparsity of the random object */
-		SPARSITY("sparsity"),
-		/** optional seed to random number generator */
-		SEED("seed"),
-		/** probability density function */
-		PDF("pdf");
 		
-		/** holds the DML parameter name */
-		private String paramName;
-		
-		
-		/**
-		 * <p>Adds a new parameter to the list of available ones.</p>
-		 * 
-		 * @param paramName DML parameter name
-		 */
-		private Param(String paramName)
-		{
-			this.paramName = paramName;
-		}
-		
-		/**
-		 * <p>Returns the DML parameter name.</p>
-		 * 
-		 * @return DML parameter name
-		 */
-		public String getParamName()
-		{
-			return paramName;
-		}
-	};
+	// target identifier which will hold the random object
+	private DataIdentifier _id = null;
 	
-	/** target identifier which will hold the random object */
-	private DataIdentifier _id;
-	/** number of rows */
-	private long rows = 1;
-	/** number of columns */
-	private long cols = 1;
-	/** minimum of the random values */
-	private double minValue = 0.0;
-	/** maximum of the random values */
-	private double maxValue = 1.0;
-	/** sparsity of the random object */
-	private double sparsity = 1.0;
-	/** optional seed to random number generator. default value of -1 indicates not set **/
-	private long seed = -1;
-	/** probability density function used to produce the sparsity */
-	private String probabilityDensityFunction = "uniform";
-	/** list of required variables */
-	private HashMap<String, String> _requiredVariables;
+	// parameter values for rand statement (with default values assigned)
+	private Expression _rowsExpr = new IntIdentifier(1L);
+	private Expression _colsExpr = new IntIdentifier(1L);
+	private Expression _minValueExpr = new DoubleIdentifier(0.0);
+	private Expression _maxValueExpr = new DoubleIdentifier(1.0);
+	private Expression _sparsityExpr = new DoubleIdentifier(1.0);
+	private Expression _seedExpr = new IntIdentifier(-1L);
+	private Expression _pdfExpr = new StringIdentifier("uniform");
 	
-		
+	
+	// rewrite the RandStatement to support function inlining 
+	// creates a deep-copy of RandStatement
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
-		RandStatement newStatement = new RandStatement(this);
-		String newIdName = prefix + _id.getName();
-		newStatement._id.setName(newIdName);
-		
-		// handle rewritting required variables
-		for (String key : newStatement._requiredVariables.keySet()){
-			String rewrittenValue = prefix + newStatement._requiredVariables.get(key);
-			newStatement._requiredVariables.put(key, rewrittenValue);
-		}
+		RandStatement newStatement = new RandStatement();
+	
+		// rewrite data identifier for target
+		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
+
+		// rewrite the indexed expressions
+		newStatement._rowsExpr = this._rowsExpr.rewriteExpression(prefix);
+		newStatement._colsExpr = this._colsExpr.rewriteExpression(prefix);
+		newStatement._minValueExpr = this._minValueExpr.rewriteExpression(prefix);
+		newStatement._maxValueExpr = this._maxValueExpr.rewriteExpression(prefix);
+		newStatement._sparsityExpr = this._sparsityExpr.rewriteExpression(prefix);
+		newStatement._seedExpr = this._seedExpr.rewriteExpression(prefix);
+		newStatement._pdfExpr = this._pdfExpr.rewriteExpression(prefix);
 		
 		return newStatement;
 	}
 	
+	public RandStatement(){}
 	
-	/**
-	 * <p>Creates a new rand statement.</p>
-	 */
-	public RandStatement()
-	{
-		_id = null;
-		_requiredVariables = new HashMap<String, String>();
-	}
-	
-	public RandStatement(RandStatement rand)
-	{
-		DataIdentifier newId = new DataIdentifier(rand._id);
-		HashMap<String, String> newRequiredVariables = new HashMap<String, String>();
-		for (String key : rand._requiredVariables.keySet()){
-			newRequiredVariables.put(key, rand._requiredVariables.get(key));
-		}
+	public RandStatement(DataIdentifier id){
+		_id = id;
 		
-		
-		this._id = newId;
-		this._requiredVariables = newRequiredVariables;
-		
-		
-		this.rows = rand.rows;
-		this.cols = rand.cols;
-		this.minValue = rand.minValue;
-		this.maxValue = rand.maxValue;
-		this.sparsity = rand.sparsity;
-		this.probabilityDensityFunction = rand.probabilityDensityFunction;
+		_rowsExpr = new IntIdentifier(1L);
+		_colsExpr = new IntIdentifier(1L);
+		_minValueExpr = new DoubleIdentifier(0.0);
+		_maxValueExpr = new DoubleIdentifier(1.0);
+		_sparsityExpr = new DoubleIdentifier(1.0);
+		_seedExpr = new IntIdentifier(-1L);
+		_pdfExpr = new StringIdentifier("uniform");
 		
 	}
 	
-	/**
-	 * <p>Creates a new rand statement.</p>
-	 * 
-	 * @param id target identifier
-	 */
-	public RandStatement(DataIdentifier id)
+	// class getter methods
+	public DataIdentifier getIdentifier(){ return _id; }
+	public Expression getRowsExpr() { return _rowsExpr; } 
+	public Expression getColsExpr() { return _colsExpr; }
+	public Expression getMinValueExpr() { return _minValueExpr; }
+	public Expression getMaxValueExpr() { return _maxValueExpr; }
+	public Expression getSparsityExpr() { return _sparsityExpr; }
+	public Expression getSeedExpr() { return _seedExpr; }
+	public Expression getPdfExpr()  { return _pdfExpr; }
+	
+	
+	public void addExprParam(String paramName, Expression paramValue) throws ParseException
 	{
-		this._id = id;
-		_requiredVariables = new HashMap<String, String>();
+		if(paramName.equals("rows")) 
+			_rowsExpr = paramValue;
+		else if(paramName.equals("cols"))
+			_colsExpr = paramValue;
+		else if(paramName.equals("min"))
+			_minValueExpr = paramValue;
+		else if(paramName.equals("max"))
+			_maxValueExpr = paramValue;
+		else if (paramName.equals("sparsity"))
+			_sparsityExpr = paramValue;
+		else if (paramName.equals("seed"))
+			_seedExpr = paramValue; 
+		else if (paramName.equals("pdf"))
+			_pdfExpr = paramValue;
+		
+		else
+			throw new ParseException("unexpected parameter \"" + paramName +
+					"\". Legal parameters for Rand statement are " +
+					"(capitalization-sensitive): rows, cols, min, max, sparsity, seed, pdf ");
 	}
 	
-	/**
-	 * <p>Returns the target identifier of the rand statement.</p>
-	 * 
-	 * @return target identifier
-	 */
-	public DataIdentifier getIdentifier()
-	{
-		return _id;
-	}
 	
-	/**
-	 * <p>Sets a parameter of type long.</p>
-	 * 
-	 * @param paramName parameter name
-	 * @param paramValue parameter value
-	 * @throws ParseException if a wrong parameter is specified
-	 */
-	public void addLongParam(String paramName, long paramValue) throws ParseException
-	{
-		if(paramName.equalsIgnoreCase(Param.ROWS.getParamName()))
-		{
-			rows = paramValue;
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.COLS.getParamName()))
-		{
-			cols = paramValue;
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.MIN.getParamName()))
-		{
-			minValue = (double) paramValue;
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.MAX.getParamName()))
-		{
-			maxValue = (double) paramValue;
-			return;
-		}
-		if (paramName.equalsIgnoreCase(Param.SPARSITY.getParamName()))
-		{
-			sparsity = new Long(paramValue).doubleValue();
-			return;
-		}
-		if (paramName.equalsIgnoreCase(Param.SEED.getParamName()))
-		{
-			seed = new Long(paramValue).longValue();
-			return;
+	// performs basic constant propagation by replacing DataIdentifier with ConstIdentifier 
+	// perform "best-effort" validation of exprParams.  If exprParam is a ConstIdentifier expression
+	//	(has constant value), then perform static validation.
+	public void performConstantPropagation(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException{
+		
+		// handle exprParam for rows
+		if (_rowsExpr instanceof DataIdentifier && !(_rowsExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_rowsExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
+					throw new LanguageException("ERROR:  In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+				else
+					_rowsExpr = new IntIdentifier((IntIdentifier)constValue);
+			}
+		}	
+		
+		// handle exprParam for cols
+		if (_colsExpr instanceof DataIdentifier && !(_colsExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_colsExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
+					throw new LanguageException("ERROR:  In rand statement, can only assign cols a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+				else
+					_colsExpr = new IntIdentifier((IntIdentifier)constValue);
+			}
 		}
 		
-		throw new ParseException("unexpected long parameter \"" + paramName + "\"");
-	}
-	
-	/**
-	 * <p>Sets a parameter of type double.</p>
-	 * 
-	 * @param paramName parameter name
-	 * @param paramValue parameter value
-	 * @throws ParseException if a wrong parameter is specified
-	 */
-	public void addDoubleParam(String paramName, double paramValue) throws ParseException
-	{
-		if(paramName.equalsIgnoreCase(Param.MIN.getParamName()))
-		{
-			minValue = paramValue;
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.MAX.getParamName()))
-		{
-			maxValue = paramValue;
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.SPARSITY.getParamName()))
-		{
-			sparsity = paramValue;
-			return;
+		// handle exprParam for min value
+		if (_minValueExpr instanceof DataIdentifier && !(_minValueExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_minValueExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
+					throw new LanguageException("ERROR:  In rand statement, can only assign min a double " +
+							"value -- attempted to assign value: " + constValue.toString());
+				else
+					_minValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
+			}
 		}
 		
-		throw new ParseException("unexpected double parameter \"" + paramName + "\"");
-	}
-	
-	/**
-	 * <p>Sets a parameter of type string.</p>
-	 * 
-	 * @param paramName parameter name
-	 * @param paramValue parameter value
-	 * @throws ParseException if a wrong parameter is specified
-	 */
-	public void addStringParam(String paramName, String paramValue) throws ParseException
-	{
-		if(paramName.equalsIgnoreCase(Param.ROWS.getParamName()))
-		{
-			try {
-				rows = Long.parseLong(paramValue);
-			} catch (NumberFormatException e){
-				throw new ParseException("in Rand statement, rows must have long value");
+		// handle exprParam for max value
+		if (_maxValueExpr instanceof DataIdentifier && !(_maxValueExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_maxValueExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
+					throw new LanguageException("ERROR:  In rand statement, can only assign max a double " +
+							"value -- attempted to assign value: " + constValue.toString());
+				else
+					_maxValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
 			}
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.COLS.getParamName()))
-		{
-			try {
-				cols = Long.parseLong(paramValue);
-			} 
-			catch (NumberFormatException e){
-				throw new ParseException("in Rand statement, cols must have long value");
-			}
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.MIN.getParamName()))
-		{
-			try {
-				minValue = Double.parseDouble(paramValue);
-			}
-			catch (NumberFormatException e){
-				throw new ParseException("in Rand statement, min must have double value");
-			}
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.MAX.getParamName()))
-		{
-			try {
-				maxValue = Double.parseDouble(paramValue);
-			}
-			catch (NumberFormatException e){
-				throw new ParseException("in Rand statement, max must have double value");
-			}
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.SPARSITY.getParamName()))
-		{
-			sparsity = Double.parseDouble(paramValue);
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.SEED.getParamName()))
-		{
-			try {
-				seed = Long.parseLong(paramValue);
-			}
-			catch (NumberFormatException e){
-				throw new ParseException("in Rand statement, seed must have double value");
-			}
-			return;
-		}
-		if(paramName.equalsIgnoreCase(Param.PDF.getParamName()))
-		{
-		    probabilityDensityFunction = paramValue;
-		    return;
 		}
 		
-		throw new ParseException("unexpected string parameter \"" + paramName + "\"");
-	}
+		// handle exprParam for seed
+		if (_seedExpr instanceof DataIdentifier && !(_seedExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_seedExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof IntIdentifier))
+					throw new LanguageException("ERROR:  In rand statement, can only assign seed a long " +
+							"value -- attempted to assign value: " + constValue.toString());
+				else
+					_seedExpr = new IntIdentifier((IntIdentifier)constValue);
+			}
+		}
+		
+		// handle exprParam for pdf (probability density function)
+		if (_pdfExpr instanceof DataIdentifier && !(_pdfExpr instanceof IndexedIdentifier)) {
+			
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)_pdfExpr).getName();
+			if (currConstVars.containsKey(identifierName)){
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				if (!(constValue instanceof StringIdentifier && (constValue.toString().equals(""))))
+					throw new LanguageException("ERROR:  In rand statement, can only assign pdf " +
+							"following one of following string values (capitalization-sensitive): uniform. " +
+							"Attempted to assign value: " + constValue.toString());
+				else
+					_pdfExpr = new IntIdentifier((IntIdentifier)constValue);	}			
+		}
+		
+	} // end method performConstantPropagation
 	
-	/**
-	 * <p>Sets a parameter of type variable.</p>
-	 * 
-	 * @param paramName parameter name
-	 * @param paramValue parameter value
-	 */
-	public void addVarParam(String paramName, DataIdentifier paramValue)
+		
+	public void setIdentifierProperties() throws LanguageException
 	{
-	    _requiredVariables.put(paramName, paramValue.getName());
-	}
-	
-	/**
-	 * <p>Validates the spcified parameters.</p>
-	 * 
-	 * @throws ParseException if a parameter is defined wrong
-	 */
-	public void validateFunctionCall() throws ParseException
-	{
-		if(rows < 1)
-			throw new ParseException("the number of rows needs to be 1 or larger");
-		if(cols < 1)
-			throw new ParseException("the number of columns needs to be 1 or larger");
-		if(sparsity < 0 || sparsity > 1)
-			throw new ParseException("the sparsity has to be between 0 and 1");
-	}
-	
-	/**
-	 * <p>Sets the properties of the target identifier according to the specified parameters.</p>
-	 * @throws LanguageException 
-	 */
-	public void setIdentifierProperties() throws ParseException
-	{
+		long rowsLong = -1, colsLong = -1;
+		
+		if (_rowsExpr instanceof IntIdentifier)
+			rowsLong = ((IntIdentifier)_rowsExpr).getValue();
+		
+		if (_colsExpr instanceof IntIdentifier)
+			colsLong = ((IntIdentifier)_colsExpr).getValue();
+		
 		_id.setFormatType(FormatType.BINARY);
 		_id.setValueType(ValueType.DOUBLE);
-		_id.setDimensions(rows, cols);
+		_id.setDimensions(rowsLong, colsLong);
 		_id.computeDataType();
-	}
-	
-	/**
-	 * <p>Returns the number of rows of the random object.</p>
-	 * 
-	 * @return number of rows
-	 */
-	public long getRows()
-	{
-		return rows;
-	}
-	
-	/**
-	 * <p>Returns the number of columns of the random object.</p>
-	 * 
-	 * @return number of columns
-	 */
-	public long getCols()
-	{
-		return cols;
-	}
-	
-	/**
-	 * <p>Returns the minimum random value.</p>
-	 * 
-	 * @return minimum value
-	 */
-	public double getMinValue()
-	{
-		return minValue;
-	}
-	
-	/**
-	 * <p>Returns the maximum random value.</p>
-	 * 
-	 * @return maximum value
-	 */
-	public double getMaxValue()
-	{
-		return maxValue;
-	}
-	
-	/**
-	 * <p>Returns the sparsity of the random object.</p>
-	 * 
-	 * @return sparsity
-	 */
-	public double getSparsity()
-	{
-		return sparsity;
-	}
-	
-	/**
-	 * <p>Returns the value of the seed associated with the random object.</p>
-	 * 
-	 * @return sparsity
-	 */
-	public double getSeed()
-	{
-		return seed;
-	}
-	
-	/**
-	 * <p>Returns the probability densitfy function used to generate the random object.</p>
-	 * 
-	 * @return probability density function
-	 */
-	public String getProbabilityDensityFunction()
-	{
-		return probabilityDensityFunction;
-	}
-	
-	/**
-	 * <p>Returns all variables which are required.</p>
-	 * 
-	 * @return required variables
-	 */
-	public String[] getRequiredVariables()
-	{
-	    ArrayList<String> variables = new ArrayList<String>();
-	    for(String variable : _requiredVariables.values())
-	    {
-	        if(!variables.contains(variable))
-	            variables.add(variable);
-	    }
-	    
-	    return variables.toArray(new String[variables.size()]);
-	}
-	
-	/**
-	 * <p>Updates the required variables with their value.</p>
-	 * 
-	 * @param variables list of variables
-	 * @throws ParseException if parameter is not available or value of a variable is not allowed
-	 * @throws LanguageException 
-	 */
-	public void updateVariables(HashMap<String, ConstIdentifier> variables) throws ParseException
-	{
-	    for(String paramName : _requiredVariables.keySet())
-	    {
-	    	String varToReplace = _requiredVariables.get(paramName);
-	        if(!variables.containsKey(varToReplace))
-	            throw new ParseException("variable " + varToReplace + " is not available");
-	        String paramValue = null;
-	        if(variables.get(varToReplace) instanceof IntIdentifier)
-	            paramValue = Long.toString(((IntIdentifier) variables.get(varToReplace)).getValue());
-	        else if(variables.get(varToReplace) instanceof DoubleIdentifier)
-                paramValue = Double.toString(((DoubleIdentifier) variables.get(varToReplace)).getValue());
-	        addStringParam(paramName, paramValue);
-	    }
-	    setIdentifierProperties();
-	}
-	
-	@Override
-	public boolean controlStatement()
-	{
-		return false;
-	}
-
-	@Override
-	public VariableSet initializebackwardLV(VariableSet lo)
-	{
-		return lo;
-	}
-
-	@Override
-	public void initializeforwardLV(VariableSet activeIn)
-	{
+		
+		if (_id instanceof IndexedIdentifier){
+			System.out.println("WARNING: Output for RandStatement may have incorrect size information");
+		}
 		
 	}
+	
+	
+	@Override
+	public boolean controlStatement() { return false; }
 
 	@Override
-	public VariableSet variablesRead()
-	{
-		return new VariableSet();
+	public VariableSet initializebackwardLV(VariableSet lo){ return lo; }
+
+	@Override
+	public void initializeforwardLV(VariableSet activeIn){}
+
+	@Override
+
+	public VariableSet variablesRead(){
+		VariableSet result = new VariableSet();
+				
+		// add variables read by parameter expressions
+		result.addVariables(_rowsExpr.variablesRead());
+		result.addVariables(_colsExpr.variablesRead());
+		result.addVariables(_minValueExpr.variablesRead());
+		result.addVariables(_maxValueExpr.variablesRead());
+		result.addVariables(_sparsityExpr.variablesRead());
+		result.addVariables(_seedExpr.variablesRead());
+		result.addVariables(_pdfExpr.variablesRead());
+		
+		// for LHS IndexedIdentifier, add variables for indexing expressions in target
+		if (_id instanceof IndexedIdentifier)
+			result.addVariables(((IndexedIdentifier)_id).variablesRead());
+			
+		return result;
 	}
 
-	@Override
+	@Override 
 	public VariableSet variablesUpdated()
 	{
+		// add target variable
 		VariableSet result = new VariableSet();
 		result.addVariable(_id.getName(), _id);
 		return result;
@@ -476,18 +259,18 @@ public class RandStatement extends Statement
     public String toString()
     {
         StringBuffer sb = new StringBuffer();
-        sb.append(_id.getName() + " = Rand(");
-        sb.append("rows=" + rows);
-        sb.append(", cols=" + cols);
-        sb.append(", min=" + minValue);
-        sb.append(", max=" + maxValue);
-        sb.append(", sparsity=" + sparsity);
-        sb.append(", pdf=" + probabilityDensityFunction);
-        if (seed == -1)
+        sb.append(_id.getName() + " = Rand( ");
+        sb.append(  "rows=" + _rowsExpr.toString());
+        sb.append(", cols=" + _colsExpr.toString());
+        sb.append(", min="  + _minValueExpr.toString());
+        sb.append(", max="  + _maxValueExpr.toString());
+        sb.append(", sparsity=" + _sparsityExpr.toString());
+        sb.append(", pdf=" +      _pdfExpr.toString());
+        if (_seedExpr instanceof IntIdentifier && ((IntIdentifier)_seedExpr).getValue() == -1L)
         	sb.append(", seed=RANDOM");
         else
-        	sb.append(", seed=" + seed);
-        sb.append(");");
+        	sb.append(", seed=" + _seedExpr.toString());
+        sb.append(" );");
         return sb.toString();
     }
 }

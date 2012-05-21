@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -10,18 +9,17 @@ public class AssignmentStatement extends Statement{
 	
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
-	
-	// create a copy that has rewritten values for 
+	 
+	// rewrites statement to support function inlining (creates deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 				
-		DataIdentifier newTarget = new DataIdentifier(_targetList.get(0));
-		String newTargetName = prefix + _targetList.get(0).getName();
-		newTarget.setName(newTargetName);
+		// rewrite target (deep copy)
+		DataIdentifier newTarget = (DataIdentifier)_targetList.get(0).rewriteExpression(prefix);
 		
-		// rewrite source
+		// rewrite source (deep copy)
 		Expression newSource = _source.rewriteExpression(prefix);
 		
-		// rewrite targetList
+		// create rewritten assignment statement (deep copy)
 		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource);
 		
 		return retVal;
@@ -59,12 +57,25 @@ public class AssignmentStatement extends Statement{
 	}
 	
 	public VariableSet variablesRead() {
-		VariableSet result =  _source.variablesRead();
+		VariableSet result = new VariableSet();
+		
+		// add variables read by source expression
+		result.addVariables(_source.variablesRead());
+		
+		// for LHS IndexedIdentifier, add variables for indexing expressions
+		for (int i=0; i<_targetList.size(); i++){
+			if (_targetList.get(i) instanceof IndexedIdentifier) {
+				IndexedIdentifier target = (IndexedIdentifier) _targetList.get(i);
+				result.addVariables(target.variablesRead());
+			}
+		}		
 		return result;
 	}
 	
 	public  VariableSet variablesUpdated() {
 		VariableSet result =  new VariableSet();
+		
+		// add target to updated list
 		for (DataIdentifier target : _targetList)
 			result.addVariable(target.getName(), target);
 		return result;

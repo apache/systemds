@@ -74,13 +74,13 @@ public class WhileStatement extends Statement{
 	
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println("[W] should not call variablesRead from IfStatement ");
+		System.out.println("WARNING: should not call variablesRead from WhileStatement ");
 		return new VariableSet();
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println("[W] should not call variablesRead from IfStatement ");
+		System.out.println("WARNING: should not call variablesRead from WhileStatement ");
 		return new VariableSet();
 	}
 }

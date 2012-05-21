@@ -60,7 +60,7 @@ public class ImportStatement extends Statement{
 	 * setModulePathAndName: Set the package (i.e., directory path relative to 
 	 * package root directories specified in a dml-path statement.
 	 * 
-	 * @param pathPieces the individual pieces of the package path, such that when concatinated with 
+	 * @param pathPieces the individual pieces of the package path, such that when concatenated with 
 	 * a "/" will yield the correct entire 
 	 */
 	public void setModulePathAndName(ArrayList<String> pathPieces ){
@@ -107,7 +107,7 @@ public class ImportStatement extends Statement{
 	
 	/**
 	 * verify: verifies that the module actually exists and sets the complete 
-	 * path for the import statement (package root specified in dml-path concatinated 
+	 * path for the import statement (package root specified in dml-path concatenated 
 	 * with package path 
 	 *  
 	 * @param packagePaths specifies directories to search for DML packages
@@ -137,7 +137,7 @@ public class ImportStatement extends Statement{
 	} // end method
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("rewriteStatement not supported for ImportStatement");
+		throw new LanguageException("rewriting for inlining not supported for ImportStatement");
 	}
 		
 	public void initializeforwardLV(VariableSet activeIn){}

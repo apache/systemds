@@ -13,14 +13,14 @@ public class IndexedIdentifier extends DataIdentifier {
 	// stores whether row / col indices have same value (thus selecting either (1 X n) row-vector OR (n X 1) col-vector)
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
 	
-	public IndexedIdentifier(String name){
+	public IndexedIdentifier(String name, boolean passedRows, boolean passedCols){
 		super(name);
 		_rowLowerBound = null; 
    		_rowUpperBound = null; 
    		_colLowerBound = null; 
    		_colUpperBound = null;
-   		_rowLowerEqualsUpper = false;
-   		_colLowerEqualsUpper = false;
+   		_rowLowerEqualsUpper = passedRows;
+   		_colLowerEqualsUpper = passedCols;
 	}
 		
 	
@@ -66,16 +66,21 @@ public class IndexedIdentifier extends DataIdentifier {
 		this.setDimensions(updatedRowDim, updatedColDim);
 	}
 	
+	
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
-		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName());
+		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
+		
+		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);
 		
+		// set remaining properties (specific to DataIdentifier)
 		newIndexedIdentifier._kind = Kind.Data;
 		newIndexedIdentifier._name = prefix + this._name;
 		newIndexedIdentifier._valueTypeString = this.getValueType().toString();	
 		newIndexedIdentifier._defaultValue = this._defaultValue;
-		
+	
+		// creates rewritten expression (deep copy)
 		newIndexedIdentifier._rowLowerBound = (_rowLowerBound == null) ? null : _rowLowerBound.rewriteExpression(prefix);
 		newIndexedIdentifier._rowUpperBound = (_rowUpperBound == null) ? null : _rowUpperBound.rewriteExpression(prefix);
 		newIndexedIdentifier._colLowerBound = (_colLowerBound == null) ? null : _colLowerBound.rewriteExpression(prefix);
@@ -120,7 +125,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		else {
 			throw new ParseException("[E] col indices are length " + + colIndices.size() + " -- should be either 1 or 2");
 		}
-		System.out.println(this);
+		//System.out.println(this);
 	}
 	
 	public Expression getRowLowerBound(){ return this._rowLowerBound; }
@@ -177,10 +182,14 @@ public class IndexedIdentifier extends DataIdentifier {
 	}
 
 	@Override
+	// handles case when IndexedIdentifier is on RHS for assignment 
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
+		
+		// add variable being indexed to read set
 		result.addVariable(this.getName(), this);
 		
+		// add variables for indexing expressions
 		if (_rowLowerBound != null)
 			result.addVariables(_rowLowerBound.variablesRead());
 		if (_rowUpperBound != null)
@@ -193,4 +202,26 @@ public class IndexedIdentifier extends DataIdentifier {
 		return result;
 	}
 	
+	// handles case when IndexedIdentifier is on LHS for assignment 
+	//		(i.e., InputStatement, RandStatement, AssignmentStatement)
+	// 	the DataIdentifier variable being indexed is NOT read, but 
+	// 		the variables in indexing expressions are being read
+	/*
+	public VariableSet variablesRead_LHS_IndexedExpression(){
+
+		VariableSet result = new VariableSet();
+				
+		// add variables for indexing expressions
+		if (_rowLowerBound != null)
+			result.addVariables(_rowLowerBound.variablesRead());
+		if (_rowUpperBound != null)
+			result.addVariables(_rowUpperBound.variablesRead());
+		if (_colLowerBound != null)
+			result.addVariables(_colLowerBound.variablesRead());
+		if (_colUpperBound != null)
+			result.addVariables(_colUpperBound.variablesRead());
+		
+		return result;
+	}
+	*/
 }

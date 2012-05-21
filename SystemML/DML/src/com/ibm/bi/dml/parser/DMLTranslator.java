@@ -1623,7 +1623,14 @@ public class DMLTranslator {
 			if (current instanceof InputStatement) {
 				InputStatement is = (InputStatement) current;
 				DataIdentifier ds = is.getIdentifier();
-				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, is.getFilename(), ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
+				
+				// TODO: DRB: BEGIN RETROFIT /////////////////////////////////////////
+				String filenameString = is.getFilenameExpr().toString();
+				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, filenameString, ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
+				//DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, is.getFilename(), ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
+				
+				// TODO: DRB: END RETROFIT ////////////////////////////////////////////
+				
 				String formatName = is.getFormatName();
 				read.setFormatType(Expression.convertFormatType(formatName));
 				_ids.put(is.getIdentifier().getName(), read);
@@ -1641,7 +1648,14 @@ public class DMLTranslator {
 			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement) current;
 				String name = os.getIdentifier().getName();
-				DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, os.getFilename());
+				
+				// TODO: DRB: BEGIN RETROFIT FOR OUTPUTSTATEMENT ///////////////////
+				String filenameString = os.getFilenameExpr().toString();
+				DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, filenameString);
+				//DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, os.getFilename());
+				// TODO: DRB: END RETROFIT FOR OUPUTSTATEMENT //////////////////////
+				
+				
 				write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).get_rows_per_block(), _ids.get(name).get_cols_per_block());
 				String formatName = os.getFormatName();
 				write.setFormatType(Expression.convertFormatType(formatName));
@@ -1779,8 +1793,16 @@ public class DMLTranslator {
 			if (current instanceof RandStatement) {
 				RandStatement rs = (RandStatement) current;
 				DataIdentifier target = rs.getIdentifier();
-				Hops rand = new RandOp(target, rs.getMinValue(), rs.getMaxValue(), rs.getSparsity(), rs.getProbabilityDensityFunction());
-			
+				
+				// TODO: DRB: BEGIN RETROFIT FOR RAND ///////////////////////////////////// 
+				double randMinValue = new Double(rs.getMinValueExpr().toString());
+				double randMaxValue = new Double(rs.getMaxValueExpr().toString());
+				double randSparsityValue = new Double(rs.getSparsityExpr().toString());
+				String randPdfValue = rs.getPdfExpr().toString();
+				// TODO: DRB: END RETROFIT FOR RAND ///////////////////////////////////////
+				
+				Hops rand = new RandOp(target, randMinValue, randMaxValue, randSparsityValue, randPdfValue);
+				
 				setIdentifierParams(rand, target);
 				_ids.put(target.getName(), rand);
 				Integer statementId = liveOutToTemp.get(target.getName());

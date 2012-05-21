@@ -6,34 +6,34 @@ import com.ibm.bi.dml.utils.LanguageException;
 
  
 public class InputStatement extends IOStatement{
+	
+	// rewrites statement to support function inlining (creates deep copy)
+	public Statement rewriteStatement(String prefix) throws LanguageException {
 		
-	public Statement rewriteStatement(String prefix) throws LanguageException{
+		InputStatement newStatement = new InputStatement();
 		
-		InputStatement newStatement = new InputStatement(this);
-		String newIdName = prefix + this._id.getName();
-		newStatement.getId().setName(newIdName);
+		// rewrite target variable name (creates deep copy)
+		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
 		
-		for (String key : _varParams.keySet()){
-			String newName = prefix + _varParams.get(key);
-			_varParams.put(key, newName);
-		}
+		// rewrite Input filename expression (creates deep copy)
+		Expression newFilenameExpr = _filenameExpr.rewriteExpression(prefix);
+		newStatement.setFilenameExpr(newFilenameExpr);
 		
+		// rewrite InputStatement expr parameters (creates deep copies)
+		HashMap<String,Expression> newExprParams = new HashMap<String,Expression>();
+		for (String key : _exprParams.keySet()){
+			Expression newExpr = _exprParams.get(key).rewriteExpression(prefix);
+			newExprParams.put(key, newExpr);
+		}	
+		newStatement.setExprParams(newExprParams);
 		return newStatement;
 	}
 
 	public InputStatement(){
 		super();
 	}
-	
-	public InputStatement(InputStatement istmt){
-		_id           = istmt._id;
-		_filename     = istmt._filename;
-		_stringParams = istmt._stringParams;
-		_varParams   = istmt._varParams;
-	
-	}
-	
-	public InputStatement(DataIdentifier t, String fname){
+		
+	public InputStatement(DataIdentifier t, Expression fname){
 		super(t,fname);
 	}
 
@@ -42,35 +42,41 @@ public class InputStatement extends IOStatement{
 		return lo;
 	}
 
-	
-	public String toString(){
-		 StringBuffer sb = new StringBuffer();
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
 		 sb.append(_id.toString() + " = " + Statement.INPUTSTATEMENT + " ( " );
-		 sb.append("\""+_filename+"\"");
-		 for (String key : _stringParams.keySet()){
-			 sb.append("," + key + "=" + "\"" + _stringParams.get(key) + "\"");
+		 sb.append(_filenameExpr.toString());
+		 for (String key : _exprParams.keySet()){
+			 sb.append(", " + key + "=" + _exprParams.get(key).toString());
 		 }
-		 for (String key : _varParams.keySet()){
-			 sb.append("," + key + "=" + _varParams.get(key));
-		 }
-		 sb.append(");");
-		 return sb.toString();
-		
+		 sb.append(" );"); 
+		 return sb.toString(); 
 	}
 	
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		for (String key : _varParams.keySet()){
-			result.addVariable(_varParams.get(key), new DataIdentifier(_varParams.get(key))) ;
-		}
 		
+		// add variables read by filename expression
+		result.addVariables(_filenameExpr.variablesRead());
+		
+		// add variables read by parameter expressions
+		for (String key : _exprParams.keySet())	
+			result.addVariables(_exprParams.get(key).variablesRead()) ;
+		
+		// for LHS IndexedIdentifier, add variables for indexing expressions
+		if (_id instanceof IndexedIdentifier) {
+			IndexedIdentifier target = (IndexedIdentifier) _id;
+			result.addVariables(target.variablesRead());
+		}
 		return result;
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
+		
+		// add variable being populated by InputStatement
 		result.addVariable(_id.getName(),_id);
 	 	return result;
 	}

@@ -73,19 +73,19 @@ public abstract class Identifier extends Expression{
 		_dim1 = dim1;
 		_dim2 = dim2;
 	}
+	
 	public void setDimensions(InputStatement is){
 		
 		// check if 
-		if (is.getStringParam("rows") != null) 
-			_dim1 = new Long(is.getStringParam("rows"));
-		if (is.getStringParam("cols") != null) 
-			_dim2 = new Long(is.getStringParam("cols"));
+		if (is.getExprParam("rows") != null && is.getExprParam("rows") instanceof IntIdentifier) 
+			_dim1 = new Long(((IntIdentifier)is.getExprParam("rows")).getValue());
+		if (is.getExprParam("cols") != null && is.getExprParam("cols") instanceof IntIdentifier) 
+			_dim2 = new Long(((IntIdentifier)is.getExprParam("cols")).getValue());
 	}
-	
 	
 	public void setBlockDimensions(long dim1, long dim2){
 		 _rows_in_block = dim1;
-		_columns_in_block = dim2;
+		 _columns_in_block = dim2;
 	}
 	
 	public void setNnzs(long nnzs){
@@ -162,7 +162,7 @@ public abstract class Identifier extends Expression{
 		}
 	}
 	
-	public void computeDataType() throws ParseException{
+	public void computeDataType() {
 				
 		if ((_dim1 == 0) && (_dim2 == 0)) {
 			_dataType = DataType.SCALAR;

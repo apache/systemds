@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -10,24 +9,22 @@ public class MultiAssignmentStatement extends Statement{
 	
 	private ArrayList<DataIdentifier> _targetList;
 	private Expression _source;
-	
-	// create a copy that has rewritten values for 
+		
+	// rewrites statement to support function inlining (creates deep copy) 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 				
 		ArrayList<DataIdentifier> newTargetList = new ArrayList<DataIdentifier>();
 		
-		// rewrite targetList 
+		// rewrite targetList (deep copy)
 		for (DataIdentifier target : _targetList){
-			String newTargetName = prefix + target.getName();	
-			DataIdentifier newTarget = new DataIdentifier(target);
-			newTarget.setName(newTargetName);	
+			DataIdentifier newTarget = (DataIdentifier) target.rewriteExpression(prefix);
 			newTargetList.add(newTarget);
 		}
 		
-		// rewrite source
+		// rewrite source (deep copy)
 		Expression newSource = _source.rewriteExpression(prefix);
 		
-		// create rewritten assignment statement 
+		// create rewritten assignment statement (deep copy)
 		MultiAssignmentStatement retVal = new MultiAssignmentStatement(newTargetList, newSource);
 		
 		return retVal;
@@ -38,8 +35,9 @@ public class MultiAssignmentStatement extends Statement{
 		_source = s;
 	}
 	
+	// NOTE: f is not used -- however, error is thrown "methods have same erasure" if not included in signature
 	public MultiAssignmentStatement(ArrayList<ArrayList<Expression>> exprListList, Expression s, int f){
-		// f is not used -- however, error is thrown "methods have same erasure" is not included
+		
 		_source = s;
 		
 		_targetList = new ArrayList<DataIdentifier>();
@@ -69,12 +67,27 @@ public class MultiAssignmentStatement extends Statement{
 	}
 	
 	public VariableSet variablesRead() {
-		VariableSet result = _source.variablesRead();
+		VariableSet result = new VariableSet();
+		
+		// add variables read by source expression
+		result.addVariables(_source.variablesRead());
+		
+		// for any IndexedIdentifier on LHS, add variables for indexing expressions
+		for (int i=0; i<_targetList.size(); i++){
+			if (_targetList.get(i) instanceof IndexedIdentifier) {
+				IndexedIdentifier target = (IndexedIdentifier) _targetList.get(i);
+				result.addVariables(target.variablesRead());
+			}
+		}
+			
 		return result;
 	}
 	
 	public  VariableSet variablesUpdated() {
+	
 		VariableSet result =  new VariableSet();
+		
+		// add target to updated list
 		for (DataIdentifier target : _targetList){
 			result.addVariable(target.getName(), target);
 		}

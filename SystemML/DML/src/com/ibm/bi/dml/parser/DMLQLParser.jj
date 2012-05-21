@@ -345,23 +345,23 @@ DMLProgram __inputInternal() :
 {
  (
   (
-     current = PathStatement() 
-   | current = ImportStatement()
-    | LOOKAHEAD(RandStatement()) current = RandStatement()
-   | LOOKAHEAD(3) current = AssignmentStatement() 
-   | LOOKAHEAD(3) current = MultiAssignmentStatement()
-   | LOOKAHEAD(3) current = InputStatement() 
-   | LOOKAHEAD(3) current = FunctionStatement()
-   | LOOKAHEAD(3) current = ExternalFunctionStatement()
-   | current = OutputStatement()
-   | current = PrintStatement()
-   | current = WhileStatement()
-   | current = ForStatement()
-   | current = ParForStatement()
-   | current = IfStatement()
-  // | current = CVStatement()
-  // | current = ELStatement()
-  // | current = ELUseStatement() 
+     LOOKAHEAD(PathStatement())					current = PathStatement() 
+   | LOOKAHEAD(ImportStatement())				current = ImportStatement()
+   | LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
   ){
    StatementBlock sb = null;
    if (current instanceof WhileStatement) {
@@ -555,21 +555,22 @@ FunctionStatement FunctionStatement() :
   <LEFTCURLYPAREN>
  (
   (
-    LOOKAHEAD(RandStatement()) current = RandStatement()
-   | LOOKAHEAD(3) current = AssignmentStatement()
-    | LOOKAHEAD(3) current = MultiAssignmentStatement()
-   | LOOKAHEAD(3) current = InputStatement() 
-   | LOOKAHEAD(3) current = FunctionStatement()
-   | current = OutputStatement()
-   | current = PrintStatement()
-   | current = WhileStatement()
-   | current = ForStatement()
-   | current = ParForStatement()
-   | current = IfStatement()
-  // | current = CVStatement()
-  // | current = ELStatement()
-  // | current = ELUseStatement()
-   
+  
+    LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
   ){
    StatementBlock sb = null;
    if (current instanceof WhileStatement) {
@@ -596,6 +597,10 @@ FunctionStatement FunctionStatement() :
    else if (current instanceof FunctionStatement) {
     throw new ParseException(" Nested function definitions are not supported ");
    }
+	else if (current instanceof ExternalFunctionStatement) {
+    	throw new ParseException(" Nested function definitions are not supported ");
+   }
+   
    else {
     sb = new StatementBlock();
    }
@@ -860,20 +865,22 @@ IfStatement IfStatement() :
  <IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
 
  <LEFTCURLYPAREN>
-   ( ( LOOKAHEAD(3) current = AssignmentStatement()
-   |  current = MultiAssignmentStatement()
-   |  LOOKAHEAD(3) current = InputStatement() 
-   |  current = OutputStatement()
-   |  current = PrintStatement()
-   |  LOOKAHEAD(2) current = WhileStatement()
-   |  current = ForStatement()
-   |  current = ParForStatement()
-   |  current = IfStatement()
-   |  LOOKAHEAD(RandStatement()) current = RandStatement()
-  // |  current = CVStatement()
-  // |  current = ELStatement()
-  // |  current = ELUseStatement()
-   
+ ( (  LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+
    ){
     StatementBlock sb = null;
     if (current instanceof WhileStatement) {
@@ -888,6 +895,12 @@ IfStatement IfStatement() :
     else if (current instanceof ForStatement) {
      sb = new ForStatementBlock();
     }
+     else if (current instanceof FunctionStatement) {
+    	throw new ParseException(" Nested function definitions are not supported ");
+  	}
+  	else if (current instanceof ExternalFunctionStatement) {
+  		throw new ParseException(" Nested function definitions are not supported ");
+  	}
     //else if (current instanceof CVStatement) {
     // sb = new CVStatementBlock() ;
     //}
@@ -912,19 +925,21 @@ IfStatement IfStatement() :
 
  (LOOKAHEAD(1) <ELSE>
   <LEFTCURLYPAREN>
-   ( ( LOOKAHEAD(3) current = AssignmentStatement()
-      |  current = MultiAssignmentStatement()    
-   | LOOKAHEAD(3) current = InputStatement() 
-   |  current = OutputStatement()
-   |  current = PrintStatement()
-   |  LOOKAHEAD(2) current = WhileStatement()
-   |  current = ForStatement()
-   |  current = ParForStatement()
-   |  current = IfStatement()
-   | LOOKAHEAD(RandStatement()) current = RandStatement()
-  // |  current = CVStatement()
-  // |  current = ELStatement()
-  // |  current = ELUseStatement()
+   ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
    
    ){
     StatementBlock sb = null;
@@ -940,6 +955,12 @@ IfStatement IfStatement() :
     else if (current instanceof ForStatement) {
      sb = new ForStatementBlock();
     }
+	else if (current instanceof FunctionStatement) {
+    	throw new ParseException(" Nested function definitions are not supported ");
+  	}
+  	else if (current instanceof ExternalFunctionStatement) {
+  		throw new ParseException(" Nested function definitions are not supported ");
+  	}
     //else if (current instanceof CVStatement) {
     // sb = new CVStatementBlock() ;
     //}
@@ -977,19 +998,21 @@ ForStatement ForStatement() :
  
   <FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
   <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(3) current = AssignmentStatement()
-  |  current = MultiAssignmentStatement()  
-  | LOOKAHEAD(3) current = InputStatement() 
-  |  current = OutputStatement()
-  |  current = PrintStatement()
-  |  LOOKAHEAD(2) current = WhileStatement()
-  |  current = ForStatement()
-  |  current = ParForStatement()
-  |  current = IfStatement()
-  | LOOKAHEAD(RandStatement()) current = RandStatement()
- // |  current = CVStatement()
- // |  current = ELStatement()
- // |  current = ELUseStatement()
+  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
  ){
   StatementBlock sb = null;
@@ -1004,6 +1027,12 @@ ForStatement ForStatement() :
   } 
   else if (current instanceof ForStatement) {
    sb = new ForStatementBlock();
+  }
+  else if (current instanceof FunctionStatement) {
+    throw new ParseException(" Nested function definitions are not supported ");
+  }
+  else if (current instanceof ExternalFunctionStatement) {
+  	throw new ParseException(" Nested function definitions are not supported ");
   }
   //else if (current instanceof CVStatement) {
   // sb = new CVStatementBlock() ;
@@ -1040,19 +1069,21 @@ ParForStatement ParForStatement() :
  
   <PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
   <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(3) current = AssignmentStatement()
-  |  current = MultiAssignmentStatement()  
-  | LOOKAHEAD(3) current = InputStatement() 
-  |  current = OutputStatement()
-  |  current = PrintStatement()
-  |  LOOKAHEAD(2) current = WhileStatement()
-  |  current = ForStatement()
-  |  current = ParForStatement()
-  |  current = IfStatement()
-  | LOOKAHEAD(RandStatement()) current = RandStatement()
- // |  current = CVStatement()
- // |  current = ELStatement()
- // |  current = ELUseStatement()
+  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement())	 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
  ){
   StatementBlock sb = null;
@@ -1068,7 +1099,12 @@ ParForStatement ParForStatement() :
   else if (current instanceof ForStatement) {
    sb = new ForStatementBlock();
   }
-  
+   else if (current instanceof FunctionStatement) {
+    throw new ParseException(" Nested function definitions are not supported ");
+  }
+  else if (current instanceof ExternalFunctionStatement) {
+  	throw new ParseException(" Nested function definitions are not supported ");
+  }
   //else if (current instanceof CVStatement) {
   // sb = new CVStatementBlock() ;
   //}
@@ -1104,19 +1140,21 @@ WhileStatement WhileStatement() :
 {
   <WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
   <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(3) current = AssignmentStatement()
-  |  LOOKAHEAD(3) current = MultiAssignmentStatement()     
-  | LOOKAHEAD(3) current = InputStatement() 
-  |  current = OutputStatement()
-  |  current = PrintStatement()
-  |  LOOKAHEAD(2) current = WhileStatement()
-  |  current = ForStatement()
-  |  current = ParForStatement()
-  |  current = IfStatement()
-  | LOOKAHEAD(RandStatement()) current = RandStatement()
- // |  current = CVStatement()
- // |  current = ELStatement()
- // |  current = ELUseStatement()
+  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   | LOOKAHEAD(ForStatement())					current = ForStatement()
+   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   | LOOKAHEAD(IfStatement())					current = IfStatement()
+// | LOOKAHEAD(CVStatement())					current = CVStatement()
+// | LOOKAHEAD(ELStatement())					current = ELStatement()
+// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
  ){
   StatementBlock sb = null;
@@ -1131,6 +1169,12 @@ WhileStatement WhileStatement() :
   }
   else if (current instanceof ForStatement) {
    sb = new ForStatementBlock();
+  }
+  else if (current instanceof FunctionStatement) {
+    throw new ParseException(" Nested function definitions are not supported ");
+  }
+  else if (current instanceof ExternalFunctionStatement) {
+  	throw new ParseException(" Nested function definitions are not supported ");
   }
   //else if (current instanceof CVStatement) {
   // sb = new CVStatementBlock() ;
@@ -1440,7 +1484,7 @@ Identifier IdentifierOrConstant() :
 				  String argVal = commandArgs.get(t1.image);
 		
 					if (argVal == null)
-						System.out.println("ERROR: value for " + t1.image + " is undefined ");
+						throw new ParseException("ERROR: value for " + t1.image + " is undefined ");
 										
 					try {
 					  	// try to assign to long value
@@ -1626,8 +1670,8 @@ DataIdentifier Identifier() :
 		    	functCall.setFunctionName(t.image);
 		   		return functCall;
 		  } else if (exprListList != null){
-				IndexedIdentifier iid = new IndexedIdentifier(id.getName());
-				iid.setIndices(exprListList);
+				IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
+				iid.setIndices(exprListList);			
 		   		return iid;
 		  } else{
 		   		return id; 
@@ -1760,7 +1804,9 @@ Expression BuiltInFunction():
 InputStatement InputStatement() :
 {
   DataIdentifier id = null;
-  InputStatement is = null;
+  InputStatement is = new InputStatement();
+  Token t1 = null;
+  Expression t2 = null;
 }
 {
   id = Identifier()
@@ -1769,7 +1815,12 @@ InputStatement InputStatement() :
     throw new ParseException("command-line parameters (e.g. $1) do not support assignment");
   }
   <ASSIGN> <READMATRIX>
-  is = ReadInputStatementParamList() [<SEMICOLON>]
+    		<LEFTPAREN>
+   			
+			 t2 = Expression(){is.setFilenameExpr(t2);} 
+   			(< COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2);}))*
+
+		<RIGHTPAREN> [<SEMICOLON>]
  {
   is.setIdentifier(id);
   id.setDimensions(is);
@@ -1778,157 +1829,24 @@ InputStatement InputStatement() :
  }
 }
 
-InputStatement ReadInputStatementParamList() :
-{ 	InputStatement is = new InputStatement();
-	Token t1 = null;
-	Token t2 = null;
-	DataIdentifier t3 = null;
-	Token t4 = null;
-	IntIdentifier intid = null;
-	DoubleIdentifier doubleid = null;
-} 
-
-
-{ <LEFTPAREN> 
-	 (
-	   t1 = <DBLQUOTE_STRING_LITERAL>  {is.setFileName(dequoteStr('\"',t1.image));}
-	 	| t2 = <ID>
-		| t4 = <DOLLAR_ID>
-	 	{			  
-			String argVal = commandArgs.get(t4.image);
-			if (argVal == null)
-				System.out.println("ERROR: value for " + t4.image + " is undefined ");	
-			is.setFileName(argVal);
-			
-	 	}  
-	 )
-	 ( <COMMA> t1 = <ID> <ASSIGN> 
-		(
-			  LOOKAHEAD(2) intid = IntConstant() { is.addStringParam(t1.image, intid.toString()); }
-				| doubleid = DoubleConstant() { is.addStringParam(t1.image, doubleid.toString()); }
-				| t2 = <DBLQUOTE_STRING_LITERAL> { is.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier() { is.addVarParam(t1.image, t3.getName()); }
-				| t4 = <DOLLAR_ID> 
-
-					///////// BEGIN handle variable param ///////////////
-					{
-						String argVal = commandArgs.get(t4.image);
-						if (argVal == null)
-							System.out.println("ERROR: value for " + t4.image + " is undefined ");
-			
-						try {
-							Long longVal = new Long(argVal);
-							is.addStringParam(t1.image, longVal.toString()); 
-							
-						} catch(Exception e1){
-						  	try {
-						  	  Double doubleVal = new Double(argVal);
-						  	  is.addStringParam(t1.image, doubleVal.toString());
-						  	  
-						  	} catch (Exception e2) {
-								
-								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-									Boolean boolVal = new Boolean(argVal);
-						  	  		is.addStringParam(t1.image, argVal.toString());
-								}
-								else {
-									is.addStringParam(t1.image, argVal);
-								}	
-	
-						  	} // end catch e2
-						  						  	 
-						} // end catch e1
-							
-					} 
-				  	///////// END handle variable param ///////////////
-				  	
-		)
-	 )*
-	  <RIGHTPAREN> 
-	  {return is;}
-}
 
 OutputStatement OutputStatement() :
 {
 	 DataIdentifier fn = null;
-	 Token t1 = null, t2 = null;
-	 DataIdentifier t3 = null;
-	 Token t4 = null;
-	 OutputStatement os;
-	 IntIdentifier intid = null;
-	 DoubleIdentifier doubleid = null;
+	 Token t1 = null;
+	 Expression t2 = null;
+	 OutputStatement os = null;
+	
 }
 {
-	    <WRITEMATRIX> <LEFTPAREN>
-
-	     // name of variable to be written out 
-	     fn = Identifier()
-	     {
-	     	os = new OutputStatement(fn, null);
-	     }
-
-	     <COMMA>
- 		(
-		  	t1 = <DBLQUOTE_STRING_LITERAL>  {os.setFileName(dequoteStr('\"',t1));}
-		  		| t3 = Identifier(){throw new ParseException("ERROR: cannot specify variable for output filename");}
-				| t4 = <DOLLAR_ID>
-			  		///////// BEGIN handle variable param ///////////////
-					{
-						String argVal = commandArgs.get(t4.image);
-						if (argVal == null)
-							System.out.println("ERROR: value for " + t4.image + " is undefined ");
-						os.setFileName(argVal);
-						
-					}
-		  			///////// END handle variable param ///////////////
-		)
-	     
-		(<COMMA> t1 = <ID> <ASSIGN>
-
-			(
-			  LOOKAHEAD(2) intid = IntConstant() { os.addStringParam(t1.image, intid.toString()); }
-				| doubleid = DoubleConstant() { os.addStringParam(t1.image, doubleid.toString()); }
-				| t2 = <DBLQUOTE_STRING_LITERAL> { os.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier() {os.addVarParam(t1.image, t3.getName());}
-				| t4 = <DOLLAR_ID>
-				
-					///////// BEGIN handle variable param ///////////////
-					{
-		
-						String argVal = commandArgs.get(t4.image);
-						if (argVal == null)
-							System.out.println("ERROR: Variable " + t4.image + " is undefined ");
-						  
-						try {
-							Long longVal = new Long(argVal);
-							os.addStringParam(t1.image, longVal.toString()); 
-							
-						} catch(Exception e1){
-						  	try {
-						  	  Double doubleVal = new Double(argVal);
-						  	  os.addStringParam(t1.image, doubleVal.toString());
-						  	  
-						  	} catch (Exception e2) {
-								
-								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-									Boolean boolVal = new Boolean(argVal);
-						  	  		os.addStringParam(t1.image, argVal.toString());
-								}
-								else {
-									os.addStringParam(t1.image, argVal);
-								}	
+	    <WRITEMATRIX>
+	    	<LEFTPAREN>
+	    		fn = Identifier() { os = new OutputStatement(fn, null); } <COMMA>
+	    		t2 = Expression() { os.setFilenameExpr(t2); }
+	     		( < COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {os.addExprParam(t1.image, t2);}) )*
 	
-						  	} // end catch e2
-						  						  	 
-						} // end catch e1
-							
-					} 
-				  	///////// END handle variable param ///////////////
-				
-		)
-	)*
-	<RIGHTPAREN>  [<SEMICOLON>]
-	{return os;}
+			<RIGHTPAREN>  [<SEMICOLON>]
+	{ return os; }
 }
 
 
@@ -1951,14 +1869,10 @@ void RelationalOp() : {}
 
 RandStatement RandStatement() :
 {
-	RandStatement rs;
-	DataIdentifier id;
-	Token t1;
-	Token t2;
-	IntIdentifier intid = null;
-	DoubleIdentifier doubleid = null;
-	DataIdentifier t3;
-	Token t4 = null;
+	RandStatement rs = null;
+	DataIdentifier id = null;
+	Token t1 = null;
+	Expression t2 = null;
 }
 {
 	id = Identifier() <ASSIGN> <RAND> <LEFTPAREN>
@@ -1966,85 +1880,11 @@ RandStatement RandStatement() :
 		rs = new RandStatement(id);
 	}
 	(
-		( t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN>
-
-		(
-			  LOOKAHEAD(2) intid = IntConstant() { rs.addLongParam(t1.image, intid.getValue()); }
-			| doubleid = DoubleConstant() { rs.addDoubleParam(t1.image, doubleid.getValue()); }
-			| t2 = <DBLQUOTE_STRING_LITERAL> { rs.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-			| t3 = Identifier()  { rs.addVarParam(t1.image, t3); }
-			| t4 = <DOLLAR_ID> 
-				///////// BEGIN handle variable param ///////////////
-				{
-					String argVal = commandArgs.get(t4.image);
-					if (argVal == null)
-						System.out.println("ERROR: Value of " + t4.image + " is undefined ");
-			
-					try {
-						Long longVal = new Long(argVal);
-						rs.addLongParam(t1.image, longVal.longValue()); 
-						
-					} catch(Exception e1){
-					  	try {
-					  	  Double doubleVal = new Double(argVal);
-					  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
-					  	  
-					  	} catch (Exception e2) {
-							
-							if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-								Boolean boolVal = new Boolean(argVal);
-					  	  		rs.addStringParam(t1.image, argVal);
-							}
-							else {
-								rs.addStringParam(t1.image, argVal);
-							}
-					  	} // end catch e2		  	 
-					} // end catch e1		
-				}
-			  	///////// END handle variable param ///////////////
-		)
-		(
-			<COMMA> (t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN>
-			(
-				LOOKAHEAD(2)  intid = IntConstant() { rs.addLongParam(t1.image, intid.getValue()); }
-				| doubleid = DoubleConstant() { rs.addDoubleParam(t1.image, doubleid.getValue()); }
-				| t2 = <DBLQUOTE_STRING_LITERAL> { rs.addStringParam(t1.image, dequoteStr('\"', t2.image)); }
-				| t3 = Identifier() {rs.addVarParam(t1.image, t3);}
-				| t4 = <DOLLAR_ID>
-				
-					///////// BEGIN handle variable param ///////////////
-					{
-
-						String argVal = commandArgs.get(t4.image);
-						if (argVal == null)
-							System.out.println("ERROR: Value of " + t4.image + " is undefined ");
-													
-						try {
-							Long longVal = new Long(argVal);
-							rs.addLongParam(t1.image, longVal.longValue()); 
-						} catch(Exception e1){
-						  	try {
-						  	  Double doubleVal = new Double(argVal);
-						  	  rs.addDoubleParam(t1.image, doubleVal.doubleValue());
-						  	} catch (Exception e2) {
-								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-									Boolean boolVal = new Boolean(argVal);
-						  	  		rs.addStringParam(t1.image, argVal);
-								}
-								else {
-									rs.addStringParam(t1.image, argVal);
-								}
-						  	} // end catch e2	  						  	 
-						} // end catch e1								
-				  	}
-				  	///////// END handle variable param ///////////////
-			)
-		)*
-	)?
+		( t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); }
+		( <COMMA> (t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); })*
+	)
 	<RIGHTPAREN> [<SEMICOLON>]
 	{
-		rs.validateFunctionCall();
-		rs.setIdentifierProperties();
 		return rs;
 	}
 }

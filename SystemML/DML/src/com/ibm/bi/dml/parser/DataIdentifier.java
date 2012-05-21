@@ -4,7 +4,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 public class DataIdentifier extends Identifier {
 
-	protected String _name;
+	protected String 	_name;
 	protected String 	_valueTypeString;	
 	protected String 	_defaultValue;
 	

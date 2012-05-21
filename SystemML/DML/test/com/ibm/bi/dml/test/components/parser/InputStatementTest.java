@@ -1,94 +1,78 @@
-package com.ibm.bi.dml.test.components.parser;
-
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.HashMap;
-
-import org.junit.Test;
-
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.InputStatement;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LanguageException;
-
-
-public class InputStatementTest {
-
-    @Test
-    public void testVariablesRead() {
-        DataIdentifier target = new DataIdentifier("target");
-        InputStatement isToTest = new InputStatement(target, "filename");
-        
-        HashMap<String, DataIdentifier> variablesRead = isToTest.variablesRead().getVariables();
-        
-        assertEquals(0, variablesRead.size());
-    }
-
-    @Test
-    public void testVariablesUpdated() {
-        DataIdentifier target = new DataIdentifier("target");
-        InputStatement isToTest = new InputStatement(target, "filename");
-        
-        HashMap<String, DataIdentifier> variablesUpdated = isToTest.variablesUpdated().getVariables();
-        
-        assertEquals(1, variablesUpdated.size());
-        assertTrue("target is missing", variablesUpdated.containsKey("target"));
-        assertEquals(target, variablesUpdated.get("target"));
-    }
-
-    @Test
-    public void testProcessParams() throws LanguageException, IOException {
-        DataIdentifier target = new DataIdentifier("target");
-        InputStatement isToTest = new InputStatement(target, "filename");
-        
-        isToTest.addStringParam("rows", "100");
-        isToTest.addStringParam("cols", "101");
-        
-        
-        isToTest.addStringParam("rows_in_block", "102");
-        isToTest.addStringParam("columns_in_block", "103");
-        isToTest.addStringParam("value_type", "double");
-        
-        isToTest.processParams(false);
-        assertEquals(100, isToTest.getIdentifier().getDim1());
-        assertEquals(101, isToTest.getIdentifier().getDim2());
-        assertEquals(-1, isToTest.getIdentifier().getRowsInBlock());
-        assertEquals(-1, isToTest.getIdentifier().getColumnsInBlock());
-        assertEquals(ValueType.DOUBLE, isToTest.getIdentifier().getValueType());
-        
-        isToTest.addStringParam("value_type", "string");
-        isToTest.processParams(false);
-        assertEquals(ValueType.STRING, isToTest.getIdentifier().getValueType());
-        
-        isToTest.addStringParam("value_type", "int");
-        isToTest.processParams(false);
-        assertEquals(ValueType.INT, isToTest.getIdentifier().getValueType());
-        
-        isToTest.addStringParam("value_type", "other");
-        try {
-        	isToTest.processParams(false);
-        	assertEquals(ValueType.UNKNOWN, isToTest.getIdentifier().getValueType());
-        } catch (LanguageException e) {}
-        	
-
-        target = new DataIdentifier("target");
-        isToTest = new InputStatement(target, "filename");
-        isToTest.addStringParam("rows", "104");
-        isToTest.addStringParam("cols", "105");
-        isToTest.processParams(false);
-        assertEquals(104, isToTest.getIdentifier().getDim1());
-        assertEquals(105, isToTest.getIdentifier().getDim2());
-
-        target = new DataIdentifier("target");
-        isToTest = new InputStatement(target, "filename");
-        isToTest.addStringParam("cols", "105");
-        try {
-        	isToTest.processParams(false);
-        } catch (LanguageException e){}
-        assertEquals(-1, isToTest.getIdentifier().getDim1());
-        assertEquals(-1, isToTest.getIdentifier().getDim2());
-
-    }
-
-}
+//package com.ibm.bi.dml.test.components.parser;
+//
+//import java.util.HashMap;
+//
+//import org.junit.Test;
+//
+//import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+//import com.ibm.bi.dml.test.integration.AutomatedTestBase;
+//import com.ibm.bi.dml.test.integration.TestConfiguration;
+//import com.ibm.bi.dml.test.utils.TestUtils;
+//
+//
+//public class InputStatementTest extends AutomatedTestBase {
+//
+//	private final static String TEST_DIR = "functions/InputOutput/";
+//	private final static String TEST_IO = "IOTestScipt";
+//
+//	@Override
+//	public void setUp() {
+//		//addTestConfiguration(TEST_IO, new TestConfiguration(TEST_DIR, TEST_IO, new String[] { "w", "h" }));
+//	}
+//	
+//	@Test
+//	public void testIO() {
+//	
+//		//TestConfiguration config = getTestConfiguration(TEST_GNMF);
+//		
+//		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+//		String IO_HOME = SCRIPT_DIR + TEST_DIR;
+//		
+//		/*
+//		# $1 = "./test/scripts/functions/InputOutput/in/A.mtx"
+//		# $2 = "./test/scripts/functions/InputOutput/in/B.mtx"
+//		# $3 = 2
+//		# $4 = 2
+//		# $5 = "./test/scripts/functions/InputOutput/out/Aout-text.mtx"
+//		# $6 = "./test/scripts/functions/InputOutput/out/Aout-binary.mtx" 
+//		*/
+//		dmlArgs = new String[]{"-f", IO_HOME + TEST_IO + "1.dml",
+//				               "-args", IO_HOME + INPUT_DIR + "A.mtx", 
+//				                        IO_HOME + INPUT_DIR + "B.mtx", 
+//				                        "2",
+//				                        "2",
+//				                        IO_HOME + OUTPUT_DIR + "Aout-text.mtx", 
+//				                        IO_HOME + OUTPUT_DIR + "Aout-binary.mtx"};
+//		
+//		dmlArgsDebug = new String[]{"-f", GNMF_HOME + TEST_IO + "1.dml", "-d",
+//	                                "-args", GNMF_HOME + INPUT_DIR + "v", 
+//	                                         GNMF_HOME + INPUT_DIR + "w", 
+//	                                         GNMF_HOME + INPUT_DIR + "h", 
+//	                                         Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
+//	                                         GNMF_HOME + OUTPUT_DIR + "w", 
+//	                                         GNMF_HOME + OUTPUT_DIR + "h"};
+//		
+//		
+//		boolean exceptionExpected = false;
+//		int expectedNumberOfJobs = -1;
+//		
+//		/* GNMF must be run in the new way as GNMF.dml will be shipped */
+//		runTest(true, exceptionExpected, null, -1); 
+//		
+//		//runRScript(true);
+//		disableOutAndExpectedDeletion();
+//
+//		/*
+//		HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
+//		HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
+//		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
+//		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
+//		HashMap<CellIndex, Double> hmWJava = TestUtils.convert2DDoubleArrayToHashMap(w);
+//		HashMap<CellIndex, Double> hmHJava = TestUtils.convert2DDoubleArrayToHashMap(h);
+//
+//		TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
+//		TestUtils.compareMatrices(hmWDML, hmWJava, 0.000001, "hmWDML", "hmWJava");
+//		TestUtils.compareMatrices(hmWR, hmWJava, 0.000001, "hmRDML", "hmWJava");
+//		*/
+//	}
+//}

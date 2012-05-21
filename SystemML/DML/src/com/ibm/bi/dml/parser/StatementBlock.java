@@ -250,8 +250,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		if (currentBlock != null) {
 			result.add(currentBlock);
 		}
-		return result;
-		
+		return result;		
 	}
 	
 	public String toString(){
@@ -447,26 +446,37 @@ public class StatementBlock extends LiveVariableAnalysis{
 		currConstVars.putAll(constVars);
 			
 		_statements = rewriteFunctionCallStatements(dmlProg, _statements);
-		
 		this._dmlProg = dmlProg;
+		
 		for (Statement current : _statements){
+			
 			if (current instanceof InputStatement){
-				InputStatement is = (InputStatement)current;	
+				InputStatement is = (InputStatement)current;		
 				is.processParams(false);
+						
+				// use existing size and properties information for LHS IndexedIdentifier
+				if (is.getIdentifier() instanceof IndexedIdentifier){
+					DataIdentifier targetAsSeen = ids.getVariable(is.getIdentifier().getName());
+					if (targetAsSeen == null)
+						throw new LanguageException("ERROR: cannot assign value to indexed identifier " + is.getIdentifier().toString() + " without initializing " + is.getIdentifier().getName());
+					is.getIdentifier().setProperties(targetAsSeen);
+				}
+				
 				ids.addVariable(is.getIdentifier().getName(),is.getIdentifier());
 			}
 			
 			else if (current instanceof OutputStatement){
 				OutputStatement os = (OutputStatement)current;
 				
-				// Throw exception for non Data Identifier
+				// validate variable being written by output statement exists
 				DataIdentifier id = (DataIdentifier)os.getIdentifier();
-				if (ids.getVariable(id.getName()) == null){
+				if (ids.getVariable(id.getName()) == null)
 					throwUndefinedVar ( id.getName(), os.toString() );
-				}
-				if ( ids.getVariable(id.getName()).getDataType() == DataType.SCALAR && !os._stringParams.isEmpty() ) {
+				
+				if ( ids.getVariable(id.getName()).getDataType() == DataType.SCALAR && !os._exprParams.isEmpty() ) {
 					throw new LanguageException("Invalid parameters in write statement: " + os.toString());
 				}
+				
 				os.processParams(true);
 				id.setDimensionValueProperties(ids.getVariable(id.getName()));
 			}
@@ -483,7 +493,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				
 				// Handle const vars: Basic Constant propagation 
 				currConstVars.remove(target.getName());
-				if (source instanceof ConstIdentifier){
+				if (source instanceof ConstIdentifier && !(target instanceof IndexedIdentifier)){
 					currConstVars.put(target.getName(), (ConstIdentifier)source);
 				}
 			
@@ -506,8 +516,15 @@ public class StatementBlock extends LiveVariableAnalysis{
 					}
 				}
 				
-		
-				target.setProperties(source.getOutput());
+				if (!(target instanceof IndexedIdentifier)){
+					target.setProperties(source.getOutput());
+				}
+				else{
+					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+					if (targetAsSeen == null)
+						throw new LanguageException("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+					target.setProperties(targetAsSeen);
+				}
 				ids.addVariable(target.getName(), target);
 				
 			}
@@ -516,8 +533,8 @@ public class StatementBlock extends LiveVariableAnalysis{
 				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 				ArrayList<DataIdentifier> targetList = mas.getTargetList(); 
 				
+				// perform validation of source expression
 				Expression source = mas.getSource();
-		
 				if (!(source instanceof FunctionCallIdentifier)){
 					throw new LanguageException("can only use user-defined functions with multi-assignment statement");
 				}
@@ -533,7 +550,16 @@ public class StatementBlock extends LiveVariableAnalysis{
 					DataIdentifier target = targetList.get(j);
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
 					FunctionStatement fstmt = (FunctionStatement)_dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-					target.setProperties(fstmt.getOutputParams().get(j));
+					if (!(target instanceof IndexedIdentifier)){
+						target.setProperties(fstmt.getOutputParams().get(j));
+					}
+					else{
+						DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+						if (targetAsSeen == null)
+							throw new LanguageException("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+						target.setProperties(targetAsSeen);
+					}
+					
 					ids.addVariable(target.getName(), target);
 				}
 					
@@ -542,17 +568,17 @@ public class StatementBlock extends LiveVariableAnalysis{
 			else if(current instanceof RandStatement)
 			{
 				RandStatement rs = (RandStatement) current;
+				
+				// perform constant propagation by replacing exprParams which are DataIdentifier (but NOT IndexedIdentifier) variables with constant values. 
+				// Also perform "best-effort" validation of parameter values (i.e., for parameter values which are constant expressions) 
+				rs.performConstantPropagation(currConstVars);
+								
+				// update properties of RandStatement target identifier
+				rs.setIdentifierProperties();
+				
+				// add RandStatement target to available variables list
 				ids.addVariable(rs.getIdentifier().getName(), rs.getIdentifier());
-				// Basic Constant propagation
-				String[] varsInRand = rs.getRequiredVariables();
-				if (varsInRand != null) {
-					 try {
-						rs.updateVariables(currConstVars);
-					} catch (ParseException e) {
-						
-						e.printStackTrace();
-					}
-				}
+				
 			}
 				
 			else if(current instanceof CVStatement || current instanceof ELStatement || 

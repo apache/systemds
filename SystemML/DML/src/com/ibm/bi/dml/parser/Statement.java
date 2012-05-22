@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.HashMap;
-
 import com.ibm.bi.dml.utils.LanguageException;
 
 
@@ -15,8 +13,8 @@ public abstract class Statement {
 	public static final String READCOLPARAM = "cols";
 	public static final String READNUMNONZEROPARAM = "nnzs";
 	public static final String FORMAT_TYPE = "format";
-	public static final String ROWBLOCKCOUNTPARAM = "rows_per_block";
-	public static final String COLUMNBLOCKCOUNTPARAM = "cols_per_block";
+	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
+	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
 	public static final String DATATYPEPARAM = "data_type";
 	public static final String VALUETYPEPARAM = "value_type";
 	

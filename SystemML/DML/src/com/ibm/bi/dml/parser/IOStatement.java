@@ -64,7 +64,10 @@ public abstract class IOStatement extends Statement{
 	public void addExprParam(String name, Expression value) throws ParseException
 	{
 		if (_exprParams.get(name) != null)
-			throw new ParseException("ERROR: attempted to add InputStatement parameter " + name + " more than once");
+			throw new ParseException("ERROR: attempted to add IOStatement parameter " + name + " more than once");
+		if (this instanceof InputStatement && !InputStatement.isValidParamName(name))
+			throw new ParseException("ERROR: attempted to add invalid InputStatmement parameter " + name);
+			
 		_exprParams.put(name, value);
 	}
 	
@@ -109,6 +112,9 @@ public abstract class IOStatement extends Statement{
 				
 				for (Object key : configObject.keySet()){
 					
+					if (!InputStatement.isValidParamName(key.toString()))
+						throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
+						
 					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
 					if (getExprParam(key.toString()) != null && (getExprParam(key.toString()) instanceof ConstIdentifier) 
 							&& !getExprParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){

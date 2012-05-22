@@ -4,8 +4,22 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
- 
+
 public class InputStatement extends IOStatement{
+	
+	public static final String[] READ_VALID_PARAM_NAMES = 
+		{ READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
+			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM }; 
+
+	public static boolean isValidParamName(String key){
+		for (String paramName : READ_VALID_PARAM_NAMES)
+			if (paramName.equals(key)){
+				return true;
+			}
+	
+		return false;
+	}
+	
 	
 	// rewrites statement to support function inlining (creates deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException {

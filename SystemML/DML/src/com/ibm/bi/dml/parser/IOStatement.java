@@ -21,34 +21,33 @@ public abstract class IOStatement extends Statement{
 	protected DataIdentifier _id;
 		
 	// data structures to store filename and parameters (as expressions)
-	protected Expression _filenameExpr;
+	//protected Expression _filenameExpr;
 	protected HashMap<String,Expression> _exprParams;	
 	
 	public IOStatement(){
 		_id = null;
-		_filenameExpr = null;
 		_exprParams = new HashMap<String,Expression>();
 	
 	}
 
 	public IOStatement(DataIdentifier t, Expression fexpr){
 		_id = t;
-		_filenameExpr = fexpr;
 		_exprParams = new HashMap<String,Expression>();	
 	}
 	
 	public DataIdentifier getId(){
 		return _id;
 	}
-		
+	/*	
 	public void setFilenameExpr(Expression expr){
 		_filenameExpr = expr;
 	}
-	
+	*/
+	/*
 	public Expression getFilenameExpr() {
 		return _filenameExpr;
 	}
-		
+	*/	
 	public void setIdentifier(DataIdentifier t) {
 		_id = t;
 	}
@@ -90,20 +89,22 @@ public abstract class IOStatement extends Statement{
 		if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(MATRIX_DATA_TYPE) ) {
 			
 			// read the configuration file
-			String filename = this.getFilenameExpr().toString() +".mtd";
-			Path pt=new Path(filename);
-	        FileSystem fs = FileSystem.get(new Configuration());
-	        
-	        boolean exists = false;
-	        try {
-	        	if (fs.exists(pt)){
-	        		exists = true;
-	        		
-	        	}
-	        } catch (Exception e){
-	        	exists = false;
-	        }
-	        
+			boolean exists = false;
+			FileSystem fs = FileSystem.get(new Configuration());
+			Path pt = null;
+			String filename = null;
+			
+			if (this._exprParams.get(IO_FILENAME) instanceof ConstIdentifier){
+				filename = this._exprParams.get(IO_FILENAME).toString() +".mtd";
+				pt=new Path(filename);
+				try {
+					if (fs.exists(pt)){
+						exists = true;
+					}
+				} catch (Exception e){
+					exists = false;
+				}
+			}
 	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
 	        if (exists){
 	        
@@ -129,7 +130,10 @@ public abstract class IOStatement extends Statement{
 				}
 	        }
 	        else {
-	        	System.out.println("INFO: could not find metadata file: " + pt);
+	        	if (!(getExprParam(IO_FILENAME) instanceof ConstIdentifier))
+	        		System.out.println("INFO: non-constant expression used for filename -- no attempt to find MTD");
+	        	else
+	        		System.out.println("INFO: could not find metadata file: " + pt);
 	        }
 			_id.setDataType(DataType.MATRIX);
 		}

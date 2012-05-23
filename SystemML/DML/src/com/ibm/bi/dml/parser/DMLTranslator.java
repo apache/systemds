@@ -1625,7 +1625,7 @@ public class DMLTranslator {
 				DataIdentifier ds = is.getIdentifier();
 				
 				// TODO: DRB: BEGIN RETROFIT /////////////////////////////////////////
-				String filenameString = is.getFilenameExpr().toString();
+				String filenameString = is.getExprParam(InputStatement.IO_FILENAME).toString();
 				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, filenameString, ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
 				//DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, is.getFilename(), ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
 				
@@ -1650,7 +1650,7 @@ public class DMLTranslator {
 				String name = os.getIdentifier().getName();
 				
 				// TODO: DRB: BEGIN RETROFIT FOR OUTPUTSTATEMENT ///////////////////
-				String filenameString = os.getFilenameExpr().toString();
+				String filenameString = os.getExprParam(OutputStatement.IO_FILENAME).toString();
 				DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, filenameString);
 				//DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, os.getFilename());
 				// TODO: DRB: END RETROFIT FOR OUPUTSTATEMENT //////////////////////
@@ -1795,10 +1795,10 @@ public class DMLTranslator {
 				DataIdentifier target = rs.getIdentifier();
 				
 				// TODO: DRB: BEGIN RETROFIT FOR RAND ///////////////////////////////////// 
-				double randMinValue = new Double(rs.getMinValueExpr().toString());
-				double randMaxValue = new Double(rs.getMaxValueExpr().toString());
-				double randSparsityValue = new Double(rs.getSparsityExpr().toString());
-				String randPdfValue = rs.getPdfExpr().toString();
+				double randMinValue = new Double(rs.getExprParam(RandStatement.RAND_MIN).toString());
+				double randMaxValue = new Double(rs.getExprParam(RandStatement.RAND_MAX).toString());
+				double randSparsityValue = new Double(rs.getExprParam(RandStatement.RAND_SPARSITY).toString());
+				String randPdfValue = rs.getExprParam(RandStatement.RAND_PDF).toString();
 				// TODO: DRB: END RETROFIT FOR RAND ///////////////////////////////////////
 				
 				Hops rand = new RandOp(target, randMinValue, randMaxValue, randSparsityValue, randPdfValue);

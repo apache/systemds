@@ -8,7 +8,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 public class InputStatement extends IOStatement{
 	
 	public static final String[] READ_VALID_PARAM_NAMES = 
-		{ READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
+		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
 			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM }; 
 
 	public static boolean isValidParamName(String key){
@@ -28,11 +28,7 @@ public class InputStatement extends IOStatement{
 		
 		// rewrite target variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
-		
-		// rewrite Input filename expression (creates deep copy)
-		Expression newFilenameExpr = _filenameExpr.rewriteExpression(prefix);
-		newStatement.setFilenameExpr(newFilenameExpr);
-		
+	
 		// rewrite InputStatement expr parameters (creates deep copies)
 		HashMap<String,Expression> newExprParams = new HashMap<String,Expression>();
 		for (String key : _exprParams.keySet()){
@@ -59,7 +55,7 @@ public class InputStatement extends IOStatement{
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		 sb.append(_id.toString() + " = " + Statement.INPUTSTATEMENT + " ( " );
-		 sb.append(_filenameExpr.toString());
+		 sb.append(_exprParams.get(IO_FILENAME));
 		 for (String key : _exprParams.keySet()){
 			 sb.append(", " + key + "=" + _exprParams.get(key).toString());
 		 }
@@ -70,9 +66,6 @@ public class InputStatement extends IOStatement{
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
-		
-		// add variables read by filename expression
-		result.addVariables(_filenameExpr.variablesRead());
 		
 		// add variables read by parameter expressions
 		for (String key : _exprParams.keySet())	

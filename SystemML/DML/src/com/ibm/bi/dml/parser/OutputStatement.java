@@ -7,6 +7,17 @@ import com.ibm.bi.dml.utils.LanguageException;
  
 public class OutputStatement extends IOStatement{
 	
+	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE};
+
+	public static boolean isValidParamName(String key){
+	for (String paramName : WRITE_VALID_PARAM_NAMES)
+		if (paramName.equals(key)){
+			return true;
+		}
+
+	return false;
+}
+	
 	public OutputStatement(DataIdentifier t, Expression fname){
 		super(t,null);
 	}
@@ -20,8 +31,8 @@ public class OutputStatement extends IOStatement{
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
 		
 		// rewrite output filename expression (creates deep copy)
-		Expression newFilenameExpr = _filenameExpr.rewriteExpression(prefix);
-		newStatement.setFilenameExpr(newFilenameExpr);
+		//Expression newFilenameExpr = _filenameExpr.rewriteExpression(prefix);
+		//newStatement.setFilenameExpr(newFilenameExpr);
 		
 		// rewrite parameter expressions (creates deep copy)
 		HashMap<String,Expression> newExprParams = new HashMap<String,Expression>();
@@ -47,7 +58,7 @@ public class OutputStatement extends IOStatement{
 	public String toString(){
 		 StringBuffer sb = new StringBuffer();
 		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
-		 sb.append( _id.toString() + ", " +  _filenameExpr.toString());
+		 sb.append( _id.toString() + ", " +  _exprParams.get(IO_FILENAME).toString());
 		 for (String key : _exprParams.keySet()){
 			 sb.append(", " + key + "=" + _exprParams.get(key));
 		 }
@@ -63,7 +74,7 @@ public class OutputStatement extends IOStatement{
 		result.addVariables(_id.variablesRead());
 		
 		// handle variables for output filename expression
-		result.addVariables(_filenameExpr.variablesRead());
+		//result.addVariables(_filenameExpr.variablesRead());
 		
 		// add variables for parameter expressions 
 		for (String key : _exprParams.keySet())

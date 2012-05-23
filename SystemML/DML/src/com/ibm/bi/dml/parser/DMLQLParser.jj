@@ -1817,7 +1817,7 @@ InputStatement InputStatement() :
   <ASSIGN> <READMATRIX>
     		<LEFTPAREN>
    			
-			 t2 = Expression(){is.setFilenameExpr(t2);} 
+			 t2 = Expression(){is.addExprParam(Statement.IO_FILENAME,t2);} 
    			(< COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2);}))*
 
 		<RIGHTPAREN> [<SEMICOLON>]
@@ -1842,7 +1842,7 @@ OutputStatement OutputStatement() :
 	    <WRITEMATRIX>
 	    	<LEFTPAREN>
 	    		fn = Identifier() { os = new OutputStatement(fn, null); } <COMMA>
-	    		t2 = Expression() { os.setFilenameExpr(t2); }
+	    		t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2); }
 	     		( < COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {os.addExprParam(t1.image, t2);}) )*
 	
 			<RIGHTPAREN>  [<SEMICOLON>]

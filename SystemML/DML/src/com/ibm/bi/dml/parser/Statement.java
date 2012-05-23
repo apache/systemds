@@ -9,6 +9,7 @@ public abstract class Statement {
 	public static final String OUTPUTSTATEMENT = "write";
 	public static final String PRINTSTATEMENT = "print";
 	
+	public static final String IO_FILENAME = "filename";
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNUMNONZEROPARAM = "nnzs";
@@ -17,6 +18,14 @@ public abstract class Statement {
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
 	public static final String DATATYPEPARAM = "data_type";
 	public static final String VALUETYPEPARAM = "value_type";
+
+	public static final String RAND_ROWS 	=  "rows";	 
+	public static final String RAND_COLS 	=  "cols";
+	public static final String RAND_MIN  	=  "min";
+	public static final String RAND_MAX  	=  "max";
+	public static final String RAND_SPARSITY = "sparsity"; 
+	public static final String RAND_SEED    =  "seed";
+	public static final String RAND_PDF		=  "pdf";
 	
 	public static final String IMPORT  = "import";
 	public static final  String DMLPATH = "dml-path";

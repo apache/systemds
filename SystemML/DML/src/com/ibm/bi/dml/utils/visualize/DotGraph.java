@@ -6,8 +6,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 
-import dml.utils.visualize.grappa.att.Graph;
-import dml.utils.visualize.grappa.att.GrappaSupport;
+import com.ibm.bi.dml.utils.visualize.grappa.att.Graph;
+import com.ibm.bi.dml.utils.visualize.grappa.att.GrappaSupport;
 
 public class DotGraph {
 

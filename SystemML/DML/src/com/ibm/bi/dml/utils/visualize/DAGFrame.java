@@ -13,9 +13,9 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import dml.utils.visualize.grappa.att.Graph;
-import dml.utils.visualize.grappa.att.GrappaAdapter;
-import dml.utils.visualize.grappa.att.GrappaPanel;
+import com.ibm.bi.dml.utils.visualize.grappa.att.Graph;
+import com.ibm.bi.dml.utils.visualize.grappa.att.GrappaAdapter;
+import com.ibm.bi.dml.utils.visualize.grappa.att.GrappaPanel;
 
 class DAGFrame extends JFrame implements ActionListener
 {

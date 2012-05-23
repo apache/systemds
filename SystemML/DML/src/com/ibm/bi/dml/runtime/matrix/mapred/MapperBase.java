@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -26,7 +25,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-
 
 
 public abstract class MapperBase extends MRBaseForCommonInstructions{
@@ -347,29 +345,6 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			//	System.out.println("map output: "+indexBuffer+"\n"+taggedValueBuffer);
 			}
 			
-		}	
-	}
-	
-	protected void processMapFinalOutput(int index, MatrixIndexes indexBuffer,
-			TaggedMatrixValue taggedValueBuffer, CollectMultipleConvertedOutputs collectFinalMultipleOutputs,
-			Reporter reporter, HashMap<Byte, Vector<Integer>> tagMapping) throws IOException
-	{
-		for(byte output: outputIndexes.get(index))
-		{
-			IndexedMatrixValue result=cachedValues.getFirst(output);
-			if(result==null)
-				continue;
-			indexBuffer.setIndexes(result.getIndexes());
-			////////////////////////////////////////
-			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-			taggedValueBuffer.setBaseObject(result.getValue());
-			////////////////////////////////////////
-			taggedValueBuffer.setTag(output);
-			for(int outputIndex: tagMapping.get(output))
-			{
-				collectFinalMultipleOutputs.collectOutput(indexBuffer, taggedValueBuffer.getBaseObject(), outputIndex, 
-					reporter);
-			}
 		}	
 	}
 }

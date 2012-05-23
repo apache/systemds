@@ -26,6 +26,12 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	public void map(Writable key, Writable valueString, OutputCollector<Writable, Writable> out,
 			Reporter reporter) throws IOException
 	{
+		if(firsttime)
+		{
+			cachedReporter=reporter;
+			firsttime=false;
+		}
+		
 		long start = System.currentTimeMillis();
 		
 		//for each represenattive matrix, read the record and apply instructions

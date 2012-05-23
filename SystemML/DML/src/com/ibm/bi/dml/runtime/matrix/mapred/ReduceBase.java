@@ -95,9 +95,6 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		resultsNonZeros=new long[resultIndexes.length];
 		resultsMaxRowDims=new long[resultIndexes.length];
 		resultsMaxColDims=new long[resultIndexes.length];
-		Arrays.fill(resultsNonZeros,   0);
-		Arrays.fill(resultsMaxRowDims, 0);
-		Arrays.fill(resultsMaxColDims, 0);
 		
 		collectFinalMultipleOutputs = MRJobConfiguration.getMultipleConvertedOutputs(job);
 		
@@ -149,47 +146,8 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 	protected void collectOutput_N_Increase_Counter(MatrixIndexes indexes, MatrixValue value, 
 			int i, Reporter reporter) throws IOException
 	{
- 		collectFinalMultipleOutputs.collectOutput(indexes, value, i, reporter);
-		resultsNonZeros[i]+=value.getNonZeros();
-		//TODO: remove redundant code
-		//System.out.println(indexes+"\n"+value);
-		//LOG.info("~~ output: "+indexes+"\n"+value);
-		if ( resultDimsUnknown[i] == (byte) 1 ) {
-			// compute dimensions for the resulting matrix
-			
-			// find the maximum row index and column index encountered in current output block/cell 
-			long maxrow=0, maxcol=0;
-		/*	try {
-				maxrow = UtilFunctions.cellIndexCalculation( cachedValues.get(resultIndexes[i]).getIndexes().getRowIndex(), 
-						cachedValues.get(resultIndexes[i]).getValue().getNumRows(), cachedValues.get(resultIndexes[i]).getValue().getMaxRow() );
-				
-				maxcol = UtilFunctions.cellIndexCalculation( cachedValues.get(resultIndexes[i]).getIndexes().getColumnIndex(), 
-						cachedValues.get(resultIndexes[i]).getValue().getNumColumns(), cachedValues.get(resultIndexes[i]).getValue().getMaxColumn() );
-			} catch(DMLRuntimeException e) {
-				e.printStackTrace();
-			}*/
-			try {
-				maxrow = value.getMaxRow();
-				maxcol = value.getMaxColumn();
-				//System.out.println("maxrow = " + maxrow + ", maxcol = " + maxcol + ", val = " + value.getValue((int)indexes.getRowIndex(), (int)indexes.getColumnIndex()));
-			} catch (DMLRuntimeException e) {
-				throw new IOException(e);
-			}
-			
-			if ( maxrow > resultsMaxRowDims[i] )
-				resultsMaxRowDims[i] = maxrow;
-				
-			if ( maxcol > resultsMaxColDims[i] )
-				resultsMaxColDims[i] = maxcol;
-		}else if(resultDimsUnknown[i] == (byte) 2)
-		{
-			if ( indexes.getRowIndex() > resultsMaxRowDims[i] )
-				resultsMaxRowDims[i] = indexes.getRowIndex();
-				
-			if ( indexes.getColumnIndex() > resultsMaxColDims[i] )
-				resultsMaxColDims[i] = indexes.getColumnIndex();
-			//System.out.println("i = " + i + ", maxrow = " + resultsMaxRowDims[i] + ", maxcol = " + resultsMaxColDims[i] + ", val = " + value.getValue((int)indexes.getRowIndex(), (int)indexes.getColumnIndex()));
-		}
+		collectOutput_N_Increase_Counter(indexes, value, i, reporter, collectFinalMultipleOutputs, 
+				resultDimsUnknown, resultsNonZeros, resultsMaxRowDims, resultsMaxColDims);
 	}
 	
 	protected Vector<Integer> getOutputIndexes(byte outputTag)

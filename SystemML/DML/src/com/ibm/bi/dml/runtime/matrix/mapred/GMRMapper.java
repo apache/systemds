@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -15,6 +14,7 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixPackedCell;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
 
@@ -25,14 +25,24 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	//whether this is a map only job
 	private boolean mapOnlyJob=false;
 	
-	//the final result indexes that needed to be outputted
+	//the final result indexes that needed to be outputted for maponly job
 	protected byte[] resultIndexes=null;
-	
+	protected byte[] resultDimsUnknown=null;
+
+	//output converters for maponly job
+	protected CollectMultipleConvertedOutputs collectFinalMultipleOutputs;
+
 	//the counters to record how many nonZero cells have been produced for each output
+	// for maponly job
 	protected long[] resultsNonZeros=null;
+	protected long[] resultsMaxRowDims=null;
+	protected long[] resultsMaxColDims=null;
 	
-	//the output converter if this is a map only job
-	private CollectMultipleConvertedOutputs collectFinalMultipleOutputs=null;
+	//cached reporter to report the number of nonZeros for each reduce task
+	protected Reporter cachedReporter=null;
+	protected boolean firsttime=true;
+	
+	protected String mapperID;
 	
 	//tempory variables
 	private MatrixIndexes indexBuffer=new MatrixIndexes();
@@ -43,6 +53,12 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	public void map(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, 
 			Reporter reporter) throws IOException 
 	{
+		if(firsttime)
+		{
+			cachedReporter=reporter;
+			firsttime=false;
+		}
+		
 	//	System.out.println("in mapper: \n"+rawValue);
 		commonMap(rawKey, rawValue, out, reporter);
 	}
@@ -90,9 +106,42 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		}	
 	}
 	
+	protected void processMapFinalOutput(int index, MatrixIndexes indexBuffer,
+			TaggedMatrixValue taggedValueBuffer, CollectMultipleConvertedOutputs collectFinalMultipleOutputs,
+			Reporter reporter, HashMap<Byte, Vector<Integer>> tagMapping) throws IOException
+	{
+		for(byte output: outputIndexes.get(index))
+		{
+			IndexedMatrixValue result=cachedValues.getFirst(output);
+			if(result==null)
+				continue;
+			indexBuffer.setIndexes(result.getIndexes());
+			////////////////////////////////////////
+			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
+			taggedValueBuffer.setBaseObject(result.getValue());
+			////////////////////////////////////////
+			taggedValueBuffer.setTag(output);
+			for(int outputIndex: tagMapping.get(output))
+			{
+				collectOutput_N_Increase_Counter(indexBuffer, taggedValueBuffer.getBaseObject(), outputIndex, 
+					reporter);
+			}
+		}	
+	}
+
+	protected void collectOutput_N_Increase_Counter(MatrixIndexes indexes, MatrixValue value, 
+			int i, Reporter reporter) throws IOException
+	{
+		collectOutput_N_Increase_Counter(indexes, value, i, reporter, collectFinalMultipleOutputs, 
+				resultDimsUnknown, resultsNonZeros, resultsMaxRowDims, resultsMaxColDims);
+	}
+	
 	public void configure(JobConf job)
 	{
 		super.configure(job);
+		
+		mapperID = job.get("mapred.task.id");
+		
 		//assign the temporay vairables
 		try {
 		//	System.out.println(valueClass.getName());
@@ -112,10 +161,12 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		//get the indexes of the final output matrices
 		resultIndexes=MRJobConfiguration.getResultIndexes(job);
+		resultDimsUnknown = MRJobConfiguration.getResultDimsUnknown(job);
 		
-		//initialize the counters for the nonZero cells
+		//initialize SystemML Counters (defined in MRJobConfiguration)
 		resultsNonZeros=new long[resultIndexes.length];
-		Arrays.fill(resultsNonZeros, 0);
+		resultsMaxRowDims=new long[resultIndexes.length];
+		resultsMaxColDims=new long[resultIndexes.length];
 		
 		tagMapping=new HashMap<Byte, Vector<Integer>>();
 		for(int i=0; i<resultIndexes.length; i++)
@@ -135,6 +186,35 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	
 	public void close() throws IOException
 	{
+		if(cachedReporter!=null)
+		{
+			String[] parts = mapperID.split("_");
+			int taskid;
+			if ( parts[0].equalsIgnoreCase("task")) {
+				taskid = Integer.parseInt(parts[parts.length-1]);
+			}
+			else if ( parts[0].equalsIgnoreCase("attempt")) {
+				taskid = Integer.parseInt(parts[parts.length-2]);
+			}
+			else {
+				throw new RuntimeException("Unrecognized format for reducerID: " + mapperID);
+			}
+			//System.out.println("Inside ReduceBase.close(): ID = " + reducerID + ", taskID = " + taskid);
+			
+			for(int i=0; i<resultIndexes.length; i++) {
+				cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
+				
+				if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
+					// Each counter is of the form: (group, name)
+					// where group = max_rowdim_resultindex; name = taskid
+					//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
+					cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).increment(resultsMaxRowDims[i]);
+					cachedReporter.getCounter("max_coldim_"+i, ""+taskid).increment(resultsMaxColDims[i]);
+					//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
+				}
+			}
+		}
+		
 		if(collectFinalMultipleOutputs!=null)
 			collectFinalMultipleOutputs.close();
 	}

@@ -473,8 +473,14 @@ public class StatementBlock extends LiveVariableAnalysis{
 				if (ids.getVariable(id.getName()) == null)
 					throwUndefinedVar ( id.getName(), os.toString() );
 				
-				if ( ids.getVariable(id.getName()).getDataType() == DataType.SCALAR && !os._exprParams.isEmpty() ) {
-					throw new LanguageException("Invalid parameters in write statement: " + os.toString());
+				if ( ids.getVariable(id.getName()).getDataType() == DataType.SCALAR) {
+					boolean paramsOkay = true;
+					for (String key : os._exprParams.keySet()){
+						if (!key.equals(os.IO_FILENAME)) 
+							paramsOkay = false;
+					}
+					if (paramsOkay == false)
+						throw new LanguageException("Invalid parameters in write statement: " + os.toString());
 				}
 				
 				os.processParams(true);

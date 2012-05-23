@@ -38,16 +38,7 @@ public abstract class IOStatement extends Statement{
 	public DataIdentifier getId(){
 		return _id;
 	}
-	/*	
-	public void setFilenameExpr(Expression expr){
-		_filenameExpr = expr;
-	}
-	*/
-	/*
-	public Expression getFilenameExpr() {
-		return _filenameExpr;
-	}
-	*/	
+	
 	public void setIdentifier(DataIdentifier t) {
 		_id = t;
 	}
@@ -64,9 +55,14 @@ public abstract class IOStatement extends Statement{
 	{
 		if (_exprParams.get(name) != null)
 			throw new ParseException("ERROR: attempted to add IOStatement parameter " + name + " more than once");
+		
+		// verify parameter names for InputStatement
 		if (this instanceof InputStatement && !InputStatement.isValidParamName(name))
-			throw new ParseException("ERROR: attempted to add invalid InputStatmement parameter " + name);
-			
+			throw new ParseException("ERROR: attempted to add invalid read statmement parameter " + name);
+		
+		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
+			throw new ParseException("ERROR: attempted to add invalid write statmement parameter: " + name);
+		
 		_exprParams.put(name, value);
 	}
 	
@@ -229,11 +225,6 @@ public abstract class IOStatement extends Statement{
 	}
 	
 	private void processParamsForOutputStatement()  throws LanguageException {
-		// Output statements are allowed to have only "format" as its parameter
-		if(_exprParams.size() > 1 || 
-				(_exprParams.size() == 1 && getExprParam(FORMAT_TYPE) == null ) ) 
-			throw new LanguageException("Invalid parameters in write statement: " +
-					toString() + ". Only the parameter format is allowed.  Please refer to the language guide for further details", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 
 		// TODO: statiko -- this logic has to be updated to remove the call to setDimensionValueProperties() in StatementBlock
 		// and to support binaryBlock as well as binaryCell in read() and write() statements

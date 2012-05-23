@@ -15,9 +15,9 @@ public class OutputStatement extends IOStatement{
 			return true;
 		}
 
-	return false;
-}
-	
+		return false;
+	}
+		
 	public OutputStatement(DataIdentifier t, Expression fname){
 		super(t,null);
 	}
@@ -60,7 +60,8 @@ public class OutputStatement extends IOStatement{
 		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
 		 sb.append( _id.toString() + ", " +  _exprParams.get(IO_FILENAME).toString());
 		 for (String key : _exprParams.keySet()){
-			 sb.append(", " + key + "=" + _exprParams.get(key));
+			 if (!key.equals(IO_FILENAME))
+				 sb.append(", " + key + "=" + _exprParams.get(key));
 		 }
 		 sb.append(" );");
 		 return sb.toString(); 

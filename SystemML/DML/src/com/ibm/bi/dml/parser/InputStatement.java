@@ -57,7 +57,8 @@ public class InputStatement extends IOStatement{
 		 sb.append(_id.toString() + " = " + Statement.INPUTSTATEMENT + " ( " );
 		 sb.append(_exprParams.get(IO_FILENAME));
 		 for (String key : _exprParams.keySet()){
-			 sb.append(", " + key + "=" + _exprParams.get(key).toString());
+			 if (key.equals(IO_FILENAME))
+				 sb.append(", " + key + "=" + _exprParams.get(key).toString());
 		 }
 		 sb.append(" );"); 
 		 return sb.toString(); 

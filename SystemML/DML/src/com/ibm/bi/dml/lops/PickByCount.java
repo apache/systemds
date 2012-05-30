@@ -10,16 +10,19 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class PickByCount extends Lops {
 	
-	public enum OperationTypes {VALUEPICK, RANGEPICK};	
+	public enum OperationTypes {VALUEPICK, RANGEPICK, IQM};	
 	OperationTypes operation;
 	boolean inMemoryInput = false;
 	
 	
 	private void init(Lops input1, Lops input2, OperationTypes op, ExecType et) {
 		this.addInput(input1);
-		this.addInput(input2);
 		input1.addOutput(this);
-		input2.addOutput(this);
+		
+		if ( input2 != null ) {
+			this.addInput(input2);
+			input2.addOutput(this);
+		}
 		
 		operation = op;
 		
@@ -103,11 +106,11 @@ public class PickByCount extends Lops {
 	}
 
 	/*
-	 * This version of getInstructions() must be called only for valuepick (CP)
+	 * This version of getInstructions() must be called only for valuepick (CP), IQM (CP)
 	 * 
 	 * Example instances:
-	 * valuepickCP:::temp2:STRING:::0.25:DOUBLE:::Var1:DOUBLE
-	 * valuepickCP:::temp2:STRING:::Var1:DOUBLE:::Var2:DOUBLE
+	 * valuepick:::temp2:STRING:::0.25:DOUBLE:::Var1:DOUBLE
+	 * valuepick:::temp2:STRING:::Var1:DOUBLE:::Var2:DOUBLE
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
@@ -123,6 +126,12 @@ public class PickByCount extends Lops {
 			if ( this.getInputs().get(1).get_dataType() != DataType.SCALAR  )
 				throw new LopsException("Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
 		}
+		else if ( operation == OperationTypes.IQM ) {
+			if ( !inMemoryInput ) {
+				throw new LopsException("Pick.IQM in can only execute in Control Program on in-memory matrices.");
+			}
+			opString = "inmem-iqm";
+		}
 		else
 			throw new LopsException("Invalid operation specified for PickByCount: " + operation);
 		
@@ -131,6 +140,22 @@ public class PickByCount extends Lops {
 					+ input2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR;
 		inst += output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
 
+		return inst;
+	}
+	
+	/**
+	 * This version of getInstructions() is called for IQM, executing in CP
+	 * 
+	 * Example instances:
+	 *   iqm:::input:::output
+	 */
+	@Override
+	public String getInstructions(String input, String output) throws LopsException {
+		String inst = "";
+		inst = getExecType() + Lops.OPERAND_DELIMITOR 
+				+ "inmem-iqm" + Lops.OPERAND_DELIMITOR
+				+ input + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
+				+ output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 		return inst;
 	}
 }

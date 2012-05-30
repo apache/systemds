@@ -130,8 +130,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
-		String2CPInstructionType.put( "inmem-valuepick"  , CPINSTRUCTION_TYPE.Variable);
-		//String2CPInstructionType.put( "inmem-rangepick"  , CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "inmem-valuepick" , CPINSTRUCTION_TYPE.Variable);
 		
 		String2CPInstructionType.put( "rangeReIndex"  , CPINSTRUCTION_TYPE.RangeReIndex);
 		

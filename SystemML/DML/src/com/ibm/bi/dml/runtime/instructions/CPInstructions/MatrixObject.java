@@ -279,11 +279,23 @@ public class MatrixObject extends Data {
 		return result;
 	}
 	
+	public MatrixObject valuePick(MatrixObject quantiles, MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		MatrixBlock result_data = null;
+		result_data = (MatrixBlock) (_data.pickValues(quantiles._data, new MatrixBlock()));
+		result.setData(result_data);
+		result.updateMatrixMetaData();
+		return result;
+	}
+	
 	public double valuePick(double quantile) throws DMLRuntimeException {
 		if (quantile < 0 || quantile > 1) {
 			throw new DMLRuntimeException("Requested quantile (" + quantile + ") is invalid -- it must be between 0 and 1.");
 		}
 		return _data.pickValue(quantile);
+	}
+	
+	public double interQuartileMean() throws DMLRuntimeException {
+		return _data.interQuartileMean();
 	}
 
 	private MatrixObject finalizeCtableOperations(HashMap<CellIndex,Double> ctable, MatrixObject result) throws DMLRuntimeException {

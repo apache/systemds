@@ -62,7 +62,8 @@ public class BinaryOp extends Hops {
 
 			try {
 			if (op == Hops.OpOp2.IQM) {
-
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
 					CombineBinary combine = CombineBinary.constructCombineLop(
 							OperationTypes.PreSort, (Lops) getInput().get(0)
 									.constructLops(), (Lops) getInput().get(1)
@@ -143,6 +144,27 @@ public class BinaryOp extends Hops {
 							get_cols_per_block());
 
 					set_lops(binScalar2);
+				}
+				else {
+					SortKeys sort = SortKeys.constructSortByValueLop(
+							getInput().get(0).constructLops(), 
+							getInput().get(1).constructLops(), 
+							SortKeys.OperationTypes.WithWeights, 
+							getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
+					sort.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(), 1, 1);
+					PickByCount pick = new PickByCount(
+							sort,
+							null,
+							get_dataType(),
+							get_valueType(),
+							PickByCount.OperationTypes.IQM, et, true);
+					pick.getOutputParameters().setDimensions(get_dim1(),
+							get_dim1(), get_rows_per_block(), get_cols_per_block());
+	
+					set_lops(pick);
+				}
 
 			} else if (op == Hops.OpOp2.CENTRALMOMENT) {
 				ExecType et = optFindExecType();

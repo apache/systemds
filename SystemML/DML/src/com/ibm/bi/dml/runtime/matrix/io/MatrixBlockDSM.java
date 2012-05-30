@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
@@ -33,6 +34,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -295,16 +297,21 @@ public class MatrixBlockDSM extends MatrixValue{
 		nonZeros=limit;
 	}
 	
-	public void examSparsity()
+	public void examSparsity() throws DMLRuntimeException
 	{
+		double sp = ((double)nonZeros/rlen)/clen;
 		if(sparse)
 		{
-			if(nonZeros>rlen*clen*SPARCITY_TURN_POINT)
+			if(sp>SPARCITY_TURN_POINT) {
+				//System.out.println("Calling sparseToDense(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				sparseToDense();
+			}
 		}else
 		{
-			if(nonZeros<rlen*clen*SPARCITY_TURN_POINT)
+			if(sp<SPARCITY_TURN_POINT) {
+				//System.out.println("Calling denseToSparse(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				denseToSparse();
+			}
 		}
 	}
 	
@@ -1057,8 +1064,10 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			SparseRow[] oldSparseRows=sparseRows;
 			sparseRows=new SparseRow[rlen];
-			for(int i=0; i<Math.min(oldSparseRows.length, rlen); i++)
+			for(int i=0; i<Math.min(oldSparseRows.length, rlen); i++) {
 				sparseRows[i]=oldSparseRows[i];
+				//System.out.println(i + " " + oldSparseRows.length + " " + rlen);
+			}
 		}
 		
 	//	if(sparseRows[r]==null)
@@ -1101,6 +1110,45 @@ public class MatrixBlockDSM extends MatrixValue{
 				nonZeros--;
 		}
 		
+	}
+	
+	public void updateNonZeros() {
+		nonZeros = (int)computeNonZeros();
+	}
+	public long computeNonZeros() {
+		long nnz = 0;
+		if ( sparse ) {
+			if ( sparseRows != null ) {
+				double []values = null;
+				for(int r=0; r < sparseRows.length; r++ ) {
+					values = sparseRows[r].getValueContainer();
+					for (int i=0; i<values.length; i++) {
+						if ( values[i] != 0 )
+							++nnz;
+					}
+				}
+			}
+		}
+		else {
+			if ( denseBlock != null ) {
+				for ( int i=0; i < denseBlock.length; i++ ) {
+					if( denseBlock[i] != 0 ) 
+						++nnz;
+				}
+			}
+		}
+		return nnz;
+	}
+	public void setDenseValue(int r, int c, double v) {
+		denseBlock[r*clen+c] = v;
+		/*
+		int index=r*clen+c;
+		if(denseBlock[index]==0)
+			nonZeros++;
+		denseBlock[index]=v;
+		if(v==0)
+			nonZeros--;
+		*/
 	}
 	
 	@Override
@@ -2377,9 +2425,12 @@ public class MatrixBlockDSM extends MatrixValue{
 				if(denseBlock!=null) {
 					int limit=rlen*clen;
 					for(int i=0; i<limit; i++) {
-						tdw[ind][0] = denseBlock[i];
-						tdw[ind][1] = 1;
-						ind++;
+						// copy only non-zero values
+						if ( denseBlock[i] != 0.0 ) {
+							tdw[ind][0] = denseBlock[i];
+							tdw[ind][1] = 1;
+							ind++;
+						}
 					}
 				}
 			}
@@ -2404,14 +2455,81 @@ public class MatrixBlockDSM extends MatrixValue{
 		return result;
 	}
 	
-	public double pickValue(double quantile) throws DMLRuntimeException {
+	private double sumWeightForQuantile() throws DMLRuntimeException {
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ )
 			sum_wt += getValue(i, 1);
-		
 		if ( (int)sum_wt != sum_wt ) {
 			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
 		}
+		return sum_wt;
+	}
+	
+	public double interQuartileMean() throws DMLRuntimeException {
+		double sum_wt = sumWeightForQuantile();
+		
+		int fromPos = (int) Math.ceil(0.25*sum_wt);
+		int toPos = (int) Math.ceil(0.75*sum_wt);
+		int selectRange = toPos-fromPos; // range: (fromPos,toPos]
+		
+		int index, count=0;
+		
+		if ( getValue(0,1) > 0 ) 
+			index = 0;
+		else
+			index = 1;
+		
+		while ( count < fromPos ) {
+			count += getValue(index,1);
+			++index;
+		}
+		
+		double runningSum; 
+		double val;
+		int wt, selectedCount;
+		
+		runningSum = (count-fromPos) * getValue(index-1, 0);
+		selectedCount = (count-fromPos);
+		
+		while(count <= toPos ) {
+			val = getValue(index,0);
+			wt = (int) getValue(index,1);
+			
+			runningSum += (val * Math.min(wt, selectRange-selectedCount));
+			selectedCount += Math.min(wt, selectRange-selectedCount);
+			count += wt;
+			++index;
+		}
+		
+		System.out.println(fromPos + ", " + toPos + ": " + count + ", "+ runningSum + ", " + selectedCount);
+		
+		return runningSum/selectedCount;
+	}
+	
+	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue output) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	
+		MatrixBlockDSM qs=checkType(quantiles);
+		
+		if ( qs.clen != 1 ) {
+			throw new DMLRuntimeException("Multiple quantiles can only be computed on a 1D matrix");
+		}
+		
+		checkType(output);
+
+		if(output==null)
+			output=new MatrixBlockDSM(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
+		else
+			output.reset(qs.rlen, qs.clen, false);
+		
+		for ( int i=0; i < qs.rlen; i++ ) {
+			output.setValue(i, 0, this.pickValue(qs.getValue(i,0)) );
+		}
+		
+		return output;
+	}
+	
+	public double pickValue(double quantile) throws DMLRuntimeException {
+		double sum_wt = sumWeightForQuantile();
 		
 		int pos = (int) Math.ceil(quantile*sum_wt);
 		
@@ -3064,12 +3182,15 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 	}
-	public void sparseToDense() {
+	public void sparseToDense() throws DMLRuntimeException {
 		
 		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
 		
 		sparse=false;
 		int limit=rlen*clen;
+		if ( limit < 0 ) {
+			throw new DMLRuntimeException("Unexpected error in sparseToDense().. limit < 0: " + rlen + ", " + clen + ", " + limit);
+		}
 		if(denseBlock==null || denseBlock.length < limit )
 			denseBlock=new double[limit];
 		Arrays.fill(denseBlock, 0, limit, 0);
@@ -3089,6 +3210,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				denseBlock[r*clen+cols[i]]=values[i];
 				nonZeros++;
 			}
+			sparseRows[r].setValueContainer(null);
+			sparseRows[r].setIndexContainer(null);
 		}
 		
 	}
@@ -3209,6 +3332,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	////////////////////////////////////////////////////////////////////////////////
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
+		//int min=1, max=5;
 		Random random=new Random(seed);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true);
 		m.sparseRows=new SparseRow[rows];
@@ -3219,7 +3343,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				if(random.nextDouble()>sparsity)
 					continue;
-				m.sparseRows[i].append(j, random.nextDouble());
+				m.sparseRows[i].append(j, random.nextDouble()); // Math.ceil(min + ((max-min)*random.nextDouble())));
 				m.nonZeros++;
 			}
 		}

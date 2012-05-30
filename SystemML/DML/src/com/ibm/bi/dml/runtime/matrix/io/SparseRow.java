@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.matrix.io;
 
 public class SparseRow {
 
-	public static final int defaultCapacity=20;
+	public static final int defaultCapacity=16;
 	private int size=0;
 	private double[] values=null;
 	private int[] indexes=null;
@@ -66,6 +66,14 @@ public class SparseRow {
 	public int[] getIndexContainer()
 	{
 		return indexes;
+	}
+	
+	public void setValueContainer(double[] d) {
+		values = d;
+	}
+	
+	public void setIndexContainer(int[] i) {
+		indexes = i;
 	}
 	
 	public int capacity()

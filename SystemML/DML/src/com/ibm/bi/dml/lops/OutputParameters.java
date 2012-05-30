@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.utils.HopsException;
+
 /**
  * class to maintain output parameters for a lop.
  * 
@@ -39,15 +41,24 @@ public class OutputParameters {
 		file_label = label;
 	}
 
-	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block) {
+	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block) throws HopsException {
 		num_rows = rows;
 		num_cols = cols;
 		num_rows_per_block = rows_per_block;
 		num_cols_per_block = cols_per_block;
 
-		if (num_rows_per_block == -1 || num_cols_per_block == -1) {
+		if ( num_rows_per_block == 0 && num_cols_per_block == 0 ) {
+			blocked_representation = false;
+		}
+		else if (num_rows_per_block == -1 && num_cols_per_block == -1) {
 			blocked_representation = false;
  		}
+		else if ( num_rows_per_block > 0 && num_cols_per_block > 0 ) {
+			blocked_representation = true;
+		}
+		else {
+			throw new HopsException("Invalid values for blocking dimensions: [" + num_rows_per_block + "," + num_cols_per_block +"].");
+		}
 	}
 
 	public void setFormat(Format format) {

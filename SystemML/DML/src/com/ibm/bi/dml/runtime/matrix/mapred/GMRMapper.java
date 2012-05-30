@@ -201,16 +201,19 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			}
 			//System.out.println("Inside ReduceBase.close(): ID = " + reducerID + ", taskID = " + taskid);
 			
-			for(int i=0; i<resultIndexes.length; i++) {
-				cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
-				
-				if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
-					// Each counter is of the form: (group, name)
-					// where group = max_rowdim_resultindex; name = taskid
-					//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
-					cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).increment(resultsMaxRowDims[i]);
-					cachedReporter.getCounter("max_coldim_"+i, ""+taskid).increment(resultsMaxColDims[i]);
-					//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
+			if(mapOnlyJob)
+			{
+				for(int i=0; i<resultIndexes.length; i++) {
+					cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
+					
+					if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
+						// Each counter is of the form: (group, name)
+						// where group = max_rowdim_resultindex; name = taskid
+						//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
+						cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).increment(resultsMaxRowDims[i]);
+						cachedReporter.getCounter("max_coldim_"+i, ""+taskid).increment(resultsMaxColDims[i]);
+						//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
+					}
 				}
 			}
 		}

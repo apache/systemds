@@ -9,6 +9,7 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public abstract class BlockJoinMapperMethodIDTable {
@@ -29,7 +30,7 @@ public abstract class BlockJoinMapperMethodIDTable {
 	abstract void execute(LongWritable key, WritableLongArray value, Reporter reporter, OutputCollector out) 
 	throws IOException ;
 		
-	public MatrixBlock getSubRowBlock(MatrixBlock blk, int rownum) {
+	public MatrixBlock getSubRowBlock(MatrixBlock blk, int rownum) throws DMLRuntimeException {
 		int ncols = blk.getNumColumns();
 		MatrixBlock thissubrowblk = new MatrixBlock(1, ncols, true);	//presume sparse
 		//populate subrowblock

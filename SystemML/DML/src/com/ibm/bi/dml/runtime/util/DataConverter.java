@@ -180,11 +180,11 @@ public class DataConverter {
 				reader.close();
 			}
 			
+			ret.examSparsity();
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
 		
-		ret.examSparsity();
 		return ret;
 	}
 	

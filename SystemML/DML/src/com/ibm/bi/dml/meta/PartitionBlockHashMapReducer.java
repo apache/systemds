@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class PartitionBlockHashMapReducer extends MapReduceBase 
@@ -90,7 +91,12 @@ implements Reducer<BlockHashMapMapOutputKey, BlockHashMapMapOutputValue, MatrixI
 				thisblock.setMaxRow(subblock.getMaxRow());
 		}*/
 		
-		thisblock.examSparsity();	//refactor based on actual sparsity
+		try {
+			thisblock.examSparsity();
+		} catch (DMLRuntimeException e) {
+			// TODO Auto-generated catch block
+			throw new IOException(e);
+		}	//refactor based on actual sparsity
 		//System.out.println("$$$$$$$ Blkhashmpreducer adding to fold " + key.foldid + " indexes: " + indexes.toString());
 		reporter.incrCounter("counter", "" + key.foldid, 1) ;	//we need to use this in driver!
 		multipleOutputs.getCollector("" + key.foldid, reporter).collect(indexes, thisblock) ;

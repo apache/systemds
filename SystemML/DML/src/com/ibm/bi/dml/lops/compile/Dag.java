@@ -3120,6 +3120,8 @@ public class Dag<N extends Lops> {
 			if (node.getOutputParameters().isBlocked_representation()) {
 				if (node.getOutputParameters().getFormat() == Format.BINARY)
 					nodeInputInfo = InputInfo.BinaryBlockInputInfo;
+				else 
+					throw new LopsException("Invalid format (" + node.getOutputParameters().getFormat() + ") encountered for a node/lop with blocked output.");
 				// inputInfos.add(InputInfo.BinaryBlockInputInfo);
 			} else {
 				if (node.getOutputParameters().getFormat() == Format.TEXT)

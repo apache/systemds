@@ -3,7 +3,6 @@
 	<classpathentry excluding="com/ibm/bi/dml/api/JaqlUdf.java|dml/packagesupport/EigenWrapper.java" kind="src" path="src"/>
 	<classpathentry excluding="scripts/" kind="src" path="test"/>
 	<classpathentry excluding="com/ibm/bi/dml/test/integration/functions/external/EigenTest.java" kind="src" path="test_integration"/>
-	<classpathentry kind="lib" path="lib/commons-math-2.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/nimble.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
@@ -28,5 +27,6 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/opencsv-1.8/opencsv-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli-2.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math-2.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

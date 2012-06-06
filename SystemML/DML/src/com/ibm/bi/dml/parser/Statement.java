@@ -12,12 +12,13 @@ public abstract class Statement {
 	public static final String IO_FILENAME = "filename";
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
-	public static final String READNUMNONZEROPARAM = "nnzs";
+	public static final String READNUMNONZEROPARAM = "nnz";
 	public static final String FORMAT_TYPE = "format";
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
 	public static final String DATATYPEPARAM = "data_type";
 	public static final String VALUETYPEPARAM = "value_type";
+	public static final String DESCRIPTIONPARAM = "description"; 
 
 	public static final String RAND_ROWS 	=  "rows";	 
 	public static final String RAND_COLS 	=  "cols";

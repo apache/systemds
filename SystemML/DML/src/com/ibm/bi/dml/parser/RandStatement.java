@@ -96,8 +96,10 @@ public class RandStatement extends Statement
 				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
 					throw new LanguageException("ERROR:  In rand statement, can only assign rows a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-				else
+				else{
 					rowsExpr = new IntIdentifier((IntIdentifier)constValue);
+					_exprParams.put(RAND_ROWS, rowsExpr);
+				}
 			}
 		}	
 		
@@ -112,8 +114,10 @@ public class RandStatement extends Statement
 				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
 					throw new LanguageException("ERROR:  In rand statement, can only assign cols a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-				else
+				else{
 					colsExpr = new IntIdentifier((IntIdentifier)constValue);
+					_exprParams.put(RAND_COLS, rowsExpr);
+				}
 			}
 		}
 		
@@ -128,8 +132,10 @@ public class RandStatement extends Statement
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
 					throw new LanguageException("ERROR:  In rand statement, can only assign min a double " +
 							"value -- attempted to assign value: " + constValue.toString());
-				else
+				else {
 					minValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
+					_exprParams.put(RAND_MIN, rowsExpr);
+				}
 			}
 		}
 		
@@ -144,8 +150,10 @@ public class RandStatement extends Statement
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
 					throw new LanguageException("ERROR:  In rand statement, can only assign max a double " +
 							"value -- attempted to assign value: " + constValue.toString());
-				else
+				else {
 					maxValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
+					_exprParams.put(RAND_MAX, rowsExpr);
+				}
 			}
 		}
 		
@@ -160,8 +168,10 @@ public class RandStatement extends Statement
 				if (!(constValue instanceof IntIdentifier))
 					throw new LanguageException("ERROR:  In rand statement, can only assign seed a long " +
 							"value -- attempted to assign value: " + constValue.toString());
-				else
+				else {
 					seedExpr = new IntIdentifier((IntIdentifier)constValue);
+					_exprParams.put(RAND_SEED, rowsExpr);
+				}
 			}
 		}
 		
@@ -177,8 +187,11 @@ public class RandStatement extends Statement
 					throw new LanguageException("ERROR:  In rand statement, can only assign pdf " +
 							"following one of following string values (capitalization-sensitive): uniform. " +
 							"Attempted to assign value: " + constValue.toString());
-				else
-					pdfExpr = new IntIdentifier((IntIdentifier)constValue);	}			
+				else {
+					pdfExpr = new IntIdentifier((IntIdentifier)constValue);	
+					_exprParams.put(RAND_PDF, rowsExpr);
+				}
+			}
 		}
 		
 	} // end method performConstantPropagation

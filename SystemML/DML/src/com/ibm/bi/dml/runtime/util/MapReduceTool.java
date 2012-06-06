@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 //import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -354,12 +355,12 @@ public class MapReduceTool {
 		
         String line = "";
         line += "{ \n" +
-        "    \"rows\": " + mc.numRows + "\n" + 
-		"    ,\"cols\": " + mc.numColumns + "\n" + 
-		"    ,\"rows_in_block\": " + mc.numRowsPerBlock + "\n" + 
-		"    ,\"cols_in_block\": " + mc.numColumnsPerBlock + "\n" + 
-		"    ,\"nnz\": " + mc.nonZeros + "\n" +
-		"    ,\"format\": "; 
+        "    \"" +  Statement.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
+		"    ,\"" + Statement.READCOLPARAM 			+  "\": " + mc.numColumns + "\n" + 
+		"    ,\"" + Statement.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
+		"    ,\"" + Statement.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n" + 
+		"    ,\"" +	Statement.READNUMNONZEROPARAM	+  "\": " + mc.nonZeros + "\n" +
+		"    ,\"" + Statement.FORMAT_TYPE	+  "\": "; 
         if ( outinfo == OutputInfo.TextCellOutputInfo ) {
         	line += "\"text\"\n";
         } else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {

@@ -1,13 +1,15 @@
  
-	x=read("$$indir$$x", rows=5, cols=5, nnzs=20, format="text") ;
-	y=read("$$indir$$y", rows=5, cols=5, nnzs=20, format="text") ;
-	z=read("$$indir$$z", rows=5, cols=5, nnzs=20, format="text") ;
+	x=read("$$indir$$x", rows=5, cols=5, nnz=20, format="text") ;
+	y=read("$$indir$$y", rows=5, cols=5, nnz=20, format="text") ;
+	z=read("$$indir$$z", rows=5, cols=5, nnz=20, format="text") ;
 	
-	zrow = nrow(z);
-	numtopics = 4;
+	#zrow = nrow(z);
+	zrow = 5;
+	numtopics = 5;
 	wd = Rand(rows = zrow, cols = numtopics) ;
 	
-	zcol = ncol(z)
+	#zcol = ncol(z)
+	zcol = 5;
 	hd = Rand(rows = numtopics, cols=zcol) ;
 	
 	accuracy = 0.000001

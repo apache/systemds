@@ -1057,9 +1057,9 @@ public class Dag<N extends Lops> {
   			inst.append(Lops.OPERAND_DELIMITOR + fileName + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
   			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_rows());
   			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_cols());
-  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_rows_per_block());
-  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNum_cols_per_block());
-  			inst.append(Lops.OPERAND_DELIMITOR + "0"); // TODO: should pass on correct NNZs
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.get_rows_in_block());
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.get_cols_in_block());
+  			inst.append(Lops.OPERAND_DELIMITOR + oparams.getNnz()); 
   			inst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(oinfo) ) ;
   		}
   		
@@ -3070,9 +3070,9 @@ public class Dag<N extends Lops> {
 			numRows.add(node.getOutputParameters().getNum_rows());
 			numCols.add(node.getOutputParameters().getNum_cols());
 			numRowsPerBlock.add(node.getOutputParameters()
-					.getNum_rows_per_block());
+					.get_rows_in_block());
 			numColsPerBlock.add(node.getOutputParameters()
-					.getNum_cols_per_block());
+					.get_cols_in_block());
 			inputStrings.add(node.getInstructions(inputStrings.size(),
 					inputStrings.size()));
 			inputInfos.add(InputInfo.TextCellInputInfo);
@@ -3112,9 +3112,9 @@ public class Dag<N extends Lops> {
 			numRows.add(node.getOutputParameters().getNum_rows());
 			numCols.add(node.getOutputParameters().getNum_cols());
 			numRowsPerBlock.add(node.getOutputParameters()
-					.getNum_rows_per_block());
+					.get_rows_in_block());
 			numColsPerBlock.add(node.getOutputParameters()
-					.getNum_cols_per_block());
+					.get_cols_in_block());
 
 			InputInfo nodeInputInfo = null;
 			// Check if file format type is binary or text and update infos

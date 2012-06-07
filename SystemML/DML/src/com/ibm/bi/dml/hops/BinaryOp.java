@@ -72,8 +72,9 @@ public class BinaryOp extends Hops {
 					combine.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 
 					SortKeys sort = SortKeys.constructSortByValueLop(
 							combine,
@@ -84,8 +85,9 @@ public class BinaryOp extends Hops {
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 
 					Data lit = new Data(null, Data.OperationTypes.READ, null,
 							Double.toString(0.25), DataType.SCALAR,
@@ -95,8 +97,8 @@ public class BinaryOp extends Hops {
 							sort, lit, DataType.MATRIX, get_valueType(),
 							PickByCount.OperationTypes.RANGEPICK);
 
-					pick.getOutputParameters().setDimensions(-1, -1,
-							get_rows_per_block(), get_cols_per_block());
+					pick.getOutputParameters().setDimensions(-1, -1, 
+							get_rows_in_block(), get_cols_in_block(), -1);
 
 					PartialAggregate pagg = new PartialAggregate(pick,
 							HopsAgg2Lops.get(Hops.AggOp.SUM),
@@ -106,42 +108,36 @@ public class BinaryOp extends Hops {
 					// Set the dimensions of PartialAggregate LOP based on the
 					// direction in which aggregation is performed
 					pagg.setDimensionsBasedOnDirection(get_dim1(), get_dim2(),
-							get_rows_per_block(), get_cols_per_block());
+							getNnz(), get_rows_in_block(), get_cols_in_block());
 
 					Group group1 = new Group(pagg, Group.OperationTypes.Sort,
 							DataType.MATRIX, get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 
 					Aggregate agg1 = new Aggregate(group1, HopsAgg2Lops
 							.get(Hops.AggOp.SUM), DataType.MATRIX,
 							get_valueType(), ExecType.MR);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 					agg1.setupCorrectionLocation(pagg.getCorrectionLocaion());
 
 					UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS
-							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
+							.get(OpOp1.CAST_AS_SCALAR), DataType.SCALAR,
 							get_valueType());
-					unary1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 
 					BinaryCP binScalar1 = new BinaryCP(sort, lit,
 							BinaryCP.OperationTypes.IQSIZE, DataType.SCALAR,
 							get_valueType());
-					binScalar1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+					binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 
 					BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1,
 							HopsOpOp2LopsBS.get(Hops.OpOp2.DIV),
 							DataType.SCALAR, get_valueType());
-					binScalar2.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+					binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 
 					set_lops(binScalar2);
 				}
@@ -153,7 +149,10 @@ public class BinaryOp extends Hops {
 							getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 1, 1);
+							getInput().get(0).get_dim2(), 
+							getInput().get(0).get_rows_in_block(), 
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 					PickByCount pick = new PickByCount(
 							sort,
 							null,
@@ -161,7 +160,7 @@ public class BinaryOp extends Hops {
 							get_valueType(),
 							PickByCount.OperationTypes.IQM, et, true);
 					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim1(), get_rows_per_block(), get_cols_per_block());
+							get_dim1(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(pick);
 				}
@@ -176,16 +175,16 @@ public class BinaryOp extends Hops {
 						dt, get_valueType(), et);
 
 				if ( et == ExecType.MR ) {
-					cm.getOutputParameters().setDimensions(1, 1, 0, 0);
+					cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
 					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
 							get_valueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0);
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(unary1);
 				}
 				else {
 					//System.out.println("CM executing in CP...");
-					cm.getOutputParameters().setDimensions(0, 0, 0, 0);
+					cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(cm);
 				}
 
@@ -202,17 +201,18 @@ public class BinaryOp extends Hops {
 					combine.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 	
 					CoVariance cov = new CoVariance(combine, DataType.MATRIX,
 							get_valueType(), et);
-					cov.getOutputParameters().setDimensions(1, 1, 0, 0);
+					cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
 	
 					UnaryCP unary1 = new UnaryCP(cov, HopsOpOp1LopsUS
 							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
 							get_valueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0);
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 	
 					set_lops(unary1);
 				}
@@ -222,7 +222,7 @@ public class BinaryOp extends Hops {
 							getInput().get(0).constructLops(), 
 							getInput().get(1).constructLops(), 
 							get_dataType(), get_valueType(), et);
-					cov.getOutputParameters().setDimensions(0, 0, 0, 0);
+					cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(cov);
 				}
 
@@ -243,14 +243,15 @@ public class BinaryOp extends Hops {
 							DataType.MATRIX, ValueType.DOUBLE, et);
 	
 					combine.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					// Sort dimensions are same as the first input
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 	
 					// If only a single quantile is computed, then "pick" operation executes in CP.
 					ExecType et_pick = (getInput().get(1).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
@@ -263,7 +264,7 @@ public class BinaryOp extends Hops {
 									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(pick);
 				}
@@ -275,8 +276,9 @@ public class BinaryOp extends Hops {
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 					PickByCount pick = new PickByCount(
 							sort,
 							getInput().get(1).constructLops(),
@@ -286,7 +288,7 @@ public class BinaryOp extends Hops {
 									: PickByCount.OperationTypes.RANGEPICK, et, true);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(pick);
 				}
@@ -303,6 +305,7 @@ public class BinaryOp extends Hops {
 							.constructLops(),
 							getInput().get(1).constructLops(), HopsOpOp2LopsBS
 									.get(op), get_dataType(), get_valueType());
+					binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(binScalar1);
 
 				} else if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
@@ -314,8 +317,8 @@ public class BinaryOp extends Hops {
 							getInput().get(1).constructLops(), HopsOpOp2LopsU
 									.get(op), get_dataType(), get_valueType(), et);
 					unary1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 					set_lops(unary1);
 					
 				} else {
@@ -326,8 +329,8 @@ public class BinaryOp extends Hops {
 						Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 								get_dataType(), get_valueType(), et);
 						binary.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						set_lops(binary);
 					}
 					else {
@@ -347,14 +350,14 @@ public class BinaryOp extends Hops {
 						binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op),
 								get_dataType(), get_valueType(), et);
 						group1.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						group2.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						binary.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						set_lops(binary);
 					}
 				}
@@ -396,18 +399,6 @@ public class BinaryOp extends Hops {
 			Hops hop1 = this.getInput().get(0);
 			Hops hop2 = this.getInput().get(1);
 
-			String denseMatrix = "denseop" + this.getHopID();
-
-			boolean mm = hop1.get_dataType() == DataType.MATRIX
-					&& hop2.get_dataType() == DataType.MATRIX;
-			boolean ms = (hop1.get_dataType() == DataType.MATRIX && hop2
-					.get_dataType() == DataType.SCALAR)
-					|| (hop2.get_dataType() == DataType.MATRIX && hop1
-							.get_dataType() == DataType.SCALAR);
-
-			boolean makeDense = (op == OpOp2.DIV && (mm || ms))
-					|| ((op == OpOp2.PLUS || op == OpOp2.MINUS) && ms);
-
 			SQLLops lop1 = hop1.constructSQLLOPs();
 			SQLLops lop2 = hop2.constructSQLLOPs();
 
@@ -443,8 +434,7 @@ public class BinaryOp extends Hops {
 
 	private SQLLopProperties getProperties() {
 		Hops hop1 = this.getInput().get(0);
-		Hops hop2 = this.getInput().get(1);
-
+	
 		SQLLopProperties prop = new SQLLopProperties();
 		JOINTYPE join = JOINTYPE.FULLOUTERJOIN;
 		AGGREGATIONTYPE agg = AGGREGATIONTYPE.NONE;

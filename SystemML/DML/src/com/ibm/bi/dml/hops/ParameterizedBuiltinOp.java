@@ -81,7 +81,7 @@ public class ParameterizedBuiltinOp extends Hops {
 
 				// set the dimesnions for the lop for the output
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
+						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} else if (_op == ParamBuiltinOp.GROUPEDAGG) {
 				// construct necessary lops: combineBinary/combineTertiary and
 				// groupedAgg
@@ -103,11 +103,13 @@ public class ParameterizedBuiltinOp extends Hops {
 							getInput().get(_paramIndexMap.get("target"))
 									.get_dim1(),
 							getInput().get(_paramIndexMap.get("target"))
-									.get_dim2(),
+									.get_dim2(),		
 							getInput().get(_paramIndexMap.get("target"))
-									.get_rows_per_block(),
+									.get_rows_in_block(),
 							getInput().get(_paramIndexMap.get("target"))
-									.get_cols_per_block());
+									.get_cols_in_block(), 
+							getInput().get(_paramIndexMap.get("target"))
+									.getNnz());
 
 					// add the combine lop to parameter list, with a new name
 					// "combinedinput"
@@ -132,9 +134,11 @@ public class ParameterizedBuiltinOp extends Hops {
 							getInput().get(_paramIndexMap.get("target"))
 									.get_dim2(),
 							getInput().get(_paramIndexMap.get("target"))
-									.get_rows_per_block(),
+									.get_rows_in_block(),
 							getInput().get(_paramIndexMap.get("target"))
-									.get_cols_per_block());
+									.get_cols_in_block(), 
+							getInput().get(_paramIndexMap.get("target"))
+									.getNnz());
 
 					// add the combine lop to parameter list, with a new name
 					// "combinedinput"
@@ -146,7 +150,7 @@ public class ParameterizedBuiltinOp extends Hops {
 				GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
 						get_dataType(), get_valueType());
 				// output dimensions are unknown at compilation time
-				grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1);
+				grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 
 				set_lops(grp_agg);
 			}

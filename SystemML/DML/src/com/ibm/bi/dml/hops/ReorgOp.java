@@ -94,22 +94,22 @@ public class ReorgOp extends Hops {
 					// copy the dimensions from the HOP (which would be a column
 					// vector, in this case)
 					transform1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 
 					Group group1 = new Group(
 							transform1, Group.OperationTypes.Sort,
 							get_dataType(), get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 
 					Aggregate agg1 = new Aggregate(
 							group1, HopsAgg2Lops.get(AggOp.SUM),
 							get_dataType(), get_valueType(), ExecType.MR);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(),
-							get_cols_per_block());
+							get_dim2(), get_rows_in_block(),
+							get_cols_in_block(), getNnz());
 
 					// kahanSum setup is not used for Diag operations. They are
 					// treated as special case in the run time
@@ -127,7 +127,7 @@ public class ReorgOp extends Hops {
 						 UnaryCP.OperationTypes.NCOL,
 						 DataType.SCALAR,
 						 ValueType.DOUBLE);
-
+                offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 				Append append = new Append(getInput().get(0).constructLops(), 
 										   getInput().get(1).constructLops(), 
 										   offset,
@@ -136,19 +136,20 @@ public class ReorgOp extends Hops {
 				
 				append.getOutputParameters().setDimensions(get_dim1(), 
 														   get_dim2(), 
-														   get_rows_per_block(), 
-														   get_cols_per_block());
+														   get_rows_in_block(), 
+														   get_cols_in_block(), 
+														   getNnz());
 				
 				ReBlock reblock = null;
 				try {
 					reblock = new ReBlock(
-							append, (long) get_rows_per_block(),
-							(long) get_cols_per_block(), get_dataType(), get_valueType());
+							append, get_rows_in_block(),
+							get_cols_in_block(), get_dataType(), get_valueType());
 				} catch (Exception e) {
 					throw new HopsException(e);
 				}
 				reblock.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-						get_rows_per_block(), get_cols_per_block());
+						get_rows_in_block(), get_cols_in_block(), getNnz());
 		
 				set_lops(reblock);
 				
@@ -158,7 +159,7 @@ public class ReorgOp extends Hops {
 						getInput().get(0).constructLops(), HopsTransf2Lops
 								.get(op), get_dataType(), get_valueType(), et);
 				transform1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
+						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 				set_lops(transform1);
 			}
 		}

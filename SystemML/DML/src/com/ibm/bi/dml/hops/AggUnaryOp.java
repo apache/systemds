@@ -54,11 +54,11 @@ public class AggUnaryOp extends Hops {
 							getInput().get(0).constructLops(), HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), get_dataType(),
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 					set_lops(agg1);
 					if (get_dataType() == DataType.SCALAR) {
-						agg1.getOutputParameters().setDimensions(1, 1,
-								get_rows_per_block(), get_cols_per_block());
+						agg1.getOutputParameters().setDimensions(1, 1, 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 					}
 				}
 				else {
@@ -67,45 +67,40 @@ public class AggUnaryOp extends Hops {
 									.get(_op), HopsDirection2Lops.get(_direction),
 							DataType.MATRIX, get_valueType());
 					transform1.setDimensionsBasedOnDirection(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					Group group1 = new Group(
 							transform1, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					Aggregate agg1 = new Aggregate(
 							group1, HopsAgg2Lops.get(_op), DataType.MATRIX,
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 					agg1.setupCorrectionLocation(transform1.getCorrectionLocaion());
 	
 					set_lops(agg1);
 	
 					if (get_dataType() == DataType.SCALAR) {
-						// In case of SUM(), an explicit cast must be performed so
-						// that the result is stored in a scalar variable
-						transform1.getOutputParameters().setDimensions(
-								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
 	
 						// Set the dimensions of PartialAggregate LOP based on the
 						// direction in which aggregation is performed
 						transform1.setDimensionsBasedOnDirection(getInput().get(0)
 								.get_dim1(), getInput().get(0).get_dim2(),
-								get_rows_per_block(), get_cols_per_block());
+								getNnz(), get_rows_in_block(), get_cols_in_block());
 						group1.getOutputParameters().setDimensions(
 								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
-						agg1.getOutputParameters().setDimensions(1, 1,
-								get_rows_per_block(), get_cols_per_block());
+								getInput().get(0).get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
+						agg1.getOutputParameters().setDimensions(1, 1, 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						UnaryCP unary1 = new UnaryCP(
 								agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 								get_dataType(), get_valueType());
+						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 						set_lops(unary1);
 	
 					}

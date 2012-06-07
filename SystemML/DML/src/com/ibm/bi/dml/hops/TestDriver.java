@@ -18,9 +18,9 @@ public class TestDriver {
 		 * result = colSum(T((((a %*% b) * c) * 10)));
 		 */
 
-		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1,-1);
-		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1,-1);
-		Hops c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1,-1);
+		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1, -1,-1);
+		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1, -1, -1,-1);
+		Hops c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1, -1,-1);
 		
 		Hops t1;
 
@@ -37,11 +37,11 @@ public class TestDriver {
 		 * A = B %*% C; D = A + 20; E = A * 50;
 		 */
 
-		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1,-1);
-		Hops c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1,-1);
+		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1, -1,-1);
+		Hops c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1, -1,-1);
 
-		b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1,-1);
-		c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1,-1);
+		b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1, -1,-1);
+		c = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "C.data",-1,-1,-1, -1,-1);
 
 		Hops t1 = new AggBinaryOp("A", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, b, c);
 		Hops t2 = new BinaryOp("D", DataType.MATRIX, ValueType.DOUBLE, OpOp2.PLUS, t1, new LiteralOp("20", 20));
@@ -58,11 +58,11 @@ public class TestDriver {
 		 * C = A %*% B write (C)
 		 */
 
-		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1,-1);
-		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1,-1);
+		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1, -1,-1);
+		Hops b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1, -1,-1);
 
-		a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1,-1);
-		b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1,-1);
+		a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1, -1,-1);
+		b = new DataOp("B", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "B.data",-1,-1,-1, -1,-1);
 
 		Hops t1 = new AggBinaryOp("C", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, AggOp.SUM, a, b);
 		Hops t2 = new DataOp("C", DataType.MATRIX, ValueType.DOUBLE, t1, DataOpTypes.PERSISTENTWRITE, "C.data");
@@ -91,9 +91,9 @@ public class TestDriver {
 		 */
 
 
-		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1,-1);
+		Hops a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1, -1,-1);
 
-		a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1,-1);
+		a = new DataOp("A", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "A.data",-1,-1,-1, -1,-1);
 
 		a.set_dim1(200);
 		a.set_dim2(1000);
@@ -127,7 +127,7 @@ public class TestDriver {
 		
 		i = new BinaryOp("i", DataType.SCALAR, ValueType.DOUBLE, OpOp2.PLUS, i, i20);
 		
-		Hops w = new DataOp("w", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "W.data", 200, 1000, -1,-1);
+		Hops w = new DataOp("w", DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.PERSISTENTREAD, "W.data", 200, 1000, -1, -1,-1);
 		w = new BinaryOp("w", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, w, i);	
 		
 		w.printMe();

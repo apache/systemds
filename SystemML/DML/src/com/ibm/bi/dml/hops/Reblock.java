@@ -21,8 +21,8 @@ public class Reblock extends Hops {
 		set_dim1(inp.get_dim1());
 		set_dim2(inp.get_dim2());
 		
-		set_rows_per_block(rows_per_block);
-		set_cols_per_block(cols_per_block);
+		set_rows_in_block(rows_per_block);
+		set_cols_in_block(cols_per_block);
 
 		getParent().addAll(inp.getParent());
 		getInput().add(0, inp);
@@ -51,8 +51,8 @@ public class Reblock extends Hops {
 		set_dim1(par.get_dim1());
 		set_dim2(par.get_dim2());
 		
-		set_rows_per_block(par.get_rows_per_block());
-		set_cols_per_block(par.get_cols_per_block());
+		set_rows_in_block(par.get_rows_in_block());
+		set_cols_in_block(par.get_cols_in_block());
 
 		getParent().add(par);
 		getInput().addAll(par.getInput());
@@ -79,9 +79,9 @@ public class Reblock extends Hops {
 				if ( et == ExecType.MR ) {
 					ReBlock reblock = new ReBlock(
 						getInput().get(0).constructLops(),
-						(long) get_rows_per_block(), (long) get_cols_per_block(), get_dataType(), get_valueType());
+						get_rows_in_block(), get_cols_in_block(), get_dataType(), get_valueType());
 					reblock.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 		
 					set_lops(reblock);
 				}

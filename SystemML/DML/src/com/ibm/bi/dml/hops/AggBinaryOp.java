@@ -64,32 +64,32 @@ public class AggBinaryOp extends Hops {
 				if ( et == ExecType.CP ) {
 					BinaryCP bcp = new BinaryCP(getInput().get(0).constructLops(), 
 							getInput().get(1).constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
-					bcp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_per_block(), get_cols_per_block());
+					bcp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 					set_lops(bcp);
 				}
 				else if ( et == ExecType.MR ) {
 				
 					MMultMethod method = optFindMMultMethod ( 
 							getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							getInput().get(0).get_rows_per_block(), getInput().get(0).get_cols_per_block(),    
+							getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
 							getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
-							getInput().get(1).get_rows_per_block(), getInput().get(1).get_cols_per_block());
+							getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block());
 					if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(
 								getInput().get(0).constructLops(), getInput().get(1)
 										.constructLops(), get_dataType(), get_valueType());
-						mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-								get_rows_per_block(), get_cols_per_block());
+						mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
 						Group grp = new Group(
 								mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-								get_rows_per_block(), get_cols_per_block());
+						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
 						Aggregate agg1 = new Aggregate(
 								grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-								get_rows_per_block(), get_cols_per_block());
+						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
 						// aggregation uses kahanSum but the inputs do not have correction values
 						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
@@ -101,7 +101,7 @@ public class AggBinaryOp extends Hops {
 								getInput().get(0).constructLops(), getInput().get(1)
 								.constructLops(), get_dataType(), get_valueType());
 						rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-								get_rows_per_block(), get_cols_per_block());
+								get_rows_in_block(), get_cols_in_block(), getNnz());
 						set_lops(rmm);
 					}
 				}
@@ -164,7 +164,7 @@ public class AggBinaryOp extends Hops {
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
 	 */
-	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, int m1_rpb, int m1_cpb, long m2_rows, long m2_cols, int m2_rpb, int m2_cpb ) {
+	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb ) {
 		
 		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
 		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2

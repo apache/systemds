@@ -75,12 +75,22 @@ public class TertiaryOp extends Hops {
 							getInput().get(0).constructLops(), 
 							getInput().get(1).constructLops(), 
 							DataType.MATRIX, get_valueType());
+					combine.getOutputParameters().setDimensions(
+							getInput().get(0).get_dim1(),
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
+					
 					CentralMoment cm = new CentralMoment(combine, (Lops) getInput()
 							.get(2).constructLops(), DataType.MATRIX,
 							get_valueType(), et);
+					cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
+					
 					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
 							get_valueType());
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(unary1);
 				} else {
 					//System.out.println("CM Tertiary executing in CP...");
@@ -89,8 +99,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(1).constructLops(),
 							getInput().get(2).constructLops(),
 							get_dataType(), get_valueType(), et);
-					cm.getOutputParameters().setDimensions(get_dim1(),
-							get_dim1(), get_rows_per_block(), get_cols_per_block());
+					cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(cm);
 				}
 
@@ -109,15 +118,18 @@ public class TertiaryOp extends Hops {
 					combine.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_per_block(),
-							getInput().get(0).get_cols_per_block());
+							getInput().get(0).get_rows_in_block(),
+							getInput().get(0).get_cols_in_block(), 
+							getInput().get(0).getNnz());
 	
 					CoVariance cov = new CoVariance(
 							combine, DataType.MATRIX, get_valueType(), et);
 	
+					cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
 					UnaryCP unary1 = new UnaryCP(
 							cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 							get_dataType(), get_valueType());
+					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(unary1);
 				}
 				else {
@@ -127,7 +139,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(1).constructLops(), 
 							getInput().get(2).constructLops(), 
 							get_dataType(), get_valueType(), et);
-					cov.getOutputParameters().setDimensions(0, 0, 0, 0);
+					cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(cov);
 				}
 
@@ -160,12 +172,18 @@ public class TertiaryOp extends Hops {
 	
 					combine.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 1, 1);
+							getInput().get(0).get_dim2(), 
+							getInput().get(0).get_rows_in_block(), 
+							getInput().get(0).get_cols_in_block(),
+							getInput().get(0).getNnz());
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 1, 1);
+							getInput().get(0).get_dim2(), 
+							getInput().get(0).get_rows_in_block(), 
+							getInput().get(0).get_cols_in_block(),
+							getInput().get(0).getNnz());
 					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim1(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(pick);
 				}
@@ -184,9 +202,12 @@ public class TertiaryOp extends Hops {
 									: PickByCount.OperationTypes.RANGEPICK, et, true);
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 1, 1);
+							getInput().get(0).get_dim2(),
+							getInput().get(0).get_rows_in_block(), 
+							getInput().get(0).get_cols_in_block(),
+							getInput().get(0).getNnz());
 					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim1(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(pick);
 				}
@@ -216,18 +237,18 @@ public class TertiaryOp extends Hops {
 							getInput().get(2).constructLops(),
 							tertiaryOp,
 							get_dataType(), get_valueType(), et);
-					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
+					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 					ReBlock reblock = null;
 					try {
 						reblock = new ReBlock(
-								tertiary, (long) get_rows_per_block(),
-								(long) get_cols_per_block(), get_dataType(),
+								tertiary, get_rows_in_block(),
+								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
 						throw new HopsException(e);
 					}
-					reblock.getOutputParameters().setDimensions(-1, -1,
-							get_rows_per_block(), get_cols_per_block());
+					reblock.getOutputParameters().setDimensions(-1, -1,  
+							get_rows_in_block(), get_cols_in_block(), -1);
 
 					set_lops(reblock);
 				}
@@ -240,7 +261,7 @@ public class TertiaryOp extends Hops {
 							Group.OperationTypes.Sort, get_dataType(),
 							get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					Tertiary tertiary = null;
 					// create "group" lops for MATRIX inputs
@@ -252,15 +273,15 @@ public class TertiaryOp extends Hops {
 								Group.OperationTypes.Sort, get_dataType(),
 								get_valueType());
 						group2.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						group3 = new Group(
 								getInput().get(2).constructLops(),
 								Group.OperationTypes.Sort, get_dataType(),
 								get_valueType());
 						group3.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 	
 						tertiary = new Tertiary(
 								group1, group2, group3,
@@ -275,8 +296,8 @@ public class TertiaryOp extends Hops {
 								Group.OperationTypes.Sort, get_dataType(),
 								get_valueType());
 						group2.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						tertiary = new Tertiary(
 								group1,
 								group2,
@@ -299,8 +320,8 @@ public class TertiaryOp extends Hops {
 								Group.OperationTypes.Sort, get_dataType(),
 								get_valueType());
 						group3.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_per_block(),
-								get_cols_per_block());
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
 						tertiary = new Tertiary(
 								group1,
 								getInput().get(1).constructLops(),
@@ -311,17 +332,17 @@ public class TertiaryOp extends Hops {
 					}
 	
 					// output dimensions are not known at compilation time
-					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
+					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 	
 					group4 = new Group(
 							tertiary, Group.OperationTypes.Sort, get_dataType(),
 							get_valueType());
-					group4.getOutputParameters().setDimensions(-1, -1, -1, -1);
+					group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 	
 					Aggregate agg1 = new Aggregate(
 							group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
 							get_valueType(), ExecType.MR);
-					agg1.getOutputParameters().setDimensions(-1, -1, -1, -1);
+					agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 	
 					// kahamSum is used for aggreagtion but inputs do not have
 					// correction values
@@ -332,14 +353,14 @@ public class TertiaryOp extends Hops {
 					ReBlock reblock = null;
 					try {
 						reblock = new ReBlock(
-								agg1, (long) get_rows_per_block(),
-								(long) get_cols_per_block(), get_dataType(),
+								agg1, get_rows_in_block(),
+								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
 						throw new HopsException(e);
 					}
-					reblock.getOutputParameters().setDimensions(-1, -1,
-							get_rows_per_block(), get_cols_per_block());
+					reblock.getOutputParameters().setDimensions(-1, -1, 
+							get_rows_in_block(), get_cols_in_block(), -1);
 	
 					set_lops(reblock);
 				}
@@ -355,8 +376,9 @@ public class TertiaryOp extends Hops {
 				group1.getOutputParameters().setDimensions(
 						getInput().get(0).get_dim1(),
 						getInput().get(0).get_dim2(),
-						getInput().get(0).get_rows_per_block(),
-						getInput().get(0).get_cols_per_block());
+						getInput().get(0).get_rows_in_block(),
+						getInput().get(0).get_cols_in_block(), 
+						getInput().get(0).getNnz());
 
 				group2 = new Group(
 						getInput().get(1).constructLops(),
@@ -365,8 +387,9 @@ public class TertiaryOp extends Hops {
 				group2.getOutputParameters().setDimensions(
 						getInput().get(1).get_dim1(),
 						getInput().get(1).get_dim2(),
-						getInput().get(1).get_rows_per_block(),
-						getInput().get(1).get_cols_per_block());
+						getInput().get(1).get_rows_in_block(),
+						getInput().get(1).get_cols_in_block(), 
+						getInput().get(1).getNnz());
 
 				Tertiary tertiary = null;
 				if (getInput().get(2).get_dataType() == DataType.MATRIX) {
@@ -377,8 +400,9 @@ public class TertiaryOp extends Hops {
 					group3.getOutputParameters().setDimensions(
 							getInput().get(2).get_dim1(),
 							getInput().get(2).get_dim2(),
-							getInput().get(2).get_rows_per_block(),
-							getInput().get(2).get_cols_per_block());
+							getInput().get(2).get_rows_in_block(),
+							getInput().get(2).get_cols_in_block(),
+							getInput().get(2).getNnz());
 
 					tertiary = new Tertiary(
 							group1, group2, group3,
@@ -392,17 +416,17 @@ public class TertiaryOp extends Hops {
 							Tertiary.OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT,
 							DataType.MATRIX, get_valueType());
 				}
-				tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1);
+				tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 
 				group4 = new Group(
 						tertiary, Group.OperationTypes.Sort, get_dataType(),
 						get_valueType());
-				group4.getOutputParameters().setDimensions(-1, -1, -1, -1);
+				group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 
 				Aggregate agg1 = new Aggregate(
 						group4, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX,
 						get_valueType(), ExecType.MR);
-				agg1.getOutputParameters().setDimensions(-1, -1, -1, -1);
+				agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 
 				// kahamSum is used for aggreagtion but inputs do not have
 				// correction values
@@ -412,7 +436,7 @@ public class TertiaryOp extends Hops {
 						agg1, UnaryCP.OperationTypes.SPEARMANHELPER,
 						get_dataType(), get_valueType());
 				unary1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_per_block(), get_cols_per_block());
+						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 
 				set_lops(unary1);
 

@@ -43,8 +43,10 @@ public class PartitionOp extends Hops {
 			Lops dataLop = getInput().get(0).constructLops();
 			PartitionLop pLop = new PartitionLop(pp, dataLop, get_dataType(), get_valueType()) ;
 			pLop.getOutputParameters().setDimensions(getInput().get(0).get_dim1(),
-					getInput().get(0).get_dim2(), getInput().get(0).get_rows_per_block(), 
-					getInput().get(0).get_cols_per_block()) ;
+					getInput().get(0).get_dim2(),  
+					getInput().get(0).get_rows_in_block(), 
+					getInput().get(0).get_cols_in_block(),
+					getInput().get(0).getNnz()) ;
 			set_lops(pLop) ;
 		}
 		return get_lops() ;

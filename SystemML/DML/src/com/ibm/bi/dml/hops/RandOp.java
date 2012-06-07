@@ -75,7 +75,7 @@ public class RandOp extends Hops
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR,
 					get_dataType(), get_valueType(), et);
 			rnd.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-					get_rows_per_block(), get_cols_per_block());
+					get_rows_in_block(), get_cols_in_block(), getNnz());
 			set_lops(rnd);
 		}
 		

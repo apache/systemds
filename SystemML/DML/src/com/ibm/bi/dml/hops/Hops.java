@@ -41,8 +41,9 @@ abstract public class Hops {
 	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
 	private long _dim1 = -1;
 	private long _dim2 = -1;
-	private int _rows_per_block = -1;
-	private int _cols_per_block = -1;
+	private long _rows_in_block = -1;
+	private long _cols_in_block = -1;
+	private long _nnz = -1;
 
 	protected ArrayList<Hops> _parent = new ArrayList<Hops>();
 	protected ArrayList<Hops> _input = new ArrayList<Hops>();
@@ -75,22 +76,30 @@ abstract public class Hops {
 		ID = getNextHopID();
 	}
 
-	public int get_rows_per_block() {
-		return _rows_per_block;
+	public long get_rows_in_block() {
+		return _rows_in_block;
 	}
 
-	public void set_rows_per_block(int rowsPerBlock) {
-		_rows_per_block = rowsPerBlock;
+	public void set_rows_in_block(long rowsInBlock) {
+		_rows_in_block = rowsInBlock;
 	}
 
-	public int get_cols_per_block() {
-		return _cols_per_block;
+	public long get_cols_in_block() {
+		return _cols_in_block;
 	}
 
-	public void set_cols_per_block(int colsPerBlock) {
-		_cols_per_block = colsPerBlock;
+	public void set_cols_in_block(long colsInBlock) {
+		_cols_in_block = colsInBlock;
 	}
 
+	public void setNnz(long nnz){
+		_nnz = nnz;
+	}
+	
+	public long getNnz(){
+		return _nnz;
+	}
+	
 	public Kind getKind() {
 		return _kind;
 	}
@@ -136,7 +145,7 @@ abstract public class Hops {
 
 			// if block size does not match
 			if (get_dataType() != DataType.SCALAR
-					&& (get_rows_per_block() != GLOBAL_BLOCKSIZE || get_cols_per_block() != GLOBAL_BLOCKSIZE)) {
+					&& (get_rows_in_block() != GLOBAL_BLOCKSIZE || get_cols_in_block() != GLOBAL_BLOCKSIZE)) {
 
 				if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
 
@@ -150,7 +159,7 @@ abstract public class Hops {
 
 					// insert reblock before the hop.
 
-					if (get_rows_per_block() == -1 && get_cols_per_block() == -1) {
+					if (get_rows_in_block() == -1 && get_cols_in_block() == -1) {
 
 						// if this dataop is for cell ouput, then no reblock is
 						// needed as (A) all jobtypes can produce block2cell and
@@ -164,8 +173,8 @@ abstract public class Hops {
 						// this is
 						// the only parent, otherwise new Reblock
 
-						getInput().get(0).set_rows_per_block(this.get_rows_per_block());
-						getInput().get(0).set_cols_per_block(this.get_cols_per_block());
+						getInput().get(0).set_rows_in_block(this.get_rows_in_block());
+						getInput().get(0).set_cols_in_block(this.get_cols_in_block());
 
 					} else {
 
@@ -175,8 +184,8 @@ abstract public class Hops {
 
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| ((DataOp) this).get_dataop() == DataOp.DataOpTypes.TRANSIENTREAD) {
-					set_rows_per_block(GLOBAL_BLOCKSIZE);
-					set_cols_per_block(GLOBAL_BLOCKSIZE);
+					set_rows_in_block(GLOBAL_BLOCKSIZE);
+					set_cols_in_block(GLOBAL_BLOCKSIZE);
 
 				} else {
 					throw new HopsException("unexpected non-scalar Data HOP in reblock.\n");
@@ -206,32 +215,32 @@ abstract public class Hops {
 			 */
 			
 			if ( this instanceof Reblock ) {
-				set_rows_per_block(GLOBAL_BLOCKSIZE);
-				set_cols_per_block(GLOBAL_BLOCKSIZE);
+				set_rows_in_block(GLOBAL_BLOCKSIZE);
+				set_cols_in_block(GLOBAL_BLOCKSIZE);
 			}
 			
 			// Constraint C1:
 			else if ( (this instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)this)._op == ParamBuiltinOp.GROUPEDAGG) ) {
-				set_rows_per_block(-1);
-				set_cols_per_block(-1);
+				set_rows_in_block(-1);
+				set_cols_in_block(-1);
 			}
 			
 			// Constraint C2:
 			else if ( this.get_dataType() == DataType.SCALAR ) {
-				set_rows_per_block(-1);
-				set_cols_per_block(-1);
+				set_rows_in_block(-1);
+				set_cols_in_block(-1);
 			}
 
 			// Constraint C3:
 			else {
-				set_rows_per_block(GLOBAL_BLOCKSIZE);
-				set_cols_per_block(GLOBAL_BLOCKSIZE);
+				set_rows_in_block(GLOBAL_BLOCKSIZE);
+				set_cols_in_block(GLOBAL_BLOCKSIZE);
 				
 				// if any input is not blocked then the output of current Hop should not be blocked
 				for ( Hops h : getInput() ) {
-					if ( h.get_dataType() == DataType.MATRIX && h.get_rows_per_block() == -1 && h.get_cols_per_block() == -1 ) {
-						set_rows_per_block(-1);
-						set_cols_per_block(-1);
+					if ( h.get_dataType() == DataType.MATRIX && h.get_rows_in_block() == -1 && h.get_cols_in_block() == -1 ) {
+						set_rows_in_block(-1);
+						set_cols_in_block(-1);
 						break;
 					}
 				}
@@ -369,9 +378,9 @@ abstract public class Hops {
 
 		// Propagate properties of input hops to current hop h
 		h.set_dim1(input1.get_dim1());
-		h.set_rows_per_block(input1.get_rows_per_block());
+		h.set_rows_in_block(input1.get_rows_in_block());
 		h.set_dim2(input2.get_dim2());
-		h.set_cols_per_block(input2.get_cols_per_block());
+		h.set_cols_in_block(input2.get_cols_in_block());
 
 	}
 
@@ -573,8 +582,9 @@ abstract public class Hops {
 			System.out.print("\n  Dim1: " + get_dim1());
 		//if (get_dim2() != -1)
 			System.out.print(" Dim2: " + get_dim2());
-		System.out.print(" RowsPerBlock: " + get_rows_per_block());
-		System.out.print(" ColsPerBlock: " + get_cols_per_block());
+		System.out.print("\n nnz: " + getNnz());
+		System.out.print(" RowsInBlock: " + get_rows_in_block());
+		System.out.print(" ColsInBlock: " + get_cols_in_block());
 		System.out.print("\n");
 	}
 

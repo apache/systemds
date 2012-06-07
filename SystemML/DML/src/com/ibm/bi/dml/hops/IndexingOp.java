@@ -53,17 +53,19 @@ public class IndexingOp extends Hops {
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
 							get_dataType(), get_valueType(), et);
 	
+					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+							get_rows_in_block(), get_cols_in_block(), getNnz());
 					Group group1 = new Group(
 							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					Aggregate agg1 = new Aggregate(
 							group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_per_block(), get_cols_per_block());
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(agg1);
 				}
@@ -72,6 +74,8 @@ public class IndexingOp extends Hops {
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
 							get_dataType(), get_valueType(), et);
+					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+							get_rows_in_block(), get_cols_in_block(), getNnz());
 					set_lops(reindex);
 				}
 			} catch (Exception e) {

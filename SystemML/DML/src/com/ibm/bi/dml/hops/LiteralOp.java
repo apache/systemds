@@ -79,8 +79,7 @@ public class LiteralOp extends Hops {
 
 			}
 
-			l.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-					get_rows_per_block(), get_cols_per_block());
+			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			set_lops(l);
 		}
 

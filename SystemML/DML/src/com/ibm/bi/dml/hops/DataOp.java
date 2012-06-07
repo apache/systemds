@@ -26,15 +26,16 @@ public class DataOp extends Hops {
 	
 	
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
-			String fname, long dim1, long dim2, int rowsPerBlock, int colsPerBlock) {
+			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
 		super(Kind.DataOp, l, dt, vt);
 		_dataop = dop;
 		
 		fileName = fname;
 		set_dim1(dim1);
 		set_dim2(dim2);
-		set_rows_per_block(rowsPerBlock);
-		set_cols_per_block(colsPerBlock);
+		setNnz(nnz);
+		set_rows_in_block(rowsPerBlock);
+		set_cols_in_block(colsPerBlock);
 				
 		if (dop == DataOpTypes.TRANSIENTREAD)
 			setFormatType(FileFormatTypes.BINARY);
@@ -54,11 +55,12 @@ public class DataOp extends Hops {
 			setFormatType(FileFormatTypes.BINARY);
 	}
 	
-	public void setOutputParams(long dim1, long dim2, int rowsPerBlock, int colsPerBlock) {
+	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
 		set_dim1(dim1);
 		set_dim2(dim2);
-		set_rows_per_block(rowsPerBlock);
-		set_cols_per_block(colsPerBlock);
+		setNnz(nnz);
+		set_rows_in_block(rowsPerBlock);
+		set_cols_in_block(colsPerBlock);
 	}
 
 	public void setFileName(String fn) {
@@ -99,7 +101,7 @@ public class DataOp extends Hops {
 			((Data) l).setFileFormatType(this.getFormatType());
 
 			l.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
-					get_rows_per_block(), get_cols_per_block());
+					get_rows_in_block(), get_cols_in_block(), getNnz());
 			set_lops(l);
 		}
 

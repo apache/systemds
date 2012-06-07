@@ -44,9 +44,9 @@ public class RandOpTest {
 		assertEquals(NUM_COLS, lop.getOutputParameters().getNum_cols()
 				.longValue());
 		assertEquals(NUM_ROWS_IN_BLOCK, lop.getOutputParameters()
-				.getNum_rows_per_block().longValue());
+				.get_rows_in_block().longValue());
 		assertEquals(NUM_COLS_IN_BLOCK, lop.getOutputParameters()
-				.getNum_cols_per_block().longValue());
+				.get_cols_in_block().longValue());
 		assertTrue(lop.getOutputParameters().isBlocked_representation());
 		assertEquals(Format.BINARY, lop.getOutputParameters().getFormat());
 		try {
@@ -75,8 +75,9 @@ public class RandOpTest {
 		RandOp rand = new RandOp(id, MIN_VALUE, MAX_VALUE, SPARSITY, PDF);
 		rand.set_dim1(id.getDim1());
 		rand.set_dim2(id.getDim2());
-		rand.set_rows_per_block((int) id.getRowsInBlock());
-		rand.set_cols_per_block((int) id.getColumnsInBlock());
+		rand.setNnz(id.getNnz());
+		rand.set_rows_in_block((int) id.getRowsInBlock());
+		rand.set_cols_in_block((int) id.getColumnsInBlock());
 		return rand;
 	}
 

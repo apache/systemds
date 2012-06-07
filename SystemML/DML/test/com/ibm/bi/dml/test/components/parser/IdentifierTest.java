@@ -92,9 +92,9 @@ public class IdentifierTest {
         assertEquals(ValueType.BOOLEAN, idToTest.getValueType());
         assertEquals(0, idToTest.getDim1());
         assertEquals(0, idToTest.getDim2());
-        assertEquals(1, idToTest.getRowsInBlock());
-        assertEquals(1, idToTest.getColumnsInBlock());
-        assertEquals(1, idToTest.getNnz());
+        assertEquals(0, idToTest.getRowsInBlock());
+        assertEquals(0, idToTest.getColumnsInBlock());
+        assertEquals(-1, idToTest.getNnz());
         assertNull(idToTest.getFormatType());
     }
 

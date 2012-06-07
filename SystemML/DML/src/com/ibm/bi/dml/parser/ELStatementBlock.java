@@ -127,10 +127,10 @@ public class ELStatementBlock extends StatementBlock {
 		
 			DataIdentifier var = this.liveIn().getVariables().get(input);
 			DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), 
-				DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), 
-				(int)var.getRowsInBlock(), (int)var.getColumnsInBlock());
-			read.set_rows_per_block((int) var.getRowsInBlock()) ;
-			read.set_cols_per_block((int) var.getColumnsInBlock()) ;
+				DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(),
+				var.getRowsInBlock(), var.getColumnsInBlock());
+			read.set_rows_in_block(var.getRowsInBlock()) ;
+			read.set_cols_in_block(var.getColumnsInBlock()) ;
 		
 			// create the partition HOP
 			_partitionHop = new PartitionOp("B", DataType.MATRIX, ValueType.DOUBLE, pp, read) ;

@@ -1,15 +1,12 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
-import java.util.Vector ;
 import java.util.HashMap;
-import java.util.HashSet;
 
-import com.ibm.bi.dml.hops.CrossvalOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.hops.PartitionOp;
 import com.ibm.bi.dml.hops.Hops.DataOpTypes;
+import com.ibm.bi.dml.hops.PartitionOp;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -110,10 +107,10 @@ public class ELUseStatementBlock extends StatementBlock {
 		
 			DataIdentifier var = this.liveIn().getVariables().get(input);
 			DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), 
-					DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), 
-					(int)var.getRowsInBlock(), (int)var.getColumnsInBlock());
-			read.set_rows_per_block((int) var.getRowsInBlock()) ;
-			read.set_cols_per_block((int) var.getColumnsInBlock()) ;
+					DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(),
+					var.getRowsInBlock(), var.getColumnsInBlock());
+			read.set_rows_in_block( var.getRowsInBlock()) ;
+			read.set_cols_in_block( var.getColumnsInBlock()) ;
 			
 			// create the partition HOP
 			_partitionHop = new PartitionOp("B", DataType.MATRIX, ValueType.DOUBLE, pp, read);

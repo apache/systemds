@@ -156,8 +156,7 @@ public class DMLTranslator {
 		VariableSet currentLiveOut = new VariableSet();
 		int numBlocks = dmlp.getNumStatementBlocks();
 		VariableSet activeIn = new VariableSet();
-		VariableSet activeOut = new VariableSet();
-		
+				
 		for (int i = 0; i < numBlocks; i++) {
 			StatementBlock sb = dmlp.getStatementBlock(i);
 			activeIn = sb.initializeforwardLV(activeIn);
@@ -187,8 +186,7 @@ public class DMLTranslator {
 		
 			for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock current = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-				FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
-				
+								
 				//currentLiveIn = new VariableSet();
 				//for (DataIdentifier id : fstmt.getInputParams()){
 				//	currentLiveIn.addVariable(id.getName(), id);
@@ -1597,7 +1595,7 @@ public class DMLTranslator {
 			
 			for (String varName : liveIn.getVariables().keySet()) {
 				DataIdentifier var = liveIn.getVariables().get(varName);
-				DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(),(int) var.getRowsInBlock(), (int) var.getColumnsInBlock());
+				DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
 				_ids.put(varName, read);
 			}
 		}
@@ -1611,7 +1609,7 @@ public class DMLTranslator {
 					Hops varHop = _ids.get(varName);
 
 					DataOp transientwrite = new DataOp(varName, varHop.get_dataType(), varHop.get_valueType(), varHop, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(varHop.get_dim1(), varHop.get_dim2(), varHop.get_rows_per_block(), varHop.get_cols_per_block());
+					transientwrite.setOutputParams(varHop.get_dim1(), varHop.get_dim2(), varHop.getNnz(), varHop.get_rows_in_block(), varHop.get_cols_in_block());
 					output.add(transientwrite);
 				}
 			}
@@ -1626,7 +1624,7 @@ public class DMLTranslator {
 				
 				// TODO: DRB: BEGIN RETROFIT /////////////////////////////////////////
 				String filenameString = is.getExprParam(InputStatement.IO_FILENAME).toString();
-				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, filenameString, ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
+				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, filenameString, ds.getDim1(), ds.getDim2(), ds.getNnz(), ds.getRowsInBlock(), ds.getColumnsInBlock());
 				//DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, is.getFilename(), ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
 				
 				// TODO: DRB: END RETROFIT ////////////////////////////////////////////
@@ -1639,7 +1637,7 @@ public class DMLTranslator {
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), read, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(read.get_dim1(), read.get_dim2(), read.get_rows_per_block(), read.get_cols_per_block());
+					transientwrite.setOutputParams(read.get_dim1(), read.get_dim2(), read.getNnz(), read.get_rows_in_block(), read.get_cols_in_block());
 					updatedLiveOut.addVariable(target.getName(), target);
 					output.add(transientwrite);
 				}
@@ -1656,7 +1654,7 @@ public class DMLTranslator {
 				// TODO: DRB: END RETROFIT FOR OUPUTSTATEMENT //////////////////////
 				
 				
-				write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).get_rows_per_block(), _ids.get(name).get_cols_per_block());
+				write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), _ids.get(name).get_rows_in_block(), _ids.get(name).get_cols_in_block());
 				String formatName = os.getFormatName();
 				write.setFormatType(Expression.convertFormatType(formatName));
 				setIdentifierParams(write, os.getIdentifier());
@@ -1695,7 +1693,7 @@ public class DMLTranslator {
 					Integer statementId = liveOutToTemp.get(target.getName());
 					if ((statementId != null) && (statementId.intValue() == i)) {
 						DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-						transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.get_rows_per_block(), ae.get_cols_per_block());
+						transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 						updatedLiveOut.addVariable(target.getName(), target);
 						output.add(transientwrite);
 					}
@@ -1748,7 +1746,6 @@ public class DMLTranslator {
 
 			else if (current instanceof MultiAssignmentStatement) {
 				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
-				ArrayList<DataIdentifier> target = mas.getTargetList();
 				Expression source = mas.getSource();
 				
 				FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
@@ -1808,7 +1805,7 @@ public class DMLTranslator {
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), rand, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(rand.get_dim1(), rand.get_dim2(), rand.get_rows_per_block(), rand.get_cols_per_block());
+					transientwrite.setOutputParams(rand.get_dim1(), rand.get_dim2(), rand.getNnz(), rand.get_rows_in_block(), rand.get_cols_in_block());
 					updatedLiveOut.addVariable(target.getName(), target);
 					output.add(transientwrite);
 				}
@@ -1916,7 +1913,7 @@ public class DMLTranslator {
 				throw new ParseException("variable " + varName + " not live variable for conditional predicate");
 			} else {
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, var.getDim1(), var.getDim2(), (int) var.getRowsInBlock(), (int) var.getColumnsInBlock());
+						null, var.getDim1(), var.getDim2(), var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
 			}
 			_ids.put(varName, read);
 		}
@@ -1972,7 +1969,7 @@ public class DMLTranslator {
 			}
 			else {
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, var.getDim1(), var.getDim2(), (int) var.getRowsInBlock(), (int) var.getColumnsInBlock());
+						null, var.getDim1(), var.getDim2(),  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
 			}
 			_ids.put(varName, read);
 		}
@@ -2538,6 +2535,13 @@ public class DMLTranslator {
 				// example DML statement: F = ctable(A,B)
 				// here, weight is interpreted as 1.0
 				Hops weightHop = new LiteralOp(Double.toString(1.0), 1.0);
+				// set dimensions
+				weightHop.set_dim1(0);
+				weightHop.set_dim2(0);
+				weightHop.setNnz(-1);
+				weightHop.set_rows_in_block(0);
+				weightHop.set_cols_in_block(0);
+				
 				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
 				/*
 				RandOp rand = new RandOp(target, 1.0, 1.0, 1.0, "uniform");
@@ -2556,6 +2560,13 @@ public class DMLTranslator {
 				// example DML statement: s = spearman(A,B)
 				// here, weight is interpreted as 1.0
 				Hops weightHop = new LiteralOp(Double.toString(1.0), 1.0);
+				// set dimensions
+				weightHop.set_dim1(0);
+				weightHop.set_dim2(0);
+				weightHop.setNnz(-1);
+				weightHop.set_rows_in_block(0);
+				weightHop.set_cols_in_block(0);
+				
 				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.SPEARMAN, expr, expr2, weightHop);
 				/*
 				RandOp rand = new RandOp(target, 1.0, 1.0, 1.0, "uniform");
@@ -2703,19 +2714,21 @@ public class DMLTranslator {
 	}
 		
 	public void setIdentifierParams(Hops h, Identifier id) {
-		// ToDo: Fix this type cast from long to int
+
 		h.set_dim1(id.getDim1());
 		h.set_dim2(id.getDim2());
-		h.set_rows_per_block((int) id.getRowsInBlock());
-		h.set_cols_per_block((int) id.getColumnsInBlock());
+		h.setNnz(id.getNnz());
+		h.set_rows_in_block(id.getRowsInBlock());
+		h.set_cols_in_block(id.getColumnsInBlock());
 	}
 
 	public void setIdentifierParams(Hops h, Hops source) {
-		// ToDo: Fix this type cast from long to int
+
 		h.set_dim1(source.get_dim1());
 		h.set_dim2(source.get_dim2());
-		h.set_rows_per_block(source.get_rows_per_block());
-		h.set_cols_per_block(source.get_cols_per_block());
+		h.setNnz(source.getNnz());
+		h.set_rows_in_block(source.get_rows_in_block());
+		h.set_cols_in_block(source.get_cols_in_block());
 	}
 
 }

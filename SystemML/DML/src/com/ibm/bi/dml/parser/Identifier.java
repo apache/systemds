@@ -13,7 +13,7 @@ public abstract class Identifier extends Expression{
 	private long _dim2;
 	private long _rows_in_block;
 	private long _columns_in_block;
-	private long _nnzs;
+	private long _nnz;
 	private FormatType _formatType;
 		
 	public Identifier(Identifier i){
@@ -23,7 +23,7 @@ public abstract class Identifier extends Expression{
 		_dim2 = i.getDim2();
 		_rows_in_block = i.getRowsInBlock();
 		_columns_in_block = i.getColumnsInBlock();
-		_nnzs = i.getNnzs();
+		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
 	}
 	
@@ -34,7 +34,7 @@ public abstract class Identifier extends Expression{
 		_valueType = ValueType.UNKNOWN;
 		_rows_in_block = -1;
 		_columns_in_block = -1;
-		_nnzs = -1;
+		_nnz = -1;
 		_output = this;
 		_formatType = null;
 	}
@@ -46,13 +46,14 @@ public abstract class Identifier extends Expression{
 		_dim2 = i.getDim2();
 		_rows_in_block = i.getRowsInBlock();
 		_columns_in_block = i.getColumnsInBlock();
-		_nnzs = i.getNnzs();
+		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
 	}
 	
 	public void setDimensionValueProperties(Identifier i){
 			_dim1 = i.getDim1();
 			_dim2 = i.getDim2();
+			_nnz = i.getNnz();
 			_dataType = i.getDataType();
 			_valueType = i.getValueType();
 	}
@@ -88,8 +89,8 @@ public abstract class Identifier extends Expression{
 		 _columns_in_block = dim2;
 	}
 	
-	public void setNnzs(long nnzs){
-		_nnzs = nnzs;
+	public void setNnz(long nnzs){
+		_nnz = nnzs;
 	}
 	
 	public long getDim1(){
@@ -120,8 +121,8 @@ public abstract class Identifier extends Expression{
 		return _columns_in_block;
 	}
 	
-	public long getNnzs(){
-		return _nnzs;
+	public long getNnz(){
+		return _nnz;
 	}
 	
 	public void validateExpression(HashMap<String,DataIdentifier> ids) throws LanguageException {
@@ -179,9 +180,9 @@ public abstract class Identifier extends Expression{
 		_valueType = ValueType.BOOLEAN;
 		_dim1 = 0;
 		_dim2 = 0;
-		_rows_in_block = 1;
-		_columns_in_block = 1;
-		_nnzs = 1;
+		_rows_in_block = 0;
+		_columns_in_block = 0;
+		_nnz = -1;
 		_formatType = null;
 	}
 	
@@ -190,9 +191,9 @@ public abstract class Identifier extends Expression{
 		_valueType = ValueType.INT;
 		_dim1 = 0;
 		_dim2 = 0;
-		_rows_in_block = 1;
-		_columns_in_block = 1;
-		_nnzs = 1;
+		_rows_in_block = 0;
+		_columns_in_block = 0;
+		_nnz = -1;
 		_formatType = null;
 	}
 	

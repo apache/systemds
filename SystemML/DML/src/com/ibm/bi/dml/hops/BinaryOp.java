@@ -108,7 +108,7 @@ public class BinaryOp extends Hops {
 					// Set the dimensions of PartialAggregate LOP based on the
 					// direction in which aggregation is performed
 					pagg.setDimensionsBasedOnDirection(get_dim1(), get_dim2(),
-							getNnz(), get_rows_in_block(), get_cols_in_block());
+							get_rows_in_block(), get_cols_in_block());
 
 					Group group1 = new Group(pagg, Group.OperationTypes.Sort,
 							DataType.MATRIX, get_valueType());

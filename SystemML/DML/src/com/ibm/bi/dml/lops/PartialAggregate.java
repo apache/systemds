@@ -169,7 +169,7 @@ public class PartialAggregate extends Lops {
 		return loc;
 	}
 
-	public void setDimensionsBasedOnDirection(long dim1, long dim2, long nnz, 
+	public void setDimensionsBasedOnDirection(long dim1, long dim2,  
 			long rowsPerBlock, long colsPerBlock) throws LopsException {
 		try {
 		if (direction == DirectionTypes.Row)

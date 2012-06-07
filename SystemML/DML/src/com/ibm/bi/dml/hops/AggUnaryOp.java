@@ -67,7 +67,7 @@ public class AggUnaryOp extends Hops {
 									.get(_op), HopsDirection2Lops.get(_direction),
 							DataType.MATRIX, get_valueType());
 					transform1.setDimensionsBasedOnDirection(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							get_dim2(), get_rows_in_block(), get_cols_in_block());
 	
 					Group group1 = new Group(
 							transform1, Group.OperationTypes.Sort, DataType.MATRIX,
@@ -90,7 +90,7 @@ public class AggUnaryOp extends Hops {
 						// direction in which aggregation is performed
 						transform1.setDimensionsBasedOnDirection(getInput().get(0)
 								.get_dim1(), getInput().get(0).get_dim2(),
-								getNnz(), get_rows_in_block(), get_cols_in_block());
+								 get_rows_in_block(), get_cols_in_block());
 						group1.getOutputParameters().setDimensions(
 								getInput().get(0).get_dim1(),
 								getInput().get(0).get_dim2(), get_rows_in_block(),

@@ -15,11 +15,11 @@ public class OutputParameters {
 	};
 
 	boolean blocked_representation = true;
-	Long num_rows = new Long(-1);
-	Long num_cols = new Long(-1);
-		
-	Long num_rows_per_block = new Long(-1);
-	Long num_cols_per_block = new Long(-1);
+	long num_rows = -1;
+	long num_cols = -1;
+	long _nnz = -1;	
+	long num_rows_in_block = -1;
+	long num_cols_in_block = -1;
 	String file_name = null;
 	String file_label = null;
 
@@ -41,23 +41,24 @@ public class OutputParameters {
 		file_label = label;
 	}
 
-	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block) throws HopsException {
+	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz) throws HopsException {
 		num_rows = rows;
 		num_cols = cols;
-		num_rows_per_block = rows_per_block;
-		num_cols_per_block = cols_per_block;
+		_nnz = nnz;
+		num_rows_in_block = rows_per_block;
+		num_cols_in_block = cols_per_block;
 
-		if ( num_rows_per_block == 0 && num_cols_per_block == 0 ) {
+		if ( num_rows_in_block == 0 && num_cols_in_block == 0 ) {
 			blocked_representation = false;
 		}
-		else if (num_rows_per_block == -1 && num_cols_per_block == -1) {
+		else if (num_rows_in_block == -1 && num_cols_in_block == -1) {
 			blocked_representation = false;
  		}
-		else if ( num_rows_per_block > 0 && num_cols_per_block > 0 ) {
+		else if ( num_rows_in_block > 0 && num_cols_in_block > 0 ) {
 			blocked_representation = true;
 		}
 		else {
-			throw new HopsException("Invalid values for blocking dimensions: [" + num_rows_per_block + "," + num_cols_per_block +"].");
+			throw new HopsException("Invalid values for blocking dimensions: [" + num_rows_in_block + "," + num_cols_in_block +"].");
 		}
 	}
 
@@ -74,6 +75,10 @@ public class OutputParameters {
 		return blocked_representation;
 	}
 
+	public Long getNnz() {
+		return _nnz;
+	}
+	
 	public Long getNum_rows() {
 		return num_rows;
 	}
@@ -82,12 +87,12 @@ public class OutputParameters {
 		return num_cols;
 	}
 
-	public Long getNum_rows_per_block() {
-		return num_rows_per_block;
+	public Long get_rows_in_block() {
+		return num_rows_in_block;
 	}
 
-	public Long getNum_cols_per_block() {
-		return num_cols_per_block;
+	public Long get_cols_in_block() {
+		return num_cols_in_block;
 	}
 
 	@Override
@@ -95,8 +100,9 @@ public class OutputParameters {
 		StringBuffer sb = new StringBuffer();
 		sb.append("rows=" + getNum_rows() + Lops.VALUETYPE_PREFIX);
 		sb.append("cols=" + getNum_cols() + Lops.VALUETYPE_PREFIX);
-		sb.append("rowsPerBlock=" + getNum_rows_per_block() + Lops.VALUETYPE_PREFIX);
-		sb.append("colsPerBlock=" + getNum_cols_per_block() + Lops.VALUETYPE_PREFIX);
+		sb.append("nnz=" + getNnz() + Lops.VALUETYPE_PREFIX);
+		sb.append("rowsInBlock=" + get_rows_in_block() + Lops.VALUETYPE_PREFIX);
+		sb.append("colsInBlock=" + get_cols_in_block() + Lops.VALUETYPE_PREFIX);
 		sb.append("isBlockedRepresentation=" + isBlocked_representation() + Lops.VALUETYPE_PREFIX);
 		sb.append("format=" + getFormat() + Lops.VALUETYPE_PREFIX);
 		sb.append("label=" + getLabel() + Lops.VALUETYPE_PREFIX);

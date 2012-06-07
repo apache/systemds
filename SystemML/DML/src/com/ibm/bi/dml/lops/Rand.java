@@ -53,8 +53,9 @@ public class Rand extends Lops
 		this.getOutputParameters().blocked_representation = true;
 		this.getOutputParameters().num_rows = id.getDim1();
 		this.getOutputParameters().num_cols = id.getDim2();
-		this.getOutputParameters().num_rows_per_block = id.getRowsInBlock();
-		this.getOutputParameters().num_cols_per_block = id.getColumnsInBlock();
+		this.getOutputParameters()._nnz = -1;
+		this.getOutputParameters().num_rows_in_block = id.getRowsInBlock();
+		this.getOutputParameters().num_cols_in_block = id.getColumnsInBlock();
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
@@ -128,8 +129,9 @@ public class Rand extends Lops
 		sb.append("Rand");
 		sb.append(" ; num_rows=" + this.getOutputParameters().getNum_rows());
 		sb.append(" ; num_cols=" + this.getOutputParameters().getNum_cols());
-		sb.append(" ; num_rows_per_block=" + this.getOutputParameters().getNum_rows_per_block());
-		sb.append(" ; num_cols_per_block=" + this.getOutputParameters().getNum_cols_per_block());
+		sb.append(" ; nnz=" + this.getOutputParameters().getNnz());
+		sb.append(" ; num_rows_per_block=" + this.getOutputParameters().get_rows_in_block());
+		sb.append(" ; num_cols_per_block=" + this.getOutputParameters().get_cols_in_block());
 		sb.append(" ; format=" + this.getOutputParameters().getFormat());
 		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked_representation());
 		sb.append(" ; min=" + this.minValue);

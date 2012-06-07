@@ -224,7 +224,7 @@ public class Data extends Lops
 					if ( oparams.getFormat() == Format.TEXT )
 						str += "textcell";
 					else {
-						if ( oparams.getNum_rows_per_block() > 0 || oparams.getNum_cols_per_block() > 0 )
+						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 							str += "binaryblock";
 						else
 							str += "binarycell";
@@ -256,14 +256,14 @@ public class Data extends Lops
 					+ oparams.getFile_name() + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.STRING + OPERAND_DELIMITOR
 			        + oparams.getNum_rows() + OPERAND_DELIMITOR
 			        + oparams.getNum_cols() + OPERAND_DELIMITOR
-			        + oparams.getNum_rows_per_block() + OPERAND_DELIMITOR
-			        + oparams.getNum_cols_per_block() + OPERAND_DELIMITOR
-	        		+ "0" + OPERAND_DELIMITOR; // NNZs.. TODO: should pass the correct nnz from upper layers!
+			        + oparams.get_rows_in_block() + OPERAND_DELIMITOR
+			        + oparams.get_cols_in_block() + OPERAND_DELIMITOR
+	        		+ oparams.getNnz() + OPERAND_DELIMITOR; 
 			// TODO: following logic should change once we LOPs encode key-value-class information.
 			if ( oparams.getFormat() == Format.TEXT )
 				inst += "textcell";
 			else {
-				if ( oparams.getNum_rows_per_block() > 0 || oparams.getNum_cols_per_block() > 0 )
+				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 					inst += "binaryblock";
 				else
 					inst += "binarycell";

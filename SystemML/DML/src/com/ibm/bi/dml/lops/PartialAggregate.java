@@ -169,15 +169,15 @@ public class PartialAggregate extends Lops {
 		return loc;
 	}
 
-	public void setDimensionsBasedOnDirection(long dim1, long dim2,
-			int rowsPerBlock, int colsPerBlock) throws LopsException {
+	public void setDimensionsBasedOnDirection(long dim1, long dim2, long nnz, 
+			long rowsPerBlock, long colsPerBlock) throws LopsException {
 		try {
 		if (direction == DirectionTypes.Row)
-			outParams.setDimensions(dim1, 1, rowsPerBlock, colsPerBlock);
+			outParams.setDimensions(dim1, 1, rowsPerBlock, colsPerBlock, -1);
 		else if (direction == DirectionTypes.Col)
-			outParams.setDimensions(1, dim2, rowsPerBlock, colsPerBlock);
+			outParams.setDimensions(1, dim2, rowsPerBlock, colsPerBlock, -1);
 		else if (direction == DirectionTypes.RowCol)
-			outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock);
+			outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock, -1);
 		else
 			throw new LopsException("Unknown aggregate direction " + direction);
 		} catch (HopsException e) {

@@ -3,20 +3,19 @@ package com.ibm.bi.dml.test.components.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -90,12 +89,12 @@ public class ParForParWorkerTest extends ParWorker
 	}
 	
 	
-	private void setParWorkerAttributes()
+	private void setParWorkerAttributes() throws DMLRuntimeException
 	{
 		Program prog = new Program();
 		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
 		pbs.add(new ProgramBlock(prog));
-		ParForBody body = new ParForBody(pbs,new HashMap<String,Data>(),new ArrayList<String>(),(ExecutionContext)null);
+		ParForBody body = new ParForBody(pbs,new LocalVariableMap (),new ArrayList<String>(),(ExecutionContext)null);
 		
 		_workerID = -1;
 		_numTasks = 0;

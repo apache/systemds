@@ -22,7 +22,7 @@ public class IdentifierTest {
         DataIdentifier sourceId = new DataIdentifier("sourceId");
         sourceId.setDimensions(10, 11);
         sourceId.setBlockDimensions(12, 13);
-        sourceId.setNnzs(14);
+        sourceId.setNnz(14);
         sourceId.setDataType(DataType.MATRIX);
         sourceId.setValueType(ValueType.DOUBLE);
         sourceId.setFormatType(FormatType.BINARY);
@@ -38,7 +38,7 @@ public class IdentifierTest {
         DataIdentifier sourceId = new DataIdentifier("sourceId");
         sourceId.setDimensions(10, 11);
         sourceId.setBlockDimensions(12, 13);
-        sourceId.setNnzs(14);
+        sourceId.setNnz(14);
         sourceId.setDataType(DataType.MATRIX);
         sourceId.setValueType(ValueType.DOUBLE);
         sourceId.setFormatType(FormatType.BINARY);
@@ -54,7 +54,7 @@ public class IdentifierTest {
         //checkIdentifierProperties(idToTest, 10, 11, 15, 16, 14, DataType.MATRIX, ValueType.DOUBLE, FormatType.BINARY);
         
         idToTest = new DataIdentifier("idToTest");
-        idToTest.setNnzs(15);
+        idToTest.setNnz(15);
         //idToTest.setNullProperties(sourceId);
         //checkIdentifierProperties(idToTest, 10, 11, 12, 13, 15, DataType.MATRIX, ValueType.DOUBLE, FormatType.BINARY);
         
@@ -76,7 +76,7 @@ public class IdentifierTest {
         idToTest = new DataIdentifier("idToTest");
         idToTest.setDimensions(15, 16);
         idToTest.setBlockDimensions(17, 18);
-        idToTest.setNnzs(19);
+        idToTest.setNnz(19);
         idToTest.setDataType(DataType.MATRIX);
         idToTest.setValueType(ValueType.INT);
         idToTest.setFormatType(FormatType.TEXT);
@@ -94,7 +94,7 @@ public class IdentifierTest {
         assertEquals(0, idToTest.getDim2());
         assertEquals(1, idToTest.getRowsInBlock());
         assertEquals(1, idToTest.getColumnsInBlock());
-        assertEquals(1, idToTest.getNnzs());
+        assertEquals(1, idToTest.getNnz());
         assertNull(idToTest.getFormatType());
     }
 
@@ -156,7 +156,7 @@ public class IdentifierTest {
         assertEquals(cols, idToTest.getDim2());
         assertEquals(rowsInBlock, idToTest.getRowsInBlock());
         assertEquals(colsInBlock, idToTest.getColumnsInBlock());
-        assertEquals(nnzs, idToTest.getNnzs());
+        assertEquals(nnzs, idToTest.getNnz());
         assertEquals(dataType, idToTest.getDataType());
         assertEquals(valueType, idToTest.getValueType());
         assertEquals(formatType, idToTest.getFormatType());

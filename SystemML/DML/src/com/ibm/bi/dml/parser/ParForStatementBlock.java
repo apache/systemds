@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -44,8 +45,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static final boolean USE_FN_CACHE              = true; //useful for larger scripts (due to O(n^2))
 	private static final boolean ABORT_ON_FIRST_DEPENDENCY = true;
 	
-	private static final String INTERAL_FN_INDEX_ROW       = "__ixr"; //pseudo index for range indexing row
-	private static final String INTERAL_FN_INDEX_COL       = "__ixc"; //pseudo index for range indexing col 
+	public static final String INTERAL_FN_INDEX_ROW       = "__ixr"; //pseudo index for range indexing row
+	public static final String INTERAL_FN_INDEX_COL       = "__ixc"; //pseudo index for range indexing col 
 	
 	//class members
 	private static IDSequence _idSeq = null;
@@ -310,11 +311,14 @@ public class ParForStatementBlock extends ForStatementBlock
 						//add writes to non-local variables to candidate set
 						if( _vsParent.containsVariable(write) )
 						{
-							Candidate c = new Candidate();
-							c._var = write; 
-							//c._pos = sCount;
-							c._dat = vsUpdated.getVariables().get( write );
-							C.add( c );
+							Collection<DataIdentifier> dats = getDataIdentifiers( s, true );
+							for( DataIdentifier dat : dats )
+							{
+								Candidate c = new Candidate();
+								c._var = write; 
+								c._dat = dat; 
+								C.add( c );
+							}
 							
 							if( DMLScript.DEBUG )
 								System.out.println("PARFOR: dependency candidate: var '"+write+"'");
@@ -323,7 +327,6 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}
 	}
-
 
 	/**
 	 * This method recursively checks a candidate against StatementBlocks for anti, data and output dependencies.
@@ -389,15 +392,14 @@ public class ParForStatementBlock extends ForStatementBlock
 				else
 				{
 					//CHECK output dependencies
-					VariableSet vsUpdated = s.variablesUpdated();
-					VariableSet vsRead = s.variablesRead();
+					Collection<DataIdentifier> datsUpdated = getDataIdentifiers(s, true);
 					
-					for(String write : vsUpdated.getVariableNames())
+					for(DataIdentifier write : datsUpdated)	
 					{ 
-						if( c._var.equals( write )  ) 
+						String writeStr = write.getName();
+						if( c._var.equals( writeStr )  ) 
 						{
-							DataIdentifier dat2 = vsUpdated.getVariable(write);
-							//DataType dat2dt = vs.getVariables().get(write).getDataType();
+							DataIdentifier dat2 = write; 
 	
 							if( cdt == DataType.MATRIX ) 
 							{
@@ -426,13 +428,17 @@ public class ParForStatementBlock extends ForStatementBlock
 						}
 					}
 					
+					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
+					
 					//check data and anti dependencies
-					for(String read : vsRead.getVariableNames())
+					for(DataIdentifier read : datsRead)
 					{ 
-						if( c._var.equals( read )  ) 
+						String readStr = read.getName();
+						
+						if( c._var.equals( readStr )  ) 
 						{
-							DataIdentifier dat2 = vsRead.getVariable(read);
-							DataType dat2dt = _vsParent.getVariables().get(read).getDataType(); //vs.getVariables().get(read).getDataType();
+							DataIdentifier dat2 = read;
+							DataType dat2dt = _vsParent.getVariables().get(readStr).getDataType(); //vs.getVariables().get(read).getDataType();
 						
 							if(    cdt == DataType.SCALAR 
 								|| cdt == DataType.OBJECT
@@ -477,8 +483,96 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}				
 	}
+	
+	/**
+	 * Get all target/source DataIdentifiers of the given statement.
+	 * 
+	 * @param s
+	 * @param target 
+	 * @return
+	 */
+	private Collection<DataIdentifier> getDataIdentifiers(Statement s, boolean target) 
+	{
+		Collection<DataIdentifier> ret = null;
+		
+		if( s instanceof AssignmentStatement )
+		{
+			AssignmentStatement s2 = (AssignmentStatement)s;
+			if(target)
+				ret = s2.getTargetList();
+			else
+				ret = rGetDataIdentifiers(s2.getSource());
+		}
+		else if (s instanceof FunctionStatement)
+		{
+			FunctionStatement s2 = (FunctionStatement)s;
+			if(target)
+				ret = s2.getOutputParams();
+			else
+				ret = s2.getInputParams();
+		}
+		else if (s instanceof MultiAssignmentStatement)
+		{
+			MultiAssignmentStatement s2 = (MultiAssignmentStatement)s;
+			if(target)
+				ret = s2.getTargetList();
+			else
+				ret = rGetDataIdentifiers(s2.getSource());
+		}
+		//potentially extend this list with other Statements if required
+		//(e.g., IOStatement, PrintStatement, RandStatement)
+		
+		return ret;
+	}
 
+	private Collection<DataIdentifier> rGetDataIdentifiers(Expression e)
+	{
+		Collection<DataIdentifier> ret = new ArrayList<DataIdentifier>();
+		
+		if( e instanceof DataIdentifier && !(e instanceof FunctionCallIdentifier) )
+		{
+			ret.add( (DataIdentifier)e );
+		}
+		else if( e instanceof FunctionCallIdentifier )
+		{
+			FunctionCallIdentifier fci = (FunctionCallIdentifier)e;
+			for( Expression ee : fci.getParamExpressions() )
+				ret.addAll(rGetDataIdentifiers( ee ));
+		}
+		else if(e instanceof BinaryExpression)
+		{
+			BinaryExpression be = (BinaryExpression) e;
+			ret.addAll( rGetDataIdentifiers(be.getLeft()) );
+			ret.addAll( rGetDataIdentifiers(be.getRight()) );
+		}
+		else if(e instanceof BooleanExpression)
+		{
+			BooleanExpression be = (BooleanExpression) e;
+			ret.addAll( rGetDataIdentifiers(be.getLeft()) );
+			ret.addAll( rGetDataIdentifiers(be.getRight()) );
+		}
+		else if(e instanceof BuiltinFunctionExpression)
+		{
+			BuiltinFunctionExpression be = (BuiltinFunctionExpression) e;
+			ret.addAll( rGetDataIdentifiers(be.getFirstExpr()) );
+			ret.addAll( rGetDataIdentifiers(be.getSecondExpr()) );
+			ret.addAll( rGetDataIdentifiers(be.getThirdExpr()) );
+		}
+		else if(e instanceof ParameterizedBuiltinFunctionExpression)
+		{
+			ParameterizedBuiltinFunctionExpression be = (ParameterizedBuiltinFunctionExpression) e;
+			for( Expression ee : be.getVarParams().values() )
+				ret.addAll( rGetDataIdentifiers(ee) );
+		}
+		else if(e instanceof RelationalExpression)
+		{
+			RelationalExpression re = (RelationalExpression) e;
+			ret.addAll( rGetDataIdentifiers(re.getLeft()) );
+			ret.addAll( rGetDataIdentifiers(re.getRight()) );
+		}
 
+		return ret;
+	}
 	/**
 	 * Determines the lower/upper bounds of all nested for/parfor indexes.
 	 * 

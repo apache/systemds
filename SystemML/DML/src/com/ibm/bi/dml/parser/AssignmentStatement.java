@@ -34,6 +34,11 @@ public class AssignmentStatement extends Statement{
 	public DataIdentifier getTarget(){
 		return _targetList.get(0);
 	}
+	
+	public ArrayList<DataIdentifier> getTargetList()
+	{
+		return _targetList;
+	}
 
 	public Expression getSource(){
 		return _source;

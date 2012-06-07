@@ -177,7 +177,6 @@ public abstract class IOStatement extends Statement{
 		}
 		
 		// Following dimension checks must be done when data type = matrix 
-		
 		if ( dataTypeString == null || dataTypeString.equalsIgnoreCase("matrix") ) {
 					
 			// initialize size of target data identifier to UNKNOWN
@@ -208,6 +207,44 @@ public abstract class IOStatement extends Statement{
 			// initialize block dimensions to UNKNOWN 
 			_id.setBlockDimensions(-1, -1);
 			 
+		
+			// if format="text" --> verify block sizes both <= 0 OR expression
+			if (getExprParam(FORMAT_TYPE) == null || getExprParam(FORMAT_TYPE).toString().equalsIgnoreCase("text")){
+				
+				if (getExprParam(ROWBLOCKCOUNTPARAM) != null && getExprParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier){
+					Long rowBlockCount = (getExprParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(ROWBLOCKCOUNTPARAM).toString());
+					if (rowBlockCount != null && rowBlockCount > 0)
+						throw new LanguageException("ERROR: Inconsistent row block value for text format data. " + 
+								ROWBLOCKCOUNTPARAM + " must be 0 for format=text data.  Value was: " + rowBlockCount);		
+				}
+			
+				if (getExprParam(COLUMNBLOCKCOUNTPARAM) != null && getExprParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier){
+					Long colBlockCount = (getExprParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(COLUMNBLOCKCOUNTPARAM).toString());
+					if (colBlockCount != null && colBlockCount > 0)
+						throw new LanguageException("ERROR: Inconsistent column block value for text format data. " + 
+								COLUMNBLOCKCOUNTPARAM + " must be 0 for format=text data.  Value was: " + colBlockCount);		
+				}
+			}
+			
+			if (getExprParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary")){
+				
+				if (getExprParam(ROWBLOCKCOUNTPARAM) != null && getExprParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier){
+					Long rowBlockCount = (getExprParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(ROWBLOCKCOUNTPARAM).toString());
+					if (rowBlockCount != null && rowBlockCount < 1)
+						throw new LanguageException("ERROR: Inconsistent row block value for binary format data. " + 
+								ROWBLOCKCOUNTPARAM + " must be >= 1 for format=text data.  Value was: " + rowBlockCount);		
+				}
+			
+				if (getExprParam(COLUMNBLOCKCOUNTPARAM) != null && getExprParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier){
+					Long colBlockCount = (getExprParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(COLUMNBLOCKCOUNTPARAM).toString());
+					if (colBlockCount != null && colBlockCount < 1)
+						throw new LanguageException("ERROR: Inconsistent column block value for text format data. " + 
+								COLUMNBLOCKCOUNTPARAM + " must be >= 1 for format=binary data.  Value was: " + colBlockCount);		
+				}
+			}
+			
+			
+			
 			if (getExprParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getExprParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
 			
 				Long rowBlockCount = (getExprParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(ROWBLOCKCOUNTPARAM).toString());

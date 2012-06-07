@@ -12,12 +12,12 @@ public class CacheStatusException extends CacheException
 		super (message);
 	}
 
-	public CacheStatusException (Throwable cause)
+	public CacheStatusException (Exception cause)
 	{
 		super (cause);
 	}
 
-	public CacheStatusException (String message, Throwable cause)
+	public CacheStatusException (String message, Exception cause)
 	{
 		super (message, cause);
 	}

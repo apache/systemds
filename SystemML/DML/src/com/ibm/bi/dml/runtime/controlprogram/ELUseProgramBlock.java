@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -42,6 +41,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 	PartitionParams _pp ;
 	
 	public ELUseProgramBlock(Program prog, PartitionParams pp, MetaLearningFunctionParameters params, DMLConfig passedConfig)
+	throws DMLRuntimeException
 	{
 		super(prog);
 		_prog = prog;
@@ -53,13 +53,11 @@ public class ELUseProgramBlock extends ProgramBlock {
 	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
 		if ( DMLScript.DEBUG ) {
 			// print _variables map
-			System.out.println("____________________________________");
-			System.out.println("___ Variables ____");
-			Iterator<Entry<String, Data>> it = _variables.entrySet().iterator();
-			while (it.hasNext()) {
-				Entry<String,Data> pairs = it.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
+			
+			System.out.println ("____________________________________");
+			System.out.println ("___ Variables ____");
+			System.out.print   (_variables.toString ());
+
 			System.out.println("___ Matrices ____");
 			// TODO: Fix This
 			Iterator<Entry<String, MetaData>> mit = null; // _matrices.entrySet().iterator();
@@ -133,14 +131,14 @@ public class ELUseProgramBlock extends ProgramBlock {
 			// create bindings to formal parameters for training function call
 			
 			// These are the bindings passed to the FunctionProgramBlock for function execution 
-			HashMap<String,Data> functionVariables = setFunctionVariables(testpb, _params.getTestFunctionFormalParams());
+			LocalVariableMap functionVariables = setFunctionVariables(testpb, _params.getTestFunctionFormalParams());
 			
 			// execute the function block
 			testpb.setVariables(functionVariables);
 			// TODO: Fix This
 			//testpb.setMetaData(this.getMetaData());
 			testpb.execute(ec);
-			HashMap<String, Data> returnedVariables = testpb.getVariables(); 
+			LocalVariableMap returnedVariables = testpb.getVariables(); 
 			
 			
 			// add the updated binding for each return variable to the CV program block variables
@@ -202,10 +200,11 @@ public class ELUseProgramBlock extends ProgramBlock {
 	 * @param formalParams the formal parameters function is being called with [NOTE: these are string values, so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException 
 	 */
-	HashMap<String, Data> setFunctionVariables(FunctionProgramBlock fpb, ArrayList<String> formalParams) throws DMLUnsupportedOperationException{
+	LocalVariableMap setFunctionVariables(FunctionProgramBlock fpb, ArrayList<String> formalParams) throws DMLUnsupportedOperationException, DMLRuntimeException{
 	
-		HashMap<String, Data> retVal = new HashMap<String, Data>(); 
+		LocalVariableMap retVal = new LocalVariableMap (); 
 		
 		for (int i=0; i<fpb.getInputParams().size();i++) {
 			

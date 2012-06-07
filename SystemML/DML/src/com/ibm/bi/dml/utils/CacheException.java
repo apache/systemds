@@ -1,11 +1,11 @@
 package com.ibm.bi.dml.utils;
 
-public class CacheException extends Exception
+public class CacheException extends DMLRuntimeException
 {
 
 	public CacheException ()
 	{
-		super ();
+		super ("Cache Exception");
 	}
 
 	public CacheException (String message)
@@ -13,12 +13,12 @@ public class CacheException extends Exception
 		super (message);
 	}
 
-	public CacheException (Throwable cause)
+	public CacheException (Exception cause)
 	{
 		super (cause);
 	}
 
-	public CacheException (String message, Throwable cause)
+	public CacheException (String message, Exception cause)
 	{
 		super (message, cause);
 	}

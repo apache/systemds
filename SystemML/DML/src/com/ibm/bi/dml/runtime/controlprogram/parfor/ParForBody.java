@@ -1,10 +1,9 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 
 /**
@@ -14,7 +13,7 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
  */
 public class ParForBody 
 {
-	private HashMap<String, Data> 		_variables;
+	private LocalVariableMap	 		_variables;
 	private ArrayList<String>           _resultVarNames;
 	private ArrayList<ProgramBlock> 	_childBlocks;
 	private ExecutionContext 			_ec;
@@ -25,7 +24,7 @@ public class ParForBody
 	}
 
 	public ParForBody( ArrayList<ProgramBlock> childBlocks, 
-			           HashMap<String, Data> variables, ArrayList<String> resultVarNames, ExecutionContext ec ) 
+			LocalVariableMap variables, ArrayList<String> resultVarNames, ExecutionContext ec ) 
 	{
 		_variables      = variables;
 		_resultVarNames = resultVarNames;
@@ -33,12 +32,12 @@ public class ParForBody
 		_ec             = ec;
 	}
 
-	public HashMap<String, Data> getVariables() 
+	public LocalVariableMap getVariables() 
 	{
 		return _variables;
 	}
 
-	public void setVariables(HashMap<String, Data> variables) 
+	public void setVariables (LocalVariableMap variables) 
 	{
 		_variables = variables;
 	}

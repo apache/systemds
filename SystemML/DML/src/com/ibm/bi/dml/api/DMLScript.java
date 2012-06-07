@@ -30,16 +30,17 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.DMLException;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.bi.dml.utils.Statistics;
@@ -431,7 +432,7 @@ public class DMLScript {
 
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
-		rtprog.execute(new HashMap<String,Data>(), null);  
+		rtprog.execute (new LocalVariableMap (), null);  
 		Statistics.stopRunTimer();
 
 		if (DEBUG) 
@@ -455,8 +456,11 @@ public class DMLScript {
 	 * @param config from parsed config file (e.g., config.xml)
 	 * @throws ParseException 
 	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
 	 */
-	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName) throws HopsException, LanguageException, ParseException{
+	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName)
+	throws HopsException, LanguageException, ParseException, DMLRuntimeException
+	{
 	
 		dmlt.constructSQLLops(prog);
 	
@@ -485,11 +489,11 @@ public class DMLScript {
 			ExecutionContext ec = new ExecutionContext(con);
 			ec.setDebug(false);
 	
-			HashMap<String,Data> hm = new HashMap<String,Data>();
-			ec.set_variables(hm);
+			LocalVariableMap vm = new LocalVariableMap ();
+			ec.set_variables (vm);
 			con.connect();
 			long time = System.currentTimeMillis();
-			pr.execute(hm, ec);
+			pr.execute (vm, ec);
 			long end = System.currentTimeMillis() - time;
 			System.out.println("Control program took " + ((double)end / 1000) + " seconds");
 			con.disconnect();

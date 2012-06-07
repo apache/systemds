@@ -6,6 +6,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLCommitInstruction;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class SQLProgram implements SQLBlockContainer{
@@ -104,7 +105,7 @@ public class SQLProgram implements SQLBlockContainer{
 		return null;
 	}
 	
-	public Program getProgram()
+	public Program getProgram() throws DMLRuntimeException
 	{
 		Program p = new Program();
 		for(ISQLBlock b : this._blocks)

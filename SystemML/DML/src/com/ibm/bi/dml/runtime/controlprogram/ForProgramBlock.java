@@ -54,7 +54,7 @@ public class ForProgramBlock extends ProgramBlock
 	}
 
 	
-	public ForProgramBlock(Program prog, String[] iterPredVars)
+	public ForProgramBlock(Program prog, String[] iterPredVars) throws DMLRuntimeException
 	{
 		super(prog);
 		

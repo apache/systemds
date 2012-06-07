@@ -26,6 +26,8 @@ import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.CacheAssignmentException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
 import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
 import com.ibm.bi.dml.utils.CacheStatusException;
@@ -52,7 +54,7 @@ public class MatrixObjectNew extends CacheableData
 	/**
 	/* The name of HDFS file by which the data is backed up.
 	 */
-	private String _hdfsFileName; // file name and path
+	private String _hdfsFileName = null; // file name and path
 
 	/**
 	 * Object that holds the metadata associated with the matrix, which
@@ -73,18 +75,20 @@ public class MatrixObjectNew extends CacheableData
 		super (DataType.MATRIX, ValueType.DOUBLE); // DOUBLE is the default value type
 		_data = null;
 		_metaData = null;
-		_hdfsFileName = null;
 	}
 
 	/**
 	 * Constructor that takes both HDFS filename and associated metadata.
+	 * @throws CacheStatusException 
+	 * @throws CacheOutOfMemoryException
 	 */
 	public MatrixObjectNew (ValueType vt, String file, MetaData mtd)
+	throws CacheOutOfMemoryException, CacheStatusException
 	{
 		super (DataType.MATRIX, vt);
-		_hdfsFileName = file; // HDFS file path
 		_metaData = mtd; // Metadata
 		_data = null;
+		_hdfsFileName = file;
 	}
 
 	/**
@@ -230,12 +234,9 @@ public class MatrixObjectNew extends CacheableData
 	 * Out-Status: READ(+1).
 	 * 
 	 * @return the matrix data reference
-	 * @throws CacheOutOfMemoryException 
-	 * @throws CacheIOException
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
-	public MatrixBlock acquireRead ()
-	throws CacheOutOfMemoryException, CacheIOException, CacheStatusException
+	public MatrixBlock acquireRead () throws CacheException
 	{
 		if (! isAvailableToRead ())
 			throw new CacheStatusException ();
@@ -256,6 +257,7 @@ public class MatrixObjectNew extends CacheableData
 		{
 			if (isEmpty () && newData != null)
 			{
+				newData.setEnvelope (this);
 				_data = newData;
 				refreshMetaData ();
 			}
@@ -273,12 +275,10 @@ public class MatrixObjectNew extends CacheableData
 	 * Out-Status: MODIFY.
 	 * 
 	 * @return the matrix data reference
-	 * @throws CacheOutOfMemoryException 
-	 * @throws CacheIOException
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
 	public MatrixBlock acquireModify ()
-	throws CacheOutOfMemoryException, CacheIOException, CacheStatusException
+	throws CacheException
 	{
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ();
@@ -299,6 +299,7 @@ public class MatrixObjectNew extends CacheableData
 		{
 			if (isEmpty () && newData != null)
 			{
+				newData.setEnvelope (this);
 				_data = newData;
 				refreshMetaData ();
 			}
@@ -317,12 +318,10 @@ public class MatrixObjectNew extends CacheableData
 	 * 
 	 * @param newData : the new matrix data reference
 	 * @return the matrix data reference, which is the same as the argument
-	 * @throws CacheOutOfMemoryException 
-	 * @throws CacheIOException
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
 	public MatrixBlock acquireModify (MatrixBlock newData) 
-	throws CacheOutOfMemoryException, CacheIOException, CacheStatusException
+	throws CacheException
 	{
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ();
@@ -332,6 +331,7 @@ public class MatrixObjectNew extends CacheableData
 			acquire (true);
 			if (newData != null)
 			{
+				newData.setEnvelope (this);
 				_data = newData;
 				refreshMetaData ();
 			}
@@ -393,6 +393,7 @@ public class MatrixObjectNew extends CacheableData
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ();
 		registerBlobDeletion ();
+		_data.clearEnvelope ();
 		_data = null;
 	}
 
@@ -423,12 +424,10 @@ public class MatrixObjectNew extends CacheableData
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
 	 * Out-Status: EMPTY, EVICTABLE, EVICTED, READ.
 	 * 
-	 * @throws CacheOutOfMemoryException 
-	 * @throws CacheIOException
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
 	public void exportData ()
-	throws CacheOutOfMemoryException, CacheIOException, CacheStatusException
+	throws CacheException
 	{
 		if (! isAvailableToRead ())
 			throw new CacheStatusException ();
@@ -508,11 +507,13 @@ public class MatrixObjectNew extends CacheableData
 		{
 			throw new CacheIOException (filePath + " : Eviction failed.", e);
 		}
+		_data.clearEnvelope ();
 		_data = null;
 	}
 	
 	@Override
-	protected synchronized void restoreBlobIntoMemory () throws CacheIOException
+	protected synchronized void restoreBlobIntoMemory () 
+	throws CacheIOException, CacheAssignmentException
 	{
 		String filePath = getCacheFilePathAndName ();
 		if (_data != null)
@@ -540,6 +541,7 @@ public class MatrixObjectNew extends CacheableData
 		}
 	    if (newData != null)
 	    {
+	    	newData.setEnvelope (this);
 			_data = newData;
 			refreshMetaData ();
 	    	freeEvictedBlob ();
@@ -611,6 +613,7 @@ public class MatrixObjectNew extends CacheableData
 		MatrixBlock newData = null;
 		newData = DataConverter.readMatrixFromHDFS 
 			(filePathAndName, iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+   		newData.clearEnvelope ();
 		return newData;
 	}
 
@@ -675,6 +678,7 @@ public class MatrixObjectNew extends CacheableData
 		newData = new MatrixBlock ();
 		newData.readFields (in);
    		in.close ();
+   		newData.clearEnvelope ();
 		return newData;
 	}
 

@@ -8,6 +8,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class SQLWhileProgramBlock implements SQLBlockContainer {
@@ -66,7 +67,7 @@ public class SQLWhileProgramBlock implements SQLBlockContainer {
 	}
 
 	@Override
-	public ProgramBlock getProgramBlock(Program p) {
+	public ProgramBlock getProgramBlock(Program p) throws DMLRuntimeException {
 		String s = this.getPredicateTableName();
 		if(s.startsWith("##"))
 			s = s.substring(2, this.getPredicateTableName().length()-2);

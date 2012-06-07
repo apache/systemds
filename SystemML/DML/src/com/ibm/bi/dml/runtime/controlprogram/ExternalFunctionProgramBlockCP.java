@@ -43,12 +43,13 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * function program block.
 	 * 
 	 * @param eFuncStat
+	 * @throws DMLRuntimeException 
 	 */
 	public ExternalFunctionProgramBlockCP(Program prog,
 			Vector<DataIdentifier> inputParams,
 			Vector<DataIdentifier> outputParams,
 			HashMap<String, String> otherParams,
-			String baseDir) {
+			String baseDir) throws DMLRuntimeException {
 
 		super(prog, inputParams, outputParams); //w/o instruction generation
 		
@@ -70,9 +71,10 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
+	 * @throws DMLRuntimeException 
 	 */
 	@Override
-	public void execute(ExecutionContext ec) 
+	public void execute(ExecutionContext ec) throws DMLRuntimeException 
 	{
 		_runID = _idSeq.getNextID();
 		
@@ -106,10 +108,11 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * Executes the external function instruction without the use of NIMBLE tasks.
 	 * 
 	 * @param inst
+	 * @throws DMLRuntimeException 
 	 * @throws NimbleCheckedRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public void executeInstruction(ExternalFunctionInvocationInstruction inst) 
+	public void executeInstruction(ExternalFunctionInvocationInstruction inst) throws DMLRuntimeException 
 	{
 		String className = inst.getClassName();
 		String configFile = inst.getConfigFile();

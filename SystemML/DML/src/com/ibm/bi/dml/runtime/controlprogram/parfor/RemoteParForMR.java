@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -146,7 +147,7 @@ public class RemoteParForMR
 			
 			
 			// read all files of result variables and prepare for return
-			HashMap<String, Data>[] results = readResultFile(resultFile); 
+			LocalVariableMap [] results = readResultFile(resultFile); 
 
 			ret = new RemoteParForJobReturn(runjob.isSuccessful(), 
 					                        numTasks, numIters, 
@@ -181,11 +182,11 @@ public class RemoteParForMR
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public static HashMap<String,Data>[] readResultFile(String fname)
+	public static LocalVariableMap [] readResultFile(String fname)
 		throws DMLRuntimeException, IOException
 	{
-		HashMap<String,Data>[] ret = null;
-		HashMap<Long,HashMap<String,Data>> tmp = new HashMap<Long,HashMap<String,Data>>();
+		LocalVariableMap [] ret = null;
+		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
 
 		SequenceFile.Reader reader = null;
 		
@@ -209,7 +210,7 @@ public class RemoteParForMR
 		        while( reader.next(key, value) ) 
 		        {
 		        	if( !tmp.containsKey( key.get() ) )
-		        		tmp.put(key.get(), new HashMap<String, Data>());	        	
+		        		tmp.put(key.get(), new LocalVariableMap ());	        	
 		        	Object[] dat = ProgramConverter.parseDataObject( value.toString() );
 		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
 		        }
@@ -227,7 +228,7 @@ public class RemoteParForMR
 
 		
 		//create return
-		ret = tmp.values().toArray(new HashMap[0]);	
+		ret = tmp.values().toArray(new LocalVariableMap[0]);	
 			
 		return ret;
 	}

@@ -2,8 +2,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -43,7 +41,8 @@ public class CVProgramBlock extends ProgramBlock {
 	MetaLearningFunctionParameters _params ;
 	PartitionParams _pp ;
 	
-	public CVProgramBlock(Program prog, PartitionParams pp, MetaLearningFunctionParameters params, DMLConfig passedConfig) {
+	public CVProgramBlock(Program prog, PartitionParams pp, MetaLearningFunctionParameters params, DMLConfig passedConfig)
+	throws DMLRuntimeException {
 		super(prog);
 		_prog = prog;
 		_params = params; 
@@ -53,14 +52,10 @@ public class CVProgramBlock extends ProgramBlock {
 	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
 		if ( DMLScript.DEBUG ) {
 			// print _variables map
-			System.out.println("____________________________________");
-			System.out.println("___ Variables ____");
-			Iterator<Entry<String, Data>> it = _variables.entrySet().iterator();
-			while (it.hasNext()) {
-				Entry<String,Data> pairs = it.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
-			System.out.println("____________________________________");
+			System.out.println ("____________________________________");
+			System.out.println ("___ Variables ____");
+			System.out.print   (_variables.toString ());
+			System.out.println ("____________________________________");
 		}
 		updateMatrixLabels();		//basically replaces ##..## stuff with actual file names of matr varbls
 		for (int i = 0; i < _inst.size(); i++) {	//only one itern occurs though

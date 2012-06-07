@@ -32,6 +32,7 @@ import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -1943,7 +1944,7 @@ public class Dag<N extends Lops> {
 
 	private void generatePartitionJob(Vector<N> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst)
-			throws LopsException {
+			throws LopsException, DMLRuntimeException {
 		ArrayList<Byte> resultIndices = new ArrayList<Byte>();
 		ArrayList<String> inputs = new ArrayList<String>();
 		ArrayList<String> outputs = new ArrayList<String>();
@@ -1955,7 +1956,7 @@ public class Dag<N extends Lops> {
 		ArrayList<Long> numColsPerBlock = new ArrayList<Long>();
 		ArrayList<String> inputLabels = new ArrayList<String>();
 		ArrayList<String> outputLabels = new ArrayList<String>();
-		HashMap<String, com.ibm.bi.dml.runtime.instructions.CPInstructions.Data> outputLabelValueMapping = new HashMap<String, com.ibm.bi.dml.runtime.instructions.CPInstructions.Data>();
+		LocalVariableMap outputLabelValueMapping = new LocalVariableMap ();
 
 		HashMap<N, Integer> nodeIndexMapping = new HashMap<N, Integer>();
 

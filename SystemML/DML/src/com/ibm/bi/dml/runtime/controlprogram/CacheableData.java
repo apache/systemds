@@ -8,6 +8,8 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.utils.CacheAssignmentException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
 import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
 import com.ibm.bi.dml.utils.CacheStatusException;
@@ -74,8 +76,11 @@ public abstract class CacheableData extends Data
 	 *
 	 * @throws CacheIOException if the restore fails, the data blob
 	 *     remains as it was at the start.
+	 * @throws CacheAssignmentException if the restored blob cannot be assigned
+	 *     to this envelope.
 	 */
-	protected abstract void restoreBlobIntoMemory () throws CacheIOException;
+	protected abstract void restoreBlobIntoMemory ()
+	throws CacheIOException, CacheAssignmentException;
 
 	/**
 	 * Low-level cache I/O method that deletes the file containing the
@@ -215,13 +220,9 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @param isModify : <code>true</code> for the exclusive "modify" lock,
 	 *     <code>false</code> for a shared "read" lock.
-	 * 
-	 * @throws CacheOutOfMemoryException
-	 * @throws CacheIOException
-	 * @throws CacheStatusException
+	 * @throws CacheException
 	 */
-	protected synchronized void acquire (boolean isModify)
-	throws CacheOutOfMemoryException, CacheIOException, CacheStatusException
+	protected synchronized void acquire (boolean isModify) throws CacheException
 	{
 		CacheStatusType oldStatus = cacheStatus.getType ();
 		switch (oldStatus)

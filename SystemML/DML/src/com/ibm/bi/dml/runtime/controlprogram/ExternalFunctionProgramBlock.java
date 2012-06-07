@@ -34,7 +34,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
@@ -46,6 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
@@ -80,11 +80,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * function program block.
 	 * 
 	 * @param eFuncStat
+	 * @throws DMLRuntimeException 
 	 */
 
 	protected ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
-			Vector<DataIdentifier> outputParams)
+			Vector<DataIdentifier> outputParams) throws DMLRuntimeException
 	{
 		super(prog, inputParams, outputParams);
 	}
@@ -92,7 +93,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	public ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
 			Vector<DataIdentifier> outputParams,
-			HashMap<String, String> otherParams) {
+			HashMap<String, String> otherParams) throws DMLRuntimeException {
 
 		super(prog, inputParams, outputParams);
 
@@ -129,9 +130,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
+	 * @throws DMLRuntimeException 
 	 */
 
-	public void execute(ExecutionContext ec) {
+	public void execute(ExecutionContext ec) throws DMLRuntimeException {
 	
 		_runID = _idSeq.getNextID();
 		
@@ -481,10 +483,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param inst
 	 * @param dQueue
 	 * @throws NimbleCheckedRuntimeException
+	 * @throws DMLRuntimeException 
 	 */
 
 	public void executeInstruction(ExternalFunctionInvocationInstruction inst,
-			DAGQueue dQueue) throws NimbleCheckedRuntimeException {
+			DAGQueue dQueue) throws NimbleCheckedRuntimeException, DMLRuntimeException {
 
 		String className = inst.getClassName();
 		String configFile = inst.getConfigFile();
@@ -549,9 +552,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * 
 	 * @param returnFunc
 	 * @param outputParams
+	 * @throws DMLRuntimeException 
 	 */
 	protected void verifyAndAttachOutputs(PackageFunction returnFunc,
-			String outputParams) {
+			String outputParams) throws DMLRuntimeException {
 
 		ArrayList<String> outputs = getParameters(outputParams);
 		// make sure they are of equal size first
@@ -673,8 +677,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param metaData
 	 * @param variableMapping
 	 */
-	protected void setupInputs(PackageFunction func, String inputParams,
-			HashMap<String, Data> variableMapping) {
+	protected void setupInputs (PackageFunction func, String inputParams,
+			LocalVariableMap variableMapping) {
 
 		ArrayList<String> inputs = getParameters(inputParams);
 		ArrayList<FIO> inputObjects = getInputObjects(inputs, variableMapping);
@@ -695,7 +699,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 */
 
 	protected ArrayList<FIO> getInputObjects(ArrayList<String> inputs,
-			HashMap<String, Data> variableMapping) {
+			LocalVariableMap variableMapping) {
 		ArrayList<FIO> inputObjects = new ArrayList<FIO>();
 
 		for (int i = 0; i < inputs.size(); i++) {

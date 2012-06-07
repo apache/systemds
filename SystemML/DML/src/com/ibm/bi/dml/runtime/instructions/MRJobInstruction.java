@@ -1,12 +1,11 @@
 package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -181,8 +180,8 @@ public class MRJobInstruction extends Instruction
 	}
 
 	
-	HashMap<String, Data> inputLabelValues;
-	public void setInputLabelValueMapping(HashMap <String,Data> labValues)
+	LocalVariableMap inputLabelValues;
+	public void setInputLabelValueMapping (LocalVariableMap labValues)
 	{
 	
 		/*
@@ -197,7 +196,7 @@ public class MRJobInstruction extends Instruction
 		inputLabelValues = labValues;
 	}
 	
-	public void setOutputLabelValueMapping(HashMap <String,Data> labValues)
+	public void setOutputLabelValueMapping (LocalVariableMap labValues)
 	{
 	
 		/*
@@ -213,13 +212,13 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	
-	public HashMap<String, Data> getInputLabelValueMapping()
+	public LocalVariableMap getInputLabelValueMapping()
 	{
 		return inputLabelValues;
 	}
 	
-	HashMap<String, Data> outputLabelValues;
-	public HashMap<String, Data> getOutputLabelValueMapping()
+	LocalVariableMap outputLabelValues;
+	public LocalVariableMap getOutputLabelValueMapping()
 	{
 		return outputLabelValues;
 	}
@@ -352,7 +351,7 @@ public class MRJobInstruction extends Instruction
 	
 	public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
 			long[] nr, long[] nc, int[] bnr, int[] bnc, byte[] resultIndexes, byte[] resultDimsUnknown, PartitionParams pp, ArrayList <String> inLabels, 
-			ArrayList <String> outLabels, HashMap <String, Data> outputLabelValueMapping) {
+			ArrayList <String> outLabels, LocalVariableMap outputLabelValueMapping) {
 		this.iv_inputs = inputs ;
 		this.iv_inputInfos = inputInfo ;
 		this.iv_outputs = outputs ;

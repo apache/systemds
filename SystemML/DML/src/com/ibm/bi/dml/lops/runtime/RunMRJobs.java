@@ -2,7 +2,6 @@ package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
@@ -23,6 +22,7 @@ import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.meta.PartitionSubMatrixMR;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -385,7 +385,7 @@ public class RunMRJobs {
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
-	public static String updateLabels(String inst, HashMap<String, Data> labelValueMapping) {
+	public static String updateLabels (String inst, LocalVariableMap labelValueMapping) {
 		Iterator<String> it = labelValueMapping.keySet().iterator();
 		String updateInst = new String(inst);
 
@@ -414,7 +414,7 @@ public class RunMRJobs {
 		return updateInst;
 	}
 
-	private static String[] updateLabels(String[] inst, HashMap<String, Data> labelValueMapping) {
+	private static String[] updateLabels(String[] inst, LocalVariableMap labelValueMapping) {
 		String[] str_array = new String[inst.length];
 		for (int i = 0; i < inst.length; i++) {
 			str_array[i] = updateLabels(inst[i], labelValueMapping);

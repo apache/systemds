@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -312,7 +313,7 @@ public class ProgramConverter
 			copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix) );
 		}
 		
-		copy.setVariables( (HashMap<String, Data>) fpb.getVariables() ); //implicit cloning
+		copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 		
 		//put 
@@ -451,7 +452,7 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
-		HashMap<String, Data> vars  = body.getVariables();
+		LocalVariableMap vars       = body.getVariables();
 		ArrayList<String> rVnames   = body.getResultVarNames();
 		ExecutionContext ec         = body.getEc();
 		
@@ -527,21 +528,10 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static String serializeVariables( HashMap<String,Data> vars ) 
+	public static String serializeVariables (LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
-		StringBuffer sb = new StringBuffer();
-		
-		int count = 0;
-		for( Entry<String, Data> e : vars.entrySet() )
-		{
-			if( count != 0 )
-				sb.append( ELEMENT_DELIM );
-			sb.append(serializeDataObject(e.getKey(),e.getValue()));
-			count++;
-		}
-		
-		return sb.toString();
+		return vars.serialize ();
 	}
 	
 	/**
@@ -1028,7 +1018,7 @@ public class ProgramConverter
 		
 		//handle symbol table
 		String varStr = st.nextToken();
-		HashMap<String,Data> vars = parseVariables(varStr);
+		LocalVariableMap vars = parseVariables(varStr);
 		body.setVariables( vars );
 		
 		//handle result variable names
@@ -1084,20 +1074,11 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static HashMap<String,Data> parseVariables(String in) 
+	public static LocalVariableMap parseVariables(String in) 
 		throws DMLRuntimeException
 	{
 		String varStr = in.substring( PARFOR_VARS_BEGIN.length(),in.length()-PARFOR_VARS_END.length()).trim(); 
-		
-		StringTokenizer st2 = new StringTokenizer(varStr, ELEMENT_DELIM );
-		HashMap<String,Data> vars = new HashMap<String, Data>();
-		while( st2.hasMoreTokens() )
-		{
-			String tmp = st2.nextToken().trim();
-			Object[] tmp2 = ProgramConverter.parseDataObject(tmp);
-			vars.put((String)tmp2[0], (Data)tmp2[1] );
-		}
-		return vars;
+		return LocalVariableMap.deserialize (varStr);
 	}
 	
 	/**
@@ -1205,7 +1186,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_WHILE.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
@@ -1239,7 +1220,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_FOR.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs
 		String[] iterPredVars = parseStringArray(st.nextToken());
@@ -1282,7 +1263,7 @@ public class ProgramConverter
 		lin = lin.replaceAll(CP_CHILD_THREAD+id, CP_ROOT_THREAD_ID); // reset placeholder to preinit state (replaced by deep copies)
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs
 		String[] iterPredVars = parseStringArray(st.nextToken());
@@ -1328,7 +1309,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_IF.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
@@ -1364,7 +1345,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_FC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs and outputs
 		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
@@ -1401,7 +1382,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_EFC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs, outputs and params
 		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
@@ -1443,7 +1424,7 @@ public class ProgramConverter
 	{
 		String lin = in.substring( PARFOR_PB_BEGIN.length(),in.length()-PARFOR_PB_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
-		HashMap<String,Data> vars = parseVariables(st.nextToken());
+		LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
 		

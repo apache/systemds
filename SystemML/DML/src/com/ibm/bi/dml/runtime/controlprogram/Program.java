@@ -6,7 +6,6 @@ import java.util.HashMap;
 import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -18,7 +17,7 @@ public class Program {
 	
 	public ArrayList<ProgramBlock> _programBlocks;
 
-	protected HashMap<String, Data> _programVariables;
+	protected LocalVariableMap _programVariables;
 	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
 	
 
@@ -26,10 +25,10 @@ public class Program {
 	private DAGQueue _dagQueue;
 
 		
-	public Program() {
+	public Program() throws DMLRuntimeException {
 		_namespaceFunctions = new HashMap<String, HashMap<String,FunctionProgramBlock>>(); 
 		_programBlocks = new ArrayList<ProgramBlock>();
-		_programVariables = new HashMap<String, Data>();
+		_programVariables = new LocalVariableMap ();
 	}
 
 	public void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb){
@@ -94,9 +93,12 @@ public class Program {
 		return _dagQueue; 
 	}
 
-	public void execute(HashMap<String, Data> hashMap, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		_programVariables.putAll(hashMap);
-		for (int i=0; i<_programBlocks.size(); i++) {
+	public void execute(LocalVariableMap varMap, ExecutionContext ec)
+	throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		_programVariables.putAll (varMap);
+		for (int i=0; i<_programBlocks.size(); i++)
+		{
 			
 			// execute each top-level program block
 			ProgramBlock pb = _programBlocks.get(i);

@@ -7,6 +7,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -32,7 +33,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return _namespace;
 	}
 	
-	private HashMap<String, Data> _inputs = new HashMap<String, Data>();
+	// private LocalVariableMap _inputs = new LocalVariableMap ();
 	
 	// stores both the bound input and output parameters
 	private ArrayList<String> _boundInputParamNames;
@@ -88,7 +89,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
-		HashMap<String, Data> functionVariables = new HashMap<String, Data>();
+		LocalVariableMap functionVariables = new LocalVariableMap ();
 		
 		for (int i=0; i<fpb.getInputParams().size();i++) {
 			
@@ -144,7 +145,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	
 		fpb.execute(null);
 		
-		HashMap<String,Data> returnedVariables = fpb.getVariables(); 
+		LocalVariableMap returnedVariables = fpb.getVariables(); 
 		
 		// add the updated binding for each return variable to the program block variables
 		for (int i=0; i< fpb.getOutputParams().size(); i++){

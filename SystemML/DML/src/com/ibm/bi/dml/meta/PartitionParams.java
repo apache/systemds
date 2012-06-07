@@ -1,15 +1,11 @@
 package com.ibm.bi.dml.meta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Vector;
 
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileObject;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -368,8 +364,8 @@ public class PartitionParams {
 
 	public PartitionParams() {}
 
-	public HashMap<String, Data> getOutputLabelValueMapping() {
-		HashMap<String, Data> output = new HashMap<String, Data>() ;
+	public LocalVariableMap getOutputLabelValueMapping() throws DMLRuntimeException {
+		LocalVariableMap output = new LocalVariableMap () ;
 		String[] opStrings = getOutputStrings();
 		for(int i = 0 ; i < opStrings.length; i++)
 			output.put(opStrings[i], new FileObject(opStrings[i], "" + opStrings[i])) ;	//varbl name maps to path "/data/varblname"

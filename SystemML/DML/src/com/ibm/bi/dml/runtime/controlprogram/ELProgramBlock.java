@@ -40,7 +40,8 @@ public class ELProgramBlock extends ProgramBlock {
 	MetaLearningFunctionParameters _params ;
 	PartitionParams _pp ;
 	
-	public ELProgramBlock(Program prog, PartitionParams pp, MetaLearningFunctionParameters params, DMLConfig passedConfig) {
+	public ELProgramBlock(Program prog, PartitionParams pp, MetaLearningFunctionParameters params, DMLConfig passedConfig)
+	throws DMLRuntimeException {
 		super(prog);
 		_prog = prog;
 		_params = params; 

@@ -1,15 +1,14 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -26,8 +25,8 @@ public abstract class ParWorker
 	protected long                      _workerID    = -1;
 	
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
-	protected HashMap<String, Data>     _variables   = null;
-	protected ExecutionContext     		_ec          = null;
+	protected LocalVariableMap          _variables   = null;
+	protected ExecutionContext          _ec          = null;
 	
 	protected int                       _numTasks    = -1;
 	protected int                       _numIters    = -1;
@@ -57,7 +56,7 @@ public abstract class ParWorker
 	 * 
 	 * @return
 	 */
-	public HashMap<String,Data> getVariables()
+	public LocalVariableMap getVariables()
 	{
 		return _variables;
 	}

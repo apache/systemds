@@ -36,7 +36,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
@@ -131,7 +130,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_pwIDSeq = new IDSequence();
 	}
 	
-	public ParForProgramBlock(Program prog, String[] iterPredVars, HashMap<String,String> params) 
+	public ParForProgramBlock(Program prog, String[] iterPredVars, HashMap<String,String> params) throws DMLRuntimeException 
 	{
 		this( -1, prog, iterPredVars, params);
 	}
@@ -144,7 +143,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param iterPred
 	 * @throws DMLRuntimeException 
 	 */
-	public ParForProgramBlock(int ID, Program prog, String[] iterPredVars, HashMap<String,String> params)  
+	public ParForProgramBlock(int ID, Program prog, String[] iterPredVars, HashMap<String,String> params) throws DMLRuntimeException  
 	{
 		super(prog, iterPredVars);
 	
@@ -369,7 +368,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 		// Step 4) collecting results from each parallel worker
 		//obtain results
-		HashMap<String,Data>[] localVariables = new HashMap[_numThreads]; 
+		LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
 		int numExecutedTasks = 0;
 		int numExecutedIterations = 0;
 		for( int i=0; i<_numThreads; i++ )
@@ -574,7 +573,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				cpChildBlocks = (ArrayList<ProgramBlock>) ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix); 
 			}                     
 			//symbol table
-			HashMap<String,Data> cpVars = (HashMap<String, Data>) _variables.clone();
+			LocalVariableMap cpVars = (LocalVariableMap) _variables.clone();
 			
 			//create the actual parallel worker
 			ParForBody body = new ParForBody( cpChildBlocks, cpVars, _resultVars, ec );
@@ -718,7 +717,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param results
 	 * @throws DMLRuntimeException
 	 */
-	private void consolidateAndCheckResults(int expIters, int expTasks, int numIters, int numTasks, HashMap<String, Data>[] results) 
+	private void consolidateAndCheckResults(int expIters, int expTasks, int numIters, int numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
 		for( String var : _resultVars ) //foreach non-local write

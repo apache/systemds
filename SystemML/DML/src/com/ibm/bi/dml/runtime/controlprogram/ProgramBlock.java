@@ -2,8 +2,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -35,17 +33,18 @@ public class ProgramBlock {
 	
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
-	protected HashMap<String, Data> _variables;
+	protected LocalVariableMap _variables;
 	
-	public ProgramBlock(Program prog) {
+	public ProgramBlock(Program prog) throws DMLRuntimeException {
 		
 		_prog = prog;
-		_variables = new HashMap<String, Data>();
+		_variables = new LocalVariableMap ();
 		_inst = new ArrayList<Instruction>();
 	}
     
-	public void setVariables(HashMap<String, Data> vars) {
-		_variables.putAll(vars);
+	public void setVariables (LocalVariableMap vars)
+	{
+		_variables.putAll (vars);
 	}
 
 	public Program getProgram(){
@@ -78,13 +77,10 @@ public class ProgramBlock {
 	
 	private void printSymbolTable() {
 		// print _variables map
-		System.out.println("____________________________________");
-		System.out.println("___ Variables ____");
-		Iterator<Entry<String, Data>> it = _variables.entrySet().iterator();
-		while (it.hasNext()) {
-			Entry<String,Data> pairs = it.next();
-		    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-		}
+		System.out.println ("____________________________________");
+		System.out.println ("___ Variables ____");
+		System.out.print   (_variables.toString ());
+		
 /*		System.out.println("___ Matrices ____");
 		Iterator<Entry<String, MetaData>> mit = _matrices.entrySet().iterator();
 		while (mit.hasNext()) {
@@ -316,11 +312,12 @@ public class ProgramBlock {
 		return ret;
 	}
 	
-	public HashMap<String, Data> getVariables() {
+	public LocalVariableMap getVariables() {
 		return _variables;
 	}
 
-	public void setVariable(String name, Data val) throws DMLRuntimeException{
+	public void setVariable(String name, Data val) throws DMLRuntimeException
+	{
 		_variables.put(name, val);
 	}
 
@@ -338,8 +335,8 @@ public class ProgramBlock {
 		_inst.add(inst);
 	}
 
-	public void addVariables(HashMap<String, Data> vars) {
-		_variables.putAll(vars);
+	public void addVariables (LocalVariableMap vars) {
+		_variables.putAll (vars);
 	}
 	public Instruction getInstruction(int i) {
 		return _inst.get(i);

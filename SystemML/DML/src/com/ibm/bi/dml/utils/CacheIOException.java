@@ -12,12 +12,12 @@ public class CacheIOException extends CacheException
 		super (message);
 	}
 
-	public CacheIOException (Throwable cause)
+	public CacheIOException (Exception cause)
 	{
 		super (cause);
 	}
 
-	public CacheIOException (String message, Throwable cause)
+	public CacheIOException (String message, Exception cause)
 	{
 		super (message, cause);
 	}

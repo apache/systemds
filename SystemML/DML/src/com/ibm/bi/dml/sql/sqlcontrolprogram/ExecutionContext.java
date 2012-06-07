@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
@@ -21,7 +22,7 @@ public class ExecutionContext {
 		statistics = new ArrayList<SQLExecutionStatistics>();
 	}
 	
-	protected HashMap<String, Data> _variables;
+	protected LocalVariableMap _variables;
 	private NetezzaConnector nzConnector;
 	private boolean debug;
 	ArrayList<SQLExecutionStatistics> statistics;
@@ -65,17 +66,18 @@ public class ExecutionContext {
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-	public HashMap<String, Data> get_variables() {
+	public LocalVariableMap get_variables() {
 		return _variables;
 	}
-	public void set_variables(HashMap<String, Data> variables) {
+	public void set_variables (LocalVariableMap variables) {
 		_variables = variables;
 	}
 	public NetezzaConnector getNzConnector() {
 		return nzConnector;
 	}
 	
-	public void setVariable(String name, Data val) {
+	public void setVariable(String name, Data val) throws DMLRuntimeException
+	{
 		_variables.put(name, val);
 	}
 	

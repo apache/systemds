@@ -6,6 +6,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLCommitInstruction;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class SQLProgramBlock implements ISQLBlock {
@@ -87,7 +88,7 @@ public class SQLProgramBlock implements ISQLBlock {
 	}
 
 	@Override
-	public ProgramBlock getProgramBlock(Program p) {
+	public ProgramBlock getProgramBlock(Program p) throws DMLRuntimeException {
 		ProgramBlock block = new ProgramBlock(p);
 		for(ISQLCode c : this._creates)
 		{

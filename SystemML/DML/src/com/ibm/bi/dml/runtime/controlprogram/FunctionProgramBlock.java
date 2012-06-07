@@ -32,7 +32,7 @@ public class FunctionProgramBlock extends ProgramBlock {
 	
 	public FunctionProgramBlock( Program prog,
 								 Vector <DataIdentifier> inputParams, 
-								 Vector <DataIdentifier> outputParams)
+								 Vector <DataIdentifier> outputParams) throws DMLRuntimeException
 	{
 		super(prog);
 		_childBlocks = new ArrayList<ProgramBlock>();

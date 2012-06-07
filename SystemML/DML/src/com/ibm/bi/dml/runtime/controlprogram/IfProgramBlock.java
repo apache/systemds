@@ -66,7 +66,7 @@ public class IfProgramBlock extends ProgramBlock {
 	}
 	
 	
-	public IfProgramBlock(Program prog, ArrayList<Instruction> predicate){
+	public IfProgramBlock(Program prog, ArrayList<Instruction> predicate) throws DMLRuntimeException{
 		super(prog);
 		
 		_childBlocksIfBody = new ArrayList<ProgramBlock>();

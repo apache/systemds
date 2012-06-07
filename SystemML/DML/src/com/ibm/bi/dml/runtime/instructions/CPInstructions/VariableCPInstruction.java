@@ -559,8 +559,8 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case SetFileName:
 			Data data = pb.getVariable(input1.get_name());
-			//if ( data == null )
-			//	System.out.println("Here");
+			if ( data == null )
+				System.out.println("Here");
 			if ( data.getDataType() == DataType.MATRIX ) {
 				if ( input3.get_name().equalsIgnoreCase("remote") ) {
 					((MatrixObject)data).setFileName(input2.get_name());

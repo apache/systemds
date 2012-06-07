@@ -13,12 +13,12 @@ public class CacheOutOfMemoryException extends CacheException
 		super (message);
 	}
 
-	public CacheOutOfMemoryException (Throwable cause)
+	public CacheOutOfMemoryException (Exception cause)
 	{
 		super (cause);
 	}
 
-	public CacheOutOfMemoryException (String message, Throwable cause)
+	public CacheOutOfMemoryException (String message, Exception cause)
 	{
 		super (message, cause);
 	}

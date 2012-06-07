@@ -1,8 +1,6 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.util.HashMap;
-
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 
 /**
  * Wrapper for job return of ParFor REMOTE for transferring statistics and result symbol table.
@@ -14,9 +12,9 @@ public class RemoteParForJobReturn
 	private boolean _successful  = true;
 	private int     _numTasks    = -1;
 	private int     _numIters    = -1;
-	private HashMap<String, Data>[] _variables = null;
+	private LocalVariableMap [] _variables = null;
 		
-	public RemoteParForJobReturn( boolean successful, int numTasks, int numIters, HashMap<String, Data>[] variables )
+	public RemoteParForJobReturn( boolean successful, int numTasks, int numIters, LocalVariableMap [] variables )
 	{
 		_successful = successful;
 		_numTasks   = numTasks;
@@ -39,12 +37,12 @@ public class RemoteParForJobReturn
 		return _numIters;
 	}
 	
-	public HashMap<String,Data>[] getVariables()
+	public LocalVariableMap [] getVariables()
 	{
 		return _variables;
 	}
 	
-	public void setVariables(HashMap<String,Data>[] variables)
+	public void setVariables (LocalVariableMap [] variables)
 	{
 		_variables = variables;
 	}

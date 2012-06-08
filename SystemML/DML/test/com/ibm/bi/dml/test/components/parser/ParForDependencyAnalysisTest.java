@@ -28,7 +28,8 @@ import com.ibm.bi.dml.utils.LanguageException;
  *    30: no, 31: no, 32: dep
  * * set indexing
  *    33: dep, 34: dep, 35: no
- * 
+ * * multiple matrix references per statement
+ *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
  * 
  * @author mboehm
  *
@@ -147,6 +148,24 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis37() { runTest("parfor37.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis38() { runTest("parfor38.dml", true); } 
+	
+	@Test
+	public void testDependencyAnalysis39() { runTest("parfor39.dml", true); } 
+	
+	@Test
+	public void testDependencyAnalysis40() { runTest("parfor40.dml", true); } 
+	
+	@Test
+	public void testDependencyAnalysis41() { runTest("parfor41.dml", true); } 
+	
+	@Test
+	public void testDependencyAnalysis42() { runTest("parfor42.dml", true); } 
+	
+	@Test
+	public void testDependencyAnalysis43() { runTest("parfor43.dml", false); } 	
 	
 	
 	private void runTest( String scriptFilename, boolean expectedException )

@@ -118,7 +118,7 @@ public class ResultMerge
 	 * @param in
 	 * @return
 	 */
-	public MatrixObject merge( MatrixObject out, MatrixObject in )
+	public void merge( MatrixObject out, MatrixObject in )
 	{
 		MatrixBlock mbout = out.getData();
 		MatrixBlock mbin = in.getData();
@@ -145,10 +145,9 @@ public class ResultMerge
 			
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
-					mbout.setValue(i, j, values[i*cols + j]);	
+					if( values[i*cols + j] != 0 ) //for all nnz
+						mbout.setValue(i, j, values[i*cols + j]);	
 		}
-		
-		return _output;
 	}
 	
 	/**

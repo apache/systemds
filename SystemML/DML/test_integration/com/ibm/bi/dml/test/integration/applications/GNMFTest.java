@@ -1,8 +1,13 @@
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -10,11 +15,26 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
+@RunWith(value = Parameterized.class)
 public class GNMFTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "applications/gnmf/";
 	private final static String TEST_GNMF = "GNMF";
-
+	
+	private int M, N, K;
+	
+	public GNMFTest(int m, int n, int k) {
+		M = m; 
+		N = n; 
+		K = k;
+	}
+	
+	@Parameters
+	 public static Collection<Object[]> data() {
+	   Object[][] data = new Object[][] { { 100, 50, 5 }, { 2000, 1500, 50 }, { 7000, 1500, 50 }};
+	   return Arrays.asList(data);
+	 }
+	 
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_GNMF, new TestConfiguration(TEST_DIR, TEST_GNMF, new String[] { "w", "h" }));
@@ -22,10 +42,10 @@ public class GNMFTest extends AutomatedTestBase {
 	
 	@Test
 	public void testGNMFWithRDMLAndJava() {
-		int m = 2000;
-		int n = 1500;
-		int k = 50;
-		int maxiter = 3;
+		int m = M;
+		int n = N;
+		int k = K;
+		int maxiter = 2;
 		
 		TestConfiguration config = getTestConfiguration(TEST_GNMF);
 		
@@ -58,9 +78,9 @@ public class GNMFTest extends AutomatedTestBase {
 		
 		loadTestConfiguration(config);
 
-		double[][] v = getRandomMatrix(m, n, 1, 5, 0.2, -1);
-		double[][] w = getRandomMatrix(m, k, 0, 1, 1, -1);
-		double[][] h = getRandomMatrix(k, n, 0, 1, 1, -1);
+		double[][] v = getRandomMatrix(m, n, 1, 5, 0.2, System.currentTimeMillis());
+		double[][] w = getRandomMatrix(m, k, 0, 1, 1, System.currentTimeMillis());
+		double[][] h = getRandomMatrix(k, n, 0, 1, 1, System.currentTimeMillis());
 
 		writeInputMatrix("v", v, true);
 		writeInputMatrix("w", w, true);
@@ -107,11 +127,12 @@ public class GNMFTest extends AutomatedTestBase {
 		HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
 		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
 		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
-		HashMap<CellIndex, Double> hmWJava = TestUtils.convert2DDoubleArrayToHashMap(w);
-		HashMap<CellIndex, Double> hmHJava = TestUtils.convert2DDoubleArrayToHashMap(h);
+		//HashMap<CellIndex, Double> hmWJava = TestUtils.convert2DDoubleArrayToHashMap(w);
+		//HashMap<CellIndex, Double> hmHJava = TestUtils.convert2DDoubleArrayToHashMap(h);
 
 		TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
-		TestUtils.compareMatrices(hmWDML, hmWJava, 0.000001, "hmWDML", "hmWJava");
-		TestUtils.compareMatrices(hmWR, hmWJava, 0.000001, "hmRDML", "hmWJava");
+		TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
+		//TestUtils.compareMatrices(hmWDML, hmWJava, 0.000001, "hmWDML", "hmWJava");
+		//TestUtils.compareMatrices(hmWR, hmWJava, 0.000001, "hmRDML", "hmWJava");
 	}
 }

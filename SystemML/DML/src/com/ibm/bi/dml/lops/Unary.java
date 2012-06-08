@@ -213,7 +213,7 @@ public class Unary extends Lops {
 			String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 			inst += getOpcode() 
 					+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
-					+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() +  VALUETYPE_PREFIX + this.get_valueType();
+					+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + get_dataType() +  VALUETYPE_PREFIX + get_valueType();
 			return inst;
 
 		} else {
@@ -229,7 +229,7 @@ public class Unary extends Lops {
 		inst += getOpcode() 
 				+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
 				+ OPERAND_DELIMITOR + input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(1).get_valueType()
-				+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() +  VALUETYPE_PREFIX + this.get_valueType();
+				+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + get_dataType() +  VALUETYPE_PREFIX + get_valueType();
 		
 		return inst;
 	}

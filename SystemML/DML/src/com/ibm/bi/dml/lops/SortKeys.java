@@ -74,7 +74,7 @@ public class SortKeys extends Lops
 		
 		String inst = new String("");
 		inst += opString + OPERAND_DELIMITOR + 
-				input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+				input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
 		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 		return inst;
 	}

@@ -61,12 +61,11 @@ public class ReBlock extends Lops
 		
 		String inst = new String("");
 		inst += opString + OPERAND_DELIMITOR + 
-				input_index + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR +
-		        output_index + VALUETYPE_PREFIX + this.get_valueType() + OPERAND_DELIMITOR +
+				input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR +
+		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR +
 				rows_per_block + OPERAND_DELIMITOR + cols_per_block;
 		
 		return inst;
-		// return "rblk" + OPERAND_DELIMITOR + input_index + OPERAND_DELIMITOR + output_index + OPERAND_DELIMITOR + rows_per_block +  OPERAND_DELIMITOR + cols_per_block;
 	}
 	
 	// This function is replicated in Dag.java

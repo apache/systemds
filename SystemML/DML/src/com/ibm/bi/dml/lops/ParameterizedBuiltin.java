@@ -90,7 +90,7 @@ public class ParameterizedBuiltin extends Lops {
 			throw new LopsException("Unknown operation: " + operation);
 		}
 		
-		inst.append(output).append(VALUETYPE_PREFIX).append(get_valueType());
+		inst.append(output).append(DATATYPE_PREFIX).append(get_dataType()).append(VALUETYPE_PREFIX).append(get_valueType());
 		
 		return inst.toString();
 	}

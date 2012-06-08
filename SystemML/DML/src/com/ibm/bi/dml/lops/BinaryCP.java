@@ -125,20 +125,22 @@ public class BinaryCP extends Lops
 		case MATMULT:
 			opString += "ba+*";
 			
-			String mminst = opString + OPERAND_DELIMITOR + 
-			input1 + VALUETYPE_PREFIX + getInputs().get(0).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input2 + VALUETYPE_PREFIX + getInputs().get(1).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-	        output + VALUETYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+/*			String mminst = opString + OPERAND_DELIMITOR + 
+			input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+	        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 
 			return mminst;
-
+*/
+			break;
+			
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + operation);
 		}
 		
 		String inst = opString + OPERAND_DELIMITOR + 
 				input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + vtype_input1 + OPERAND_DELIMITOR + 
-				input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+				input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
 		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 
 		return inst;

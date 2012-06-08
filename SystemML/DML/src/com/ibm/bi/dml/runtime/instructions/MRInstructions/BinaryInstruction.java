@@ -29,7 +29,7 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 	public BinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
 	{
 		super(op, in1, in2, out);
-		mrtype = MRINSTRUCTION_TYPE.Binary;
+		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
 	}
 	

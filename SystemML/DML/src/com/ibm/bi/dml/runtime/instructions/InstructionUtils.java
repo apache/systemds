@@ -20,28 +20,39 @@ public class InstructionUtils {
 	}
 	
 	/**
-	 * Parse the instruction string, and return opcode as well as all operands
-	 * i.e., ret.length = parts.length-1 (-1 accounts for execution type)
+	 * Given an instruction string, strip-off the execution type and return 
+	 * opcode and all input/output operands WITHOUT their data/value type. 
+	 * i.e., ret.length = parts.length-1 (-1 for execution type)
 	 * 
 	 * @param str
 	 * @return 
 	 */
 	public static String[] getInstructionParts ( String str ) {
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		String[] ret = new String[parts.length-1]; // -1 accounts for exec type
+		String[] ret = new String[parts.length-1]; // stripping-off the exectype
 		
 		ret[0] = parts[1]; // opcode
-		String[] f;
 		for ( int i=2; i < parts.length; i++ ) {
-			f = parts[i].split(Instruction.VALUETYPE_PREFIX);
-			ret[i-1] = f[0];
+			ret[i-1] = parts[i].split(Instruction.DATATYPE_PREFIX)[0];
 		}
 		return ret;
 	}
 	
+	/**
+	 * Given an instruction string, this function strips-off the 
+	 * execution type (CP or MR) and returns the remaining parts, 
+	 * which include the opcode as well as the input and output operands.
+	 * Each returned part will have the datatype and valuetype associated
+	 * with the operand.
+	 * 
+	 * This function is invoked mainly for parsing CPInstructions.
+	 * 
+	 * @param str
+	 * @return
+	 */
 	public static String[] getInstructionPartsWithValueType ( String str ) {
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		String[] ret = new String[parts.length-1];
+		String[] ret = new String[parts.length-1]; // stripping-off the exectype
 		
 		ret[0] = parts[1]; // opcode
 		for ( int i=2; i < parts.length; i++ ) {

@@ -10,8 +10,10 @@ public abstract class Instruction
 	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB };
 	
 	public static final String OPERAND_DELIM = Lops.OPERAND_DELIMITOR;
+	public static final String DATATYPE_PREFIX = Lops.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lops.VALUETYPE_PREFIX;
 	public static final String INSTRUCTION_DELIM = Lops.INSTRUCTION_DELIMITOR;
+	public static final String NAME_VALUE_SEPARATOR = Lops.NAME_VALUE_SEPARATOR;
 	
 	protected INSTRUCTION_TYPE type;
 	protected String           instString;

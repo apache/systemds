@@ -130,10 +130,10 @@ public class Tertiary extends Lops
 		case CTABLE_TRANSFORM:
 			// F = ctable(A,B,W)
 			inst += "ctabletransform" + OPERAND_DELIMITOR + 
-					input_index1 + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-					input_index2 + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-					input_index3 + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-			        output_index + VALUETYPE_PREFIX + get_valueType() ;
+					input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+					input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+					input_index3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+			        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 			
 			break;
 		
@@ -157,10 +157,10 @@ public class Tertiary extends Lops
 				valueLabel = "##" + getInputs().get(scalarIndex).getOutputParameters().getLabel() + "##";
 			
 			inst += "ctabletransformscalarweight" + OPERAND_DELIMITOR + 
-			input_index1 + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input_index2 + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			valueLabel + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-	        output_index + VALUETYPE_PREFIX + get_valueType() ;
+			input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+			valueLabel   + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+	        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 			break;
 			
 		case CTABLE_TRANSFORM_HISTOGRAM:
@@ -184,10 +184,10 @@ public class Tertiary extends Lops
 				scalar3 = "##" + getInputs().get(2).getOutputParameters().getLabel() + "##";
 			
 			inst += "ctabletransformhistogram" + OPERAND_DELIMITOR + 
-			input_index1 + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			scalar2 + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			scalar3 + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-	        output_index + VALUETYPE_PREFIX + get_valueType() ;
+			input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			scalar2      + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+			scalar3      + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+	        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 			
 			break;
 		
@@ -203,10 +203,10 @@ public class Tertiary extends Lops
 			else
 				scalarInput2 = "##" + getInputs().get(1).getOutputParameters().getLabel() + "##";
 			inst += "ctabletransformweightedhistogram" + OPERAND_DELIMITOR + 
-					input_index1 + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-					scalarInput2 + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-					input_index3 + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-					output_index + VALUETYPE_PREFIX + get_valueType() ;
+					input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+					scalarInput2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+					input_index3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+					output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 			
 			break;
 			

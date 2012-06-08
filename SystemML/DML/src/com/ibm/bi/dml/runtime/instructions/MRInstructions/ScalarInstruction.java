@@ -31,7 +31,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 	public ScalarInstruction(Operator op, byte in, byte out, String istr)
 	{
 		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Scalar;
+		mrtype = MRINSTRUCTION_TYPE.ArithmeticBinary;
 		instString = istr;
 	}
 	

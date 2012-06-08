@@ -115,8 +115,8 @@ public class Transform extends Lops
 	public String getInstructions(int input_index, int output_index) throws LopsException
 	{
 		String inst = getExecType() + OPERAND_DELIMITOR + getOpcode() 
-				+ OPERAND_DELIMITOR + input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() 
-				+ OPERAND_DELIMITOR + output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
+				+ OPERAND_DELIMITOR + input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() 
+				+ OPERAND_DELIMITOR + output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		return inst;
 	}
 

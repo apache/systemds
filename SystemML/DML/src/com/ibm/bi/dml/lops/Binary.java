@@ -141,9 +141,9 @@ public class Binary extends Lops
 	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
 	{
 		String inst = getExecType() + OPERAND_DELIMITOR + getOpcode() + OPERAND_DELIMITOR + 
-				input_index1 + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-				input_index2 + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
+				input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+				input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+		        output_index + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
 		
 		return inst;
 	}

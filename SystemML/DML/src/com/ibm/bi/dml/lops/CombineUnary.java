@@ -53,8 +53,8 @@ public class CombineUnary extends Lops
 	{
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += "combineunary" + OPERAND_DELIMITOR + 
-		        input_index1 + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
+		        input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		
 		return inst;
 	}

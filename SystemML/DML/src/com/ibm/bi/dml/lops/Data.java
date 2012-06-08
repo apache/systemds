@@ -197,7 +197,7 @@ public class Data extends Lops
 	 */
 	@Override
 	public String getInstructions(String input1, String input2) throws LopsException {
-		// get_dataType() == DataType.SCALAR && 
+		
 		if ( getOutputParameters().getFile_name() != null) {
 			String str = "CP" + OPERAND_DELIMITOR;
 			if ( operation == OperationTypes.READ ) 

@@ -76,9 +76,9 @@ public class CoVariance extends Lops {
 	public String getInstructions(String input1, String input2, String output) {
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += "cov" + OPERAND_DELIMITOR + 
-			input1 + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
+			input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+			output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
 		return inst;
 	}
 
@@ -86,10 +86,10 @@ public class CoVariance extends Lops {
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += "cov" + OPERAND_DELIMITOR + 
-			input1 + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			input3 + DATATYPE_PREFIX + this.getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-			output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
+			input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+			input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+			input3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
+			output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
 		return inst;
 	}
 
@@ -97,8 +97,8 @@ public class CoVariance extends Lops {
 	public String getInstructions(int input_index, int output_index) {
 		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		inst += "cov" + OPERAND_DELIMITOR + 
-				input_index + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-				output_index + VALUETYPE_PREFIX + this.get_valueType();
+				input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+				output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
 		return inst;
 	}
 

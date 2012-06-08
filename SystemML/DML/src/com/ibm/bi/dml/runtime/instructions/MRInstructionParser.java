@@ -66,20 +66,6 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "uacmin"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "rdiagM2V", MRINSTRUCTION_TYPE.AggregateUnary);
 
-		// BINARY Instruction Opcodes 
-		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.Binary);
-		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.Binary);
-
 		// BUILTIN Instruction Opcodes 
 		String2MRInstructionType.put( "abs"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "sin"  , MRINSTRUCTION_TYPE.Unary);
@@ -92,22 +78,22 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "pow"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
 
-		// SCALAR Instruction Opcodes 
-		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "s-r"   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "so"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.Scalar);
-		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.Scalar);
+		// BINARY and SCALAR Instruction Opcodes 
+		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "s-r"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "so"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "min"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( ">"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( ">="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "<"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		// String2InstructionType.put( "sl"    , MRINSTRUCTION_TYPE.Scalar);
 
 		// REORG Instruction Opcodes 
@@ -164,15 +150,23 @@ public class MRInstructionParser extends InstructionParser {
 		case Aggregate:
 			return (MRInstruction) AggregateInstruction.parseInstruction(str);
 			
+		case ArithmeticBinary:
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			// extract datatypes of first and second input operands
+			String dt1 = parts[1].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
+			String dt2 = parts[2].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
+			if ( dt1.equalsIgnoreCase("SCALAR") || dt2.equalsIgnoreCase("SCALAR") ) {
+				return (MRInstruction) ScalarInstruction.parseInstruction(str);
+			}
+			else {
+				return (MRInstruction) BinaryInstruction.parseInstruction(str);
+			}
 		case AggregateBinary:
 			return (MRInstruction) AggregateBinaryInstruction.parseInstruction(str);
 			
 		case AggregateUnary:
 			return (MRInstruction) AggregateUnaryInstruction.parseInstruction(str);
 			
-		case Binary: 
-			return (MRInstruction) BinaryInstruction.parseInstruction(str);
-		
 		case Tertiary: 
 			return (MRInstruction) TertiaryInstruction.parseInstruction(str);
 		
@@ -191,9 +185,6 @@ public class MRInstructionParser extends InstructionParser {
 		//case Replicate:
 		//	return (MRInstruction) ReplicateInstruction.parseInstruction(str);
 		
-		case Scalar:
-			return (MRInstruction) ScalarInstruction.parseInstruction(str);
-			
 		case Unary:
 			return (MRInstruction) UnaryInstruction.parseInstruction(str);
 			

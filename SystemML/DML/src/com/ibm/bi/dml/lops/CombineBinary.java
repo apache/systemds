@@ -67,10 +67,10 @@ public class CombineBinary extends Lops
 			isSecondInputIsWeight = false;
 		}
 		inst += "combinebinary" + OPERAND_DELIMITOR + 
-		        isSecondInputIsWeight + VALUETYPE_PREFIX + ValueType.BOOLEAN + OPERAND_DELIMITOR +
-				input_index1 + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        input_index2 + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + VALUETYPE_PREFIX + this.get_valueType() ;
+		        isSecondInputIsWeight + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.BOOLEAN + OPERAND_DELIMITOR +
+				input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
+		        input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
+		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		
 		return inst;
 	}

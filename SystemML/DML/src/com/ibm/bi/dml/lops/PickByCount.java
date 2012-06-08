@@ -136,9 +136,9 @@ public class PickByCount extends Lops {
 			throw new LopsException("Invalid operation specified for PickByCount: " + operation);
 		
 		inst += opString + OPERAND_DELIMITOR
-					+ input1 + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-					+ input2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR;
-		inst += output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
+					+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
+					+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR
+					+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
 
 		return inst;
 	}
@@ -154,8 +154,8 @@ public class PickByCount extends Lops {
 		String inst = "";
 		inst = getExecType() + Lops.OPERAND_DELIMITOR 
 				+ "inmem-iqm" + Lops.OPERAND_DELIMITOR
-				+ input + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-				+ output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
+				+ input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
+				+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		return inst;
 	}
 }

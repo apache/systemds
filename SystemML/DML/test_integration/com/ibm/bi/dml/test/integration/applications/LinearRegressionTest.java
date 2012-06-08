@@ -1,22 +1,39 @@
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-
+@RunWith(value = Parameterized.class)
 public class LinearRegressionTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/linear_regression/";
     private final static String TEST_LINEAR_REGRESSION = "LinearRegression";
 
-
+    private int numRecords, numFeatures;
+    
+	public LinearRegressionTest(int rows, int cols) {
+		numRecords = rows;
+		numFeatures = cols;
+	}
+	
+	@Parameters
+	 public static Collection<Object[]> data() {
+	   Object[][] data = new Object[][] { {100, 50}, {1000, 500}, {10000, 750}};
+	   return Arrays.asList(data);
+	 }
+	 
     @Override
     public void setUp()
     {
@@ -27,8 +44,8 @@ public class LinearRegressionTest extends AutomatedTestBase
     @Test
     public void testLinearRegression()
     {
-    	int rows = 50;
-        int cols = 30;
+    	int rows = numRecords;
+        int cols = numFeatures;
 
         TestConfiguration config = getTestConfiguration(TEST_LINEAR_REGRESSION);
         config.addVariable("rows", rows);
@@ -75,6 +92,6 @@ public class LinearRegressionTest extends AutomatedTestBase
         
         HashMap<CellIndex, Double> wR = this.readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wDML= this.readDMLMatrixFromHDFS("w");
-        TestUtils.compareMatrices(wR, wDML, Math.pow(10, -14), "wR", "wDML");
+        TestUtils.compareMatrices(wR, wDML, Math.pow(10, -10), "wR", "wDML");
     }
 }

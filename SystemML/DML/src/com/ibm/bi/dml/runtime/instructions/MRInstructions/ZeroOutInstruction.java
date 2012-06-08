@@ -3,12 +3,15 @@ package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReIndexOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.ZeroOutOperator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -47,26 +50,17 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
-		InstructionUtils.checkNumFields ( str, 3 );
+		InstructionUtils.checkNumFields ( str, 6 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
-		byte in, out;
 		String opcode = parts[0];
-		if(!opcode.equalsIgnoreCase("sel"))
-			throw new DMLRuntimeException("Unknown opcode while parsing a Select: " + str);
-		in = Byte.parseByte(parts[1]);
-		out = Byte.parseByte(parts[2]);
-		IndexRange rng=new IndexRange(-1, -1, -1, -1);
-		String[] strs=InstructionUtils.getInstructionPartsWithValueType(parts[3]);
-		if(strs.length!=4)
-			throw new DMLRuntimeException("ill formated range " + parts[3]);
-		rng.rowStart=parseStartBoundary(strs[0]);
-		rng.rowEnd=parseEndBoundary(strs[1]);
-		rng.colStart=parseStartBoundary(strs[2]);
-		rng.colEnd=parseEndBoundary(strs[3]);
-		return new ZeroOutInstruction(new ReIndexOperator(), in, out, rng, str);
-		
+		if(!opcode.equalsIgnoreCase("zeroOut"))
+			throw new DMLRuntimeException("Unknown opcode while parsing a zeroout: " + str);
+		byte in = Byte.parseByte(parts[1]);
+		IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
+		byte out = Byte.parseByte(parts[6]);
+		return new ZeroOutInstruction(new ZeroOutOperator(), in, out, rng, str);
 	}
 
 	private IndexRange getSelectedRange(IndexedMatrixValue in, int blockRowFactor, int blockColFactor) {
@@ -139,5 +133,25 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 		if(out==tempValue)
 			cachedValues.add(output, out);
 		
+	}
+	
+	public static void main(String[] args) throws Exception {
+		
+		byte input=1;
+		byte output=2;
+		ZeroOutInstruction ins=new ZeroOutInstruction(new ReIndexOperator(), input, output, new IndexRange(3, 18, 3, 18), "zeroOut");
+		int blockRowFactor=10;
+		int blockColFactor=10;
+		
+		MatrixBlockDSM m=MatrixBlockDSM.getRandomSparseMatrix(blockRowFactor, blockColFactor, 1, 1);
+		//m.examSparsity();
+		CachedValueMap cachedValues=new CachedValueMap();
+		cachedValues.set(input, new MatrixIndexes(1, 2), m);
+		
+		IndexedMatrixValue tempValue=new IndexedMatrixValue(MatrixBlockDSM.class);
+		IndexedMatrixValue zeroInput=new IndexedMatrixValue(MatrixBlockDSM.class);
+		
+		ins.processInstruction(MatrixBlockDSM.class, cachedValues, tempValue, zeroInput, blockRowFactor, blockColFactor);
+		System.out.println(cachedValues.get(output));
 	}
 }

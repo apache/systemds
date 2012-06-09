@@ -3,7 +3,6 @@ package com.ibm.bi.dml.api;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,6 +16,9 @@ import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.nimble.configuration.NimbleConfig;
@@ -52,7 +54,8 @@ public class DMLScript {
 
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
 	+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
-	+ " -f: <filename> will be interpreted as a filename path \n"
+	+ " -f: <filename> will be interpreted as a filename path + \n"
+	+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
 	+ " -s: <filename> will be interpreted as a DML script string \n"
 	//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
 	//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
@@ -61,6 +64,7 @@ public class DMLScript {
 	+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 	+ " [-l | -log]: (optional) output log info \n"
 	+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
+	+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
 	+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
 	+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
 	+ "<args-list>: (optional) args to DML script \n" ;
@@ -131,17 +135,30 @@ public class DMLScript {
 		HashMap<String, String> argVals = new HashMap<String,String>();
 		
 		//////////// process -f | -s to set dmlScriptString ////////////////
-		if (!((args[0].equals("-f") || args[0].equals("-s")))){
+		if (!(args[0].equals("-f") || args[0].equals("-s"))){
 			System.err.println("first argument must be either -f or -s");
 			System.err.println(USAGE);
 			return;
 		}
+		
 		fromFile = (args[0].equals("-f")) ? true : false;
 		fileName = args[1];
 		String dmlScriptString = new String();
+
+		// DML script can be from local or from hdfs
+		// from local file - e.g., command invokation of DML
+		// hdfs file - e.g., application oozie workflow.xml -> Jaql -> DML
 		if (fromFile){
-			BufferedReader in = new BufferedReader(new FileReader(fileName));
 			String s1 = null;
+			BufferedReader in = null;
+			if (fileName.startsWith("hdfs:")){ // from hdfs 	
+                FileSystem hdfs = FileSystem.get(new Configuration());
+                Path scriptPath = new Path(fileName);
+                in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
+			}
+			else { // from local file system
+				in = new BufferedReader(new FileReader(fileName));
+			}
 			while ((s1 = in.readLine()) != null)
 				dmlScriptString += s1 + "\n";
 			in.close();	
@@ -153,14 +170,12 @@ public class DMLScript {
 		////////////////// process rest of args list ////////////////////////
 		int argid = 2;
 		while (argid < args.length) {
-			
 			if (args[argid].equalsIgnoreCase("-d") || args[argid].equalsIgnoreCase("-debug")) {
 				DEBUG = true;
 			} else if (args[argid].equalsIgnoreCase("-l") || args[argid].equalsIgnoreCase("-log")) {
 				LOG = true;
 			} else if (args[argid].equalsIgnoreCase("-v") || args[argid].equalsIgnoreCase("-visualize")) {
 				VISUALIZE = true;
-			// handle config file
 			//} else if(args[argid].equalsIgnoreCase("-nz")){
 			//	rtplatform = RUNTIME_PLATFORM.NZ;
 			} else if ( args[argid].equalsIgnoreCase("-exec")) {
@@ -179,10 +194,8 @@ public class DMLScript {
 			} else if (args[argid].startsWith("-config=")){
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
-				
 			// handle the args to DML Script -- rest of args will be passed here to 
 			} else if (args[argid].startsWith("-args")) {
-			
 				argid++;
 				int index = 1;
 				while( argid < args.length){
@@ -240,47 +253,51 @@ public class DMLScript {
 			out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile, true)));
 			out.write("BEGIN DMLRun " + getDateTime() + "\n");
 			out.write("BEGIN DMLScript\n");
-			BufferedReader script = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
-			String s = null;
-			while ((s = script.readLine()) != null) 
-				out.write(s + "\n");
+			// No need to reopen the dml script, just print out dmlScriptString
+			out.write(dmlScriptString);
 			out.write("END DMLScript\n");
-			script.close();
 		}
 
-		//////////////////// parse the builtin config file and optional config file //////////////////////// 
-		// try to read
+		// optional config specified overwrites/merge into the default config
 		DMLConfig defaultConfig = null;
-		try {
-			defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-
-		} catch (Exception e) {
-			System.out.println("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		
-		// read the optional config file to overwrite changed parameter values
 		DMLConfig optionalConfig = null;
-		if (optionalConfigurationFileName != null) {
-			try {
-				optionalConfig = new DMLConfig(optionalConfigurationFileName);
-					
-			} catch (Exception e) {
+		
+		
+		if (optionalConfigurationFileName != null) { // the optional config is specified
+			try { // try to get the default config first 
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			} catch (Exception e) { // it is ok to not have the default
+				defaultConfig = null;
+			}
+			try { // try to get the optional config next
+				optionalConfig = new DMLConfig(optionalConfigurationFileName);	
+			} catch (Exception e) { // it is not ok as the specification is wrong
+				optionalConfig = null;
 				System.out.println("Error parsing optional configuration file: " + optionalConfigurationFileName);
 				System.exit(-1);
 			}
+			if (defaultConfig != null) {
+				try {
+					defaultConfig.merge(optionalConfig);
+				}
+				catch(Exception e){
+					System.out.println("ERROR: failed to merge default ");
+					System.exit(-1);
+				}
+			}
+			else {
+				defaultConfig = optionalConfig;
+			}
 		}
-		
-		// update default config file with values from optional config file
-		try {
-			defaultConfig.merge(optionalConfig);
+		else { // the optional config is not specified
+			try { // try to get the default config 
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			} catch (Exception e) { // it is not ok to not have the default
+				defaultConfig = null;
+				System.out.println("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+				System.exit(-1);
+			}
 		}
-		catch(Exception e){
-			System.out.println("ERROR: failed to merge default ");
-			return;
-		}
-		
 		ConfigurationManager.setConfig(defaultConfig);
 		
 		//////////////////////////// parse script ///////////////////////////////

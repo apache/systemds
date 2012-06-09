@@ -6,6 +6,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -75,9 +78,16 @@ public class DMLConfig
 	 */
 	private void parseConfig () throws ParserConfigurationException, SAXException, IOException 
 	{
- 
 		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		Document domTree = builder.parse(config_file_name);
+		Document domTree = null;
+		if (config_file_name.startsWith("hdfs:")) { // config file from hdfs
+			FileSystem hdfs = FileSystem.get(new Configuration());
+            Path configFilePath = new Path(config_file_name);
+            domTree = builder.parse(hdfs.open(configFilePath));
+		}
+		else { // config from local file system
+			domTree = builder.parse(config_file_name);
+		}
 		xml_root = domTree.getDocumentElement();		
 		
 	}

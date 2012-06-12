@@ -34,7 +34,7 @@ public class MatrixCharacteristics{
 	public int numRowsPerBlock=1;
 	public int numColumnsPerBlock=1;
 	public long nonZeros=-1;
-
+	
 	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc)
 	{
 		set(nr, nc, bnr, bnc);
@@ -203,4 +203,19 @@ public class MatrixCharacteristics{
 		}
 	}
 
+	@Override
+	public boolean equals (Object anObject)
+	{
+		if (anObject instanceof MatrixCharacteristics)
+		{
+			MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
+			return ((numRows == mc.numRows) && 
+					(numColumns == mc.numColumns) && 
+					(numRowsPerBlock == mc.numRowsPerBlock) && 
+					(numColumnsPerBlock == mc.numColumnsPerBlock) && 
+					(nonZeros == mc.nonZeros)) ;
+		}
+		else
+			return false;
+	}
 }

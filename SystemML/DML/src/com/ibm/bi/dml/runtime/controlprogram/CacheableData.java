@@ -170,6 +170,17 @@ public abstract class CacheableData extends Data
 	}
 
 	/**
+	 * Checks if the data blob is being modified, that is, exclusively locked
+	 * for writing by some thread.
+	 * 
+	 * @return
+	 */
+	public synchronized boolean isModify ()
+	{
+		return cacheStatus.isModify ();
+	}
+	
+	/**
 	 * Checks if the data blob resides in the cache main memory.
 	 * 
 	 * @return <code>false</code> if the data blob is evicted or deleted or
@@ -543,6 +554,12 @@ public abstract class CacheableData extends Data
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EMPTY || theType == CacheStatusType.EVICTABLE 
 					|| theType == CacheStatusType.EVICTED);
+		}
+		
+		public boolean isModify ()
+		{
+			final CacheStatusType theType = type;
+			return (theType == CacheStatusType.MODIFY);
 		}
 		
 		public boolean isInMemory ()

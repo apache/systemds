@@ -19,6 +19,19 @@ public class MatrixDimensionsMetaData extends MetaData {
 		matchar = mc;
 	}
 	
+	@Override
+	public boolean equals (Object anObject)
+	{
+		if (anObject instanceof MatrixDimensionsMetaData)
+		{
+			MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) anObject;
+			return (matchar.equals (md.matchar));
+		}
+		else
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		return "[rows = " + matchar.numRows + 
 			   ", cols = " + matchar.numColumns + 

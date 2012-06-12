@@ -6,6 +6,13 @@ package com.ibm.bi.dml.runtime.matrix;
  *
  */
 
-public abstract class MetaData {
+public abstract class MetaData
+{
+	
+	@Override
+	public abstract boolean equals (Object anObject);
+	
+	@Override
+	public abstract String toString();
 	
 }

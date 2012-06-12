@@ -130,6 +130,11 @@ public abstract class CacheableData extends Data
 	 */
 	private CacheStatus cacheStatus = new CacheStatus ();
 	
+	public String getStatusAsString ()
+	{
+		return cacheStatus.type.toString();
+	}
+	
 	
 	/**
 	 * Checks if the status is "empty" ({@link #cacheStatus} == <code>EMPTY</code>),

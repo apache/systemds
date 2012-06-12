@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
 
 
@@ -41,19 +42,30 @@ public class CacheManager
 	public synchronized void releaseCacheMemory (long numBytes)
 		throws CacheOutOfMemoryException
 	{
-		if (numBytes <= getFreeMemory ())
-			return;
-		if (numBytes > getAvailableMemory ())
-			throw new CacheOutOfMemoryException ();
-		CacheableData[] evictionQueue = getEvictionQueue ();
-		boolean is_successful = false;
-		for (int i = 0; ((! is_successful) && i < evictionQueue.length); i++)
+		if (DMLScript.DEBUG) 
 		{
-			evictionQueue [i].attemptEviction ();
-			is_successful = (numBytes <= getFreeMemory ());
+			System.out.println ("CACHE: Releasing " + numBytes + " of cache memory...");
 		}
-		if (! is_successful)
-			throw new CacheOutOfMemoryException ();
+
+		if (numBytes > getFreeMemory ())
+		{
+			if (numBytes > getAvailableMemory ())
+				throw new CacheOutOfMemoryException ();
+			CacheableData[] evictionQueue = getEvictionQueue ();
+			boolean is_successful = false;
+			for (int i = 0; ((! is_successful) && i < evictionQueue.length); i++)
+			{
+				evictionQueue [i].attemptEviction ();
+				is_successful = (numBytes <= getFreeMemory ());
+			}
+			if (! is_successful)
+				throw new CacheOutOfMemoryException ();
+		}
+		
+		if (DMLScript.DEBUG) 
+		{
+			System.out.println ("CACHE: Releasing cache memory - COMPLETED.");
+		}
 	}
 	
 	/**
@@ -72,8 +84,22 @@ public class CacheManager
 		throws CacheOutOfMemoryException 
 	{
 		if (cdata == null)
+		{
+			if (DMLScript.DEBUG) 
+			{
+				System.out.println ("CACHE: Updating size/status - NOTHING TO DO: cacheable object == null.");
+			}
 			return;
+		}
 		
+		if (DMLScript.DEBUG) 
+		{
+			System.out.println ("CACHE: Updating size/status of cacheable data object...");
+			System.out.println ("CACHE: Object ID: " + cdata.getUniqueCacheID () + 
+					";  Status: " + cdata.getStatusAsString () + 
+					";  Size: old = " + oldMemorySize + ", new = " + newMemorySize);
+		}
+
 		boolean wasInMemory = inMemory.contains (cdata);
 		boolean wasEvictable = evictable.contains (cdata);
 		
@@ -127,6 +153,11 @@ public class CacheManager
 				evictable.add (cdata);
 				evictableCacheMemory += newMemorySize;
 			}
+		}
+		
+		if (DMLScript.DEBUG) 
+		{
+			System.out.println ("CACHE: Updating size/status - COMPLETED.");
 		}
 	}
 	

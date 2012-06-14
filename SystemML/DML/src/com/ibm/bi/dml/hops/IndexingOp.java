@@ -50,7 +50,7 @@ public class IndexingOp extends Hops {
 				if(et == ExecType.MR) {
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
 							get_dataType(), get_valueType(), et);
 	
 					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 

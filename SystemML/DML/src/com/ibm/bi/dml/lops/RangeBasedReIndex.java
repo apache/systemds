@@ -3,6 +3,7 @@ package com.ibm.bi.dml.lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.utils.LopsException;
@@ -18,8 +19,16 @@ public class RangeBasedReIndex extends Lops {
 	 * @return 
 	 * @throws LopsException
 	 */
+	
+	private boolean forLeftIndexing=false;
+	private long leftIndexingNRow=0;
+	private long leftIndexingNCol=0;
 
-	private void init(Lops inputMatrix, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lops inputMatrix, Lops rowL, Lops rowU, Lops colL, Lops colU, long leftMatrixRowDim, long leftMatrixColDim, DataType dt, ValueType vt, ExecType et, boolean forleft) {
+		
+		leftIndexingNRow=leftMatrixRowDim;
+		leftIndexingNCol=leftMatrixColDim;
+		
 		this.addInput(inputMatrix);
 		this.addInput(rowL);
 		this.addInput(rowU);
@@ -48,24 +57,42 @@ public class RangeBasedReIndex extends Lops {
 			lps.addCompatibility(JobType.INVALID);
 			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
+		
+		forLeftIndexing=forleft;
+	}
+	
+	public RangeBasedReIndex(
+			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, boolean forleft)
+			throws LopsException {
+		super(Lops.Type.RangeReIndex, dt, vt);
+		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR, forleft);
+	}
+
+	public RangeBasedReIndex(
+			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et, boolean forleft)
+			throws LopsException {
+		super(Lops.Type.RangeReIndex, dt, vt);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
 	}
 	
 	public RangeBasedReIndex(
 			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt)
 			throws LopsException {
 		super(Lops.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR);
+		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR, false);
 	}
 
 	public RangeBasedReIndex(
 			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
 			throws LopsException {
 		super(Lops.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
 	}
 	
 	private String getOpcode() {
-		
+		if(forLeftIndexing)
+			return "rangeReIndexForLeft";
+		else
 			return "rangeReIndex";
 	}
 	
@@ -78,7 +105,9 @@ public class RangeBasedReIndex extends Lops {
 		        rowu + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
 		        coll + DATATYPE_PREFIX + getInputs().get(3).get_dataType() + VALUETYPE_PREFIX + getInputs().get(3).get_valueType() + OPERAND_DELIMITOR + 
 		        colu + DATATYPE_PREFIX + getInputs().get(4).get_dataType() + VALUETYPE_PREFIX + getInputs().get(4).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
+		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR +
+		        leftIndexingNRow + DATATYPE_PREFIX + Expression.DataType.SCALAR + VALUETYPE_PREFIX + Expression.ValueType.INT + OPERAND_DELIMITOR+
+		        leftIndexingNCol + DATATYPE_PREFIX + Expression.DataType.SCALAR + VALUETYPE_PREFIX + Expression.ValueType.INT;
 		return inst;
 	}
 
@@ -119,7 +148,10 @@ public class RangeBasedReIndex extends Lops {
 
 	@Override
 	public String toString() {
-		return "Range Based ReIndexing";
+		if(forLeftIndexing)
+			return "rangeReIndexForLeft";
+		else
+			return "rangeReIndex";
 	}
 
 }

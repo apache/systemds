@@ -3,11 +3,13 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Binary;
+import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.ZeroOut;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -52,43 +54,58 @@ public class LeftIndexingOp  extends Hops {
 				if(et == ExecType.MR) {
 					
 					//the right matrix is reindexed
+					Lops top=getInput().get(2).constructLops();
+					Lops bottom=getInput().get(3).constructLops();
+					Lops left=getInput().get(4).constructLops();
+					Lops right=getInput().get(5).constructLops();
+					/*
+					//need to creat new lops for converting the index ranges
+					//original range is (a, b) --> (c, d)
+					//newa=2-a, newb=2-b
+					Lops two=new Data(null,	Data.OperationTypes.READ, null, "2", Expression.DataType.SCALAR, Expression.ValueType.INT, false);
+					Lops newTop=new Binary(two, top, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
+					Lops newLeft=new Binary(two, left, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
+					//newc=leftmatrix.row-a+1, newd=leftmatrix.row
+					*/
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							getInput().get(1).constructLops(), getInput().get(2).constructLops(), getInput().get(3).constructLops(),
-							getInput().get(4).constructLops(), getInput().get(5).constructLops(), get_dim1(), get_dim2(),
-							get_dataType(), get_valueType(), et);
-	
-					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+							getInput().get(1).constructLops(), top, bottom, 
+							left, right, getInput().get(1).get_dim1(), getInput().get(1).get_dim2(),
+							get_dataType(), get_valueType(), et, true);
+					
+					reindex.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
+					
 					Group group1 = new Group(
 							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
-					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					group1.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
+							get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					//the left matrix is zeroed out
 					ZeroOut zeroout = new ZeroOut(
-							getInput().get(0).constructLops(), getInput().get(2).constructLops(), getInput().get(3).constructLops(),
-							getInput().get(4).constructLops(), getInput().get(5).constructLops(), get_dim1(), get_dim2(),
+							getInput().get(0).constructLops(), top, bottom,
+							left, right, getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
 							get_dataType(), get_valueType(), et);
 	
-					zeroout.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+					zeroout.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
 					Group group2 = new Group(
 							zeroout, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
-					group2.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					group2.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
+							get_rows_in_block(), get_cols_in_block(), getNnz());
 					
 					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hops.OpOp2.PLUS),
 							get_dataType(), get_valueType(), et);
 					
-					binary.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					binary.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
+							get_rows_in_block(), get_cols_in_block(), getNnz());
 	
 					set_lops(binary);
 				}
 				else {
 					//TODO: how to implement leftIndexing in CP
+					throw new HopsException("leftIndexing is not supported in CP yet!");
 				}
 			} catch (Exception e) {
 				throw new HopsException(e);

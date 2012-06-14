@@ -65,23 +65,40 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		indexRange=rng;
 	}
 	
-	
-	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
-		InstructionUtils.checkNumFields ( str, 6 );
+		InstructionUtils.checkNumFields ( str, 8 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		String opcode = parts[0];
-		if(!opcode.equalsIgnoreCase("rangeReIndex"))
+		boolean forLeft=false;
+		if(opcode.equalsIgnoreCase("rangeReIndexForLeft"))
+			forLeft=true;
+		else if(!opcode.equalsIgnoreCase("rangeReIndex"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a Select: " + str);
 		byte in = Byte.parseByte(parts[1]);
 		IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
 		byte out = Byte.parseByte(parts[6]);
-		return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, str);
+		long leftIndexingNrow=Long.parseLong(parts[7]);
+		long leftIndexingNcol=Long.parseLong(parts[8]);
 		
+		//recalculate the index range for left indexing
+		if(forLeft)
+		{
+			long a=rng.rowStart;
+			long b=rng.colStart;
+			rng.rowStart=2-a;
+			rng.colStart=2-b;
+			//don't need to extend to the whole left matrix dimension
+			rng.rowEnd=leftIndexingNrow-a+1;
+			rng.colEnd=leftIndexingNcol-b+1;
+		}
+	
+		return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, str);
 	}
+	
+	
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,

@@ -42,11 +42,11 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 		int lTo    = _toVal.getIntValue();
 		int lIncr  = _incrVal.getIntValue();
 		
-		int P = _numThreads;     // number of parallel workers
-		int N = (lTo-lFrom+1)/lIncr; // total number of iterations
-		int R = N;               // remaining number of iterations
-		int K = -1;              //next _numThreads task sizes	
-		TaskType type = null;    // type of iterations: range tasks (similar to run-length encoding) make only sense if taskSize>3
+		int P = _numThreads;  // number of parallel workers
+		int N = _numIter;     // total number of iterations
+		int R = N;            // remaining number of iterations
+		int K = -1;           // next _numThreads task sizes	
+		TaskType type = null; // type of iterations: range tasks (similar to run-length encoding) make only sense if taskSize>3
 		
 		for( int i = lFrom; i<=lTo;  )
 		{
@@ -104,7 +104,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 		int lIncr  = _incrVal.getIntValue();
 		
 		int P = _numThreads;     // number of parallel workers
-		int N = (lTo-lFrom+1)/lIncr; // total number of iterations
+		int N = _numIter;     // total number of iterations
 		int R = N;               // remaining number of iterations
 		int K = -1;              //next _numThreads task sizes	
 	    TaskType type = null;    // type of iterations: range tasks (similar to run-length encoding) make only sense if taskSize>3

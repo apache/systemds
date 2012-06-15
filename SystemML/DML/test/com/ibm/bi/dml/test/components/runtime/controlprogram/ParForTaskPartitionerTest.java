@@ -33,7 +33,10 @@ public class ParForTaskPartitionerTest
 	private static final int _par = 4;
 	private static final int _k = 4; 
 	private static final int _N = 101;
+	private static final int _incr = 7;
 	private static final String _dat = "i";
+	
+	
 	
 	//expected results 
 	private static final int[] _naiveTP = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -402,29 +405,399 @@ public class ParForTaskPartitionerTest
 		if( !checkCompleteness(tasks, 1, _N, 1, true) )
 			Assert.fail("Wrong values in iterations.");
 	}
+
+	
+	@Test
+	public void testFixedSizeTaskPartitionerNumSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, false, false, _incr);
+		if( !checkExpectedNum(tasks, _fixedTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerNumSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, false, true, _incr);
+		if( !checkExpectedNum(tasks, _fixedTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerNumRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, true, false, _incr);
+		if( !checkExpectedNum(tasks, _fixedTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerNumRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, true, true, _incr);
+		if( !checkExpectedNum(tasks, _fixedTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerCompletenessSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, false, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerCompletenessSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, false, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) ) //TODO from ueberall rein
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerCompletenessRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, true, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFixedSizeTaskPartitionerCompletenessRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FIXED, true, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerNumSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, false, false, _incr);
+		if( !checkExpectedNum(tasks, _naiveTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerNumSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, false, true, _incr);
+		if( !checkExpectedNum(tasks, _naiveTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerNumRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, true, false, _incr);
+		if( !checkExpectedNum(tasks, _naiveTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerNumRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, true, true, _incr);
+		if( !checkExpectedNum(tasks, _naiveTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerCompletenessSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, false, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerCompletenessSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, false, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerCompletenessRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, true, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testNaiveTaskPartitionerCompletenessRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.NAIVE, true, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerNumSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, false, false, _incr);
+		if( !checkExpectedNum(tasks, _staticTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerNumSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, false, true, _incr);
+		if( !checkExpectedNum(tasks, _staticTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerNumRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, true, false, _incr);
+		if( !checkExpectedNum(tasks, _staticTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerNumRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, true, true, _incr);
+		if( !checkExpectedNum(tasks, _staticTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerCompletenessSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, false, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false ) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerCompletenessSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, false, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerCompletenessRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, true, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testStaticTaskPartitionerCompletenessRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.STATIC, true, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerNumSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, false, false, _incr);
+		if( !checkExpectedNum(tasks, _factTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerNumSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, false, true, _incr);
+		if( !checkExpectedNum(tasks, _factTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerNumRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, true, false, _incr);
+		if( !checkExpectedNum(tasks, _factTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerNumRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, true, true, _incr);
+		if( !checkExpectedNum(tasks, _factTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerCompletenessSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, false, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerCompletenessSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, false, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerCompletenessRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, true, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringTaskPartitionerCompletenessRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.FACTORING, true, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerNumSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, false, false, _incr);
+		if( !checkExpectedNum(tasks, _cfactTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerNumSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, false, true, _incr);
+		if( !checkExpectedNum(tasks, _cfactTP, false) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerNumRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, true, false, _incr);
+		if( !checkExpectedNum(tasks, _cfactTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerNumRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, true, true, _incr);
+		if( !checkExpectedNum(tasks, _cfactTP, true) )
+			Assert.fail("Wrong number of tasks or number of iterations per task.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerCompletenessSetFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, false, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerCompletenessSetStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, false, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, false) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerCompletenessRangeFullIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, true, false, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
+	@Test
+	public void testFactoringConstrainedTaskPartitionerCompletenessRangeStreamIncr() 
+		throws DMLRuntimeException, InterruptedException 
+	{ 
+		Collection<Task> tasks = createTasks(PTaskPartitioner.CFACTORING, true, true, _incr);
+		if( !checkCompleteness(tasks, 1, _N*_incr-1, _incr, true) )
+			Assert.fail("Wrong values in iterations.");
+	}
+	
 	
 	private Collection<Task> createTasks( PTaskPartitioner partitioner, boolean range, boolean streaming ) 
 		throws DMLRuntimeException, InterruptedException
 	{
+		return createTasks(partitioner, range, streaming, 1);
+	}
+	
+	private Collection<Task> createTasks( PTaskPartitioner partitioner, boolean range, boolean streaming, int incr ) 
+		throws DMLRuntimeException, InterruptedException
+	{
 		ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL = range; 
+		
+		int to = (incr==1) ? _N : _N*incr-1;
 		
 		TaskPartitioner tp = null;
 		switch( partitioner )
 		{
 			case FIXED:
-				tp =  new TaskPartitionerFixedsize( _k, _dat, new IntObject(1), new IntObject(_N), new IntObject(1) );
+				tp =  new TaskPartitionerFixedsize( _k, _dat, new IntObject(1), new IntObject(to), new IntObject(incr) );
 				break;
 			case NAIVE:
-				tp =  new TaskPartitionerNaive( _k, _dat, new IntObject(1), new IntObject(_N), new IntObject(1) );
+				tp =  new TaskPartitionerNaive( _k, _dat, new IntObject(1), new IntObject(to), new IntObject(incr) );
 				break;
 			case STATIC:
-				tp =  new TaskPartitionerStatic( _k, _par, _dat, new IntObject(1), new IntObject(_N), new IntObject(1) );
+				tp =  new TaskPartitionerStatic( _k, _par, _dat, new IntObject(1), new IntObject(to), new IntObject(incr) );
 				break;
 			case FACTORING:
-				tp =  new TaskPartitionerFactoring( _k, _par, _dat, new IntObject(1), new IntObject(_N), new IntObject(1) );
+				tp =  new TaskPartitionerFactoring( _k, _par, _dat, new IntObject(1), new IntObject(to), new IntObject(incr) );
 				break;
 			case CFACTORING:
-				tp =  new TaskPartitionerFactoringConstrained( _k, _par, _k, _dat, new IntObject(1), new IntObject(_N), new IntObject(1) );
+				tp =  new TaskPartitionerFactoringConstrained( _k, _par, _k, _dat, new IntObject(1), new IntObject(to), new IntObject(incr) );
 				break;
 			default:
 				throw new RuntimeException("Unable to create task partitioner");
@@ -445,32 +818,26 @@ public class ParForTaskPartitionerTest
 			tasks = tp.createTasks();
 		}
 		
+		//if(tp.getNumIterations()!=getNumIterations(tasks) )
+		//	throw new RuntimeException( "Failure during task generation" ); //Assert not usable, if not in test
+		
 		return tasks;
 	}
 	
 	private boolean checkExpectedNum( Collection<Task> tasks, int[] expected, boolean range )
 	{
+		//System.out.println("created: "+tasks.size());
+		//System.out.println("expected: "+expected.length);
+		
 		boolean ret = ( tasks.size() == expected.length );
-		int count=0;
-		for( Task t : tasks )
+		if( ret )
 		{
-			if( range && t.getType()==TaskType.ITERATION_RANGE )
+			int count = 0;
+			for( Task t : tasks )
 			{
-				int from = t.getIterations().get(0).getIntValue();
-				int to = t.getIterations().get(1).getIntValue();
-				int incr = t.getIterations().get(2).getIntValue();
-				int N = (to-from+1)/incr;
-				
-				//System.out.println("expected:"+expected[count]+"  /  created:"+N);
-				
+				ret &= (expected[count] == getNumIterations(t) );			
+				count++;	
 			}
-			else
-			{
-				//System.out.println("expected:"+expected[count]+"  /  created:"+t.size());
-				ret &= (t.size() == expected[count]);
-			}
-			
-			count++;	
 		}
 		return ret;
 	}
@@ -517,4 +884,30 @@ public class ParForTaskPartitionerTest
 		return ret;		
 	}
 
+	private int getNumIterations(Task t)
+	{
+		int ret = -1;
+		
+		if( t.getType()==TaskType.ITERATION_RANGE )
+		{
+			int from = t.getIterations().get(0).getIntValue();
+			int to = t.getIterations().get(1).getIntValue();
+			int incr = t.getIterations().get(2).getIntValue();
+			ret = (int)Math.ceil(((double)(to-from+1))/incr);
+		}
+		else
+		{
+			ret = t.size();
+		}
+		
+		return ret;
+	}
+	
+	/*private int getNumIterations( Collection<Task> tasks )
+	{
+		int count = 0;
+		for( Task t : tasks )
+			count += getNumIterations( t );
+		return count;
+	}*/
 }

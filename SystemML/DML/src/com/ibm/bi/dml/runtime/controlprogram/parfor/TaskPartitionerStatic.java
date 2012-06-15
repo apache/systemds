@@ -15,13 +15,7 @@ public class TaskPartitionerStatic extends TaskPartitionerFixedsize
 	{
 		super(taskSize, iterVarName, fromVal, toVal, incrVal);
 	
-		//compute the new static task size
-		int lFrom = _fromVal.getIntValue();
-		int lTo   = _toVal.getIntValue();
-		int lIncr = _incrVal.getIntValue();
-		
-		int numIterations = (lTo-lFrom+1)/lIncr; 
-		_taskSize = numIterations / numThreads;
-		_firstnPlus1 = numIterations % numThreads;
+		_taskSize = _numIter / numThreads;
+		_firstnPlus1 = _numIter % numThreads;
 	}	
 }

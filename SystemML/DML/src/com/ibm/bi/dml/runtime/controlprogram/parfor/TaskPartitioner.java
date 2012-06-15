@@ -35,7 +35,7 @@ public abstract class TaskPartitioner
 		_toVal       = toVal;
 		_incrVal     = incrVal;
 		
-		_numIter     = (_toVal.getIntValue()-_fromVal.getIntValue()+1 ) / _incrVal.getIntValue(); 
+		_numIter     = (int)Math.ceil(((double)(_toVal.getIntValue()-_fromVal.getIntValue()+1 )) / _incrVal.getIntValue()); 
 	}
 	
 	/**

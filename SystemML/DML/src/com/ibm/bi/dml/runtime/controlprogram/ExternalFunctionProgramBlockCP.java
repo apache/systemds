@@ -8,11 +8,14 @@ import java.util.Vector;
 import org.nimble.exception.NimbleCheckedRuntimeException;
 
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
+import com.ibm.bi.dml.packagesupport.Matrix;
 import com.ibm.bi.dml.packagesupport.PackageFunction;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -82,24 +85,6 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		for( Instruction inst : _inst ) 
 		{
 			executeInstruction( (ExternalFunctionInvocationInstruction) inst );
-		}
-
-		// convert matrix metadata information for symbol table
-		try 
-		{
-			for( DataIdentifier dat : getOutputParams() )
-			{
-				if( dat.getDataType()==DataType.MATRIX )
-				{
-					MatrixFormatMetaData md = (MatrixFormatMetaData) _variables.get(dat.getName()).getMetaData();
-					MatrixFormatMetaData md2 = new MatrixFormatMetaData(md.getMatrixCharacteristics(),OutputInfo.BinaryBlockOutputInfo,InputInfo.BinaryBlockInputInfo);
-					_variables.get(dat.getName()).setMetaData(md2);
-				}
-			}		
-		} 
-		catch (DMLRuntimeException ex) 
-		{
-			throw new PackageRuntimeException("Failed to change matrix metadata.", ex);
 		}
 		
 	}
@@ -184,4 +169,26 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		_inst.add(einst);
 
 	}
+
+	@Override
+	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
+	{
+		//pass in-memory object to external function
+		m.setMatrixObject( mobj );
+	}
+	
+	@Override
+	protected MatrixObject createOutputMatrixObject(Matrix m) 
+	{
+		MatrixObject ret = m.getMatrixObject();
+		
+		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
+		{
+			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
+			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
+		}
+		
+		return ret;
+	}	
 }

@@ -51,9 +51,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 	protected static IDSequence _idSeq;
 
-	final String CLASSNAME = "classname";
-	final String EXECLOCATION = "execlocation";
-	final String CONFIGFILE = "configfile";
+	public static final String CLASSNAME = "classname";
+	public static final String EXECLOCATION = "execlocation";
+	public static final String CONFIGFILE = "configfile";
 	final String WORKER = "worker";
 	final int ROWS_PER_BLOCK = DMLTranslator.DMLBlockSize;
 	final int COLS_PER_BLOCK = DMLTranslator.DMLBlockSize;
@@ -530,7 +530,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		try {
 			t = dQueue.waitOnTask(t);
 		} catch (Exception e) {
-			throw new PackageRuntimeException(e.toString());
+			throw new PackageRuntimeException(e);
 		}
 
 		// get updated function
@@ -585,10 +585,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 
 				// add result to variableMapping
-				MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
-				//MatrixDimensionsMetaData mtd = new MatrixDimensionsMetaData(mc);
-				MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);
-				MatrixObject result_matrix = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
+				MatrixObject result_matrix = createOutputMatrixObject( m );
 				this.getVariables().put(tokens.get(1), result_matrix);
 				continue;
 			}
@@ -646,6 +643,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			throw new PackageRuntimeException(
 					"Should never come here -- unknown output type");
 		}
+	}
+
+	protected MatrixObject createOutputMatrixObject( Matrix m ) 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
+		//MatrixDimensionsMetaData mtd = new MatrixDimensionsMetaData(mc);
+		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);
+		return new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);		
 	}
 
 	/**
@@ -717,6 +722,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 						md.getMatrixCharacteristics().numRows,
 						md.getMatrixCharacteristics().numColumns,
 						getMatrixValueType(tokens.get(2)));
+				modifyInputMatrix(m, mobj);
 				inputObjects.add(m);
 			}
 
@@ -740,6 +746,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		return inputObjects;
 
+	}
+
+	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
+	{
+		//do nothing, intended for extensions
 	}
 
 	/**

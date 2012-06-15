@@ -413,6 +413,46 @@ public class DataConverter {
 			throw new DMLRuntimeException(e);
 		}
 	}
+
+	/**
+	 * Creates a two-dimensional double matrix of the input matrix block. 
+	 * 
+	 * @param mb
+	 * @return
+	 */
+	public static double[][] convertToDoubleMatrix( MatrixBlock mb )
+	{
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		double[][] ret = new double[rows][cols];
+		
+		for( int i=0; i<rows; i++ )
+			for( int j=0; j<cols; j++ )
+				ret[i][j] = mb.getValue(i, j);
+				
+		return ret;
+	}
+	
+	/**
+	 * Creates a dense Matrix Block and copies the given double matrix into it.
+	 * 
+	 * @param data
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock( double[][] data )
+	{
+		int rows = data.length;
+		int cols = (rows > 0)? data[0].length : 0;
+		
+		MatrixBlock mb = new MatrixBlock(rows, cols, false);
+		
+		for( int i=0; i<rows; i++ )
+			for( int j=0; j<cols; j++ )
+				if( data[i][j] != 0 )
+					mb.setValue(i, j, data[i][j]);
+		
+		return mb;
+	}
 	
 	private static Path[] getSubDirs(String dir) throws IOException {
 		FileSystem fs = FileSystem.get(new Configuration());
@@ -422,4 +462,5 @@ public class DataConverter {
 		}
 		return paths.toArray(new Path[paths.size()]);
 	}
+
 }

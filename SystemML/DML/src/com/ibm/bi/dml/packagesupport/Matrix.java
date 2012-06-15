@@ -1,27 +1,42 @@
 package com.ibm.bi.dml.packagesupport;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.nimble.hadoop.HDFSFileManager;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
+
 /**
  * Class to represent the matrix input type
  * 
- * @author aghoting
+ * @author aghoting, mboehm
  * 
  */
 public class Matrix extends FIO {
 
 	private static final long serialVersionUID = -1058329938431848909L;
-	String filePath;
-	long rows, cols;
-	ValueType vType;
+	
+	private String 		 _filePath;
+	private long 		 _rows;
+	private long 		 _cols;
+	private ValueType 	 _vType;
+	private MatrixObject _mo;
 
 	public enum ValueType {
-		Double, Integer
+		Double, 
+		Integer
 	};
 
 	/**
@@ -36,10 +51,20 @@ public class Matrix extends FIO {
 
 	public Matrix(String path, long rows, long cols, ValueType vType) {
 		super(Type.Matrix);
-		filePath = path;
-		this.rows = rows;
-		this.cols = cols;
-		this.vType = vType;
+		_filePath = path;
+		_rows = rows;
+		_cols = cols;
+		_vType = vType;
+	}
+	
+	public void setMatrixObject( MatrixObject mo )
+	{
+		_mo = mo;
+	}
+	
+	public MatrixObject getMatrixObject()
+	{
+		return _mo;
 	}
 
 	/**
@@ -48,7 +73,7 @@ public class Matrix extends FIO {
 	 * @return
 	 */
 	public String getFilePath() {
-		return filePath;
+		return _filePath;
 	}
 
 	/**
@@ -57,7 +82,7 @@ public class Matrix extends FIO {
 	 * @return
 	 */
 	public long getNumRows() {
-		return rows;
+		return _rows;
 	}
 
 	/**
@@ -67,7 +92,7 @@ public class Matrix extends FIO {
 	 */
 
 	public long getNumCols() {
-		return cols;
+		return _cols;
 	}
 
 	/**
@@ -76,7 +101,7 @@ public class Matrix extends FIO {
 	 * @return
 	 */
 	public ValueType getValueType() {
-		return vType;
+		return _vType;
 	}
 
 	/**
@@ -86,46 +111,112 @@ public class Matrix extends FIO {
 	 * 
 	 * @return
 	 */
-	public double[][] getMatrixAsDoubleArray() {
-
-		double[][] arr = new double[(int) rows][(int) cols];
-
-		try {
-
-			String[] files;
-
-			// get file names for this matrix.
-
-			files = HDFSFileManager.getFileNamesWithPrefixStatic(this
-					.getFilePath() + "/");
-			String line = null;
-
-			// read each file into memory.
-			for (String file : files) {
-
-				FSDataInputStream inStrm;
-				inStrm = HDFSFileManager.getInputStreamStatic(file);
-				BufferedReader br = new BufferedReader(new InputStreamReader(
-						inStrm));
-
-				while ((line = br.readLine()) != null) {
-
-					StringTokenizer tk = new StringTokenizer(line);
-					int i, j;
-					double val;
-
-					i = Integer.parseInt(tk.nextToken());
-					j = Integer.parseInt(tk.nextToken());
-					val = Double.parseDouble(tk.nextToken());
-
-					arr[i - 1][j - 1] = val;
+	public double[][] getMatrixAsDoubleArray() 
+	{
+		double[][] ret = null;
+		
+		if( _mo != null ) //CP ext function
+		{
+			try
+			{
+				MatrixBlock mb = _mo.getData();
+				if( mb != null ) //convert in-memory
+				{
+					ret = DataConverter.convertToDoubleMatrix( mb );
+				}
+				else
+				{
+					ret = MapReduceTool.readMatrixFromHDFS(
+				             _filePath, InputInfo.BinaryBlockInputInfo, _rows, _cols, 
+	                         DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 				}
 			}
-		} catch (Exception e) {
-			throw new PackageRuntimeException(e.toString());
+			catch(Exception ex)
+			{
+				throw new PackageRuntimeException(ex);
+			}
 		}
+		else //traditional ext function
+		{
+			double[][] arr = new double[(int) _rows][(int) _cols];
+	
+			try {
+	
+				String[] files;
+	
+				// get file names for this matrix.
+	
+				files = HDFSFileManager.getFileNamesWithPrefixStatic(this
+						.getFilePath() + "/");
+				String line = null;
+	
+				// read each file into memory.
+				for (String file : files) {
+	
+					FSDataInputStream inStrm;
+					inStrm = HDFSFileManager.getInputStreamStatic(file);
+					BufferedReader br = new BufferedReader(new InputStreamReader(
+							inStrm));
+	
+					while ((line = br.readLine()) != null) {
+	
+						StringTokenizer tk = new StringTokenizer(line);
+						int i, j;
+						double val;
+	
+						i = Integer.parseInt(tk.nextToken());
+						j = Integer.parseInt(tk.nextToken());
+						val = Double.parseDouble(tk.nextToken());
+	
+						arr[i - 1][j - 1] = val;
+					}
+				}
+			} catch (Exception e) {
+				throw new PackageRuntimeException(e.toString());
+			}
+			ret = arr;
+		}
+		
+		return ret;
 
-		return arr;
+	}
 
+	/**
+	 * Method to set matrix as double array. This should only be used if the
+	 * user knows the matrix fits in memory. We are using the dense
+	 * representation.
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	public void setMatrixDoubleArray(double[][] data, OutputInfo oinfo, InputInfo iinfo) 
+		throws IOException 
+	{
+		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
+		setMatrixDoubleArray(mb, oinfo, iinfo);
+	}
+	
+	/**
+	 * Method to set matrix as double array. This should only be used if the
+	 * user knows the matrix fits in memory. We are using the dense
+	 * representation.
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	public void setMatrixDoubleArray(MatrixBlock mb, OutputInfo oinfo, InputInfo iinfo) 
+		throws IOException 
+	{
+		_rows = mb.getNumRows();
+		_cols = mb.getNumColumns();
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, 0, 0);
+		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
+		_mo = new MatrixObject(com.ibm.bi.dml.parser.Expression.ValueType.DOUBLE, _filePath, mfmd);
+		
+		_mo.setData( mb );
+		
+		//write matrix data to DFS
+		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, (int)_rows, (int)_cols); 
 	}
 }

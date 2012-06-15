@@ -22,6 +22,9 @@ build.configfile=SystemML-config.xml
 # SystemML.jar
 build.jarnamerun=SystemML.jar
 
+# machine-learning.tar.gz
+build.configjartgz=machine-learning.tar.gz
+
 # JunitSystemML.jar
 build.jarnamejunit=JunitSystemML.jar
 
@@ -40,4 +43,10 @@ hadoop.hdfs.basepath=/user/hadoop
 systemml.version=0.0.1
 release.notes=Preliminary build.
 release.detica=Releases/2012_Detica/machine-learning
+
+#SystemML specific for 2012_Nov release
+systemml.version=0.0.2
+release.notes=GA build 1
+release.2012_Nov=Releases/2012_Nov
+
 

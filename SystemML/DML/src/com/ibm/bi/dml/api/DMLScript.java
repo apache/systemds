@@ -551,16 +551,11 @@ public class DMLScript {
 	static DAGQueue setupNIMBLEQueue(DMLConfig dmlCfg) {
 
 		//config not provided
-		if(dmlCfg == null)
+		if (dmlCfg == null) 
 			return null;
 		
 		// read in configuration files
 		NimbleConfig config = new NimbleConfig();
-
-
-		//if(dmlCfg.getTextValue("NimbleSystemConfigFile") == null)
-		//	return null;
-
 
 		try {
 			config.parseSystemDocuments(dmlCfg.getConfig_file_name());

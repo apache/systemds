@@ -189,6 +189,13 @@
 		<tar basedir="${release.detica}" destfile="${release.detica}/../machine-learning.tar.gz" compression="gzip"/>
 	</target>
 	
+	<!-- Target for Nov. 2012 release -->
+	<target name="2012_Nov" depends="jar">
+		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.2012_Nov}" overwrite="true"/>
+		<copy file="${build.configfile}" todir="${release.2012_Nov}" overwrite="true"/>
+		<tar basedir="${release.2012_Nov}" destfile="${release.2012_Nov}/${configjartgz}" compression="gzip"/>
+	</target>
+	
 	<target name="auto">
 		<antcall target="clean" />
 		<antcall target="build" />

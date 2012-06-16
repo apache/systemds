@@ -207,16 +207,28 @@ public class Matrix extends FIO {
 	public void setMatrixDoubleArray(MatrixBlock mb, OutputInfo oinfo, InputInfo iinfo) 
 		throws IOException 
 	{
+		int rblen, cblen;
 		_rows = mb.getNumRows();
 		_cols = mb.getNumColumns();
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, 0, 0);
+		if( _rows*_cols <= Math.pow(DMLTranslator.DMLBlockSize,2) )
+		{
+			rblen = (int)_rows;
+			cblen = (int)_cols;
+		}
+		else
+		{
+			rblen = DMLTranslator.DMLBlockSize;
+			cblen = DMLTranslator.DMLBlockSize;
+		}
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
 		_mo = new MatrixObject(com.ibm.bi.dml.parser.Expression.ValueType.DOUBLE, _filePath, mfmd);
 		
 		_mo.setData( mb );
 		
 		//write matrix data to DFS
-		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, (int)_rows, (int)_cols); 
+		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, rblen, cblen); 
 	}
 }

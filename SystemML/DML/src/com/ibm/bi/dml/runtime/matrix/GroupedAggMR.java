@@ -97,6 +97,7 @@ public class GroupedAggMR {
 	/*	ExecMode mode = RunMRJobs.getExecMode(LopProperties.CM_COV, stats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}*/
 		
 		ExecMode mode = ExecMode.CLUSTER; //default

@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
  
 public class GMR{
@@ -225,6 +226,7 @@ public class GMR{
 		ExecMode mode = RunMRJobs.getExecMode(JobType.GMR, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}
 		
 		//System.out.println("Check mode = " + mode);

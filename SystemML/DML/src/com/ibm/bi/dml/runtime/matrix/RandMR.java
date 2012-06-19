@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.RandMapper;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -225,6 +226,7 @@ public class RandMR
 			ExecMode mode = RunMRJobs.getExecMode(JobType.RAND, inputStats); 
 			if ( mode == ExecMode.LOCAL ) {
 				job.set("mapred.job.tracker", "local");
+				job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 			}
 
 			//set unique working dir

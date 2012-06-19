@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /*
@@ -288,6 +289,7 @@ public class MMCJMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.MMCJ, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}
 		
 		//set unique working dir

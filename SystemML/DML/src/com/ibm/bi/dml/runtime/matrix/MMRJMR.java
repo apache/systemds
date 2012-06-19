@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /*
  * inBlockRepresentation: indicate whether to use block representation or cell representation
@@ -129,6 +130,7 @@ public class MMRJMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.MMRJ, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}
 
 		//set unique working dir

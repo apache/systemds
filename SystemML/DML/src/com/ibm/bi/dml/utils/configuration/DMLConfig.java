@@ -20,6 +20,7 @@ public class DMLConfig
 
     public static final int DEFAULT_BLOCK_SIZE = 1000;
     public static final int DEFAULT_NUM_REDUCERS = 75;
+    public static final String LOCAL_MR_MODE_STAGING_DIR="/tmp/hadoop/mapred/staging";
 	String config_file_name;
 	
 	public String getConfig_file_name() {

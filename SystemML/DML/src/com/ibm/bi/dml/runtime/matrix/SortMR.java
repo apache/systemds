@@ -46,6 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 @SuppressWarnings("deprecation")
@@ -279,6 +280,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    ExecMode mode = RunMRJobs.getExecMode(JobType.SORT, s); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}
 		
 		//set unique working dir

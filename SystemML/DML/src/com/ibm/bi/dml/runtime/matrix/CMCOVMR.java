@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class CMCOVMR {
@@ -96,6 +97,7 @@ public class CMCOVMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.CM_COV, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
+			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}
 		
 		//set unique working dir

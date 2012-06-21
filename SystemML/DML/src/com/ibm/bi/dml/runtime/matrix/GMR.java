@@ -245,7 +245,7 @@ public class GMR{
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
-			stats[i].nonZeros=group.getCounter(Integer.toString(i));
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
 		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 			
 			// compute dimensions for output matrices whose dimensions are unknown at compilation time 

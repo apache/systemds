@@ -22,6 +22,7 @@ import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.meta.PartitionSubMatrixMR;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -373,7 +374,9 @@ public class RunMRJobs {
 					}
 					
 					// write out metadata file
-					MapReduceTool.writeMetaDataFile(inst.getIv_outputs()[i] + ".mtd", ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+					// TODO: we currently don't carry valueType information in MR instruction, 
+					// as we only support DOUBLE type, hard coded the value type information for now
+					MapReduceTool.writeMetaDataFile(inst.getIv_outputs()[i] + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 				}
 				return ret;
 			} catch (IOException e) {

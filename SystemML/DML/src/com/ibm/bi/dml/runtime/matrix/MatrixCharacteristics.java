@@ -33,7 +33,7 @@ public class MatrixCharacteristics{
 	public long numColumns=-1;
 	public int numRowsPerBlock=1;
 	public int numColumnsPerBlock=1;
-	public long nonZeros=-1;
+	public long nonZero=-1;
 	
 	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc)
 	{
@@ -60,7 +60,7 @@ public class MatrixCharacteristics{
 		numColumns=nc;
 		numRowsPerBlock=bnr;
 		numColumnsPerBlock=bnc;
-		nonZeros = nnz;
+		nonZero = nnz;
 	}
 	
 	public void set(MatrixCharacteristics that) {
@@ -68,7 +68,7 @@ public class MatrixCharacteristics{
 		this.numColumns=that.numColumns;
 		this.numRowsPerBlock=that.numRowsPerBlock;
 		this.numColumnsPerBlock=that.numColumnsPerBlock;
-		this.nonZeros = that.nonZeros;
+		this.nonZero = that.nonZero;
 	}
 	
 	public long get_rows(){
@@ -88,7 +88,7 @@ public class MatrixCharacteristics{
 	}
 	public String toString()
 	{
-		return "["+numRows+" x "+numColumns+", nnz="+nonZeros
+		return "["+numRows+" x "+numColumns+", nnz="+nonZero
 		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
 	}
 	
@@ -105,7 +105,7 @@ public class MatrixCharacteristics{
 	}
 	
 	public void setNonZeros(long nnz) {
-		nonZeros = nnz;
+		nonZero = nnz;
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
@@ -213,7 +213,7 @@ public class MatrixCharacteristics{
 					(numColumns == mc.numColumns) && 
 					(numRowsPerBlock == mc.numRowsPerBlock) && 
 					(numColumnsPerBlock == mc.numColumnsPerBlock) && 
-					(nonZeros == mc.nonZeros)) ;
+					(nonZero == mc.nonZero)) ;
 		}
 		else
 			return false;

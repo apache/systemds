@@ -226,7 +226,9 @@ public abstract class Lops {
 			System.out.println(this.toString());
 			System.out.println("FORMAT:" + this.getOutputParameters().getFormat() + ", rows="
 					+ this.getOutputParameters().getNum_rows() + ", cols=" + this.getOutputParameters().getNum_cols()
-					+ ", Blocked?: " + this.getOutputParameters().isBlocked_representation());
+					+ ", Blocked?: " + this.getOutputParameters().isBlocked_representation() + ", rowsInBlock=" + 
+					this.getOutputParameters().get_rows_in_block() + ", colsInBlock=" + 
+					this.getOutputParameters().get_cols_in_block());
 			this.set_visited(VISIT_STATUS.DONE);
 			System.out.print("\n");
 

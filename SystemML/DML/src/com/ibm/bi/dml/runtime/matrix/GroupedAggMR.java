@@ -115,7 +115,7 @@ public class GroupedAggMR {
 		{
 			// number of non-zeros
 			stats[i]=new MatrixCharacteristics();
-			stats[i].nonZeros=group.getCounter(Integer.toString(i));
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
 		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 			
 			rowgroup = runjob.getCounters().getGroup("max_rowdim_"+i);

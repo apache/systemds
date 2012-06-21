@@ -547,13 +547,15 @@ public class VariableCPInstruction extends CPInstruction {
 					default:
 						throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
 					}
+				  // write out .mtd file
+				  MapReduceTool.writeScalarMetaDataFile(input2.get_name() +".mtd", input1.get_valueType());
 				} catch ( IOException e ) {
 					throw new DMLRuntimeException(e);
 				}
 			}
 			else {
 				MatrixObject mo = pb.getMatrixVariable(input1.get_name());
-				mo.writeInMemoryMatrixToHDFS(input2.get_name(), OutputInfo.stringToOutputInfo(input3.get_name()));
+				mo.writeInMemoryMatrixToHDFS(input2.get_name(), input1.get_valueType(), OutputInfo.stringToOutputInfo(input3.get_name()));
 			}
 			break;
 			

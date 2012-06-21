@@ -770,7 +770,7 @@ public class MatrixObjectNew extends CacheableData
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = InputInfo.getMatchingOutputInfo (iimd.getInputInfo ());
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", mc, oinfo);
+			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo);
 		}
 	}
 	

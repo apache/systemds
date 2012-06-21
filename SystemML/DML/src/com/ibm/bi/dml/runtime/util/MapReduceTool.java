@@ -25,6 +25,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 
 //import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
 import com.ibm.bi.dml.parser.Statement;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class MapReduceTool {
@@ -347,33 +349,101 @@ public class MapReduceTool {
         br.close();
 	}
 	
-	public static void writeMetaDataFile ( String mtdfile, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {
+	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {
 		//MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
         Path pt=new Path(mtdfile);
         FileSystem fs = FileSystem.get(new Configuration());
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
 		
         String line = "";
-        line += "{ \n" +
-        "    \"" +  Statement.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
-		"    ,\"" + Statement.READCOLPARAM 			+  "\": " + mc.numColumns + "\n" + 
-		"    ,\"" + Statement.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
-		"    ,\"" + Statement.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n" + 
-		"    ,\"" +	Statement.READNUMNONZEROPARAM	+  "\": " + mc.nonZeros + "\n" +
-		"    ,\"" + Statement.FORMAT_TYPE	+  "\": "; 
-        if ( outinfo == OutputInfo.TextCellOutputInfo ) {
+        
+        try {
+          line += "{ \n" +
+          "    \"" +  Statement.DATATYPEPARAM         +  "\": \"matrix\"\n" +
+          "    ,\"" +  Statement.VALUETYPEPARAM        +  "\": ";
+        
+          switch (v) {
+          case DOUBLE:
+			line += "\"double\"\n";
+			break;
+	  	  case INT:
+			line += "\"int\"\n";
+			break;
+		  case BOOLEAN:
+			line += "\"boolean\"\n";
+			break;
+		  case STRING:
+			line += "\"string\"\n";
+			break;
+          };
+        
+          line += 
+          "    ,\"" +  Statement.READROWPARAM 			+  "\": " + mc.numRows + "\n" + 
+		  "    ,\"" + Statement.READCOLPARAM 			+  "\": " + mc.numColumns + "\n";
+          // only output rows_in_block and cols_in_block for binary format 
+          if ( outinfo == OutputInfo.BinaryBlockOutputInfo)  {
+         	 line += "    ,\"" + Statement.ROWBLOCKCOUNTPARAM	+  "\": " + mc.numRowsPerBlock + "\n" + 
+		            "    ,\"" + Statement.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.numColumnsPerBlock + "\n";
+          }
+        
+          line += "    ,\"" +	Statement.READNUMNONZEROPARAM	+  "\": " + mc.nonZero + "\n" +
+		          "    ,\"" + Statement.FORMAT_TYPE	+  "\": "; 
+        
+          if ( outinfo == OutputInfo.TextCellOutputInfo ) {
         	line += "\"text\"\n";
-        } else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
+          } else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
         	line += "\"binary\"\n"; // currently, there is no way to differentiate between them
-        } else {
+          } else {
         	line += "\"specialized\"\n"; // this should not be the final output info
         }
-		line += "    ,\"description\": { \"author\": \"SystemML\" } \n" + 
-		"}" ;
+        
+		line += "    ,\"description\": { \"author\": \"SystemML\" } \n" + "}" ;
+        
+        br.write(line);
+        
+        br.close(); 
+        }catch (Exception e) {
+			throw new IOException(e);
+		}
+	}
+	
+	
+	public static void writeScalarMetaDataFile ( String mtdfile, ValueType v ) throws IOException {
+		
+        Path pt=new Path(mtdfile);
+        FileSystem fs = FileSystem.get(new Configuration());
+        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
+		
+        try {
+          String line = "";
+          line += "{ \n" +
+                  "    \"" +  Statement.DATATYPEPARAM         +  "\": \"scalar\"\n" +
+        		  "    ,\"" +  Statement.VALUETYPEPARAM        +  "\": ";
+        		        
+          switch (v) {
+        	case DOUBLE:
+        		line += "\"double\"\n";
+        		break;
+        	case INT:
+        		line += "\"int\"\n";
+        		break;
+        	case BOOLEAN:
+        		line += "\"boolean\"\n";
+        		break;
+        	case STRING:
+        		line += "\"string\"\n";
+        		break;
+          };
+          
+          line += "    ,\"" + Statement.FORMAT_TYPE	+  "\": \"text\"\n" + 
+                  "    ,\"description\": { \"author\": \"SystemML\" } \n" +" }" ;
         
         br.write(line);
         
         br.close();
+        }catch (Exception e) {
+			throw new IOException(e);
+		}
 	}
 	
 	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 

@@ -161,7 +161,7 @@ public class MMCJMR {
 		Group rowgroup, colgroup;
 		
 		// number of non-zeros
-		stats[outputIndex].nonZeros=group.getCounter(Byte.toString(outputMatrixID));
+		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
 		
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
@@ -314,7 +314,7 @@ public class MMCJMR {
 		Group rowgroup, colgroup;
 		
 		// number of non-zeros
-		stats[outputIndex].nonZeros=group.getCounter(Byte.toString(outputMatrixID));
+		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
 		
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {

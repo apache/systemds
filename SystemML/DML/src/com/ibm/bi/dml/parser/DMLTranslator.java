@@ -21,6 +21,7 @@ import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.Hops.AggOp;
 import com.ibm.bi.dml.hops.Hops.DataOpTypes;
 import com.ibm.bi.dml.hops.Hops.Direction;
+import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hops.OpOp1;
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.hops.Hops.OpOp3;
@@ -1654,10 +1655,18 @@ public class DMLTranslator {
 				// TODO: DRB: END RETROFIT FOR OUPUTSTATEMENT //////////////////////
 				
 				
-				write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), _ids.get(name).get_rows_in_block(), _ids.get(name).get_cols_in_block());
+				
 				String formatName = os.getFormatName();
 				write.setFormatType(Expression.convertFormatType(formatName));
-				setIdentifierParams(write, os.getIdentifier());
+				if (write.getFormatType() == FileFormatTypes.TEXT || 
+					write.get_dataType() == DataType.SCALAR)  {
+					
+					write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), -1, -1);
+				}
+				else  {
+				    write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				}
+				//setIdentifierParams(write, os.getIdentifier());
 				output.add(write);
 			}
 

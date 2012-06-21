@@ -70,7 +70,7 @@ public class PartitionSubMatrixMR {
 		long[] rowArray = lengths.getKey() ; long[] colArray = lengths.getValue() ;
 		for(int i = 0 ; i < mc.length; i++){
 			mc[i] = new MatrixCharacteristics(rowArray[i], colArray[i], bnr, bnc) ;
-			mc[i].nonZeros = rowArray[i] * colArray[i];
+			mc[i].nonZero = rowArray[i] * colArray[i];
 		}
 		return new JobReturn(mc, rj.isSuccessful()) ;
 	}

@@ -388,14 +388,14 @@ public class MatrixObject extends Data {
 		_data.reset();
 	}
 
-	public void writeInMemoryMatrixToHDFS(String path, OutputInfo oinfo) throws DMLRuntimeException {
+	public void writeInMemoryMatrixToHDFS(String path, ValueType v, OutputInfo oinfo) throws DMLRuntimeException {
 		// Get the dimension information from the metadata stored within MatrixObject
 		MatrixCharacteristics mc = ((MatrixFormatMetaData)_metaData).getMatrixCharacteristics();
 		
 		// Write the matrix to HDFS in requested format
 		try {
 			DataConverter.writeMatrixToHDFS(_data, path, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
-			MapReduceTool.writeMetaDataFile(path+".mtd", mc, oinfo);
+			MapReduceTool.writeMetaDataFile(path+".mtd", v, mc, oinfo);
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);
 		}
@@ -409,7 +409,7 @@ public class MatrixObject extends Data {
 	public void writeData() throws DMLRuntimeException {
 		
 		if ( isBuffered() ) {
-			writeInMemoryMatrixToHDFS(_hdfsFileName, InputInfo.getMatchingOutputInfo(((MatrixFormatMetaData)_metaData).getInputInfo()));
+			writeInMemoryMatrixToHDFS(_hdfsFileName, valueType, InputInfo.getMatchingOutputInfo(((MatrixFormatMetaData)_metaData).getInputInfo()));
 		}
 		else {
 			throw new DMLRuntimeException("Can not write a matrix that is not in the buffer.");

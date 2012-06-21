@@ -147,7 +147,7 @@ public class MMRJMR {
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
-			stats[i].nonZeros=group.getCounter(Byte.toString(resultIndexes[i]));
+			stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
 		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 			
 			// compute dimensions for output matrices whose dimensions are unknown at compilation time 

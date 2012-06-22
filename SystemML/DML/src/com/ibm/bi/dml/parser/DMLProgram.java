@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.parser;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -129,7 +130,7 @@ public class DMLProgram {
 	}
 	
 	
-	public Program getRuntimeProgram(boolean debug, DMLConfig config) throws DMLException {
+	public Program getRuntimeProgram(boolean debug, DMLConfig config) throws DMLException, IOException {
 		
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
@@ -157,7 +158,7 @@ public class DMLProgram {
 	}
 	
 	
-	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, boolean debug, DMLConfig config) throws DMLException {
+	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, boolean debug, DMLConfig config) throws DMLException, IOException {
 		Dag<Lops> dag, pred_dag = null;
 
 		ArrayList<Instruction> instruct;

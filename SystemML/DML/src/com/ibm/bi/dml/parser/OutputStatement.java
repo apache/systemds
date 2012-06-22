@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.utils.LanguageException;
 
  
@@ -17,10 +18,18 @@ public class OutputStatement extends IOStatement{
 
 		return false;
 	}
-		
-	public OutputStatement(DataIdentifier t, Expression fname){
-		super(t,null);
+	
+	public OutputStatement(){
+		super();
 	}
+	public OutputStatement(DataIdentifier t, DataOp op){
+		super(t, op);
+	}
+	
+	public OutputStatement(DataOp op){
+		super (op);
+	}
+
 	
 	// rewrites statement to support function inlining (create deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
@@ -35,20 +44,17 @@ public class OutputStatement extends IOStatement{
 		//newStatement.setFilenameExpr(newFilenameExpr);
 		
 		// rewrite parameter expressions (creates deep copy)
+		DataOp op = _paramsExpr.getOpCode();
 		HashMap<String,Expression> newExprParams = new HashMap<String,Expression>();
-		for (String key : _exprParams.keySet()){
-			Expression newExpr = _exprParams.get(key).rewriteExpression(prefix);
+		for (String key : _paramsExpr.getVarParams().keySet()){
+			Expression newExpr = _paramsExpr.getVarParam(key).rewriteExpression(prefix);
 			newExprParams.put(key, newExpr);
 		}
-		
-		newStatement.setExprParams(newExprParams);
+		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams);
+		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}
 	
-	
-	public OutputStatement(){
-		super();
-	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}
 	public VariableSet initializebackwardLV(VariableSet lo){
@@ -56,12 +62,12 @@ public class OutputStatement extends IOStatement{
 	}
 	
 	public String toString(){
-		 StringBuffer sb = new StringBuffer();
+		StringBuffer sb = new StringBuffer();
 		 sb.append(Statement.OUTPUTSTATEMENT + " ( " );
-		 sb.append( _id.toString() + ", " +  _exprParams.get(IO_FILENAME).toString());
-		 for (String key : _exprParams.keySet()){
+		 sb.append( _id.toString() + ", " +  _paramsExpr.getVarParam(IO_FILENAME).toString());
+		 for (String key : _paramsExpr.getVarParams().keySet()){
 			 if (!key.equals(IO_FILENAME))
-				 sb.append(", " + key + "=" + _exprParams.get(key));
+				 sb.append(", " + key + "=" + _paramsExpr.getVarParam(key));
 		 }
 		 sb.append(" );");
 		 return sb.toString(); 
@@ -78,9 +84,8 @@ public class OutputStatement extends IOStatement{
 		//result.addVariables(_filenameExpr.variablesRead());
 		
 		// add variables for parameter expressions 
-		for (String key : _exprParams.keySet())
-			result.addVariables(_exprParams.get(key).variablesRead()) ;
-		
+		for (String key : _paramsExpr.getVarParams().keySet())
+			result.addVariables(_paramsExpr.getVarParam(key).variablesRead()) ;
 		
 		return result;
 	}

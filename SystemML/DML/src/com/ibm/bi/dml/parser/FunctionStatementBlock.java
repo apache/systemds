@@ -20,7 +20,7 @@ public class FunctionStatementBlock extends StatementBlock {
 	 *    2)  The other parameters for External Functions
 	 * @throws IOException 
 	 */
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, IOException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
 			throw new LanguageException("FunctionStatementBlock should have only 1 statement (FunctionStatement)");

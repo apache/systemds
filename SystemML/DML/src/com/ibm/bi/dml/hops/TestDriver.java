@@ -6,6 +6,7 @@ import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 public class TestDriver {
@@ -51,7 +52,7 @@ public class TestDriver {
 		t3.printMe();
 
 	}
-	static void test3() throws HopsException {
+	static void test3() throws HopsException, LopsException {
 		/*
 		 * Example (example0.1.R)
 		 * 

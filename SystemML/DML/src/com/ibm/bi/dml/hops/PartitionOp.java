@@ -8,6 +8,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 public class PartitionOp extends Hops {
@@ -38,7 +39,7 @@ public class PartitionOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops() throws HopsException {
+	public Lops constructLops() throws HopsException, LopsException {
 		if(get_lops() == null) {
 			Lops dataLop = getInput().get(0).constructLops();
 			PartitionLop pLop = new PartitionLop(pp, dataLop, get_dataType(), get_valueType()) ;

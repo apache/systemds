@@ -1,0 +1,15 @@
+a = "data"
+d = "B"
+B = read("data/fileB", rows=3, cols=1, format="text")
+#C = read("data/fileB", rows=3, cols=1, format="text")
+#B = B + C
+write (B, "data/tmp")
+i=0 
+x=0
+while (i<2) {
+ x = x+sum(B)
+ print("Sum = " +  x)
+# write (B, i+"/tm"+"p")
+ i = i+1
+ }
+#write (B, "data/tmp") 

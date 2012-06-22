@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.lops.compile;
 
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
+
 
 
 /**
@@ -147,7 +150,7 @@ public class Dag<N extends Lops> {
 	 */
 
 	public ArrayList<Instruction> getJobs(boolean debug, DMLConfig config)
-			throws LopsException, DMLRuntimeException,
+			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
 		if (config != null) {
@@ -513,7 +516,8 @@ public class Dag<N extends Lops> {
 		else
 			throw new RuntimeException("Should not happen.");
 	}
-
+	
+	
 	/**
 	 * Method to generate instructions that create variables.
 	 * i.e., each instructions creates a new entry in the symbol table.
@@ -522,7 +526,7 @@ public class Dag<N extends Lops> {
 	 * @param nodes
 	 * @throws LopsException 
 	 */
-	private void generateInstructionsForInputVariables(Vector<N> nodes_v, ArrayList<Instruction> inst) throws LopsException {
+	private void generateInstructionsForInputVariables(Vector<N> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
 		for(N n : nodes_v) {
 			/*
 			 * ONLY persistent reads must be considered. For transient reads, previous program block 
@@ -563,7 +567,7 @@ public class Dag<N extends Lops> {
 	 */
 
 	private ArrayList<Instruction> doGreedyGrouping(Vector<N> node_v)
-			throws LopsException, DMLRuntimeException,
+			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException
 
 	{
@@ -592,6 +596,9 @@ public class Dag<N extends Lops> {
 		// remove files for transient reads that are updated.
 		deleteUpdatedTransientReadVariables(node_v, preWriteDeleteInst);
 
+		// compute the value of expressions in input/output statement
+		//computeValuesForIOExpression(node_v);
+		
 		generateInstructionsForInputVariables(node_v, inst);
 		
 		boolean done = false;
@@ -761,6 +768,7 @@ public class Dag<N extends Lops> {
 					if ( op == OperationTypes.READ ) {
 						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
 						if ( node.get_dataType() == DataType.SCALAR 
+								//TODO: LEO check the following condition is still needed
 								&& node.getOutputParameters().getFile_name() != null ) {
 							// this lop corresponds to reading a scalar from HDFS file
 							// add it to execNodes so that "readScalar" instruction gets generated
@@ -2689,13 +2697,24 @@ public class Dag<N extends Lops> {
 		ArrayList<Integer> inputIndices = new ArrayList<Integer>();
 
 		// recurse
-
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			ret_val = getAggAndOtherInstructions((N) node.getInputs().get(i),
+		// Leo: For WRITE, since the first element from input is the real input (the other elements
+		// are parameters for the WRITE operation), so we only need to take care of the
+		// first element.
+		if (node.getType() == Lops.Type.Data && ((Data)node).getOperationType() == Data.OperationTypes.WRITE) {
+			ret_val = getAggAndOtherInstructions((N) node.getInputs().get(0),
 					execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
 					inputLabels);
 			inputIndices.add(ret_val);
+		}
+		else {
+			for (int i = 0; i < node.getInputs().size(); i++) {
+				ret_val = getAggAndOtherInstructions((N) node.getInputs().get(i),
+						execNodes, shuffleInstructions, aggInstructionsReducer,
+						otherInstructionsReducer, nodeIndexMapping, start_index,
+						inputLabels);
+				inputIndices.add(ret_val);
+			}
 		}
 
 		// have to verify if this is needed
@@ -2759,10 +2778,10 @@ public class Dag<N extends Lops> {
 				if (node.getType() == Type.Aggregate)
 					aggInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), output_index));
-				else
+				else {
 					otherInstructionsReducer.add(node.getInstructions(
 							inputIndices.get(0), output_index));
-
+				}
 				nodeIndexMapping.put(node, output_index);
 
 				return output_index;

@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
+import java.io.IOException;
 
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -8,7 +9,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 public abstract class Expression {
 	public enum Kind {
-		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
+		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
 	};
 
 	public enum BinaryOp {
@@ -30,8 +31,12 @@ public abstract class Expression {
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {
-		INVALID, CDF, GROUPEDAGG
+		CDF, GROUPEDAGG, INVALID
 	};
+	
+	public enum DataOp {
+		READ, WRITE, RAND, INVALID	
+	}
 
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
@@ -49,9 +54,9 @@ public abstract class Expression {
 		TRANSPOSE, DIAG
 	};
 
-	public enum DataOp {
-		READ, WRITE
-	};
+	//public enum DataOp {
+	//	READ, WRITE
+	//};
 
 	public enum DataType {
 		MATRIX, SCALAR, OBJECT, UNKNOWN
@@ -89,8 +94,13 @@ public abstract class Expression {
 		return _output;
 	}
 
-	public abstract void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException;
-
+	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException{
+		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
+	};
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException, IOException{
+		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
+	};
+	
 	public static BinaryOp getBinaryOp(String val) {
 		if (val.equalsIgnoreCase("+"))
 			return BinaryOp.PLUS;

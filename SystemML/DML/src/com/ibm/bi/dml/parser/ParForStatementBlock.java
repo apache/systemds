@@ -113,7 +113,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	@Override
 	@SuppressWarnings("unchecked")
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars)
-		throws LanguageException, IOException 
+		throws LanguageException, ParseException, IOException 
 	{	
 		//DMLScript.DEBUG=true;
 		

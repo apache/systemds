@@ -3,12 +3,12 @@ package com.ibm.bi.dml.parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -20,21 +20,28 @@ public abstract class IOStatement extends Statement{
 	
 	protected DataIdentifier _id;
 		
-	// data structures to store filename and parameters (as expressions)
-	//protected Expression _filenameExpr;
-	protected HashMap<String,Expression> _exprParams;	
+	// data structures to store parameters as expressions
+
+	protected DataExpression _paramsExpr;
 	
 	public IOStatement(){
 		_id = null;
-		_exprParams = new HashMap<String,Expression>();
+		_paramsExpr = new DataExpression();
 	
+	}
+	
+	public IOStatement(DataIdentifier t, DataOp op){
+		_id = t;
+		_paramsExpr = new DataExpression(op);
+	
+	}
+	
+	public IOStatement (DataOp op){
+		_id  = null;
+		_paramsExpr = new DataExpression(op);
+		
 	}
 
-	public IOStatement(DataIdentifier t, Expression fexpr){
-		_id = t;
-		_exprParams = new HashMap<String,Expression>();	
-	}
-	
 	public DataIdentifier getId(){
 		return _id;
 	}
@@ -44,16 +51,16 @@ public abstract class IOStatement extends Statement{
 	}
 	
 	public void setExprParam(String name, Expression value) {
-		_exprParams.put(name, value);
+		_paramsExpr.addVarParam(name, value);
 	}
 	
-	public void setExprParams(HashMap<String,Expression> passed){
-		_exprParams = passed;
+	public void setExprParams(DataExpression paramsExpr) {
+		_paramsExpr = paramsExpr;
 	}
 	
 	public void addExprParam(String name, Expression value) throws ParseException
 	{
-		if (_exprParams.get(name) != null)
+		if (_paramsExpr.getVarParam(name) != null)
 			throw new ParseException("ERROR: attempted to add IOStatement parameter " + name + " more than once");
 		
 		// verify parameter names for InputStatement
@@ -63,13 +70,16 @@ public abstract class IOStatement extends Statement{
 		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
 			throw new ParseException("ERROR: attempted to add invalid write statmement parameter: " + name);
 		
-		_exprParams.put(name, value);
+		_paramsExpr.addVarParam(name, value);
 	}
 	
 	public Expression getExprParam(String name){
-		return _exprParams.get(name);
+		return _paramsExpr.getVarParam(name);
 	}
 	
+	public DataExpression getSource(){
+		return _paramsExpr;
+	}
 	
 	private void processParamsForInputStatement(boolean missingdimension) throws IOException, LanguageException {
 		
@@ -90,8 +100,8 @@ public abstract class IOStatement extends Statement{
 			Path pt = null;
 			String filename = null;
 			
-			if (this._exprParams.get(IO_FILENAME) instanceof ConstIdentifier){
-				filename = this._exprParams.get(IO_FILENAME).toString() +".mtd";
+			if (this._paramsExpr.getVarParam(IO_FILENAME) instanceof ConstIdentifier){
+				filename = this._paramsExpr.getVarParam(IO_FILENAME).toString() +".mtd";
 				pt=new Path(filename);
 				try {
 					if (fs.exists(pt)){
@@ -120,8 +130,8 @@ public abstract class IOStatement extends Statement{
 					}
 					else {
 						// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
-						if (_exprParams.get(key.toString()) == null)
-							_exprParams.put(key.toString(), new StringIdentifier(configObject.get(key).toString()));
+						if (_paramsExpr.getVarParam(key.toString()) == null)
+							_paramsExpr.addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
 					}
 				}
 	        }
@@ -284,9 +294,9 @@ public abstract class IOStatement extends Statement{
 			processParamsForOutputStatement();
 		}
 		
-	 	if (_exprParams.containsKey(FORMAT_TYPE)){
-	 	
-	 		Expression formatTypeExpr = _exprParams.get(FORMAT_TYPE);  
+		if (_paramsExpr.getVarParam(FORMAT_TYPE)!= null ){
+		 	
+	 		Expression formatTypeExpr = _paramsExpr.getVarParam(FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier))
 				throw new LanguageException("ERROR: input statement parameter " + FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text", 
@@ -301,7 +311,7 @@ public abstract class IOStatement extends Statement{
 					+ " can only be a string with one of following values: binary, text", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		} else {
-			_exprParams.put(FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
+			_paramsExpr.addVarParam(FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
 			_id.setFormatType(FormatType.TEXT);
 		}
 	}
@@ -312,7 +322,7 @@ public abstract class IOStatement extends Statement{
 	}
 	
 	public String getFormatName() {
-		return(_exprParams.get(FORMAT_TYPE).toString());
+		return(_paramsExpr.getVarParam(FORMAT_TYPE).toString());
 	}
 	
 	@Override

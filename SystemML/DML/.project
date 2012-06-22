@@ -42,4 +42,15 @@
 		<nature>sf.eclipse.javacc.javaccnature</nature>
 		<nature>net.sourceforge.metrics.nature</nature>
 	</natures>
+	<filteredResources>
+		<filter>
+			<id>1337201429562</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-sf.eclipse.javacc.prefs</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>

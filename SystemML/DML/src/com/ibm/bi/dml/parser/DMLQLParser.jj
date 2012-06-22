@@ -1800,12 +1800,11 @@ Expression BuiltInFunction():
 }
 
  
-
+//TODO: need to check with Doug's fix
 InputStatement InputStatement() :
 {
   DataIdentifier id = null;
-  InputStatement is = new InputStatement();
-  Token t1 = null;
+  InputStatement is = new InputStatement(Expression.DataOp.READ);
   Expression t2 = null;
 }
 {
@@ -1817,8 +1816,10 @@ InputStatement InputStatement() :
   <ASSIGN> <READMATRIX>
     		<LEFTPAREN>
    			
-			 t2 = Expression(){is.addExprParam(Statement.IO_FILENAME,t2);} 
-   			(< COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2);}))*
+			 t2 = Expression(){is.addExprParam(Statement.IO_FILENAME,t2);}
+					
+   			//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
+   			(< COMMA >(   			{   			  Token t1 = null;   			}   			t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2);}))*
 
 		<RIGHTPAREN> [<SEMICOLON>]
  {
@@ -1836,17 +1837,19 @@ OutputStatement OutputStatement() :
 	 Token t1 = null;
 	 Expression t2 = null;
 	 OutputStatement os = null;
-	
+	 	
 }
 {
 	    <WRITEMATRIX>
 	    	<LEFTPAREN>
-	    		fn = Identifier() { os = new OutputStatement(fn, null); } <COMMA>
+	    		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
 	    		t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2); }
 	     		( < COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {os.addExprParam(t1.image, t2);}) )*
 	
 			<RIGHTPAREN>  [<SEMICOLON>]
-	{ return os; }
+	{
+	  return os;
+	}
 }
 
 

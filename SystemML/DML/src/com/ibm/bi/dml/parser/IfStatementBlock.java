@@ -15,7 +15,7 @@ public class IfStatementBlock extends StatementBlock {
 	private Hops _predicateHops;
 	private Lops _predicateLops = null;
 		
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, IOException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
 			throw new LanguageException("IfStatementBlock should only have 1 statement (IfStatement)");

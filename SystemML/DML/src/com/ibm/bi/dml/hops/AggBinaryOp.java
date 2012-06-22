@@ -23,6 +23,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)
@@ -56,7 +57,7 @@ public class AggBinaryOp extends Hops {
 		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
 	}
 	
-	public Lops constructLops() throws HopsException {
+	public Lops constructLops() throws HopsException, LopsException {
 
 		if (get_lops() == null) {
 			if ( isMatrixMultiply() ) {

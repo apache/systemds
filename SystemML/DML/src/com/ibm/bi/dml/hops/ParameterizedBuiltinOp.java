@@ -14,6 +14,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
@@ -61,7 +62,7 @@ public class ParameterizedBuiltinOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops() throws HopsException {
+	public Lops constructLops() throws HopsException, LopsException {
 		if (get_lops() == null) {
 
 			// construct lops for all input parameters

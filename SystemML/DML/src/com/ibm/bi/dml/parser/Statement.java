@@ -9,7 +9,7 @@ public abstract class Statement {
 	public static final String OUTPUTSTATEMENT = "write";
 	public static final String PRINTSTATEMENT = "print";
 	
-	public static final String IO_FILENAME = "filename";
+	public static final String IO_FILENAME = "iofilename";
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNUMNONZEROPARAM = "nnz";

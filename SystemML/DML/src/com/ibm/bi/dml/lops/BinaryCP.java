@@ -64,6 +64,10 @@ public class BinaryCP extends Lops
 		return "Operation: " + operation;
 
 	}
+	
+	public OperationTypes getOperationType(){
+		return operation;
+	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException

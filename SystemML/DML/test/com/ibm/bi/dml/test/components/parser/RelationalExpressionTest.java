@@ -3,6 +3,7 @@ package com.ibm.bi.dml.test.components.parser;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
+import java.io.IOException;
 
 import org.junit.Test;
 
@@ -16,7 +17,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 public class RelationalExpressionTest {
 
     @Test
-    public void testValidateExpression() throws LanguageException {
+    public void testValidateExpression() throws LanguageException, IOException {
         HashMap<String, DataIdentifier> ids = new HashMap<String, DataIdentifier>();
         DataIdentifier left = new DataIdentifier("left");
         left.setDimensions(100, 101);

@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.io.IOException;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -68,7 +69,7 @@ public class FunctionCallIdentifier extends DataIdentifier {
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids) throws LanguageException {
+	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids) throws LanguageException, IOException{
 		
 		// check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null)

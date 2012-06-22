@@ -3,6 +3,7 @@ package com.ibm.bi.dml.test.components.parser;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
+import java.io.IOException;
 
 import org.junit.Test;
 
@@ -99,7 +100,7 @@ public class IdentifierTest {
     }
 
     @Test
-    public void testValidateExpression() throws LanguageException {
+    public void testValidateExpression() throws LanguageException, IOException {
         DataIdentifier idToTest = new DataIdentifier("idToTest");
         HashMap<String, DataIdentifier> ids = new HashMap<String, DataIdentifier>();
         DataIdentifier originalId = new DataIdentifier("idToTest");

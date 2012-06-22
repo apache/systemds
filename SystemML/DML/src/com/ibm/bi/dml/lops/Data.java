@@ -1,12 +1,16 @@
 package com.ibm.bi.dml.lops;
 
+import java.util.HashMap;
+
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.*;
 import com.ibm.bi.dml.utils.LopsException;
+
 
 
 /**
@@ -24,6 +28,8 @@ public class Data extends Lops
 	OperationTypes operation;
 	boolean literal_var = false;
 	boolean transient_var = false;
+	
+	private HashMap<String, Lops> _inputParams;
 
 	/**
 	 * Constructor to setup data lop.
@@ -56,10 +62,59 @@ public class Data extends Lops
 
 		this.getOutputParameters().setFile_name(fName);
 
-		setLopProperties ( );
+		setLopProperties( );
 	
 	}
 	
+	// Constructor to setup data lop for read or write lops
+	// If a user wants to create a write lops, input must be provided,
+	// it will always be added to the first element of the Input Array
+	public Data(Data.OperationTypes op, Lops input, HashMap<String, Lops> 
+	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient) throws LopsException 
+	{
+		super(Lops.Type.Data, dt, vt);	
+		operation = op;	
+		
+		if(literal != null){
+			literal_var = true;
+			this.getOutputParameters().setLabel(literal);
+		}
+
+		transient_var = isTransient;
+		if(name != null)
+		{
+			if ( transient_var )
+				this.getOutputParameters().setLabel(name); // tvar+name
+			else
+				this.getOutputParameters().setLabel("p"+op+name);
+		}
+		
+		// WRITE operation must have an input Lops, we always put this
+		// input Lops as the first element of WRITE input. The parameters of
+		// WRITE operation are then put as the following input elements.
+		if(input != null && operation == OperationTypes.WRITE)
+		{
+			this.addInput(input);
+			input.addOutput(this);
+		}
+		
+		for (Lops lop : inputParametersLops.values()) {
+			this.addInput(lop);
+			lop.addOutput(this);
+		}
+		
+		_inputParams = inputParametersLops;
+		
+		if (inputParametersLops.get(Statement.IO_FILENAME)!= null){
+		
+			OutputParameters outParams = ((Data)inputParametersLops.get(Statement.IO_FILENAME)).getOutputParameters();
+			String fName = outParams.getLabel();
+			this.getOutputParameters().setFile_name(fName);
+		}
+		
+		setLopProperties( );
+	}
+
 	/**
 	 * Same as other constructor, but with the ability to specify an input for write data lops.
 	 * @param fName
@@ -171,6 +226,14 @@ public class Data extends Lops
 	}
 	
 	/**
+	 * method to get inputParams 
+	 * @return
+	 */
+	public HashMap<String, Lops> getInputParams(){
+		return _inputParams;
+	}
+	
+	/**
 	 * method to check if this data lop represents a literal.
 	 * @return
 	 */
@@ -197,6 +260,7 @@ public class Data extends Lops
 	 */
 	@Override
 	public String getInstructions(String input1, String input2) throws LopsException {
+		
 		
 		if ( getOutputParameters().getFile_name() != null) {
 			String str = "CP" + OPERAND_DELIMITOR;

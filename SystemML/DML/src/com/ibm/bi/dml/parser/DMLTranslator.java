@@ -50,6 +50,7 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLWithTable;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -68,10 +69,10 @@ public class DMLTranslator {
 	 * @throws LanguageException
 	 * @throws IOException 
 	 */
-	public void validateParseTree(DMLProgram dmlp) throws LanguageException, IOException {
+	public void validateParseTree(DMLProgram dmlp) throws LanguageException, ParseException, IOException {
 		
 			
-		// hnadle functions in namespaces (current program has default namespace)
+		// handle functions in namespaces (current program has default namespace)
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
 		
 			// for each function defined in the namespace
@@ -198,15 +199,13 @@ public class DMLTranslator {
 		
 		
 		// handle regular program blocks
-		//currentLiveIn = new VariableSet();
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock current = dmlp.getStatementBlock(i);
 			constructHops(current);
-			//currentLiveIn = current.liveOut();
 		}
 	}
 	
-	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
+	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 
 		// for each namespace, handle function program blocks handle function 
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
@@ -231,7 +230,7 @@ public class DMLTranslator {
 		}	
 	}
 	
-	public void constructLops(StatementBlock sb) throws HopsException {
+	public void constructLops(StatementBlock sb) throws HopsException, LopsException {
 		
 		if (sb instanceof WhileStatementBlock){
 			WhileStatement whileStmt = (WhileStatement)sb.getStatement(0);
@@ -992,7 +991,7 @@ public class DMLTranslator {
 		lop.set_visited(VISIT_STATUS.DONE);
 	}
 	
-	public void printLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
+	public void printLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 
 		// for each namespace, handle function program blocks
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
@@ -1008,7 +1007,7 @@ public class DMLTranslator {
 		}
 	}
 			
-	public void printLops(StatementBlock current) throws ParseException, HopsException {
+	public void printLops(StatementBlock current) throws ParseException, HopsException, LopsException {
 	
 		ArrayList<Lops> lopsDAG = current.get_lops();
 		
@@ -1621,53 +1620,48 @@ public class DMLTranslator {
 
 			if (current instanceof InputStatement) {
 				InputStatement is = (InputStatement) current;
-				DataIdentifier ds = is.getIdentifier();
 				
-				// TODO: DRB: BEGIN RETROFIT /////////////////////////////////////////
-				String filenameString = is.getExprParam(InputStatement.IO_FILENAME).toString();
-				DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, filenameString, ds.getDim1(), ds.getDim2(), ds.getNnz(), ds.getRowsInBlock(), ds.getColumnsInBlock());
-				//DataOp read = new DataOp(is.getIdentifier().getName(), is.getIdentifier().getDataType(), is.getIdentifier().getValueType(), DataOpTypes.PERSISTENTREAD, is.getFilename(), ds.getDim1(), ds.getDim2(), (int) ds.getRowsInBlock(), (int) ds.getColumnsInBlock());
-				
-				// TODO: DRB: END RETROFIT ////////////////////////////////////////////
-				
-				String formatName = is.getFormatName();
-				read.setFormatType(Expression.convertFormatType(formatName));
-				_ids.put(is.getIdentifier().getName(), read);
-	
+				DataExpression source = is.getSource();
 				DataIdentifier target = is.getIdentifier();
+
+				DataOp ae = (DataOp)processExpression(source, target, _ids);
+				String formatName = is.getFormatName();
+				ae.setFormatType(Expression.convertFormatType(formatName));
+				_ids.put(target.getName(), ae);
+
+
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
-					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), read, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(read.get_dim1(), read.get_dim2(), read.getNnz(), read.get_rows_in_block(), read.get_cols_in_block());
+					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
+					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 					updatedLiveOut.addVariable(target.getName(), target);
 					output.add(transientwrite);
 				}
+
 			}
 
 			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement) current;
-				String name = os.getIdentifier().getName();
-				
-				// TODO: DRB: BEGIN RETROFIT FOR OUTPUTSTATEMENT ///////////////////
-				String filenameString = os.getExprParam(OutputStatement.IO_FILENAME).toString();
-				DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, filenameString);
-				//DataOp write = new DataOp(name, os.getIdentifier().getDataType(), os.getIdentifier().getValueType(), _ids.get(name), DataOpTypes.PERSISTENTWRITE, os.getFilename());
-				// TODO: DRB: END RETROFIT FOR OUPUTSTATEMENT //////////////////////
-				
-				
-				
+
+				DataExpression source = os.getSource();
+				DataIdentifier target = os.getIdentifier();
+
+				DataOp ae = (DataOp)processExpression(source, target, _ids);
 				String formatName = os.getFormatName();
-				write.setFormatType(Expression.convertFormatType(formatName));
-				if (write.getFormatType() == FileFormatTypes.TEXT || 
-					write.get_dataType() == DataType.SCALAR)  {
+				ae.setFormatType(Expression.convertFormatType(formatName));
+				_ids.put(target.getName(), ae);
+
+
+				if (ae.getFormatType() == FileFormatTypes.TEXT || 
+					ae.get_dataType() == DataType.SCALAR)  {
 					
-					write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), -1, -1);
+					ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), -1, -1);
 				}
 				else  {
-				    write.setOutputParams(_ids.get(name).get_dim1(), _ids.get(name).get_dim2(), _ids.get(name).getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				    ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 				}
-				//setIdentifierParams(write, os.getIdentifier());
-				output.add(write);
+				output.add(ae);
+				
 			}
 
 			if (current instanceof PrintStatement) {
@@ -1717,7 +1711,7 @@ public class DMLTranslator {
 					 */
 
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+					FunctionStatement fstmt = (FunctionStatement)DMLTranslator._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
 					StringBuilder inst = new StringBuilder();
 
 					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
@@ -1758,7 +1752,7 @@ public class DMLTranslator {
 				Expression source = mas.getSource();
 				
 				FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-				FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
+				FunctionStatement fstmt = (FunctionStatement)DMLTranslator._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
 				StringBuilder inst = new StringBuilder();
 
 				inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
@@ -2044,6 +2038,12 @@ public class DMLTranslator {
 			} catch ( HopsException e ) {
 				e.printStackTrace();
 			}
+		} else if (source.getKind() == Expression.Kind.DataOp ) {
+			try {
+				return processDataExpression((DataExpression)source, target, hops);
+			} catch ( HopsException e ) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	} // end method processExpression
@@ -2313,6 +2313,58 @@ public class DMLTranslator {
 		return currBuiltinOp;
 	}
 	
+	/**
+	 * Construct Hops from parse tree : Process ParameterizedExpression in a
+	 * read/write/rand statement
+	 * 
+	 * @throws ParseException
+	 * @throws HopsException 
+	 */
+	private Hops processDataExpression(DataExpression source, DataIdentifier target,
+			HashMap<String, Hops> hops) throws ParseException, HopsException {
+		
+		// this expression has multiple "named" parameters
+		HashMap<String, Hops> paramHops = new HashMap<String,Hops>();
+		
+		// -- construct hops for all input parameters
+		// -- store them in hashmap so that their "name"s are maintained
+		Hops pHop = null;
+		for ( String paramName : source.getVarParams().keySet() ) {
+			pHop = processExpression(source.getVarParam(paramName), null, hops);
+			paramHops.put(paramName, pHop);
+		}
+		
+		Hops currBuiltinOp = null;
+
+		if (target == null) {
+			target = createTarget(source);
+		}
+		
+		// construct hop based on opcode
+		switch(source.getOpCode()) {
+		case READ:
+			currBuiltinOp = new DataOp(
+					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTREAD, paramHops);
+			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
+			break;
+			
+		case WRITE:
+			String name = target.getName();
+			currBuiltinOp = new DataOp(
+					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTWRITE, hops.get(name), paramHops);
+			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
+			break;
+		
+		default:
+			throw new ParseException(
+					"processDataExpression():: Unknown operation:  "
+							+ source.getOpCode());
+		}
+		
+		setIdentifierParams(currBuiltinOp, source.getOutput());
+		
+		return currBuiltinOp;
+	}
 
 	/**
 	 * Construct Hops from parse tree : Process BuiltinFunction Expression in an

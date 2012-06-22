@@ -24,7 +24,7 @@ public class ForStatementBlock extends StatementBlock {
 		return ((ForStatement)_statements.get(0)).getIterablePredicate();
 	}
 
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, IOException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
 			throw new LanguageException("ForStatementBlock should have only 1 statement (for statement)");

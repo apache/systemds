@@ -12,6 +12,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 abstract public class Hops {
@@ -104,7 +105,7 @@ abstract public class Hops {
 		return _kind;
 	}
 
-	abstract public Lops constructLops() throws HopsException;
+	abstract public Lops constructLops() throws HopsException, LopsException;
 	
 	abstract public SQLLops constructSQLLOPs() throws HopsException; 
 
@@ -156,8 +157,6 @@ abstract public class Hops {
 					r.set_visited(Hops.VISIT_STATUS.DONE);
 
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
-
-					// insert reblock before the hop.
 
 					if (get_rows_in_block() == -1 && get_cols_in_block() == -1) {
 

@@ -8,6 +8,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 public class CrossvalOp extends Hops {
@@ -40,7 +41,7 @@ public class CrossvalOp extends Hops {
 		set_visited(VISIT_STATUS.DONE);
 	}
 
-	public Lops constructLops() throws HopsException {
+	public Lops constructLops() throws HopsException, LopsException {
 		if(get_lops() == null) {
 			Lops pLop = getInput().get(0).constructLops() ;
 			CrossvalLop cvlop = new CrossvalLop(pLop, _params) ;

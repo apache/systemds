@@ -7,6 +7,7 @@ import java.util.HashMap;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -439,52 +440,63 @@ public class StatementBlock extends LiveVariableAnalysis{
 		return newStatements;
 	}
 	
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException, IOException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 
 		_constVarsIn.putAll(constVars);
 		HashMap<String, ConstIdentifier> currConstVars = new HashMap<String,ConstIdentifier>();
 		currConstVars.putAll(constVars);
 			
 		_statements = rewriteFunctionCallStatements(dmlProg, _statements);
-		this._dmlProg = dmlProg;
+		_dmlProg = dmlProg;
 		
 		for (Statement current : _statements){
 			
 			if (current instanceof InputStatement){
-				InputStatement is = (InputStatement)current;		
-				is.processParams(false);
-						
-				// use existing size and properties information for LHS IndexedIdentifier
-				if (is.getIdentifier() instanceof IndexedIdentifier){
-					DataIdentifier targetAsSeen = ids.getVariable(is.getIdentifier().getName());
-					if (targetAsSeen == null)
-						throw new LanguageException("ERROR: cannot assign value to indexed identifier " + is.getIdentifier().toString() + " without initializing " + is.getIdentifier().getName());
-					is.getIdentifier().setProperties(targetAsSeen);
-				}
+				InputStatement is = (InputStatement)current;	
+				DataIdentifier target = is.getIdentifier(); 
 				
-				ids.addVariable(is.getIdentifier().getName(),is.getIdentifier());
+				Expression source = is.getSource();
+				source.setOutput(target);
+				source.validateExpression(ids.getVariables(), currConstVars);
+				
+				setStatementFormatType(is);
+				
+				// use existing size and properties information for LHS IndexedIdentifier
+				if (target instanceof IndexedIdentifier){
+					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+					if (targetAsSeen == null)
+						throw new LanguageException("ERROR: cannot assign value to indexed identifier " + target.toString() + " without initializing " + is.getIdentifier().getName());
+					target.setProperties(targetAsSeen);
+				}
+							
+				ids.addVariable(target.getName(),target);
 			}
 			
 			else if (current instanceof OutputStatement){
 				OutputStatement os = (OutputStatement)current;
 				
 				// validate variable being written by output statement exists
-				DataIdentifier id = (DataIdentifier)os.getIdentifier();
-				if (ids.getVariable(id.getName()) == null)
-					throwUndefinedVar ( id.getName(), os.toString() );
+				DataIdentifier target = (DataIdentifier)os.getIdentifier();
+				if (ids.getVariable(target.getName()) == null)
+					throwUndefinedVar ( target.getName(), os.toString() );
 				
-				if ( ids.getVariable(id.getName()).getDataType() == DataType.SCALAR) {
+				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
 					boolean paramsOkay = true;
-					for (String key : os._exprParams.keySet()){
-						if (!key.equals(os.IO_FILENAME)) 
+					for (String key : os._paramsExpr.getVarParams().keySet()){
+						if (!key.equals(Statement.IO_FILENAME)) 
 							paramsOkay = false;
 					}
 					if (paramsOkay == false)
 						throw new LanguageException("Invalid parameters in write statement: " + os.toString());
 				}
 				
-				os.processParams(true);
-				id.setDimensionValueProperties(ids.getVariable(id.getName()));
+				
+				Expression source = os.getSource();
+				source.setOutput(target);
+				source.validateExpression(ids.getVariables(), currConstVars);
+				
+				setStatementFormatType(os);
+				target.setDimensionValueProperties(ids.getVariable(target.getName()));
 			}
 			
 			else if (current instanceof AssignmentStatement){
@@ -618,6 +630,29 @@ public class StatementBlock extends LiveVariableAnalysis{
 		_constVarsOut.putAll(currConstVars);
 		return ids;
 
+	}
+	
+	public void setStatementFormatType(IOStatement s) throws LanguageException, ParseException{
+		if (s.getExprParam(Statement.FORMAT_TYPE)!= null ){
+		 	
+	 		Expression formatTypeExpr = s.getExprParam(Statement.FORMAT_TYPE);  
+			if (!(formatTypeExpr instanceof StringIdentifier))
+				throw new LanguageException("ERROR: input statement parameter " + Statement.FORMAT_TYPE 
+						+ " can only be a string with one of following values: binary, text", 
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+	 		
+			String ft = formatTypeExpr.toString();
+			if (ft.equalsIgnoreCase("binary")){
+				s._id.setFormatType(FormatType.BINARY);
+			} else if (ft.equalsIgnoreCase("text")){
+				s._id.setFormatType(FormatType.TEXT);
+			} else throw new LanguageException("ERROR: input statement parameter " + Statement.FORMAT_TYPE 
+					+ " can only be a string with one of following values: binary, text", 
+					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		} else {
+			s.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
+			s._id.setFormatType(FormatType.TEXT);
+		}
 	}
 	
 	/**

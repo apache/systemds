@@ -13,24 +13,38 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
+
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 
 public class DataOp extends Hops {
 
 	DataOpTypes _dataop;
-	String fileName;
+	//TODO: remove fileName
+	String _fileName;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
 	
 	
-	// READ operation for Matrix w/ dim1, dim2.  
-	
-	
+	/**
+	 * List of "named" input parameters. They are maintained as a hashmap:
+	 * parameter names (String) are mapped as indices (Integer) into getInput()
+	 * arraylist.
+	 * 
+	 * i.e., getInput().get(_paramIndexMap.get(parameterName)) refers to the Hop
+	 * that is associated with parameterName.
+	 */
+	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
+
+	// READ operation for Matrix w/ dim1, dim2. 
+	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
 			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
 		super(Kind.DataOp, l, dt, vt);
 		_dataop = dop;
 		
-		fileName = fname;
+		_fileName = fname;
 		set_dim1(dim1);
 		set_dim2(dim2);
 		setNnz(nnz);
@@ -42,14 +56,68 @@ public class DataOp extends Hops {
 	}
 
 	// WRITE operation
-
+	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, Hops in,
 			DataOpTypes dop, String fname) {
 		super(Kind.DataOp, l, dt, vt);
 		_dataop = dop;
 		getInput().add(0, in);
 		in.getParent().add(this);
-		fileName = fname;
+		_fileName = fname;
+
+		if (dop == DataOpTypes.TRANSIENTWRITE)
+			setFormatType(FileFormatTypes.BINARY);
+	}
+	
+	/**
+	 * READ operation for Matrix
+	 * This constructor supports expressions in parameters
+	 */
+	public DataOp(String l, DataType dt, ValueType vt, 
+			DataOpTypes dop, HashMap<String, Hops> inputParameters) {
+		super(Kind.DataOp, l, dt, vt);
+
+		_dataop = dop;
+
+		int index = 0;
+		for (String s : inputParameters.keySet()) {
+			Hops input = inputParameters.get(s);
+			getInput().add(input);
+			input.getParent().add(this);
+
+			_paramIndexMap.put(s, index);
+			index++;
+		}
+		if (dop == DataOpTypes.TRANSIENTREAD ){
+			setFormatType(FileFormatTypes.BINARY);
+		}
+	}
+	
+	/**
+	 *  WRITE operation for Matrix
+	 *  This constructor supports expression in parameters
+	 */
+	public DataOp(String l, DataType dt, ValueType vt, 
+		DataOpTypes dop, Hops in, HashMap<String, Hops> inputParameters) {
+		super(Kind.DataOp, l, dt, vt);
+
+		_dataop = dop;
+		
+		getInput().add(0, in);
+		in.getParent().add(this);
+		
+		if (inputParameters != null){
+			int index = 1;
+			for (String s : inputParameters.keySet()) {
+				Hops input = inputParameters.get(s);
+				getInput().add(input);
+				input.getParent().add(this);
+
+				_paramIndexMap.put(s, index);
+				index++;
+			}
+		
+		}
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
@@ -64,40 +132,75 @@ public class DataOp extends Hops {
 	}
 
 	public void setFileName(String fn) {
-		fileName = fn;
+		_fileName = fn;
 	}
 
 	public String getFileName() {
-		return fileName;
+		return _fileName;
 	}
 
 	@Override
 	public Lops constructLops()
-			throws HopsException {
-
+			throws HopsException, LopsException {
+		
 		if (get_lops() == null) {
-
 			Lops l = null;
-
-			if (_dataop == DataOpTypes.PERSISTENTREAD) {
-				l = new Data(
-						getFileName(), HopsData2Lops.get(_dataop), get_name(), null,
-						get_dataType(), get_valueType(), false);
-			} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
-				l = new Data(
-						getFileName(), HopsData2Lops.get(_dataop), get_name(),
-						null, get_dataType(), get_valueType(), true);
-			} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
-				l = new Data(
-						getFileName(), HopsData2Lops.get(_dataop), this
-								.getInput().get(0).constructLops(), get_name(), null,
-						get_dataType(), get_valueType(), false);
-			} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
-				l = new Data(
-						getFileName(), HopsData2Lops.get(_dataop), this
-								.getInput().get(0).constructLops(), get_name(),
-						null, get_dataType(), get_valueType(), true);
+			//TODO: need to remove this if statement
+			/*if (!(_fileName==null)){
+				
+				if (_dataop == DataOpTypes.PERSISTENTREAD) {
+					l = new Data(
+							getFileName(), HopsData2Lops.get(_dataop), get_name(), null,
+							get_dataType(), get_valueType(), false);
+				} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
+					l = new Data(
+							getFileName(), HopsData2Lops.get(_dataop), get_name(),
+							null, get_dataType(), get_valueType(), true);
+				} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
+					l = new Data(
+							getFileName(), HopsData2Lops.get(_dataop), this
+									.getInput().get(0).constructLops(), get_name(), null,
+							get_dataType(), get_valueType(), false);
+				} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
+					l = new Data(
+							getFileName(), HopsData2Lops.get(_dataop), this
+									.getInput().get(0).constructLops(), get_name(),
+							null, get_dataType(), get_valueType(), true);
+				}
 			}
+			
+			else {*/
+
+				// construct lops for all input parameters
+				HashMap<String, Lops> inputLops = new HashMap<String, Lops>();
+				for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+					inputLops.put(cur.getKey(), getInput().get(cur.getValue())
+							.constructLops());
+				}
+
+				if (_dataop == DataOpTypes.PERSISTENTREAD) {
+					l = new Data(
+							HopsData2Lops.get(_dataop), null,
+							inputLops, get_name(), null,
+							get_dataType(), get_valueType(), false);
+				} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
+					l = new Data(
+							HopsData2Lops.get(_dataop), null,
+							inputLops, get_name(), null, 
+							get_dataType(), get_valueType(), true);
+				} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
+					l = new Data(
+							HopsData2Lops.get(_dataop), this
+							.getInput().get(0).constructLops(),inputLops, 
+							get_name(), null, get_dataType(), get_valueType(), false);
+				} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
+					l = new Data(
+							HopsData2Lops.get(_dataop), this
+							.getInput().get(0).constructLops(),inputLops, 
+							get_name(), null, get_dataType(), get_valueType(), true);
+				}
+			//}
+			
 			((Data) l).setFileFormatType(this.getFormatType());
 
 			l.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
@@ -128,8 +231,8 @@ public class DataOp extends Hops {
 		if (get_visited() != VISIT_STATUS.DONE) {
 			super.printMe();
 			System.out.print("  DataOp: " + _dataop);
-			if (fileName != null) {
-				System.out.print(" file: " + fileName);
+			if (_fileName != null) {
+				System.out.print(" file: " + _fileName);
 			}
 			System.out.println(" format: " + getFormatType());
 			System.out.print("\n");
@@ -254,8 +357,8 @@ public class DataOp extends Hops {
 				else
 					sqllop.set_sql(input.get_sqllops().get_tableName());
 			}
-			String i = this.fileName;
-			if(input != null && this.fileName != null)
+			String i = _fileName;
+			if(input != null && _fileName != null)
 				i = input.get_sqllops().get_tableName() + "->" + i;
 			else
 				i = "";

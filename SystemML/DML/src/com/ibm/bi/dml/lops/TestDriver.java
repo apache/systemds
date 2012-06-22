@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.lops;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.lops.compile.Dag;
@@ -16,7 +17,7 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class TestDriver {
 
-	public static void aggbinaryop() throws LopsException, DMLRuntimeException,
+	public static void aggbinaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
@@ -44,7 +45,7 @@ public class TestDriver {
 
 	}
 
-	public static void aggunaryop() throws LopsException, DMLRuntimeException,
+	public static void aggunaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		Dag<Lops> dag = new Dag<Lops>();
 
@@ -74,7 +75,7 @@ public class TestDriver {
 		printInstructions(inst);
 	}
 
-	public static void binaryop() throws LopsException, DMLRuntimeException,
+	public static void binaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
@@ -102,7 +103,7 @@ public class TestDriver {
 
 	}
 
-	public static void unaryop() throws LopsException, DMLRuntimeException,
+	public static void unaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
@@ -126,7 +127,7 @@ public class TestDriver {
 		printInstructions(inst);
 	}
 
-	public static void multiop() throws LopsException, DMLRuntimeException,
+	public static void multiop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
@@ -171,7 +172,7 @@ public class TestDriver {
 	}
 
 	public static void simplestlop() throws LopsException, DMLRuntimeException,
-			DMLUnsupportedOperationException {
+			DMLUnsupportedOperationException, IOException {
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
 		Data data2 = new Data("scripts/B", Data.OperationTypes.WRITE, data1,
@@ -195,7 +196,7 @@ public class TestDriver {
 	}
 
 	public static void main(String args[]) throws LopsException,
-			DMLRuntimeException, DMLUnsupportedOperationException {
+			DMLRuntimeException, DMLUnsupportedOperationException, IOException {
 
 		simplestlop();
 		// unaryop();
@@ -209,7 +210,7 @@ public class TestDriver {
 	}
 
 	public static void harderexample1withLabels() throws LopsException,
-			DMLRuntimeException, DMLUnsupportedOperationException {
+			DMLRuntimeException, DMLUnsupportedOperationException, IOException {
 		Data data1 = new Data(null, Data.OperationTypes.READ, "Data1Label",
 				null, DataType.MATRIX, ValueType.DOUBLE, false);
 		Data var1 = new Data(null, Data.OperationTypes.READ, "Var1Label", null,
@@ -274,7 +275,7 @@ public class TestDriver {
 	}
 
 	public static void harderexample1() throws LopsException,
-			DMLRuntimeException, DMLUnsupportedOperationException {
+			DMLRuntimeException, DMLUnsupportedOperationException, IOException {
 
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);

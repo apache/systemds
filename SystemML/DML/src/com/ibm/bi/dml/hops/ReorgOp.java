@@ -74,7 +74,7 @@ public class ReorgOp extends Hops {
 
 	@Override
 	public Lops constructLops()
-			throws HopsException {
+			throws HopsException, LopsException {
 
 		if (get_lops() == null) {
 			if (op == ReorgOp.DIAG_M2V) {

@@ -4,7 +4,10 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
  * Functionalities for extracting numeric IDs from Hadoop taskIDs and other
  * things related to modification of IDs.
  * 
- * @author mboehm
+ * NOTE: Many those functionalities rely on a big endian format. This is always given because 
+ * Java stores everything as big endian, independent of the platform. Furthermore, we
+ * rely on Long.MAX_VALUE in order to prevent numeric overflows with regard to signed data types.
+ * 
  */
 public class IDHandler 
 {
@@ -44,7 +47,7 @@ public class IDHandler
 	 */
 	public static int extractIntID( String taskID )
 	{
-		int maxlen = (int)(Math.log10(Integer.MAX_VALUE)+1);
+		int maxlen = (int)(Math.log10(Integer.MAX_VALUE));
 		int intVal = (int)extractID( taskID, maxlen );
 		return intVal;		
 		
@@ -57,7 +60,7 @@ public class IDHandler
 	 */
 	public static long extractLongID( String taskID )
 	{
-		int maxlen = (int)(Math.log10(Long.MAX_VALUE)+1);
+		int maxlen = (int)(Math.log10(Long.MAX_VALUE));
 		long longVal = extractID( taskID, maxlen );
 		return longVal;
 	}
@@ -70,8 +73,13 @@ public class IDHandler
 	 */
 	public static long concatIntIDsToLong( int part1, int part2 )
 	{
+		//big-endian version (in java uses only big endian)
 		long value = ((long)part1) << 32; //unsigned shift of part1 to first 4bytes
-		value = value | part2;   //bitwise OR with part2 (second 4bytes)
+		value = value | part2;            //bitwise OR with part2 (second 4bytes)
+		
+		//*-endian version 
+		//long value = ((long)part1)*(long)Math.pow(2, 32);
+		//value += part2;
 		
 		return value;
 	}

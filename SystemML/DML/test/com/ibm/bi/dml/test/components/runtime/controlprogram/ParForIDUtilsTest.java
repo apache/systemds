@@ -10,7 +10,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 /**
  * Different test cases for IDHandler and IDSequence.
  * 
- * @author mboehm
  *
  */
 public class ParForIDUtilsTest 
@@ -123,24 +122,24 @@ public class ParForIDUtilsTest
 	
 	private String getClusterTaskID()
 	{
-		return "task_201203111647_0898_m_000001";
+		return "task_201213111647_0898_m_000001";
 	}
 	
 	private int getClusterIntID()
 	{
-		//cluster ID: 2012031116470898000001
+		//cluster ID: 2012131116470898000001
 		//MAX INT (2^31-1):       2147483647
-		//cluster int ID:         0898000001 
+		//cluster int ID:          898000001 
 		
 		return 898000001;
 	}
 	
 	private long getClusterLongID()
 	{
-		//cluster ID:       2012031116470898000001
+		//cluster ID:       2012131116470898000001
 		//MAX LONG (2^63-1):   9223372036854775807 
-		//cluster int ID:      2031116470898000001
+		//cluster ID:           131116470898000001
 
-		return 2031116470898000001L;
+		return 131116470898000001L;
 	}
 }

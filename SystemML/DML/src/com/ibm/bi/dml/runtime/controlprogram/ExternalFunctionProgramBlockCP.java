@@ -32,7 +32,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * to make it parallelizable, even in case of different JVMs. For this purpose every
  * external function must implement a <SET_BASE_DIR> method. 
  * 
- * @author mboehm
  *
  */
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 

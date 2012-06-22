@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.nimble.hadoop.HDFSFileManager;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -21,7 +22,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 /**
  * Class to represent the matrix input type
  * 
- * @author aghoting, mboehm
+ * @author aghoting
  * 
  */
 public class Matrix extends FIO {
@@ -222,13 +223,15 @@ public class Matrix extends FIO {
 			cblen = DMLTranslator.DMLBlockSize;
 		}
 		
+		Expression.ValueType vt = Expression.ValueType.DOUBLE;
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
-		_mo = new MatrixObject(com.ibm.bi.dml.parser.Expression.ValueType.DOUBLE, _filePath, mfmd);
-		
+		_mo = new MatrixObject(vt, _filePath, mfmd);
 		_mo.setData( mb );
 		
 		//write matrix data to DFS
 		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, rblen, cblen); 
+		//MapReduceTool.writeMetaDataFile(_mo.getFileName()+ ".mtd", vt, mc, oinfo);
+		//_mo.writeInMemoryMatrixToHDFS(_filePath, vt, oinfo);
 	}
 }

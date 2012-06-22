@@ -80,6 +80,11 @@ public class StatementBlock extends LiveVariableAnalysis{
 	public Statement getStatement(int i){
 		return _statements.get(i);
 	}
+	
+	public ArrayList<Statement> getStatements()
+	{
+		return _statements;
+	}
 
 	public ArrayList<Hops> get_hops() throws HopsException {
 		return _hops;

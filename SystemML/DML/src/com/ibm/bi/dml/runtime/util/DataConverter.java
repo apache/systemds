@@ -429,6 +429,13 @@ public class DataConverter {
 		for( int i=0; i<rows; i++ )
 			for( int j=0; j<cols; j++ )
 				ret[i][j] = mb.getValue(i, j);
+		
+		/*double[] in = mb.getDenseArray();
+		for( int i=0; i<rows; i++ )
+		{
+			double[] out = ret[i];
+			System.arraycopy(in, i*cols, out, 0, cols);
+		}*/
 				
 		return ret;
 	}
@@ -443,13 +450,12 @@ public class DataConverter {
 	{
 		int rows = data.length;
 		int cols = (rows > 0)? data[0].length : 0;
-		
 		MatrixBlock mb = new MatrixBlock(rows, cols, false);
-		
-		for( int i=0; i<rows; i++ )
-			for( int j=0; j<cols; j++ )
-				if( data[i][j] != 0 )
-					mb.setValue(i, j, data[i][j]);
+		try
+		{ 
+			mb.init( data, rows, cols ); //copy data to mb
+		} 
+		catch (Exception e){} //can never happen
 		
 		return mb;
 	}

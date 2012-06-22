@@ -153,14 +153,16 @@ public class Dag<N extends Lops> {
 			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
-		if (config != null) {
-			if (config.getTextValue("numreducers") != null)
-				total_reducers = Integer.parseInt(config
-						.getTextValue("numreducers"));
+		if (config != null) 
+		{
+			String numReducers = config.getTextValue(DMLConfig.NUM_REDUCERS);
+			String scratchSpace = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+			
+			if ( numReducers != null )
+				total_reducers = Integer.parseInt(numReducers);
 
-			if (config.getTextValue("scratch") != null)
-				scratch = config.getTextValue("scratch") + "/";
-
+			if ( scratchSpace != null )
+				scratch = scratchSpace + "/";
 		}
 
 		DEBUG = debug;

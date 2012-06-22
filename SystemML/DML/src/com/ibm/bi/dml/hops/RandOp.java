@@ -16,6 +16,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * <p>Defines a Rand-HOP.</p>
@@ -69,7 +70,7 @@ public class RandOp extends Hops
 			ExecType et = optFindExecType();
 			Rand rnd = new Rand(id, minValue, maxValue, sparsity,
 					probabilityDensityFunction, ConfigurationManager
-							.getConfig().getTextValue("scratch")
+							.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE)
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR
 							+ ProgramConverter.CP_ROOT_THREAD_ID
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR,

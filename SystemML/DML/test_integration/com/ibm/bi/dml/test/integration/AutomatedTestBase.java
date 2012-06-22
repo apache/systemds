@@ -741,7 +741,7 @@ public abstract class AutomatedTestBase {
 		}
 	}
 	
-	protected void cleanupScratchSpace()
+	public static void cleanupScratchSpace()
 	{
 		try 
 		{
@@ -750,7 +750,7 @@ public abstract class AutomatedTestBase {
 
 			// delete the scratch_space and all contents
 			// (prevent side effect between tests)
-			String dir = conf.getTextValue("scratch");  
+			String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);  
 			MapReduceTool.deleteFileIfExistOnHDFS(dir);
 		} 
 		catch (Exception ex) 

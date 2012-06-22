@@ -46,6 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
@@ -118,7 +119,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * It is necessary to change the local temporary files as only file handles are passed out
 	 * by the external function program block.
 	 * 
-	 * @author mboehm
 	 * 
 	 * @param id
 	 */
@@ -312,7 +312,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		for (int i = 0; i < matrices.size(); i++) {
 
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = ConfigurationManager.getConfig().getTextValue("scratch") + "/" +
+			outputs[i] = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + "/" +
                          _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
 			blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = textCellInputInfo;
@@ -423,7 +423,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// cell
 		for (int i = 0; i < matrices.size(); i++) {
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = ConfigurationManager.getConfig().getTextValue("scratch") + "/" +
+			outputs[i] = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + "/" +
                          _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
 			unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = binBlockInputInfo;

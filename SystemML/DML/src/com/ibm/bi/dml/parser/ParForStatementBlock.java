@@ -23,7 +23,6 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 
  * NOTE: related test suite: dml.test.components.parser.ParForDependencyAnalysisTest 
  * 
- * @author mboehm
  *
  */
 public class ParForStatementBlock extends ForStatementBlock 
@@ -1033,7 +1032,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					if( incr < 0 || 1 < incr ) 
 					{
 						out.normalize(index,low,incr); // normalize linear functions
-						_bounds._upper.put(var,up/incr); // normalize upper bound
+						_bounds._upper.put(var,(long)Math.ceil(((double)up)/incr)); // normalize upper bound
 					}
 					index++;
 				}

@@ -17,8 +17,20 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig 
 {
-
-    public static final int DEFAULT_BLOCK_SIZE = 1000;
+	// external names of configuration properties 
+	// (single point of change for all internal refs)
+	public static final String SCRATCH_SPACE        = "scratch";
+	public static final String NUM_REDUCERS         = "numreducers";
+	public static final String DEF_BLOCK_SIZE       = "defaultblocksize"; //TODO remove ambiguity (many different places)
+	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
+	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
+	public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
+	public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
+	public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
+	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
+	
+	//internal default values
+	public static final int DEFAULT_BLOCK_SIZE = 1000;
     public static final int DEFAULT_NUM_REDUCERS = 75;
     public static final String LOCAL_MR_MODE_STAGING_DIR="/tmp/hadoop/mapred/staging";
 	String config_file_name;

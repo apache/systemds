@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+//import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
@@ -449,20 +450,34 @@ public class DMLScript {
 
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
-		rtprog.execute (new LocalVariableMap (), null);  
-		Statistics.stopRunTimer();
-
-		if (DEBUG) 
-			System.out.println(Statistics.display());
-		
-		if (LOG) {
-			out.write("END DMLRun " + getDateTime() + "\n");
-			out.close();
+		try 
+		{   
+			//run execute (w/ exception handling to ensure proper shutdown)
+			rtprog.execute (new LocalVariableMap (), null);  
 		}
-
-		if(rtprog.getDAGQueue() != null)
-	  	    rtprog.getDAGQueue().forceShutDown();
-		
+		catch(DMLException ex)
+		{
+			throw ex;
+		}
+		finally //ensure cleanup/shutdown
+		{			
+			Statistics.stopRunTimer();
+	
+			if (DEBUG) 
+				System.out.println(Statistics.display());
+			
+			if (LOG) {
+				out.write("END DMLRun " + getDateTime() + "\n");
+				out.close();
+			}
+	
+			//cleanup all threads
+			if(rtprog.getDAGQueue() != null)
+		  	    rtprog.getDAGQueue().forceShutDown();
+			
+			//cleanup scratch space (decomment this to ensure cleanup, but incurs some overhead)
+			//MapReduceTool.deleteFileIfExistOnHDFS(config.getTextValue(DMLConfig.SCRATCH_SPACE));	
+		}
 	} // end executeHadoop
 
 	
@@ -476,7 +491,7 @@ public class DMLScript {
 	 * @throws DMLRuntimeException 
 	 */
 	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName)
-	throws HopsException, LanguageException, ParseException, DMLRuntimeException
+		throws HopsException, LanguageException, ParseException, DMLRuntimeException
 	{
 	
 		dmlt.constructSQLLops(prog);

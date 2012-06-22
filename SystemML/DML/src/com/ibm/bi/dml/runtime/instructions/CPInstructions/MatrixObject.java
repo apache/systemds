@@ -450,4 +450,15 @@ public class MatrixObject extends Data {
 		}
 		return str.toString();
 	}
+
+	@Override
+	public String getDebugName()
+	{
+		final int maxLength = 23;
+		String debugNameEnding = (_hdfsFileName == null ? "null" : 
+			(_hdfsFileName.length() < maxLength ? _hdfsFileName : "..." + 
+				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
+		// TODO Auto-generated method stub
+		return "MatrixObject " + debugNameEnding;
+	}
 }

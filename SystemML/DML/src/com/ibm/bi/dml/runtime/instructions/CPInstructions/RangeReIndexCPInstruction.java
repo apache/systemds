@@ -4,6 +4,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -64,20 +65,22 @@ public class RangeReIndexCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public MatrixObject processInstruction(ProgramBlock pb)
+	public void processInstruction(ProgramBlock pb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		MatrixObject mat = pb.getMatrixVariable(input1.get_name());
+		MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
 		
-		long rl = pb.getScalarVariable(rowLower.get_name(), ValueType.INT).getLongValue();
-		long ru = pb.getScalarVariable(rowUpper.get_name(), ValueType.INT).getLongValue();
-		long cl = pb.getScalarVariable(colLower.get_name(), ValueType.INT).getLongValue();
-		long cu = pb.getScalarVariable(colUpper.get_name(), ValueType.INT).getLongValue();
+		//MatrixObject mat = pb.getMatrixVariable(input1.get_name());
 		
-		String output_name = output.get_name();
-		MatrixObject sores = mat.indexOperations(rl, ru, cl, cu, (MatrixObject)pb.getVariable(output_name));
+		long rl = pb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
+		long ru = pb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
+		long cl = pb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
+		long cu = pb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
 		
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-		return sores; 
+		MatrixBlock resultBlock = (MatrixBlock) matBlock.slideOperations(rl, ru, cl, cu, new MatrixBlock());
+		
+		pb.releaseMatrixInput(input1.get_name());
+		pb.setMatrixOutput(output.get_name(), resultBlock);
+		matBlock = resultBlock = null;
 	}
 }

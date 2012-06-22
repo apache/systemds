@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -26,13 +26,13 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class ResultMerge 
 {
-	private MatrixObject    _output = null;
-	private MatrixObject[]  _inputs = null; 
+	private MatrixObjectNew    _output = null;
+	private MatrixObjectNew[]  _inputs = null; 
 
 	private boolean         _writeOutput = false;
 	private boolean         _readInputs = false;
 	
-	public ResultMerge( MatrixObject out, MatrixObject[] in, boolean writeOutput, boolean readInputs )
+	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in, boolean writeOutput, boolean readInputs )
 	{
 		_output = out;
 		_inputs = in;
@@ -46,12 +46,12 @@ public class ResultMerge
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObject executeSerialMerge() 
+	public MatrixObjectNew executeSerialMerge() 
 		throws DMLRuntimeException
 	{
 		try
 		{
-			for( MatrixObject in : _inputs ) 
+			for( MatrixObjectNew in : _inputs ) 
 			{
 				//read each input if required
 				if( _readInputs )
@@ -79,7 +79,7 @@ public class ResultMerge
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObject executeParallelMerge(int par) 
+	public MatrixObjectNew executeParallelMerge(int par) 
 		throws DMLRuntimeException
 	{
 		try
@@ -118,7 +118,7 @@ public class ResultMerge
 	 * @param in
 	 * @return
 	 */
-	public void merge( MatrixObject out, MatrixObject in )
+	public void merge( MatrixObjectNew out, MatrixObjectNew in )
 	{
 		MatrixBlock mbout = out.getData();
 		MatrixBlock mbin = in.getData();
@@ -155,7 +155,7 @@ public class ResultMerge
 	 * @param mo
 	 * @throws IOException
 	 */
-	private void readMatrixObject( MatrixObject mo ) 
+	private void readMatrixObject( MatrixObjectNew mo ) 
 		throws IOException
 	{
 		String dir = mo.getFileName();
@@ -174,7 +174,7 @@ public class ResultMerge
 	 * @param mo
 	 * @throws IOException
 	 */
-	private void writeMatrixObject( MatrixObject mo ) 
+	private void writeMatrixObject( MatrixObjectNew mo ) 
 		throws IOException 
 	{
 		MatrixBlock mb = mo.getData();
@@ -195,10 +195,10 @@ public class ResultMerge
 	 */
 	private class ResultMergeWorker implements Runnable
 	{
-		private MatrixObject _input  = null;
-		private MatrixObject _output = null;
+		private MatrixObjectNew _input  = null;
+		private MatrixObjectNew _output = null;
 		
-		public ResultMergeWorker(MatrixObject in, MatrixObject out)
+		public ResultMergeWorker(MatrixObjectNew in, MatrixObjectNew out)
 		{
 			_input  = in;
 			_output = out;

@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -564,7 +564,7 @@ public class ProgramConverter
 				value = so.getStringValue();
 				break;
 			case MATRIX:
-				MatrixObject mo = (MatrixObject) dat;
+				MatrixObjectNew mo = (MatrixObjectNew) dat;
 				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
@@ -1606,7 +1606,7 @@ public class ProgramConverter
 		    }
 			case MATRIX:
 			{
-				MatrixObject mo = new MatrixObject(valuetype,valString);
+				MatrixObjectNew mo = new MatrixObjectNew(valuetype,valString);
 				int rows = Integer.parseInt( st.nextToken() );
 				int cols = Integer.parseInt( st.nextToken() );
 				int brows = Integer.parseInt( st.nextToken() );

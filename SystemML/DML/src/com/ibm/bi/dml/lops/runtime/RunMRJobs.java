@@ -11,7 +11,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionBlockHashMapMR;
@@ -27,7 +26,7 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
@@ -51,7 +50,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class RunMRJobs {
-	public static boolean flagLocalModeOpt = true;
+	public static boolean flagLocalModeOpt = false;
 	public enum ExecMode { LOCAL, CLUSTER, INVALID }; 
 
 	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
@@ -60,6 +59,15 @@ public class RunMRJobs {
 		if ( DMLScript.DEBUG  )
 			System.out.println(inst.toString());
 
+		for(String ii: inst.getInputLabels() ) {
+			Data d = pb.getVariable(ii);
+			if ( d.getDataType() == DataType.MATRIX ) {
+				MatrixObjectNew inputObj = (MatrixObjectNew) d;
+				if ( inputObj.isDirty() ) 
+					inputObj.exportData();
+			}
+		}
+		
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
 		if (!inst.getJobType().areEmptyInputsAllowed()) {
@@ -149,9 +157,9 @@ public class RunMRJobs {
 						String [] fields = parts[2].split(Lops.VALUETYPE_PREFIX);
 						int input_index = Integer.parseInt(fields[0]); 
 						
-						String fname = inst.getIv_inputs()[input_index];
+						//String fname = inst.getIv_inputs()[input_index];
 						String varname = inst.getInputLabels().get(input_index);
-						MatrixObject mobj = (MatrixObject)pb.getVariable(varname);
+						MatrixObjectNew mobj = (MatrixObjectNew)pb.getVariable(varname);
 						inst.getIv_inputInfos()[input_index].metadata = mobj.getMetaData();
 					}
 					else 
@@ -399,7 +407,7 @@ public class RunMRJobs {
 			if ( val != null ) {
 				String replacement = null;
 				if (val.getDataType() == DataType.MATRIX) {
-					replacement = ((MatrixObject)val).getFileName();
+					replacement = ((MatrixObjectNew)val).getFileName();
 				}
 	
 				if (val.getDataType() == DataType.SCALAR)
@@ -660,8 +668,8 @@ public class RunMRJobs {
 	 */
 	public static ExecMode getExecMode(JobType jt, MatrixCharacteristics[] stats) throws DMLRuntimeException {
 		
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecMode.LOCAL;
+		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		//	return ExecMode.LOCAL;
 		
 		if ( flagLocalModeOpt == false )
 			return ExecMode.CLUSTER;

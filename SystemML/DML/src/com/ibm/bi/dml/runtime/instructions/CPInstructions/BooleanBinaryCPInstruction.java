@@ -39,18 +39,17 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction {
 	}
 	
 	@Override
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
-		ScalarObject so1 = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+		ScalarObject so1 = pb.getScalarInput(input1.get_name(), input1.get_valueType());
 		ScalarObject so2 = null;
 		if ( input2 != null ) 
-			so2 = pb.getScalarVariable(input2.get_name(), input2.get_valueType() );
+			so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) optr;
 		boolean rval = dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue());
 		sores = (ScalarObject) new BooleanObject(rval);
 		
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

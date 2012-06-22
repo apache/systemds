@@ -36,9 +36,9 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
+		ScalarObject so = pb.getScalarInput(input1.get_name(), input1.get_valueType());
 		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 
@@ -49,7 +49,6 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction{
 		sores = (ScalarObject) new BooleanObject(rval);
 		
 		// 3) Put the result value into ProgramBlock
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

@@ -40,4 +40,10 @@ public class FileObject extends Data {
 	public boolean isLocal(){
 		return _isLocal;
 	}
+
+	@Override
+	public String getDebugName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

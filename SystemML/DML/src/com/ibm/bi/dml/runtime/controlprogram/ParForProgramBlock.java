@@ -15,29 +15,30 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForMR;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoring;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringConstrained;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
-//import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -452,7 +453,21 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( MONITOR )
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
+		// TODO Matthias: transfer only required!
+		// TODO: check getVarible()
 		
+		/* if there is some data in the cache that is not backed by HDFS 
+		 * (i.e., a "dirty" matrix object), then it must be exported prior
+		 * to serialization.
+		 */
+		for (String key : _variables.keySet() ) {
+			Data d = getVariable(key);
+			if ( d.getDataType() == DataType.MATRIX ) {
+				if ( ((MatrixObjectNew)d).isDirty() )
+					((MatrixObjectNew)d).exportData();
+			}
+		}
+				
 		// Step 3) submit MR job (wait for finished work)
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
 				                      ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR);
@@ -723,10 +738,18 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( String var : _resultVars ) //foreach non-local write
 		{
 			String varname = var;
-			MatrixObject out = (MatrixObject) _variables.get( varname );
-			MatrixObject[] in = new MatrixObject[ results.length ];
+			
+			/*
+			 * TODO Matthias
+			 * 1) make necessary changes to acquire appropriate locks on in, out
+			 * 2) Read existing values for 'out' before performing the merge
+			 * 3) pass the MatrixObjectNew(out).getData() to the merge method
+			 *  
+			 */
+			MatrixObjectNew out = (MatrixObjectNew) getVariable(varname);
+			MatrixObjectNew[] in = new MatrixObjectNew[ results.length ];
 			for( int i=0; i< results.length; i++ )
-				in[i] = (MatrixObject) results[i].get( varname ); 
+				in[i] = (MatrixObjectNew) results[i].get( varname ); 
 			ResultMerge rm = new ResultMerge(out,in, WRITE_RESULTS_TO_FILE, WRITE_RESULTS_TO_FILE);
 			_variables.put( varname, rm.executeParallelMerge( _numThreads ));
 		}

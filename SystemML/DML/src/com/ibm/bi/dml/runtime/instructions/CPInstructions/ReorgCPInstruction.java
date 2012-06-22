@@ -6,6 +6,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -38,16 +39,32 @@ public class ReorgCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public MatrixObject processInstruction(ProgramBlock pb)
+	public void processInstruction(ProgramBlock pb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		MatrixObject mat = pb.getMatrixVariable(input1.get_name());
+		long begin, st, tread, tcompute, twrite, ttotal;
 		
+		begin = System.currentTimeMillis();
+		MatrixBlock matBlock = (MatrixBlock) pb.getMatrixInput(input1.get_name());
+		tread = System.currentTimeMillis() - begin;
+		
+		st = System.currentTimeMillis();
 		ReorgOperator r_op = (ReorgOperator) optr;
-		
 		String output_name = output.get_name();
-		MatrixObject sores = mat.reorgOperations(r_op, (MatrixObject)pb.getVariable(output_name));
 		
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-		return sores; 
+		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations (r_op, new MatrixBlock(), 0, 0, 0));
+        
+		tcompute = System.currentTimeMillis() - st;
+		
+		st = System.currentTimeMillis();
+		matBlock = null;
+		pb.releaseMatrixInput(input1.get_name());
+		pb.setMatrixOutput(output_name, soresBlock);
+		soresBlock = null;
+		
+		twrite = System.currentTimeMillis() - st;
+		ttotal = System.currentTimeMillis()-begin;
+		
+		System.out.println("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
 	}
+	
 }

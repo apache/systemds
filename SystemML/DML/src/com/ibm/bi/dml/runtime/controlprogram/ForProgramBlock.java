@@ -187,7 +187,7 @@ public class ForProgramBlock extends ProgramBlock
 			if( _iterablePredicateVars[pos] != null )
 			{
 				//check for literals or scalar variables
-				ret = (IntObject) getScalarVariable(_iterablePredicateVars[pos], ValueType.INT); 		
+				ret = (IntObject) getScalarInput(_iterablePredicateVars[pos], ValueType.INT); 		
 			}		
 			else
 			{
@@ -213,7 +213,7 @@ public class ForProgramBlock extends ProgramBlock
 					}
 					
 					if(!isSQL)
-						ret = (IntObject) getScalarVariable(retName, ValueType.INT);
+						ret = (IntObject) getScalarInput(retName, ValueType.INT);
 					else
 						ret = (IntObject) ec.getVariable(retName, ValueType.INT);
 					

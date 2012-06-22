@@ -28,7 +28,6 @@ public class RelationalBinaryCPInstruction extends BinaryCPInstruction {
 		DataType dt1 = in1.get_dataType();
 		ValueType vt2 = in2.get_valueType();
 		DataType dt2 = in2.get_dataType();
-		ValueType vt3 = out.get_valueType();
 		DataType dt3 = out.get_dataType();
 		
 		//if ( vt3 != ValueType.BOOLEAN )

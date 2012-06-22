@@ -71,7 +71,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 	
 	@Override 
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;
@@ -84,8 +84,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
 		
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 	
 

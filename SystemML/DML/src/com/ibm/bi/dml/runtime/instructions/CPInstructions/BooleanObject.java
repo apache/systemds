@@ -40,5 +40,11 @@ public class BooleanObject extends ScalarObject  {
 	public long getLongValue() {
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public String getDebugName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

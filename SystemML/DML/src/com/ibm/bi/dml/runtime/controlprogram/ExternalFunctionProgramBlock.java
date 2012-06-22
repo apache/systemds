@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -45,6 +45,8 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -585,7 +587,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 
 				// add result to variableMapping
-				MatrixObject result_matrix = createOutputMatrixObject( m );
+				MatrixObjectNew result_matrix = createOutputMatrixObject( m );
 				this.getVariables().put(tokens.get(1), result_matrix);
 				continue;
 			}
@@ -645,12 +647,21 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		}
 	}
 
-	protected MatrixObject createOutputMatrixObject( Matrix m ) 
+	protected MatrixObjectNew createOutputMatrixObject( Matrix m ) 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
 		//MatrixDimensionsMetaData mtd = new MatrixDimensionsMetaData(mc);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);
-		return new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);		
+		try {
+			return new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
+		} catch (CacheOutOfMemoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CacheStatusException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;		
 	}
 
 	/**
@@ -716,7 +727,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 			if (tokens.get(0).equals("Matrix")) {
 				String varName = tokens.get(1);
-				MatrixObject mobj = (MatrixObject) variableMapping.get(varName);
+				MatrixObjectNew mobj = (MatrixObjectNew) variableMapping.get(varName);
 				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) mobj.getMetaData();
 				Matrix m = new Matrix(mobj.getFileName(),
 						md.getMatrixCharacteristics().numRows,
@@ -748,7 +759,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 	}
 
-	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
+	protected void modifyInputMatrix(Matrix m, MatrixObjectNew mobj) 
 	{
 		//do nothing, intended for extensions
 	}

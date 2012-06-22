@@ -17,9 +17,9 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 	}
 	
 	@Override
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException{
-		ScalarObject so1 = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
-		ScalarObject so2 = pb.getScalarVariable(input2.get_name(), input2.get_valueType() );
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException{
+		ScalarObject so1 = pb.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) optr;
@@ -46,7 +46,6 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		}
 		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
 		
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

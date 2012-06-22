@@ -5,6 +5,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -57,17 +58,11 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		return new RandCPInstruction(op, in, out, rows, cols, minValue, maxValue, sparsity, pdf, str);
 	}
 	
-	public Data processInstruction (ProgramBlock pb)
+	public void processInstruction (ProgramBlock pb)
 		throws DMLRuntimeException{
 		String output_name = output.get_name();
 		
-		MatrixObject sores = ((MatrixObject)pb.getVariable(output_name)).randOperations(rows, 
-																				  cols, 
-																				  minValue, 
-																				  maxValue, 
-																				  seed, 
-																				  sparsity);
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-		return sores;
+		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, seed) );
+        pb.setMatrixOutput(output_name, soresBlock);
 	}
 }

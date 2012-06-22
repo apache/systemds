@@ -265,7 +265,16 @@ public abstract class CacheableData extends Data
 		lastAccessTime = Calendar.getInstance().getTimeInMillis();
 		CacheStatusType newStatus = cacheStatus.getType ();
 		if (newStatus != oldStatus)
-			cacheManager.refresh (this);
+		{
+			if (oldStatus == CacheStatusType.EMPTY)
+				updateRegisteredBlobSize ();
+			else
+				cacheManager.refresh (this);
+		}
+		if(DMLScript.DEBUG) {
+			System.out.println("    CACHE: acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
+			cacheManager.printCacheStatus();
+		}
 	}
 	
 	public synchronized void downgrade ()
@@ -279,6 +288,11 @@ public abstract class CacheableData extends Data
 		}
 		else
 			throw new CacheStatusException ();
+		
+		if(DMLScript.DEBUG) {
+			System.out.println("    CACHE: downgraded lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
+			cacheManager.printCacheStatus();
+		}
 	}
 	
 	/**
@@ -322,6 +336,11 @@ public abstract class CacheableData extends Data
 			updateRegisteredBlobSize ();
 		else if (newStatus != oldStatus)
 			cacheManager.refresh (this);			
+		
+		if(DMLScript.DEBUG) {
+			System.out.println("    CACHE: released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
+			cacheManager.printCacheStatus();
+		}
 	}
 	
 	/**

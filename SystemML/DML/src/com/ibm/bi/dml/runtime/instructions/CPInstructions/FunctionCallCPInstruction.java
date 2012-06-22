@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -59,8 +58,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	 */
 	public static Instruction parseInstruction(String str) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		HashMap<String, Data> ins = new HashMap<String,Data>(); 
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
 		String functionName = parts[2];
@@ -80,7 +77,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
 	}
 
-	public Data processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		if (DMLScript.DEBUG)
 			System.out.println("executing instruction : " + this.toString());
 
@@ -157,7 +154,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 			pb.getVariables().put(boundVarName, boundValue);
 		}
-		return null;
 	}
 
 	//

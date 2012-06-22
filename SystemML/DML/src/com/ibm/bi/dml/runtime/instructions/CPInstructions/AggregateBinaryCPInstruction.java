@@ -7,6 +7,7 @@ import com.ibm.bi.dml.runtime.functionobjects.COV;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
@@ -73,50 +74,67 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 	}
 	
 	@Override
-	public Data processInstruction(ProgramBlock pb) 
+	public void processInstruction(ProgramBlock pb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
 		
 		if(pb == null) System.err.println("pb is null");
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		MatrixObject mat1 = pb.getMatrixVariable(input1.get_name());
-		MatrixObject mat2 = pb.getMatrixVariable(input2.get_name());
+		long begin, st, tread, tcompute, twrite, ttotal;
+		
+		begin = System.currentTimeMillis();
+        MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
+        MatrixBlock matBlock2 = pb.getMatrixInput(input2.get_name());
+		tread = System.currentTimeMillis() - begin;
+		
 		String output_name = output.get_name(); 
 		
 		if ( opcode.equalsIgnoreCase("ba+*")) {
-			//long st = System.currentTimeMillis();
-			//long begin = st;
+			
+			st = System.currentTimeMillis();
 			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) optr;
-	
-			//System.out.println("    setup inputs: " + (System.currentTimeMillis()-st) + " msec.");
-			//st = System.currentTimeMillis();
-			MatrixObject res = mat1.aggregateBinaryOperations(ab_op, mat2, (MatrixObject)pb.getVariable(output_name));
-			//System.out.println("    compute result: " + (System.currentTimeMillis()-st) + " msec.");
-			//st = System.currentTimeMillis();
-			pb.setVariableAndWriteToHDFS(output_name, res);
-			//System.out.println("    write to HDFS: " + (System.currentTimeMillis()-st) + " msec.");
-			//System.out.println("    Total: " + (System.currentTimeMillis()-begin) + " msec.");
-			return res;
+			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
+			tcompute = System.currentTimeMillis() - st;
+
+			st = System.currentTimeMillis();
+			matBlock1 = matBlock2 = null;
+			pb.releaseMatrixInput(input1.get_name());
+			pb.releaseMatrixInput(input2.get_name());
+			pb.setMatrixOutput(output_name, soresBlock);
+			twrite = System.currentTimeMillis()-st;
+			
+			ttotal = System.currentTimeMillis()-begin;
+			
+			System.out.println("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
 		} 
-		else {
+		else if ( opcode.equalsIgnoreCase("cov") ) {
 			COVOperator cov_op = (COVOperator)optr;
 			CM_COV_Object covobj = new CM_COV_Object();
 			
 			if ( input3 == null ) {
 				// Unweighted: cov.mvar0.mvar1.out
-				covobj = mat1.covOperations(cov_op, mat2); 
+				covobj = matBlock1.covOperations(cov_op, matBlock2);
 			}
 			else {
 				// Weighted: cov.mvar0.mvar1.weights.out
-				MatrixObject wt = pb.getMatrixVariable(input3.get_name());
-				covobj = mat1.covOperations(cov_op, mat2, wt); 
+		        MatrixBlock wtBlock = pb.getMatrixInput(input3.get_name());
+				
+				covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
+				
+				matBlock1 = matBlock2 = wtBlock = null;
+				pb.releaseMatrixInput(input1.get_name());
+				pb.releaseMatrixInput(input2.get_name());
+				pb.releaseMatrixInput(input3.get_name());
 			}
 			double val = covobj.getRequiredResult(optr);
 			DoubleObject ret = new DoubleObject(output_name, val);
-			pb.setVariable(output_name, ret);
-			return ret;
+			
+			pb.setScalarOutput(output_name, ret);
+		}
+		else {
+			throw new DMLRuntimeException("Unknown opcode in Instruction: " + toString());
 		}
 	}
-	
+
 }

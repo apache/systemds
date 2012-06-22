@@ -12,6 +12,8 @@ public abstract class Data {
 	protected DataType dataType;
 	protected ValueType valueType;
 	
+	public abstract String getDebugName();
+	
 	protected Data(DataType dt, ValueType vt) {
 		dataType = dt;
 		valueType = vt;

@@ -133,7 +133,7 @@ public class IfProgramBlock extends ProgramBlock {
 		}
 		
 		if(!isSQL)
-			result = (BooleanObject) getScalarVariable(_predicateResultVar, ValueType.BOOLEAN);
+			result = (BooleanObject) getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 		else
 			result = (BooleanObject) ec.getVariable(_predicateResultVar, ValueType.BOOLEAN);
 		

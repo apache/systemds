@@ -77,7 +77,7 @@ public class FileCPInstruction extends CPInstruction {
 	}
 	
 	@Override
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
 		
 		try {
 		switch(code) {
@@ -98,10 +98,8 @@ public class FileCPInstruction extends CPInstruction {
 			throw new DMLRuntimeException(e);
 		}
 		
-		
 		// NO RESULT is produced
 		// pb.setVariable(output.get_name(), sores);
-		return null;
 	}
 	
 	

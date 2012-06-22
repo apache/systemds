@@ -10,7 +10,7 @@ import org.nimble.hadoop.HDFSFileManager;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -18,11 +18,13 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 
 /**
  * Class to represent the matrix input type
  * 
- * @author aghoting
+ * @author aghoting, mboehm
  * 
  */
 public class Matrix extends FIO {
@@ -33,7 +35,7 @@ public class Matrix extends FIO {
 	private long 		 _rows;
 	private long 		 _cols;
 	private ValueType 	 _vType;
-	private MatrixObject _mo;
+	private MatrixObjectNew _mo;
 
 	public enum ValueType {
 		Double, 
@@ -58,12 +60,12 @@ public class Matrix extends FIO {
 		_vType = vType;
 	}
 	
-	public void setMatrixObject( MatrixObject mo )
+	public void setMatrixObject( MatrixObjectNew mo )
 	{
 		_mo = mo;
 	}
 	
-	public MatrixObject getMatrixObject()
+	public MatrixObjectNew getMatrixObject()
 	{
 		return _mo;
 	}
@@ -226,12 +228,17 @@ public class Matrix extends FIO {
 		Expression.ValueType vt = Expression.ValueType.DOUBLE;
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
-		_mo = new MatrixObject(vt, _filePath, mfmd);
+		try {
+			_mo = new MatrixObjectNew(Expression.ValueType.DOUBLE, _filePath, mfmd);
+		} catch (CacheOutOfMemoryException e) {
+			throw new IOException(e);
+		} catch (CacheStatusException e) {
+			throw new IOException(e);
+		}
+		
 		_mo.setData( mb );
 		
 		//write matrix data to DFS
 		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, rblen, cblen); 
-		//MapReduceTool.writeMetaDataFile(_mo.getFileName()+ ".mtd", vt, mc, oinfo);
-		//_mo.writeInMemoryMatrixToHDFS(_filePath, vt, oinfo);
 	}
 }

@@ -38,7 +38,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-//import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
@@ -77,7 +76,7 @@ public class DMLScript {
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
-    public static final long maxCacheMemory = 1000000000;
+    public static long maxCacheMemory = 1000000000;
     public enum CACHE_EVICTION_POLICY { DEFAULT };
     public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
     public enum CACHE_EVICTION_STORAGE_TYPE { LOCAL, HDFS };
@@ -191,7 +190,29 @@ public class DMLScript {
 					System.err.println("Unknown runtime platform: " + args[argid]);
 					return;
 				}
-			// handle config file
+/*			} else if ( args[argid].equalsIgnoreCase("-cachesize")) {
+				argid++;
+				char unit = args[argid].charAt(args[argid].length()-1);
+				double num = Double.parseDouble(args[argid].substring(0, args[argid].length()-1));
+				
+				switch(unit) {
+				case 'g': maxCacheMemory = (long)Math.ceil(num*1024) * (long)(1024*1024); break; 
+				case 'm': maxCacheMemory = (long)Math.ceil(num*1024) * 1024; break;
+				case 'k': maxCacheMemory = (long)Math.ceil(num*1024); break;
+					default: throw new ParseException("Invalid value for argument -cachesize: " + args[argid]);
+				}
+				
+			} else if ( args[argid].equalsIgnoreCase("-readas")) {
+				argid++;
+				if ( args[argid].equalsIgnoreCase("dense")) 
+					READ_AS_SPARSE = false;
+				else if ( args[argid].equalsIgnoreCase("sparse"))
+					READ_AS_SPARSE = true;
+				else {
+					System.err.println("Unknown value for readas: " + args[argid]);
+					return;
+				}
+*/			// handle config file
 			} else if (args[argid].startsWith("-config=")){
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
@@ -209,7 +230,7 @@ public class DMLScript {
 			// increment counter
 			argid++;
 		} // while (argid < args.length) {
-
+		
 		//////////////// for DEBUG, dump arguments /////////////////////////////
 		if (DEBUG){
 			System.out.println("INFO: ****** args to DML Script ****** ");
@@ -221,6 +242,7 @@ public class DMLScript {
 			System.out.println("INFO: OPTIONAL CONFIG: " + optionalConfigurationFileName);
 			System.out.println("INFO: RUNTIME: " + rtplatform);
 			System.out.println("INFO: LOG: "  + LOG);
+			System.out.println("INFO: CACHESIZE: " + maxCacheMemory);
 			
 			if (argVals.size() > 0)
 				System.out.println("INFO: Value for script parameter args: ");
@@ -491,7 +513,7 @@ public class DMLScript {
 	 * @throws DMLRuntimeException 
 	 */
 	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName)
-		throws HopsException, LanguageException, ParseException, DMLRuntimeException
+	throws HopsException, LanguageException, ParseException, DMLRuntimeException
 	{
 	
 		dmlt.constructSQLLops(prog);

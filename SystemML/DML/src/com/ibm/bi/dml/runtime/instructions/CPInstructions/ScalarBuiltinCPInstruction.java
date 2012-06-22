@@ -16,12 +16,12 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 	}
 
 	@Override 
-	public ScalarObject processInstruction(ProgramBlock pb) 
+	public void processInstruction(ProgramBlock pb) 
 		throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		ScalarObject so = pb.getScalarVariable( input1.get_name(), input1.get_valueType() );
+		ScalarObject so = pb.getScalarInput( input1.get_name(), input1.get_valueType() );
 		
 		ScalarObject sores = null;
 		
@@ -57,7 +57,6 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 		
 		//prithvi TODO: we input a null into the symbol table
 		//if builtin is print/print2?? is that ok?
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

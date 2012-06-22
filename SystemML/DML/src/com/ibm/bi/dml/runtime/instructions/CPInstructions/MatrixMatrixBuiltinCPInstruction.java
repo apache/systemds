@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -17,19 +18,20 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	}
 	
 	@Override
-	public MatrixObject processInstruction(ProgramBlock pb) 
+	public void processInstruction(ProgramBlock pb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
-		MatrixObject mat1 = pb.getMatrixVariable(input1.get_name());
-		MatrixObject mat2 = pb.getMatrixVariable(input2.get_name());
-		
-		BinaryOperator bop = (BinaryOperator) optr;
+        MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
+        MatrixBlock matBlock2 = pb.getMatrixInput(input2.get_name());
 		
 		String output_name = output.get_name();
-		MatrixObject sores = mat1.binaryOperations(bop, mat2, (MatrixObject)pb.getVariable(output_name));
+		BinaryOperator bop = (BinaryOperator) optr;
 		
-		//pb.setVariable(output_name, sores);
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-
-		return sores;		
+		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+		
+		pb.setMatrixOutput(output_name, resultBlock);
+		
+		resultBlock = matBlock1 = matBlock2 = null;
+		pb.releaseMatrixInput(input1.get_name());
+		pb.releaseMatrixInput(input2.get_name());
 	}
 }

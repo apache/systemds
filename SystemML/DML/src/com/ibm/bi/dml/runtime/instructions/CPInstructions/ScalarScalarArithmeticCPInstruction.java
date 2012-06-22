@@ -19,10 +19,10 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	}
 	
 	@Override
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException{
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException{
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so1 = pb.getScalarVariable(input1.get_name(), input1.get_valueType());
-		ScalarObject so2 = pb.getScalarVariable(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = pb.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		
@@ -35,7 +35,6 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			sores = (ScalarObject) new StringObject(rval);
 		}
 		else if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
-			// TODO: statiko: can we remove the use of instanceof ?
 			if ( dop.fn instanceof Divide || dop.fn instanceof Power ) {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
 				double rval = dop.fn.execute ( so1.getIntValue(), so2.getIntValue() );
@@ -55,8 +54,6 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		pb.setVariable(output.get_name(), sores);
-		return sores;
-		
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

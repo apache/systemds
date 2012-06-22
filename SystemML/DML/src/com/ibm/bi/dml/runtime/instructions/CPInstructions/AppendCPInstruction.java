@@ -51,13 +51,14 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 	}
 	
 	@Override
-	public MatrixObject processInstruction(ProgramBlock pb)
+	public void processInstruction(ProgramBlock pb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		MatrixObject mat1 = pb.getMatrixVariable(input1.get_name());
-		MatrixObject mat2 = pb.getMatrixVariable(input2.get_name());
+
+/*		MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock2 = pb.getMatrixInput(input2.get_name());
 		
 		//also check if offset_str matches with mat1.getNumColumns()
-		if(mat1.getNumRows() != mat2.getNumRows())
+		if(matBlock1.getNumRows() != matBlock2.getNumRows())
 			throw new DMLRuntimeException("Append is not possible for input matrices " 
 										  + input1.get_name()
 										  + " and "
@@ -66,7 +67,7 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 		
 		ReorgOperator r_op = (ReorgOperator) optr;
 		OffsetColumnIndex off = ((OffsetColumnIndex)((ReorgOperator)optr).fn);
-		off.setOutputSize(mat1.getNumRows(), mat1.getNumColumns() + mat2.getNumColumns());
+		off.setOutputSize(matBlock1.getNumRows(), matBlock1.getNumColumns() + matBlock2.getNumColumns());
 		
 		String output_name = output.get_name();
 		
@@ -78,5 +79,5 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 		
 		pb.setVariableAndWriteToHDFS(output_name, sores);
 		return sores;
-	}
+*/	}
 }

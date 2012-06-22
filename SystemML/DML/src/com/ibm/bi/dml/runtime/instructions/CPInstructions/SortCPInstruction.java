@@ -5,6 +5,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -60,18 +61,25 @@ public class SortCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public MatrixObject processInstruction(ProgramBlock pb)
+	public void processInstruction(ProgramBlock pb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		MatrixObject mat = pb.getMatrixVariable(input1.get_name());
-		MatrixObject weights = null;
-		if ( input2 != null ) {
-			weights = pb.getMatrixVariable(input2.get_name());
-		}
+		
+		MatrixBlock matBlock = (MatrixBlock) pb.getMatrixInput(input1.get_name());
+		MatrixBlock wtBlock = null, resultBlock = null;
  		
 		String output_name = output.get_name();
-		MatrixObject sores = mat.sortOperations(weights, (MatrixObject)pb.getVariable(output_name));
 		
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-		return sores; 
+		if (input2 != null) {
+			wtBlock = (MatrixBlock) pb.getMatrixInput(input2.get_name());
+		}
+		
+		resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
+		
+		matBlock = wtBlock = null;
+		pb.releaseMatrixInput(input1.get_name());
+		if (input2 != null)
+			pb.releaseMatrixInput(input2.get_name());
+		
+		pb.setMatrixOutput(output_name, resultBlock);
 	}
 }

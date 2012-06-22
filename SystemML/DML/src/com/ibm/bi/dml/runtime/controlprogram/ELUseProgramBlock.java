@@ -67,7 +67,6 @@ public class ELUseProgramBlock extends ProgramBlock {
 			}
 			System.out.println("____________________________________");
 		}
-		updateMatrixLabels();
 		for (int i = 0; i < _inst.size(); i++) {
 			Instruction currInst = _inst.get(i);
 			if (currInst instanceof MRJobInstruction) {

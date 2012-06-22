@@ -140,7 +140,7 @@ public class DataConverter {
 			int brlen, int bclen) 
 	throws IOException
 	{	
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, false);
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, true);
 		
 	//	String filename = getSubDirsIgnoreLogs(dir);
 		JobConf job = new JobConf();

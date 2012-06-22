@@ -8,8 +8,6 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 /**
  * Lop to perform cross product operation
- * 
- * @author statiko
  */
 public class CentralMoment extends Lops {
 

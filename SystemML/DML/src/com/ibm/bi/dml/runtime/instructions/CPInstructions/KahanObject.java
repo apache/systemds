@@ -57,4 +57,10 @@ public class KahanObject extends Data {
 	{
 		return _sum==0 && _correction==0;
 	}
+
+	@Override
+	public String getDebugName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

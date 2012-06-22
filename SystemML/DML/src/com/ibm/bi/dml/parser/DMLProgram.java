@@ -210,9 +210,6 @@ public class DMLProgram {
 				throw new LopsException("WhileStatementBlock should have no Lops");
 			}
 			
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			rtpb.initInputMatrixMetadata ( );
 			return rtpb;
 		}
 		
@@ -267,9 +264,6 @@ public class DMLProgram {
 				throw new LopsException("IfStatementBlock should have no Lops");
 			}
 			
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			rtpb.initInputMatrixMetadata ( );
 			return rtpb;
 		}
 		
@@ -335,9 +329,6 @@ public class DMLProgram {
 				throw new LopsException( sbName+" should have no Lops" );
 			}
 			
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			rtpb.initInputMatrixMetadata ( );
 			return rtpb;
 		
 		}
@@ -396,9 +387,6 @@ public class DMLProgram {
 				throw new LopsException("FunctionStatementBlock should have no Lops");
 			}
 			
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			rtpb.initInputMatrixMetadata ( );
 			return rtpb;
 		}
 		
@@ -429,9 +417,6 @@ public class DMLProgram {
 				}
 			}
 
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			cvpb.initInputMatrixMetadata ( );
 			return cvpb;
 		}
 		
@@ -462,9 +447,6 @@ public class DMLProgram {
 				}
 			}
 
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			epb.initInputMatrixMetadata ( );
 			return epb;
 		}
 		
@@ -495,9 +477,6 @@ public class DMLProgram {
 				}
 			}
 
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			eupb.initInputMatrixMetadata ( );
 			return eupb;
 		}
 		else {
@@ -525,9 +504,6 @@ public class DMLProgram {
 				rtpb.addInstruction(sb.getFunctionCallInst());
 			}
 			
-			// initialize local _matrices hashmap using metadata of input matrices (as computed in piggybacking)
-			// these values are updated (whenever necessary) by the metadata computed at runtime 
-			rtpb.initInputMatrixMetadata ( );
 			return rtpb ;	
 		}
 	}	

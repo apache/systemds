@@ -135,4 +135,10 @@ public class CM_COV_Object extends Data {
 				return c2._sum/(w-1.0);
 		}
 	}
+
+	@Override
+	public String getDebugName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

@@ -22,6 +22,13 @@ public class MatrixBlock extends MatrixBlockDSM
 		super(map);
 	}
 	
+	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, long seed)
+	{
+		MatrixBlock m = new MatrixBlock(rows,cols,true);
+		m.getRandomSparseMatrix(rows, cols, sparsity, min, max, seed);
+		return m;
+	}
+	
 	@Override
 	public long getObjectSizeInMemory ()
 	{

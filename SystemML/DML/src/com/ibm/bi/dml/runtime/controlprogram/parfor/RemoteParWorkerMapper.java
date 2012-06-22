@@ -126,6 +126,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
+				// TODO Matthias: Check this! 
+				DMLScript.cacheEvictionLocalFilePrefix = DMLScript.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+				
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
 				
 				if(DMLScript.DEBUG)

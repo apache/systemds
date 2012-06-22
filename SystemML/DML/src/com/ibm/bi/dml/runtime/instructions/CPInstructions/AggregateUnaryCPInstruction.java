@@ -14,8 +14,9 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
@@ -222,10 +223,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		return null;
 	}
 	
-	public Data processInstruction (ProgramBlock pb)
-		throws DMLRuntimeException, DMLUnsupportedOperationException{
+	public void processInstruction (ProgramBlock pb)
+	throws DMLRuntimeException, DMLUnsupportedOperationException{
 		String output_name = output.get_name();
 		String opcode = InstructionUtils.getOpCode(instString);
+		
 		if(opcode.equalsIgnoreCase("nrow")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
 			ScalarObject ret = null;
@@ -235,8 +237,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			else if ( output.get_valueType() == ValueType.DOUBLE ) {
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
 			}
-			pb.setVariable(output_name, ret);
-			return ret;
+			pb.setScalarOutput(output_name, ret);
 		}
 		else if(opcode.equalsIgnoreCase("ncol")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
@@ -247,8 +248,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			else if ( output.get_valueType() == ValueType.DOUBLE ) {
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
 			}
-			pb.setVariable(output_name, ret);
-			return ret;
+			pb.setScalarOutput(output_name, ret);
 		}
 		else if(opcode.equalsIgnoreCase("length")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
@@ -261,8 +261,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols()
 						 * dims.getMatrixCharacteristics().get_rows());
 			}
-			pb.setVariable(output_name, ret);
-			return ret;
+			pb.setScalarOutput(output_name, ret);
 		}
 		
 		else if (opcode.equalsIgnoreCase("cm")) {
@@ -272,9 +271,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			 * compilation time. We first need to determine the exact 
 			 * order and update the CMOperator, if needed.
 			 */
-
+			
+			MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
+	
 			CPOperand scalarInput = (input3==null ? input2 : input3);
-			ScalarObject order = pb.getScalarVariable(scalarInput.get_name(), scalarInput.get_valueType()); 
+			ScalarObject order = pb.getScalarInput(scalarInput.get_name(), scalarInput.get_valueType()); 
 			
 			CMOperator cm_op = ((CMOperator)optr); 
 			if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {
@@ -283,34 +284,39 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			
 			CM_COV_Object cmobj = null; 
 			if (input3 == null ) {
-				cmobj = pb.getMatrixVariable(input1.get_name()).cmOperations(cm_op); 
+				cmobj = matBlock.cmOperations(cm_op);
 			}
 			else {
-				cmobj = pb.getMatrixVariable(input1.get_name()).cmOperations(cm_op, pb.getMatrixVariable(input2.get_name())); 
+				MatrixBlock wtBlock = pb.getMatrixInput(input2.get_name());
+				cmobj = matBlock.cmOperations(cm_op, wtBlock);
 			}
+			
+			matBlock = null;
+			pb.releaseMatrixInput(input1.get_name());
+			
 			double val = cmobj.getRequiredResult(optr);
 			DoubleObject ret = new DoubleObject(output_name, val);
-			pb.setVariable(output_name, ret);
-			return ret;
+			
+			pb.setScalarOutput(output_name, ret);
 		} 
 		
 		/* Default behavior for AggregateUnary Instruction */
+		MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());		
 		AggregateUnaryOperator au_op = (AggregateUnaryOperator) optr;
-		MatrixObject inputMatrix = pb.getMatrixVariable(input1.get_name());
-		MatrixObject outputMatrix = null;
+		
+		MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+	
+		matBlock = null;
+		pb.releaseMatrixInput(input1.get_name());
+		
 		if(output.get_dataType() == DataType.SCALAR){
-			outputMatrix = new MatrixObject();
-			outputMatrix.setMetaData(new MatrixDimensionsMetaData(new MatrixCharacteristics()));
-			outputMatrix = inputMatrix.aggregateUnaryOperations(au_op, outputMatrix);
-			DoubleObject ret = new DoubleObject(output_name, outputMatrix.getValue(0, 0));
-			pb.setVariable(output_name, ret);
-			return ret;
+			DoubleObject ret = new DoubleObject(output_name, resultBlock.getValue(0, 0));
+			pb.setScalarOutput(output_name, ret);
 		} else{
 			// since the computed value is a scalar, allocate a "temp" output matrix
-			outputMatrix = (MatrixObject)pb.getMatrixVariable(output.get_name());
-			outputMatrix = inputMatrix.aggregateUnaryOperations(au_op, outputMatrix);
-			pb.setVariableAndWriteToHDFS(output_name, outputMatrix);
-			return outputMatrix;
+			pb.setMatrixOutput(output_name, resultBlock);
 		}
+		resultBlock = null;
 	}
+
 }

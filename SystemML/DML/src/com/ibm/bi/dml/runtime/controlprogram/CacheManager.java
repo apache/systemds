@@ -44,7 +44,7 @@ public class CacheManager
 	{
 		if (DMLScript.DEBUG) 
 		{
-			System.out.println ("CACHE: Releasing " + numBytes + " of cache memory...");
+			System.out.println ("    CACHE: Releasing " + numBytes + " of cache memory...");
 		}
 
 		if (numBytes > getFreeMemory ())
@@ -59,12 +59,12 @@ public class CacheManager
 				is_successful = (numBytes <= getFreeMemory ());
 			}
 			if (! is_successful)
-				throw new CacheOutOfMemoryException ();
+				throw new CacheOutOfMemoryException ("requested " + numBytes + " <= " + getFreeMemory() + " available!");
 		}
 		
-		if (DMLScript.DEBUG) 
+		if (!DMLScript.DEBUG) 
 		{
-			System.out.println ("CACHE: Releasing cache memory - COMPLETED.");
+			System.out.println ("    CACHE: Releasing cache memory - COMPLETED.");
 		}
 	}
 	
@@ -85,19 +85,20 @@ public class CacheManager
 	{
 		if (cdata == null)
 		{
-			if (DMLScript.DEBUG) 
+			if (!DMLScript.DEBUG) 
 			{
-				System.out.println ("CACHE: Updating size/status - NOTHING TO DO: cacheable object == null.");
+				System.out.println ("    CACHE: Updating envelope size/status - NOTHING TO DO: envelope == null.");
 			}
 			return;
 		}
 		
-		if (DMLScript.DEBUG) 
+		if (!DMLScript.DEBUG) 
 		{
-			System.out.println ("CACHE: Updating size/status of cacheable data object...");
-			System.out.println ("CACHE: Object ID: " + cdata.getUniqueCacheID () + 
-					";  Status: " + cdata.getStatusAsString () + 
-					";  Size: old = " + oldMemorySize + ", new = " + newMemorySize);
+			System.out.println ("    CACHE: Updating envelope size/status of " + cdata.getDebugName() +
+					String.format (", ID:%4d;  ", cdata.getUniqueCacheID ()) + 
+					"Status: " + cdata.getStatusAsString () + ";  Size: " +
+					(oldMemorySize == newMemorySize ? newMemorySize : 
+						"old = " + oldMemorySize + ", new = " + newMemorySize));
 		}
 
 		boolean wasInMemory = inMemory.contains (cdata);
@@ -113,6 +114,9 @@ public class CacheManager
 		}
 		
 		//  Do we need to release more memory by evicting some blobs?
+		//
+		//  Make sure that one blob eviction does not trigger more evictions,
+		//  because that may create an infinite recursion sequence.
 		
 		final long memoryNeeded = 
 			(wasInMemory ? newMemorySize - oldMemorySize : newMemorySize);
@@ -155,10 +159,10 @@ public class CacheManager
 			}
 		}
 		
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("CACHE: Updating size/status - COMPLETED.");
-		}
+		//if (DMLScript.DEBUG) 
+		//{
+		//	System.out.println ("CACHE: Updating envelope size/status - COMPLETED.");
+		//}
 	}
 	
 	/**
@@ -198,5 +202,21 @@ public class CacheManager
 	{
 		final long availableMemory = maxCacheMemory - (usedCacheMemory - evictableCacheMemory);
 		return (availableMemory < 0 ? 0 : availableMemory);
+	}
+	
+	public synchronized void printCacheStatus() {
+		System.out.println("\t-----------CACHE STATUS-----------" );
+		System.out.println("\t      max: " + maxCacheMemory);
+		System.out.println("\t     used: " + usedCacheMemory);
+		System.out.println("\tevictable: " + evictableCacheMemory);
+		System.out.println("\t--inMemory--");
+		for(CacheableData cdata : inMemory ) {
+			System.out.println("\t             " + cdata.getDebugName() + ", status: " + cdata.getStatusAsString() + ", size: " + cdata.getBlobSize());
+		}
+/*		System.out.println("\t--EVICTABLE--" );
+		for(CacheableData cdata : evictable ) {
+			System.out.println("\t             " + cdata.getDebugName());
+		}
+*/		System.out.println("\t---------------------------------\n\n" );
 	}
 }

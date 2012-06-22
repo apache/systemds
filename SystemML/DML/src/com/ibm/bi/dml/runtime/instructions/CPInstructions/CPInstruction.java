@@ -34,7 +34,7 @@ public class CPInstruction extends Instruction {
 		return null;
 	}
 
-	public Data processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		throw new DMLRuntimeException ( "processInstruction(ProgramBlock): should not be invoked in the base class.");
 	}
 

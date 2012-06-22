@@ -14,12 +14,14 @@ import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
@@ -170,22 +172,28 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	}
 
 	@Override
-	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
+	protected void modifyInputMatrix(Matrix m, MatrixObjectNew mobj) 
 	{
 		//pass in-memory object to external function
 		m.setMatrixObject( mobj );
 	}
 	
 	@Override
-	protected MatrixObject createOutputMatrixObject(Matrix m) 
+	protected MatrixObjectNew createOutputMatrixObject(Matrix m)
 	{
-		MatrixObject ret = m.getMatrixObject();
+		MatrixObjectNew ret = m.getMatrixObject();
 		
 		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
 		{
 			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
 			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
+			try {
+				ret = new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
+			} catch (CacheOutOfMemoryException e) {
+				e.printStackTrace();
+			} catch (CacheStatusException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		return ret;

@@ -66,8 +66,10 @@ public class MatrixBlockDSM extends MatrixValue{
 			all_size += denseBlock.length * 8;
 		if (sparseRows != null)
 		{
-			for (int i = 0; i < sparseRows.length; i++)
-				all_size += 8 + sparseRows [i].getObjectSizeInMemory ();
+			for (int i = 0; i < sparseRows.length; i++) {
+				if ( sparseRows[i] != null )
+					all_size += 8 + sparseRows [i].getObjectSizeInMemory ();
+			}
 		}
 		return all_size;
 	}
@@ -2664,6 +2666,82 @@ public class MatrixBlockDSM extends MatrixValue{
 		return result;
 	}
 	
+	public void allocateDenseBlock() {
+		int limit=rlen*clen;
+		if(denseBlock==null || denseBlock.length < limit )
+			denseBlock=new double[limit];
+		nonZeros = 0;
+	}
+	
+	private static void aggBinDenseSparse_2(MatrixBlockDSM m1, MatrixBlockDSM m2,
+			MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException 
+	{
+		if(m2.sparseRows==null)
+			return;
+		
+		if ( result.sparse ) {
+			throw new DMLRuntimeException("this case is not implemented yet.");
+		}
+		else {
+			long begin, st, m1Time=0, mmultTime=0, resultTime=0, nnzTime=0, totalTime=0; 
+			
+			result.allocateDenseBlock();
+			
+			begin = st = System.currentTimeMillis();
+			//m1.inplaceTranspose();
+			//m1Time = System.currentTimeMillis() - st; 
+			
+			//st = System.currentTimeMillis();
+			int[] cols=null;
+			double[] values=null;
+			double aik, bkj;
+			for(int k=0; k<Math.min(m2.rlen, m2.sparseRows.length); k++) {
+				if(m2.sparseRows[k]==null) continue;
+				cols=m2.sparseRows[k].getIndexContainer();
+				values=m2.sparseRows[k].getValueContainer();
+				for(int p=0; p<m2.sparseRows[k].size(); p++) {
+					int j=cols[p];
+					for(int i=0; i<m1.rlen; i++) {
+						//double old=result.getValue(i, j);
+						aik= m1.denseBlock[i*m1.clen+k];
+						bkj = values[p];
+						
+						// actual_result[i,j] will be @ result[j,i] 
+						result.denseBlock[j*result.rlen+i] += (aik*bkj);
+						//double addValue=op.binaryFn.execute(aik, values[p]);
+						//double newvalue=op.aggOp.increOp.fn.execute(old, addValue);
+						//result.setValue(i, j, newvalue);
+					}
+				}
+			}
+			mmultTime = System.currentTimeMillis()-st;
+			
+			// Convert from column-major to row-major
+			st = System.currentTimeMillis();
+			double [] temp = new double[result.clen*result.rlen];
+			for(int j=0; j < result.clen; j++) {
+				for(int i=0; i < result.rlen; i++) {
+					//int x = j*result.clen+i;
+					//int y = i*result.clen+j;
+					//System.out.println(x + "<-" + y);
+					temp[i*result.clen+j] = result.denseBlock[j*result.rlen+i];
+				}
+			}
+			result.denseBlock = null;
+			result.denseBlock = temp;
+			temp = null;
+			resultTime = System.currentTimeMillis() - st;
+			
+			st = System.currentTimeMillis();
+			result.updateNonZeros();
+			nnzTime = System.currentTimeMillis() - st;
+			
+			totalTime = System.currentTimeMillis() - begin;
+			
+			System.out.println("denseSparse:\t" + m1Time + "\t" + mmultTime + "\t" + resultTime + "\t" + nnzTime + "\t" + totalTime);
+		}
+		
+	}
 	
 	/*
 	 * to perform aggregateBinary when the first matrix is dense and the second is sparse
@@ -3328,6 +3406,41 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
+	public static MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, long seed)
+	{
+		int min=1, max=5;
+		Random random=new Random(seed);
+		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
+		m.allocateDenseBlock();
+		for(int i=0; i<rows; i++) {
+			for(int j=0; j<cols; j++) {
+				m.denseBlock[i*cols+j] = Math.ceil(min + ((max-min)*random.nextDouble()));
+				m.nonZeros++;
+			}
+		}
+		return m;
+	}
+	
+	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
+	{
+		Random random=new Random(seed);
+		//MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true);
+		this.sparseRows=new SparseRow[rows];
+		for(int i=0; i<rows; i++)
+		{
+			this.sparseRows[i]=new SparseRow();	
+			for(int j=0; j<cols; j++)
+			{
+				if(random.nextDouble()>sparsity)
+					continue;
+				this.sparseRows[i].append(j, Math.ceil(min + ((max-min)*random.nextDouble())) );
+				this.nonZeros++;
+			}
+		}
+		return this;
+	}
+	
+
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
 		//int min=1, max=5;
@@ -3660,6 +3773,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
+		
 		int rows=10, cols=10, runs=10;
 		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
 		for(double sparsity: sparsities)
@@ -3685,6 +3799,50 @@ public class MatrixBlockDSM extends MatrixValue{
 		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOCOLUMNS);
 		System.out.println("~~~~~~~~~~~~");
 		System.out.println(m);
+
+		
+		/*
+		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+		
+		MatrixBlockDSM m1=getRandomDenseMatrix(2, 4, 1);
+		System.out.println(m1.toString());
+		
+		MatrixBlockDSM m2=getRandomSparseMatrix(4,3,0.3,1);
+		System.out.println(m2.toString());
+		
+		MatrixBlockDSM result = (MatrixBlockDSM) m1.aggregateBinaryOperations(m1, m2, new MatrixBlock(), aggbin);
+		
+		System.out.println(result.toString());
+		
+		// -------------------------------------------------
+		//DMLScript.READ_AS_SPARSE = Boolean.parseBoolean(args[0]);
+		String Vfile = args[0];
+		String Wfile = args[1];
+		int numD = Integer.parseInt(args[2]);
+		int numW = Integer.parseInt(args[3]);
+		int numT = Integer.parseInt(args[4]);
+		
+		MatrixBlockDSM W = DataConverter.readMatrixFromHDFS(Wfile, InputInfo.BinaryBlockInputInfo, numD, numT, 1000, 1000);
+		MatrixBlockDSM V = DataConverter.readMatrixFromHDFS(Vfile, InputInfo.BinaryBlockInputInfo, numD, numW, 1000, 1000);
+		
+		long st = System.currentTimeMillis();
+		MatrixBlockDSM tW = new MatrixBlockDSM(numT, numD, W.sparse);
+		W.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), tW, 0, 0, 0);
+		long txTime = System.currentTimeMillis() - st;
+		
+		MatrixBlockDSM tWV = new MatrixBlockDSM(numT, numW, false);
+		st = System.currentTimeMillis();
+		tW.aggregateBinaryOperations(tW, V, tWV, aggbin);
+		long mmultTime = System.currentTimeMillis()-st;
+		System.out.println("    Transpose " + txTime + ", MMult " + mmultTime);
+		
+		//m.examSparsity();
+		W = null;
+		V = null;
+		tW = null;
+		tWV = null;
+		*/
 	}
 
 	public void addDummyZeroValue() {

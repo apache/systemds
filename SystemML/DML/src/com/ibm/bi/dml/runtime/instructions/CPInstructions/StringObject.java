@@ -38,5 +38,10 @@ public class StringObject extends ScalarObject {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public String getDebugName() {
+		return _value;
+	}
+
 
 }

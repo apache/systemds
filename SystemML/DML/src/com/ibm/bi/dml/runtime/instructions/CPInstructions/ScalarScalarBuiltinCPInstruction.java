@@ -18,13 +18,13 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	}
 
 	@Override 
-	public ScalarObject processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;
 		
-		ScalarObject so1 = pb.getScalarVariable( input1.get_name(), input1.get_valueType() );
-		ScalarObject so2 = pb.getScalarVariable(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = pb.getScalarInput( input1.get_name(), input1.get_valueType() );
+		ScalarObject so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String buffer = "";
@@ -58,7 +58,6 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		pb.setVariable(output.get_name(), sores);
-		return sores;
+		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

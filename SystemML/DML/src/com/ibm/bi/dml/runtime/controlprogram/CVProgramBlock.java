@@ -57,7 +57,6 @@ public class CVProgramBlock extends ProgramBlock {
 			System.out.print   (_variables.toString ());
 			System.out.println ("____________________________________");
 		}
-		updateMatrixLabels();		//basically replaces ##..## stuff with actual file names of matr varbls
 		for (int i = 0; i < _inst.size(); i++) {	//only one itern occurs though
 			Instruction currInst = _inst.get(i);
 			if (currInst instanceof MRJobInstruction) {
@@ -239,11 +238,9 @@ return retapt;
 		/********** Construct folds for partition with replication ****************/ 
 		if(_pp.toReplicate == true) {	//partition w repl
 			executePartition();
-			updateMatrixLabels();
 			System.out.println("Finished executing partition w repl!");
 			if(_pp.apt == PartitionParams.AccessPath.RB || _pp.apt == PartitionParams.AccessPath.JR) {	//do post partn reblocks for RB and JR
 				executeReblocks(nr, nc, bnr, bnc);
-				updateMatrixLabels();
 				System.out.println("Finished executing reblocks on outputs for JR/RB w repl!");
 			}
 		}
@@ -267,11 +264,9 @@ return retapt;
 			/********** Construct folds for partition without replication ****************/
 			if(_pp.toReplicate == false) {	//partition wo repl - invoke it and do post partn reblock if ncsry
 				executePartition();
-				updateMatrixLabels();
 				System.out.println("Finished executing partition wo repl for fold "+foldId+"!");
 				if(_pp.apt == PartitionParams.AccessPath.RB || _pp.apt == PartitionParams.AccessPath.JR) {	//do post partn reblocks for RB and JR
 					executeReblocks(nr, nc, bnr, bnc);
-					updateMatrixLabels();
 					System.out.println("Finished executing reblock on fold "+foldId+" for JR/RB wo repl!");
 				}
 			}

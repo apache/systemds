@@ -13,13 +13,15 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -61,16 +63,16 @@ public class ParForResultMergeTest
 		throws ParserConfigurationException, SAXException, IOException, DMLRuntimeException
 	{
 		//init input, output, comparison obj
-		MatrixObject[] in = new MatrixObject[ _par ];
+		MatrixObjectNew[] in = new MatrixObjectNew[ _par ];
 		for( int i=0; i<_par; i++ )
 			in[i] = createMatrixObject( _dim, true );
-		MatrixObject out = createMatrixObject( _dim, true );
-		MatrixObject ref = createMatrixObject( _dim, true );
+		MatrixObjectNew out = createMatrixObject( _dim, true );
+		MatrixObjectNew ref = createMatrixObject( _dim, true );
 		
 		//propulate inputs and comparison object
 		generateData( ref, in );			
 		if( !inMem )
-			for( MatrixObject mo : in )
+			for( MatrixObjectNew mo : in )
 			{
 				//write and delete in-memory data
 				DataConverter.writeMatrixToHDFS(
@@ -92,7 +94,7 @@ public class ParForResultMergeTest
 			Assert.fail("Wrong result matrix.");	
 	}
 
-	private MatrixObject createMatrixObject(int dim, boolean withData) 
+	private MatrixObjectNew createMatrixObject(int dim, boolean withData) 
 		throws ParserConfigurationException, SAXException, IOException 
 	{
 		DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
@@ -101,7 +103,14 @@ public class ParForResultMergeTest
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, dim, dim);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, fname, md);
+		MatrixObjectNew mo;
+		try {
+			mo = new MatrixObjectNew(ValueType.DOUBLE, fname, md);
+		} catch (CacheOutOfMemoryException e) {
+			throw new IOException(e);
+		} catch (CacheStatusException e) {
+			throw new IOException(e);
+		}
 		
 		if( withData )
 			mo.setData( new MatrixBlock(dim, dim, false) );
@@ -109,50 +118,58 @@ public class ParForResultMergeTest
 		return mo;
 	}
 	
-	private void generateData(MatrixObject ref, MatrixObject[] in) 
+	private void generateData(MatrixObjectNew ref, MatrixObjectNew[] in) 
 	{
-		int rows = ref.getNumRows();
-		int cols = ref.getNumColumns();
-		int index = 0;
-		int subSize = (int) Math.ceil( rows * cols / in.length );
-		double value;
-		
-		MatrixBlock refData = ref.getData();
-		MatrixBlock inData = in[ index ].getData();
-		
-		for( int i=0; i<rows; i++ )
-			for( int j=0; j<cols; j++ )
-			{
-				value = i*cols+(j+1);
-				refData.setValue( i, j, value );				
-				inData.setValue(i, j, value);
-				if( value % subSize == 0 && index != in.length-1 )
-					inData = in[ ++index ].getData();	
-			}		
-	}
-	
-	private boolean checkOutput(MatrixObject ref, MatrixObject out) 
-	{
-		boolean ret = true;
-		
-		if(    ref.getNumRows() != out.getNumRows() 
-			|| ref.getNumColumns() != out.getNumColumns() )
-		{
-			ret = false; 
-		}
-		else
-		{
+		try {
 			int rows = ref.getNumRows();
 			int cols = ref.getNumColumns();
+			int index = 0;
+			int subSize = (int) Math.ceil( rows * cols / in.length );
+			double value;
+			
+			MatrixBlock refData = ref.getData();
+			MatrixBlock inData = in[ index ].getData();
 			
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
-					if( ref.getValue(i, j) != out.getValue(i, j) )
-					{
-						//System.out.println(ref.getValue(i, j)+" vs "+out.getValue(i, j));
-						ret=false;
-						i=rows; break;
-					}
+				{
+					value = i*cols+(j+1);
+					refData.setValue( i, j, value );				
+					inData.setValue(i, j, value);
+					if( value % subSize == 0 && index != in.length-1 )
+						inData = in[ ++index ].getData();	
+				}
+		} catch (DMLRuntimeException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private boolean checkOutput(MatrixObjectNew ref, MatrixObjectNew out) 
+	{
+		boolean ret = true;
+		
+		try {
+			if(    ref.getNumRows() != out.getNumRows() 
+				|| ref.getNumColumns() != out.getNumColumns() )
+			{
+				ret = false; 
+			}
+			else
+			{
+				int rows = ref.getNumRows();
+				int cols = ref.getNumColumns();
+				
+				for( int i=0; i<rows; i++ )
+					for( int j=0; j<cols; j++ )
+						if( ref.getValue(i, j) != out.getValue(i, j) )
+						{
+							//System.out.println(ref.getValue(i, j)+" vs "+out.getValue(i, j));
+							ret=false;
+							i=rows; break;
+						}
+			}
+		} catch (DMLRuntimeException e) {
+			e.printStackTrace();
 		}
 		
 		return ret;

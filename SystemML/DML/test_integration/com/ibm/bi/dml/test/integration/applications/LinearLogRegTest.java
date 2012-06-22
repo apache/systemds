@@ -2,9 +2,14 @@ package com.ibm.bi.dml.test.integration.applications;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -14,12 +19,26 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
+@RunWith(value = Parameterized.class)
 public class LinearLogRegTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/linearLogReg/";
     private final static String TEST_LINEAR_LOG_REG = "LinearLogReg";
 
+    private int numRecords, numFeatures, numTestRecords;
+    
+	public LinearLogRegTest(int numRecords, int numFeatures, int numTestRecords) {
+		this.numRecords = numRecords;
+		this.numFeatures = numFeatures;
+		this.numTestRecords = numTestRecords;
+	}
+	
+	@Parameters
+	 public static Collection<Object[]> data() {
+	   Object[][] data = new Object[][] { {100, 50, 25}, {1000, 500, 200}, {10000, 750, 1500}};
+	   return Arrays.asList(data);
+	 }
 
     @Override
     public void setUp()
@@ -32,10 +51,10 @@ public class LinearLogRegTest extends AutomatedTestBase
     @Test
     public void testLinearLogReg() throws ClassNotFoundException, SQLException, IOException
     {
-    	int rows = 100;	// // # of rows in the training data 
-        int cols = 50;
-        int rows_test = 25; 	// # of rows in the test data 
-        int cols_test = cols; 	// # of rows in the test data 
+    	int rows = numRecords;			// # of rows in the training data 
+        int cols = numFeatures;
+        int rows_test = numTestRecords; // # of rows in the test data 
+        int cols_test = cols; 			// # of rows in the test data 
 
         TestConfiguration config = getTestConfiguration(TEST_LINEAR_LOG_REG);
         config.addVariable("rows", rows);

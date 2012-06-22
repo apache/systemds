@@ -1,19 +1,38 @@
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
+@RunWith(value = Parameterized.class)
 public class PageRankTest extends AutomatedTestBase
 {
 
     private final static String TEST_DIR = "applications/page_rank/";
     private final static String TEST_PAGE_RANK = "PageRank";
 
+    private int numRows, numCols;
 
+	public PageRankTest(int rows, int cols) {
+		this.numRows = rows;
+		this.numCols = cols;
+	}
+
+	@Parameters
+	 public static Collection<Object[]> data() {
+	   Object[][] data = new Object[][] { { 50, 50 }, { 1500, 1500 }, { 7500, 7500 }};
+	   return Arrays.asList(data);
+	 }
+   
     @Override
     public void setUp()
     {
@@ -23,9 +42,9 @@ public class PageRankTest extends AutomatedTestBase
     @Test
     public void testPageRank()
     {
-    	int rows = 1000;
-    	int cols = 1000;
-    	int maxiter = 3;
+    	int rows = numRows;
+    	int cols = numCols;
+    	int maxiter = 2;
     	double alpha = 0.85;
     	
     	/* This is for running the junit test by constructing the arguments directly */
@@ -58,7 +77,7 @@ public class PageRankTest extends AutomatedTestBase
         writeInputMatrix("e", e);
         writeInputMatrix("u", u);
         
-        for(int i = 0; i < 3; i++) {
+        for(int i = 0; i < maxiter; i++) {
         	double[][] gp = TestUtils.performMatrixMultiplication(g, p);
         	double[][] eu = TestUtils.performMatrixMultiplication(e, u);
         	double[][] eup = TestUtils.performMatrixMultiplication(eu, p);

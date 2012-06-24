@@ -12,24 +12,27 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
  * Remote ParWorker implementation, realized as MR mapper.
  * 
- * @author mboehm
  *
  */
 public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not required (no op implementations of configure, close)
 	implements Mapper<LongWritable, Text, Writable, Writable>
 {
-	private static RemoteParWorkerMapper _sCache = null; //self reference for future reuse
+	//self reference for future reuse (in case of JVM reuse)
+	private static RemoteParWorkerMapper _sCache = null; 
 	
+	//MR ParWorker attributes  
 	protected String            _stringID       = null; 
 	protected boolean           _binaryTasks    = false;	
 	protected ArrayList<String> _resultVarNames = null;
@@ -69,6 +72,15 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			for( String rvar : _resultVarNames )
 			{
 				Data dat = _variables.get( rvar );
+				
+				//export output variable to HDFS (see RunMRJobs)
+				if ( dat.getDataType() == DataType.MATRIX ) {
+					MatrixObjectNew inputObj = (MatrixObjectNew) dat;
+					if ( inputObj.isDirty() ) 
+						inputObj.exportData();
+				}
+				
+				//pass output vars (scalars by value, matrix by ref) to result
 				String datStr = ProgramConverter.serializeDataObject(rvar, dat);
 				ovalue.set( datStr );
 				out.collect( okey, ovalue );	
@@ -126,14 +138,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
-				// TODO Matthias: Check this! 
+				//init local cache manager
 				DMLScript.cacheEvictionLocalFilePrefix = DMLScript.cacheEvictionLocalFilePrefix +"_" + _workerID; 
 				
+				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
-				
-				if(DMLScript.DEBUG)
-					System.out.println(in);
-				
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
 				
 				_childBlocks = body.getChildBlocks();

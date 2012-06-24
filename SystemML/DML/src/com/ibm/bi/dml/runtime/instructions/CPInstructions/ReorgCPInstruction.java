@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -64,7 +65,8 @@ public class ReorgCPInstruction extends UnaryCPInstruction{
 		twrite = System.currentTimeMillis() - st;
 		ttotal = System.currentTimeMillis()-begin;
 		
-		System.out.println("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
+		if( DMLScript.DEBUG )
+			System.out.println("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
 	}
 	
 }

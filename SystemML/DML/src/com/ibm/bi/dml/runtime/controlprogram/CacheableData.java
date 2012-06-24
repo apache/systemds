@@ -390,6 +390,7 @@ public abstract class CacheableData extends Data
 		}
 		catch (CacheIOException e)
 		{
+			e.printStackTrace();
 			return false;
 		}
 		cacheStatus.setEvicted ();

@@ -238,6 +238,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_rows());
 			}
 			pb.setScalarOutput(output_name, ret);
+			return;
 		}
 		else if(opcode.equalsIgnoreCase("ncol")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
@@ -249,6 +250,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 				ret = new DoubleObject(output_name, dims.getMatrixCharacteristics().get_cols());
 			}
 			pb.setScalarOutput(output_name, ret);
+			return;
 		}
 		else if(opcode.equalsIgnoreCase("length")){
 			MatrixDimensionsMetaData dims = (MatrixDimensionsMetaData)(pb.getMetaData(input1.get_name()));
@@ -262,8 +264,8 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 						 * dims.getMatrixCharacteristics().get_rows());
 			}
 			pb.setScalarOutput(output_name, ret);
+			return;
 		}
-		
 		else if (opcode.equalsIgnoreCase("cm")) {
 			/*
 			 * The "order" of the central moment in the instruction can 
@@ -298,6 +300,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			DoubleObject ret = new DoubleObject(output_name, val);
 			
 			pb.setScalarOutput(output_name, ret);
+			return;
 		} 
 		
 		/* Default behavior for AggregateUnary Instruction */

@@ -19,12 +19,11 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
-import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
+//TODO: tests for sparse representation.
 public class ParForResultMergeTest 
 {
 	private static final int _par = 4;
@@ -69,21 +68,21 @@ public class ParForResultMergeTest
 		MatrixObjectNew out = createMatrixObject( _dim, true );
 		MatrixObjectNew ref = createMatrixObject( _dim, true );
 		
-		//propulate inputs and comparison object
+		//populate inputs and comparison object
 		generateData( ref, in );			
 		if( !inMem )
 			for( MatrixObjectNew mo : in )
 			{
 				//write and delete in-memory data
-				DataConverter.writeMatrixToHDFS(
-						mo.getData(), mo.getFileName(), OutputInfo.BinaryBlockOutputInfo, 
-                        mo.getNumRows(), mo.getNumColumns(), mo.getNumRows(), mo.getNumColumns());
-				mo.setData(null);				
+				if(!inMem)
+				{
+					mo.exportData();
+					mo.clearData();
+				}
 			}
 		
-		
 		//run result merge
-		ResultMerge rm = new ResultMerge(out, in, !inMem, !inMem);
+		ResultMerge rm = new ResultMerge(out, in);
 		if( parallel )
 			out = rm.executeParallelMerge(_par);
 		else
@@ -95,82 +94,88 @@ public class ParForResultMergeTest
 	}
 
 	private MatrixObjectNew createMatrixObject(int dim, boolean withData) 
-		throws ParserConfigurationException, SAXException, IOException 
+		throws ParserConfigurationException, SAXException, IOException, CacheException 
 	{
 		DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-		String dir = conf.getTextValue("scratch");  
+		String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);  
 		String fname = dir+"/"+String.valueOf(_seq.getNextID());
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, dim, dim);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObjectNew mo;
-		try {
-			mo = new MatrixObjectNew(ValueType.DOUBLE, fname, md);
-		} catch (CacheOutOfMemoryException e) {
-			throw new IOException(e);
-		} catch (CacheStatusException e) {
-			throw new IOException(e);
-		}
+		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE, fname, md);
 		
 		if( withData )
-			mo.setData( new MatrixBlock(dim, dim, false) );
+		{
+			MatrixBlock mb = new MatrixBlock(dim,dim,false);
+			mo.acquireModify(mb);
+			mo.release();
+		}
 	
 		return mo;
 	}
 	
 	private void generateData(MatrixObjectNew ref, MatrixObjectNew[] in) 
+		throws DMLRuntimeException 
 	{
-		try {
-			int rows = ref.getNumRows();
-			int cols = ref.getNumColumns();
-			int index = 0;
-			int subSize = (int) Math.ceil( rows * cols / in.length );
-			double value;
-			
-			MatrixBlock refData = ref.getData();
-			MatrixBlock inData = in[ index ].getData();
-			
-			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
+		int rows = ref.getNumRows();
+		int cols = ref.getNumColumns();
+		int index = 0;
+		int subSize = (int) Math.ceil( rows * cols / in.length );
+		double value;
+		
+		MatrixBlock refData = ref.acquireModify();
+		MatrixBlock inData = in[ index ].acquireModify();
+		
+		for( int i=0; i<rows; i++ )
+			for( int j=0; j<cols; j++ )
+			{
+				value = i*cols+(j+1);
+				refData.setValue( i, j, value );				
+				inData.setValue(i, j, value);
+				if( value % subSize == 0 && index != in.length-1 )
 				{
-					value = i*cols+(j+1);
-					refData.setValue( i, j, value );				
-					inData.setValue(i, j, value);
-					if( value % subSize == 0 && index != in.length-1 )
-						inData = in[ ++index ].getData();	
+					in[ index ].release();
+					index++;
+					inData = in[ index ].acquireModify();
 				}
-		} catch (DMLRuntimeException e) {
-			e.printStackTrace();
-		}
+			}
+		
+		ref.release();
+		in[ index ].release();
 	}
 	
 	private boolean checkOutput(MatrixObjectNew ref, MatrixObjectNew out) 
+		throws CacheException 
 	{
 		boolean ret = true;
 		
-		try {
-			if(    ref.getNumRows() != out.getNumRows() 
-				|| ref.getNumColumns() != out.getNumColumns() )
-			{
-				ret = false; 
-			}
-			else
-			{
-				int rows = ref.getNumRows();
-				int cols = ref.getNumColumns();
-				
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-						if( ref.getValue(i, j) != out.getValue(i, j) )
-						{
-							//System.out.println(ref.getValue(i, j)+" vs "+out.getValue(i, j));
-							ret=false;
-							i=rows; break;
-						}
-			}
-		} catch (DMLRuntimeException e) {
-			e.printStackTrace();
+		MatrixBlock refMB = ref.acquireRead();
+		MatrixBlock outMB = out.acquireRead();
+		
+
+		if(    refMB.getNumRows() != outMB.getNumRows() 
+			|| refMB.getNumColumns() != outMB.getNumColumns() )
+		{
+			ret = false; 
 		}
+		else
+		{
+			int rows = refMB.getNumRows();
+			int cols = refMB.getNumColumns();
+			
+			for( int i=0; i<rows; i++ )
+				for( int j=0; j<cols; j++ )
+					if( refMB.getValue(i, j) != outMB.getValue(i, j) )
+					{
+						//System.out.println(ref.getValue(i, j)+" vs "+out.getValue(i, j));
+						ret=false;
+						i=rows; break;
+					}
+		}
+
+		
+		ref.release();
+		out.release();
 		
 		return ret;
 	}

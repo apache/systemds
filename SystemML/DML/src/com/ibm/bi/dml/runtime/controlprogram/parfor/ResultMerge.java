@@ -1,19 +1,15 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
- * Due to independence of all iterations, any results has the following properties:
+ * Due to independence of all iterations, any result has the following properties:
  * (1) non local var, (2) matrix object, and (3) completely independent.
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
@@ -21,29 +17,24 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  *   * assumption that each result matrix fits entirely in main-memory
  *   * currently no reduction aggregations functions
  * 
- * 
- * @author mboehm
  */
 public class ResultMerge 
 {
-	private MatrixObjectNew    _output = null;
-	private MatrixObjectNew[]  _inputs = null; 
-
-	private boolean         _writeOutput = false;
-	private boolean         _readInputs = false;
+	private MatrixObjectNew   _output = null;
+	private MatrixObjectNew[] _inputs = null; 
 	
-	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in, boolean writeOutput, boolean readInputs )
+	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in )
 	{
 		_output = out;
 		_inputs = in;
-		
-		_writeOutput = writeOutput;
-		_readInputs = readInputs;
 	}
 	
 	/**
+	 * Merge all given input matrices sequentially into the given output matrix.
+	 * The required space in-memory is the size of the output matrix plus the size
+	 * of one input matrix at a time.
 	 * 
-	 * @return
+	 * @return output (merged) matrix
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixObjectNew executeSerialMerge() 
@@ -51,19 +42,23 @@ public class ResultMerge
 	{
 		try
 		{
+			//get output matrix from cache 
+			MatrixBlock outMB = _output.acquireModify();
+			
 			for( MatrixObjectNew in : _inputs ) 
 			{
-				//read each input if required
-				if( _readInputs )
-					readMatrixObject( in );
+				//get input matrix from cache
+				MatrixBlock inMB = in.acquireRead();
 				
 				//merge each input to output
-				merge( _output, in );
+				merge( outMB, inMB );
+				
+				//release input
+				in.release();
 			}
 			
-			//write output if required
-			if( _writeOutput )
-				writeMatrixObject( _output );
+			//release output
+			_output.release();
 		}
 		catch(Exception ex)
 		{
@@ -74,9 +69,12 @@ public class ResultMerge
 	}
 	
 	/**
+	 * Merge all given input matrices in parallel into the given output matrix.
+	 * The required space in-memory is the size of the output matrix plus the size
+	 * of all input matrices.
 	 * 
-	 * @param par
-	 * @return
+	 * @param par degree of parallelism
+	 * @return output (merged) matrix
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixObjectNew executeParallelMerge(int par) 
@@ -84,12 +82,19 @@ public class ResultMerge
 	{
 		try
 		{
+			//get matrix blocks through caching 
+			MatrixBlock outMB = _output.acquireModify();
+			MatrixBlock[] inMB = new MatrixBlock[ _inputs.length ];
+			for( int i=0; i<inMB.length; i++ )
+				inMB[i] = _inputs[i].acquireRead();
+			       
 			//create and start threads
 			Thread[] threads = new Thread[ _inputs.length ];
 			for( int i=0; i<threads.length; i++ )
 			{
-				ResultMergeWorker rmw = new ResultMergeWorker(_inputs[i], _output);
+				ResultMergeWorker rmw = new ResultMergeWorker(inMB[i], outMB);
 				threads[i] = new Thread(rmw);
+				threads[i].setPriority(Thread.MAX_PRIORITY);
 				threads[i].start(); // start execution
 			}
 				
@@ -99,9 +104,10 @@ public class ResultMerge
 				threads[i].join();
 			}
 			
-			//write output if required
-			if( _writeOutput )
-				writeMatrixObject( _output );
+			//release all data
+			_output.release();
+			for( MatrixObjectNew in : _inputs )
+				in.release();
 		}
 		catch(Exception ex)
 		{
@@ -112,96 +118,57 @@ public class ResultMerge
 	}
 	
 	/**
-	 * NOTE: similar to converters, but not directly applicable as we are interested in combining
-	 * to objects with each other; not unary transformation.
+	 * Merges <code>in</code> into <code>out</code> by inserting all non-zeros of <code>in</code>
+	 * into <code>out</code> at their given positions. This is an update-in-place.
 	 * 
+	 * NOTE: similar to converters, but not directly applicable as we are interested in combining
+	 * two objects with each other; not unary transformation.
+	 * 
+	 * @param out
 	 * @param in
-	 * @return
 	 */
-	public void merge( MatrixObjectNew out, MatrixObjectNew in )
+	public void merge( MatrixBlock out, MatrixBlock in )
 	{
-		MatrixBlock mbout = out.getData();
-		MatrixBlock mbin = in.getData();
+		//TODO fine-gained synchronization in setValue (for sparse and dense) due to dynamic allocations, 
 		
-		
-		if( mbin.isInSparseFormat() ) //sparse format
+		if( in.isInSparseFormat() ) //sparse input format
 		{
-			HashMap<CellIndex, Double> sparseMap = mbin.getSparseMap();
+			HashMap<CellIndex, Double> sparseMap = in.getSparseMap();
 			for(Entry<CellIndex,Double> cell : sparseMap.entrySet() )
 			{
 				CellIndex key = cell.getKey();
 				double value  = cell.getValue();
 				
-				mbout.setValue(key, value);
+				out.setValue(key, value);
 			}
 		}
-		else //dense format
+		else //dense input format
 		{
 			//for a merge this case will seldom happen, as each input MatrixObject
 			//has at most 1/numThreads of all values in it.
-			double[] values = mbin.getDenseArray();
-			int rows = mbin.getNumRows();
-			int cols = mbin.getNumColumns();
+			double[] values = in.getDenseArray();
+			int rows = in.getNumRows();
+			int cols = in.getNumColumns();
 			
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
 					if( values[i*cols + j] != 0 ) //for all nnz
-						mbout.setValue(i, j, values[i*cols + j]);	
-		}
+						out.setValue(i, j, values[i*cols + j]);	
+		}	
 	}
 	
 	/**
 	 * 
-	 * @param mo
-	 * @throws IOException
-	 */
-	private void readMatrixObject( MatrixObjectNew mo ) 
-		throws IOException
-	{
-		String dir = mo.getFileName();
-		
-		MatrixFormatMetaData md = (MatrixFormatMetaData) mo.getMetaData();
-		MatrixCharacteristics mc = md.getMatrixCharacteristics();
-		
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(dir, md.getInputInfo(), 
-				                                          mc.get_rows(), mc.get_cols(), 
-				                                          mc.get_rows_per_block(), mc.get_cols_per_block());
-		mo.setData(mb);
-	}
-	
-	/**
-	 * 
-	 * @param mo
-	 * @throws IOException
-	 */
-	private void writeMatrixObject( MatrixObjectNew mo ) 
-		throws IOException 
-	{
-		MatrixBlock mb = mo.getData();
-		String dir = mo.getFileName();
-		
-		MatrixFormatMetaData md = (MatrixFormatMetaData) mo.getMetaData();
-		MatrixCharacteristics mc = md.getMatrixCharacteristics();
-		
-		//overwrite existing file
-		DataConverter.writeMatrixToHDFS( mb, dir, md.getOutputInfo(), 
-                                         mc.get_rows(), mc.get_cols(), 
-                                         mc.get_rows_per_block(), mc.get_cols_per_block());	
-	}
-	
-	/**
-	 * 
-	 * @author mboehm
 	 */
 	private class ResultMergeWorker implements Runnable
 	{
-		private MatrixObjectNew _input  = null;
-		private MatrixObjectNew _output = null;
+		private MatrixBlock _inMB  = null;
+		private MatrixBlock _outMB = null;
 		
-		public ResultMergeWorker(MatrixObjectNew in, MatrixObjectNew out)
+		public ResultMergeWorker(MatrixBlock inMB, MatrixBlock outMB)
 		{
-			_input  = in;
-			_output = out;
+			_inMB  = inMB;
+			_outMB = outMB;
 		}
 
 		@Override
@@ -210,10 +177,7 @@ public class ResultMerge
 			//read each input if required
 			try
 			{
-				if( _readInputs )
-					readMatrixObject( _input );
-				
-				merge( _output, _input );
+				merge( _outMB, _inMB );
 			}
 			catch(Exception ex)
 			{

@@ -42,8 +42,9 @@ public class CacheManager
 	public synchronized void releaseCacheMemory (long numBytes)
 		throws CacheOutOfMemoryException
 	{
-		if (DMLScript.DEBUG) 
+		if (DMLScript.DEBUG)  
 		{
+			//printCacheStatus();
 			System.out.println ("    CACHE: Releasing " + numBytes + " of cache memory...");
 		}
 
@@ -85,14 +86,14 @@ public class CacheManager
 	{
 		if (cdata == null)
 		{
-			if (!DMLScript.DEBUG) 
+			if (DMLScript.DEBUG) 
 			{
 				System.out.println ("    CACHE: Updating envelope size/status - NOTHING TO DO: envelope == null.");
 			}
 			return;
 		}
 		
-		if (!DMLScript.DEBUG) 
+		if (DMLScript.DEBUG) 
 		{
 			System.out.println ("    CACHE: Updating envelope size/status of " + cdata.getDebugName() +
 					String.format (", ID:%4d;  ", cdata.getUniqueCacheID ()) + 

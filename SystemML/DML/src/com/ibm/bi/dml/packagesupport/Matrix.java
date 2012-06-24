@@ -17,14 +17,12 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
-import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.CacheException;
 
 /**
  * Class to represent the matrix input type
  * 
- * @author aghoting, mboehm
+ * @author aghoting
  * 
  */
 public class Matrix extends FIO {
@@ -122,24 +120,16 @@ public class Matrix extends FIO {
 		{
 			try
 			{
-				MatrixBlock mb = _mo.getData();
-				if( mb != null ) //convert in-memory
-				{
-					ret = DataConverter.convertToDoubleMatrix( mb );
-				}
-				else
-				{
-					ret = MapReduceTool.readMatrixFromHDFS(
-				             _filePath, InputInfo.BinaryBlockInputInfo, _rows, _cols, 
-	                         DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-				}
+				MatrixBlock mb = _mo.acquireRead();
+				ret = DataConverter.convertToDoubleMatrix( mb );
+				_mo.release();
 			}
 			catch(Exception ex)
 			{
 				throw new PackageRuntimeException(ex);
 			}
 		}
-		else //traditional ext function
+		else //traditional ext function (matrix file produced by reblock)
 		{
 			double[][] arr = new double[(int) _rows][(int) _cols];
 	
@@ -225,20 +215,17 @@ public class Matrix extends FIO {
 			cblen = DMLTranslator.DMLBlockSize;
 		}
 		
-		Expression.ValueType vt = Expression.ValueType.DOUBLE;
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
-		try {
+		try 
+		{
 			_mo = new MatrixObjectNew(Expression.ValueType.DOUBLE, _filePath, mfmd);
-		} catch (CacheOutOfMemoryException e) {
+			_mo.acquireModify( mb );
+			_mo.release();
+		} 
+		catch (CacheException e) 
+		{
 			throw new IOException(e);
-		} catch (CacheStatusException e) {
-			throw new IOException(e);
-		}
-		
-		_mo.setData( mb );
-		
-		//write matrix data to DFS
-		DataConverter.writeMatrixToHDFS(mb, _filePath, oinfo, _rows, _cols, rblen, cblen); 
+		} 
 	}
 }

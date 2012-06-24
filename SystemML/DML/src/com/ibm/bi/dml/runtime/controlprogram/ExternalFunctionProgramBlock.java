@@ -34,6 +34,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
@@ -45,8 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
-import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
-import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -141,7 +141,18 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		
 		changeTmpInput( _runID ); 
 		changeTmpOutput( _runID );
-				
+		
+		// export input variables to HDFS (see RunMRJobs)
+		ArrayList<DataIdentifier> inputParams = getInputParams();
+		for(DataIdentifier di : inputParams ) {			
+			Data d = getVariable(di.getName());
+			if ( d.getDataType() == DataType.MATRIX ) {
+				MatrixObjectNew inputObj = (MatrixObjectNew) d;
+				if ( inputObj.isDirty() ) 
+					inputObj.exportData();
+			}
+		}
+		
 		// convert block to cell
 		ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
 		tempInst.addAll(block2CellInst);
@@ -648,20 +659,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	}
 
 	protected MatrixObjectNew createOutputMatrixObject( Matrix m ) 
+		throws CacheException 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
-		//MatrixDimensionsMetaData mtd = new MatrixDimensionsMetaData(mc);
-		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);
-		try {
-			return new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
-		} catch (CacheOutOfMemoryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CacheStatusException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;		
+		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
+		return new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
 	}
 
 	/**

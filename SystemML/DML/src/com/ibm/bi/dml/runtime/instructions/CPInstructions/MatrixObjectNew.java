@@ -135,21 +135,6 @@ public class MatrixObjectNew extends CacheableData
 	{
 		_metaData = null;
 	}
-
-	/* TODO Matthias: this function should be removed once caching+parfor integration is finalized */
-	public MatrixBlock getData() {
-		return _data;
-	}
-	
-	/* TODO Matthias: this function should be removed once caching+parfor integration is finalized */
-	public void setData(MatrixBlock d) {
-		_data=d;
-	}
-	
-	/* TODO: this function should be removed once caching+parfor integration is finalized */
-	public double getValue(int i, int j) {
-		return _data.getValue(i,j);
-	}
 	
 	@Override
 	public void updateMatrixCharacteristics (MatrixCharacteristics mc)

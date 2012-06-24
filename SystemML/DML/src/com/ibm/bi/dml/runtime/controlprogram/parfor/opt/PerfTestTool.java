@@ -68,8 +68,6 @@ import com.sun.xml.internal.txw2.output.IndentingXMLStreamWriter;
  * real executions of DML instructions on random input data. Finally, during runtime, the profile
  * is used by the costs estimator in order to create statistic estimates for cost-based optimization.
  * 
- * FIXME: properly discard objects from cache
- * 
  * TODO: complete all CP instructions
  * TODO: add support for MR instructions
  * TODO: add support for TestVariable.PARALLELISM 
@@ -389,7 +387,7 @@ public class PerfTestTool
 		_seqInst.reset();
 		
 		//matrix multiply 
-		/*registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
 		////registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
 		////		             changeToMuliDimTestDefs(TestVariable.DATA_SIZE, getDefaultTestDefs()) ); 
@@ -407,7 +405,7 @@ public class PerfTestTool
 	                         getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );		
 		//central moment
 		registerInstruction( "CP°cm", CPInstructionParser.parseSingleInstruction("CP°cm°A·MATRIX·DOUBLE°2·SCALAR·INT°c·SCALAR·DOUBLE"),
-	            			 getDefaultTestDefs(), true, IOSchema.UNARY_NONE ); */
+	            			 getDefaultTestDefs(), true, IOSchema.UNARY_NONE ); 
 		//co-variance
 		registerInstruction( "CP°cov", CPInstructionParser.parseSingleInstruction("CP°cov°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°c·SCALAR·DOUBLE"),
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );

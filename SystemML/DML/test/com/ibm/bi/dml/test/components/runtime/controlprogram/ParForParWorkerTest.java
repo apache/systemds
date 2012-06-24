@@ -24,7 +24,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 /**
  * TestCases for local task queue.
  * 
- * @author mboehm
  */
 public class ParForParWorkerTest extends ParWorker
 {

@@ -7,7 +7,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
  * creates iterations and group them to tasks according to a task size of numIterations/numWorkers. 
  * There, all tasks are equally sized.
  * 
- * @author mboehm
  */
 public class TaskPartitionerNaive extends TaskPartitionerFixedsize
 {

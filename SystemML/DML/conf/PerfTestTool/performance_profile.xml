@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profile date="Fri Jun 08 12:19:15 PDT 2012">
+  <instruction id="1" name="CP ba+*">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">156.63690940144275,0.0010568220526066309,1.2494018959751441E-9</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">284.37376764883,1586.1766352716077,-41.142536619736035</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">69.42822259960786,0.0031505311506395714,4.351856749567816E-9</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">266.68705539019714,-223.46005977625813,12681.413687271353</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">-1091646.9529362237,38.60550900381977,-2.505717927806613E-6</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">1.6398900833244134E7,-2044974.679904473,2339365.852254732</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-1293182.7654455786,36.38875865043299,-5.075722312959423E-6</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">8610198.186583895,1.201498194664542E7,-285005.95700548444</cost_function>
+  </instruction>
+  <instruction id="2" name="CP Rand">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">125.84769323578067,2.8764692937642414E-4,-9.792739497444262E-11</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">210.81525307334275,94.57462447978519,-94.99792080347767</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">122.00827787894137,2.055152161050054E-4,-2.3183158144785893E-11</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">215.11378270104558,46.046859057580036,19.732065613402717</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">-1110286.7665137865,26.052408509143056,-6.223813524447447E-6</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">2672525.1507670376,1.836856596782589E7,-1.4974916573138332E7</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-1479927.8761622563,25.38209918417226,-5.003441506611412E-6</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">3458543.1091312836,1.1076827149672974E7,-7660812.339923103</cost_function>
+  </instruction>
+  <instruction id="3" name="CP r'">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">124.11535298842223,1.8832261360672193E-4,-7.849581569969384E-12</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">396.85118098051595,-395.52947511513315,185.04918512762347</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">121.50215904136229,1.7030975352359744E-4,-2.0758522346778025E-11</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">185.84994278250477,102.20752689797517,-103.0565269504094</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">-741233.2656640839,38.53002142895778,-3.049471184272726E-6</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">1.3480836269199176E7,7412566.094908933,-4060804.512359841</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-1214665.1746389652,30.912139500777247,2.519213997358338E-7</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">1974101.9552563077,3.0023220585110154E7,-1.0906023194911893E7</cost_function>
+  </instruction>
+  <instruction id="4" name="CP uak+">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">123.87895477572667,1.0123377927659079E-4,-2.2848709255114565E-11</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">147.4696208208592,59.45083318500796,-52.8102179918808</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">120.80458318307488,1.540869797528965E-4,3.3938154024900826E-12</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">178.76029280314884,62.17466895852876,-43.73971521482429</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">95674.32834884412,15.90211949765148,1.115940788947882E-7</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">8078060.407793051,-2240.2408127536387,27412.817635090316</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">166767.4487110089,11.048820180923423,1.0828359176762902E-8</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">350641.60672251205,1.175273511548524E7,250106.0749950572</cost_function>
+  </instruction>
+  <instruction id="5" name="CP extfunct">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">87.93524282359581,1.9158709830007848E-4,1.6416341754345777E-10</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">485.54213850020545,-236.27017368033918,-37.28980370657973</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">64.00152130869786,5.285993557362895E-4,-1.2051897895407809E-10</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">437.81069841986937,25.67930249721799,-276.60853325275144</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">-799896.2985017819,40.52606923193417,-5.8826182816841535E-6</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">1.3287412714495528E7,2.4324961299835294E7,-2.3978620391953144E7</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-965442.409952778,37.14900986529024,-4.927185200791994E-6</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">1.211802821924095E7,2.2918042318109408E7,-1.8422230280007664E7</cost_function>
+  </instruction>
+  <instruction id="6" name="CP cm">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">-12.179171692291279,0.0014625245549100103,-1.2682485857995792E-10</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">657.0477795425378,-60.27125040629063,40.52077890011679</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">2.8055877195995067,6.110352030236302E-4,-3.686807837959391E-11</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">7.176427296758406,611.3301391583557,71.63023174768405</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">8711.349840728479,8.007368409936332,-4.963955581257284E-9</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">3998453.6078045503,26253.35750664946,-19595.61426224515</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-24908.25682089685,115.60675670325654,1.071105241936655E-7</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">1929924.084698948,1.2421200697942331E8,-263314.62775855564</cost_function>
+  </instruction>
+  <instruction id="7" name="CP cov">
+    <cost_function id="1" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">1.6867700355751776,7.302015441367297E-5,-1.4942940868872122E-13</cost_function>
+    <cost_function id="2" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">39.61709559528047,0.22648868905563763,3.876547986992588</cost_function>
+    <cost_function id="3" measure="EXEC_TIME" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-0.7168422175986394,1.2150498067326286E-4,-2.6150487224894984E-11</cost_function>
+    <cost_function id="4" measure="EXEC_TIME" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">35.49553224921022,75.87155435068556,-48.438399896399225</cost_function>
+    <cost_function id="5" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="DENSE">22156.61784681351,15.955580288779144,2.564062624116634E-8</cost_function>
+    <cost_function id="6" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="DENSE">8007011.860231925,-31881.702955365257,17834.642723426583</cost_function>
+    <cost_function id="7" measure="MEMORY_USAGE" lvariable="DATA_SIZE" pvariables="DATA_SIZE" dataformat="SPARSE">-47164.56281586461,231.14121168696227,2.3504495976969697E-7</cost_function>
+    <cost_function id="8" measure="MEMORY_USAGE" lvariable="SPARSITY" pvariables="SPARSITY" dataformat="SPARSE">3976419.0801933897,2.476471436010192E8,385213.73277391953</cost_function>
+  </instruction>
+</profile>

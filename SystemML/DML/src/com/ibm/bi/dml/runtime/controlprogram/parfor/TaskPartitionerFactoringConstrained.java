@@ -4,7 +4,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 
 /**
  * 
- * @author mboehm
  */
 public class TaskPartitionerFactoringConstrained extends TaskPartitionerFactoring
 {

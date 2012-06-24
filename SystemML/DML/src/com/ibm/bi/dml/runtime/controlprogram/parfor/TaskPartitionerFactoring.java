@@ -19,7 +19,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * Factoring: a practical and robust method for scheduling parallel loops. 
  * SC 1991: 610-632]
  * 
- * @author mboehm
  */
 public class TaskPartitionerFactoring extends TaskPartitioner
 {

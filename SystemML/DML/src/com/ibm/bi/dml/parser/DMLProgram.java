@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.utils.DMLException;
@@ -300,7 +301,10 @@ public class DMLProgram {
 			{
 				sbName = "ParForStatementBlock";
 				rtpb = new ParForProgramBlock(prog, iterPredData,iterPred.getParForParams());
-				((ParForProgramBlock)rtpb).setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
+				ParForProgramBlock pfrtpb = (ParForProgramBlock)rtpb;
+				pfrtpb.setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
+				if( pfrtpb.getOptimizationMode() != POptMode.NONE )
+					pfrtpb.setStatementBlock((ParForStatementBlock)sb);
 			}
 			else //ForStatementBlock
 			{
@@ -354,9 +358,9 @@ public class DMLProgram {
 					rtpb = new ExternalFunctionProgramBlockCP(prog, 
 							fstmt.getInputParams(), fstmt.getOutputParams(), 
 							((ExternalFunctionStatement) fstmt).getOtherParams(),
-							config.getTextValue("scratch")+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-                                                           ProgramConverter.CP_ROOT_THREAD_ID + 
-                                                           ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
+							config.getTextValue(DMLConfig.SCRATCH_SPACE)+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+                                                                         ProgramConverter.CP_ROOT_THREAD_ID + 
+                                                                         ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
 				}
 				else
 				{

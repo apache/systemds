@@ -53,12 +53,11 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  *   * serializing and parsing of programs, program blocks, functions program blocks
  * 
  * TODO: CV, EL, ELUse program blocks not considered so far
- *  
- * @author mboehm
  *
  */
 public class ProgramConverter 
 {
+	//TODO change delimiters to escaped specific characters
 	public static final String NEWLINE           = "\n"; //System.lineSeparator();
 	public static final String COMPONENTS_DELIM  = ";";
 	public static final String ELEMENT_DELIM     = ",";
@@ -140,8 +139,9 @@ public class ProgramConverter
 				}
 				else if ( pb instanceof ParForProgramBlock )
 				{
+					ParForProgramBlock pfpb = (ParForProgramBlock) pb;
 					if( ParForProgramBlock.ALLOW_NESTED_PARALLELISM )
-						tmpPB = createDeepCopyParForProgramBlock((ParForProgramBlock) pb, pid, IDPrefix, prog);
+						tmpPB = createDeepCopyParForProgramBlock(pfpb, pid, IDPrefix, prog);
 					else 
 						tmpPB = createDeepCopyForProgramBlock((ForProgramBlock) pb, pid, IDPrefix, prog);
 				}				
@@ -164,7 +164,7 @@ public class ProgramConverter
 		
 		return tmp;
 	}
-
+	
 	/**
 	 * 
 	 * @param wpb
@@ -235,6 +235,28 @@ public class ProgramConverter
 	
 	/**
 	 * 
+	 * @param fpb
+	 * @param prog
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static ForProgramBlock createShallowCopyForProgramBlock(ForProgramBlock fpb, Program prog ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterablePredicateVars());
+		
+		tmpPB.setFromInstructions( fpb.getFromInstructions() );
+		tmpPB.setToInstructions( fpb.getToInstructions() );
+		tmpPB.setIncrementInstructions( fpb.getIncrementInstructions() );
+		tmpPB.setExitInstructions( fpb.getExitInstructions() );
+		tmpPB.setChildBlocks( fpb.getChildBlocks() );
+		
+		return tmpPB;
+	}
+	
+	/**
+	 * 
 	 * @param pfpb
 	 * @param pid
 	 * @param IDPrefix
@@ -299,7 +321,11 @@ public class ProgramConverter
 		{
 			ExternalFunctionProgramBlockCP efpb = (ExternalFunctionProgramBlockCP) fpb;
 			HashMap<String,String> tmp3 = efpb.getOtherParams();
-			copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
+			
+			if( IDPrefix!=-1 )
+				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
+			else	
+				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
 		}
 		else if( fpb instanceof ExternalFunctionProgramBlock )
 		{
@@ -366,6 +392,7 @@ public class ProgramConverter
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		Instruction inst = null;
+
 		String tmpString = oInst.toString().replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, 
 				                                       ProgramConverter.CP_CHILD_THREAD+pid);
 		
@@ -851,7 +878,7 @@ public class ProgramConverter
 			sb.append( rSerializeProgramBlocks( wpb.getChildBlocks() ) );
 			sb.append( PARFOR_PBS_END );
 		}
-		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
+		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock ) )
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pb; 
 			sb.append( serializeStringArray(fpb.getIterablePredicateVars()) );
@@ -1013,7 +1040,7 @@ public class ProgramConverter
 		
 		//handle program
 		String progStr = st.nextToken();
-		progStr = progStr.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction 
+	    progStr = progStr.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction  
 		Program prog = parseProgram( progStr, id ); 
 		
 		//handle symbol table
@@ -1096,17 +1123,21 @@ public class ProgramConverter
 		HashMap<String,FunctionProgramBlock> ret = new HashMap<String, FunctionProgramBlock>();
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer( in, ELEMENT_DELIM );
 		
-		//System.out.println(in);
-		
 		while( st.hasMoreTokens() )
 		{
-			String lvar = st.nextToken();
-			int index = lvar.indexOf("=");
-			String tmp1 = lvar.substring(0, index);
-			String tmp2 = lvar.substring(index + 1);
+			String lvar  = st.nextToken(); //with ID = CP_CHILD_THREAD+id for current use
 			
-			//System.out.println(tmp2);
+			//put first copy into prog (for direct use)
+			int index = lvar.indexOf("=");
+			String tmp1 = lvar.substring(0, index); // + CP_CHILD_THREAD+id;
+			String tmp2 = lvar.substring(index + 1);
 			ret.put(tmp1, (FunctionProgramBlock)rParseProgramBlock(tmp2, prog, id));
+			
+			//put first copy into prog (for future deep copies)
+			//index = lvar2.indexOf("=");
+			//tmp1 = lvar2.substring(0, index);
+			//tmp2 = lvar2.substring(index + 1);
+			//ret.put(tmp1, (FunctionProgramBlock)rParseProgramBlock(tmp2, prog, id));
 		}
 
 		return ret;
@@ -1163,7 +1194,7 @@ public class ProgramConverter
 			pb = rParseFunctionProgramBlock( in, prog, id );
 		else if ( in.startsWith(PARFOR_PB_EFC ) )
 			pb = rParseExternalFunctionProgramBlock( in, prog, id );
-		else if ( in.startsWith(PARFOR_PB_BEGIN ) )
+ 		else if ( in.startsWith(PARFOR_PB_BEGIN ) )
 			pb = rParseGenericProgramBlock( in, prog, id );
 		else 
 			throw new DMLUnsupportedOperationException( NOT_SUPPORTED_PB+" "+in );
@@ -1260,7 +1291,7 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		String lin = in.substring( PARFOR_PB_PARFOR.length(),in.length()-PARFOR_PB_END.length()); 
-		lin = lin.replaceAll(CP_CHILD_THREAD+id, CP_ROOT_THREAD_ID); // reset placeholder to preinit state (replaced by deep copies)
+		lin = lin.replaceAll(CP_CHILD_THREAD+id, CP_ROOT_THREAD_ID); // reset placeholder to preinit state (replaced by deep copies of nested parfor pbs)
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
 		LocalVariableMap vars = parseVariables(st.nextToken());
@@ -1402,6 +1433,7 @@ public class ProgramConverter
 		Vector<DataIdentifier> tmp1 = new Vector<DataIdentifier>(dat1);
 		Vector<DataIdentifier> tmp2 = new Vector<DataIdentifier>(dat2);
 		
+		//only CP external functions, because no nested MR jobs for reblocks
 		ExternalFunctionProgramBlockCP efpb = new ExternalFunctionProgramBlockCP(prog, tmp1, tmp2, dat3, basedir);
 		//efpb.setInstructions(inst);
 		efpb.setChildBlocks(pbs);
@@ -1652,7 +1684,6 @@ public class ProgramConverter
 	 * search for delim-Strings on the same hierarchy level, while delims of lower hierarchy
 	 * levels are skipped.  
 	 * 
-	 * @author mboehm
 	 */
 	private static class HierarchyAwareStringTokenizer //extends StringTokenizer
 	{

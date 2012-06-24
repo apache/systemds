@@ -13,7 +13,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * creates iterations and group them to tasks according to the given task size. There, all
  * tasks are equally sized.
  * 
- * @author mboehm
  */
 public class TaskPartitionerFixedsize extends TaskPartitioner
 {

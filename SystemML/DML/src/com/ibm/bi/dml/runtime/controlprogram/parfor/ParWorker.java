@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -18,7 +19,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * Super class for master/worker pattern implementations. Central place to
  * execute set or range tasks.
  * 
- * @author mboehm
  */
 public abstract class ParWorker
 {
@@ -92,6 +92,9 @@ public abstract class ParWorker
 	protected void executeTask( Task task ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		if(DMLScript.DEBUG)
+			System.out.println("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
+		
 		switch( task.getType() )
 		{
 			case ITERATION_SET:

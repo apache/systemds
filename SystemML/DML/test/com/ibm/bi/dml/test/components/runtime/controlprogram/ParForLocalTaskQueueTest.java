@@ -16,7 +16,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 /**
  * TestCases for local task queue.
  * 
- * @author mboehm
  */
 public class ParForLocalTaskQueueTest 
 {

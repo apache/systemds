@@ -31,7 +31,6 @@ import com.ibm.bi.dml.utils.LanguageException;
  * * multiple matrix references per statement
  *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
  * 
- * @author mboehm
  *
  */
 public class ParForDependencyAnalysisTest 

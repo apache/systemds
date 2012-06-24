@@ -4,7 +4,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
  * Helper class for encapsulated time measurements.
  * 
  * 
- * @author mboehm
  */
 public class Timing 
 {

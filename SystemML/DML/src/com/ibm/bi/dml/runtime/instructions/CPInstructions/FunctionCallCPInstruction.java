@@ -169,4 +169,14 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	public String getGraphString() {
 		return "ExtBuiltinFunc: " + _functionName;
 	}
+	
+	public ArrayList<String> getBoundInputParamNames()
+	{
+		return _boundInputParamNames;
+	}
+	
+	public ArrayList<String> getBoundOutputParamNames()
+	{
+		return _boundOutputParamNames;
+	}
 }

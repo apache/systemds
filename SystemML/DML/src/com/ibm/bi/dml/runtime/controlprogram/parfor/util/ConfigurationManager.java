@@ -5,11 +5,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 /**
  * Singleton for accessing the parsed and merged system configuration.
  * 
- * TODO: would require changes if multiple DML scripts with different configurations run in the same JVM
- * 
- * 
- * @author mboehm
- *
+ * NOTE: parallel execution of multiple DML scripts (in the same JVM) with different configurations  
+ *       would require changes/extensions of this class. 
  */
 public class ConfigurationManager 
 {

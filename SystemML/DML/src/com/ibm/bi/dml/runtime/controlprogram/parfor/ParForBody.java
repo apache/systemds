@@ -7,16 +7,15 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 
 /**
- * Wrapper for exchanging parfor body datastructures.
+ * Wrapper for exchanging parfor body data structures.
  * 
- * @author mboehm
  */
 public class ParForBody 
 {
-	private LocalVariableMap	 		_variables;
-	private ArrayList<String>           _resultVarNames;
-	private ArrayList<ProgramBlock> 	_childBlocks;
-	private ExecutionContext 			_ec;
+	private LocalVariableMap	 	_variables;
+	private ArrayList<String>       _resultVarNames;
+	private ArrayList<ProgramBlock> _childBlocks;
+	private ExecutionContext 		_ec;
 	
 	public ParForBody()
 	{
@@ -71,6 +70,4 @@ public class ParForBody
 	{
 		_ec = ec;
 	}
-	
-	
 }

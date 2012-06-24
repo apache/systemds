@@ -14,7 +14,6 @@ import com.ibm.bi.dml.api.DMLScript;
  * and readers. Synchronized writes and reads ensure that each task is only read by exactly one
  * reader. Furthermore, the queue is implemented as a simple FIFO.
  * 
- * @author mboehm
  *
  */
 public class LocalTaskQueue 

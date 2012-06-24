@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
 /**
  * ID sequence for generating unique long identifiers with start 0 and increment 1.
  * 
- * @author mboehm
  */
 public class IDSequence 
 {
@@ -33,4 +32,18 @@ public class IDSequence
 	{
 		_current = 0;
 	}
+	
+	/*
+	private AtomicLong _seq = new AtomicLong(0);
+	
+	public long getNextID()
+	{
+		return _seq.getAndIncrement();
+	}
+	
+	public void reset()
+	{
+		_seq = new AtomicLong( 0 );
+	}
+	*/
 }

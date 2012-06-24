@@ -12,7 +12,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  * Resiliency approach: retry on computation error, abort on task queue error
  * 
  * 
- * @author mboehm
  */
 public class LocalParWorker extends ParWorker implements Runnable
 {
@@ -25,8 +24,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 	{
 		super(ID, body);
 
-		_taskQueue   = q;
-		_stopped     = false;
+		_taskQueue = q;
+		_stopped   = false;
 		
 		_max_retry = max_retry;
 	}
@@ -51,12 +50,12 @@ public class LocalParWorker extends ParWorker implements Runnable
 			time1.start();
 		}
 		
-		// continuous execution:
-		// execute tasks until (1) stopped or (2) no more tasks
+		// continuous execution (execute tasks until (1) stopped or (2) no more tasks)
+		Task lTask = null; 
+		
 		while( !_stopped ) 
 		{
 			//dequeue the next task (abort on NO_MORE_TASKS or error)
-			Task lTask = null; 
 			try
 			{
 				lTask = _taskQueue.dequeueTask();
@@ -66,8 +65,12 @@ public class LocalParWorker extends ParWorker implements Runnable
 			}
 			catch(Exception ex)
 			{
+				//ex.printStackTrace();
+				
 				// abort on taskqueue error
-				throw new RuntimeException(ex); 
+				System.err.println("Error reading from task queue: "+ex.getMessage());
+				System.err.println("Stopping LocalParWorker.");
+				break; //no exception thrown to prevent blocking on join
 			}
 			
 			//execute the task sequentially (re-try on error)
@@ -78,18 +81,26 @@ public class LocalParWorker extends ParWorker implements Runnable
 			{
 				try 
 				{
+					///////
 					//core execution (see ParWorker)
 					executeTask( lTask );
 					success = true;
 				} 
 				catch (Exception ex) 
 				{
-					System.out.println("ParFOR: Failed to execute task "+lTask.toString()+" retry:"+retrys);
+					ex.printStackTrace();
+					
+					System.out.println("ParFOR: Failed to execute "+lTask.toString()+", retry:"+retrys+" ("+ex.getMessage()+")");
 					
 					if( retrys > 0 )
 						retrys--; //retry on task error
 					else
-						throw new RuntimeException(ex); 
+					{
+						// abort on no remaining retrys
+						System.err.println("Error executing task: "+ex.getMessage());
+						System.err.println("Stopping LocalParWorker.");
+						break; //no exception thrown to prevent blocking on join 
+					}
 				}
 			}
 		}	

@@ -11,7 +11,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 /**
  * Different test cases for serialization and parsing of all kinds of task representations.
  * 
- * @author mboehm
  *
  */
 public class ParForTaskSerializationTest 

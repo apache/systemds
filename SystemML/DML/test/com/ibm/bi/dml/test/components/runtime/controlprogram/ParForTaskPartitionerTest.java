@@ -25,7 +25,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * Different test cases for task partitioners w.r.t. both number of created tasks
  * and completeness of created tasks.
  * 
- * @author mboehm
  *
  */
 public class ParForTaskPartitionerTest 

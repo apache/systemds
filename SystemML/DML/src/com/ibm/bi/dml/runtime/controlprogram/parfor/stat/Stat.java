@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
 /**
  * Collection of all ParFor statistic types.
  * 
- * @author mboehm
  *
  */
 public enum Stat

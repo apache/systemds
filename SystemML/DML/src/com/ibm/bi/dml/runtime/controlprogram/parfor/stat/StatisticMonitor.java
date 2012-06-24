@@ -4,16 +4,20 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+
 /**
  * This singleton statistic monitor is used to consolidate all parfor runtime statistics.
  * Its purpose is mainly for (1) debugging and (2) potential optimization.
  * 
- * @author mboehm
+ * 
  *
  */
 public class StatisticMonitor 
 {	
-	private static HashMap<Long,Long>                  	      _mapPwPf;       //mapping parfor to parworkers
+	private static HashMap<Long,Long>                              _mapPwPf;       //mapping parfor to parworkers
 	private static HashMap<Long, HashMap<Stat,LinkedList<Double>>> _pfstats;       //parfor statistics
 	private static HashMap<Long, HashMap<Stat,LinkedList<Double>>> _pwstats;       //parworker statistics
 	
@@ -146,14 +150,14 @@ public class StatisticMonitor
 				sb.append(" Run #"+i+"\n");
 				sb.append("  Num Threads      = "+(int)(double)stats.get(Stat.PARFOR_NUMTHREADS).get(i)+"\n");
 				sb.append("  TaskSize         = "+(int)(double)stats.get(Stat.PARFOR_TASKSIZE).get(i)+"\n");
-				sb.append("  Task Partitioner = "+(int)(double)stats.get(Stat.PARFOR_TASKPARTITIONER).get(i)+"\n");
-				sb.append("  Exec Model       = "+(int)(double)stats.get(Stat.PARFOR_EXECMODE).get(i)+"\n");
+				sb.append("  Task Partitioner = "+PTaskPartitioner.values()[(int)(double)stats.get(Stat.PARFOR_TASKPARTITIONER).get(i)]+"\n");
+				sb.append("  Exec Mode        = "+PExecMode.values()[(int)(double)stats.get(Stat.PARFOR_EXECMODE).get(i)]+"\n");
 				sb.append("  Num Tasks        = "+(int)(double)stats.get(Stat.PARFOR_NUMTASKS).get(i)+"\n");
 				sb.append("  Num Iterations   = "+(int)(double)stats.get(Stat.PARFOR_NUMITERS).get(i)+"\n");
 				
 				if( stats.containsKey(Stat.OPT_OPTIMIZER) )
 				{
-					sb.append("  Optimizer               = "+(int)(double)stats.get(Stat.OPT_OPTIMIZER).get(i)+"\n");
+					sb.append("  Optimizer               = "+POptMode.values()[(int)(double)stats.get(Stat.OPT_OPTIMIZER).get(i)]+"\n");
 					sb.append("  Opt Num Total Plans     = "+(int)(double)stats.get(Stat.OPT_NUMTPLANS).get(i)+"\n");
 					sb.append("  Opt Num Evaluated Plans = "+(int)(double)stats.get(Stat.OPT_NUMEPLANS).get(i)+"\n");
 					sb.append("  Time INIT OPTIM   = "+stats.get(Stat.OPT_T).get(i)+"ms\n");
@@ -173,7 +177,8 @@ public class StatisticMonitor
 					{
 						long pid = e.getKey();
 						HashMap<Stat,LinkedList<Double>> stats2 = _pwstats.get(pid); 
-						
+						if(stats2==null)
+							continue;
 						int ntasks=(int)(double)stats2.get(Stat.PARWRK_NUMTASKS).get(0);
 						int niters=(int)(double)stats2.get(Stat.PARWRK_NUMITERS).get(0);
 						

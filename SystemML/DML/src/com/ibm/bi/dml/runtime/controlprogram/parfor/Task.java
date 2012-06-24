@@ -12,7 +12,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
  * 
  * NOTE: (Extension possibility: group of statements) 
  * 
- * @author mboehm
  */
 public class Task 
 {

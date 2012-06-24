@@ -4,7 +4,6 @@ package com.ibm.bi.dml.parser;
  * This ParForStatement is essentially identical to a ForStatement, except an extended
  * toString method for printing the 'parfor' keyword.
  * 
- * @author mboehm
  *
  */
 public class ParForStatement extends ForStatement

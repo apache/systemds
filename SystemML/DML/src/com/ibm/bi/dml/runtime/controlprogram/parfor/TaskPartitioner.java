@@ -12,7 +12,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * 
  * Known implementation classes: TaskPartitionerFixedsize, TaskPartitionerFactoring
  * 
- * @author mboehm
  */
 public abstract class TaskPartitioner 
 {

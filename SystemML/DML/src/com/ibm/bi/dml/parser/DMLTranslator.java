@@ -1,4 +1,3 @@
-
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
@@ -12,6 +11,7 @@ import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
+import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.RandOp;
@@ -188,15 +188,9 @@ public class DMLTranslator {
 		
 			for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock current = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-								
-				//currentLiveIn = new VariableSet();
-				//for (DataIdentifier id : fstmt.getInputParams()){
-				//	currentLiveIn.addVariable(id.getName(), id);
-				//}
 				constructHops(current);
 			}
 		}
-		
 		
 		// handle regular program blocks
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
@@ -1622,6 +1616,7 @@ public class DMLTranslator {
 				InputStatement is = (InputStatement) current;
 				
 				DataExpression source = is.getSource();
+				
 				DataIdentifier target = is.getIdentifier();
 
 				DataOp ae = (DataOp)processExpression(source, target, _ids);
@@ -1688,18 +1683,40 @@ public class DMLTranslator {
 				DataIdentifier target = as.getTarget();
 				Expression source = as.getSource();
 				
+				// CASE: regular assignment statement -- source is DML expression that is NOT user-defined or external function 
 				if (!(source instanceof FunctionCallIdentifier)){
 				
-					Hops ae = processExpression(source, target, _ids);
-					_ids.put(target.getName(), ae);
-					target.setProperties(source.getOutput());
-					Integer statementId = liveOutToTemp.get(target.getName());
-					if ((statementId != null) && (statementId.intValue() == i)) {
-						DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-						transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
-						updatedLiveOut.addVariable(target.getName(), target);
-						output.add(transientwrite);
+					// CASE: target is regular data identifier
+					if (!(target instanceof IndexedIdentifier)) {
+					
+						Hops ae = processExpression(source, target, _ids);
+						_ids.put(target.getName(), ae);
+						target.setProperties(source.getOutput());
+						Integer statementId = liveOutToTemp.get(target.getName());
+						if ((statementId != null) && (statementId.intValue() == i)) {
+							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
+							transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
+							updatedLiveOut.addVariable(target.getName(), target);
+							output.add(transientwrite);
+						}
+					} // end if (!(target instanceof IndexedIdentifier)) {
+					
+					// TODO: DRB: CASE: target is indexed identifier (left-hand side indexed expression)
+					else {
+						Hops ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, _ids);
+						_ids.put(target.getName(), ae);
+						
+						target.setProperties(source.getOutput());
+						Integer statementId = liveOutToTemp.get(target.getName());
+						if ((statementId != null) && (statementId.intValue() == i)) {
+							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
+							transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
+							updatedLiveOut.addVariable(target.getName(), target);
+							output.add(transientwrite);
+						}
 					}
+					
+					
 				}
 				else {
 					
@@ -2081,10 +2098,81 @@ public class DMLTranslator {
 		return processExpression(source, tmpOut, hops );	
 	}
 	
+	private Hops processLeftIndexedExpression(Expression source, IndexedIdentifier target, HashMap<String, Hops> hops)  
+			throws ParseException {
+
+		// process target indexed expressions
+		Hops rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
+		
+		if (target.getRowLowerBound() != null)
+			rowLowerHops = processExpression(target.getRowLowerBound(),null,hops);
+		else
+			rowLowerHops = new LiteralOp(Long.toString(1), 1);
+		
+		if (target.getRowUpperBound() != null)
+			rowUpperHops = processExpression(target.getRowUpperBound(),null,hops);
+		else
+		{
+			if ( target.getDim1() != -1 ) 
+				rowUpperHops = new LiteralOp(Long.toString(target.getDim1()), target.getDim1());
+			else
+			{
+				try {
+					//currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hops.OpOp1.NROW, expr);
+					rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(target.getName()));
+				} catch (HopsException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		if (target.getColLowerBound() != null)
+			colLowerHops = processExpression(target.getColLowerBound(),null,hops);
+		else
+			colLowerHops = new LiteralOp(Long.toString(1), 1);
+		
+		if (target.getColUpperBound() != null)
+			colUpperHops = processExpression(target.getColUpperBound(),null,hops);
+		else
+		{
+			if ( target.getDim2() != -1 ) 
+				colUpperHops = new LiteralOp(Long.toString(target.getDim2()), target.getDim2());
+			else
+			{
+				try {
+					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(target.getName()));
+				} catch (HopsException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		
+		//if (target == null) {
+		//	target = createTarget(source);
+		//}
+		
+		// process the source expression to get source Hops
+		Hops sourceOp = processExpression(source, target, hops);
+		
+		// process the target to get targetHops
+		Hops targetOp = hops.get(target.getName());
+		if (targetOp == null)
+			throw new ParseException("ERROR: must define matrix " + target.getName() + " before indexing operations are allowed ");
+		
+		Hops leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
+				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+		
+		//IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
+		//		hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+	
+	
+		return leftIndexOp;
+	}
+	
+	
 	private Hops processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hops> hops) 
 		throws ParseException {
 	
-		// process 
+		// process Hops for indexes (for source)
 		Hops rowLowerHops = null, rowUpperHops = null, colLowerHops = null, colUpperHops = null;
 		
 		if (source.getRowLowerBound() != null)

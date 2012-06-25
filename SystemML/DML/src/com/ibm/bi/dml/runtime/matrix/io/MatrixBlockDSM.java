@@ -2878,7 +2878,6 @@ public class MatrixBlockDSM extends MatrixValue{
 	 * @param matrixB second matrix
 	 * @param resultMatrix result matrix
 	 * @throws IllegalArgumentException if the matrixes are of wrong format
-	 * @author schnetter
 	 */
 	public static void matrixMult(MatrixBlockDSM matrixA, MatrixBlockDSM matrixB,
 			MatrixBlockDSM resultMatrix)

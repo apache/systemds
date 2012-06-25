@@ -2,7 +2,6 @@ package com.ibm.bi.dml.packagesupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ToolRunner;
-import org.nimble.debug.Debugger;
 import org.nimble.io.utils.FixedWidthDataset;
 import org.nimble.utils.IJVtoCSV;
 import org.nimble.utils.I_RowtoIJV;

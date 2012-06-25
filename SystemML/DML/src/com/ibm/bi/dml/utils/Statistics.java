@@ -2,9 +2,6 @@ package com.ibm.bi.dml.utils;
 
 /**
  * This class captures all statistics.
- * 
- * @author Felix Hamborg
- * 
  */
 public class Statistics {
 	private static long lStartTime = 0;

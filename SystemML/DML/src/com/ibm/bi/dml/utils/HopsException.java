@@ -5,8 +5,6 @@ package com.ibm.bi.dml.utils;
 
 /**
  * <p>Exception occurring in the HOP level.</p>
- * 
- * @author reinwald
  */
 @SuppressWarnings("serial")
 public class HopsException extends DMLException {

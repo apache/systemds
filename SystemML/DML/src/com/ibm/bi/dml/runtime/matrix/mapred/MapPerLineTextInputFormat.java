@@ -16,9 +16,6 @@ import org.apache.hadoop.mapred.TextInputFormat;
 /**
  * <p>Genereates a single mapper for each input line.</p>
  * <p>Should not be used for large files, as everything is read to create the splits.</p>
- * 
- * @author ytian
- * @author schnetter
  */
 public class MapPerLineTextInputFormat extends TextInputFormat
 {

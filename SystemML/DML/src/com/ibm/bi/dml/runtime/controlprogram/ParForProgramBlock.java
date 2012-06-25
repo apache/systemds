@@ -44,6 +44,7 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 
@@ -884,8 +885,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructTaskfileName()
 	{
-		return ConfigurationManager.getConfig().getTextValue("scratch")+
-		       PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
+		String scratchSpaceLoc = null;
+		try {
+			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+		} catch (Exception e){
+			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+		}
+	
+		return scratchSpaceLoc + PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
 	}
 	
 	/**
@@ -896,7 +903,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructResultfileName()
 	{
-		return ConfigurationManager.getConfig().getTextValue("scratch")+
-		       PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
+		String scratchSpaceLoc = null;
+		try {
+			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+		} catch (Exception e){
+			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+		}
+		
+		return scratchSpaceLoc + PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
 	}
 }

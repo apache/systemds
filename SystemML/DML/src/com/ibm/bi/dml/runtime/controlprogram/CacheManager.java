@@ -13,7 +13,6 @@ import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
  * A global class that manages the cache.  Refer to {@link CacheableData} for
  * more information.
  * 
- * @author Alexandre Evfimievski
  */
 public class CacheManager
 {

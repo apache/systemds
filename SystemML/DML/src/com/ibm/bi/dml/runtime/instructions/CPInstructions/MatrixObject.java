@@ -35,8 +35,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * matrices from HDFS and convert them to a specific format/representation. It
  * is also able to write several formats/representation of matrices to HDFS.
  * 
- * @author Felix Hamborg
- * 
  */
 public class MatrixObject extends Data {
 	/*

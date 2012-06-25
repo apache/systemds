@@ -3,8 +3,6 @@ package com.ibm.bi.dml.utils;
 /**
  * This class provides helper methods for external built-in functions.
  * 
- * @author Felix Hamborg
- * 
  */
 public class ExtBuiltinHelper {
 	/**

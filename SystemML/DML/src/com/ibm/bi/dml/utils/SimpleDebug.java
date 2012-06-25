@@ -8,8 +8,6 @@ import java.util.Date;
  * This class provides support for debugging on machines where runtime-debugging
  * is not accessible.
  * 
- * @author Felix Hamborg
- * 
  */
 public class SimpleDebug {
 	/**

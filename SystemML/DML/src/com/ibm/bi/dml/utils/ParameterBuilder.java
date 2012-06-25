@@ -13,10 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class to help setting variables in a script.
- * 
- * @author Felix Hamborg
- * 
+ * Class to help setting variables in a script. 
  */
 public class ParameterBuilder {
 	/** String used to replace variables in scripts */

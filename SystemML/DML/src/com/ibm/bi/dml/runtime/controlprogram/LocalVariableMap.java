@@ -13,8 +13,6 @@ import java.util.Set;
  * Replaces <code>HashMap&lang;String, Data&rang;</code> as the table of
  * variable names and references.  No longer supports global consistency.
  * 
- * @author Alexandre Evfimievski
- * 
  */
 public class LocalVariableMap implements Cloneable
 {

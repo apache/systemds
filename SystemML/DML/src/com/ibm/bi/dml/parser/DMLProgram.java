@@ -355,12 +355,19 @@ public class DMLProgram {
 				
 				if( isCP )
 				{
+					String scratchSpaceLoc = null;
+					try {
+						scratchSpaceLoc = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+					} catch (Exception e){
+						System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+					}
+					
 					rtpb = new ExternalFunctionProgramBlockCP(prog, 
 							fstmt.getInputParams(), fstmt.getOutputParams(), 
 							((ExternalFunctionStatement) fstmt).getOtherParams(),
-							config.getTextValue(DMLConfig.SCRATCH_SPACE)+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-                                                                         ProgramConverter.CP_ROOT_THREAD_ID + 
-                                                                         ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
+							scratchSpaceLoc+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+                                            ProgramConverter.CP_ROOT_THREAD_ID + 
+                                            ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
 				}
 				else
 				{

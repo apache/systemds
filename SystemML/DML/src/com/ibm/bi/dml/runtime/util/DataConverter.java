@@ -51,8 +51,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * external data representations to representations needed external functions,
  * such as those in JLapack, by and vice versa.
  * 
- * @author Felix Hamborg
- * 
  */
 public class DataConverter {
 	private static Configuration conf = new Configuration();

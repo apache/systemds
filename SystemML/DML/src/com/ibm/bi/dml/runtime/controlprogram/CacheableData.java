@@ -28,8 +28,6 @@ import com.ibm.bi.dml.utils.CacheStatusException;
  * To make the eviction meaningful, the rest of the system
  * must dispose of all references prior to giving the permission for eviction. 
  * 
- * @author Alexandre Evfimievski
- * 
  */
 public abstract class CacheableData extends Data
 {
@@ -102,7 +100,7 @@ public abstract class CacheableData extends Data
 	 * The data structure that keeps track of all cacheable data blobs.
 	 * It is unique and globally defined.
 	 */
-	private static final CacheManager cacheManager = new CacheManager (DMLScript.maxCacheMemory);
+	public static CacheManager cacheManager = null;
 	
 	/**
 	 * The global counter for the objects of this class, used to provide

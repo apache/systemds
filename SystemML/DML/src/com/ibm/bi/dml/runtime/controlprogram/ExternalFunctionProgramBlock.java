@@ -324,8 +324,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// block
 		for (int i = 0; i < matrices.size(); i++) {
 
+			String scratchSpaceLoc = null;
+			try {
+				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			} catch (Exception e){
+				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+			}
+			
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + "/" +
+			outputs[i] = scratchSpaceLoc + "/" +
                          _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
 			blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = textCellInputInfo;
@@ -435,8 +442,16 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// create a GMR job that transforms each of these matrices from block to
 		// cell
 		for (int i = 0; i < matrices.size(); i++) {
+			
+			String scratchSpaceLoc = null;
+			try {
+				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			} catch (Exception e){
+				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+			}
+			
 			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + "/" +
+			outputs[i] = scratchSpaceLoc + "/" +
                          _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
 			unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 			inputInfo[i] = binBlockInputInfo;

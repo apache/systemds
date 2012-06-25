@@ -6,11 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 
- * @author Alexandre Evfimievski
- * 
- */
 public class GlobalVariableMap
 {
 	private static String eol = System.getProperty ("line.separator");  

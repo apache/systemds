@@ -2,8 +2,6 @@ package com.ibm.bi.dml.utils;
 
 /**
  * <p>Exception occurring in the DML framework.</p>
- * 
- * @author schnetter
  */
 @SuppressWarnings("serial")
 public abstract class DMLException extends Exception {

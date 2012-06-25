@@ -5,8 +5,6 @@ package com.ibm.bi.dml.utils;
 
 /**
  * <p>Exception occurring at the Language level.</p>
- * 
- * @author reinwald
  */
 @SuppressWarnings("serial")
 public class LanguageException extends DMLException {

@@ -1593,7 +1593,6 @@ public class MatrixBlock1D extends MatrixValue{
 	 * @param matrixB second matrix
 	 * @param resultMatrix result matrix
 	 * @throws IllegalArgumentException if the matrixes are of wrong format
-	 * @author schnetter
 	 */
 	public static void matrixMult(MatrixBlock1D matrixA, MatrixBlock1D matrixB,
 			MatrixBlock1D resultMatrix)

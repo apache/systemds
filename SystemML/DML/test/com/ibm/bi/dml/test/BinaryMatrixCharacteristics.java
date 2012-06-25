@@ -4,7 +4,7 @@ package com.ibm.bi.dml.test;
 /**
  * <p>Contains characteristics about a binary matrix.</p>
  * 
- * @author schnetter
+ * 
  */
 public class BinaryMatrixCharacteristics {
     

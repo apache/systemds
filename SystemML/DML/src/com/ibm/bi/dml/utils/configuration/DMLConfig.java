@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.utils.configuration;
 
 import java.io.IOException;
+import com.ibm.bi.dml.parser.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -28,6 +29,7 @@ public class DMLConfig
 	public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
 	public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
 	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
+	public static final String CACHE_SIZE			= "cachesize";
 	
 	//internal default values
 	public static final int DEFAULT_BLOCK_SIZE = 1000;
@@ -48,39 +50,47 @@ public class DMLConfig
 	 * @throws IOException
 	 */
 
-	public DMLConfig(String fileName) throws ParserConfigurationException, SAXException, IOException 
+	public DMLConfig(String fileName) throws ParseException
 	{
 		config_file_name = fileName;
-		parseConfig();
+		try {
+			parseConfig();
+		}
+		catch (Exception e){
+			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
+		}
 	}
 	
-	public void merge(DMLConfig otherConfig) throws ParserConfigurationException, SAXException, IOException 
+	public void merge(DMLConfig otherConfig) throws ParseException
 	{
 		if (otherConfig == null) 
 			return;
 	
-		// for each element in otherConfig, either overwrite existing value OR add to defaultConfig
-		NodeList otherConfigNodeList = otherConfig.xml_root.getChildNodes();
-		if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
-			for (int i=0; i<otherConfigNodeList.getLength(); i++){
-				org.w3c.dom.Node optionalConfigNode = otherConfigNodeList.item(i);
-				if (optionalConfigNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE){
+		try {
+			// for each element in otherConfig, either overwrite existing value OR add to defaultConfig
+			NodeList otherConfigNodeList = otherConfig.xml_root.getChildNodes();
+			if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
+				for (int i=0; i<otherConfigNodeList.getLength(); i++){
+					org.w3c.dom.Node optionalConfigNode = otherConfigNodeList.item(i);
 					
-					// try to find optional config node in default config node
-					String paramName = optionalConfigNode.getNodeName();
-					String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
-					if (this.xml_root.getElementsByTagName(paramName) != null){
+					if (optionalConfigNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE){
+					
+						// try to find optional config node in default config node
+						String paramName = optionalConfigNode.getNodeName();
+						String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
+					
+						if (this.xml_root.getElementsByTagName(paramName) != null)
+							System.out.println("INFO: updating " + paramName + " with value " + paramValue);
+						else 
+							System.out.println("INFO: defining new attribute" + paramName + " with value " + paramValue);
 						DMLConfig.setTextValue(this.xml_root, paramName, paramValue);
-						System.out.println("INFO: updating " + paramName + " with value " + paramValue);
-					}
-					else {
-						System.out.println("ERROR: attempting to define new attribute " + paramValue + " not defined in default config");
-						throw new ParserConfigurationException();
 					}
 					
 				}
-			} // end for (int i=0; i<otherConfigNodeList.getLength(); i++){
-		} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
+			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
+		} catch (Exception e){
+			new ParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + this.config_file_name);
+		}
 	}
 	
 	/**
@@ -107,12 +117,49 @@ public class DMLConfig
 	
 	/**
 	 * Method to get string value of a configuration parameter
-	 * @param tagName
-	 * @return
+	 * Handles processing of conguration parameters 
+	 * @param tagName the name of the DMLConfig parameter being retrieved
+	 * @return a string representation of the DMLConfig parameter value.  
+	 * 	Note: for cachesize, the string value will be converted to number of bytes
+	 *  e.g., "1k" is translated to "1024"  
 	 */
-	public String getTextValue(String tagName)
+	public String getTextValue(String tagName) throws ParseException
 	{
-		return getTextValue(xml_root,tagName);
+		String retVal = getTextValue(xml_root,tagName);
+		if (retVal == null){
+			throw new ParseException("ERROR: could not find parameter " + tagName + " in DMLConfig" );
+		}
+		
+		// perform transformation of cachesize parameter
+		if (tagName.equals(DMLConfig.CACHE_SIZE)){
+			// perform error checking
+			if (!retVal.matches("\\d+[kKmMgGtT]?")){
+				throw new ParseException("ERROR: malformed cachesize parameter: cachesize must be " +
+						" a numeric value followed by either k (for kilobytes), m (MB), g (for GB), " +
+						" or t (TB), with case-insensitve.");
+			}
+			
+			// handle k -- kilobytes
+			if (retVal.endsWith("k") || retVal.endsWith("K")){
+				String digits = retVal.replaceAll("k", "").replaceAll("K", "");
+				retVal = new Long(new Long(digits) * 1024).toString();
+			}
+			
+			else if (retVal.endsWith("m") || retVal.endsWith("M")){
+				String digits = retVal.replaceAll("m", "").replaceAll("M", "");
+				retVal = new Long(new Long(digits) * 1024 * 1024).toString();
+			}
+			else if (retVal.endsWith("g") || retVal.endsWith("G")){
+				String digits = retVal.replaceAll("g", "").replaceAll("G", "");
+				retVal = new Long(new Long(digits) * 1024 * 1024 * 1024).toString();
+			}
+			else if (retVal.endsWith("t") || retVal.endsWith("T")){
+				String digits = retVal.replaceAll("t", "").replaceAll("T", "");
+				retVal = new Long(new Long(digits) * 1024 * 1024 * 1024 * 1024).toString();
+			}
+			
+		}
+		return retVal;
 	}
 	
 	
@@ -123,12 +170,12 @@ public class DMLConfig
 	 * @param tagName
 	 * @return
 	 */
-	private static String getTextValue(Element ele, String tagName) {
+	private static String getTextValue(Element element, String tagName) {
 		String textVal = null;
-		NodeList nl = ele.getElementsByTagName(tagName);
-		if (nl != null && nl.getLength() > 0) {
-			Element el = (Element) nl.item(0);
-			textVal = el.getFirstChild().getNodeValue();
+		NodeList list = element.getElementsByTagName(tagName);
+		if (list != null && list.getLength() > 0) {
+			Element elem = (Element) list.item(0);
+			textVal = elem.getFirstChild().getNodeValue();
 			
 		}
 		return textVal;
@@ -140,12 +187,12 @@ public class DMLConfig
 	 * @param tagName
 	 * @param newTextValue
 	 */
-	private static void setTextValue(Element ele, String tagName, String newTextValue) {
+	private static void setTextValue(Element element, String tagName, String newTextValue) {
 		
-		NodeList nl = ele.getElementsByTagName(tagName);
-		if (nl != null && nl.getLength() > 0) {
-			Element el = (Element) nl.item(0);
-			el.getFirstChild().setNodeValue(newTextValue);	
+		NodeList list = element.getElementsByTagName(tagName);
+		if (list != null && list.getLength() > 0) {
+			Element elem = (Element) list.item(0);
+			elem.getFirstChild().setNodeValue(newTextValue);	
 		}
 	}
 	

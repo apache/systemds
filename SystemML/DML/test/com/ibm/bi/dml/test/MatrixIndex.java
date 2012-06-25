@@ -3,7 +3,7 @@ package com.ibm.bi.dml.test;
 /**
  * <p>Index of a binary matrix cell or block.</p>
  * 
- * @author schnetter
+ * 
  */
 public class MatrixIndex {
     

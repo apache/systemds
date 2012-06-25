@@ -439,7 +439,7 @@ public abstract class AutomatedTestBase {
 	 * 
 	 * @param configurationName
 	 *            test configuration name
-	 * @author Felix Hamborg
+	 * 
 	 */
 	protected void loadTestConfiguration(TestConfiguration config) {
 		if (!availableTestConfigurations.containsValue(config))
@@ -479,7 +479,7 @@ public abstract class AutomatedTestBase {
 	 * 
 	 * @param configurationName
 	 *            test configuration name
-	 * @author schnetter
+	 * 
 	 */
 	@Deprecated
 	protected void loadTestConfiguration(String configurationName) {
@@ -966,7 +966,7 @@ public abstract class AutomatedTestBase {
 	 * This class is used to compare the standard output stream against an
 	 * expected string.
 	 * 
-	 * @author Felix Hamborg
+	 *
 	 * 
 	 */
 	class ExpecterOutputStream extends OutputStream {

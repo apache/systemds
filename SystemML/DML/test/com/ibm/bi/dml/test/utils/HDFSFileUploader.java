@@ -10,8 +10,6 @@ import java.util.Vector;
  * to HDFS under /user/hadoop/...<br/>
  * Currently used for ant auto testing.
  * 
- * @author Felix Hamborg
- * 
  */
 public class HDFSFileUploader {
 	private static FilenameFilter filter = new FilenameFilter() {

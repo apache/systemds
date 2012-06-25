@@ -12,6 +12,7 @@ import org.xml.sax.SAXException;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -96,8 +97,21 @@ public class ParForResultMergeTest
 	private MatrixObjectNew createMatrixObject(int dim, boolean withData) 
 		throws ParserConfigurationException, SAXException, IOException, CacheException 
 	{
-		DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-		String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);  
+		
+		DMLConfig conf = null;
+		try {
+			conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+		} catch (Exception e){
+			System.out.println("ERROR: could not create DMLConfig from config file " + DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+		}
+		
+		String dir = null;
+		try {
+			dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
+		} catch (Exception e){
+			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+		}
+		
 		String fname = dir+"/"+String.valueOf(_seq.getNextID());
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, dim, dim);

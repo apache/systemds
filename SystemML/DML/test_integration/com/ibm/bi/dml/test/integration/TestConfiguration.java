@@ -13,7 +13,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  *  It can also handle variables for a DML script.
  * </p>
  * 
- * @author schnetter
+ * 
  */
 public class TestConfiguration {
     

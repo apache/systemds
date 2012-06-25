@@ -50,9 +50,6 @@ import com.ibm.bi.dml.test.MatrixIndex;
  * <li>reading files</li>
  * <li>clean up</li>
  * </ul>
- * 
- * @author schnetter
- * @author Felix Hamborg
  */
 public class TestUtils {
 

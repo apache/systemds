@@ -10,10 +10,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
-/**
- * 
- * @author Amol Ghoting
- */
+
 public class kMeans2Test extends AutomatedTestBase {
 
 	private final static String TEST_KMEANS = "kMeans2";  // The version w/ init kCenters

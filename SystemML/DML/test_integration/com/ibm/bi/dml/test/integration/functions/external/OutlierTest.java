@@ -8,11 +8,6 @@ import org.nimble.algorithms.outlier.FindOutliersTask;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-
-/**
- * 
- * @author Amol Ghoting
- */
 public class OutlierTest extends AutomatedTestBase {
 
 	private final static String TEST_OUTLIER = "Outlier"; 

@@ -5,10 +5,6 @@ import org.junit.Test;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-/**
- * 
- * @author Felix Hamborg, Amol Ghoting
- */
 public class EigenTest extends AutomatedTestBase {
 
 	@Override

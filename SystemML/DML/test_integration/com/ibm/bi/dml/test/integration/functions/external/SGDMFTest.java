@@ -7,7 +7,6 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 /**
  * JUnit test for SGD based MF
- * @author Amol Ghoting
  */
 
 public class SGDMFTest extends AutomatedTestBase {

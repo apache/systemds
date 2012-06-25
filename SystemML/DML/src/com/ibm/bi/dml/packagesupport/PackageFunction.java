@@ -8,7 +8,7 @@ import org.nimble.control.DAGQueue;
 /**
  * Abstract class that should be extended to implement a package function.
  * 
- * @author aghoting
+ * 
  * 
  */
 public abstract class PackageFunction implements Serializable {

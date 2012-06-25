@@ -6,7 +6,7 @@ import java.io.Serializable;
  * abstract class to represent all input and output objects for package
  * functions.
  * 
- * @author aghoting
+ * 
  * 
  */
 

@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * Sample package function that takes one input of each kind and produces the
  * very same output.
  * 
- * @author aghoting
+ * 
  * 
  */
 public class TestPackageFunctionMaster extends PackageFunction {

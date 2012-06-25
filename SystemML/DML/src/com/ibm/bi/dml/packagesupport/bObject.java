@@ -3,8 +3,6 @@ package com.ibm.bi.dml.packagesupport;
 /**
  * Class to represent an object.
  * 
- * @author aghoting
- * 
  */
 
 public class bObject extends FIO {

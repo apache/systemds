@@ -19,7 +19,7 @@ import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
  * It then invokes kMeansTask and return the result as a matrix.
  * It takes 2 parameters, the input matrix, and number of centers k
  * It returns a matrix representing the k centers
- * @author aghoting
+ * 
  *
  */
 public class kMeansWrapper extends PackageFunction {

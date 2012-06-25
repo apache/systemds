@@ -13,7 +13,7 @@ import com.ibm.bi.dml.sgd.TestDist;
 
 /**
  * Wrapper function for the stochastic gradient descent matrix factorization algorithm. 
- * @author aghoting
+ * 
  *
  */
 public class SGDWrapper extends PackageFunction {

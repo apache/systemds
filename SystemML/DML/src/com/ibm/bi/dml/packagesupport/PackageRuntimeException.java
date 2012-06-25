@@ -3,7 +3,7 @@ package com.ibm.bi.dml.packagesupport;
 /**
  * Class to capture a runtime exception during package execution.
  * 
- * @author aghoting
+ * 
  * 
  */
 public class PackageRuntimeException extends RuntimeException {

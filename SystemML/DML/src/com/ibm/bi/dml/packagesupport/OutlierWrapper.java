@@ -20,7 +20,7 @@ import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
  * It takes 3 parameters, the input matrix, number of outliers, and k
  * neighborhood for the outliers 
  * It returns a matrix representing the outliers
- * @author aghoting
+ * 
  *
  */
 public class OutlierWrapper extends PackageFunction {

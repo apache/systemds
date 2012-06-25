@@ -6,7 +6,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 /**
  * Class to maintain external function invocation instructions.
  * 
- * @author aghoting
+ * 
  * 
  */
 

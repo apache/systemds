@@ -11,7 +11,6 @@ import com.ibm.bi.dml.packagesupport.PackageFunction;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 /**
  * Wrapper class for eigen value computation
- * @author aghoting
  *
  */
 public class EigenWrapper extends PackageFunction {

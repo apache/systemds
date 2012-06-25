@@ -22,7 +22,7 @@ import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
  * sequences. It then invokes the sequence miner on this data set. Finally, it
  * takes the output sequences and returns a matrix.
  * 
- * @author aghoting
+ * 
  * 
  */
 public class SequenceMinerWrapper extends PackageFunction {

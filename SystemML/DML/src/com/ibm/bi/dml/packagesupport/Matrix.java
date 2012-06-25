@@ -22,7 +22,7 @@ import com.ibm.bi.dml.utils.CacheException;
 /**
  * Class to represent the matrix input type
  * 
- * @author aghoting
+ * 
  * 
  */
 public class Matrix extends FIO {

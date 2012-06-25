@@ -3,7 +3,7 @@ package com.ibm.bi.dml.packagesupport;
 /**
  * Class to represent a scalar input/output.
  * 
- * @author aghoting
+ * 
  * 
  */
 public class Scalar extends FIO {

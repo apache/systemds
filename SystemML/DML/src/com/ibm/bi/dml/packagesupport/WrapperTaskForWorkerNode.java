@@ -6,7 +6,7 @@ import org.nimble.task.AbstractWrapperTaskWorkerSystemSerializable;
  * Worker node package functions will be wrapped using this task so that they
  * can be executed directly inside NIMBLE.
  * 
- * @author aghoting
+ * 
  * 
  */
 

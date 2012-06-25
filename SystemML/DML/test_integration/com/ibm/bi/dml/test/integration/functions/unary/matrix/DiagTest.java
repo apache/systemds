@@ -18,7 +18,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 	<li>wrong dimensions</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class DiagTest extends AutomatedTestBase {
 

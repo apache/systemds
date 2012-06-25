@@ -21,7 +21,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 	<li>boolean operand</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class AdditionTest extends AutomatedTestBase {
 

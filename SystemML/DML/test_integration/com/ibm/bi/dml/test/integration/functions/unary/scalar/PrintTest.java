@@ -1,9 +1,5 @@
 package com.ibm.bi.dml.test.integration.functions.unary.scalar;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
-
 import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;

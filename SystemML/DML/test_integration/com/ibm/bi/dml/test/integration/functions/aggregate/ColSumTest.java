@@ -17,7 +17,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  *  <li>scalar test</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class ColSumTest extends AutomatedTestBase {
 

@@ -18,7 +18,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * <b>Negative tests:</b>
  * </p>
  * 
- * @author Hamborg
+ * 
  */
 public class RandTest extends AutomatedTestBase {
 

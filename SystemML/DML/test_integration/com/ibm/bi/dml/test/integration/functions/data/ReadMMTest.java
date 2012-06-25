@@ -34,7 +34,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * <li>wrong format (format=binary)</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class ReadMMTest extends AutomatedTestBase {
 

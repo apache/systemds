@@ -20,7 +20,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  * </ul>
  * <p><b>Negative tests:</b></p>
  * 
- * @author schnetter
+ * 
  */
 public class WriteMMTest extends AutomatedTestBase {
 

@@ -32,6 +32,8 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.controlprogram.CacheManager;
+import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -63,7 +65,7 @@ public class DMLScript {
 	// COMMENT OUT -v option before RELEASE
 	+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 	+ " [-l | -log]: (optional) output log info \n"
-	+ " -config: (optional) use config file <config_filename> (default: use default SystemML-config.xml config file) \n" 
+	+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
 	+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
 	+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
 	+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
@@ -76,7 +78,6 @@ public class DMLScript {
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
-    public static long maxCacheMemory = 1000000000;
     public enum CACHE_EVICTION_POLICY { DEFAULT };
     public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
     public enum CACHE_EVICTION_STORAGE_TYPE { LOCAL, HDFS };
@@ -190,29 +191,7 @@ public class DMLScript {
 					System.err.println("Unknown runtime platform: " + args[argid]);
 					return;
 				}
-/*			} else if ( args[argid].equalsIgnoreCase("-cachesize")) {
-				argid++;
-				char unit = args[argid].charAt(args[argid].length()-1);
-				double num = Double.parseDouble(args[argid].substring(0, args[argid].length()-1));
-				
-				switch(unit) {
-				case 'g': maxCacheMemory = (long)Math.ceil(num*1024) * (long)(1024*1024); break; 
-				case 'm': maxCacheMemory = (long)Math.ceil(num*1024) * 1024; break;
-				case 'k': maxCacheMemory = (long)Math.ceil(num*1024); break;
-					default: throw new ParseException("Invalid value for argument -cachesize: " + args[argid]);
-				}
-				
-			} else if ( args[argid].equalsIgnoreCase("-readas")) {
-				argid++;
-				if ( args[argid].equalsIgnoreCase("dense")) 
-					READ_AS_SPARSE = false;
-				else if ( args[argid].equalsIgnoreCase("sparse"))
-					READ_AS_SPARSE = true;
-				else {
-					System.err.println("Unknown value for readas: " + args[argid]);
-					return;
-				}
-*/			// handle config file
+			// handle config file
 			} else if (args[argid].startsWith("-config=")){
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
 				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
@@ -242,7 +221,7 @@ public class DMLScript {
 			System.out.println("INFO: OPTIONAL CONFIG: " + optionalConfigurationFileName);
 			System.out.println("INFO: RUNTIME: " + rtplatform);
 			System.out.println("INFO: LOG: "  + LOG);
-			System.out.println("INFO: CACHESIZE: " + maxCacheMemory);
+			
 			
 			if (argVals.size() > 0)
 				System.out.println("INFO: Value for script parameter args: ");
@@ -285,7 +264,6 @@ public class DMLScript {
 		DMLConfig defaultConfig = null;
 		DMLConfig optionalConfig = null;
 		
-		
 		if (optionalConfigurationFileName != null) { // the optional config is specified
 			try { // try to get the default config first 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
@@ -296,7 +274,7 @@ public class DMLScript {
 				optionalConfig = new DMLConfig(optionalConfigurationFileName);	
 			} catch (Exception e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
-				System.out.println("Error parsing optional configuration file: " + optionalConfigurationFileName);
+				System.out.println("ERROR: Error parsing optional configuration file: " + optionalConfigurationFileName);
 				System.exit(-1);
 			}
 			if (defaultConfig != null) {
@@ -317,13 +295,40 @@ public class DMLScript {
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			} catch (Exception e) { // it is not ok to not have the default
 				defaultConfig = null;
-				System.out.println("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+				System.out.println("ERROR: Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 				System.exit(-1);
 			}
 		}
 		ConfigurationManager.setConfig(defaultConfig);
 		
-		//////////////////////////// parse script ///////////////////////////////
+		//////////////// print config file parameters /////////////////////////////
+		if (DEBUG){
+			System.out.println("INFO: ****** DMLConfig parameters *****");			
+			System.out.println("INFO: " + DMLConfig.SCRATCH_SPACE  + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+			System.out.println("INFO: " + DMLConfig.NUM_REDUCERS   + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REDUCERS));
+			System.out.println("INFO: " + DMLConfig.DEF_BLOCK_SIZE + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.DEF_BLOCK_SIZE));
+			System.out.println("INFO: " + DMLConfig.NUM_MERGE_TASKS      + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_MERGE_TASKS));
+			System.out.println("INFO: " + DMLConfig.NUM_SOW_THREADS      + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_SOW_THREADS));
+			System.out.println("INFO: " + DMLConfig.NUM_REAP_THREADS     + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REAP_THREADS ));
+			System.out.println("INFO: " + DMLConfig.SOWER_WAIT_INTERVAL  + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.SOWER_WAIT_INTERVAL ));
+			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));
+			System.out.println("INFO: " + DMLConfig.NIMBLE_SCRATCH       + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NIMBLE_SCRATCH ));
+			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));
+			System.out.println("INFO: " + DMLConfig.CACHE_SIZE     		 + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.CACHE_SIZE));
+			
+		}
+		
+		///////////////////////////////////// initialize cacheManager /////////////////////////////////
+		String cacheSizeString = null; 
+		try {
+			cacheSizeString = ConfigurationManager.getConfig().getTextValue(DMLConfig.CACHE_SIZE);
+		} catch (Exception e){
+			System.out.println("ERROR: error retrieving DMLConfig parameter " + DMLConfig.CACHE_SIZE);
+		}
+		
+		CacheableData.cacheManager = new CacheManager (new Long(cacheSizeString));
+		
+		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(dmlScriptString,argVals);
 		prog = parser.parse();

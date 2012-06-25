@@ -43,7 +43,6 @@ import com.ibm.metatracker.util.TestHarness;
 /**
  * Tests of the built-in MetaTracker job that runs a SystemML script.
  * 
- * @author Berthold Reinwald
  */
 public class DmlJobTests extends TestHarness {
 

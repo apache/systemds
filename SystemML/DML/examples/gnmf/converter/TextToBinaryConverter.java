@@ -29,7 +29,6 @@ import org.apache.hadoop.mapred.TextOutputFormat;
 /**
  * Contains classes which can be used to convert text based objects into classes.
  * 
- * @author schnetter
  */
 public class TextToBinaryConverter
 {

@@ -23,7 +23,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 	<li>two parameters</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class ExponentTest extends AutomatedTestBase {
 	

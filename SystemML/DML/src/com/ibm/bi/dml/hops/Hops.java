@@ -674,9 +674,6 @@ abstract public class Hops {
 	/**
 	 * Functions that are built in, but whose execution takes place in an
 	 * external library
-	 * 
-	 * @author Felix Hamborg
-	 * 
 	 */
 	public enum ExtBuiltInOp {
 		EIGEN, CHOLESKY

@@ -21,7 +21,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 /**
  * <p>Defines a Rand-HOP.</p>
  * 
- * @author schnetter
+ * 
  */
 public class RandOp extends Hops
 {
@@ -68,9 +68,16 @@ public class RandOp extends Hops
 		if(get_lops() == null)
 		{
 			ExecType et = optFindExecType();
+			
+			String scratchSpaceLoc = null;
+			try {
+				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			} catch (Exception e){
+				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+			}
+			
 			Rand rnd = new Rand(id, minValue, maxValue, sparsity,
-					probabilityDensityFunction, ConfigurationManager
-							.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE)
+					probabilityDensityFunction, scratchSpaceLoc
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR
 							+ ProgramConverter.CP_ROOT_THREAD_ID
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR,

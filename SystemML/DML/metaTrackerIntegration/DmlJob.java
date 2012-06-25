@@ -44,7 +44,6 @@ import dml.DMLScriptCmd;
 /**
  * Built-in job type for running a SystemML DML scripts.
  * 
- * @author: Berthold Reinwald
  */
 
 public class DmlJob extends JavaJobInstance {

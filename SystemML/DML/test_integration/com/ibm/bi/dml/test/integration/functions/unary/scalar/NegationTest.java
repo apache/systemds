@@ -14,7 +14,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * </ul>
  * <p><b>Negative tests:</b></p>
  * 
- * @author schnetter
+ * 
  */
 public class NegationTest extends AutomatedTestBase {
 

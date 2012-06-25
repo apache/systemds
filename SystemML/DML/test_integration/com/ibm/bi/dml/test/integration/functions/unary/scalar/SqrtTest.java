@@ -23,7 +23,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  * 	<li>random double</li>
  * </ul>
  * 
- * @author schnetter
+ * 
  */
 public class SqrtTest extends AutomatedTestBase {
 

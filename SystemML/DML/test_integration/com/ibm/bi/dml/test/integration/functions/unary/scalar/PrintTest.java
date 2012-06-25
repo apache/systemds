@@ -12,8 +12,6 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 /**
  * Tests the print function
- * 
- * @author Felix Hamborg
  */
 public class PrintTest extends AutomatedTestBase {
 

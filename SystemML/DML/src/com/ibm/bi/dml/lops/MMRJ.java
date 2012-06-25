@@ -8,7 +8,6 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 /**
  * Lop to perform cross product operation
- * @author aghoting
  */
 public class MMRJ extends Lops 
 {

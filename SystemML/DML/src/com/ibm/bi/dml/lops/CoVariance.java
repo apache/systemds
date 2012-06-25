@@ -10,7 +10,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to compute covariance between two 1D matrices
  * 
- * @author statiko
  */
 public class CoVariance extends Lops {
 

@@ -15,7 +15,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to perform binary scalar operations. Both inputs must be scalars.
  * Example i = j + k, i = i + 1. 
- * @author aghoting
  */
 
 public class BinaryCP extends Lops  

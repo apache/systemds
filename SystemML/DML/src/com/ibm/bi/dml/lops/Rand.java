@@ -10,8 +10,6 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 /**
  * <p>Defines a Rand-LOP.</p>
- * 
- * @author schnetter
  */
 public class Rand extends Lops
 {

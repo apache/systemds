@@ -5,8 +5,6 @@ import com.ibm.bi.dml.utils.HopsException;
 /**
  * class to maintain output parameters for a lop.
  * 
- * @author aghoting
- * 
  */
 
 public class OutputParameters {

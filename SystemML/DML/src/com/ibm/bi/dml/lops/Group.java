@@ -7,7 +7,6 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 /**
  * Lop to represent a grouping operation.
- * @author aghoting
  */
 
 public class Group extends Lops  

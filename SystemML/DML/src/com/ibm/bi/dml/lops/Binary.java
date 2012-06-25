@@ -10,7 +10,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to perform binary operation. Both inputs must be matrices or vectors. 
  * Example - A = B + C, where B and C are matrices or vectors.
- * @author aghoting
  */
 
 public class Binary extends Lops 

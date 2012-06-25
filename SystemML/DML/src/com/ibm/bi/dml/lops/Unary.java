@@ -13,7 +13,6 @@ import com.ibm.bi.dml.utils.LopsException;
  * SQRT(A), LOG(A) with two operands where one of them is a scalar -- H=H*i,
  * H=H*5, EXP(A,2), LOG(A,2)
  * 
- * @author aghoting
  */
 
 public class Unary extends Lops {

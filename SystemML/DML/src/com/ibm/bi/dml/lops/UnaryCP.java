@@ -10,7 +10,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to perform unary scalar operations. Example a = !b
  * 
- * @author aghoting
  */
 
 public class UnaryCP extends Lops {

@@ -16,8 +16,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to represent data objects. Data objects represent matrices, vectors, 
  * variables, literals. Can be for both input and output. 
- * @author aghoting
- *
  */
 
 public class Data extends Lops  

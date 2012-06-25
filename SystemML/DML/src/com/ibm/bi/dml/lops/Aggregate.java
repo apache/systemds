@@ -11,7 +11,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to represent an aggregation.
  * It is used in rowsum, colsum, etc. 
- * @author aghoting
  */
 
 public class Aggregate extends Lops 

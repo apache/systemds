@@ -11,7 +11,6 @@ import com.ibm.bi.dml.parser.Expression.*;
 /**
  * Lop to perform grouped aggregates
  * 
- * @author statiko
  */
 public class GroupedAggregate extends Lops {
 

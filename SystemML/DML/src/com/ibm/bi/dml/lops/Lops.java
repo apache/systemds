@@ -12,8 +12,6 @@ import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * Base class for all Lops.
- * 
- * @author aghoting
  */
 
 public abstract class Lops {

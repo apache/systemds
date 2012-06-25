@@ -10,7 +10,6 @@ import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * Lop to perform reblock operation
- * @author aghoting
  */
 public class ReBlock extends Lops 
 {

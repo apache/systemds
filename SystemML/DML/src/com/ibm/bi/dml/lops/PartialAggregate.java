@@ -11,8 +11,6 @@ import com.ibm.bi.dml.utils.LopsException;
 /**
  * Lop to perform a partial aggregation. It was introduced to do some initial
  * aggregation operations on blocks in the mapper/reducer.
- * 
- * @author aghoting
  */
 
 public class PartialAggregate extends Lops {

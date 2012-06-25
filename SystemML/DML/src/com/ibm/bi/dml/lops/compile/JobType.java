@@ -27,8 +27,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * and such a combination can potentially hinder the performance (since these jobs 
  * make use of a lot of memory). Similarly, SORT job can sort a single stream of values.
  * 
- * @author statiko
- * 
  */
 
 public enum JobType {

@@ -51,7 +51,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * 
- * @author aghoting Class to maintain a DAG and compile it into jobs
+ *  Class to maintain a DAG and compile it into jobs
  * @param <N>
  */
 
@@ -155,8 +155,17 @@ public class Dag<N extends Lops> {
 
 		if (config != null) 
 		{
-			String numReducers = config.getTextValue(DMLConfig.NUM_REDUCERS);
-			String scratchSpace = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+			String numReducers  = null; 
+			String scratchSpace = null; 
+			
+			try {
+				numReducers  = config.getTextValue(DMLConfig.NUM_REDUCERS);
+				scratchSpace = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+			} catch (Exception e){
+				System.out.println("ERROR: error retrieving config parameters " + 
+						DMLConfig.NUM_REDUCERS + " and " + DMLConfig.SCRATCH_SPACE 
+						+ " from DMLConfig");
+			}
 			
 			if ( numReducers != null )
 				total_reducers = Integer.parseInt(numReducers);

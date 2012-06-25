@@ -20,9 +20,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * which they are created
  * 
  * compare() method is designed to respect the above two requirements.
- * 
- * @author Shirish
- * 
+ *  
  * @param <N>
  */
 public class LopComparator<N extends Lops>

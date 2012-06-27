@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;

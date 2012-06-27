@@ -545,7 +545,7 @@ public class TestUtils {
 				countErrorIdentical++;
 				if (!compareCellValue(first.get(index), second.get(index), tolerance)) {
 					countErrorWithinTolerance++;
-					System.out.println(first.get(index)+" <--> "+second.get(index));
+					System.out.println(index+": "+first.get(index)+" <--> "+second.get(index));
 				}
 			} else {
 				countIdentical++;

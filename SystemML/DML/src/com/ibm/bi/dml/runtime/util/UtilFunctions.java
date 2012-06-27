@@ -24,6 +24,7 @@ public class UtilFunctions {
 		if(cellIndex>0)
 			return (int) ((cellIndex-1)%blockSize);
 		else
+			//return (int) Math.abs((cellIndex-1)%blockSize);
 			return (int) ((cellIndex-1)%blockSize)+blockSize;
 	}
 	

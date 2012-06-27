@@ -1644,7 +1644,7 @@ public class DMLTranslator {
 				DataOp ae = (DataOp)processExpression(source, target, _ids);
 				String formatName = os.getFormatName();
 				ae.setFormatType(Expression.convertFormatType(formatName));
-				_ids.put(target.getName(), ae);
+				//_ids.put(target.getName(), ae);
 
 
 				if (ae.getFormatType() == FileFormatTypes.TEXT || 

@@ -37,11 +37,11 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		commonSetup(reporter);
 		
 		cachedValues.reset();
-//		LOG.info("before aggregation: \n"+cachedValues);
+	//	LOG.info("before aggregation: \n"+cachedValues);
 		//perform aggregate operations first
 		processAggregateInstructions(indexes, values);
 		
-//		LOG.info("after aggregation: \n"+cachedValues);
+	//	LOG.info("after aggregation: \n"+cachedValues);
 		
 		//perform mixed operations
 		try {
@@ -91,7 +91,7 @@ implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 				collectOutput_N_Increase_Counter(outValue.getIndexes(), 
 					outValue.getValue(), i, reporter);
 	//		LOG.info("output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
-		//	System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
+	//		System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
 		}
 	}
 	

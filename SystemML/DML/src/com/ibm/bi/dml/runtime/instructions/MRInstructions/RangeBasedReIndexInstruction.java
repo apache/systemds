@@ -68,7 +68,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 8 );
-		
+		//System.out.println(str);
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		String opcode = parts[0];
@@ -82,7 +82,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		byte out = Byte.parseByte(parts[6]);
 		long leftIndexingNrow=Long.parseLong(parts[7]);
 		long leftIndexingNcol=Long.parseLong(parts[8]);
-		
+		//System.out.println("original index range: "+rng);
 		//recalculate the index range for left indexing
 		if(forLeft)
 		{
@@ -106,13 +106,16 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
+	//	System.out.println("~~~ in reindex");
+		
 		if(input==output)
 			throw new DMLRuntimeException("input cannot be the same for output for "+this.instString);
 		
 		IndexedMatrixValue in=cachedValues.getFirst(input);
 		if(in==null)
 			return;
-		
+	//	System.out.println("input block: "+in);
+	//	System.out.println("index range: "+indexRange+"\n");
 		long cellIndexTopRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, 0);
 		long cellIndexBottomRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, in.getValue().getNumRows()-1);
 		long cellIndexLeftCol=UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), blockColFactor, 0);
@@ -163,6 +166,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		//process instruction
 		
 		OperationsOnMatrixValues.performSlide(in.getIndexes(), in.getValue(), outlist, tempRange, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
+		//System.out.println("output: "+outlist);
 	}
 	
 	public static void main(String[] args) throws Exception {

@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -132,6 +133,8 @@ public class MRInstructionParser extends InstructionParser {
 		
 		//rangereindexing
 		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
+		String2MRInstructionType.put( "rangeReIndexForLeft"  , MRINSTRUCTION_TYPE.RangeReIndex);
+		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
 	}
 	
 	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -207,6 +210,8 @@ public class MRInstructionParser extends InstructionParser {
 			return (MRInstruction) GroupedAggregateInstruction.parseInstruction(str);
 		case RangeReIndex:
 			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);
+		case ZeroOut:
+			return (MRInstruction) ZeroOutInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

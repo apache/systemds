@@ -27,7 +27,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 	
 	public ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);
-		mrtype = MRINSTRUCTION_TYPE.Select;
+		mrtype = MRINSTRUCTION_TYPE.ZeroOut;
 		instString = istr;
 		indexRange=rng;
 	}
@@ -114,6 +114,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 		if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
 		{
 			cachedValues.add(output, in);
+			//System.out.println("just write down: "+in);
 			return;
 		}
 		
@@ -139,14 +140,14 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 		
 		byte input=1;
 		byte output=2;
-		ZeroOutInstruction ins=new ZeroOutInstruction(new ReIndexOperator(), input, output, new IndexRange(3, 18, 3, 18), "zeroOut");
+		ZeroOutInstruction ins=new ZeroOutInstruction(new ReIndexOperator(), input, output, new IndexRange(3, 8, 3, 18), "zeroOut");
 		int blockRowFactor=10;
 		int blockColFactor=10;
 		
 		MatrixBlockDSM m=MatrixBlockDSM.getRandomSparseMatrix(blockRowFactor, blockColFactor, 1, 1);
 		//m.examSparsity();
 		CachedValueMap cachedValues=new CachedValueMap();
-		cachedValues.set(input, new MatrixIndexes(1, 2), m);
+		cachedValues.set(input, new MatrixIndexes(1, 1), m);
 		
 		IndexedMatrixValue tempValue=new IndexedMatrixValue(MatrixBlockDSM.class);
 		IndexedMatrixValue zeroInput=new IndexedMatrixValue(MatrixBlockDSM.class);

@@ -321,6 +321,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		{
 			out=cachedValues.holdPlace(instruction.output, valueClass);
 			out.getIndexes().setIndexes(row, col);
+			//System.out.println("out: "+out);
 			if(aggOp.correctionExists)// && !imbededCorrection)
 			{
 				if(correction==null)
@@ -332,14 +333,16 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 				OperationsOnMatrixValues.startAggregation(out.getValue(), null, aggOp, 
 						value.getNumRows(), value.getNumColumns(),
 						value.isInSparseFormat(), imbededCorrection);
+			//System.out.println("after start: "+out);
 		}
-		
+		//System.out.println("value to add: "+value);
 		if(aggOp.correctionExists)// && !imbededCorrection)
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), correction.getValue(), 
 					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
 		else
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), null, 
-					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);	
+					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
+		//System.out.println("after increment: "+out);
 	}
 	
 	//process all the aggregate instructions for one group of values

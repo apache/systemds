@@ -217,21 +217,23 @@ public class SparseRow {
 			return index-1;
 	}
 	
-	public int searchIndexesFirstLT(int col)
+/*	public int searchIndexesFirstLT(int col)
 	{
-		int index=searchIndexesFirstGTE(col);
-		if(index>0) 
+		int index=binarySearch(col);
+		if(index<size && col==indexes[index])
 			return index-1;
-		else 
-			return -1;
-	}
+		else
+			return index;
+	}*/
 	
 	public int searchIndexesFirstGT(int col)
 	{
-		int index=searchIndexesFirstLTE(col);
-		if(index>=0 && index<size-1) 
+		int index=binarySearch(col);
+		if(index<size && col==indexes[index])
 			return index+1;
-		else 
+		else if(index>=0)
+			return index;
+		else
 			return -1;
 	}
 	
@@ -265,5 +267,31 @@ public class SparseRow {
 			values[i]=values[start+i];
 		}
 		size=(end-start);
+	}
+	
+	public static void main(String[] args) throws Exception
+	{
+		SparseRow row=new SparseRow();
+		row.append(9, 21);
+		row.append(11, 43);
+		row.append(24, 23);
+		row.append(30, 53);
+		row.append(37, 95);
+		row.append(38,38);
+		
+		int start=row.searchIndexesFirstGTE((int)0);
+		System.out.println("start: "+start);
+		if(start<0) start=row.size();
+		int end=row.searchIndexesFirstGT((int)8);
+		System.out.println("end: "+end);
+		if(end<0) end=row.size();
+	
+		{
+			System.out.println("----------------------");
+			System.out.println("row: "+row);
+			System.out.println("start: "+start);
+			System.out.println("end: "+end);
+		}
+		
 	}
 }

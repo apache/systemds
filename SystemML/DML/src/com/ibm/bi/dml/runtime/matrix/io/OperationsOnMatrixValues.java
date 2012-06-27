@@ -92,6 +92,7 @@ public class OperationsOnMatrixValues {
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		value_out=value_in.zeroOutOperations(value_out, range, complementary);
+		indexes_out.setIndexes(indexes_in);
 	}
 	
 	public static void performSlide(MatrixIndexes indexes_in, MatrixValue value_in, 

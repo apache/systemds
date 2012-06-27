@@ -1612,6 +1612,8 @@ public class MatrixBlockDSM extends MatrixValue{
 
 	private void slideHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
 	{
+	//	if(left==null || right==null)
+	//		throw new RuntimeException("left = "+left+", and right = "+right);
 		if(sparseRows[r]==null) return;
 		//System.out.println("row "+r+"\t"+sparseRows[r]);
 		int[] cols=sparseRows[r].getIndexContainer();
@@ -1712,29 +1714,38 @@ public class MatrixBlockDSM extends MatrixValue{
 			blockRowFactor=boundaryRlen;
 		if(colCut>range.colEnd)
 			blockColFactor=boundaryClen;
+		
+		int minrowcut=(int)Math.min(rowCut,range.rowEnd);
+		int mincolcut=(int)Math.min(colCut, range.colEnd);
+		int maxrowcut=(int)Math.max(rowCut, range.rowStart);
+		int maxcolcut=(int)Math.max(colCut, range.colStart);
+		
 		if(range.rowStart<rowCut && range.colStart<colCut)
 		{
 			topleft=(MatrixBlockDSM) p.next().getValue();
+			//topleft.reset(blockRowFactor, blockColFactor, 
+			//		checkSparcityOnSlide(rowCut-(int)range.rowStart, colCut-(int)range.colStart, blockRowFactor, blockColFactor));
+			
 			topleft.reset(blockRowFactor, blockColFactor, 
-					checkSparcityOnSlide(rowCut-(int)range.rowStart, colCut-(int)range.colStart, blockRowFactor, blockColFactor));
+					checkSparcityOnSlide(minrowcut-(int)range.rowStart, mincolcut-(int)range.colStart, blockRowFactor, blockColFactor));
 		}
 		if(range.rowStart<rowCut && range.colEnd>=colCut)
 		{
 			topright=(MatrixBlockDSM) p.next().getValue();
 			topright.reset(blockRowFactor, boundaryClen, 
-					checkSparcityOnSlide(rowCut-(int)range.rowStart, (int)range.colEnd-colCut+1, blockRowFactor, boundaryClen));
+					checkSparcityOnSlide(minrowcut-(int)range.rowStart, (int)range.colEnd-maxcolcut+1, blockRowFactor, boundaryClen));
 		}
 		if(range.rowEnd>=rowCut && range.colStart<colCut)
 		{
 			bottomleft=(MatrixBlockDSM) p.next().getValue();
 			bottomleft.reset(boundaryRlen, blockColFactor, 
-					checkSparcityOnSlide((int)range.rowEnd-rowCut+1, colCut-(int)range.colStart, boundaryRlen, blockColFactor));
+					checkSparcityOnSlide((int)range.rowEnd-maxrowcut+1, mincolcut-(int)range.colStart, boundaryRlen, blockColFactor));
 		}
 		if(range.rowEnd>=rowCut && range.colEnd>=colCut)
 		{
 			bottomright=(MatrixBlockDSM) p.next().getValue();
 			bottomright.reset(boundaryRlen, boundaryClen, 
-					checkSparcityOnSlide((int)range.rowEnd-rowCut+1, (int)range.colEnd-colCut+1, boundaryRlen, boundaryClen));
+					checkSparcityOnSlide((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
 		}
 		
 		if(sparse)
@@ -1742,11 +1753,13 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows!=null)
 			{
 				int r=(int)range.rowStart;
-				for(; r<Math.min(Math.min(rowCut, sparseRows.length-1), range.rowEnd+1); r++)
+				for(; r<Math.min(Math.min(rowCut, sparseRows.length), range.rowEnd+1); r++)
 					slideHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockRowFactor, normalBlockColFactor);
 				
 				for(; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
 					slideHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
+				//System.out.println("in: \n"+this);
+				//System.out.println("outlist: \n"+outlist);
 			}
 		}else
 		{
@@ -1781,10 +1794,11 @@ public class MatrixBlockDSM extends MatrixValue{
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		checkType(result);
 		boolean sps;
-		double estimatedSps=(double)nonZeros/(double)rlen/(double)clen*(double)(range.rowEnd-range.rowStart+1)
+		double currentSparsity=(double)nonZeros/(double)rlen/(double)clen;
+		double estimatedSps=currentSparsity*(double)(range.rowEnd-range.rowStart+1)
 		*(double)(range.colEnd-range.colStart+1)/(double)rlen/(double)clen;
 		if(!complementary)
-			estimatedSps=1-estimatedSps;
+			estimatedSps=currentSparsity-estimatedSps;
 		if(estimatedSps< SPARCITY_TURN_POINT)
 			sps=true;
 		else sps=false;
@@ -1803,25 +1817,25 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					for(int r=0; r<Math.min((int)range.rowStart, sparseRows.length); r++)
 						((MatrixBlockDSM) result).appendRow(r, sparseRows[r]);
-					for(int r=Math.min((int)range.rowEnd+1, sparseRows.length-1); r<Math.min(rlen, sparseRows.length); r++)
+					for(int r=Math.min((int)range.rowEnd+1, sparseRows.length); r<Math.min(rlen, sparseRows.length); r++)
 						((MatrixBlockDSM) result).appendRow(r, sparseRows[r]);
 				}
-				
 				for(int r=(int)range.rowStart; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
 				{
 					if(sparseRows[r]==null) continue;
 					//System.out.println("row "+r+"\t"+sparseRows[r]);
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
-					int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
-					//System.out.println("start: "+start);
-					if(start<0) continue;
-					int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
-					//System.out.println("end: "+end);
-					if(end<0 || start>end) continue;
 					
 					if(complementary)//if selection
 					{
+						int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
+						//System.out.println("start: "+start);
+						if(start<0) continue;
+						int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
+						//System.out.println("end: "+end);
+						if(end<0 || start>end) continue;
+						
 						for(int i=start; i<end; i++)
 						{
 							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
@@ -1829,10 +1843,32 @@ public class MatrixBlockDSM extends MatrixValue{
 						}
 					}else
 					{
+						int start=sparseRows[r].searchIndexesFirstGTE((int)range.colStart);
+						//System.out.println("start: "+start);
+						if(start<0) start=sparseRows[r].size();
+						int end=sparseRows[r].searchIndexesFirstGT((int)range.colEnd);
+						//System.out.println("end: "+end);
+						if(end<0) end=sparseRows[r].size();
+						
+				/*		if(r==999)
+						{
+							System.out.println("----------------------");
+							System.out.println("range: "+range);
+							System.out.println("row: "+sparseRows[r]);
+							System.out.println("start: "+start);
+							System.out.println("end: "+end);
+						}
+				*/		
 						for(int i=0; i<start; i++)
+						{
 							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
+					//		if(r==999) System.out.println("append ("+r+", "+cols[i]+"): "+values[i]);
+						}
 						for(int i=end; i<sparseRows[r].size(); i++)
+						{
 							((MatrixBlockDSM) result).appendValue(r, cols[i], values[i]);
+					//		if(r==999) System.out.println("append ("+r+", "+cols[i]+"): "+values[i]);
+						}
 					}
 				}
 			}
@@ -1872,12 +1908,14 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 				
 			}
-		}	
+		}
+		//System.out.println("zeroout in:\n"+this);
+		//System.out.println("zeroout result:\n"+result);
 		return result;
 	}
 	
 	//This function is not really used
-	public void zeroOutOperationsInPlace(IndexRange range, boolean complementary)
+/*	public void zeroOutOperationsInPlace(IndexRange range, boolean complementary)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//do not change the format of the block
@@ -1943,7 +1981,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
-	}
+	}*/
 
 	private void traceHelp(AggregateUnaryOperator op, MatrixBlockDSM result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) 
@@ -3481,7 +3519,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		String ret="sparse? = "+sparse+"\n" ;
 		ret+="nonzeros = "+nonZeros+"\n";
 		ret+="size: "+rlen+" X "+clen+"\n";
-		boolean toprint=false;
+		boolean toprint=true;
+		if(!toprint)
+			return "sparse? = "+sparse+"\nnonzeros = "+nonZeros+"\nsize: "+rlen+" X "+clen+"\n";
 		if(sparse)
 		{
 			int len=0;
@@ -3520,8 +3560,6 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
-		if(!toprint)
-			return "sparse? = "+sparse+"\nnonzeros = "+nonZeros+"\nsize: "+rlen+" X "+clen+"\n";
 		return ret;
 	}
 	

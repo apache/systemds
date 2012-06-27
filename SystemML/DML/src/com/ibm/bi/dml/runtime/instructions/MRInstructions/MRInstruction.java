@@ -13,7 +13,7 @@ public abstract class MRInstruction extends Instruction {
 
 	public enum MRINSTRUCTION_TYPE { INVALID, Append, Aggregate, ArithmeticBinary, AggregateBinary, AggregateUnary, Rand, 
 		Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTertiary, PickByCount, 
-		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, Select }; 
+		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut }; 
 	
 	
 	MRINSTRUCTION_TYPE mrtype;

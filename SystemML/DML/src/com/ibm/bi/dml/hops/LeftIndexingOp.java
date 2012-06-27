@@ -65,9 +65,10 @@ public class LeftIndexingOp  extends Hops {
 					Lops newLeft=new Binary(two, left, HopsOpOp2LopsB.get(Hops.OpOp2.MINUS), Expression.DataType.SCALAR, Expression.ValueType.INT, et);
 					//newc=leftmatrix.row-a+1, newd=leftmatrix.row
 					*/
+					//right hand matrix
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(1).constructLops(), top, bottom, 
-							left, right, getInput().get(1).get_dim1(), getInput().get(1).get_dim2(),
+							left, right, getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
 							get_dataType(), get_valueType(), et, true);
 					
 					reindex.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
@@ -137,12 +138,12 @@ public class LeftIndexingOp  extends Hops {
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		
-		if ( getInput().get(0).areDimsBelowThreshold() )
-			return ExecType.CP;
-		
+//		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+//			return ExecType.CP;
+//		
+//		if ( getInput().get(0).areDimsBelowThreshold() )
+//			return ExecType.CP;
+//		
 		return ExecType.MR;
 	}
 

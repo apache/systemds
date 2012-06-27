@@ -1,15 +1,10 @@
-
-
 A = Rand(rows=10, cols=10, min=1.0, max=1.0);
-
-# case no indices, no indices  
-B = A[:,:];
+B = Rand(rows=20, cols=20, min=1.0, max=1.0);
+i = 1;
 
 # case expr
-B[1,5:6] = A[i+2,:];
+B[1,5] =  4;
+B[1:10,1:10] = A;
 
-B[1:10,5:6] = A[i+2:i+4,4];
-
-C[max(A):21,23:34] = B;
-
-#[C,V,S] = foo(A,B,C);
+bsum = sum(B);
+print(bsum);

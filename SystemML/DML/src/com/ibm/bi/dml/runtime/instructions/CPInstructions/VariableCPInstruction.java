@@ -336,19 +336,23 @@ public class VariableCPInstruction extends CPInstruction {
 	@Override
 	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		switch ( opcode ) {
+		switch ( opcode ) { 
 		case CreateVariable:
+			
 			if ( input1.get_dataType() == DataType.MATRIX ) {
-				
 				/*
 				 * Following if condition is used for debugging, and to easily
 				 * switch between OLD MatrixObject and NEW MatrixObject classes.
 				 * Once MatrixObjectNew is completely tested, it can be removed. 
 				 */
+				
+				//create new variable for symbol table and cache
+				//(existing objects already cleared on 'rm vars')
 				MatrixObjectNew mobj = new MatrixObjectNew(input1.get_valueType(), input2.get_name());
 				mobj.setVarName(input1.get_name());
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
+				
 				pb.setVariable(input1.get_name(), mobj);
 			}
 			else if ( input1.get_dataType() == DataType.SCALAR ){
@@ -366,19 +370,31 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case RemoveVariable:
+			//remove matrix object from cache
+			if ( input1.get_dataType() == DataType.MATRIX )
+				((MatrixObjectNew)pb.getVariable(input1.get_name())).clearData();
+			
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
 			break;
 			
 		case RenameVariable:
 			Data dd = pb.getVariable(input1.get_name());
-			//if ( dd == null )
-			//	System.out.println("Here");
 			pb.setVariable(input2.get_name(), dd);
 			//pb.removeVariable(input1.get_name());
 			break;
 			
 		case RemoveVariableAndFile:
+			//remove matrix object from cache
+			if ( input1.get_dataType() == DataType.MATRIX )
+				((MatrixObjectNew)pb.getVariable(input1.get_name())).clearData();
+			else if ( input1.get_dataType() == DataType.UNKNOWN || input1.get_dataType() == null )
+			{
+				Data dat = pb.getVariable(input1.get_name());
+				if( dat instanceof MatrixObjectNew )
+					((MatrixObjectNew)dat).clearData();
+			}
+			
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
@@ -405,6 +421,7 @@ public class VariableCPInstruction extends CPInstruction {
 			MatrixBlock mBlock = (MatrixBlock) pb.getMatrixInput(input1.get_name());
 			double value = mBlock.getValue(0,0);
 			//double value = MapReduceTool.readFirstNumberFromHDFSMatrix(mobj.getFileName());
+			pb.releaseMatrixInput(input1.get_name());
 			pb.setScalarOutput(input2.get_name(), new DoubleObject(value));
 			break;
 			

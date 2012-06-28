@@ -20,8 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
-import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
-import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
@@ -187,13 +186,14 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		{
 			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
 			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			try {
+			try 
+			{
 				ret = new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
-			} catch (CacheOutOfMemoryException e) {
+			} 
+			catch (CacheException e) 
+			{
 				e.printStackTrace();
-			} catch (CacheStatusException e) {
-				e.printStackTrace();
-			}
+			} 
 		}
 		
 		return ret;

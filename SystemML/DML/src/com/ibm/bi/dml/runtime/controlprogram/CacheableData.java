@@ -7,6 +7,7 @@ import java.util.Date;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
@@ -100,17 +101,17 @@ public abstract class CacheableData extends Data
 	 * The data structure that keeps track of all cacheable data blobs.
 	 * It is unique and globally defined.
 	 */
-	public static CacheManager cacheManager = null;
-	
+	//FIXME (just a workaround for remote parfor and component testcases)
+	//public static CacheManager cacheManager = null;
+	public static CacheManager cacheManager = new CacheManager (500000000); //500MB
 	/**
 	 * The global counter for the objects of this class, used to provide
 	 * a unique identifier and file name to every evicted data blob.
 	 */
-	private volatile static int globalCount = 0;
-
-	private final int uniqueID = globalCount ++;
+	private static IDSequence globalCount = new IDSequence();
+	private final int uniqueID = (int)globalCount.getNextID();
 	
-	protected synchronized int getUniqueCacheID ()
+	protected int getUniqueCacheID ()
 	{
 		return uniqueID;
 	}
@@ -120,8 +121,8 @@ public abstract class CacheableData extends Data
 	 * May not always be equal to the true size.  Measured in bytes.
 	 * Must be zero when {@link #cacheStatus} = <code>EMPTY</code>.
 	 */
-	private volatile long registeredBlobSize = 0;
-	private volatile long lastAccessTime = 0;
+	private long registeredBlobSize = 0;
+	private long lastAccessTime = 0;
 	
 	/**
 	 * The cache status of the data blob (whether it can be or is evicted, etc.)
@@ -143,7 +144,7 @@ public abstract class CacheableData extends Data
 	 * @return <code>true</code> if the data blob does not exist,
 	 *         <code>false</code> if the data blob exists.
 	 */
-	public synchronized boolean isEmpty ()
+	public boolean isEmpty ()
 	{
 		return cacheStatus.isEmpty ();
 	}
@@ -155,7 +156,7 @@ public abstract class CacheableData extends Data
 	 * @return <code>true</code> if the data blob is available to be read,
 	 *         <code>false</code> if exclusive-locked (in "MODIFY" status).
 	 */
-	public synchronized boolean isAvailableToRead ()
+	public boolean isAvailableToRead ()
 	{
 		return cacheStatus.isAvailableToRead ();
 	}
@@ -167,7 +168,7 @@ public abstract class CacheableData extends Data
 	 * @return <code>true</code> if the data blob is available to be modified,
 	 *         <code>false</code> if locked (in "READ" or "MODIFY" status).
 	 */
-	public synchronized boolean isAvailableToModify ()
+	public boolean isAvailableToModify ()
 	{
 		return cacheStatus.isAvailableToModify ();
 	}
@@ -178,7 +179,7 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @return
 	 */
-	public synchronized boolean isModify ()
+	public boolean isModify ()
 	{
 		return cacheStatus.isModify ();
 	}
@@ -189,7 +190,7 @@ public abstract class CacheableData extends Data
 	 * @return <code>false</code> if the data blob is evicted or deleted or
 	 *         not yet created; <code>true</code> otherwise.
 	 */
-	public synchronized boolean isInMemory ()
+	public boolean isInMemory ()
 	{
 		return cacheStatus.isInMemory ();
 	}
@@ -200,7 +201,7 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @return
 	 */
-	public synchronized boolean isEvictable ()
+	public boolean isEvictable ()
 	{
 		return cacheStatus.isEvictable ();
 	}
@@ -210,7 +211,7 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @return
 	 */
-	public synchronized boolean isEvicted ()
+	public boolean isEvicted ()
 	{
 		return cacheStatus.isEvicted ();
 	}
@@ -236,7 +237,8 @@ public abstract class CacheableData extends Data
 	 *     <code>false</code> for a shared "read" lock.
 	 * @throws CacheException
 	 */
-	protected synchronized void acquire (boolean isModify) throws CacheException
+	protected void acquire (boolean isModify) 
+		throws CacheException
 	{
 		CacheStatusType oldStatus = cacheStatus.getType ();
 		switch (oldStatus)
@@ -271,12 +273,12 @@ public abstract class CacheableData extends Data
 		}
 		if(DMLScript.DEBUG) {
 			System.out.println("    CACHE: acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
-			cacheManager.printCacheStatus();
+			//cacheManager.printCacheStatus();
 		}
 	}
 	
 	public synchronized void downgrade ()
-	throws CacheStatusException, CacheOutOfMemoryException
+		throws CacheStatusException, CacheOutOfMemoryException
 	{
 		if (cacheStatus.getType () == CacheStatusType.MODIFY)
 		{
@@ -307,7 +309,7 @@ public abstract class CacheableData extends Data
 	 * @throws CacheStatusException 
 	 */
 	public synchronized void release ()
-	throws CacheOutOfMemoryException, CacheStatusException
+		throws CacheOutOfMemoryException, CacheStatusException
 	{
 		CacheStatusType oldStatus = cacheStatus.getType ();
 		boolean isModified = false;
@@ -351,8 +353,8 @@ public abstract class CacheableData extends Data
 	 * @throws CacheOutOfMemoryException 
 	 * @throws CacheStatusException 
 	 */
-	protected synchronized void registerBlobDeletion ()
-	throws CacheOutOfMemoryException, CacheStatusException
+	protected void registerBlobDeletion ()
+		throws CacheOutOfMemoryException, CacheStatusException
 	{
 		switch (cacheStatus.getType ())
 		{
@@ -378,7 +380,7 @@ public abstract class CacheableData extends Data
 	 * @throws CacheOutOfMemoryException 
 	 */
 	public synchronized boolean attemptEviction ()
-	throws CacheOutOfMemoryException
+		throws CacheOutOfMemoryException
 	{
 		if (! cacheStatus.isEvictable ())
 			return false;
@@ -412,12 +414,10 @@ public abstract class CacheableData extends Data
 			private final Date currTime = Calendar.getInstance().getTime();
 			public int compare (CacheableData cdata1, CacheableData cdata2)
 			{
-				synchronized (cdata1) { synchronized (cdata2)
-				{
-					boolean b1 = (cdata1 == null || ! cdata1.isEvictable ());
-					boolean b2 = (cdata2 == null || ! cdata2.isEvictable ());
-					return (b1 ? (b2 ? 0 : +1) : (b2 ? -1 : cdata1.compareTo (cdata2, currTime)));
-				}}
+				boolean b1 = (cdata1 == null || ! cdata1.isEvictable ());
+				boolean b2 = (cdata2 == null || ! cdata2.isEvictable ());
+				return (b1 ? (b2 ? 0 : +1) : (b2 ? -1 : cdata1.compareTo (cdata2, currTime)));
+				
 			}
 		};
 	}
@@ -429,7 +429,7 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @return the registered blob size
 	 */
-	public long getRegisteredBlobSize ()
+	protected long getRegisteredBlobSize ()
 	{
 		return registeredBlobSize;
 	}
@@ -438,25 +438,29 @@ public abstract class CacheableData extends Data
 	 * Call this method to inform the cache about memory size changes in the data blob.
 	 * @throws CacheOutOfMemoryException
 	 */
-	protected synchronized void updateRegisteredBlobSize ()
-	throws CacheOutOfMemoryException 
+	protected void updateRegisteredBlobSize ()
+		throws CacheOutOfMemoryException 
 	{
-		if (! isEvicted ())
-		{	
-			long oldSize = registeredBlobSize;
-			long newSize = (isEmpty () ? 0 : getBlobSize ());
-			registeredBlobSize = newSize;
-			cacheManager.updateMemorySize (this, oldSize, newSize);
-		}
-		else
+		 //no update while cache manager is working
+		synchronized( cacheManager ) 
 		{
-			//  When a data blob is evicted, we cannot update its registered size,
-			//  but we call the refresh-method to make sure the status is in sync.
-			cacheManager.refresh (this);
+			if (! isEvicted ())
+			{	
+				long oldSize = registeredBlobSize;
+				long newSize = (isEmpty () ? 0 : getBlobSize ());
+				registeredBlobSize = newSize;
+				cacheManager.updateMemorySize (this, oldSize, newSize);
+			}
+			else
+			{
+				//  When a data blob is evicted, we cannot update its registered size,
+				//  but we call the refresh-method to make sure the status is in sync.
+				cacheManager.refresh (this);
+			}
 		}
 	}
 	
-	public long getLastAccessTime ()
+	protected long getLastAccessTime()
 	{
 		return lastAccessTime;
 	}
@@ -475,21 +479,16 @@ public abstract class CacheableData extends Data
 	 *     +1 if <code>this</code> >  the argument.
 	 * Remember: The head of the eviction queue is the least element!
 	 */
-	private int compareTo (CacheableData other, Date currentTime)
+	protected int compareTo (CacheableData other, Date currentTime)
 	{
 		if (other == null)
 			throw new NullPointerException ("CacheableData.compareTo is given a null pointer as the argument");
 		
 		int result = 0;
-		long duration1, duration2, size1, size2;
-		
-		synchronized (this) { synchronized (other)
-		{
-			duration1 = currentTime.getTime () - getLastAccessTime ();
-			duration2 = currentTime.getTime () - other.getLastAccessTime ();
-			size1 = registeredBlobSize;
-			size2 = other.registeredBlobSize;
-		}}
+		long duration1 = currentTime.getTime () - getLastAccessTime ();
+		long duration2 = currentTime.getTime () - other.getLastAccessTime ();
+		long size1 = registeredBlobSize;
+		long size2 = other.registeredBlobSize;
 		
 		double defaultPriority1 = (duration1 > 10 ? Math.log (duration1) : 0) + 0.5 * (size1 > 10000 ? Math.log (size1) : 0);
 		double defaultPriority2 = (duration2 > 10 ? Math.log (duration2) : 0) + 0.5 * (size2 > 10000 ? Math.log (size2) : 0);
@@ -544,67 +543,68 @@ public abstract class CacheableData extends Data
 	 * <code>EVICTED</code>:   The data blob has been evicted.
 	 */
 	private enum CacheStatusType {EMPTY, READ, MODIFY, EVICTABLE, EVICTED};
-	private class CacheStatus
+	
+	protected class CacheStatus
 	{
-		private volatile CacheStatusType type = CacheStatusType.EMPTY;
-	    private volatile int numReadThreads = 0;
+		protected CacheStatusType type = CacheStatusType.EMPTY;
+		protected int numReadThreads = 0;
 	    
-	    CacheStatus ()
+		protected CacheStatus ()
 	    {
 	    	;
 	    }
 	    
-	    public CacheStatusType getType ()
+		protected CacheStatusType getType ()
 	    {
 	    	return type;
 	    }
 	    
-		public boolean isEmpty ()
+		protected boolean isEmpty ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EMPTY);
 		}
 		
-		public boolean isAvailableToRead ()
+		protected boolean isAvailableToRead ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EMPTY || theType == CacheStatusType.EVICTABLE 
 					|| theType == CacheStatusType.EVICTED || theType == CacheStatusType.READ);
 		}
 		
-		public boolean isAvailableToModify ()
+		protected boolean isAvailableToModify ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EMPTY || theType == CacheStatusType.EVICTABLE 
 					|| theType == CacheStatusType.EVICTED);
 		}
 		
-		public boolean isModify ()
+		protected boolean isModify ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.MODIFY);
 		}
 		
-		public boolean isInMemory ()
+		protected boolean isInMemory ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.READ || theType == CacheStatusType.MODIFY
 					|| theType == CacheStatusType.EVICTABLE);
 		}
 		
-		public boolean isEvictable ()
+		protected boolean isEvictable ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EVICTABLE);
 		}
 		
-		public boolean isEvicted ()
+		protected boolean isEvicted ()
 		{
 			final CacheStatusType theType = type;
 			return (theType == CacheStatusType.EVICTED);
 		}
 
-		public synchronized void addOneRead ()
+		protected void addOneRead ()
 		{
 			if (type == CacheStatusType.READ)
 				numReadThreads ++;
@@ -615,7 +615,7 @@ public abstract class CacheableData extends Data
 			}
 		}
 		
-		public synchronized void removeOneRead (boolean doesBlobExist)
+		protected void removeOneRead (boolean doesBlobExist)
 		{
 			if (type == CacheStatusType.READ)
 			{
@@ -629,22 +629,22 @@ public abstract class CacheableData extends Data
 			}
 		}
 		
-		public void setEmpty ()
+		protected void setEmpty ()
 		{
 			type = CacheStatusType.EMPTY;
 		}
 		
-		public void setModify ()
+		protected void setModify ()
 		{
 			type = CacheStatusType.MODIFY;
 		}
 		
-		public void setEvictable ()
+		protected void setEvictable ()
 		{
 			type = CacheStatusType.EVICTABLE;
 		}
 		
-		public void setEvicted ()
+		protected void setEvicted ()
 		{
 			type = CacheStatusType.EVICTED;
 		}

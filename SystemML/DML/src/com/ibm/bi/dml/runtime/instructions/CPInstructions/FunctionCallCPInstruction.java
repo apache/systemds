@@ -152,6 +152,15 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			if (boundValue == null)
 				throw new DMLUnsupportedOperationException(boundVarName + " was not assigned a return value");
 		
+			//remove old matrix from cache (if necessary)
+			if( boundValue instanceof MatrixObjectNew )
+			{
+				MatrixObjectNew oldVar = (MatrixObjectNew)pb.getVariable(boundVarName);
+				if( oldVar != null )
+					oldVar.clearData(); //clear old obj from cache
+			}
+			
+			//add/replace data in symbol table
 			pb.getVariables().put(boundVarName, boundValue);
 		}
 	}

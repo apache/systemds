@@ -613,8 +613,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 
 				// add result to variableMapping
-				MatrixObjectNew result_matrix = createOutputMatrixObject( m );
-				this.getVariables().put(tokens.get(1), result_matrix);
+				String varName = tokens.get(1);
+				MatrixObjectNew newVar = createOutputMatrixObject( m );
+				getVariables().put(varName, newVar); //put/override in local symbol table
+
 				continue;
 			}
 

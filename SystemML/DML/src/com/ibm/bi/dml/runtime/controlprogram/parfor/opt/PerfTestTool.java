@@ -79,7 +79,7 @@ public class PerfTestTool
 {
 	//internal parameters
 	public static final boolean READ_STATS_ON_STARTUP  = false;
-	public static final int     TEST_REPETITIONS       = 2; 
+	public static final int     TEST_REPETITIONS       = 5; 
 	public static final int     NUM_SAMPLES_PER_TEST   = 11; 
 	public static final int     MODEL_MAX_ORDER        = 2;
 	public static final boolean MODEL_INTERCEPT        = true;
@@ -929,22 +929,13 @@ public class PerfTestTool
 			throw new DMLRuntimeException(ex);
 		}
 		
-		//clear matrixes from cache //TODO clarify with Shirish (should be transparent)
+		//clear matrixes from cache
 		for( String str : pb.getVariables().keySet() )
 		{
 			Data dat = pb.getVariable(str); 
 			if( dat.getDataType() == DataType.MATRIX )
-			{
-				try
-				{
-					((MatrixObjectNew)dat).clearData();
-				}
-				catch(Exception ex)
-				{
-					((MatrixObjectNew)dat).release(); //(currently required for cov)
-					((MatrixObjectNew)dat).clearData(); //TODO should happen implicity in cache manager	
-				}
-			}
+				((MatrixObjectNew)dat).clearData();
+			
 		}
 		
 		return value;

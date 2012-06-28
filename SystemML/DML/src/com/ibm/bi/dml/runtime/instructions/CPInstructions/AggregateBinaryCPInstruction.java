@@ -114,11 +114,17 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 			COVOperator cov_op = (COVOperator)optr;
 			CM_COV_Object covobj = new CM_COV_Object();
 			
-			if ( input3 == null ) {
+			if ( input3 == null ) 
+			{
 				// Unweighted: cov.mvar0.mvar1.out
 				covobj = matBlock1.covOperations(cov_op, matBlock2);
+				
+				matBlock1 = matBlock2 = null;
+				pb.releaseMatrixInput(input1.get_name());
+				pb.releaseMatrixInput(input2.get_name());
 			}
-			else {
+			else 
+			{
 				// Weighted: cov.mvar0.mvar1.weights.out
 		        MatrixBlock wtBlock = pb.getMatrixInput(input3.get_name());
 				

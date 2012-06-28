@@ -2161,8 +2161,7 @@ public class DMLTranslator {
 		Hops leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
 		
-		//IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
-		//		hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+		setIdentifierParams(leftIndexOp, target);
 	
 	
 		return leftIndexOp;
@@ -2221,10 +2220,12 @@ public class DMLTranslator {
 			target = createTarget(source);
 		}
 		
+		
+		
 		Hops indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
 				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
 	
-	
+		setIdentifierParams(indexOp, target);
 		return indexOp;
 	}
 	

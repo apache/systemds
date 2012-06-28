@@ -3451,7 +3451,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		m.allocateDenseBlock();
 		for(int i=0; i<rows; i++) {
 			for(int j=0; j<cols; j++) {
-				m.denseBlock[i*cols+j] = Math.ceil(min + ((max-min)*random.nextDouble()));
+				m.denseBlock[i*cols+j] = min + ((max-min)*random.nextDouble());
 				m.nonZeros++;
 			}
 		}
@@ -3470,7 +3470,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				if(random.nextDouble()>sparsity)
 					continue;
-				this.sparseRows[i].append(j, Math.ceil(min + ((max-min)*random.nextDouble())) );
+				this.sparseRows[i].append(j, min + ((max-min)*random.nextDouble()) );
 				this.nonZeros++;
 			}
 		}

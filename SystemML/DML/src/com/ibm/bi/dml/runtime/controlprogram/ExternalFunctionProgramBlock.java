@@ -154,16 +154,19 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		}
 		
 		// convert block to cell
-		ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
-		tempInst.addAll(block2CellInst);
-		try {
-			this.execute(tempInst,ec);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing "
-					+ tempInst.toString());
+		if( block2CellInst != null )
+		{
+			ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
+			tempInst.addAll(block2CellInst);
+			try {
+				this.execute(tempInst,ec);
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new PackageRuntimeException("Error executing "
+						+ tempInst.toString());
+			}
 		}
-
+		
 		// now execute package function
 		for (int i = 0; i < _inst.size(); i++) {
 
@@ -183,14 +186,18 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		}
 
 		// convert cell to block
-		try {
-			tempInst.clear();
-			tempInst.addAll(cell2BlockInst);
-			this.execute(tempInst, ec);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new PackageRuntimeException("Failed to execute instruction "
-					+ cell2BlockInst.toString());
+		if( cell2BlockInst != null )
+		{
+			ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
+			try {
+				tempInst.clear();
+				tempInst.addAll(cell2BlockInst);
+				this.execute(tempInst, ec);
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new PackageRuntimeException("Failed to execute instruction "
+						+ cell2BlockInst.toString());
+			}
 		}
 	}
 
@@ -246,8 +253,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		_inst = new ArrayList<Instruction>();
 
 		// unblock all input matrices
-		block2CellInst = (getBlock2CellInstructions(getInputParams(),
-				_unblockedFileNames));
+		block2CellInst = getBlock2CellInstructions(getInputParams(),_unblockedFileNames);
 
 		// assemble information provided through keyvalue pairs
 		String className = _otherParams.get(CLASSNAME);
@@ -271,8 +277,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		_inst.add(einst);
 
 		// block output matrices
-		cell2BlockInst = getCell2BlockInstructions(getOutputParams(),
-				_blockedFileNames);
+		cell2BlockInst = getCell2BlockInstructions(getOutputParams(),_blockedFileNames);
 	}
 
 	
@@ -285,13 +290,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	private ArrayList<Instruction> getCell2BlockInstructions(
 			ArrayList<DataIdentifier> outputParams,
 			HashMap<String, String> blockedFileNames) {
-		ArrayList<Instruction> c2binst = new ArrayList<Instruction>();
-
-		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
-		//	return c2binst;
-		//}
-
-		MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK_BINARY);
+		
+		ArrayList<Instruction> c2binst = null;
 		
 		//list of matrices that need to be reblocked
 		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
@@ -303,95 +303,101 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			}
 		}
 
-		InputInfo textCellInputInfo = InputInfo.TextCellInputInfo;
-		OutputInfo binaryBlockOutputInfo = OutputInfo.BinaryBlockOutputInfo;
-
-		String[] inputs = new String[matrices.size()];
-		String[] outputs = new String[matrices.size()];
-		InputInfo[] inputInfo = new InputInfo[matrices.size()];
-		OutputInfo[] outputInfo = new OutputInfo[matrices.size()];
-		long[] numRows = new long[matrices.size()];
-		long[] numCols = new long[matrices.size()];
-		int[] numRowsPerBlock = new int[matrices.size()];
-		int[] numColsPerBlock = new int[matrices.size()];
-		byte[] resultIndex = new byte[matrices.size()];
-		byte[] resultDimsUnknown = new byte[matrices.size()];
-		ArrayList<String> inLabels = new ArrayList<String>();
-		ArrayList<String> outLabels = new ArrayList<String>();
-		String reblock = "";
-
-		// create a RBLK job that transforms each of these matrices from cell to
-		// block
-		for (int i = 0; i < matrices.size(); i++) {
-
-			String scratchSpaceLoc = null;
-			try {
-				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+		if( matrices.size() > 0 )
+		{
+			c2binst = new ArrayList<Instruction>();
+			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK_BINARY);
+			
+			InputInfo textCellInputInfo = InputInfo.TextCellInputInfo;
+			OutputInfo binaryBlockOutputInfo = OutputInfo.BinaryBlockOutputInfo;
+	
+			String[] inputs = new String[matrices.size()];
+			String[] outputs = new String[matrices.size()];
+			InputInfo[] inputInfo = new InputInfo[matrices.size()];
+			OutputInfo[] outputInfo = new OutputInfo[matrices.size()];
+			long[] numRows = new long[matrices.size()];
+			long[] numCols = new long[matrices.size()];
+			int[] numRowsPerBlock = new int[matrices.size()];
+			int[] numColsPerBlock = new int[matrices.size()];
+			byte[] resultIndex = new byte[matrices.size()];
+			byte[] resultDimsUnknown = new byte[matrices.size()];
+			ArrayList<String> inLabels = new ArrayList<String>();
+			ArrayList<String> outLabels = new ArrayList<String>();
+			String reblock = "";
+	
+			// create a RBLK job that transforms each of these matrices from cell to
+			// block
+			for (int i = 0; i < matrices.size(); i++) {
+	
+				String scratchSpaceLoc = null;
+				try {
+					scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+				} catch (Exception e){
+					System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+				}
+				
+				inputs[i] = "##" + matrices.get(i).getName() + "##";
+				outputs[i] = scratchSpaceLoc + "/" +
+	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
+				blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
+				inputInfo[i] = textCellInputInfo;
+				outputInfo[i] = binaryBlockOutputInfo;
+				inLabels.add(matrices.get(i).getName());
+				outLabels.add(matrices.get(i).getName() + "_extFnOutput");
+				numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
+				resultIndex[i] = (byte) i;
+				resultDimsUnknown[i] = 1;
+	
+				if (i > 0)
+					reblock += ",";
+	
+				reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + i
+						+ ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType()
+						+ ReBlock.OPERAND_DELIMITOR + i + ReBlock.VALUETYPE_PREFIX
+						+ matrices.get(i).getValueType()
+						+ ReBlock.OPERAND_DELIMITOR + ROWS_PER_BLOCK
+						+ ReBlock.OPERAND_DELIMITOR + COLS_PER_BLOCK;
+				
+				// create metadata instructions to populate symbol table 
+				// with variables that hold blocked matrices
+		  		StringBuilder mtdInst = new StringBuilder();
+				mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
+		 		mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
+		  		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
+		  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
+			
+		  		try {
+					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
+				} catch (Exception e) {
+					throw new PackageRuntimeException(e);
+				}
+			}
+	
+			reblkInst.setReBlockInstructions(inputs, inputInfo, numRows, numCols,
+					numRowsPerBlock, numColsPerBlock, "", reblock, "", outputs,
+					outputInfo, resultIndex, resultDimsUnknown, 1, 1, inLabels,
+					outLabels);
+			c2binst.add(reblkInst);
+	
+			// generate instructions that rename the output variables of REBLOCK job
+			for (int i = 0; i < matrices.size(); i++) {
+				try {
+					c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
+				} catch (Exception e) {
+					throw new PackageRuntimeException(e);
+				}
 			}
 			
-			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = scratchSpaceLoc + "/" +
-                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
-			blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
-			inputInfo[i] = textCellInputInfo;
-			outputInfo[i] = binaryBlockOutputInfo;
-			inLabels.add(matrices.get(i).getName());
-			outLabels.add(matrices.get(i).getName() + "_extFnOutput");
-			numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
-			resultIndex[i] = (byte) i;
-			resultDimsUnknown[i] = 1;
-
-			if (i > 0)
-				reblock += ",";
-
-			reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + i
-					+ ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType()
-					+ ReBlock.OPERAND_DELIMITOR + i + ReBlock.VALUETYPE_PREFIX
-					+ matrices.get(i).getValueType()
-					+ ReBlock.OPERAND_DELIMITOR + ROWS_PER_BLOCK
-					+ ReBlock.OPERAND_DELIMITOR + COLS_PER_BLOCK;
-			
-			// create metadata instructions to populate symbol table 
-			// with variables that hold blocked matrices
-	  		StringBuilder mtdInst = new StringBuilder();
-			mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-	 		mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-	  		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-	  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
-		
-	  		try {
-				c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
-			} catch (Exception e) {
-				throw new PackageRuntimeException(e);
-			}
-		}
-
-		reblkInst.setReBlockInstructions(inputs, inputInfo, numRows, numCols,
-				numRowsPerBlock, numColsPerBlock, "", reblock, "", outputs,
-				outputInfo, resultIndex, resultDimsUnknown, 1, 1, inLabels,
-				outLabels);
-		c2binst.add(reblkInst);
-
-		// generate instructions that rename the output variables of REBLOCK job
-		for (int i = 0; i < matrices.size(); i++) {
-			try {
-				c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
-			} catch (Exception e) {
-				throw new PackageRuntimeException(e);
+			//print instructions
+			if (DMLScript.DEBUG) {
+				System.out.println("--- Cell-2-Block Instructions ---");
+				for(Instruction i : c2binst) {
+					System.out.println(i.toString());
+				}
 			}
 		}
 		
-		//print instructions
-		if (DMLScript.DEBUG) {
-			System.out.println("--- Cell-2-Block Instructions ---");
-			for(Instruction i : c2binst) {
-				System.out.println(i.toString());
-			}
-		}
-		
-		return c2binst;
+		return c2binst; //null if no output matrices
 	}
 
 	/**
@@ -404,105 +410,106 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	private ArrayList<Instruction> getBlock2CellInstructions(
 			ArrayList<DataIdentifier> inputParams,
 			HashMap<String, String> unBlockedFileNames) {
-		ArrayList<Instruction> b2cinst = new ArrayList<Instruction>();
 		
-		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
-		//	return b2cinst;
-		//}		
+		ArrayList<Instruction> b2cinst = null;
 		
-		MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
-
 		//list of input matrices
 		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
 
 		// find all inputs that are matrices
-
 		for (int i = 0; i < inputParams.size(); i++) {
 			if (inputParams.get(i).getDataType() == DataType.MATRIX) {
 				matrices.add(inputParams.get(i));
 			}
 		}
-
-		InputInfo binBlockInputInfo = InputInfo.BinaryBlockInputInfo;
-		OutputInfo textCellOutputInfo = OutputInfo.TextCellOutputInfo;
-
-		String[] inputs = new String[matrices.size()];
-		String[] outputs = new String[matrices.size()];
-		InputInfo[] inputInfo = new InputInfo[matrices.size()];
-		OutputInfo[] outputInfo = new OutputInfo[matrices.size()];
-		long[] numRows = new long[matrices.size()];
-		long[] numCols = new long[matrices.size()];
-		int[] numRowsPerBlock = new int[matrices.size()];
-		int[] numColsPerBlock = new int[matrices.size()];
-		byte[] resultIndex = new byte[matrices.size()];
-		byte[] resultDimsUnknown = new byte[matrices.size()];
-		ArrayList<String> inLabels = new ArrayList<String>();
-		ArrayList<String> outLabels = new ArrayList<String>();
-
-		// create a GMR job that transforms each of these matrices from block to
-		// cell
-		for (int i = 0; i < matrices.size(); i++) {
-			
-			String scratchSpaceLoc = null;
-			try {
-				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-			}
-			
-			inputs[i] = "##" + matrices.get(i).getName() + "##";
-			outputs[i] = scratchSpaceLoc + "/" +
-                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
-			unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
-			inputInfo[i] = binBlockInputInfo;
-			outputInfo[i] = textCellOutputInfo;
-			inLabels.add(matrices.get(i).getName());
-			outLabels.add(matrices.get(i).getName()+"_extFnInput");
-			numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
-			resultIndex[i] = (byte) i;
-			resultDimsUnknown[i] = 1;
 		
-			// create metadata instructions to populate symbol table 
-			// with variables that hold unblocked matrices
-		 	StringBuilder mtdInst = new StringBuilder();
-			mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-				mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-		 		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-		 		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
+		if( matrices.size()>0 )
+		{
+			b2cinst = new ArrayList<Instruction>();
+			MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
 			
-		  	try {
-				b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
-			} catch (Exception e) {
-				throw new PackageRuntimeException(e);
-			}
-		}
+			InputInfo binBlockInputInfo = InputInfo.BinaryBlockInputInfo;
+			OutputInfo textCellOutputInfo = OutputInfo.TextCellOutputInfo;
 	
-		// Finally, generate GMR instruction that performs block2cell conversion
-		gmrInst.setGMRInstructions(inputs, inputInfo, numRows, numCols,
-				numRowsPerBlock, numColsPerBlock, "", "", "", "", outputs,
-				outputInfo, resultIndex, resultDimsUnknown, 0, 1, inLabels,
-				outLabels);
+			String[] inputs = new String[matrices.size()];
+			String[] outputs = new String[matrices.size()];
+			InputInfo[] inputInfo = new InputInfo[matrices.size()];
+			OutputInfo[] outputInfo = new OutputInfo[matrices.size()];
+			long[] numRows = new long[matrices.size()];
+			long[] numCols = new long[matrices.size()];
+			int[] numRowsPerBlock = new int[matrices.size()];
+			int[] numColsPerBlock = new int[matrices.size()];
+			byte[] resultIndex = new byte[matrices.size()];
+			byte[] resultDimsUnknown = new byte[matrices.size()];
+			ArrayList<String> inLabels = new ArrayList<String>();
+			ArrayList<String> outLabels = new ArrayList<String>();
+	
+			// create a GMR job that transforms each of these matrices from block to
+			// cell
+			for (int i = 0; i < matrices.size(); i++) {
+				
+				String scratchSpaceLoc = null;
+				try {
+					scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+				} catch (Exception e){
+					System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+				}
+				
+				inputs[i] = "##" + matrices.get(i).getName() + "##";
+				outputs[i] = scratchSpaceLoc + "/" +
+	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
+				unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
+				inputInfo[i] = binBlockInputInfo;
+				outputInfo[i] = textCellOutputInfo;
+				inLabels.add(matrices.get(i).getName());
+				outLabels.add(matrices.get(i).getName()+"_extFnInput");
+				numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
+				resultIndex[i] = (byte) i;
+				resultDimsUnknown[i] = 1;
 			
-		b2cinst.add(gmrInst);
-	
-		// generate instructions that rename the output variables of GMR job
-		for (int i = 0; i < matrices.size(); i++) {
-			try {
-				String s = "CP" + Lops.OPERAND_DELIMITOR + "mvvar"+ Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName(); 
-				b2cinst.add(CPInstructionParser.parseSingleInstruction(s));
-			} catch (Exception e) {
-				throw new PackageRuntimeException(e);
+				// create metadata instructions to populate symbol table 
+				// with variables that hold unblocked matrices
+			 	StringBuilder mtdInst = new StringBuilder();
+				mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
+					mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
+			 		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
+			 		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(outputInfo[i]) ) ;
+				
+			  	try {
+					b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
+				} catch (Exception e) {
+					throw new PackageRuntimeException(e);
+				}
+			}
+		
+			// Finally, generate GMR instruction that performs block2cell conversion
+			gmrInst.setGMRInstructions(inputs, inputInfo, numRows, numCols,
+					numRowsPerBlock, numColsPerBlock, "", "", "", "", outputs,
+					outputInfo, resultIndex, resultDimsUnknown, 0, 1, inLabels,
+					outLabels);
+				
+			b2cinst.add(gmrInst);
+		
+			// generate instructions that rename the output variables of GMR job
+			for (int i = 0; i < matrices.size(); i++) {
+				try {
+					String s = "CP" + Lops.OPERAND_DELIMITOR + "mvvar"+ Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName(); 
+					b2cinst.add(CPInstructionParser.parseSingleInstruction(s));
+				} catch (Exception e) {
+					throw new PackageRuntimeException(e);
+				}
+			}
+		
+			//print instructions
+			if (DMLScript.DEBUG) {
+				System.out.println("--- Block-2-Cell Instructions ---");
+				for(Instruction i : b2cinst) {
+					System.out.println(i.toString());
+				}
 			}
 		}
-	
-		//print instructions
-		if (DMLScript.DEBUG) {
-			System.out.println("--- Block-2-Cell Instructions ---");
-			for(Instruction i : b2cinst) {
-				System.out.println(i.toString());
-			}
-		}
-		return b2cinst;
+		
+		return b2cinst; //null if no input matrices
 	}
 
 	/**
@@ -614,7 +621,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 				// add result to variableMapping
 				String varName = tokens.get(1);
-				MatrixObjectNew newVar = createOutputMatrixObject( m );
+				MatrixObjectNew newVar = createOutputMatrixObject( m ); 
+				newVar.setVarName(varName);
+				
+				/* cleanup not required because done at central position (FunctionCallCPInstruction)
+				MatrixObjectNew oldVar = (MatrixObjectNew)getVariable(varName);
+				if( oldVar!=null )
+					oldVar.clearData();*/
+				
 				getVariables().put(varName, newVar); //put/override in local symbol table
 
 				continue;

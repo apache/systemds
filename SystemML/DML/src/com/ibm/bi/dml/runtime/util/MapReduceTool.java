@@ -37,7 +37,6 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class MapReduceTool {
@@ -89,6 +88,21 @@ public class MapReduceTool {
 		return job.get("mapred.task.id");
 	}
 
+	public static boolean existsFileOnHDFS(String fname){
+		boolean ret = true;
+		try{
+			JobConf job = new JobConf();
+			Path outpath = new Path(fname);
+			ret = FileSystem.get(job).exists(outpath);
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			ret = false;
+		}
+		return ret;
+	}
+	
 	public static void deleteFileIfExistOnHDFS(Path outpath, JobConf job) throws IOException {
 		if (FileSystem.get(job).exists(outpath)) {
 			FileSystem.get(job).delete(outpath, true);

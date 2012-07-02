@@ -27,6 +27,7 @@ public abstract class ParWorker
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
 	protected LocalVariableMap          _variables   = null;
 	protected ExecutionContext          _ec          = null;
+	protected ArrayList<String>         _resultVars  = null;
 	
 	protected int                       _numTasks    = -1;
 	protected int                       _numIters    = -1;
@@ -46,6 +47,7 @@ public abstract class ParWorker
 			_childBlocks = body.getChildBlocks();
 			_variables   = body.getVariables();
 			_ec          = body.getEc();
+			_resultVars  = body.getResultVarNames();
 		}
 		
 		_numTasks    = 0;
@@ -216,6 +218,35 @@ public abstract class ParWorker
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
 		}
 	}
+	
+	
+	/*
+	public void cleanupCachedVariables()
+	{
+		try
+		{
+			for( String var : _variables.keySet() )
+			{
+				Data dat = _variables.get(var);
+				DataType dt = dat.getDataType();
+				
+				if ( dt == DataType.MATRIX )
+				{
+					((MatrixObjectNew)dat).clearData();
+				}
+				else if ( dt == null || dt == DataType.UNKNOWN )
+				{
+					if( dat instanceof MatrixObjectNew )
+						((MatrixObjectNew)dat).clearData();
+				}
+				
+			}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+		}
+	}*/
 	
 }
 

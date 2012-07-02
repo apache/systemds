@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
+import com.ibm.bi.dml.utils.CacheException;
 
 public class MatrixBlock extends MatrixBlockDSM
 {
@@ -52,10 +53,24 @@ public class MatrixBlock extends MatrixBlockDSM
 	 *     to some other envelope.
 	 */
 	public void setEnvelope (MatrixObjectNew newEnvelope)
-	throws CacheAssignmentException
+		throws CacheAssignmentException
 	{
 		if (envelope != null && envelope != newEnvelope)
 			throw new CacheAssignmentException ();
 		envelope = newEnvelope; 
+	}
+	
+	@Override
+	public void finalize()
+	{
+		try 
+		{
+			if( envelope != null )
+				envelope.attemptEviction( this );
+		} 
+		catch (CacheException e)
+		{
+			e.printStackTrace();
+		}
 	}
 }

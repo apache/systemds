@@ -2,10 +2,7 @@ package com.ibm.bi.dml.utils;
 
 public class CacheStatusException extends CacheException
 {
-	public CacheStatusException ()
-	{
-		super ();
-	}
+	private static final long serialVersionUID = 1L;
 
 	public CacheStatusException (String message)
 	{

@@ -64,7 +64,9 @@ public class ParForResultMergeTest
 		//init input, output, comparison obj
 		MatrixObjectNew[] in = new MatrixObjectNew[ _par ];
 		for( int i=0; i<_par; i++ )
+		{
 			in[i] = createMatrixObject( _dim, true );
+		}
 		MatrixObjectNew out = createMatrixObject( _dim, true );
 		MatrixObjectNew ref = createMatrixObject( _dim, true );
 		
@@ -91,6 +93,12 @@ public class ParForResultMergeTest
 		//compare result
 		if( !checkOutput( ref, out ) )
 			Assert.fail("Wrong result matrix.");	
+		
+		//cleanup
+		for( MatrixObjectNew inMO : in )
+			inMO.clearData();
+		out.clearData();
+		ref.clearData();
 	}
 
 	private MatrixObjectNew createMatrixObject(int dim, boolean withData) 
@@ -111,11 +119,13 @@ public class ParForResultMergeTest
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 		
-		String fname = dir+"/"+String.valueOf(_seq.getNextID());
+		long id = _seq.getNextID();
+		String fname = dir+"/"+String.valueOf(id);
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, dim, dim);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE, fname, md);
+		mo.setVarName( String.valueOf(id) );
 		
 		if( withData )
 		{
@@ -130,8 +140,8 @@ public class ParForResultMergeTest
 	private void generateData(MatrixObjectNew ref, MatrixObjectNew[] in) 
 		throws DMLRuntimeException 
 	{
-		int rows = ref.getNumRows();
-		int cols = ref.getNumColumns();
+		long rows = ref.getNumRows();
+		long cols = ref.getNumColumns();
 		int index = 0;
 		int subSize = (int) Math.ceil( rows * cols / in.length );
 		double value;

@@ -105,6 +105,9 @@ public class LocalParWorker extends ParWorker implements Runnable
 			}
 		}	
 		
+		//cleanup symbol table
+		//cleanupCachedVariables();
+
 		if( ParForProgramBlock.MONITOR )
 		{
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
@@ -113,44 +116,6 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}
 	}
 
-	
-	/* 
-	@Override
-	public void run() 
-	{
-		// monitoring start
-		Timing time1;
-		if( ParForProgramBlock.MONITOR )
-		{
-			time1 = new Timing(); 
-			time1.start();
-		}
-		
-		// continuous execution:
-		// execute tasks until (1) stopped or (2) no more tasks
-		try
-		{
-			//dequeue the next task and execute
-			Task lTask = null; 
-			while( (lTask = _taskQueue.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS && !_stopped ) 
-			{
-				//execute the task 
-				executeTask( lTask );
-			}
-		}	
-		catch(Exception ex)	
-		{
-			throw new RuntimeException("ParFOR: Failed to execute task",ex); 
-		}	
-		
-		if( ParForProgramBlock.MONITOR )
-		{
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMITERS, _numIters);
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_EXEC_T, time1.stop());
-		}
-	}
-	*/
 }
 
 	

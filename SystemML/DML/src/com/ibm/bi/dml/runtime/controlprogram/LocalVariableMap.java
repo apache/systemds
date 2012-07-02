@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -18,15 +19,15 @@ public class LocalVariableMap implements Cloneable
 {
 	private static String eol = System.getProperty ("line.separator");
 	private static String ELEMENT_DELIM = com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
-	private volatile int globalCount = 0;
+	private static IDSequence _seq = new IDSequence();
 	
 	private HashMap <String, Data> localMap = null;
-	private final String localID;
+	private final long localID;
 	
 	public LocalVariableMap ()
 	{
 		localMap = new HashMap <String, Data> ();
-		localID = getNewID ();
+		localID = _seq.getNextID();
 	}
 	
 	public Set<String> keySet ()
@@ -119,7 +120,8 @@ public class LocalVariableMap implements Cloneable
 		newMap.putAll (this);
 		return newMap;
 	}
-
+	
+	/*
 	@Override
 	protected void finalize ()
 	{
@@ -140,4 +142,5 @@ public class LocalVariableMap implements Cloneable
         }
         return new String (out);
 	}
+	*/
 }

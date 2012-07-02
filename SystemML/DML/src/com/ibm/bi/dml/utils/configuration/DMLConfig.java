@@ -29,7 +29,6 @@ public class DMLConfig
 	public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
 	public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
 	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
-	public static final String CACHE_SIZE			= "cachesize";
 	
 	//internal default values
 	public static final int DEFAULT_BLOCK_SIZE = 1000;
@@ -120,8 +119,6 @@ public class DMLConfig
 	 * Handles processing of conguration parameters 
 	 * @param tagName the name of the DMLConfig parameter being retrieved
 	 * @return a string representation of the DMLConfig parameter value.  
-	 * 	Note: for cachesize, the string value will be converted to number of bytes
-	 *  e.g., "1k" is translated to "1024"  
 	 */
 	public String getTextValue(String tagName) throws ParseException
 	{
@@ -130,35 +127,6 @@ public class DMLConfig
 			throw new ParseException("ERROR: could not find parameter " + tagName + " in DMLConfig" );
 		}
 		
-		// perform transformation of cachesize parameter
-		if (tagName.equals(DMLConfig.CACHE_SIZE)){
-			// perform error checking
-			if (!retVal.matches("\\d+[kKmMgGtT]?")){
-				throw new ParseException("ERROR: malformed cachesize parameter: cachesize must be " +
-						" a numeric value followed by either k (for kilobytes), m (MB), g (for GB), " +
-						" or t (TB), with case-insensitve.");
-			}
-			
-			// handle k -- kilobytes
-			if (retVal.endsWith("k") || retVal.endsWith("K")){
-				String digits = retVal.replaceAll("k", "").replaceAll("K", "");
-				retVal = new Long(new Long(digits) * 1024).toString();
-			}
-			
-			else if (retVal.endsWith("m") || retVal.endsWith("M")){
-				String digits = retVal.replaceAll("m", "").replaceAll("M", "");
-				retVal = new Long(new Long(digits) * 1024 * 1024).toString();
-			}
-			else if (retVal.endsWith("g") || retVal.endsWith("G")){
-				String digits = retVal.replaceAll("g", "").replaceAll("G", "");
-				retVal = new Long(new Long(digits) * 1024 * 1024 * 1024).toString();
-			}
-			else if (retVal.endsWith("t") || retVal.endsWith("T")){
-				String digits = retVal.replaceAll("t", "").replaceAll("T", "");
-				retVal = new Long(new Long(digits) * 1024 * 1024 * 1024 * 1024).toString();
-			}
-			
-		}
 		return retVal;
 	}
 	

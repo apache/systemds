@@ -32,7 +32,6 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.controlprogram.CacheManager;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -40,6 +39,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
@@ -77,19 +77,6 @@ public class DMLScript {
 	public enum RUNTIME_PLATFORM { HADOOP, NZ, SINGLE_NODE, INVALID };
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
-	
-    public enum CACHE_EVICTION_POLICY { DEFAULT };
-    public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
-    public enum CACHE_EVICTION_STORAGE_TYPE { LOCAL, HDFS };
-    public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
-	
-    public static String cacheEvictionLocalFilePath = "C:\\YOUR_FAVORITE_LOCAL_PATH\\";
-    public static String cacheEvictionLocalFilePrefix = "cache";
-    public static String cacheEvictionLocalFileExtension = ".dat";
-
-    public static String cacheEvictionHDFSFilePath = "scratch_space/";
-    public static String cacheEvictionHDFSFilePrefix = "cache";
-    public static String cacheEvictionHDFSFileExtension = ".dat";
 	
 	// stores the path to the source
 	public static final String path_to_src = "./";
@@ -313,20 +300,8 @@ public class DMLScript {
 			System.out.println("INFO: " + DMLConfig.SOWER_WAIT_INTERVAL  + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.SOWER_WAIT_INTERVAL ));
 			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));
 			System.out.println("INFO: " + DMLConfig.NIMBLE_SCRATCH       + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NIMBLE_SCRATCH ));
-			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));
-			System.out.println("INFO: " + DMLConfig.CACHE_SIZE     		 + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.CACHE_SIZE));
-			
+			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));	
 		}
-		
-		///////////////////////////////////// initialize cacheManager /////////////////////////////////
-		String cacheSizeString = null; 
-		try {
-			cacheSizeString = ConfigurationManager.getConfig().getTextValue(DMLConfig.CACHE_SIZE);
-		} catch (Exception e){
-			System.out.println("ERROR: error retrieving DMLConfig parameter " + DMLConfig.CACHE_SIZE);
-		}
-		
-		CacheableData.cacheManager = new CacheManager (new Long(cacheSizeString));
 		
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
@@ -503,7 +478,9 @@ public class DMLScript {
 		  	    rtprog.getDAGQueue().forceShutDown();
 			
 			//cleanup scratch space (decomment this to ensure cleanup, but incurs some overhead)
-			//MapReduceTool.deleteFileIfExistOnHDFS(config.getTextValue(DMLConfig.SCRATCH_SPACE));	
+			//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
+			MapReduceTool.deleteFileIfExistOnHDFS(config.getTextValue(DMLConfig.SCRATCH_SPACE));
+			CacheableData.cleanupCache();
 		}
 	} // end executeHadoop
 

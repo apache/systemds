@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -348,6 +349,7 @@ public class VariableCPInstruction extends CPInstruction {
 				
 				//create new variable for symbol table and cache
 				//(existing objects already cleared on 'rm vars')
+
 				MatrixObjectNew mobj = new MatrixObjectNew(input1.get_valueType(), input2.get_name());
 				mobj.setVarName(input1.get_name());
 				mobj.setDataType(DataType.MATRIX);
@@ -371,29 +373,23 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RemoveVariable:
 			//remove matrix object from cache
-			if ( input1.get_dataType() == DataType.MATRIX )
-				((MatrixObjectNew)pb.getVariable(input1.get_name())).clearData();
+			clearCachedMatrixObject(pb, input1);
 			
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
 			break;
 			
 		case RenameVariable:
-			Data dd = pb.getVariable(input1.get_name());
+			Data dd = pb.getVariable(input1.get_name());		
+			clearCachedMatrixObject(pb, input2);
+			
 			pb.setVariable(input2.get_name(), dd);
-			//pb.removeVariable(input1.get_name());
+			//pb.removeVariable(input1.get_name()); 
 			break;
 			
 		case RemoveVariableAndFile:
 			//remove matrix object from cache
-			if ( input1.get_dataType() == DataType.MATRIX )
-				((MatrixObjectNew)pb.getVariable(input1.get_name())).clearData();
-			else if ( input1.get_dataType() == DataType.UNKNOWN || input1.get_dataType() == null )
-			{
-				Data dat = pb.getVariable(input1.get_name());
-				if( dat instanceof MatrixObjectNew )
-					((MatrixObjectNew)dat).clearData();
-			}
+			clearCachedMatrixObject( pb, input1 );
 			
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
@@ -610,7 +606,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 * This is a helper function to compute Spearman correlation between two ordinal variables.
 	 * It takes the contingency table constructed between ordinal variables as the input.
 	 */
-	double spearmanHelperFunction(double [][]ctable, int rows, int cols) {
+	private double spearmanHelperFunction(double [][]ctable, int rows, int cols) {
 		
 		double [] rowSums = new double[rows];
 		double [] colSums = new double[cols];
@@ -678,5 +674,25 @@ public class VariableCPInstruction extends CPInstruction {
 		
 		return spearman;
 	}
+	
+
+	public void clearCachedMatrixObject( ProgramBlock pb, CPOperand op ) 
+		throws CacheStatusException 
+	{
+		String varName = op.get_name();
+		Data dat = pb.getVariable(varName);
+		DataType dt = op.get_dataType(); //op datatype required
+		
+		if ( dt == DataType.MATRIX )
+		{
+			((MatrixObjectNew)dat).clearData();
+		}
+		else if ( dt == null || dt == DataType.UNKNOWN )
+		{
+			if( dat instanceof MatrixObjectNew )
+				((MatrixObjectNew)dat).clearData();
+		}
+	}
+	
 	
 }

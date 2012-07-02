@@ -6,7 +6,11 @@ import java.util.HashMap;
 import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -96,7 +100,9 @@ public class Program {
 	public void execute(LocalVariableMap varMap, ExecutionContext ec)
 	throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		//populate initial symbol table
 		_programVariables.putAll (varMap);
+		
 		for (int i=0; i<_programBlocks.size(); i++)
 		{
 			
@@ -106,6 +112,28 @@ public class Program {
 			
 			pb.execute(ec);
 			_programVariables = pb.getVariables();
+		}
+		
+		//cleanup remaining symbol table
+		cleanupCachedVariables();
+	}
+	
+	public void cleanupCachedVariables() throws CacheStatusException
+	{
+		for( String var : _programVariables.keySet() )
+		{
+			Data dat = _programVariables.get(var);
+			DataType dt = dat.getDataType();
+			
+			if ( dt == DataType.MATRIX )
+			{
+				((MatrixObjectNew)dat).clearData();
+			}
+			else if ( dt == null || dt == DataType.UNKNOWN )
+			{
+				if( dat instanceof MatrixObjectNew )
+					((MatrixObjectNew)dat).clearData();
+			}
 		}
 	}
 	

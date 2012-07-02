@@ -8,5 +8,4 @@
 <SowerWaitInterval>1000</SowerWaitInterval>
 <ReaperWaitInterval>1000</ReaperWaitInterval>
 <NimbleScratch>nimbleoutput</NimbleScratch>
-<cachesize>10000000</cachesize>
 </root>

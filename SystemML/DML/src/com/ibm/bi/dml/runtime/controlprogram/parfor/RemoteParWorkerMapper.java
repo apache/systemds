@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -13,6 +12,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
@@ -34,8 +34,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	
 	//MR ParWorker attributes  
 	protected String            _stringID       = null; 
-	protected boolean           _binaryTasks    = false;	
-	protected ArrayList<String> _resultVarNames = null;
+	protected boolean           _binaryTasks    = false;
 	
 	
 	public RemoteParWorkerMapper( ) 
@@ -69,7 +68,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			//write output if required (matrix indexed write)
 			LongWritable okey = new LongWritable( _workerID ); //created once
 			Text ovalue = new Text();
-			for( String rvar : _resultVarNames )
+			for( String rvar : _resultVars )
 			{
 				Data dat = _variables.get( rvar );
 				
@@ -116,7 +115,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 					
 					_childBlocks    = _sCache._childBlocks;
 					_variables      = _sCache._variables;
-					_resultVarNames = _sCache._resultVarNames;
+					_resultVars     = _sCache._resultVars;
 					_ec             = _sCache._ec;
 					
 					_numIters       = _sCache._numIters;
@@ -139,7 +138,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
 				//init local cache manager
-				DMLScript.cacheEvictionLocalFilePrefix = DMLScript.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+				CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+				CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
 				
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
@@ -147,9 +147,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				
 				_childBlocks = body.getChildBlocks();
 				_variables   = body.getVariables();
-				_ec          = body.getEc();
-				
-				_resultVarNames = body.getResultVarNames();
+				_ec          = body.getEc();				
+				_resultVars  = body.getResultVarNames();
 				
 				_numTasks    = 0;
 				_numIters    = 0;
@@ -182,7 +181,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	@Override
 	public void close() throws IOException 
 	{
-		//do nothing
+		//cleanup cached variables in order to prevent writing to disk
+		//cleanupCachedVariables();
 	}
 	
 }

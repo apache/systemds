@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -29,13 +30,12 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
-import com.ibm.bi.dml.utils.CacheOutOfMemoryException;
 import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 /**
- * Represents a matrix in controlprogram. This class contains method to read
+ * Represents a matrix in control program. This class contains method to read
  * matrices from HDFS and convert them to a specific format/representation. It
  * is also able to write several formats/representation of matrices to HDFS.
  * 
@@ -46,10 +46,12 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class MatrixObjectNew extends CacheableData
 {
+	private SoftReference<MatrixBlock> _cache;
+	
 	/**
 	 * Container object that holds the actual data.
 	 */
-	protected MatrixBlock _data;
+	private MatrixBlock _data;
 
 	/**
 	 * The name of HDFS file by which the data is backed up.
@@ -75,26 +77,20 @@ public class MatrixObjectNew extends CacheableData
 	 * When the matrix is written to HDFS (local file system, as well?), one
 	 * must get the OutputInfo that matches with InputInfo stored inside _mtd.
 	 */
-	protected MetaData _metaData;
-	
-	/**
-	 * Default constructor
-	 */
-	public MatrixObjectNew ()
-	{
-		super (DataType.MATRIX, ValueType.DOUBLE); // DOUBLE is the default value type
-		_data = null;
-		_metaData = null;
-		_dirtyFlag = false;
-	}
+	private MetaData _metaData;
 
 	/**
+	 * Constructor that takes only the HDFS filename.
+	 */
+	public MatrixObjectNew (ValueType vt, String file)
+	{
+		this (vt, file, null); //HDFS file path
+	}
+	
+	/**
 	 * Constructor that takes both HDFS filename and associated metadata.
-	 * @throws CacheStatusException 
-	 * @throws CacheOutOfMemoryException
 	 */
 	public MatrixObjectNew (ValueType vt, String file, MetaData mtd)
-		throws CacheOutOfMemoryException, CacheStatusException
 	{
 		super (DataType.MATRIX, vt);
 		_metaData = mtd; // Metadata
@@ -103,18 +99,6 @@ public class MatrixObjectNew extends CacheableData
 		_dirtyFlag = false;
 	}
 
-	/**
-	 * Constructor that takes only the HDFS filename.
-	 */
-	public MatrixObjectNew (ValueType vt, String file)
-	{
-		super (DataType.MATRIX, vt);
-		_hdfsFileName = file; // HDFS file path
-		_metaData = null;
-		_data = null;
-		_dirtyFlag = false;
-	}
-	
 	public void setVarName(String s) 
 	{
 		_varName = s;
@@ -149,28 +133,25 @@ public class MatrixObjectNew extends CacheableData
 	 */
 	public void refreshMetaData ()
 	{
+		if (_data == null) //refresh only for existing data
+			return;
+		
 		MatrixCharacteristics mcOld = (_metaData == null ? null : 
 			((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics ());
 		
-		MatrixBlock theData = _data;
-		if (theData == null)
-			return;
+		long numRows    = _data.getNumRows ();
+		long numColumns = _data.getNumColumns ();
+		long nonZeros   = _data.getNonZeros ();
 		
-		long numRows = theData.getNumRows ();
-		long numColumns = theData.getNumColumns ();
-		long nonZeros = theData.getNonZeros ();
-		
-		int numRowsPerBlock = 
-			(mcOld == null ? -1 : mcOld.get_rows_per_block ());  // TODO Set according to theData
-		int numColumnsPerBlock = 
-			(mcOld == null ? -1 : mcOld.get_cols_per_block ());  // TODO Set according to theData
+		int numRowsPerBlock = (mcOld == null ? -1 : mcOld.get_rows_per_block ());  // TODO Set according to theData
+		int numColumnsPerBlock = (mcOld == null ? -1 : mcOld.get_cols_per_block ());  // TODO Set according to theData
 		
 		MatrixCharacteristics mcNew = 
 			new MatrixCharacteristics (numRows, numColumns, numRowsPerBlock, numColumnsPerBlock, nonZeros);
 		
 		if (_metaData == null)
 			_metaData = new  MatrixDimensionsMetaData (mcNew);
-		else if (! mcNew.equals (mcOld))
+		else 
 			((MatrixDimensionsMetaData) _metaData).setMatrixCharacteristics (mcNew);
 	}
 
@@ -189,30 +170,22 @@ public class MatrixObjectNew extends CacheableData
 		}
 	}
 
-	public int getNumRows () 
+	public long getNumRows () 
 		throws DMLRuntimeException
 	{
 		if (_metaData == null)
 			refreshMetaData ();
 		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics ();
-		long numRows = mc.get_rows ();
-		if (numRows <= Integer.MAX_VALUE)
-			return (int) numRows;
-		else
-			throw new DMLRuntimeException ("Number of rows is " + numRows + ", which is too large for an \"int\"");
+		return mc.get_rows ();
 	}
 
-	public int getNumColumns() 
+	public long getNumColumns() 
 		throws DMLRuntimeException
 	{
 		if (_metaData == null)
 			refreshMetaData ();
 		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics ();
-		long numColumns = mc.get_cols ();
-		if (numColumns <= Integer.MAX_VALUE)
-			return (int) numColumns;
-		else
-			throw new DMLRuntimeException ("Number of columns is " + numColumns + ", which is too large for an \"int\"");
+		return mc.get_cols ();
 	}
 	
 	/**
@@ -275,6 +248,9 @@ public class MatrixObjectNew extends CacheableData
 	 * Acquires a shared "read-only" lock, produces the reference to the matrix data,
 	 * restores the matrix to main memory, reads from HDFS if needed.
 	 * 
+	 * Synchronized because there might be parallel threads (parfor local) that
+	 * access the same MatrixObjectNew object (in case it was created before the loop).
+	 * 
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
 	 * Out-Status: READ(+1).
 	 * 
@@ -285,9 +261,13 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		//System.out.println("acquire read "+_varName);
-		
+	
 		if (! isAvailableToRead ())
-			throw new CacheStatusException ();
+			throw new CacheStatusException ("MatrixObject not available to read.");
+		
+		//get object from cache
+		getCache();
+		
 		MatrixBlock newData = null;
 		String fName = _hdfsFileName;
 		if (isEmpty () && fName != null)
@@ -325,13 +305,19 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public synchronized MatrixBlock acquireModify ()
+	public MatrixBlock acquireModify ()
 		throws CacheException
 	{
+		
 		//System.out.println("acquire modify "+_varName);
 		
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ();
+			throw new CacheStatusException("MatrixObject not available to modify.");
+		
+		//get object from cache
+		getCache();
+		
+		
 		MatrixBlock newData = null;
 		String fName = _hdfsFileName;
 		if (isEmpty () && fName != null)
@@ -369,14 +355,15 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference, which is the same as the argument
 	 * @throws CacheException 
 	 */
-	public synchronized MatrixBlock acquireModify (MatrixBlock newData) 
+	public MatrixBlock acquireModify (MatrixBlock newData) 
 		throws CacheException
 	{
 		//System.out.println("acquire modify newdata "+_varName);
 		
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ();
-		clearData ();
+			throw new CacheStatusException ("MatrixObject not available to modify.");
+		
+		clearData (); 
 		acquire (true);
 		_dirtyFlag = true;
 		if (newData != null)
@@ -393,15 +380,17 @@ public class MatrixObjectNew extends CacheableData
 	 * Releases the shared ("read-only") or exclusive ("write") lock.  Updates
 	 * the matrix size, last-access time, metadata, etc.
 	 * 
+	 * Synchronized because there might be parallel threads (parfor local) that
+	 * access the same MatrixObjectNew object (in case it was created before the loop).
+	 * 
 	 * In-Status:  READ, MODIFY;
 	 * Out-Status: READ(-1), EVICTABLE, EMPTY.
 	 * 
-	 * @throws CacheOutOfMemoryException 
 	 * @throws CacheStatusException
 	 */
 	@Override
 	public synchronized void release () 
-		throws CacheOutOfMemoryException, CacheStatusException
+		throws CacheStatusException
 	{
 		//System.out.println("release "+_varName);
 		
@@ -410,28 +399,20 @@ public class MatrixObjectNew extends CacheableData
 			_dirtyFlag = true;
 			refreshMetaData ();
 		}
+		
 		super.release ();
+		
+		if( isEvictable() )
+		{
+			//get object from cache
+			if( _data != null )
+			{
+				createCache();
+				_data = null;
+			}
+		}
 	}
 
-	/**
-	 * Downgrades the exclusive ("write") lock down to a shared ("read-only") lock.
-	 * May be used, for example, prior to exporting a newly computed matrix to HDFS.
-	 * Updates the matrix size, last-access time, metadata, etc.
-
-	 * In-Status:  MODIFY;
-	 * Out-Status: READ(1).
-	 * 
-	 * @throws CacheOutOfMemoryException 
-	 * @throws CacheStatusException
-	 */
-	@Override
-	public synchronized void downgrade ()
-		throws CacheOutOfMemoryException, CacheStatusException
-	{
-		_dirtyFlag = true;
-		refreshMetaData ();
-		super.downgrade ();
-	}
 
 	/**
 	 * Sets the matrix data reference to <code>null</code>, abandons the old matrix.
@@ -441,22 +422,34 @@ public class MatrixObjectNew extends CacheableData
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
 	 * Out-Status: EMPTY.
 	 * 
-	 * @throws CacheOutOfMemoryException 
 	 * @throws CacheStatusException
 	 */
-	public synchronized void clearData ()  
-		throws CacheOutOfMemoryException, CacheStatusException
+	public void clearData ()  
+		throws CacheStatusException
 	{
 		//System.out.println("clear data "+_varName);
+		
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ();
+			throw new CacheStatusException ("MatrixObject not available to modify.");
+		
 		if (_data != null)
+		{
 			_data.clearEnvelope ();
+		}
+			
+		if( _cache!=null )
+		{
+			MatrixBlock tmp = _cache.get();
+			if( tmp!=null )
+				tmp.clearEnvelope();
+			clearCache();
+		}
+		
 		if (! isEmpty())
 		{
-			registerBlobDeletion ();
 			_data = null;
 			_dirtyFlag = false;
+			setEmpty();
 		}
 	}
 
@@ -469,14 +462,13 @@ public class MatrixObjectNew extends CacheableData
 	 * Out-Status: EMPTY.
 	 * 
 	 * @param filePath : the new HDFS path and file name
-	 * @throws CacheOutOfMemoryException 
 	 * @throws CacheStatusException
 	 */
-	public synchronized void importData (String filePath) 
-		throws CacheOutOfMemoryException, CacheStatusException
+	public void importData (String filePath) 
+		throws CacheStatusException
 	{
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ();
+			throw new CacheStatusException ("MatrixObject not available to modify.");
 		_hdfsFileName = filePath;
 		clearData ();
 	}
@@ -495,34 +487,55 @@ public class MatrixObjectNew extends CacheableData
 		exportData (_hdfsFileName, null);
 	}
 	
+	/**
+	 * Synchronized because there might be parallel threads (parfor local) that
+	 * access the same MatrixObjectNew object (in case it was created before the loop).
+	 * If all threads export the same data object concurrently it results errors
+	 * because they all write to the same file. Efficiency for loops and parallel threads
+	 * is achieved by checking if a file already exist on HDFS.
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @throws CacheException
+	 */
 	public synchronized void exportData (String fName, String outputFormat)
 		throws CacheException
 	{
-		if (! isAvailableToRead ())
-			throw new CacheStatusException ();
-		if (! isEmpty ())
+		//System.out.println("export data "+_varName+" "+fName);
+		
+		if( !MapReduceTool.existsFileOnHDFS(fName) )
 		{
-			acquire (false);
-			try
+			if (! isAvailableToRead ())
+				throw new CacheStatusException ("MatrixObject not available to read.");
+			
+			getCache();
+			
+			if (! isEmpty ())
 			{
-				writeMetaData (fName);
-				writeMatrixToHDFS (fName, outputFormat);
-				if (fName.equals (_hdfsFileName))
-					_dirtyFlag = false;
-			}
-			catch (IOException e)
-			{
-				throw new CacheIOException (fName + " : Export failed.", e);
-			}
-			catch (DMLRuntimeException e)
-			{
-				throw new CacheIOException (fName + " : Export failed.", e);
-			}
-			finally
-			{
-				release ();
+				acquire (false);
+				try
+				{
+					writeMetaData (fName);
+					writeMatrixToHDFS (fName, outputFormat);
+					if (fName.equals (_hdfsFileName))
+						_dirtyFlag = false;
+				}
+				catch (IOException e)
+				{
+					throw new CacheIOException (fName + " : Export failed.", e);
+				}
+				catch (DMLRuntimeException e)
+				{
+					throw new CacheIOException (fName + " : Export failed.", e);
+				}
+				finally
+				{
+					release();
+				}
 			}
 		}
+		else if(DMLScript.DEBUG) 
+			System.out.println("Skip export to hdfs since filename "+fName+" already exists.");
 	}
 	
 
@@ -534,12 +547,7 @@ public class MatrixObjectNew extends CacheableData
 	// ***                                       ***
 	// *********************************************
 	
-	
-	@Override
-	protected long getBlobSize ()
-	{
-		return (_data == null ? 0 : _data.getObjectSizeInMemory ());
-	}
+
 
 	@Override
 	protected boolean isBlobPresent()
@@ -548,9 +556,13 @@ public class MatrixObjectNew extends CacheableData
 	}
 
 	@Override
-	protected void evictBlobFromMemory () 
+	protected void evictBlobFromMemory ( MatrixBlock mb ) 
 		throws CacheIOException
 	{
+		System.out.println("EVICTION OF MatrixObjectNew "+_varName+" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()+" free");
+
+		_data = mb; //reference to garbage-collected matrix block
+			
 		String filePath = getCacheFilePathAndName ();
 		long begin=0;
 		if (DMLScript.DEBUG) 
@@ -560,9 +572,7 @@ public class MatrixObjectNew extends CacheableData
 			System.out.println ("\t        Eviction path: " + filePath);
 			begin = System.currentTimeMillis();
 		}
-		
-		if (_data == null)
-			throw new CacheIOException (filePath + " : Nothing to evict.");
+
 		try
 		{
 			writeMatrix (filePath);
@@ -588,6 +598,8 @@ public class MatrixObjectNew extends CacheableData
 	protected void restoreBlobIntoMemory () 
 		throws CacheIOException, CacheAssignmentException
 	{
+		System.out.println("RESTORE OF MatrixObjectNew "+_varName);
+		
 		String filePath = getCacheFilePathAndName ();
 		long begin = 0;
 		if (DMLScript.DEBUG) 
@@ -613,7 +625,7 @@ public class MatrixObjectNew extends CacheableData
 	    {
 	    	newData.setEnvelope (this);
 			_data = newData;
-	    	freeEvictedBlob ();
+	    	freeEvictedBlob();
 	    }
 	    else
 			throw new CacheIOException (filePath + " : Restore failed.");
@@ -637,21 +649,21 @@ public class MatrixObjectNew extends CacheableData
 			begin = System.currentTimeMillis();
 		}
 		
-		switch (DMLScript.cacheEvictionStorageType)
+		switch (CacheableData.cacheEvictionStorageType)
 		{
-		case LOCAL:
-			(new File (cacheFilePathAndName)).delete ();
-			break;
-		case HDFS:
-			try
-			{
-				(FileSystem.get (new Configuration())).delete (new Path (cacheFilePathAndName), false);
-			}
-			catch (IOException e)
-			{
-				;
-			}
-			break;
+			case LOCAL:
+				new File(cacheFilePathAndName).delete();
+				break;
+			case HDFS:
+				try
+				{
+					(FileSystem.get (new Configuration())).delete (new Path (cacheFilePathAndName), false);
+				}
+				catch (IOException e)
+				{
+					;
+				}
+				break;
 		}
 		
 		if (DMLScript.DEBUG) 
@@ -674,20 +686,20 @@ public class MatrixObjectNew extends CacheableData
 		if( _cacheFileName==null )
 		{
 			StringBuffer sb = new StringBuffer();
-			switch (DMLScript.cacheEvictionStorageType)
+			switch (CacheableData.cacheEvictionStorageType)
 			{
 				case LOCAL:
-					sb.append(DMLScript.cacheEvictionLocalFilePath); 
-					sb.append(DMLScript.cacheEvictionLocalFilePrefix);
+					sb.append(CacheableData.cacheEvictionLocalFilePath); 
+					sb.append(CacheableData.cacheEvictionLocalFilePrefix);
 					sb.append(String.format ("%09d", getUniqueCacheID()));
-					sb.append(DMLScript.cacheEvictionLocalFileExtension);
+					sb.append(CacheableData.cacheEvictionLocalFileExtension);
 					break;
 					
 				case HDFS:
-					sb.append(DMLScript.cacheEvictionHDFSFilePath);
-					sb.append(DMLScript.cacheEvictionHDFSFilePrefix);
+					sb.append(CacheableData.cacheEvictionHDFSFilePath);
+					sb.append(CacheableData.cacheEvictionHDFSFilePrefix);
 					sb.append(String.format ("%09d", getUniqueCacheID()));
-					sb.append(DMLScript.cacheEvictionHDFSFileExtension);
+					sb.append(CacheableData.cacheEvictionHDFSFileExtension);
 					break;
 			}
 			
@@ -700,19 +712,21 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock readMatrix (String filePathAndName)
 		throws IOException
 	{
+		//System.out.println("read matrix");
+		
 		MatrixBlock newData = null;
-		switch (DMLScript.cacheEvictionStorageType)
+		switch (CacheableData.cacheEvictionStorageType)
 		{
-		case LOCAL:
-			newData = readMatrixFromLocal (filePathAndName);
-			break;			
-		case HDFS:
-			newData = readMatrixFromHDFS (filePathAndName);
-			break;
-		default:
-			throw new IOException (filePathAndName + 
-					" : Cannot read matrix from unsupported storage type \""
-					+ DMLScript.cacheEvictionStorageType + "\"");				
+			case LOCAL:
+				newData = readMatrixFromLocal (filePathAndName);
+				break;			
+			case HDFS:
+				newData = readMatrixFromHDFS (filePathAndName);
+				break;
+			default:
+				throw new IOException (filePathAndName + 
+						" : Cannot read matrix from unsupported storage type \""
+						+ CacheableData.cacheEvictionStorageType + "\"");				
 		}
 		return newData;
 	}
@@ -720,6 +734,8 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock readMatrixFromHDFS (String filePathAndName)
 		throws IOException
 	{
+		//System.out.println("read hdfs "+filePathAndName);
+		
 		long begin = 0;
 		if (DMLScript.DEBUG) 
 		{
@@ -729,9 +745,8 @@ public class MatrixObjectNew extends CacheableData
 
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
-		MatrixBlock newData = null;
-		newData = DataConverter.readMatrixFromHDFS 
-			(filePathAndName, iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
+				iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
    		newData.clearEnvelope ();
    		
 		if (DMLScript.DEBUG) 
@@ -744,33 +759,36 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock readMatrixFromLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
-		MatrixBlock newData = null;
-		DataInputStream in = null;
-    	// in = new ObjectInputStream (new FileInputStream (filePathAndName));
-    	// newData = (MatrixBlock) in.readObject ();
-    	in = new DataInputStream (new FileInputStream (filePathAndName));
-		newData = new MatrixBlock ();
-		newData.readFields (in);
-   		in.close ();
+		//System.out.println("read local");
+		
+		DataInputStream in = new DataInputStream (new FileInputStream (filePathAndName));
+		MatrixBlock newData = new MatrixBlock ();
+		try {
+			newData.readFields (in);
+		}
+		finally{
+			in.close ();
+		}
    		newData.clearEnvelope ();
+   		
 		return newData;
 	}
 	
 	private void writeMatrix (String filePathAndName)
 		throws DMLRuntimeException, IOException
 	{
-		switch (DMLScript.cacheEvictionStorageType)
+		switch (CacheableData.cacheEvictionStorageType)
 		{
-		case LOCAL:
-			writeMatrixToLocal (filePathAndName);
-			break;			
-		case HDFS:
-			writeMatrixToHDFS (filePathAndName, null);
-			break;
-		default:
-			throw new IOException (filePathAndName + 
-					" : Cannot write matrix to unsupported storage type \""
-					+ DMLScript.cacheEvictionStorageType + "\"");				
+			case LOCAL:
+				writeMatrixToLocal (filePathAndName);
+				break;			
+			case HDFS:
+				writeMatrixToHDFS (filePathAndName, null);
+				break;
+			default:
+				throw new IOException (filePathAndName + 
+						" : Cannot write matrix to unsupported storage type \""
+						+ CacheableData.cacheEvictionStorageType + "\"");				
 		}
 	}
 
@@ -783,6 +801,8 @@ public class MatrixObjectNew extends CacheableData
 	private void writeMatrixToHDFS (String filePathAndName, String outputFormat)
 		throws DMLRuntimeException, IOException
 	{
+		//System.out.println("write matrix hdfs "+filePathAndName );
+		
 		long begin = 0;
 		if (DMLScript.DEBUG) 
 		{
@@ -791,21 +811,18 @@ public class MatrixObjectNew extends CacheableData
 			begin = System.currentTimeMillis();
 		}
    		
-		MatrixFormatMetaData iimd;
-		MatrixBlock theData;
 		if (_metaData == null)
 			refreshMetaData ();
-		iimd = (MatrixFormatMetaData) _metaData;
-		theData = _data;
-		
-		if (theData != null)
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+
+		if (_data != null)
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
 					: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-			DataConverter.writeMatrixToHDFS (theData, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+			DataConverter.writeMatrixToHDFS (_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
 
 			if (DMLScript.DEBUG) 
 			{
@@ -818,28 +835,32 @@ public class MatrixObjectNew extends CacheableData
 		}
 	}
 	
-	private void writeMatrixToLocal (String filePathAndName)
+	private synchronized void writeMatrixToLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
-		DataOutputStream out = null;
-		// out = new ObjectOutputStream (new FileOutputStream (filePathAndName));
-		// out.writeObject (_data);	
-		out = new DataOutputStream (new FileOutputStream (filePathAndName));
-		_data.write (out);
-   		out.close ();
+		//System.out.println("write matrix local");
+		
+		DataOutputStream out = new DataOutputStream (new FileOutputStream (filePathAndName));
+		try {
+			_data.write (out);
+		}
+		finally{
+			out.close ();	
+		}
+   		
 	}
 
 	private void writeMetaData (String filePathAndName)
 		throws DMLRuntimeException, IOException
 	{
-		MatrixFormatMetaData iimd;
-		MatrixBlock theData;
+		//System.out.println("write meta");
+
 		if (_metaData == null)
 			refreshMetaData ();
-		iimd = (MatrixFormatMetaData) _metaData;
-		theData = _data;
+		
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 	
-		if (theData != null)
+		if (_data != null)
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
@@ -858,4 +879,42 @@ public class MatrixObjectNew extends CacheableData
 				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
 		return _varName + " " + debugNameEnding;
 	}
+	
+	
+	private void createCache( ) 
+	{
+		_cache = new SoftReference<MatrixBlock>( _data );	
+	}
+
+	private void getCache()
+	{
+		if( _data == null && _cache !=null )
+		{
+			_data = _cache.get();
+			clearCache();
+		}
+	}
+	
+	private void clearCache()
+	{
+		_cache.clear();
+		_cache = null;
+	}
+	
+	/*
+	@Override
+	public void finalize()
+	{
+		//todo if this always works properly
+		
+		try 
+		{
+			clearData();
+		} 
+		catch (CacheStatusException e) 
+		{
+			e.printStackTrace();
+		}
+	}
+	*/
 }

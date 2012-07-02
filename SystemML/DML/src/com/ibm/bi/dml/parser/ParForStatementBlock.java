@@ -393,92 +393,94 @@ public class ParForStatementBlock extends ForStatementBlock
 					//CHECK output dependencies
 					Collection<DataIdentifier> datsUpdated = getDataIdentifiers(s, true);
 					
-					for(DataIdentifier write : datsUpdated)	
-					{ 
-						String writeStr = write.getName();
-						if( c._var.equals( writeStr )  ) 
-						{
-							DataIdentifier dat2 = write; 
-	
-							if( cdt == DataType.MATRIX ) 
+					if( datsUpdated != null )
+						for(DataIdentifier write : datsUpdated)	
+						{ 
+							String writeStr = write.getName();
+							if( c._var.equals( writeStr )  ) 
 							{
-								if( c._dat != dat2 ) //omit self-check
+								DataIdentifier dat2 = write; 
+		
+								if( cdt == DataType.MATRIX ) 
 								{
-									if( runEqualsCheck(c._dat, dat2) )
+									if( c._dat != dat2 ) //omit self-check
 									{
-										//intra-iteration output dependencies (same index function) are OK
-									}
-									else if(runBanerjeeGCDTest( c._dat, dat2 ))
-									{
-										if( DMLScript.DEBUG )
-											System.out.println("PARFOR: Possible output dependency detected via GCD/Banerjee: var '"+write+"'.");
-										dep[0] = true;
-										if( ABORT_ON_FIRST_DEPENDENCY )
-											return;
+										if( runEqualsCheck(c._dat, dat2) )
+										{
+											//intra-iteration output dependencies (same index function) are OK
+										}
+										else if(runBanerjeeGCDTest( c._dat, dat2 ))
+										{
+											if( DMLScript.DEBUG )
+												System.out.println("PARFOR: Possible output dependency detected via GCD/Banerjee: var '"+write+"'.");
+											dep[0] = true;
+											if( ABORT_ON_FIRST_DEPENDENCY )
+												return;
+										}
 									}
 								}
-							}
-							else // at least one type UNKNOWN
-							{
-								//cannot infer type, need to exit (conservative approach)
-								throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
-														   "due to unknown datatype of var '"+c._var+"'.");
+								else // at least one type UNKNOWN
+								{
+									//cannot infer type, need to exit (conservative approach)
+									throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
+															   "due to unknown datatype of var '"+c._var+"'.");
+								}
 							}
 						}
-					}
 					
 					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
 					
 					//check data and anti dependencies
-					for(DataIdentifier read : datsRead)
-					{ 
-						String readStr = read.getName();
-						
-						if( c._var.equals( readStr )  ) 
-						{
-							DataIdentifier dat2 = read;
-							DataType dat2dt = _vsParent.getVariables().get(readStr).getDataType(); //vs.getVariables().get(read).getDataType();
-						
-							if(    cdt == DataType.SCALAR 
-								|| cdt == DataType.OBJECT
-								|| dat2dt == DataType.SCALAR 
-								|| dat2dt == DataType.OBJECT )  
+					if( datsRead != null )
+						for(DataIdentifier read : datsRead)
+						{ 
+							String readStr = read.getName();
+							
+							if( c._var.equals( readStr )  ) 
 							{
-								//every write, read combination involving a scalar is a data dependency
-								dep[1] = true;
-								if( ABORT_ON_FIRST_DEPENDENCY )
-									return;
-								
-								//if(!output) //no write before read in iteration body
-								//data = true;
-								
-							}
-							else if(   cdt == DataType.MATRIX 
-									&& dat2dt == DataType.MATRIX  )
-							{
-								if( /*c._pos < sCount &&*/ runEqualsCheck(c._dat, dat2) )
+								DataIdentifier dat2 = read;
+								DataType dat2dt = _vsParent.getVariables().get(readStr).getDataType(); //vs.getVariables().get(read).getDataType();
+							
+								if(    cdt == DataType.SCALAR 
+									|| cdt == DataType.OBJECT
+									|| dat2dt == DataType.SCALAR 
+									|| dat2dt == DataType.OBJECT )  
 								{
-									//read after write on same index, and not constant (checked for output) 
-									//is OK
-								}
-								else if( runBanerjeeGCDTest( c._dat, dat2 ) )
-								{
-									if( DMLScript.DEBUG )
-										System.out.println("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
+									//every write, read combination involving a scalar is a data dependency
 									dep[1] = true;
-									dep[2] = true;
 									if( ABORT_ON_FIRST_DEPENDENCY )
 										return;
+									
+									//if(!output) //no write before read in iteration body
+									//data = true;
+									
+								}
+								else if(   cdt == DataType.MATRIX 
+										&& dat2dt == DataType.MATRIX  )
+								{
+									if( /*c._pos < sCount &&*/ runEqualsCheck(c._dat, dat2) )
+									{
+										//read after write on same index, and not constant (checked for output) 
+										//is OK
+									}
+									else if( runBanerjeeGCDTest( c._dat, dat2 ) )
+									{
+										if( DMLScript.DEBUG )
+											System.out.println("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
+										dep[1] = true;
+										dep[2] = true;
+										if( ABORT_ON_FIRST_DEPENDENCY )
+											return;
+									}
+								}
+								else //if( c._dat.getDataType() == DataType.UNKNOWN )
+								{
+									//cannot infer type, need to exit (conservative approach)
+									throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
+															   "due to unknown datatype of var '"+c._var+"'.");
 								}
 							}
-							else //if( c._dat.getDataType() == DataType.UNKNOWN )
-							{
-								//cannot infer type, need to exit (conservative approach)
-								throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
-														   "due to unknown datatype of var '"+c._var+"'.");
-							}
 						}
-					}
 				}
 			}				
 	}

@@ -1,0 +1,4 @@
+#Tue Jul 03 16:38:14 PDT 2012
+com.ibm.biginsights.version=1.3.0.1
+bigInsights.librariesVersion=BigInsights V1.3.0.1
+jaql.searchPath=C\:\\Program Files\\IBM\\IBMIMShared\\plugins\\plugins\\com.ibm.biginsights.jaql.lib_1.1.0.v20120406_1537\\lib\\modules\\

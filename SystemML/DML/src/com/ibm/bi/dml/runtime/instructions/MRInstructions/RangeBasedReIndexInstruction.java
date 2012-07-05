@@ -19,6 +19,9 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 
+	public boolean forLeftIndexing=false;
+	public long leftMatrixNRows=0;
+	public long leftMatrixNCols=0;
 	//start and end are all inclusive
 	public static class IndexRange
 	{
@@ -65,6 +68,16 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		indexRange=rng;
 	}
 	
+	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, boolean forleft, long leftNRows, long leftNCols, String istr) {
+		super(op, in, out);
+		mrtype = MRINSTRUCTION_TYPE.RangeReIndex;
+		instString = istr;
+		indexRange=rng;
+		this.forLeftIndexing=forleft;
+		this.leftMatrixNRows=leftNRows;
+		this.leftMatrixNCols=leftNCols;
+	}
+	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 8 );
@@ -93,9 +106,9 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 			//don't need to extend to the whole left matrix dimension
 			rng.rowEnd=leftIndexingNrow-a+1;
 			rng.colEnd=leftIndexingNcol-b+1;
-		}
-	
-		return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, str);
+			return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, forLeft, leftIndexingNrow, leftIndexingNcol, str);
+		}else
+			return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, str);
 	}
 	
 	

@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
@@ -166,7 +167,8 @@ public class MatrixCharacteristics{
 		}else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
 				|| ins instanceof UnaryInstruction
-				|| ins instanceof RandInstruction)
+				|| ins instanceof RandInstruction
+				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;
 			dim_out.set(dims.get(realIns.input));
@@ -189,10 +191,9 @@ public class MatrixCharacteristics{
 			RangeBasedReIndexInstruction realIns=(RangeBasedReIndexInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);
 			long nrow=realIns.indexRange.rowEnd-realIns.indexRange.rowStart+1;
-			long ncol=realIns.indexRange.colEnd-realIns.indexRange.colEnd+1;
+			long ncol=realIns.indexRange.colEnd-realIns.indexRange.colStart+1;
 			dim_out.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
-		}
-		else { 
+		}else { 
 			/*
 			 * if ins is none of the above cases then we assume that dim_out dimensions are unknown
 			 */

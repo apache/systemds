@@ -1,0 +1,17 @@
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+
+A=readMM(paste(args[1], "A.mtx", sep=""))
+B=readMM(paste(args[1], "B.mtx", sep=""))
+C=readMM(paste(args[1], "C.mtx", sep=""))
+D=readMM(paste(args[1], "D.mtx", sep=""))
+A[args[2]:args[3],args[4]:args[5]]=0
+A[args[2]:args[3],args[4]:args[5]]=B
+writeMM(as(A,"CsparseMatrix"), paste(args[6], "AB", sep=""), format="text")
+A[1:args[3],args[4]:ncol(A)]=0
+A[1:args[3],args[4]:ncol(A)]=C
+writeMM(as(A,"CsparseMatrix"), paste(args[6], "AC", sep=""), format="text")
+A[,args[4]:args[5]]=0
+A[,args[4]:args[5]]=D
+writeMM(as(A,"CsparseMatrix"), paste(args[6], "AD", sep=""), format="text")

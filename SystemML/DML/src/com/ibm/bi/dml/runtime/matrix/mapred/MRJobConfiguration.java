@@ -865,7 +865,7 @@ public class MRJobConfiguration {
 			for(MRInstruction ins: insMapper)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
+				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction)
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 

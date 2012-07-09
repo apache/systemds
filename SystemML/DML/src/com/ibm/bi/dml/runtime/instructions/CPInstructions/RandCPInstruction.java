@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -27,6 +28,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 							  double minValue, 
 							  double maxValue,
 							  double sparsity, 
+							  long seed,
 							  String probabilityDensityFunction, 
 							  String istr ) {
 		super(op, in, out, istr);
@@ -35,6 +37,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
+		this.seed = seed;
 		this.probabilityDensityFunction = probabilityDensityFunction;
 	}
 
@@ -42,7 +45,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 	{
 		Operator op = null;
 		
-		// Example: CP:Rand:rows=10:cols=10:min=0.0:max=1.0:sparsity=1.0:pdf=uniform:dir=scratch_space/_t0/:mVar0-MATRIX-DOUBLE
+		// Example: CP:Rand:rows=10:cols=10:min=0.0:max=1.0:sparsity=1.0:seed=7:pdf=uniform:dir=scratch_space/_t0/:mVar0-MATRIX-DOUBLE
 		String[] s = InstructionUtils.getInstructionPartsWithValueType(str);
 		CPOperand in = null; // Rand instruction does not have any input matrices
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -53,16 +56,24 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		double minValue = Double.parseDouble(s[3].substring(4));
 		double maxValue = Double.parseDouble(s[4].substring(4));
 		double sparsity = Double.parseDouble(s[5].substring(9));
-		String pdf = s[6].substring(4);
+		long seed = Long.parseLong(s[6].substring(5));
+		String pdf = s[7].substring(4);
 		
-		return new RandCPInstruction(op, in, out, rows, cols, minValue, maxValue, sparsity, pdf, str);
+		return new RandCPInstruction(op, in, out, rows, cols, minValue, maxValue, sparsity, seed, pdf, str);
 	}
 	
 	public void processInstruction (ProgramBlock pb)
-		throws DMLRuntimeException{
+		throws DMLRuntimeException
+	{
 		String output_name = output.get_name();
 		
-		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, seed) );
+		//generate pseudo-random seed (because not specified) 
+		long lSeed = seed; //seed per invocation
+		if( lSeed == RandOp.UNSPECIFIED_SEED ) 
+			lSeed = RandOp.generateRandomSeed();
+		
+		//execute rand
+		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, lSeed) );
         pb.setMatrixOutput(output_name, soresBlock);
 	}
 }

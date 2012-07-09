@@ -36,6 +36,7 @@ public class RandTest {
         	instruction.append(Instruction.OPERAND_DELIM + "min=0.0");
         	instruction.append(Instruction.OPERAND_DELIM + "max=1.0");
         	instruction.append(Instruction.OPERAND_DELIM + "sparsity=0.5");
+        	instruction.append(Instruction.OPERAND_DELIM + "seed=7");
         	instruction.append(Instruction.OPERAND_DELIM + "pdf=uniform");
         	instruction.append(Instruction.OPERAND_DELIM + "dir=scratch_space/_t0/");
         	RandInstruction instType = (RandInstruction)RandInstruction.parseInstruction(instruction.toString());
@@ -47,6 +48,7 @@ public class RandTest {
             assertEquals(0.0, instType.minValue, 0);
             assertEquals(1.0, instType.maxValue, 0);
             assertEquals(0.5, instType.sparsity, 0);
+            assertEquals(7, instType.seed, 0);
             assertEquals("uniform", instType.probabilityDensityFunction);
             assertEquals("scratch_space/_t0/", instType.baseDir);
         } catch (Exception e) {

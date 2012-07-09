@@ -1815,10 +1815,11 @@ public class DMLTranslator {
 				double randMinValue = new Double(rs.getExprParam(RandStatement.RAND_MIN).toString());
 				double randMaxValue = new Double(rs.getExprParam(RandStatement.RAND_MAX).toString());
 				double randSparsityValue = new Double(rs.getExprParam(RandStatement.RAND_SPARSITY).toString());
+				long randSeedValue = new Long(rs.getExprParam(RandStatement.RAND_SEED).toString());
 				String randPdfValue = rs.getExprParam(RandStatement.RAND_PDF).toString();
 				// TODO: DRB: END RETROFIT FOR RAND ///////////////////////////////////////
 				
-				Hops rand = new RandOp(target, randMinValue, randMaxValue, randSparsityValue, randPdfValue);
+				Hops rand = new RandOp(target, randMinValue, randMaxValue, randSparsityValue, randSeedValue, randPdfValue);
 				
 				setIdentifierParams(rand, target);
 				_ids.put(target.getName(), rand);

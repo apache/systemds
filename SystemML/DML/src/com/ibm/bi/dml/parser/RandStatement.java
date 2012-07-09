@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -51,7 +52,7 @@ public class RandStatement extends Statement
 		_exprParams.put(RAND_MIN, 	new DoubleIdentifier(0.0));
 		_exprParams.put(RAND_MAX, 	new DoubleIdentifier(1.0));
 		_exprParams.put(RAND_SPARSITY, 	new DoubleIdentifier(1.0)); 			
-		_exprParams.put(RAND_SEED,		new IntIdentifier(-1L));
+		_exprParams.put(RAND_SEED,		new IntIdentifier(RandOp.UNSPECIFIED_SEED));
 		_exprParams.put(RAND_PDF,		new StringIdentifier("uniform"));		
 	}
 	

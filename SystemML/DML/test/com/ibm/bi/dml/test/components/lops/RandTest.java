@@ -18,6 +18,7 @@ public class RandTest {
     private static final double MIN_VALUE = 0.0;
     private static final double MAX_VALUE = 1.0;
     private static final double SPARSITY = 0.5;
+    private static final long SEED = 7;
     private static final String PDF = "uniform";
     private static final String DIR = "./in/";
     
@@ -36,7 +37,7 @@ public class RandTest {
         id.setDataType(DataType.MATRIX);
         id.setDimensions(NUM_ROWS, NUM_COLS);
         id.setBlockDimensions(NUM_ROWS_IN_BLOCK, NUM_COLS_IN_BLOCK);
-        return new Rand(id, MIN_VALUE, MAX_VALUE, SPARSITY, PDF, DIR,
+        return new Rand(id, MIN_VALUE, MAX_VALUE, SPARSITY, SEED, PDF, DIR,
         		DataType.MATRIX, ValueType.DOUBLE);
     }
 

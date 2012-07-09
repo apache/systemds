@@ -25,6 +25,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public class RandOp extends Hops
 {
+	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
+	public static final long UNSPECIFIED_SEED = -1;
+	
 	/** target identifier which will hold the random object */
 	private DataIdentifier id;
 	/** minimum of the random values */
@@ -33,9 +36,11 @@ public class RandOp extends Hops
 	private double maxValue;
 	/** sparsity of the random object */
 	private double sparsity;
+	/** fixed seed for all invocations, -1 for random seed on each invocation */
+	private long seed;
 	/** probability density function which is used to produce the sparsity */
 	private String probabilityDensityFunction;
-	
+
 	
 	/**
 	 * <p>Creates a new Rand-HOP. The target identifier has to hold the dimensions of the new random object.</p>
@@ -46,7 +51,7 @@ public class RandOp extends Hops
 	 * @param sparsity sparsity of the random object
 	 * @param probabilityDensityFunction probability density function
 	 */
-	public RandOp(DataIdentifier id, double minValue, double maxValue, double sparsity,
+	public RandOp(DataIdentifier id, double minValue, double maxValue, double sparsity, long seed,
 			String probabilityDensityFunction)
 	{
 		super(Kind.RandOp, id.getName(), id.getDataType(), ValueType.DOUBLE);
@@ -54,6 +59,7 @@ public class RandOp extends Hops
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
+		this.seed = seed;
 		this.probabilityDensityFunction = probabilityDensityFunction;
 	}
 
@@ -76,7 +82,7 @@ public class RandOp extends Hops
 				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 			}
 			
-			Rand rnd = new Rand(id, minValue, maxValue, sparsity,
+			Rand rnd = new Rand(id, minValue, maxValue, sparsity, seed,
 					probabilityDensityFunction, scratchSpaceLoc
 							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR
 							+ ProgramConverter.CP_ROOT_THREAD_ID
@@ -111,6 +117,7 @@ public class RandOp extends Hops
 					this.get_valueType(),
 					this.get_dataType());
 
+			//TODO extend for seed
 			sqllop.set_sql("CALL gensparsematrix('" + sqllop.get_tableName() + "', " + this.get_dim1() + ", "
 					+ this.get_dim2() + ", " + this.minValue + ", " + this.maxValue + ", " + this.sparsity + ");");
 			
@@ -130,13 +137,27 @@ public class RandOp extends Hops
 	}
 
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}	
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if (DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			return ExecType.CP;
 
+		if( _etype != null ) 			
+			return _etype;
+		
 		if (this.areDimsBelowThreshold() || this.isVector())
 			return ExecType.CP;
 		else
 			return ExecType.MR;
+	}
+	
+	public static long generateRandomSeed()
+	{
+		return System.nanoTime();
 	}
 }

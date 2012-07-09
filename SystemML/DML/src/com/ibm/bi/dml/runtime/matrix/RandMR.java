@@ -13,6 +13,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -106,11 +107,17 @@ public class RandMR
 			inputs[i]=ins.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
 			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 			PrintWriter pw = new PrintWriter(fsOut);
-			random.setSeed(ins.seed);
+			
+			//seed generation
+			long lSeed = ins.seed;
+			if(lSeed == RandOp.UNSPECIFIED_SEED)
+				lSeed = RandOp.generateRandomSeed();
+			random.setSeed(lSeed);
 			int[] seeds=new int[32];
 			for(int s=0; s<seeds.length; s++)
 				seeds[s]=random.nextInt();
 			bigrand.setSeed(seeds);
+			
 			if(ins==null)
 				throw new RuntimeException("bad rand instruction: "+randInstructions[i]);
 			rlens[i]=ins.rows;

@@ -29,6 +29,7 @@ public class RandOpTest {
 	private static final double MIN_VALUE = 0.0;
 	private static final double MAX_VALUE = 1.0;
 	private static final double SPARSITY = 0.5;
+	private static final long SEED = 7;
 	private static final String PDF = "uniform";
 	private static final String DIR = "scratch_space/_t0/";
 	
@@ -57,6 +58,7 @@ public class RandOpTest {
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "min=" + MIN_VALUE
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "max=" + MAX_VALUE
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "sparsity=" + SPARSITY
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "seed=" + SEED
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pdf=" + PDF
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "dir=" + DIR, lop
 					.getInstructions(0, 1));
@@ -72,7 +74,7 @@ public class RandOpTest {
 		id.setDataType(DataType.MATRIX);
 		id.setDimensions(NUM_ROWS, NUM_COLS);
 		id.setBlockDimensions(NUM_ROWS_IN_BLOCK, NUM_COLS_IN_BLOCK);
-		RandOp rand = new RandOp(id, MIN_VALUE, MAX_VALUE, SPARSITY, PDF);
+		RandOp rand = new RandOp(id, MIN_VALUE, MAX_VALUE, SPARSITY, SEED, PDF);
 		rand.set_dim1(id.getDim1());
 		rand.set_dim2(id.getDim2());
 		rand.setNnz(id.getNnz());

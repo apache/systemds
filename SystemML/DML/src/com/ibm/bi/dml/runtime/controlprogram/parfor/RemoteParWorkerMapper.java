@@ -75,8 +75,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				//export output variable to HDFS (see RunMRJobs)
 				if ( dat.getDataType() == DataType.MATRIX ) {
 					MatrixObjectNew inputObj = (MatrixObjectNew) dat;
-					if ( inputObj.isDirty() ) 
-						inputObj.exportData();
+					inputObj.exportData();
 				}
 				
 				//pass output vars (scalars by value, matrix by ref) to result

@@ -14,6 +14,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
@@ -143,8 +144,8 @@ public class MatrixObjectNew extends CacheableData
 		long numColumns = _data.getNumColumns ();
 		long nonZeros   = _data.getNonZeros ();
 		
-		int numRowsPerBlock = (mcOld == null ? -1 : mcOld.get_rows_per_block ());  // TODO Set according to theData
-		int numColumnsPerBlock = (mcOld == null ? -1 : mcOld.get_cols_per_block ());  // TODO Set according to theData
+		int numRowsPerBlock = (mcOld == null ? DMLTranslator.DMLBlockSize : mcOld.get_rows_per_block ()); 
+		int numColumnsPerBlock = (mcOld == null ? DMLTranslator.DMLBlockSize : mcOld.get_cols_per_block ()); 
 		
 		MatrixCharacteristics mcNew = 
 			new MatrixCharacteristics (numRows, numColumns, numRowsPerBlock, numColumnsPerBlock, nonZeros);
@@ -490,9 +491,10 @@ public class MatrixObjectNew extends CacheableData
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same MatrixObjectNew object (in case it was created before the loop).
-	 * If all threads export the same data object concurrently it results errors
+	 * If all threads export the same data object concurrently it results in errors
 	 * because they all write to the same file. Efficiency for loops and parallel threads
-	 * is achieved by checking if a file already exist on HDFS.
+	 * is achieved by checking if the in-memory matrix block is dirty.
+	 * 
 	 * 
 	 * @param fName
 	 * @param outputFormat
@@ -503,28 +505,94 @@ public class MatrixObjectNew extends CacheableData
 	{
 		//System.out.println("export data "+_varName+" "+fName);
 		
-		if( !MapReduceTool.existsFileOnHDFS(fName) )
+		//prevent concurrent modifications
+		if (! isAvailableToRead ())
+			throw new CacheStatusException ("MatrixObject not available to read.");
+				
+		//check status, 
+		boolean pWrite = !fName.equals(_hdfsFileName); //persistent write flag
+
+		if( isDirty() || pWrite ) //use dirty for skipping parallel exports
 		{
-			if (! isAvailableToRead ())
-				throw new CacheStatusException ("MatrixObject not available to read.");
+			// CASE 1: write matrix to fname 
+			// (at this point, obj should never be in state empty)
 			
 			getCache();
-			
-			if (! isEmpty ())
+			acquire (false); //incl. read matrix if evicted
+			try
 			{
+				writeMetaData (fName);
+				writeMatrixToHDFS (fName, outputFormat);
+				if ( !pWrite )
+					_dirtyFlag = false;
+			}
+			catch (Exception e)
+			{
+				throw new CacheIOException (fName + " : Export failed.", e);
+			}
+			finally
+			{
+				release();
+			}
+		}
+		else if(DMLScript.DEBUG) 
+		{
+			//CASE 3: data already in hdfs (do nothing, no need for export)
+			System.out.println("Skip export to hdfs since data already exists.");
+		}
+		
+		
+		/* TODO replace implementation as soon as empty_state semantics (file existence, output format) are clarified 
+		//prevent concurrent modifications
+		if (! isAvailableToRead ())
+			throw new CacheStatusException ("MatrixObject not available to read.");
+				
+		//check status, 
+		boolean pWrite = !fName.equals(_hdfsFileName); //persistent write flag
+
+		if( isDirty() )
+		{
+			// CASE 1: write matrix to fname 
+			// (at this point, obj should never be in state empty)
+			
+			getCache();
+			acquire (false); //incl. read matrix if evicted
+			try
+			{
+				writeMetaData (fName);
+				writeMatrixToHDFS (fName, outputFormat);
+				if ( !pWrite )
+					_dirtyFlag = false;
+			}
+			catch (Exception e)
+			{
+				throw new CacheIOException (fName + " : Export failed.", e);
+			}
+			finally
+			{
+				release();
+			}
+		}
+		else //not dirty (same content as in _hdfsFileName or empty) 
+		{
+			if( pWrite )
+			{
+				//CASE 2: copy data from one hdfs location to another
+				//(for scalability this is done w/o trying to read if empty)
+				
+				//TODO: investigate if this case of empty MatrixObjectNew can happen at all.
+				if( isEmpty() ) //if not empty (and not dirty) the respective file should exist
+					System.out.println("Warning: input file for persistent write might not exist on hdfs or has a different output format.");
+	
+				getCache();
 				acquire (false);
 				try
 				{
 					writeMetaData (fName);
-					writeMatrixToHDFS (fName, outputFormat);
-					if (fName.equals (_hdfsFileName))
-						_dirtyFlag = false;
+					MapReduceTool.copyFileOnHDFS(_hdfsFileName, fName); //keep original data format
+					//TODO investigate data output format problem 
 				}
-				catch (IOException e)
-				{
-					throw new CacheIOException (fName + " : Export failed.", e);
-				}
-				catch (DMLRuntimeException e)
+				catch (Exception e)
 				{
 					throw new CacheIOException (fName + " : Export failed.", e);
 				}
@@ -533,10 +601,15 @@ public class MatrixObjectNew extends CacheableData
 					release();
 				}
 			}
+			else if(DMLScript.DEBUG) 
+			{
+				//CASE 3: data already in hdfs (do nothing, no need for export)
+				System.out.println("Skip export to hdfs since data already exists.");
+			}
 		}
-		else if(DMLScript.DEBUG) 
-			System.out.println("Skip export to hdfs since filename "+fName+" already exists.");
+		*/
 	}
+	
 	
 
 	// *********************************************

@@ -148,8 +148,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			Data d = getVariable(di.getName());
 			if ( d.getDataType() == DataType.MATRIX ) {
 				MatrixObjectNew inputObj = (MatrixObjectNew) d;
-				if ( inputObj.isDirty() ) 
-					inputObj.exportData();
+				inputObj.exportData();
 			}
 		}
 		

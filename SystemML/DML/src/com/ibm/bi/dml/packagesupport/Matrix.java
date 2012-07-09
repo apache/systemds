@@ -200,20 +200,12 @@ public class Matrix extends FIO {
 	public void setMatrixDoubleArray(MatrixBlock mb, OutputInfo oinfo, InputInfo iinfo) 
 		throws IOException 
 	{
-		int rblen, cblen;
 		_rows = mb.getNumRows();
 		_cols = mb.getNumColumns();
 		
-		if( _rows*_cols <= Math.pow(DMLTranslator.DMLBlockSize,2) )
-		{
-			rblen = (int)_rows;
-			cblen = (int)_cols;
-		}
-		else
-		{
-			rblen = DMLTranslator.DMLBlockSize;
-			cblen = DMLTranslator.DMLBlockSize;
-		}
+		int rblen = DMLTranslator.DMLBlockSize;
+		int cblen = DMLTranslator.DMLBlockSize;
+		
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);

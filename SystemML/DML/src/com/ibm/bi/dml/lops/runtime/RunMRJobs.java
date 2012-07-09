@@ -63,8 +63,7 @@ public class RunMRJobs {
 			Data d = pb.getVariable(ii);
 			if ( d.getDataType() == DataType.MATRIX ) {
 				MatrixObjectNew inputObj = (MatrixObjectNew) d;
-				if ( inputObj.isDirty() ) 
-					inputObj.exportData();
+				inputObj.exportData();
 			}
 		}
 		

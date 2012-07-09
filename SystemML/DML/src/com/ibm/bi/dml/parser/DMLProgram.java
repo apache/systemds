@@ -21,8 +21,11 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.utils.DMLException;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -159,11 +162,16 @@ public class DMLProgram {
 	}
 	
 	
-	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, boolean debug, DMLConfig config) throws DMLException, IOException {
-		Dag<Lops> dag, pred_dag = null;
+	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, boolean debug, DMLConfig config) 
+		throws DMLException, IOException 
+	{
+		Dag<Lops> dag = null; 
+		Dag<Lops> pred_dag = null;
 
 		ArrayList<Instruction> instruct;
 		ArrayList<Instruction> pred_instruct = null;
+		
+		ProgramBlock retPB = null;
 		
 		// process While Statement - add runtime program blocks to program
 		if (sb instanceof WhileStatementBlock){
@@ -211,7 +219,7 @@ public class DMLProgram {
 				throw new LopsException("WhileStatementBlock should have no Lops");
 			}
 			
-			return rtpb;
+			retPB = rtpb;
 		}
 		
 		// process If Statement - add runtime program blocks to program
@@ -265,7 +273,7 @@ public class DMLProgram {
 				throw new LopsException("IfStatementBlock should have no Lops");
 			}
 			
-			return rtpb;
+			retPB = rtpb;
 		}
 		
 		// process For Statement - add runtime program blocks to program
@@ -333,12 +341,11 @@ public class DMLProgram {
 				throw new LopsException( sbName+" should have no Lops" );
 			}
 			
-			return rtpb;
-		
+			retPB = rtpb;
 		}
 		
 		// process function statement block - add runtime program blocks to program
-		if (sb instanceof FunctionStatementBlock){
+		else if (sb instanceof FunctionStatementBlock){
 			
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			if (fsb.getNumStatements() > 1)
@@ -398,7 +405,7 @@ public class DMLProgram {
 				throw new LopsException("FunctionStatementBlock should have no Lops");
 			}
 			
-			return rtpb;
+			retPB = rtpb;
 		}
 		
 		else if (sb instanceof CVStatementBlock) {
@@ -428,7 +435,7 @@ public class DMLProgram {
 				}
 			}
 
-			return cvpb;
+			retPB = cvpb;
 		}
 		
 		else if (sb instanceof ELStatementBlock) {
@@ -458,7 +465,7 @@ public class DMLProgram {
 				}
 			}
 
-			return epb;
+			retPB = epb;
 		}
 		
 		else if (sb instanceof ELUseStatementBlock) {
@@ -488,7 +495,7 @@ public class DMLProgram {
 				}
 			}
 
-			return eupb;
+			retPB = eupb;
 		}
 		else {
 			// handle general case
@@ -515,8 +522,82 @@ public class DMLProgram {
 				rtpb.addInstruction(sb.getFunctionCallInst());
 			}
 			
-			return rtpb ;	
+			retPB = rtpb;
+			
+			//post processing for generating missing instructions
+			//TODO: MB: remove this line after external functions are integrated in hops/lops
+			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), retPB);
 		}
+		
+		return retPB;
 	}	
+	
+	/**
+	 * Post processing of each created (last-level) program block in order to adhere to livein/liveout
+	 * (currently needed for cleanup (especially for caching) of intermediate results if the last datasink 
+	 * is an external function because instructions of external functions are created outside hops/lops,
+	 * e.g., X=..., Y=fun(X) and X is not used afterwards )
+	 * 
+	 * NOTES: 
+	 * (1) checking livein and liveout is sufficient because the last external function is in its own
+	 * programblock anyway.
+	 * (2) as we cannot efficiently distinguish if the problematic var is created by an external function
+	 * or some other instruction, we generate RMVAR instructions although for vars created by non-CP
+	 * external functions RMFILEVAR instructions are required. However, all remaining files in scratch_space
+	 * are cleaned after execution anyway.
+	 * 
+	 * FIXME: currently this works for generic program blocks, this should be extended to all program blocks
+	 * However, this needs a discussion on where to integrate those additional instructions (e.g., exit instructions?)
+	 * 
+	 * TODO: MB: external function invocations should become hops/lops as well (see instruction gen in DMLTranslator), 
+	 * (currently not possible at Hops/Lops level due the requirement of multiple outputs for functions) 
+	 * TODO: MB: we should in general always leverage livein/liveout during hops/lops generation.
+	 * 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param pb
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, ProgramBlock pb) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{		
+		for( String varIn : in.getVariableNames() )
+		{
+			if( !out.containsVariable(varIn) ) 
+			{
+				//if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+				boolean foundRMInst = false;
+				for( Instruction inst : pb.getInstructions() )
+				{
+					String instStr = inst.toString();
+					if(   instStr.contains("rmfilevar"+Lops.OPERAND_DELIMITOR+varIn)
+					   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varIn))
+					{
+						foundRMInst = true;
+						break;
+					}
+				}
+				if( !foundRMInst )
+				{
+					//create RMVAR instruction and put it into the programblock
+					//(example "CP°rmvar°Var7")
+					StringBuffer sb = new StringBuffer();
+					sb.append("CP");
+					sb.append(Lops.OPERAND_DELIMITOR);
+					sb.append("rmvar");
+					sb.append(Lops.OPERAND_DELIMITOR);
+					sb.append(varIn);
+					String str = sb.toString();
+					Instruction inst = CPInstructionParser.parseSingleInstruction( str );
+					pb.addInstruction(inst); //add inst at end of pb
+				}		
+			}
+		}
+		
+		return pb;
+	}
 }
 

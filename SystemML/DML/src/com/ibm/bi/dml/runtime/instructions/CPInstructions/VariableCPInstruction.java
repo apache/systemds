@@ -676,6 +676,12 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 	
 
+	/**
+	 * 
+	 * @param pb
+	 * @param op
+	 * @throws CacheStatusException
+	 */
 	public void clearCachedMatrixObject( ProgramBlock pb, CPOperand op ) 
 		throws CacheStatusException 
 	{
@@ -683,14 +689,10 @@ public class VariableCPInstruction extends CPInstruction {
 		Data dat = pb.getVariable(varName);
 		DataType dt = op.get_dataType(); //op datatype required
 		
-		if ( dt == DataType.MATRIX )
+		if (   dt == DataType.MATRIX 
+			|| dat instanceof MatrixObjectNew )
 		{
-			((MatrixObjectNew)dat).clearData();
-		}
-		else if ( dt == null || dt == DataType.UNKNOWN )
-		{
-			if( dat instanceof MatrixObjectNew )
-				((MatrixObjectNew)dat).clearData();
+			((MatrixObjectNew)dat).clearData();			
 		}
 	}
 	

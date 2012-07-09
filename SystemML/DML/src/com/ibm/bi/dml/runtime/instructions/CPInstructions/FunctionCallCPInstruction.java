@@ -160,6 +160,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 				if( oldVar != null )
 					oldVar.clearData(); //clear old obj from cache 
 				//FIXME missing rmvar/rmfilevar instructions for external functions
+				//TODO remove once this issue is completely solved
 				
 				((MatrixObjectNew) boundValue).setVarName(boundVarName);
 			}

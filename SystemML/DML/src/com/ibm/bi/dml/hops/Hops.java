@@ -21,7 +21,6 @@ abstract public class Hops {
 	public static boolean SPLITLARGEMATRIXMULT = true;
 	public static long CPThreshold = 2000;
 	
-	
 	public enum Kind {
 		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, RandOp, GenericFunctionOp, 
 		TertiaryOp, ParameterizedBuiltinOp, Indexing
@@ -52,6 +51,8 @@ abstract public class Hops {
 	private Lops _lops = null;
 	private SQLLops _sqllops = null;
 
+	protected ExecType _etype = null;
+
 	
 	private static int getNextHopID() {
 		return ++UniqueHopID;
@@ -60,6 +61,18 @@ abstract public class Hops {
 	public int getHopID() {
 		return ID;
 	}
+	
+	public ExecType getExecType()
+	{
+		return _etype;
+	}
+	
+	public void setExecType(ExecType etype)
+	{
+		_etype = etype;
+	}
+	
+	public abstract boolean allowsAllExecTypes();
 	
 	public ArrayList<Hops> getParent() {
 		return _parent;

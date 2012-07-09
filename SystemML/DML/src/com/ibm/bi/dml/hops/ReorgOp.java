@@ -207,11 +207,20 @@ public class ReorgOp extends Hops {
 		prop.setOpString(HopsTransf2String.get(op) + "(" + input.get_sqllops().get_tableName() + ")");
 		return prop;
 	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
+		
+		if( _etype != null ) 			
+			return _etype;
 		
 		// Choose CP, if the input dimensions are below threshold or if the input is a vector
 		if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )

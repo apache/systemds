@@ -127,10 +127,19 @@ public class Reblock extends Hops {
 		this.set_sqllops(lop);
 		return this.get_sqllops();
 	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			throw new HopsException("REBLOCKing is an invalid operation when runtime = SINGLE_NODE");
+		
+		if( _etype != null & _etype != ExecType.MR ) 			
 			throw new HopsException("REBLOCKing is an invalid operation when runtime = SINGLE_NODE");
 		
 		// Reblock operation always gets executed in MR. 

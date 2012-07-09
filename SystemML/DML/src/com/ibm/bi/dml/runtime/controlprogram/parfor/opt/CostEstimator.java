@@ -103,7 +103,7 @@ public class CostEstimator
 		double ret = -1;
 		double datasize = -1;
 		
-		if( instName.equals("CP°ba+*") )
+		if( instName.equals("CPÂ°ba+*") )
 			datasize = (dim1*dim2 + dim2*dim3 + dim1*dim3)/3;
 		else
 			datasize = dim1*dim2;
@@ -134,7 +134,7 @@ public class CostEstimator
 			double assumedC = -1;
 			double realC = -1;
 			
-			if( instName.equals("CP°ba+*") )
+			if( instName.equals("CPÂ°ba+*") )
 			{
 				switch( measure )
 				{
@@ -187,15 +187,20 @@ public class CostEstimator
 		if( node.isLeaf() )
 		{
 			String str = node.getInstructionName();//node.getParam(ParamType.OPSTRING);
-			double[] stats = OptTreeConverter.getStatisticsMapping(node);
-			DataFormat df = DataFormat.values()[(int)stats[5]];
+			OptNodeStatistics stats = node.getStatistics();
+			DataFormat df = stats.getDataFormat();
 
-			double dim1 = stats[0];
-			double dim2 = Math.max(stats[1], stats[2]); //using max useful if just one side known
-			double dim3 = stats[3];
-			double sparsity = stats[4];
+			double dim1 = stats.getDim1();
+			double dim2 = Math.max(stats.getDim2(), stats.getDim3()); //using max useful if just one side known
+			double dim3 = stats.getDim4();
+			double sparsity = stats.getSparsity();
 			val = getEstimate(measure, str, dim1, dim2, dim3, sparsity, df);
-			System.out.println("measure="+measure+", operation="+str+", val="+val);
+			
+			//FIXME just for test until cost functions for MR are trained
+			if( node.getExecType() == ExecType.MR )
+				val = 60000; //1min or 60k
+			
+			//System.out.println("measure="+measure+", operation="+str+", val="+val);
 		}
 		else
 		{
@@ -338,6 +343,16 @@ public class CostEstimator
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param f1
+	 * @param f2
+	 * @param x1
+	 * @param d1
+	 * @param x2
+	 * @param d2
+	 * @return
+	 */
 	private static double aggregate( CostFunction f1, CostFunction f2, double[] x1, double[] d1, double x2, double d2 )
 	{
 		double val11 = f1.estimate(x1);
@@ -363,8 +378,7 @@ public class CostEstimator
 	 */
 	public static double computeLocalParBound(OptTree plan, OptNode n) 
 	{
-		// TODO implement for greedy optimizer
-		throw new RuntimeException("Not implemented yet.");
+		return Math.floor(rComputeLocalValueBound(plan.getRoot(), n, plan.getCK()));		
 	}
 
 	/**
@@ -373,10 +387,9 @@ public class CostEstimator
 	 * @param n
 	 * @return
 	 */
-	static double computeLocalMemoryBound(OptTree plan, OptNode n) 
+	public static double computeLocalMemoryBound(OptTree plan, OptNode n) 
 	{
-		// TODO implement for greedy optimizer
-		throw new RuntimeException("Not implemented yet.");
+		return rComputeLocalValueBound(plan.getRoot(), n, plan.getCM());
 	}
 
 	/**
@@ -386,8 +399,50 @@ public class CostEstimator
 	 */
 	public static double getMinMemoryUsage(OptNode pn) 
 	{
-		// TODO implement for greedy optimizer
+		// TODO implement for DP enum optimizer
 		throw new RuntimeException("Not implemented yet.");
 	}
 
+	/**
+	 * 
+	 * @param current
+	 * @param node
+	 * @param currentVal
+	 * @return
+	 */
+	private static double rComputeLocalValueBound( OptNode current, OptNode node, double currentVal )
+	{
+		if( current == node ) //found node
+			return currentVal;
+		else if( current.isLeaf() ) //node not here
+			return -1; 
+		else
+		{
+			switch( current.getNodeType() )
+			{
+				case GENERIC:
+				case IF:
+				case WHILE:
+				case FOR:
+					for( OptNode c : current.getChilds() ) 
+					{
+						double lval = rComputeLocalValueBound(c, node, currentVal);
+						if( lval > 0 )
+							return lval;
+					}
+					break;
+				case PARFOR:
+					for( OptNode c : current.getChilds() ) 
+					{
+						double lval = rComputeLocalValueBound(c, node, currentVal/current.getK());
+						if( lval > 0 )
+							return lval;
+					}
+					break;
+			}
+		}
+			
+		return -1;
+	}
+	
 }

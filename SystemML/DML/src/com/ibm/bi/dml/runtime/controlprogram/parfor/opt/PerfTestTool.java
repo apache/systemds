@@ -387,27 +387,27 @@ public class PerfTestTool
 		_seqInst.reset();
 		
 		//matrix multiply 
-		registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		registerInstruction( "CPÂ°ba+*", CPInstructionParser.parseSingleInstruction("CPÂ°ba+*Â°AÂ·MATRIXÂ·DOUBLEÂ°BÂ·MATRIXÂ·DOUBLEÂ°CÂ·MATRIXÂ·DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
-		////registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		////registerInstruction( "CPÂ°ba+*", CPInstructionParser.parseSingleInstruction("CPÂ°ba+*Â°AÂ·MATRIXÂ·DOUBLEÂ°BÂ·MATRIXÂ·DOUBLEÂ°CÂ·MATRIXÂ·DOUBLE"),
 		////		             changeToMuliDimTestDefs(TestVariable.DATA_SIZE, getDefaultTestDefs()) ); 
 		//rand
-		registerInstruction( "CP°Rand", CPInstructionParser.parseSingleInstruction("CP°Rand°rows=1°cols=1°min=1.0°max=100.0°sparsity=1.0°pdf=uniform°dir=.°C·MATRIX·DOUBLE"),
+		registerInstruction( "CPÂ°Rand", CPInstructionParser.parseSingleInstruction("CPÂ°RandÂ°rows=1Â°cols=1Â°min=1.0Â°max=100.0Â°sparsity=1.0Â°pdf=uniformÂ°dir=.Â°CÂ·MATRIXÂ·DOUBLE"),
 				 			 getDefaultTestDefs(), false, IOSchema.NONE_UNARY );
 		//matrix transpose
-		registerInstruction( "CP°r'", CPInstructionParser.parseSingleInstruction("CP°r'°A·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		registerInstruction( "CPÂ°r'", CPInstructionParser.parseSingleInstruction("CPÂ°r'Â°AÂ·MATRIXÂ·DOUBLEÂ°CÂ·MATRIXÂ·DOUBLE"),
 	 			 			 getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//sum
-		registerInstruction( "CP°uak+", CPInstructionParser.parseSingleInstruction("CP°uak+°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE"), //needs B instead of C
+		registerInstruction( "CPÂ°uak+", CPInstructionParser.parseSingleInstruction("CPÂ°uak+Â°AÂ·MATRIXÂ·DOUBLEÂ°BÂ·MATRIXÂ·DOUBLE"), //needs B instead of C
 	 			             getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//external function
-		registerInstruction( "CP°extfunct", CPInstructionParser.parseSingleInstruction("CP°extfunct°"+DMLProgram.DEFAULT_NAMESPACE+"°execPerfTestExtFunct°1°1°A°C"),
+		registerInstruction( "CPÂ°extfunct", CPInstructionParser.parseSingleInstruction("CPÂ°extfunctÂ°"+DMLProgram.DEFAULT_NAMESPACE+"Â°execPerfTestExtFunctÂ°1Â°1Â°AÂ°C"),
 	                         getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );		
 		//central moment
-		registerInstruction( "CP°cm", CPInstructionParser.parseSingleInstruction("CP°cm°A·MATRIX·DOUBLE°2·SCALAR·INT°c·SCALAR·DOUBLE"),
+		registerInstruction( "CPÂ°cm", CPInstructionParser.parseSingleInstruction("CPÂ°cmÂ°AÂ·MATRIXÂ·DOUBLEÂ°2Â·SCALARÂ·INTÂ°cÂ·SCALARÂ·DOUBLE"),
 	            			 getDefaultTestDefs(), true, IOSchema.UNARY_NONE ); 
 		//co-variance
-		registerInstruction( "CP°cov", CPInstructionParser.parseSingleInstruction("CP°cov°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°c·SCALAR·DOUBLE"),
+		registerInstruction( "CPÂ°cov", CPInstructionParser.parseSingleInstruction("CPÂ°covÂ°AÂ·MATRIXÂ·DOUBLEÂ°BÂ·MATRIXÂ·DOUBLEÂ°cÂ·SCALARÂ·DOUBLE"),
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );
 		
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/
@@ -1462,7 +1462,7 @@ public class PerfTestTool
 			
 			//parse instruction
 			int ID = Integer.parseInt( xsr.getAttributeValue(null, XML_ID) );
-			//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", "°");
+			//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", "Â°");
 			HashMap<Integer, CostFunction> tmp = new HashMap<Integer, CostFunction>();
 			_profile.put( ID, tmp );
 			
@@ -1532,7 +1532,7 @@ public class PerfTestTool
 					
 			xsw.writeStartElement( XML_INSTRUCTION ); 
 			xsw.writeAttribute(XML_ID, String.valueOf( instID ));
-			xsw.writeAttribute(XML_NAME, instName.replaceAll("°", " "));
+			xsw.writeAttribute(XML_NAME, instName.replaceAll("Â°", " "));
 			
 			//foreach testdef cost function
 			for( Entry<Integer,CostFunction> cfun : inst.getValue().entrySet() )

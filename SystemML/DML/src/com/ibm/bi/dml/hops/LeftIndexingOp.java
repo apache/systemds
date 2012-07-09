@@ -135,9 +135,18 @@ public class LeftIndexingOp  extends Hops {
 	}
 	
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 //		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 //			return ExecType.CP;
+//		
+//		if( _etype != null ) 			
+//			return _etype;
 //		
 //		if ( getInput().get(0).areDimsBelowThreshold() )
 //			return ExecType.CP;

@@ -109,9 +109,18 @@ public class IndexingOp extends Hops {
 	}
 	
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
+		
+		if( _etype != null ) 			
+			return _etype;
 		
 		if ( getInput().get(0).areDimsBelowThreshold() )
 			return ExecType.CP;

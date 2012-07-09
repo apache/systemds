@@ -35,6 +35,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * TODO guarantee parallelism constraints  
  * TODO enhancement rewrite exec strategy (more fine-grained decision)
  *  
+ * TODO taskpartitioner: in general range, yes but binary
+ *  
  */
 public class OptimizerHeuristic extends Optimizer
 {
@@ -66,6 +68,9 @@ public class OptimizerHeuristic extends Optimizer
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		System.out.println("--- HEURISTIC OPTIMIZER -------");
+		
+		
 		OptNode pn = plan.getRoot();
 		
 		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
@@ -141,8 +146,8 @@ public class OptimizerHeuristic extends Optimizer
 		//actual modification
 		long id = n.getID();
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		                             .getObjectMapping().getMappedObject(id);
-		pfpb.setExecutionMode( (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR );	
+		                             .getRTObjectMapping().getMappedObject(id);
+		pfpb.setExecMode( (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR );	
 	}
 
 	private void rewriteRemoveNestedParallelism(OptNode n) 
@@ -156,7 +161,7 @@ public class OptimizerHeuristic extends Optimizer
 				{
 					long id = sub.getID();
 					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					                             .getObjectMapping().getMappedObject(id);
+					                             .getRTObjectMapping().getMappedObject(id);
 					
 					//create for pb as replacement
 					Program prog = pfpb.getProgram();
@@ -190,7 +195,7 @@ public class OptimizerHeuristic extends Optimizer
 		//modify rtprog
 		long id = n.getID();
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		                            .getObjectMapping().getMappedObject(id);
+		                            .getRTObjectMapping().getMappedObject(id);
 		ArrayList<ProgramBlock> tmpPBOld = pfpb.getChildBlocks();
 		
 		//create new program block structure and modify parameters (from, to, incr, types,)
@@ -204,33 +209,33 @@ public class OptimizerHeuristic extends Optimizer
 		HashMap<String,String> params = pfpb.getParForParams();
 		HashMap<String,String> params2 = (HashMap<String,String>)params.clone();	
 		ParForProgramBlock pfpb2 = new ParForProgramBlock(pfpb.getProgram(),iterVars2, params2);
-		OptTreeConverter.getObjectMapping().putMapping(pfpb2, nest);
+		OptTreeConverter.getRTObjectMapping().putMapping(pfpb2, nest);
 		
 		ArrayList<ProgramBlock> tmpPBNew = new ArrayList<ProgramBlock>();
 		tmpPBNew.add(pfpb2);
 		pfpb.setChildBlocks(tmpPBNew);
 		pfpb.setIterablePredicateVars(iterVars);
 		pfpb.setIncrementInstructions(new ArrayList<Instruction>());
-		pfpb.setExecutionMode(PExecMode.REMOTE_MR);
+		pfpb.setExecMode(PExecMode.REMOTE_MR);
 		pfpb2.setChildBlocks(tmpPBOld);
 		pfpb2.setResultVariables(pfpb.getResultVariables());
 		pfpb2.setFromInstructions(new ArrayList<Instruction>());
 		pfpb2.setToInstructions(createNestedParallelismToInstructionSet( ParForStatementBlock.INTERAL_FN_INDEX_ROW, String.valueOf(outIncr-1) ));
 		pfpb2.setIncrementInstructions(new ArrayList<Instruction>());
-		pfpb2.setExecutionMode(PExecMode.LOCAL);
+		pfpb2.setExecMode(PExecMode.LOCAL);
 	}
 	
 	private ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//create instruction string
-		StringBuffer sb = new StringBuffer("CP°+°");
+		StringBuffer sb = new StringBuffer("CPÂ°+Â°");
 		sb.append(iterVar);
-		sb.append("·SCALAR·INT°");
+		sb.append("Â·SCALARÂ·INTÂ°");
 		sb.append(offset);
-		sb.append("·SCALAR·INT°");
+		sb.append("Â·SCALARÂ·INTÂ°");
 		sb.append(iterVar);
-		sb.append("·SCALAR·INT");
+		sb.append("Â·SCALARÂ·INT");
 		String str = sb.toString(); 
 		
 		//create instruction set
@@ -256,7 +261,7 @@ public class OptimizerHeuristic extends Optimizer
 		kMax = Math.min(kMax, (int)Math.floor(_cmx/M));//ensure mem constraints 
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        						  .getObjectMapping().getMappedObject(id);
+        						  .getRTObjectMapping().getMappedObject(id);
 		
 		if( nested ) // remote,local
 		{
@@ -265,7 +270,7 @@ public class OptimizerHeuristic extends Optimizer
 			
 			OptNode n2 = n.getChilds().get(0);
 			ParForProgramBlock pfpb2 = (ParForProgramBlock) OptTreeConverter
-			                            .getObjectMapping().getMappedObject(n2.getID());
+			                            .getRTObjectMapping().getMappedObject(n2.getID());
 			
 			int k2 = Math.min((int)Math.ceil(((double)_N)/_rnk), (int)Math.ceil(((double)kMax)/_rnk));
 			pfpb2.setDegreeOfParallelism(k2);  
@@ -299,7 +304,7 @@ public class OptimizerHeuristic extends Optimizer
 					long id = c.getID();
 					c.setK(tmpK);
 					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					  							.getObjectMapping().getMappedObject(id);
+					  							.getRTObjectMapping().getMappedObject(id);
 					pfpb.setDegreeOfParallelism(tmpK);
 					assignRemainingParallelism(c,(int)Math.ceil(((double)(par-tmpK+1))/tmpK));
 				}
@@ -317,7 +322,7 @@ public class OptimizerHeuristic extends Optimizer
 		
 		// modify rtprog
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        							.getObjectMapping().getMappedObject(id);
+        							.getRTObjectMapping().getMappedObject(id);
 		pfpb.setTaskPartitioner(partitioner);
 		
 		// modify plan

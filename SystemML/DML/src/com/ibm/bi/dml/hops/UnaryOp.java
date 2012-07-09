@@ -427,11 +427,20 @@ public class UnaryOp extends Hops {
 			throw new HopsException("Other unary operations than matrix and scalar operations are currently not supported");
 		return stmt;
 	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
+		
+		if( _etype != null ) 			
+			return _etype;
 		
 		// Choose CP, if the input dimensions are below threshold or if the input is a vector
 		if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )

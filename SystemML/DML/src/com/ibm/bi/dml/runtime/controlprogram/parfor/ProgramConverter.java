@@ -258,6 +258,30 @@ public class ProgramConverter
 	/**
 	 * 
 	 * @param pfpb
+	 * @param prog
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static ForProgramBlock createShallowCopyParForProgramBlock(ParForProgramBlock pfpb, Program prog ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		ParForProgramBlock tmpPB = new ParForProgramBlock(prog,pfpb.getIterablePredicateVars(),pfpb.getParForParams());
+		
+		tmpPB.setResultVariables( pfpb.getResultVariables() );
+		
+		tmpPB.setFromInstructions( pfpb.getFromInstructions() );
+		tmpPB.setToInstructions( pfpb.getToInstructions() );
+		tmpPB.setIncrementInstructions( pfpb.getIncrementInstructions() );
+		tmpPB.setExitInstructions( pfpb.getExitInstructions() );
+		tmpPB.setChildBlocks( pfpb.getChildBlocks() );
+		
+		return tmpPB;
+	}
+	
+	/**
+	 * 
+	 * @param pfpb
 	 * @param pid
 	 * @param IDPrefix
 	 * @param prog

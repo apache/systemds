@@ -2688,7 +2688,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		MatrixBlockDSM m2=checkType(m2Value);
 		checkType(result);
 		if(m1.clen!=m2.rlen)
-			throw new RuntimeException("dimenstions do not match for matrix multiplication");
+			throw new RuntimeException("dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+")");
 		int rl=m1.rlen;
 		int cl=m2.clen;
 		boolean sp=checkSparcityOnAggBinary(m1, m2);

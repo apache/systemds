@@ -405,6 +405,12 @@ public class DataOp extends Hops {
 	}
 
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		// Since a DATA hop does not represent any computation, 
 		// this function is not applicable. 

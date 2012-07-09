@@ -418,7 +418,7 @@ public class BinaryOp extends Hops {
 					.get_valueType(), this.get_dataType());
 
 			if (this.get_dataType() == DataType.SCALAR && gen == GENERATES.DML)
-				sqllop.set_tableName("##" + sqllop.get_tableName() + "##");
+				sqllop.set_tableName(Lops.VARIABLE_NAME_PLACEHOLDER + sqllop.get_tableName() + Lops.VARIABLE_NAME_PLACEHOLDER);
 
 			// String sql = this.getSQLSelectCode(hop1, hop2, makeDense, name);
 			String sql = this.getSQLSelectCode(false, "");
@@ -964,10 +964,19 @@ public class BinaryOp extends Hops {
 	}
 
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
+		
+		if( _etype != null ) 			
+			return _etype;
 		
 		DataType dt1 = getInput().get(0).get_dataType();
 		DataType dt2 = getInput().get(1).get_dataType();

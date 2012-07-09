@@ -146,10 +146,19 @@ public class AggBinaryOp extends Hops {
 	}
 	
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() {
 		
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
+
+		if( _etype != null ) 			
+			return _etype;
 		
 		// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
 		// OR if it is vector-vector inner product

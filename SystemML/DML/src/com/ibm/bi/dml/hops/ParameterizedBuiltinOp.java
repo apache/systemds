@@ -176,6 +176,12 @@ public class ParameterizedBuiltinOp extends Hops {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {

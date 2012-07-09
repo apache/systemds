@@ -57,6 +57,12 @@ public class CrossvalOp extends Hops {
 	}
 
 	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		// TODO Auto-generated method stub
 		return null;

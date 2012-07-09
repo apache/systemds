@@ -53,6 +53,13 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
+ * TODO awareness of central configuration property
+ * 
+ * TODO fix read write performance issue + exploration
+ * TODO fix parsing overhead issue
+ * 
+ * TODO perftesttool: create dir if not existing
+ * TODO perftesttool: dml via text in code 
  *  
  * TODO external configurations properties and constraints 
  * TODO documentation update (after change format by Doug)
@@ -99,7 +106,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean OPTIMIZE                    = true;	// run all automatic optimizations on top-level parfor
 	public static final boolean USE_PB_CACHE                = true;  	// reuse copied program blocks whenever possible
 	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = false;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
-	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks
+	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small taskqueue
 	public static final boolean USE_BINARY_MR_TASK_REP	    = false;    // serialize tasks to binary representation for remote communication
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
 	public static final boolean ALLOW_REUSE_MR_JVMS         = true;     // potential benefits: less setup costs per task
@@ -107,7 +114,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean WRITE_RESULTS_TO_FILE       = true;
 	public static final int     WRITE_REPLICATION_FACTOR    = 3;
-	public static final int     MAX_RETRYS_ON_ERROR         = 1;
+	public static final int     MAX_RETRYS_ON_ERROR         = 0;
 	
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_taskfile.dat"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_results.dat"; 
@@ -249,7 +256,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		setLocalParWorkerIDs();
 	}
 
-	public void setExecutionMode( PExecMode mode )
+	public void setExecMode( PExecMode mode )
 	{
 		_execMode = mode;
 		_params.put(ParForStatementBlock.EXEC_MODE, String.valueOf(_execMode)); //kept up-to-date for copies
@@ -399,7 +406,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//create parallel workers as (lazy) deep copies
 			workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
 			threads[i] = new Thread( workers[i] );
-			threads[i].setPriority(Thread.MAX_PRIORITY);
+			//FIXME threads[i].setPriority(Thread.MAX_PRIORITY); //current experiments show that this is even slower
 		}
 		
 		// start threads (from now on waiting for tasks)
@@ -560,8 +567,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for (String key : _variables.keySet() ) 
 		{
 			Data d = getVariable(key);
-			if (   d.getDataType() == DataType.MATRIX 
-				&& ((MatrixObjectNew)d).isDirty()      )
+			if ( d.getDataType() == DataType.MATRIX )
 			{
 				((MatrixObjectNew)d).exportData();
 			}

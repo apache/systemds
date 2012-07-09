@@ -138,77 +138,18 @@ public class OptimizationWrapper
 			System.out.println(tree.explain(false));
 		
 		//cleanup phase
-		OptTreeConverter.getObjectMapping().clear();
-		OptTreeConverter.getStatisticsMapping().clear();
+		OptTreeConverter.clear();
 		
 		if( ParForProgramBlock.MONITOR )
 		{
+			System.out.println("Optimization finished in "+time.stop()+" ms."); 
+			
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, time.stop());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, type.ordinal());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMTPLANS, opt.getNumTotalPlans());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMEPLANS, opt.getNumEvaluatedPlans());
 		}
 	}
-
-	
-	/* analyze if statement block and lops really required
-	 * 
-	private static StatisticMapping rCreateStatisticMapping(StatementBlock sb, StatisticMapping stats)  
-	{
-		//analyze instruction input statistics
-		ArrayList<Lops> lops = sb.get_lops();
-		if( lops != null )
-			for( Lops lop : lops )
-			{
-				System.out.println(lop);
-				//String inst = null;
-				//try {
-					//inst = lop.getInstructions();
-				//} catch (LopsException e) {
-				//	e.printStackTrace();
-				//}
-				//System.out.println(inst);
-				//Dag<Lops> pred_dag = new Dag<Lops>();
-				//((WhileStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
-				//pred_instruct = new ArrayList<Instruction>();
-				//ArrayList<Instruction> pInst = pred_dag.getJobs(debug,config);
-			}
-		
-		//recursive invocation
-		for( Statement s : sb.getStatements() )
-		{
-			ArrayList<StatementBlock> childs = null;
-			
-			if( s instanceof ForStatement || s instanceof ParForStatement )
-			{
-				childs = ((ForStatement)s).getBody();
-			}
-			else if( s instanceof WhileStatement ) 
-			{
-				childs = ((WhileStatement)s).getBody();
-			}
-			else if( s instanceof IfStatement ) 
-			{
-				childs = new ArrayList<StatementBlock>();
-				childs.addAll(((IfStatement)s).getIfBody());
-				childs.addAll(((IfStatement)s).getElseBody());
-			}
-			else if( s instanceof FunctionStatement ) 
-			{
-				childs = ((FunctionStatement)s).getBody();
-			}
-			else
-			{
-				System.out.println("test");
-			}
-			
-			if( childs != null )
-				for( StatementBlock c : childs )
-					rCreateStatisticMapping( c, stats );
-		}
-
-		return stats;
-	}*/
 
 	/**
 	 * 
@@ -322,9 +263,8 @@ public class OptimizationWrapper
 //				opt = new OptimizerDPEnum();
 //				break;
 			case GREEDY:
-				//TODO: implement greedy optimizer
-//				opt = new OptimizerGreedyEnum();
-//				break;
+				opt = new OptimizerGreedyEnum();
+				break;
 			case HEURISTIC:
 				opt = new OptimizerHeuristic();
 				break;

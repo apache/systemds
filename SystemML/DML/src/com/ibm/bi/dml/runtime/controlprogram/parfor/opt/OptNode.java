@@ -5,7 +5,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
+
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 
 /**
  * Internal representation of a plan alternative for program blocks and instructions 
@@ -21,12 +24,21 @@ public class OptNode
 		WHILE,
 		FOR,
 		PARFOR,
-		INST
+		INST,
+		HOP
 	}
 	
 	public enum ExecType{ 
 		CP,
-		MR
+		MR;
+		
+		public LopProperties.ExecType toLopsExecType(){
+			return (this == CP)? LopProperties.ExecType.CP : LopProperties.ExecType.MR;
+		}
+		
+		public ParForProgramBlock.PExecMode toParForExecMode(){
+			return (this == CP)? ParForProgramBlock.PExecMode.LOCAL : ParForProgramBlock.PExecMode.REMOTE_MR;
+		}
 	}
 	
 	public enum ParamType{
@@ -45,6 +57,9 @@ public class OptNode
 	private ExecType                  _etype   = null;
 	private int                       _k       = -1;
 	private HashMap<ParamType,String> _params  = null;
+	
+	//node statistics (only present for physical plans and leaf nodes)
+	private OptNodeStatistics         _stats   = null;
 	
 	public OptNode( NodeType type )
 	{
@@ -136,29 +151,6 @@ public class OptNode
 		return _childs;
 	}
 	
-	public boolean isLeaf()
-	{
-		return ( _childs == null || _childs.size()==0 );
-	}
-	
-	public Collection<OptNode> getNodeList()
-	{
-		Collection<OptNode> nodes = new LinkedList<OptNode>();
-		
-		for( OptNode n : _childs )
-		{
-			if( !n.isLeaf() )
-				nodes.addAll( n.getNodeList() );
-			nodes.add(n);
-		}
-		
-		return nodes;
-	}
-	
-	public String getInstructionName() 
-	{
-		return String.valueOf(_etype) + Lops.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
-	}
 	
 	public int getK() 
 	{
@@ -170,9 +162,98 @@ public class OptNode
 		_k = k;
 	}
 	
+	public OptNodeStatistics getStatistics()
+	{
+		return _stats;
+	}
 	
+	public void setStatistics(OptNodeStatistics stats)
+	{
+		_stats = stats;
+	}
+	
+	/**
+	 * 
+	 * @param oldNode
+	 * @param newNode
+	 * @return
+	 */
+	public boolean exchangeChild(OptNode oldNode, OptNode newNode) 
+	{
+		boolean ret = false;
+		
+		if( _childs != null )
+			for( int i=0; i<_childs.size(); i++ )
+				if( _childs.get(i) == oldNode )
+				{
+					_childs.set(i, newNode);
+					ret = true;
+				}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isLeaf()
+	{
+		return ( _childs == null || _childs.size()==0 );
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getInstructionName() 
+	{
+		return String.valueOf(_etype) + Lops.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
+	}
+	
+
 	///////
 	//recursive methods
+	
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Collection<OptNode> getNodeList()
+	{
+		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		
+		if(!isLeaf())
+			for( OptNode n : _childs )
+				nodes.addAll( n.getNodeList() );
+		nodes.add(this);
+		
+		return nodes;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Collection<OptNode> getRelevantNodeList()
+	{
+		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		
+		if( !isLeaf() )
+		{
+			for( OptNode n : _childs )
+				nodes.addAll( n.getRelevantNodeList() );
+		}
+		 
+		if( _ntype == NodeType.PARFOR || _ntype == NodeType.HOP )
+		{
+			nodes.add(this);
+		}
+		
+		return nodes;
+	}
+
 	
 	/**
 	 * Set the plan to a parallel degree of 1 (serial execution).
@@ -233,7 +314,10 @@ public class OptNode
 		StringBuffer sb = new StringBuffer();
 		for( int i=0; i<level; i++ )
 			sb.append("--");	
-		sb.append(_ntype);
+		if( _ntype == NodeType.INST )
+			sb.append(_params.get(ParamType.OPSTRING));
+		else
+			sb.append(_ntype);
 		sb.append(", exec=");
 		sb.append(_etype);
 		sb.append(", k=");
@@ -268,47 +352,31 @@ public class OptNode
 	}
 	
 	
-	/*
-	
-	public double getT() 
+	/**
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public OptNode createShallowClone()
 	{
-		return _T;
-	}
-
-	public double getM() 
-	{
-		return _m;
-	}
-
-	public void setType(int type) 
-	{
-		_type = type;
-	}
-
-	public void setKcp(int kcp) 
-	{
-		_kcp = kcp;
-	}
-
-	public void setKmr(int kmr) 
-	{
-		_kmr = kmr;
-	}
-
-	public void setT(double t) 
-	{
-		_T = t;
-	}
-
-	public void setM(double m) 
-	{
-		_m = m;
-	}
-		
-	public static void exchangeNode( Collection<OptNode> list, OptNode n )
-	{
-	
+		OptNode n = new OptNode(_ntype,_etype);
+		n.setID(_id);
+		n.setK(_k);		
+		if( _childs != null )
+			n.setChilds( (ArrayList<OptNode>)_childs.clone() );
+		if( _params != null )
+			n.setParams((HashMap<ParamType,String>)_params.clone());
+		return n;
 	}
 	
-	*/
+	/**
+	 * 
+	 * @return
+	 */
+	public OptNode createDeepClone()
+	{
+		throw new RuntimeException("not implemented yet");
+	}
+
+
 }

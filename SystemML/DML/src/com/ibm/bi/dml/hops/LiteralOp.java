@@ -189,6 +189,12 @@ public class LiteralOp extends Hops {
 		}
 		return this.get_sqllops();
 	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {

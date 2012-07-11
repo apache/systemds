@@ -117,7 +117,7 @@ public class RandStatement extends Statement
 							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 				else{
 					colsExpr = new IntIdentifier((IntIdentifier)constValue);
-					_exprParams.put(RAND_COLS, rowsExpr);
+					_exprParams.put(RAND_COLS, colsExpr);
 				}
 			}
 		}

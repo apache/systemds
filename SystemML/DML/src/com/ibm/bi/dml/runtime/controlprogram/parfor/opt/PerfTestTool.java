@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
@@ -52,8 +53,6 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-//import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -976,7 +975,7 @@ public class PerfTestTool
 		int dim = (int)Math.sqrt( datasize );
 		
 		//create random test data
-		double[][] d = TestUtils.generateTestMatrix(dim, dim, 1, 100, sparsity, 7);
+		double[][] d = generateTestMatrix(dim, dim, 1, 100, sparsity, 7);
 		
 		//create matrix block
 		MatrixBlock mb = null;
@@ -1028,7 +1027,7 @@ public class PerfTestTool
 		System.out.println(d1+" "+d2);
 		
 		//create random test data
-		double[][] d = TestUtils.generateTestMatrix(d1, d2, 1, 100, sparsity, 7);
+		double[][] d = generateTestMatrix(d1, d2, 1, 100, sparsity, 7);
 		
 		//create matrix block
 		MatrixBlock mb = null;
@@ -1127,6 +1126,31 @@ public class PerfTestTool
 		
 		return mo;
 	}
+	
+
+	/**
+	 * NOTE: This is a copy of TestUtils.generateTestMatrix, it was replicated in order to prevent
+	 * dependency of SystemML.jar to our test package.
+	 */
+	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
+		double[][] matrix = new double[rows][cols];
+		Random random;
+		if (seed == -1)
+			random = new Random(System.nanoTime());
+		else
+			random = new Random(seed);
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if (random.nextDouble() > sparsity)
+					continue;
+				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+			}
+		}
+
+		return matrix;
+	}
+
 
 	/**
 	 * 

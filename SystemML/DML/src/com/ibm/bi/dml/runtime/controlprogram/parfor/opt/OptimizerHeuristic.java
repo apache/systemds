@@ -232,11 +232,11 @@ public class OptimizerHeuristic extends Optimizer
 		//create instruction string
 		StringBuffer sb = new StringBuffer("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
 		sb.append(iterVar);
-		sb.append("·SCALAR·INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
 		sb.append(offset);
-		sb.append("·SCALAR·INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
 		sb.append(iterVar);
-		sb.append("·SCALAR·INT");
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT");
 		String str = sb.toString(); 
 		
 		//create instruction set

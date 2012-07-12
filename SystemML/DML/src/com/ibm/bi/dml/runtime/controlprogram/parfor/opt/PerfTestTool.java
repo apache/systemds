@@ -388,27 +388,27 @@ public class PerfTestTool
 		_seqInst.reset();
 		
 		//matrix multiply 
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
-		////registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
+		////registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 		////		             changeToMuliDimTestDefs(TestVariable.DATA_SIZE, getDefaultTestDefs()) ); 
 		//rand
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"Rand", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"Rand"+Lops.OPERAND_DELIMITOR+"rows=1"+Lops.OPERAND_DELIMITOR+"cols=1"+Lops.OPERAND_DELIMITOR+"min=1.0"+Lops.OPERAND_DELIMITOR+"max=100.0"+Lops.OPERAND_DELIMITOR+"sparsity=1.0"+Lops.OPERAND_DELIMITOR+"pdf=uniform"+Lops.OPERAND_DELIMITOR+"dir=."+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"Rand", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"Rand"+Lops.OPERAND_DELIMITOR+"rows=1"+Lops.OPERAND_DELIMITOR+"cols=1"+Lops.OPERAND_DELIMITOR+"min=1.0"+Lops.OPERAND_DELIMITOR+"max=100.0"+Lops.OPERAND_DELIMITOR+"sparsity=1.0"+Lops.OPERAND_DELIMITOR+"pdf=uniform"+Lops.OPERAND_DELIMITOR+"dir=."+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 				 			 getDefaultTestDefs(), false, IOSchema.NONE_UNARY );
 		//matrix transpose
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"r'", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"r'"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"r'", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"r'"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 	 			 			 getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//sum
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"uak+", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"uak+"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"), //needs B instead of C
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"uak+", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"uak+"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"), //needs B instead of C
 	 			             getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//external function
 		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"extfunct", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"extfunct"+Lops.OPERAND_DELIMITOR+DMLProgram.DEFAULT_NAMESPACE+""+Lops.OPERAND_DELIMITOR+"execPerfTestExtFunct"+Lops.OPERAND_DELIMITOR+"1"+Lops.OPERAND_DELIMITOR+"1"+Lops.OPERAND_DELIMITOR+"A"+Lops.OPERAND_DELIMITOR+"C"),
 	                         getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );		
 		//central moment
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cm", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cm"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"2·SCALAR·INT"+Lops.OPERAND_DELIMITOR+"c·SCALAR·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cm", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cm"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"2"+Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR+"c"+Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 	            			 getDefaultTestDefs(), true, IOSchema.UNARY_NONE ); 
 		//co-variance
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cov", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cov"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"c·SCALAR·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cov", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cov"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"c"+Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );
 		
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/

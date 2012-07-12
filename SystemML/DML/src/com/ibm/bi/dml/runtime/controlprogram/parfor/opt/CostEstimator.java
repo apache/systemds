@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
@@ -103,7 +104,7 @@ public class CostEstimator
 		double ret = -1;
 		double datasize = -1;
 		
-		if( instName.equals("CP°ba+*") )
+		if( instName.equals("CP"+Lops.OPERAND_DELIMITOR+"ba+*") )
 			datasize = (dim1*dim2 + dim2*dim3 + dim1*dim3)/3;
 		else
 			datasize = dim1*dim2;
@@ -134,7 +135,7 @@ public class CostEstimator
 			double assumedC = -1;
 			double realC = -1;
 			
-			if( instName.equals("CP°ba+*") )
+			if( instName.equals("CP"+Lops.OPERAND_DELIMITOR+"ba+*") )
 			{
 				switch( measure )
 				{

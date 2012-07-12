@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -229,11 +230,11 @@ public class OptimizerHeuristic extends Optimizer
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//create instruction string
-		StringBuffer sb = new StringBuffer("CP°+°");
+		StringBuffer sb = new StringBuffer("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
 		sb.append(iterVar);
-		sb.append("·SCALAR·INT°");
+		sb.append("·SCALAR·INT"+Lops.OPERAND_DELIMITOR);
 		sb.append(offset);
-		sb.append("·SCALAR·INT°");
+		sb.append("·SCALAR·INT"+Lops.OPERAND_DELIMITOR);
 		sb.append(iterVar);
 		sb.append("·SCALAR·INT");
 		String str = sb.toString(); 

@@ -529,11 +529,12 @@ public class DMLProgram {
 			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), retPB);
 		}
 		
+		//FIXME put correction here, once this issue is solved
 		return retPB;
 	}	
 	
 	/**
-	 * Post processing of each created (last-level) program block in order to adhere to livein/liveout
+	 * Post processing of each created program block in order to adhere to livein/liveout
 	 * (currently needed for cleanup (especially for caching) of intermediate results if the last datasink 
 	 * is an external function because instructions of external functions are created outside hops/lops,
 	 * e.g., X=..., Y=fun(X) and X is not used afterwards )
@@ -545,9 +546,6 @@ public class DMLProgram {
 	 * or some other instruction, we generate RMVAR instructions although for vars created by non-CP
 	 * external functions RMFILEVAR instructions are required. However, all remaining files in scratch_space
 	 * are cleaned after execution anyway.
-	 * 
-	 * FIXME: currently this works for generic program blocks, this should be extended to all program blocks
-	 * However, this needs a discussion on where to integrate those additional instructions (e.g., exit instructions?)
 	 * 
 	 * TODO: MB: external function invocations should become hops/lops as well (see instruction gen in DMLTranslator), 
 	 * (currently not possible at Hops/Lops level due the requirement of multiple outputs for functions) 
@@ -564,40 +562,119 @@ public class DMLProgram {
 	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, ProgramBlock pb) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{		
-		for( String varIn : in.getVariableNames() )
-		{
-			if( !out.containsVariable(varIn) ) 
+		for( String varName : in.getVariableNames() )
+			if( !out.containsVariable(varName) ) 
 			{
 				//if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
-				boolean foundRMInst = false;
-				for( Instruction inst : pb.getInstructions() )
-				{
-					String instStr = inst.toString();
-					if(   instStr.contains("rmfilevar"+Lops.OPERAND_DELIMITOR+varIn)
-					   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varIn))
-					{
-						foundRMInst = true;
-						break;
-					}
-				}
+				boolean foundRMInst = rContainsRMInstruction(pb, varName);
+				
 				if( !foundRMInst )
 				{
 					//create RMVAR instruction and put it into the programblock
-					//(example "CP°rmvar°Var7")
+					//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
 					StringBuffer sb = new StringBuffer();
 					sb.append("CP");
 					sb.append(Lops.OPERAND_DELIMITOR);
 					sb.append("rmvar");
 					sb.append(Lops.OPERAND_DELIMITOR);
-					sb.append(varIn);
+					sb.append(varName);
 					String str = sb.toString();
 					Instruction inst = CPInstructionParser.parseSingleInstruction( str );
-					pb.addInstruction(inst); //add inst at end of pb
+				
+					//System.out.println("Adding instruction "+inst.toString());
+					
+					addCleanupInstruction(pb, inst);
 				}		
 			}
-		}
+		
 		
 		return pb;
+	}
+	
+	/**
+	 * Determines if the given program block includes a RMVAR or RMFILEVAR
+	 * instruction for the given varName.
+	 * 
+	 * @param pb
+	 * @param varName
+	 * @return
+	 */
+	private boolean rContainsRMInstruction(ProgramBlock pb, String varName)
+	{	
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock tmp = (WhileProgramBlock)pb;	
+			for( ProgramBlock c : tmp.getChildBlocks() )
+				if( rContainsRMInstruction(c, varName) )
+					return true;
+		}
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			for( ProgramBlock c : tmp.getChildBlocksIfBody() )
+				if( rContainsRMInstruction(c, varName) )
+					return true;
+			for( ProgramBlock c : tmp.getChildBlocksElseBody() )
+				if( rContainsRMInstruction(c, varName) )
+					return true;
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{ 
+			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			for( ProgramBlock c : tmp.getChildBlocks() )
+				if( rContainsRMInstruction(c, varName) )
+					return true;
+		}		
+		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			    || pb instanceof CVProgramBlock
+				|| pb instanceof ELProgramBlock
+				|| pb instanceof ELUseProgramBlock)
+		{
+			//do nothing
+		}
+		else 
+		{
+			for( Instruction inst : pb.getInstructions() )
+			{
+				String instStr = inst.toString();
+				if(   instStr.contains("rmfilevar"+Lops.OPERAND_DELIMITOR+varName)
+				   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varName))
+				{
+					return true;
+				}
+			}	
+		}
+		
+		
+		return false;
+	}
+	
+	/**
+	 * Adds the generated cleanup RMVAR instruction to the given program block.
+	 * In case of generic (last-level) programblocks it is added to the end of 
+	 * the list of instructions, while for complex program blocks it is added to
+	 * the end of the list of exit instructions.
+	 * 
+	 * @param pb
+	 * @param inst
+	 */
+	private void addCleanupInstruction( ProgramBlock pb, Instruction inst )
+	{
+		if (pb instanceof WhileProgramBlock)
+			((WhileProgramBlock)pb).addExitInstruction(inst);
+		else if (pb instanceof IfProgramBlock)
+			((IfProgramBlock)pb).addExitInstruction(inst);
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+			((ForProgramBlock)pb).addExitInstruction(inst);
+		else if (   pb instanceof FunctionProgramBlock  //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			     || pb instanceof CVProgramBlock
+			     || pb instanceof ELProgramBlock
+			     || pb instanceof ELUseProgramBlock)
+			; //do nothing
+		else 
+		{
+			pb.addInstruction(inst); //add inst at end of pb	
+		}
 	}
 }
 

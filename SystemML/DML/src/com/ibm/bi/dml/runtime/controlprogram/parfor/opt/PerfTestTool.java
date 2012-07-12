@@ -26,6 +26,7 @@ import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -387,27 +388,27 @@ public class PerfTestTool
 		_seqInst.reset();
 		
 		//matrix multiply 
-		registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
-		////registerInstruction( "CP°ba+*", CPInstructionParser.parseSingleInstruction("CP°ba+*°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		////registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
 		////		             changeToMuliDimTestDefs(TestVariable.DATA_SIZE, getDefaultTestDefs()) ); 
 		//rand
-		registerInstruction( "CP°Rand", CPInstructionParser.parseSingleInstruction("CP°Rand°rows=1°cols=1°min=1.0°max=100.0°sparsity=1.0°pdf=uniform°dir=.°C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"Rand", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"Rand"+Lops.OPERAND_DELIMITOR+"rows=1"+Lops.OPERAND_DELIMITOR+"cols=1"+Lops.OPERAND_DELIMITOR+"min=1.0"+Lops.OPERAND_DELIMITOR+"max=100.0"+Lops.OPERAND_DELIMITOR+"sparsity=1.0"+Lops.OPERAND_DELIMITOR+"pdf=uniform"+Lops.OPERAND_DELIMITOR+"dir=."+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
 				 			 getDefaultTestDefs(), false, IOSchema.NONE_UNARY );
 		//matrix transpose
-		registerInstruction( "CP°r'", CPInstructionParser.parseSingleInstruction("CP°r'°A·MATRIX·DOUBLE°C·MATRIX·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"r'", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"r'"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"C·MATRIX·DOUBLE"),
 	 			 			 getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//sum
-		registerInstruction( "CP°uak+", CPInstructionParser.parseSingleInstruction("CP°uak+°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE"), //needs B instead of C
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"uak+", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"uak+"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"), //needs B instead of C
 	 			             getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );
 		//external function
-		registerInstruction( "CP°extfunct", CPInstructionParser.parseSingleInstruction("CP°extfunct°"+DMLProgram.DEFAULT_NAMESPACE+"°execPerfTestExtFunct°1°1°A°C"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"extfunct", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"extfunct"+Lops.OPERAND_DELIMITOR+DMLProgram.DEFAULT_NAMESPACE+""+Lops.OPERAND_DELIMITOR+"execPerfTestExtFunct"+Lops.OPERAND_DELIMITOR+"1"+Lops.OPERAND_DELIMITOR+"1"+Lops.OPERAND_DELIMITOR+"A"+Lops.OPERAND_DELIMITOR+"C"),
 	                         getDefaultTestDefs(), false, IOSchema.UNARY_UNARY );		
 		//central moment
-		registerInstruction( "CP°cm", CPInstructionParser.parseSingleInstruction("CP°cm°A·MATRIX·DOUBLE°2·SCALAR·INT°c·SCALAR·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cm", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cm"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"2·SCALAR·INT"+Lops.OPERAND_DELIMITOR+"c·SCALAR·DOUBLE"),
 	            			 getDefaultTestDefs(), true, IOSchema.UNARY_NONE ); 
 		//co-variance
-		registerInstruction( "CP°cov", CPInstructionParser.parseSingleInstruction("CP°cov°A·MATRIX·DOUBLE°B·MATRIX·DOUBLE°c·SCALAR·DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cov", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cov"+Lops.OPERAND_DELIMITOR+"A·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"B·MATRIX·DOUBLE"+Lops.OPERAND_DELIMITOR+"c·SCALAR·DOUBLE"),
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );
 		
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/
@@ -1462,7 +1463,7 @@ public class PerfTestTool
 			
 			//parse instruction
 			int ID = Integer.parseInt( xsr.getAttributeValue(null, XML_ID) );
-			//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", "°");
+			//String name = xsr.getAttributeValue(null, XML_NAME).trim().replaceAll(" ", Lops.OPERAND_DELIMITOR);
 			HashMap<Integer, CostFunction> tmp = new HashMap<Integer, CostFunction>();
 			_profile.put( ID, tmp );
 			
@@ -1532,7 +1533,7 @@ public class PerfTestTool
 					
 			xsw.writeStartElement( XML_INSTRUCTION ); 
 			xsw.writeAttribute(XML_ID, String.valueOf( instID ));
-			xsw.writeAttribute(XML_NAME, instName.replaceAll("°", " "));
+			xsw.writeAttribute(XML_NAME, instName.replaceAll(Lops.OPERAND_DELIMITOR, " "));
 			
 			//foreach testdef cost function
 			for( Entry<Integer,CostFunction> cfun : inst.getValue().entrySet() )

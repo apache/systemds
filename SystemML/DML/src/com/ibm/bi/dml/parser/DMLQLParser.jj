@@ -1020,7 +1020,7 @@ ForStatement ForStatement() :
    sb = new WhileStatementBlock();
   }
   else if (current instanceof IfStatement) {
-   sb = new WhileStatementBlock();
+   sb = new IfStatementBlock();
   }
   else if (current instanceof ParForStatement) {
    sb = new ParForStatementBlock();
@@ -1091,7 +1091,7 @@ ParForStatement ParForStatement() :
    sb = new WhileStatementBlock();
   }
   else if (current instanceof IfStatement) {
-   sb = new WhileStatementBlock();
+   sb = new IfStatementBlock();
   }
   else if (current instanceof ParForStatement) {
    sb = new ParForStatementBlock();

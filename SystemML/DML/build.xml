@@ -31,7 +31,7 @@
 	<path id="JUnit4.classpath">
 		<pathelement location="${junit.antlibpathname}" />
 	</path>
-	
+		
 	<path id="OWN.classpath">
 		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
 		<pathelement location="${build.ownlib}/commons-math-2.2.jar" />       <!-- for math computations -->
@@ -45,6 +45,7 @@
 	<path id="SHARED.classpath">
 		<pathelement location="${build.sharedlib}/Jaql-0.5/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
+	    <pathelement location="${build.sharedlib}/opencsv-1.8/opencsv-1.8.jar" /> <!-- for read/write csv -->
 	</path>	
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
@@ -64,7 +65,7 @@
 		<path refid="HADOOP.local.classpath" />
 		<path refid="JUnit4.classpath" />
 	</path>
-	
+		
 	<target name="deleteall">
 		<delete includeemptydirs="true">
 			<fileset dir="lib" defaultexcludes="false">

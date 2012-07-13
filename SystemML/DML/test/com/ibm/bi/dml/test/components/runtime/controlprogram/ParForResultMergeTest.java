@@ -130,6 +130,7 @@ public class ParForResultMergeTest
 		if( withData )
 		{
 			MatrixBlock mb = new MatrixBlock(dim,dim,false);
+			mb.setValue(0, 0, 7d); // base data to check if div works
 			mo.acquireModify(mb);
 			mo.release();
 		}
@@ -144,8 +145,9 @@ public class ParForResultMergeTest
 		long cols = ref.getNumColumns();
 		int index = 0;
 		int subSize = (int) Math.ceil( rows * cols / in.length );
-		double value;
+		double value; //dynamically assigned
 		
+		//set input data
 		MatrixBlock refData = ref.acquireModify();
 		MatrixBlock inData = in[ index ].acquireModify();
 		

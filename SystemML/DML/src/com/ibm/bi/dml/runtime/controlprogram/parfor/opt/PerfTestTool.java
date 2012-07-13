@@ -933,9 +933,8 @@ public class PerfTestTool
 		for( String str : pb.getVariables().keySet() )
 		{
 			Data dat = pb.getVariable(str); 
-			if( dat.getDataType() == DataType.MATRIX )
-				((MatrixObjectNew)dat).clearData();
-			
+			if( dat instanceof MatrixObjectNew )
+				((MatrixObjectNew)dat).clearData();		
 		}
 		
 		return value;

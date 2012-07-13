@@ -24,6 +24,24 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * (time: O(m^2)), and OptimizerDPEnum (time: O(2^m)) 
  * 
  * 
+ * CURRENT LIST of REWRITES
+ * - Select execution strategy (parfor, hops that allow CP/MR)				done
+ * - Nested parallelism (ParFOR[Remote] -> ParFOR[Remote],ParFOR[Local])	done
+ * - Select task partitioner												done
+ * - Select degree of parallelism for hierarchy of PB/inst					done
+ * - Remove unnecessary nested parallelism (ParFOR[k=1]->FOR)				done
+ * 
+ * TODO to be implemented
+ * - Select degree/distribution of parallelism for MR jobs (#mappers,#reducers)
+ * - Choose configuration properties (sort.io, etc)
+ * - Rewrite blocked matrix/file access (sharing-aware)
+ * - Redundant execution (whenever compute is cheaper than transfer)
+ * - Split single ParFOR into ParFOR of different types wrt data transfer and inst
+ * - Rewrite specific CP inst (e.g., matmult) to ParFOR (inst on independent blocks)
+ * - ...  
+ * 
+ * 
+ * NOTE: better statistics, holistic view on all included instructions, awareness of par and mem, 
  */
 public abstract class Optimizer 
 {

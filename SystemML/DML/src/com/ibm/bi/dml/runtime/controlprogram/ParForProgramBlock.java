@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -62,7 +63,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * TODO perftesttool: dml via text in code 
  *  
  * TODO external configurations properties and constraints 
- * TODO documentation update (after change format by Doug)
  * TODO testcases application (parfor corr, linreg); incl external functions
  * 
  *
@@ -138,7 +138,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	// program block meta data
 	protected long                _ID           = -1;
 	protected int                 _IDPrefix     = -1;
-	protected ArrayList<String>  _resultVars   = null;
+	protected ArrayList<String>  _resultVars      = null;
+	protected ArrayList<Boolean> _resultVarsState = null;
+	
 	
 	// local parworker data
 	protected long[] 		   	                     _pwIDs   = null;
@@ -327,6 +329,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_EXECMODE,        _execMode.ordinal());
 		}
 		
+		//preserve result variables of cleanup
+		pinResultVariables();
+		
 		try 
 		{		
 			switch( _execMode )
@@ -353,9 +358,14 @@ public class ParForProgramBlock extends ForProgramBlock
 			throw new DMLRuntimeException("PARFOR: Failed to execute loop in parallel.",ex);
 		}
 		
+		//clear result variables 
+		unpinResultVariables();
+		
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		_variables.put(iterVarName, iterVar);
+		
+		
 		
 		///////
 		//end PARALLEL EXECUTION of (PAR)FOR body
@@ -406,7 +416,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//create parallel workers as (lazy) deep copies
 			workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
 			threads[i] = new Thread( workers[i] );
-			//FIXME threads[i].setPriority(Thread.MAX_PRIORITY); //current experiments show that this is even slower
+			threads[i].setPriority(Thread.MAX_PRIORITY); 
 		}
 		
 		// start threads (from now on waiting for tasks)
@@ -561,6 +571,62 @@ public class ParForProgramBlock extends ForProgramBlock
 		}			
 	}	
 	
+	/**
+	 * Pin state of result variables before execution.
+	 */
+	private void pinResultVariables()
+	{
+		_resultVarsState = new ArrayList<Boolean>();
+		
+		for( String var : _resultVars )
+		{
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObjectNew )
+			{
+				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				_resultVarsState.add( mo.isCleanupEnabled() );
+				mo.enableCleanup(false); 
+			}
+		}
+	}
+	
+	/**
+	 * Unpin (revert) state of result variables after execution.
+	 */
+	private void unpinResultVariables()
+	{
+		for( int i=0; i<_resultVars.size(); i++ )
+		{
+			String var = _resultVars.get(i);
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObjectNew )
+				((MatrixObjectNew)dat).enableCleanup(_resultVarsState.get(i));
+		}
+		
+		_resultVarsState = null;
+	}
+	
+	/**
+	 * Cleanup result variables of parallel workers after result merge.
+	 * @param in 
+	 * @param out 
+	 * @throws CacheStatusException 
+	 */
+	private void cleanWorkerResultVariables(MatrixObjectNew out, MatrixObjectNew[] in) 
+		throws CacheStatusException
+	{
+		for( MatrixObjectNew tmp : in )
+		{
+			//check for empty inputs (no iterations executed)
+			if( tmp != null && tmp != out )
+				tmp.clearData();
+		}
+	}
+	
+	/**
+	 * 
+	 * @throws CacheException
+	 */
 	private void exportMatricesToHDFS() 
 		throws CacheException 
 	{
@@ -824,9 +890,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( int i=0; i< results.length; i++ )
 				in[i] = (MatrixObjectNew) results[i].get( varname ); 
 			
+			//result merge
 			ResultMerge rm = new ResultMerge( out, in );
-			
 			_variables.put( varname, rm.executeParallelMerge( _numThreads ));
+			
+			//cleanup of intermediate result variables
+			cleanWorkerResultVariables( out, in );
 		}
 		
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check

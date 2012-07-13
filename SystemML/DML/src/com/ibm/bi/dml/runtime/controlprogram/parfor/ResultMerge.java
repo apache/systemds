@@ -1,11 +1,13 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
@@ -22,6 +24,8 @@ public class ResultMerge
 {
 	private MatrixObjectNew   _output = null;
 	private MatrixObjectNew[] _inputs = null; 
+	
+	private double[][]        _compare = null;
 	
 	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in )
 	{
@@ -44,17 +48,24 @@ public class ResultMerge
 		{
 			//get output matrix from cache 
 			MatrixBlock outMB = _output.acquireModify();
-			
+	
+			//create compare matrix if required
+			_compare = createCompareMatrix(outMB);
+						
 			for( MatrixObjectNew in : _inputs ) 
 			{
-				//get input matrix from cache
-				MatrixBlock inMB = in.acquireRead();
-				
-				//merge each input to output
-				merge( outMB, inMB );
-				
-				//release input
-				in.release();
+				//check for empty inputs (no iterations executed)
+				if( in != _output ) 
+				{
+					//get input matrix from cache
+					MatrixBlock inMB = in.acquireRead();
+					
+					//merge each input to output
+					merge( outMB, inMB );
+					
+					//release input
+					in.release();
+				}
 			}
 			
 			//release output
@@ -84,15 +95,22 @@ public class ResultMerge
 		{
 			//get matrix blocks through caching 
 			MatrixBlock outMB = _output.acquireModify();
-			MatrixBlock[] inMB = new MatrixBlock[ _inputs.length ];
-			for( int i=0; i<inMB.length; i++ )
-				inMB[i] = _inputs[i].acquireRead();
-			       
+			ArrayList<MatrixBlock> inMB = new ArrayList<MatrixBlock>();
+			for( MatrixObjectNew in : _inputs )
+			{
+				//check for empty inputs (no iterations executed)
+				if( in != _output ) 
+					inMB.add( in.acquireRead() );	
+			}
+			
+			//create compare matrix if required
+			_compare = createCompareMatrix(outMB);
+			
 			//create and start threads
-			Thread[] threads = new Thread[ _inputs.length ];
+			Thread[] threads = new Thread[ inMB.size() ];
 			for( int i=0; i<threads.length; i++ )
 			{
-				ResultMergeWorker rmw = new ResultMergeWorker(inMB[i], outMB);
+				ResultMergeWorker rmw = new ResultMergeWorker(inMB.get(i), outMB);
 				threads[i] = new Thread(rmw);
 				threads[i].setPriority(Thread.MAX_PRIORITY);
 				threads[i].start(); // start execution
@@ -107,7 +125,11 @@ public class ResultMerge
 			//release all data
 			_output.release();
 			for( MatrixObjectNew in : _inputs )
-				in.release();
+			{
+				//check for empty results
+				if( in != _output ) 
+					in.release(); //only if required (see above)
+			}
 		}
 		catch(Exception ex)
 		{
@@ -115,6 +137,19 @@ public class ResultMerge
 		}
 		
 		return _output;
+	}
+	
+	private double[][] createCompareMatrix( MatrixBlock output )
+	{
+		double[][] ret = null;
+		
+		//create compare matrix only if required
+		if( output.getNonZeros() > 0 )
+		{
+			ret = DataConverter.convertToDoubleMatrix( output );
+		}
+		
+		return ret;
 	}
 	
 	/**
@@ -127,19 +162,31 @@ public class ResultMerge
 	 * @param out
 	 * @param in
 	 */
-	public void merge( MatrixBlock out, MatrixBlock in )
+	private void merge( MatrixBlock out, MatrixBlock in )
 	{
-		//TODO fine-gained synchronization in setValue (for sparse and dense) due to dynamic allocations, 
-		
+		if( _compare == null )
+			mergeWithoutComp(out, in);
+		else
+			mergeWithComp(out, in);
+	}
+	
+	//TODO fine-gained synchronization in setValue (for sparse and dense) due to dynamic allocations, 
+	
+	private void mergeWithComp( MatrixBlock out, MatrixBlock in )
+	{
 		if( in.isInSparseFormat() ) //sparse input format
 		{
 			HashMap<CellIndex, Double> sparseMap = in.getSparseMap();
 			for(Entry<CellIndex,Double> cell : sparseMap.entrySet() )
 			{
 				CellIndex key = cell.getKey();
-				double value  = cell.getValue();
 				
-				out.setValue(key, value);
+				double value  = cell.getValue();  //input value
+				if(   value != _compare[key.row][key.column]   //for new values only (div)
+				   && value != 0     )                         //for all nnz
+				{
+					out.setValue(key, value);
+				}
 			}
 		}
 		else //dense input format
@@ -152,10 +199,53 @@ public class ResultMerge
 			
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
-					if( values[i*cols + j] != 0 ) //for all nnz
-						out.setValue(i, j, values[i*cols + j]);	
+				{
+				    double value = values[i*cols + j];  //input value
+					if(   value != _compare[i][j]   //for new values only (div)
+					   && value != 0              ) //for all nnz
+					{
+						out.setValue( i, j, value );	
+					}
+				}
+		}			
+	}
+	
+	private void mergeWithoutComp( MatrixBlock out, MatrixBlock in )
+	{
+		if( in.isInSparseFormat() ) //sparse input format
+		{
+			HashMap<CellIndex, Double> sparseMap = in.getSparseMap();
+			for(Entry<CellIndex,Double> cell : sparseMap.entrySet() )
+			{
+				CellIndex key = cell.getKey();
+				
+				double value  = cell.getValue();  //input value
+				if( value != 0 )                  //for all nnz
+				{
+					out.setValue(key, value);
+				}
+			}
+		}
+		else //dense input format
+		{
+			//for a merge this case will seldom happen, as each input MatrixObject
+			//has at most 1/numThreads of all values in it.
+			double[] values = in.getDenseArray();
+			int rows = in.getNumRows();
+			int cols = in.getNumColumns();
+			
+			for( int i=0; i<rows; i++ )
+				for( int j=0; j<cols; j++ )
+				{
+				    double value = values[i*cols + j];  //input value
+					if( value != 0  ) 					//for all nnz
+					{
+						out.setValue( i, j, value );	
+					}
+				}
 		}	
 	}
+	
 	
 	/**
 	 * 

@@ -331,10 +331,10 @@ public abstract class CacheableData extends Data
 	 * because it decrements the lock count and the other method increments
 	 * the lock count.
 	 * 
-	 * @throws CacheStatusException 
+	 * @throws CacheException 
 	 */
 	public void release ()
-		throws CacheStatusException
+		throws CacheException
 	{
 		switch ( _cacheStatus.getType() )
 		{

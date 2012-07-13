@@ -395,14 +395,19 @@ public class VariableCPInstruction extends CPInstruction {
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
 			if ( del == true ) {
+				//TODO MB: potentially move whole block into clearCachedMatrix
 				// delete the file on disk
 				try {
-					String fpath = ((MatrixObjectNew)pb.getVariable( input1.get_name())).getFileName();
-					if ( fpath != null ) {
-						MapReduceTool.deleteFileIfExistOnHDFS( fpath );
-						// delete metadata associated with the file
-						pb.removeMetaData(input1.get_name());
-						MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
+					MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable( input1.get_name());
+					if( mo.isCleanupEnabled() )
+					{
+						String fpath = mo.getFileName();
+						if ( fpath != null ) {
+							MapReduceTool.deleteFileIfExistOnHDFS( fpath );
+							// delete metadata associated with the file
+							pb.removeMetaData(input1.get_name());
+							MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
+						}
 					}
 				}
 				catch ( IOException e ) {
@@ -687,13 +692,8 @@ public class VariableCPInstruction extends CPInstruction {
 	{
 		String varName = op.get_name();
 		Data dat = pb.getVariable(varName);
-		DataType dt = op.get_dataType(); //op datatype required
-		
-		if (   dt == DataType.MATRIX 
-			|| dat instanceof MatrixObjectNew )
-		{
+		if ( dat instanceof MatrixObjectNew )
 			((MatrixObjectNew)dat).clearData();			
-		}
 	}
 	
 	

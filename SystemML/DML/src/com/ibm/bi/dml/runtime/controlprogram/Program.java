@@ -6,7 +6,6 @@ import java.util.HashMap;
 import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
@@ -123,17 +122,8 @@ public class Program {
 		for( String var : _programVariables.keySet() )
 		{
 			Data dat = _programVariables.get(var);
-			DataType dt = dat.getDataType();
-			
-			if ( dt == DataType.MATRIX )
-			{
+			if( dat instanceof MatrixObjectNew )
 				((MatrixObjectNew)dat).clearData();
-			}
-			else if ( dt == null || dt == DataType.UNKNOWN )
-			{
-				if( dat instanceof MatrixObjectNew )
-					((MatrixObjectNew)dat).clearData();
-			}
 		}
 	}
 	

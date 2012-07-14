@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Dag;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -220,6 +222,9 @@ public class DMLProgram {
 			}
 			
 			retPB = rtpb;
+			
+			//post processing for generating missing instructions
+			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 		}
 		
 		// process If Statement - add runtime program blocks to program
@@ -274,6 +279,9 @@ public class DMLProgram {
 			}
 			
 			retPB = rtpb;
+			
+			//post processing for generating missing instructions
+			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 		}
 		
 		// process For Statement - add runtime program blocks to program
@@ -342,6 +350,9 @@ public class DMLProgram {
 			}
 			
 			retPB = rtpb;
+			
+			//post processing for generating missing instructions
+			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 		}
 		
 		// process function statement block - add runtime program blocks to program
@@ -525,11 +536,9 @@ public class DMLProgram {
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			//TODO: MB: remove this line after external functions are integrated in hops/lops
-			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), retPB);
+			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 		}
-		
-		//FIXME put correction here, once this issue is solved
+
 		return retPB;
 	}	
 	
@@ -540,17 +549,20 @@ public class DMLProgram {
 	 * e.g., X=..., Y=fun(X) and X is not used afterwards )
 	 * 
 	 * NOTES: 
-	 * (1) checking livein and liveout is sufficient because the last external function is in its own
+	 * (1) Rule1: checking livein and liveout is sufficient because the last external function is in its own
 	 * programblock anyway.
 	 * (2) as we cannot efficiently distinguish if the problematic var is created by an external function
 	 * or some other instruction, we generate RMVAR instructions although for vars created by non-CP
 	 * external functions RMFILEVAR instructions are required. However, all remaining files in scratch_space
 	 * are cleaned after execution anyway.
+	 * (3) As an alternative to doing rule 2, we could also check for existing objects in createvar and function invocation
+	 * (or generic at program block level) and remove objects of previous iterations accordingly (but objects of last iteration
+	 * would still require seperate cleanup).
 	 * 
 	 * TODO: MB: external function invocations should become hops/lops as well (see instruction gen in DMLTranslator), 
 	 * (currently not possible at Hops/Lops level due the requirement of multiple outputs for functions) 
 	 * TODO: MB: we should in general always leverage livein/liveout during hops/lops generation.
-	 * 
+	 * TODO: MB: verify and correct can be removed once everything is integrated in hops/lops generation
 	 * 
 	 * @param in
 	 * @param out
@@ -559,36 +571,70 @@ public class DMLProgram {
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, ProgramBlock pb) 
+	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, VariableSet kill, ProgramBlock pb) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{		
+	{	
+		//RULE 1: if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+		//(currently required for specific cases of external functions)
 		for( String varName : in.getVariableNames() )
 			if( !out.containsVariable(varName) ) 
 			{
-				//if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+				DataType dt = in.getVariable(varName).getDataType();
+				if( !(dt==DataType.MATRIX || dt==DataType.UNKNOWN) )
+					continue; //skip rm instructions for non-matrix objects
+				
 				boolean foundRMInst = rContainsRMInstruction(pb, varName);
 				
 				if( !foundRMInst )
 				{
 					//create RMVAR instruction and put it into the programblock
-					//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
-					StringBuffer sb = new StringBuffer();
-					sb.append("CP");
-					sb.append(Lops.OPERAND_DELIMITOR);
-					sb.append("rmvar");
-					sb.append(Lops.OPERAND_DELIMITOR);
-					sb.append(varName);
-					String str = sb.toString();
-					Instruction inst = CPInstructionParser.parseSingleInstruction( str );
-				
-					//System.out.println("Adding instruction "+inst.toString());
-					
+					Instruction inst = createCleanupInstruction(varName);
 					addCleanupInstruction(pb, inst);
+					
+					if( DMLScript.DEBUG )
+						System.out.println("Adding instruction (r1) "+inst.toString());
+				}		
+			}
+
+		//RULE 2: if in KILL and not in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+		//(currently required for specific cases of nested loops)
+		for( String varName : kill.getVariableNames() )
+			if( (!in.containsVariable(varName)) && (!out.containsVariable(varName)) ) 
+			{
+				DataType dt = kill.getVariable(varName).getDataType();
+				if( !(dt==DataType.MATRIX || dt==DataType.UNKNOWN) )
+					continue; //skip rm instructions for non-matrix objects
+				
+				boolean foundRMInst = rContainsRMInstruction(pb, varName);
+				
+				if( !foundRMInst )
+				{
+					//create RMVAR instruction and put it into the programblock
+					Instruction inst = createCleanupInstruction(varName);
+					addCleanupInstruction(pb, inst);
+					
+					if( DMLScript.DEBUG )
+						System.out.println("Adding instruction (r2) "+inst.toString());
 				}		
 			}
 		
-		
 		return pb;
+	}
+	
+	private Instruction createCleanupInstruction(String varName) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append("rmvar");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(varName);
+		String str = sb.toString();
+		Instruction inst = CPInstructionParser.parseSingleInstruction( str );
+		
+		return inst;
 	}
 	
 	/**
@@ -638,7 +684,7 @@ public class DMLProgram {
 			{
 				String instStr = inst.toString();
 				if(   instStr.contains("rmfilevar"+Lops.OPERAND_DELIMITOR+varName)
-				   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varName))
+				   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varName)  )
 				{
 					return true;
 				}
@@ -657,15 +703,37 @@ public class DMLProgram {
 	 * 
 	 * @param pb
 	 * @param inst
+	 * @throws DMLRuntimeException 
 	 */
-	private void addCleanupInstruction( ProgramBlock pb, Instruction inst )
+	private void addCleanupInstruction( ProgramBlock pb, Instruction inst ) 
+		throws DMLRuntimeException
 	{
 		if (pb instanceof WhileProgramBlock)
-			((WhileProgramBlock)pb).addExitInstruction(inst);
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock)pb;
+			ArrayList<ProgramBlock> childs = wpb.getChildBlocks();
+			if( childs.get(childs.size()-1).getInstructions().size()>0 ) //generic last level pb
+				childs.get(childs.size()-1).addInstruction(inst);
+			else{
+				ProgramBlock pbNew = new ProgramBlock(pb.getProgram());
+				pbNew.addInstruction(inst);
+				childs.add(pbNew); 
+			}
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{
+			ForProgramBlock wpb = (ForProgramBlock)pb;
+			ArrayList<ProgramBlock> childs = wpb.getChildBlocks();
+			if( childs.get(childs.size()-1).getInstructions().size()>0 ) //generic last level pb
+				childs.get(childs.size()-1).addInstruction(inst);
+			else{
+				ProgramBlock pbNew = new ProgramBlock(pb.getProgram());
+				pbNew.addInstruction(inst);
+				childs.add(pbNew); 
+			}
+		}
 		else if (pb instanceof IfProgramBlock)
 			((IfProgramBlock)pb).addExitInstruction(inst);
-		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
-			((ForProgramBlock)pb).addExitInstruction(inst);
 		else if (   pb instanceof FunctionProgramBlock  //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			     || pb instanceof CVProgramBlock
 			     || pb instanceof ELProgramBlock

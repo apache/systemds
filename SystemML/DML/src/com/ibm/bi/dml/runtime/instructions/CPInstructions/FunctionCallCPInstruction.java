@@ -151,21 +151,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			Data boundValue = returnedVariables.get(fpb.getOutputParams().get(i).getName());
 			if (boundValue == null)
 				throw new DMLUnsupportedOperationException(boundVarName + " was not assigned a return value");
-		
-			//remove old matrix from cache (if necessary)
-			//(required because var mon already created during create var)
-			if( boundValue instanceof MatrixObjectNew )
-			{
-				MatrixObjectNew oldVar = (MatrixObjectNew)pb.getVariable(boundVarName);
-				if( oldVar != null )
-					oldVar.clearData(); //clear old obj from cache 
-				//FIXME missing rmvar/rmfilevar instructions for external functions
-				//TODO remove once this issue is completely solved
-				
-				((MatrixObjectNew) boundValue).setVarName(boundVarName);
-			}
-			
+
 			//add/replace data in symbol table
+			if( boundValue instanceof MatrixObjectNew )
+				((MatrixObjectNew) boundValue).setVarName(boundVarName);
 			pb.getVariables().put(boundVarName, boundValue);
 		}
 	}

@@ -381,7 +381,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RenameVariable:
 			Data dd = pb.getVariable(input1.get_name());		
-			clearCachedMatrixObject(pb, input2);
+			//(existing objects already cleared on 'rm vars')
 			
 			pb.setVariable(input2.get_name(), dd);
 			//pb.removeVariable(input1.get_name()); 

@@ -441,10 +441,9 @@ public class MatrixObjectNew extends CacheableData
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
 		
-		if (_data != null) //FIXME should never be in memory
+		if (_data != null) //e.g., in case of evicted matrix
 		{
-			throw new RuntimeException("Should never happen");
-			// FIXME _data.clearEnvelope ();
+			_data.clearEnvelope ();
 		}
 			
 		if( _cache!=null )

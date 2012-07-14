@@ -6,10 +6,7 @@ import java.util.HashMap;
 import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
-import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -112,12 +109,9 @@ public class Program {
 			pb.execute(ec);
 			_programVariables = pb.getVariables();
 		}
-		
-		//cleanup remaining symbol table
-		cleanupCachedVariables();
 	}
 	
-	public void cleanupCachedVariables() throws CacheStatusException
+	/*public void cleanupCachedVariables() throws CacheStatusException
 	{
 		for( String var : _programVariables.keySet() )
 		{
@@ -125,7 +119,7 @@ public class Program {
 			if( dat instanceof MatrixObjectNew )
 				((MatrixObjectNew)dat).clearData();
 		}
-	}
+	}*/
 	
 	public void printMe() {
 		

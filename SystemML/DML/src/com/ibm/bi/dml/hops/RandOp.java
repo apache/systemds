@@ -146,6 +146,8 @@ public class RandOp extends Hops
 	protected ExecType optFindExecType() throws HopsException {
 		if (DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			return ExecType.CP;
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
+			return ExecType.MR;
 
 		if( _etype != null ) 			
 			return _etype;

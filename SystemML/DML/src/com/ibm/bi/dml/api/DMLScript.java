@@ -74,8 +74,8 @@ public class DMLScript {
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;
 	public static boolean LOG = false;	
-	public enum RUNTIME_PLATFORM { HADOOP, NZ, SINGLE_NODE, INVALID };
-	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HADOOP;
+	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
+	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
 	// stores the path to the source
@@ -96,7 +96,7 @@ public class DMLScript {
 		final String logFileName = "SystemML.log";
 		
 		// stores runtime platform
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		
 		// stores the (filename | DMLScript string) passed
 		String fileName = null;
@@ -170,10 +170,12 @@ public class DMLScript {
 				argid++;
 				if ( args[argid].equalsIgnoreCase("hadoop")) 
 					rtplatform = RUNTIME_PLATFORM.HADOOP;
-				else if ( args[argid].equalsIgnoreCase("nz"))
-					rtplatform = RUNTIME_PLATFORM.NZ;
 				else if ( args[argid].equalsIgnoreCase("singlenode"))
 					rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+				else if ( args[argid].equalsIgnoreCase("hybrid"))
+					rtplatform = RUNTIME_PLATFORM.HYBRID;
+				else if ( args[argid].equalsIgnoreCase("nz"))
+					rtplatform = RUNTIME_PLATFORM.NZ;
 				else {
 					System.err.println("Unknown runtime platform: " + args[argid]);
 					return;
@@ -217,7 +219,7 @@ public class DMLScript {
 		}
 	
 		/////////////// set logger level //////////////////////////////////////
-		if (rtplatform == RUNTIME_PLATFORM.HADOOP){
+		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID){
 			if (DEBUG)
 				mapredLogger.setLevel(Level.WARN);
 			else {
@@ -228,7 +230,7 @@ public class DMLScript {
 		}
 		////////////// handle log output //////////////////////////
 		BufferedWriter out = null;
-		if (LOG && rtplatform == RUNTIME_PLATFORM.HADOOP) {
+		if (LOG && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
 			// copy the input DML script to ./log folder
 			String hadoop_home = System.getenv("HADOOP_HOME");
 			File logfile = new File(hadoop_home + "/" + logFileName);

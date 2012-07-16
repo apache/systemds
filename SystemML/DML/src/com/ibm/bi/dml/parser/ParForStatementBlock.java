@@ -179,6 +179,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		 *    non-local variables. However, for local variables arbitrary expressions are possible).
 		 * - for and parfor increments must be integer values 
 		 * - only static (integer lower, upper bounds) range indexing
+		 * - only input variables considered as potential candidates for checking 
+		 *   (TODO: in order to remove the last restriction, dependencies must be checked again after 
+		 *   live variable analysis against LIVEOUT)
 		 * 
 		 * NOTE: validity is only checked during compilation, i.e., for dynamic from, to, incr MIN MAX values assumed.        
 		 */ 

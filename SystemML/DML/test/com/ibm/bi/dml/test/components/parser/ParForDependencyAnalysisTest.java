@@ -30,12 +30,15 @@ import com.ibm.bi.dml.utils.LanguageException;
  *    33: dep, 34: dep, 35: no
  * * multiple matrix references per statement
  *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
+ * * scoping (create object in loop, but used afterwards)
+ *    44: dep   
  * 
  *
  */
 public class ParForDependencyAnalysisTest 
 {
 	public static String DIR = "./test/scripts/functions/parfor/";
+	
 	
 	@Test
 	public void testDependencyAnalysis1() { runTest("parfor1.dml", false); }
@@ -165,6 +168,10 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis43() { runTest("parfor43.dml", false); } 	
+	
+	//TODO: requires dynamic re-execution of dependency analysis after live variable analysis has been done
+	//@Test
+	//public void testDependencyAnalysis44() { runTest("parfor44.dml", true); } 	
 	
 	
 	private void runTest( String scriptFilename, boolean expectedException )

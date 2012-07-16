@@ -466,10 +466,14 @@ public class ProgramConverter
 				String[] in = tmp.getIv_inputs().clone();
 				String[] out = tmp.getIv_outputs().clone();
 				String rand = tmp.getIv_randInstructions();
-				for( int j=0;j<in.length; j++)
-					in[j]=in[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
-				for( int j=0;j<out.length; j++)
-					out[j]=out[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
+				if(in!=null)
+					for( int j=0;j<in.length; j++)
+						if( in[j]!=null )
+							in[j]=in[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
+				if(out!=null)
+					for( int j=0;j<out.length; j++)
+						if( out[j]!=null )
+							out[j]=out[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
 				rand = rand.replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
 				tmpNew.setIv_inputs(in);
 				tmpNew.setIv_outputs(out);	

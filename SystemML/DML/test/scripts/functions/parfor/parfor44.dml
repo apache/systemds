@@ -1,0 +1,8 @@
+B = Rand(rows=10,cols=1);
+
+parfor( i in 1:10 )
+{ 
+   A = Rand(rows=10,cols=1);
+}
+
+B = B * A

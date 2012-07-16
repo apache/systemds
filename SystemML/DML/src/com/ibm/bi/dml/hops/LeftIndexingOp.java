@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
@@ -144,7 +142,7 @@ public class LeftIndexingOp  extends Hops {
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+/*		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
 			return ExecType.MR;
@@ -154,7 +152,7 @@ public class LeftIndexingOp  extends Hops {
 		
 		if ( getInput().get(0).areDimsBelowThreshold() )
 			return ExecType.CP;
-		
+*/		
 		return ExecType.MR;
 	}
 

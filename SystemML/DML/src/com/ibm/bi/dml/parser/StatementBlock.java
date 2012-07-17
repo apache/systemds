@@ -538,15 +538,28 @@ public class StatementBlock extends LiveVariableAnalysis{
 						currConstVars.put(target.getName(), intid);
 					}
 				}
-				
+				// CASE: target NOT indexed identifier
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
 				}
+				// CASE: target is indexed identifier
 				else{
+					// process the "target" being indexed
 					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 					if (targetAsSeen == null)
 						throw new LanguageException("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
 					target.setProperties(targetAsSeen);
+					
+					// process the expressions for the indexing
+					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+					
 				}
 				ids.addVariable(target.getName(), target);
 				

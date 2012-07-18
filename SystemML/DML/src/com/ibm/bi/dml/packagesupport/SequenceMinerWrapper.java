@@ -42,6 +42,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 	final String NIMBLEoutFile = "PackageSupport/seq_scratch/SequenceMinerWrapperOutput";
 	public String freq_seq_file = "PackageSupport/seq_scratch/FreqSeqFile";
 	public String seq_support_file = "PackageSupport/seq_scratch/FreqSeqSupportFile";
+	int max_patterns = Integer.MAX_VALUE;
 	
 
 	@Override
@@ -90,11 +91,18 @@ public class SequenceMinerWrapper extends PackageFunction {
 			//support
 			double min_sup = Double.parseDouble(((Scalar) this.getFunctionInput(1)).getValue());
 			
+
 			//max level
 			int max_sequence_size = (int) Double.parseDouble(((Scalar) this.getFunctionInput(2)).getValue());
 			
+			if(this.getNumFunctionInputs() == 4)
+			{
+				max_patterns = (int) Double.parseDouble(((Scalar) this.getFunctionInput(3)).getValue());
+			}
+			
+			
 			//invoke sequence mining
-			SequenceMinerTask seqMiner = new SequenceMinerTask(min_sup, data_block_size, sequence_block_size, in_memory_scratch_size,  max_projection_size,  max_sequence_size,  NIMBLEoutFile);
+			SequenceMinerTask seqMiner = new SequenceMinerTask(min_sup, data_block_size, sequence_block_size, in_memory_scratch_size,  max_projection_size,  max_sequence_size,  NIMBLEoutFile, max_patterns);
 			seqMiner.setNumInputDatasets(1);
 			seqMiner.addInputDataset(seqMiningDataset, 0);
 			this.getDAGQueue().pushTask(seqMiner);

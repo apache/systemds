@@ -532,6 +532,9 @@ public class MatrixObjectNew extends CacheableData
 			acquire (false); //incl. read matrix if evicted
 			try
 			{
+				if (DMLScript.DEBUG)
+					System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+				
 				writeMetaData (fName, outputFormat);
 				writeMatrixToHDFS (fName, outputFormat);
 				if ( !pWrite )
@@ -549,7 +552,7 @@ public class MatrixObjectNew extends CacheableData
 		else if(DMLScript.DEBUG) 
 		{
 			//CASE 3: data already in hdfs (do nothing, no need for export)
-			System.out.println("Skip export to hdfs since data already exists.");
+			System.out.println(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
 		
 		

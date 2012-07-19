@@ -68,6 +68,9 @@ public class DataConverter {
 		
 		try{
 			OutputFormat informat = outputinfo.outputFormatClass.newInstance();
+
+			// If the file already exists on HDFS, remove it.
+			MapReduceTool.deleteFileIfExistOnHDFS(dir);
 			
 			if ( outputinfo == OutputInfo.TextCellOutputInfo ) {
 		        Path pt=new Path(dir);

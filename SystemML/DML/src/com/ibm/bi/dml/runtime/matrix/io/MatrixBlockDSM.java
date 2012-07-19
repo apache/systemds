@@ -1639,7 +1639,60 @@ public class MatrixBlockDSM extends MatrixValue{
 		return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
 	}
 	
-		/**
+	/**
+	 * Method to perform leftIndexing operation for a given lower and upper bounds in row and column dimensions.
+	 * Updated matrix is returned as the output.
+	 * 
+	 * Operations to be performed: 
+	 *   1) result=this; 
+	 *   2) result[rowLower:rowUpper, colLower:colUpper] = rhsMatrix;
+	 *  
+	 * @throws DMLRuntimeException 
+	 */
+	public MatrixValue leftIndexingOperations(MatrixValue rhsMatrix, long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue result) throws DMLRuntimeException {
+		
+		// Check the validity of bounds
+		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
+				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
+					"["+rowLower+":"+rowUpper+"," + colLower+":"+colUpper+"] " +
+							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+".");
+		}
+		
+		if ( (rowUpper-rowLower+1) != rhsMatrix.getNumRows() || (colUpper-colLower+1) != rhsMatrix.getNumColumns()) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
+					"dimensions of the source matrix ["+rhsMatrix.getNumRows()+"x" + rhsMatrix.getNumColumns() + "] " +
+					"do not match the shape of the matrix specified by indices [" +
+					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
+		}
+		
+		/*
+		int rl = (int)rowLower-1;
+		int ru = (int)rowUpper-1;
+		int cl = (int)colLower-1;
+		int cu = (int)colUpper-1;
+		*/
+		
+		if(result==null)
+			result=new MatrixBlockDSM(this);
+		else {
+			//result.reset(ru-rl+1, cu-cl+1, result_sparsity);
+			result.copy(this);
+		}
+		
+		// TODO: following implementation can be significantly improved by looking at the representations of "this" and "rhsmatrix"
+		double d = 0;
+		for ( int i=0, res_i=(int)rowLower-1; i < rhsMatrix.getNumRows(); i++, res_i++ ) {
+			for ( int j=0, res_j=(int)colLower-1; j < rhsMatrix.getNumColumns(); j++, res_j++ ) {
+				d = rhsMatrix.getValue(i,j);
+				result.setValue(res_i, res_j, d);
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
 	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
 	 * Extracted submatrix is returned as "result".
 	 * @throws DMLRuntimeException 
@@ -1698,7 +1751,6 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
-		
 		return result;
 	}
 	

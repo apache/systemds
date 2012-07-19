@@ -15,7 +15,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.RangeReIndexCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ReorgCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.SortCPInstruction;
@@ -133,7 +133,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "inmem-valuepick" , CPINSTRUCTION_TYPE.Variable);
 		
-		String2CPInstructionType.put( "rangeReIndex"  , CPINSTRUCTION_TYPE.RangeReIndex);
+		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
+		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
 		
 	}
 
@@ -206,8 +207,8 @@ public class CPInstructionParser extends InstructionParser {
 		case Sort: 
 			return (CPInstruction) SortCPInstruction.parseInstruction(str);
 		
-		case RangeReIndex: 
-			return (CPInstruction) RangeReIndexCPInstruction.parseInstruction(str);
+		case MatrixIndexing: 
+			return (CPInstruction) MatrixIndexingCPInstruction.parseInstruction(str);
 		
 		case Builtin: 
 			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);

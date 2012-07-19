@@ -105,9 +105,14 @@ public class RangeBasedReIndex extends Lops {
 		        rowu + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
 		        coll + DATATYPE_PREFIX + getInputs().get(3).get_dataType() + VALUETYPE_PREFIX + getInputs().get(3).get_valueType() + OPERAND_DELIMITOR + 
 		        colu + DATATYPE_PREFIX + getInputs().get(4).get_dataType() + VALUETYPE_PREFIX + getInputs().get(4).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR +
+		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
+		
+		if(getExecType() == ExecType.MR) {
+			// following fields are added only when this lop is executed in MR (both for left & right indexing) 
+			inst += OPERAND_DELIMITOR +
 		        leftIndexingNRow + DATATYPE_PREFIX + Expression.DataType.SCALAR + VALUETYPE_PREFIX + Expression.ValueType.INT + OPERAND_DELIMITOR+
 		        leftIndexingNCol + DATATYPE_PREFIX + Expression.DataType.SCALAR + VALUETYPE_PREFIX + Expression.ValueType.INT;
+		}
 		return inst;
 	}
 

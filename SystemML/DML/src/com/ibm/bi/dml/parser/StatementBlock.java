@@ -554,11 +554,11 @@ public class StatementBlock extends LiveVariableAnalysis{
 					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
 						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
 					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables());
 					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables());
 					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables());
 					
 				}
 				ids.addVariable(target.getName(), target);

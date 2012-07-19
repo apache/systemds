@@ -1,7 +1,10 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
+import com.ibm.bi.dml.lops.LeftIndex;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.ZeroOut;
@@ -101,8 +104,12 @@ public class LeftIndexingOp  extends Hops {
 					set_lops(binary);
 				}
 				else {
-					//TODO: how to implement leftIndexing in CP
-					throw new HopsException("leftIndexing is not supported in CP yet!");
+					LeftIndex left = new LeftIndex(
+							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+							get_dataType(), get_valueType(), et);
+					left.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					set_lops(left);
 				}
 			} catch (Exception e) {
 				throw new HopsException(e);
@@ -142,7 +149,7 @@ public class LeftIndexingOp  extends Hops {
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-/*		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return ExecType.CP;
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
 			return ExecType.MR;
@@ -152,7 +159,7 @@ public class LeftIndexingOp  extends Hops {
 		
 		if ( getInput().get(0).areDimsBelowThreshold() )
 			return ExecType.CP;
-*/		
+		
 		return ExecType.MR;
 	}
 

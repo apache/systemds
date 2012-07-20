@@ -194,7 +194,7 @@
 	<target name="2012_Nov" depends="jar">
 		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.2012_Nov}" overwrite="true"/>
 		<copy file="${build.configfile}" todir="${release.2012_Nov}" overwrite="true"/>
-		<tar basedir="${release.2012_Nov}" destfile="${release.2012_Nov}/${configjartgz}" compression="gzip"/>
+		<tar basedir="${release.2012_Nov}" destfile="${release.2012_Nov}/${build.configjartgz}" compression="gzip"/>
 	</target>
 	
 	<target name="auto">

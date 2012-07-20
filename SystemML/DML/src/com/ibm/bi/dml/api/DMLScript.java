@@ -53,92 +53,101 @@ import com.ibm.bi.dml.utils.visualize.DotGraph;
 
 
 public class DMLScript {
-
-	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-	+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
-	+ " -f: <filename> will be interpreted as a filename path + \n"
-	+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
-	+ " -s: <filename> will be interpreted as a DML script string \n"
-	//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
-	//+ " -nz: (optional) use Netezza runtime (default: use Hadoop runtime) \n"
-	+ " [-d | -debug]: (optional) output debug info \n"
-	// COMMENT OUT -v option before RELEASE
-	+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
-	+ " [-l | -log]: (optional) output log info \n"
-	+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
-	+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
-	+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-	+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
-	+ "<args-list>: (optional) args to DML script \n" ;
-					
+	//TODO: Change these static variables to non-static, and create corresponding access methods
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;
 	public static boolean LOG = false;	
 	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
+	// We should assume the default value is HYBRID
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
-	public static String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
+
+	private String _dmlScriptString;
+	// stores name of the OPTIONAL config file
+	private String _optConfig;
+	// stores optional args to parameterize DML script 
+	private HashMap<String, String> _argVals;
 	
+	private Logger mapredLogger;
+	private Logger mmcjLogger;
+	
+	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
+	private static final String DEFAULT_MAPRED_LOGGER = "org.apache.hadoop.mapred";
+	private static final String DEFAULT_MMCJMR_LOGGER = "dml.runtime.matrix.MMCJMR";
+	private static final String LOG_FILE_NAME = "SystemML.log";
 	// stores the path to the source
-	public static final String path_to_src = "./";
+	private static final String PATH_TO_SRC = "./";
+	
+	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
+			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config <config_filename>)? (-args)? <args-list>? \n" 
+			+ " -f: <filename> will be interpreted as a filename path + \n"
+			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
+			+ " -s: <filename> will be interpreted as a DML script string \n"
+			//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
+			+ " [-d | -debug]: (optional) output debug info \n"
+			// COMMENT OUT -v option before RELEASE
+			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
+			+ " [-l | -log]: (optional) output log info \n"
+			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
+			+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
+			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
+			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
+			+ "<args-list>: (optional) args to DML script \n" ;
+	
+
+	
+	public DMLScript(String dmlScript, boolean debug, boolean log, boolean visualize, RUNTIME_PLATFORM rt, String config, HashMap<String, String> argVals){
+		_dmlScriptString = dmlScript;
+		DMLScript.DEBUG = debug;
+		LOG = log;
+		VISUALIZE = visualize;
+		rtplatform = rt;
+		_optConfig = config;
+		_argVals = argVals;
+		
+		mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
+		mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
+	}
 	
 	/**
-	 * @param args
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
+	 * createDMLScript: Do the diligent work to parse the parameters provided by the user and create a DMLScript object
+	 * @param args[] parameters array 
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException, ParseException, DMLException {
-
-		Logger mapredLogger = Logger.getLogger("org.apache.hadoop.mapred");
-		Logger mmcjLogger = Logger.getLogger("dml.runtime.matrix.MMCJMR");
-		// Logger jvmLogger = Logger.getLogger("jvm.JvmMetrics");			
-		final String logFileName = "SystemML.log";
+	public static DMLScript createDMLScript(String[] args) throws IOException{
+		DMLScript d = null;
 		
-		// stores runtime platform
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM rt = RUNTIME_PLATFORM.HYBRID;
 		
 		// stores the (filename | DMLScript string) passed
 		String fileName = null;
 		
 		// stores if <filename> arg is file (if true) or is a string (if false)
 		boolean fromFile = false;
-	
-		// stores name of the OPTIONAL config file
-		String optionalConfigurationFileName = null;
 		
-		//////////////// for DEBUG, dump arguments /////////////////////////////
-		System.out.println("INFO: Value for args passed to DMLScript: ");
-		for (int i=0; i< args.length; i++)
-			System.out.println("INFO: arg " + i + " = " + args[i] );
-		
-	
-		// print usage
+		/////////// if the args is incorrect, print usage /////////////
 		if (args.length < 2){
 			System.err.println(USAGE);
-			return;
+			return d;
 		}
-		
-		// stores optional args to parameterize DML script 
-		HashMap<String, String> argVals = new HashMap<String,String>();
 		
 		//////////// process -f | -s to set dmlScriptString ////////////////
 		if (!(args[0].equals("-f") || args[0].equals("-s"))){
-			System.err.println("first argument must be either -f or -s");
+			System.err.println("ERROR: first argument must be either -f or -s");
 			System.err.println(USAGE);
-			return;
+			return d;
 		}
 		
+		StringBuilder dmlScriptString = new StringBuilder();
 		fromFile = (args[0].equals("-f")) ? true : false;
 		fileName = args[1];
-		String dmlScriptString = new String();
 
 		// DML script can be from local or from hdfs
-		// from local file - e.g., command invokation of DML
+		// from local file - e.g., command invocation of DML
 		// hdfs file - e.g., application oozie workflow.xml -> Jaql -> DML
 		if (fromFile){
 			String s1 = null;
 			BufferedReader in = null;
+			//TODO: update this hard coded line
 			if (fileName.startsWith("hdfs:")){ // from hdfs 	
                 FileSystem hdfs = FileSystem.get(new Configuration());
                 Path scriptPath = new Path(fileName);
@@ -148,44 +157,46 @@ public class DMLScript {
 				in = new BufferedReader(new FileReader(fileName));
 			}
 			while ((s1 = in.readLine()) != null)
-				dmlScriptString += s1 + "\n";
+				dmlScriptString.append(s1 + "\n");
 			in.close();	
 		}
 		else {
-			dmlScriptString = fileName;
+			dmlScriptString.append(fileName);
 		}
 		
-		////////////////// process rest of args list ////////////////////////
+		//////////////////process rest of args list ////////////////////////
 		int argid = 2;
+		boolean debug = false, log = false, visualize = false;
+		String optConfig = null;
+		HashMap<String, String> argVals = new HashMap<String, String>();
 		while (argid < args.length) {
 			if (args[argid].equalsIgnoreCase("-d") || args[argid].equalsIgnoreCase("-debug")) {
-				DEBUG = true;
+				debug = true;
 			} else if (args[argid].equalsIgnoreCase("-l") || args[argid].equalsIgnoreCase("-log")) {
-				LOG = true;
+				log = true;
 			} else if (args[argid].equalsIgnoreCase("-v") || args[argid].equalsIgnoreCase("-visualize")) {
-				VISUALIZE = true;
-			//} else if(args[argid].equalsIgnoreCase("-nz")){
-			//	rtplatform = RUNTIME_PLATFORM.NZ;
+				visualize = true;
 			} else if ( args[argid].equalsIgnoreCase("-exec")) {
 				argid++;
 				if ( args[argid].equalsIgnoreCase("hadoop")) 
-					rtplatform = RUNTIME_PLATFORM.HADOOP;
+					rt = RUNTIME_PLATFORM.HADOOP;
 				else if ( args[argid].equalsIgnoreCase("singlenode"))
-					rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+					rt = RUNTIME_PLATFORM.SINGLE_NODE;
 				else if ( args[argid].equalsIgnoreCase("hybrid"))
-					rtplatform = RUNTIME_PLATFORM.HYBRID;
+					rt = RUNTIME_PLATFORM.HYBRID;
 				else if ( args[argid].equalsIgnoreCase("nz"))
-					rtplatform = RUNTIME_PLATFORM.NZ;
+					rt = RUNTIME_PLATFORM.NZ;
 				else {
-					System.err.println("Unknown runtime platform: " + args[argid]);
-					return;
+					System.err.println("ERROR: Unknown runtime platform: " + args[argid]);
+					return d;
 				}
 			// handle config file
-			} else if (args[argid].startsWith("-config=")){
-				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\"", "");
-				optionalConfigurationFileName = args[argid].substring(8).replaceAll("\'", "");	
+			} else if (args[argid].startsWith("-config")){
+				argid++;
+				optConfig = args[argid];	
+			} 
 			// handle the args to DML Script -- rest of args will be passed here to 
-			} else if (args[argid].startsWith("-args")) {
+			else if (args[argid].startsWith("-args")) {
 				argid++;
 				int index = 1;
 				while( argid < args.length){
@@ -194,30 +205,39 @@ public class DMLScript {
 					index++;
 				}
 			} 
-			
-			// increment counter
 			argid++;
-		} // while (argid < args.length) {
+		} 
 		
+		d = new DMLScript(dmlScriptString.toString(), debug, log, visualize, rt, optConfig, argVals);
 		//////////////// for DEBUG, dump arguments /////////////////////////////
-		if (DEBUG){
+		//if (debug){
 			System.out.println("INFO: ****** args to DML Script ****** ");
 			System.out.println("INFO: FROM-FILE: " + fromFile);
 			System.out.println("INFO: SCRIPT: " + fileName);
-			System.out.println("INFO: DEBUG: "  + DEBUG);
-			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
+			System.out.println("INFO: DMLSTRING: " + dmlScriptString);
+			System.out.println("INFO: DEBUG: "  + debug);
+			System.out.println("INFO: LOG: "  + log);
+			System.out.println("INFO: VISUALIZE: "  + visualize);
+			System.out.println("INFO: RUNTIME: " + rt);
 			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			System.out.println("INFO: OPTIONAL CONFIG: " + optionalConfigurationFileName);
-			System.out.println("INFO: RUNTIME: " + rtplatform);
-			System.out.println("INFO: LOG: "  + LOG);
-			
+			System.out.println("INFO: OPTIONAL CONFIG: " + optConfig);
 			
 			if (argVals.size() > 0)
 				System.out.println("INFO: Value for script parameter args: ");
 			for (int i=1; i<= argVals.size(); i++)
 				System.out.println("INFO: $" + i + " = " + argVals.get("$" + i) );
-		}
-	
+		//}
+		return d;
+	}
+
+	/**
+	 * run: Execute a DML script
+	 * @throws ParseException 
+	 * @throws IOException 
+	 * @throws DMLException 
+	 */
+	public void run()throws IOException, ParseException, DMLException {
+		
 		/////////////// set logger level //////////////////////////////////////
 		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID){
 			if (DEBUG)
@@ -225,7 +245,6 @@ public class DMLScript {
 			else {
 				mapredLogger.setLevel(Level.WARN);
 				mmcjLogger.setLevel(Level.WARN);
-				// jvmLogger.setLevel(Level.FATAL);
 			}
 		}
 		////////////// handle log output //////////////////////////
@@ -233,37 +252,37 @@ public class DMLScript {
 		if (LOG && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
 			// copy the input DML script to ./log folder
 			String hadoop_home = System.getenv("HADOOP_HOME");
-			File logfile = new File(hadoop_home + "/" + logFileName);
+			File logfile = new File(hadoop_home + "/" + LOG_FILE_NAME);
 			if (!logfile.exists()) {
 				boolean success = logfile.createNewFile(); // creates the file
 				// if it does not
 				if (success == false) 
-					System.out.println("Failed to create log file: " + hadoop_home + "/" + logFileName);	
+					System.err.println("ERROR: Failed to create log file: " + hadoop_home + "/" + LOG_FILE_NAME);	
 			}
-		
+
 			out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile, true)));
 			out.write("BEGIN DMLRun " + getDateTime() + "\n");
 			out.write("BEGIN DMLScript\n");
 			// No need to reopen the dml script, just print out dmlScriptString
-			out.write(dmlScriptString);
+			out.write(_dmlScriptString);
 			out.write("END DMLScript\n");
 		}
-
+		
 		// optional config specified overwrites/merge into the default config
 		DMLConfig defaultConfig = null;
 		DMLConfig optionalConfig = null;
 		
-		if (optionalConfigurationFileName != null) { // the optional config is specified
+		if (_optConfig != null) { // the optional config is specified
 			try { // try to get the default config first 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			} catch (Exception e) { // it is ok to not have the default
 				defaultConfig = null;
 			}
 			try { // try to get the optional config next
-				optionalConfig = new DMLConfig(optionalConfigurationFileName);	
+				optionalConfig = new DMLConfig(_optConfig);	
 			} catch (Exception e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
-				System.out.println("ERROR: Error parsing optional configuration file: " + optionalConfigurationFileName);
+				System.err.println("ERROR: Error parsing optional configuration file: " + _optConfig);
 				System.exit(-1);
 			}
 			if (defaultConfig != null) {
@@ -271,7 +290,7 @@ public class DMLScript {
 					defaultConfig.merge(optionalConfig);
 				}
 				catch(Exception e){
-					System.out.println("ERROR: failed to merge default ");
+					System.err.println("ERROR: failed to merge default ");
 					System.exit(-1);
 				}
 			}
@@ -282,7 +301,7 @@ public class DMLScript {
 		else { // the optional config is not specified
 			try { // try to get the default config 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			} catch (Exception e) { // it is not ok to not have the default
+			} catch (Exception e) { // it is not OK to not have the default
 				defaultConfig = null;
 				System.out.println("ERROR: Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 				System.exit(-1);
@@ -290,7 +309,7 @@ public class DMLScript {
 		}
 		ConfigurationManager.setConfig(defaultConfig);
 		
-		//////////////// print config file parameters /////////////////////////////
+		////////////////print config file parameters /////////////////////////////
 		if (DEBUG){
 			System.out.println("INFO: ****** DMLConfig parameters *****");			
 			System.out.println("INFO: " + DMLConfig.SCRATCH_SPACE  + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
@@ -304,17 +323,17 @@ public class DMLScript {
 			System.out.println("INFO: " + DMLConfig.NIMBLE_SCRATCH       + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NIMBLE_SCRATCH ));
 			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));	
 		}
-		
+
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
-		DMLQLParser parser = new DMLQLParser(dmlScriptString,argVals);
+		DMLQLParser parser = new DMLQLParser(_dmlScriptString, _argVals);
 		prog = parser.parse();
-		
+
 		if (prog == null){
-			System.out.println("ERROR: Parsing failed");
-			return;
+			System.err.println("ERROR: Parsing failed");
+			System.exit(-1);
 		}
-		
+
 		if (DEBUG) {
 			System.out.println("********************** PARSER *******************");
 			System.out.println(prog.toString());
@@ -331,7 +350,7 @@ public class DMLScript {
 			System.out.println(prog.toString());
 		}
 		dmlt.constructHops(prog);
-		
+
 		if (DEBUG) {
 			System.out.println("********************** HOPS DAG (Before Rewrite) *******************");
 			// print
@@ -344,7 +363,7 @@ public class DMLScript {
 			// last parameter: the path of DML source directory. If dml source
 			// is at /path/to/dml/src then it should be /path/to/dml.
 			//
-			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, path_to_src, VISUALIZE);
+			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
@@ -365,17 +384,30 @@ public class DMLScript {
 
 			// visualize
 			DotGraph gt = new DotGraph();
-			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, path_to_src, VISUALIZE);
+			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
-		//if ( rtplatform == RUNTIME_PLATFORM.NZ ) {
-		//	executeNetezza(dmlt, prog, config, fileName);
-			
-		//} else if (rtplatform == RUNTIME_PLATFORM.HADOOP ) {
-			executeHadoop(dmlt, prog, defaultConfig, out);
-		//}			
-	} // end main
+		executeHadoop(dmlt, prog, defaultConfig, out);
+
+	}
+	
+	
+
+	
+	/**
+	 * @param args
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 */
+	public static void main(String[] args) throws IOException, ParseException, DMLException {
+		// This is a show case how to create a DMLScript object to accept a DML script provided by the user,
+		// and how to run it.
+		DMLScript d = DMLScript.createDMLScript(args);
+		d.run();		
+	} ///~ end main
 
 	
 	/**
@@ -399,7 +431,7 @@ public class DMLScript {
 			dmlt.resetLopsDAGVisitStatus(prog);
 
 			DotGraph gt = new DotGraph();
-			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, path_to_src, VISUALIZE);
+			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
 
@@ -509,7 +541,7 @@ public class DMLScript {
 	
 		dmlt.resetSQLLopsDAGVisitStatus(prog);
 		DotGraph g = new DotGraph();
-		g.drawSQLLopsDAG(prog, "SQLLops DAG", 100, 100, path_to_src, VISUALIZE);
+		g.drawSQLLopsDAG(prog, "SQLLops DAG", 100, 100, PATH_TO_SRC, VISUALIZE);
 		dmlt.resetSQLLopsDAGVisitStatus(prog);
 	
 		String sql = sqlprog.generateSQLString();
@@ -639,4 +671,28 @@ public class DMLScript {
 		return jobCount;
 	}
 	
-}  // end class
+	public void setDMLScriptString(String dmlScriptString){
+		_dmlScriptString = dmlScriptString;
+	}
+	
+	public String getDMLScriptString (){
+		return _dmlScriptString;
+	}
+	
+	public void setOptConfig (String optConfig){
+		_optConfig = optConfig;
+	}
+	
+	public String getOptConfig (){
+		return _optConfig;
+	}
+	
+	public void setArgVals (HashMap<String, String> argVals){
+		_argVals = argVals;
+	}
+	
+	public HashMap<String, String> getArgVals() {
+		return _argVals;
+	}
+	
+}  ///~ end class

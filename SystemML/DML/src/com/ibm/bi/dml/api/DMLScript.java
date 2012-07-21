@@ -78,13 +78,13 @@ public class DMLScript {
 	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config <config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
 			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
 			//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
 			+ " [-d | -debug]: (optional) output debug info \n"
-			// COMMENT OUT -v option before RELEASE
+			// TODO: COMMENT OUT -v option before RELEASE
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
@@ -101,6 +101,7 @@ public class DMLScript {
 		LOG = log;
 		VISUALIZE = visualize;
 		rtplatform = rt;
+		
 		_optConfig = config;
 		_argVals = argVals;
 		
@@ -191,10 +192,9 @@ public class DMLScript {
 					return d;
 				}
 			// handle config file
-			} else if (args[argid].startsWith("-config")){
-				argid++;
-				optConfig = args[argid];	
-			} 
+			} else if (args[argid].startsWith("-config=")){
+				optConfig = args[argid].substring(8).replaceAll("\"", "");
+			}
 			// handle the args to DML Script -- rest of args will be passed here to 
 			else if (args[argid].startsWith("-args")) {
 				argid++;

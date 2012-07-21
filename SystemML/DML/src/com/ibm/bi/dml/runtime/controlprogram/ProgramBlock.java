@@ -133,8 +133,8 @@ public class ProgramBlock {
 						}
 					}
 				}
-				
-				System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (System.currentTimeMillis()-begin));
+				if ( DMLScript.DEBUG )
+					System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (System.currentTimeMillis()-begin));
 				
 				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 			} 

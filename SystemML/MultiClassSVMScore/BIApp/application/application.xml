@@ -1,0 +1,14 @@
+<application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <name>MultiClassSVMScore</name>
+    <description>This application scores how good the multi-class SVM classification model X * W. </description>
+    <properties>
+        <property defaultValue="/user/biadmin/data/X" description="Matrix X" isDataset="true" isInputPath="true" isOutputPath="false" isRequired="true" label="X" name="X" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/y" description="Matrix y" isDataset="true" isInputPath="true" isOutputPath="false" isRequired="true" label="y" name="y" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/W" description="Matrix W" isDataset="true" isInputPath="true" isOutputPath="false" isRequired="true" label="W" name="W" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/scores" description="Matrix scores" isDataset="true" isInputPath="false" isOutputPath="true" isRequired="true" label="scores" name="scores" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/predicted_y" description="Matrix predicted_y" isDataset="true" isInputPath="false" isOutputPath="true" isRequired="true" label="predicted_y" name="predicted_y" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/error_percentage" description="error_ercentage" isDataset="true" isInputPath="false" isOutputPath="true" isRequired="true" label="error_percentage" name="error_percentage" paramtype="FILEPATH" uitype="textfield"/>
+    </properties>
+    <imagePath>defaultApp_L.png</imagePath>
+    <categories>Analytics</categories>
+</application-template>

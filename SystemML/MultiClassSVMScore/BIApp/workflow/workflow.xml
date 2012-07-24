@@ -1,0 +1,25 @@
+<workflow-app name="MultiClassSVMScore" xmlns="uri:oozie:workflow:0.1">
+    <start to="action1"/>
+    <action name="action1">
+        <jaql xmlns="uri:oozie:jaql-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jaql-path>custom_modules</jaql-path>
+            <script>jaql/run_MultiClassSVMScore.jaql</script>
+            <eval>
+            Input_X_PARAM='${X}';
+            Input_y_PARAM='${y}';
+            Input_W_PARAM='${W}';
+            Output_scores_PARAM='${scores}';
+            Output_predicted_y_PARAM='${predicted_y}';
+            Output_error_percentage_PARAM='${error_percentage}';
+    	    </eval>
+        </jaql>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

@@ -1,0 +1,22 @@
+addClassPath("lib/SystemML.jar");
+dml = javaudf("com.ibm.bi.dml.api.JaqlUdf");
+
+invokeDML = fn(X, y, W, scores, predicted_y, error_percentage) (
+	// Jaql may invoke DML from any node that we can't predict, so make sure 
+	// dml script and config file are available on HDFS accessible from any node
+	tmp_dir = getHdfsPath("/tmp"),
+	hdfsShell("-put " + ::_moduleDirectory + "/dml/MultiClassSVMScore.dml " + tmp_dir + "/MultiClassSVMScore.dml"),
+	hdfsShell("-put " + ::_moduleDirectory + "/dml/SystemML-config.xml " + tmp_dir + "/SystemML-config.xml"),							
+		
+	dmlScript = tmp_dir + "/MultiClassSVMScore.dml",
+	args = "-config=" + tmp_dir + "/SystemML-config.xml" + " "
+		   + "-args " + X + " " + y + " " + W + " " + scores + " " + predicted_y + " " + error_percentage,   
+	
+	// Do something that is equivalent to nothing with retcode so that Jaql 
+	// will not optimize retcode and dml call away all together, sigh!
+	retcode = dml(dmlScript, args),
+	tmp_dir = tmp_dir + substring(serialize(retcode), 0, 0),
+			
+	hdfsShell("-rmr " + tmp_dir + "/MultiClassSVMScore.dml"),	
+	hdfsShell("-rmr " + tmp_dir + "/SystemML-config.xml")
+);		

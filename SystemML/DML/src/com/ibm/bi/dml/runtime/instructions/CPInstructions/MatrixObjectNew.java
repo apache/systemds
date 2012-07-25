@@ -646,7 +646,8 @@ public class MatrixObjectNew extends CacheableData
 	protected void evictBlobFromMemory ( MatrixBlock mb ) 
 		throws CacheIOException
 	{
-		System.out.println("EVICTION of Matrix "+_varName+" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()/(1024*1024)+"MB free");
+		if ( DMLScript.DEBUG )
+			System.out.println("EVICTION of Matrix "+_varName+" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()/(1024*1024)+"MB free");
 
 		_data = mb; //reference to garbage-collected matrix block
 			
@@ -685,7 +686,8 @@ public class MatrixObjectNew extends CacheableData
 	protected void restoreBlobIntoMemory () 
 		throws CacheIOException, CacheAssignmentException
 	{
-		System.out.println("RESTORE of Matrix "+_varName);
+		if (DMLScript.DEBUG) 
+			System.out.println("RESTORE of Matrix "+_varName);
 		
 		String filePath = getCacheFilePathAndName ();
 		long begin = 0;

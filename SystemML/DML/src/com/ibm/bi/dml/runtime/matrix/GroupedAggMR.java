@@ -13,13 +13,14 @@ import com.ibm.bi.dml.runtime.matrix.io.WeightedCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
 public class GroupedAggMR {
 
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String grpAggInstructions, String simpleReduceInstructions/*only scalar or reorg instructions allowed*/, 
-			int numReducers, int replication, byte[] resultIndexes,	String[] outputs, OutputInfo[] outputInfos) 
+			int numReducers, int replication, byte[] resultIndexes,	String dimsUnknownFilePrefix, String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
 		JobConf job;
@@ -47,7 +48,7 @@ public class GroupedAggMR {
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);
-		
+		MRJobConfiguration.setDimsUnknownFilePrefix(job, dimsUnknownFilePrefix);
 		//set up the block size
 		MRJobConfiguration.setBlocksSizes(job, realIndexes, realbrlens, realbclens);
 		
@@ -71,7 +72,7 @@ public class GroupedAggMR {
 		// Update resultDimsUnknown based on computed "stats"
 		for ( int i=0; i < resultIndexes.length; i++ )  
 			resultDimsUnknown[i] = (byte) 2;
-	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
+		//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, false);
@@ -100,6 +101,8 @@ public class GroupedAggMR {
 			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
 		}*/
 		
+		
+		
 		ExecMode mode = ExecMode.CLUSTER; //default
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job, mode); //TODO see above
@@ -108,9 +111,32 @@ public class GroupedAggMR {
 		RunningJob runjob=JobClient.runJob(job);
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
+		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
+		for(int i=0; i<resultIndexes.length; i++) {
+			// number of non-zeros
+			stats[i]=new MatrixCharacteristics();
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
+		}
+		
+		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";
+		stats = MapReduceTool.processDimsFiles(dir, stats);
+		MapReduceTool.deleteFileIfExistOnHDFS(dir);
+		
+/*		Counters counters = runjob.getCounters();
+		System.out.println("Counters size = " + counters.size());
+		System.out.println("All Counters = " +counters.toString());
+		Group maxrowGroup = counters.getGroup(MRJobConfiguration.MAX_ROW_DIMENSION);
+		Group maxcolGroup = counters.getGroup(MRJobConfiguration.MAX_COL_DIMENSION);
+		
+		for (int i=0; i < resultIndexes.length; i++) {
+			long r = maxrowGroup.getCounter(Integer.toString(i));
+			long c = maxcolGroup.getCounter(Integer.toString(i));
+			stats[i].numRows = (stats[i].numRows > r ? stats[i].numRows : r);
+			stats[i].numColumns = (stats[i].numColumns > c ? stats[i].numColumns : c);
+		}
+		
 		Group rowgroup, colgroup;
 		
-		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -133,7 +159,8 @@ public class GroupedAggMR {
 			stats[i].numColumns = maxcol;
 			//System.out.println("stats: "+stats[i]);
 		}
-		
+*/		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
+	
 }

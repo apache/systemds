@@ -16,7 +16,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TripleIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /*
@@ -142,8 +141,12 @@ public class MMRJMR {
 		/* Process different counters */
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		Group rowgroup, colgroup;
-		
+		for(int i=0; i<resultIndexes.length; i++) {
+			// number of non-zeros
+			stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
+		}
+
+/*		Group rowgroup, colgroup;
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -170,13 +173,7 @@ public class MMRJMR {
 				stats[i].numColumns = maxcol;
 			}
 		}
-		
-		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		//for(int i=0; i<resultIndexes.length; i++)
-		//{
-		//	stats[i].nonZeros=group.getCounter(Byte.toString(resultIndexes[i]));
-		////	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-		//}
+*/		
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}

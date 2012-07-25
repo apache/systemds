@@ -27,7 +27,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.RandMapper;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -62,17 +61,17 @@ public class RandMR
 	public static JobReturn runJob(long[] numRows, long[] numCols, int[] blockRowSize, int[] blockColSize,
 			double[] minValue, double[] maxValue, double[] sparsity, String[] pdf, int replication,
 			String[] inputs, String[] outputs, OutputInfo[] outputInfos,
-			String instructionsInMapper, byte[] resultIndexes, byte[] resultDimsUnknown)
+			String instructionsInMapper, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix)
 	throws Exception
 	{
 		return runJob(instructionsInMapper.split(","), blockRowSize, blockColSize, "", "", "", 0, replication, 
-				resultIndexes, resultDimsUnknown, outputs, outputInfos);
+				resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix, outputs, outputInfos);
 	}
 	
 	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(String[] randInstructions, int[] brlens, int[] bclens, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
-			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown,
+			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -153,6 +152,7 @@ public class RandMR
 			
 			//set up the dimensions of input matrices
 			MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);
+			MRJobConfiguration.setDimsUnknownFilePrefix(job, dimsUnknownFilePrefix);
 			
 			//set up the block size
 			MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
@@ -245,7 +245,17 @@ public class RandMR
 			/* Process different counters */
 			
 			Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-			Group rowgroup, colgroup;
+			for(int i=0; i<resultIndexes.length; i++) {
+				// number of non-zeros
+				stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
+				//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
+			}
+			
+			String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";
+			stats = MapReduceTool.processDimsFiles(dir, stats);
+			MapReduceTool.deleteFileIfExistOnHDFS(dir);
+			
+/*			Group rowgroup, colgroup;
 			for(int i=0; i<resultIndexes.length; i++)
 			{
 				// number of non-zeros
@@ -272,7 +282,7 @@ public class RandMR
 					stats[i].numColumns = maxcol;
 				}
 			}
-			
+*/			
 		}finally
 		{
 			for(String input: inputs)

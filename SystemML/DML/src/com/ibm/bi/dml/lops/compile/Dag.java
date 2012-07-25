@@ -2535,6 +2535,10 @@ public class Dag<N extends Lops> {
 		
 		mr.setOutputs(getStringArray(outputs), getOutputInfoArray(outputInfos), resultIndicesByte);
 		mr.setOutputDimensions(resultDimsUnknown);
+		mr.setDimsUnknownFilePrefix(scratch +  
+				ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
+				ProgramConverter.CP_ROOT_THREAD_ID + 
+				ProgramConverter.CP_ROOT_THREAD_SEPARATOR );
 		
 		mr.setNumberOfReducers(numReducers);
 		mr.setReplication(replication);

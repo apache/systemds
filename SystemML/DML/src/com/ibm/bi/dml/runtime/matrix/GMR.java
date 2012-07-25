@@ -24,7 +24,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
  
@@ -51,20 +50,20 @@ public class GMR{
 	
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown,
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix,
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, null, instructionsInMapper, aggInstructionsInReducer, 
-				otherInstructionsInReducer, numReducers, replication, resultIndexes, resultDimsUnknown,
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix,
 				outputs, outputInfos); 
 	}
 	
 	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown,
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -149,7 +148,8 @@ public class GMR{
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);
-		
+		MRJobConfiguration.setDimsUnknownFilePrefix(job, dimsUnknownFilePrefix);
+
 		//set up the block size
 		MRJobConfiguration.setBlocksSizes(job, realIndexes, realbrlens, realbclens);
 		
@@ -190,8 +190,6 @@ public class GMR{
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
-		
-		
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GMRMapper.class);
@@ -237,9 +235,20 @@ public class GMR{
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
+		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
+		//MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
+		for(int i=0; i<resultIndexes.length; i++) {
+			// number of non-zeros
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
+		}
+		
+		String dir = dimsUnknownFilePrefix + "/" + runjob.getID().toString() + "_dimsFile";
+		stats = MapReduceTool.processDimsFiles(dir, stats);
+		MapReduceTool.deleteFileIfExistOnHDFS(dir);
+
 		/* Process different counters */
 		
-		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
+/*		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		Group rowgroup, colgroup;
 		
 		for(int i=0; i<resultIndexes.length; i++)
@@ -268,13 +277,7 @@ public class GMR{
 				stats[i].numColumns = maxcol;
 			}
 		}
-		
-		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		//for(int i=0; i<resultIndexes.length; i++)
-		//{
-		//	stats[i].nonZeros=group.getCounter(Byte.toString(resultIndexes[i]));
-		////	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-		//}
+*/		
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}

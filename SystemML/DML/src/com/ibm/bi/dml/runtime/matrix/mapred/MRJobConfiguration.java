@@ -130,6 +130,8 @@ public class MRJobConfiguration {
 	private static final String OUTPUT_MATRICES_DIRS_CONFIG="output.matrices.dirs";
 	private static final String OUTPUT_CONVERTER_CLASS_PREFIX_CONFIG="output.converter.class.for.";
 	
+	private static final String DIMS_UNKNOWN_FILE_PREFIX = "dims.unknown.file.prefix";
+	
 	private static final String PARTIAL_AGG_CACHE_SIZE="partial.aggregate.cache.size";
 	
 	
@@ -139,6 +141,14 @@ public class MRJobConfiguration {
 	 * group name for the counters on number of output nonZeros
 	 */
 	public static final String NUM_NONZERO_CELLS="nonzeros";
+	
+	/*
+	 * Counter group for determining the dimensions of result matrix. It is 
+	 * useful in operations like ctable and groupedAgg, in which the dimensions 
+	 * of result matrix are known only after computing the matrix.
+	 */
+	public static final String MAX_ROW_DIMENSION = "maxrows";
+	public static final String MAX_COL_DIMENSION = "maxcols";
 	
 	public static final String PARFOR_NUMTASKS="numtasks";
 	public static final String PARFOR_NUMITERATOINS="numiterations";
@@ -577,6 +587,10 @@ public class MRJobConfiguration {
 		job.set(INTERMEDIATE_INDEXES_CONFIG, getIndexesString(indexes));
 	}
 
+	public static void setDimsUnknownFilePrefix(JobConf job, String prefix) {
+		job.setStrings(DIMS_UNKNOWN_FILE_PREFIX, prefix);
+	}
+	
 	public static void setMatricesDimensions(JobConf job, byte[] inputIndexes, long[] rlens, long[] clens) {
 		if(rlens.length!=clens.length)
 			throw new RuntimeException("rlens.length should be clens.length");

@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -158,11 +157,11 @@ public class MMCJMR {
 		Byte outputMatrixID = MRInstructionParser.parseSingleInstruction(aggBinInstrction).output;
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		Group rowgroup, colgroup;
 		
 		// number of non-zeros
 		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
-		
+
+/*		Group rowgroup, colgroup;
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
 			if ( resultDimsUnknown != (byte) 1 )
@@ -182,8 +181,7 @@ public class MMCJMR {
 			stats[outputIndex].numRows = maxrow;
 			stats[outputIndex].numColumns = maxcol;
 		}
-		
-		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
+*/		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
 	}
 	
 	private static MatrixCharacteristics[] commonSetup(JobConf job, boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -311,11 +309,11 @@ public class MMCJMR {
 		Byte outputMatrixID = MRInstructionParser.parseSingleInstruction(aggBinInstrction).output;
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		Group rowgroup, colgroup;
 		
 		// number of non-zeros
 		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
 		
+/*		Group rowgroup, colgroup;
 		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
 		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
 			if ( resultDimsUnknown != (byte) 1 )
@@ -335,8 +333,7 @@ public class MMCJMR {
 			stats[outputIndex].numRows = maxrow;
 			stats[outputIndex].numColumns = maxcol;
 		}
-
-		
+*/
 		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
 	}
 }

@@ -23,7 +23,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-//import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -291,7 +290,7 @@ public class MapReduceTool {
 		return ret;
 	}
 	
-	private static BufferedReader setupScalarInputFile ( String filename ) throws IOException {
+	private static BufferedReader setupInputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
         FileSystem fs = FileSystem.get(new Configuration());
         BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));		
@@ -299,25 +298,25 @@ public class MapReduceTool {
 	}
 	
 	public static double readDoubleFromHDFSFile(String filename) throws IOException {
-		BufferedReader br = setupScalarInputFile(filename);
+		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
 		return Double.parseDouble(line);
 	}
 	public static int readIntegerFromHDFSFile(String filename) throws IOException {
-		BufferedReader br = setupScalarInputFile(filename);
+		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
 		return Integer.parseInt(line);
 	}
 	public static boolean readBooleanFromHDFSFile(String filename) throws IOException {
-		BufferedReader br = setupScalarInputFile(filename);
+		BufferedReader br = setupInputFile(filename);
 		String line = br.readLine();
 		br.close();
 		return Boolean.parseBoolean(line);
 	}
 	public static String readStringFromHDFSFile(String filename) throws IOException {
-		BufferedReader br = setupScalarInputFile(filename);
+		BufferedReader br = setupInputFile(filename);
 		// handle multi-line strings in the HDFS file
 		String output = "", temp = "";
 		output = br.readLine();
@@ -328,7 +327,7 @@ public class MapReduceTool {
 		return output;
 	}
 		
-	private static BufferedWriter setupScalarOutputFile ( String filename ) throws IOException {
+	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
         FileSystem fs = FileSystem.get(new Configuration());
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
@@ -336,31 +335,87 @@ public class MapReduceTool {
 	}
 	
 	public static void writeDoubleToHDFS ( double d, String filename ) throws IOException {
-        BufferedWriter br = setupScalarOutputFile(filename);
+        BufferedWriter br = setupOutputFile(filename);
         String line = "" + d;
         br.write(line);
         br.close();
 	}
 	
 	public static void writeIntToHDFS ( int i, String filename ) throws IOException {
-        BufferedWriter br = setupScalarOutputFile(filename);
+        BufferedWriter br = setupOutputFile(filename);
         String line = "" + i;
         br.write(line);
         br.close();
 	}
 	
 	public static void writeBooleanToHDFS ( boolean b, String filename ) throws IOException {
-        BufferedWriter br = setupScalarOutputFile(filename);
+        BufferedWriter br = setupOutputFile(filename);
         String line = "" + b;
         br.write(line);
         br.close();
 	}
 	
 	public static void writeStringToHDFS ( String s, String filename ) throws IOException {
-        BufferedWriter br = setupScalarOutputFile(filename);
+        BufferedWriter br = setupOutputFile(filename);
         String line = "" + s;
         br.write(line);
         br.close();
+	}
+	
+	public static void writeDimsFile ( String filename, byte[] unknownFlags, long[] maxRows, long[] maxCols) throws IOException {
+        BufferedWriter br = setupOutputFile(filename);
+        StringBuilder line = new StringBuilder();
+        for ( int i=0; i < unknownFlags.length; i++ ) {
+        	if ( unknownFlags[i]  != (byte)0 ) {
+        		line.append(i);
+        		line.append(" " + maxRows[i]);
+        		line.append(" " + maxCols[i]);
+        		line.append("\n");
+        	}
+        }
+        br.write(line.toString());
+        br.close();
+        //System.out.println("Finished writing dimsFile: " + filename);
+	}
+	
+	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) throws IOException {
+		Path pt=new Path(dir);
+        FileSystem fs = FileSystem.get(new Configuration());
+		
+        if ( !fs.exists(pt) )
+        	return stats;
+        
+        FileStatus fstat = fs.getFileStatus(pt);
+		
+        //System.out.println("----------------");
+		if ( fstat.isDir() ) {
+			FileStatus[] files = fs.listStatus(pt);
+			for ( int i=0; i < files.length; i++ ) {
+				Path filePath = files[i].getPath();
+				//System.out.println("Processing dims file: " + filePath.toString());
+				BufferedReader br = setupInputFile(filePath.toString());
+				
+				String line = "";
+				while((line=br.readLine()) != null ) {
+					String[] parts = line.split(" ");
+					int resultIndex = Integer.parseInt(parts[0]);
+					long maxRows = Long.parseLong(parts[1]);
+					long maxCols = Long.parseLong(parts[2]);
+					
+					stats[resultIndex].numRows = (stats[resultIndex].numRows < maxRows ? maxRows : stats[resultIndex].numRows);
+					stats[resultIndex].numColumns = (stats[resultIndex].numColumns < maxCols ? maxCols : stats[resultIndex].numColumns);
+					//System.out.println("     " + line);
+				}
+				
+				br.close();
+			}
+		}
+		else {
+			throw new IOException(dir + " is expected to be a folder!");
+		}
+        //System.out.println("----------------");
+
+		return stats;
 	}
 	
 	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {

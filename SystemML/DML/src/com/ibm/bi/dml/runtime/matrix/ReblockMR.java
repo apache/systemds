@@ -15,7 +15,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -132,8 +131,13 @@ public class ReblockMR {
 		/* Process different counters */
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
-		Group rowgroup, colgroup;
-		
+		for(int i=0; i<resultIndexes.length; i++) {
+			// number of non-zeros
+			stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
+			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
+		}
+
+/*		Group rowgroup, colgroup;
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
@@ -160,7 +164,7 @@ public class ReblockMR {
 				stats[i].numColumns = maxcol;
 			}
 		}
-		
+*/		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	

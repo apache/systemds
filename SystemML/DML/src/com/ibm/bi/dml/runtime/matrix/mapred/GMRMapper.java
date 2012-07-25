@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixPackedCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixPackedCell;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
 public class GMRMapper extends MapperBase 
@@ -37,6 +38,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	protected long[] resultsNonZeros=null;
 	protected long[] resultsMaxRowDims=null;
 	protected long[] resultsMaxColDims=null;
+	protected String dimsUnknownFilePrefix;
 	
 	//cached reporter to report the number of nonZeros for each reduce task
 	protected Reporter cachedReporter=null;
@@ -141,6 +143,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		super.configure(job);
 		
 		mapperID = job.get("mapred.task.id");
+		dimsUnknownFilePrefix = job.get("dims.unknown.file.prefix");
 		
 		//assign the temporay vairables
 		try {
@@ -189,6 +192,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		if(cachedReporter!=null)
 		{
 			String[] parts = mapperID.split("_");
+			String jobID = "job_" + parts[1] + "_" + parts[2];
 			int taskid;
 			if ( parts[0].equalsIgnoreCase("task")) {
 				taskid = Integer.parseInt(parts[parts.length-1]);
@@ -199,21 +203,28 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			else {
 				throw new RuntimeException("Unrecognized format for reducerID: " + mapperID);
 			}
-			//System.out.println("Inside ReduceBase.close(): ID = " + reducerID + ", taskID = " + taskid);
+			//System.out.println("Inside GMRMapper.close(): jobID = " + jobID + ", taskID = " + taskid);
 			
 			if(mapOnlyJob)
 			{
+				boolean dimsUnknown = false;
 				for(int i=0; i<resultIndexes.length; i++) {
 					cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
 					
 					if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
+						dimsUnknown = true;
 						// Each counter is of the form: (group, name)
 						// where group = max_rowdim_resultindex; name = taskid
 						//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
-						cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).increment(resultsMaxRowDims[i]);
-						cachedReporter.getCounter("max_coldim_"+i, ""+taskid).increment(resultsMaxColDims[i]);
+						//cachedReporter.getCounter(MRJobConfiguration.MAX_ROW_DIMENSION, Integer.toString(i)).increment(resultsMaxRowDims[i]);
+						//cachedReporter.getCounter(MRJobConfiguration.MAX_COL_DIMENSION, Integer.toString(i)).increment(resultsMaxColDims[i]);
 						//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
 					}
+				}
+				//System.out.println("DimsUnknown = " + dimsUnknown);
+				if ( dimsUnknown ) {
+					// every task creates a file with max_row and max_col dimensions found in that task
+					MapReduceTool.writeDimsFile(dimsUnknownFilePrefix + "/" + jobID + "_dimsFile/" + "m_" + taskid , resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
 				}
 			}
 		}

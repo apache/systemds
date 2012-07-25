@@ -172,7 +172,7 @@ public class RunMRJobs {
 								.getInputLabelValueMapping()), updateLabels(inst.getIv_instructionsInMapper(), inst
 										.getInputLabelValueMapping()), inst.getIv_aggInstructions(), updateLabels(inst
 								.getIv_otherInstructions(), inst.getInputLabelValueMapping()),
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), 
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), inst.getDimsUnknownFilePrefix(), 
 						updatedOutputLabels, inst.getIv_outputInfos());
 			}
 
@@ -197,7 +197,7 @@ public class RunMRJobs {
 						.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
 						updateLabels(inst.getIv_shuffleInstructions(),inst.getInputLabelValueMapping()), 
 						updateLabels(inst.getIv_otherInstructions(),inst.getInputLabelValueMapping()),
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_outputs(), inst.getIv_outputInfos());
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_outputs(), inst.getIv_outputInfos());
 			}
 			
 			if (inst.getJobType() == JobType.REBLOCK_TEXT || inst.getJobType() == JobType.REBLOCK_BINARY) {
@@ -337,7 +337,7 @@ public class RunMRJobs {
 						updateLabels(inst.getIv_instructionsInMapper(), inst.getInputLabelValueMapping()), inst
 								.getIv_aggInstructions(), updateLabels(inst.getIv_otherInstructions(), inst
 								.getInputLabelValueMapping()), inst.getIv_numReducers(), inst.getIv_replication(), inst
-								.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), inst.getIv_outputs(), inst.getIv_outputInfos());
+								.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), inst.getDimsUnknownFilePrefix(),inst.getIv_outputs(), inst.getIv_outputInfos());
 
 			
 			}

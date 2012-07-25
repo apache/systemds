@@ -389,13 +389,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     GMR.runJob(false, new String[]{args[1], args[3]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
     		new int[]{matchar.numColumnsPerBlock, 1}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(false, new String[]{args[1]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
     		new int[]{matchar.numColumnsPerBlock}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
   
   public static void testWithWeights(String[] args)throws Exception 
@@ -429,13 +429,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     GMR.runJob(false, new String[]{args[2], args[4]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
     		new int[]{matchar.numColumnsPerBlock, 1}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(false, new String[]{args[2]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
     		new int[]{matchar.numColumnsPerBlock}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
   @SuppressWarnings("deprecation")
 public static void main(String[] args) throws Exception {

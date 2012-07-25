@@ -165,6 +165,13 @@ public class MRJobInstruction extends Instruction
 		return iv_resultDimsUnknown;
 	}
 
+	public String dimsUnknownFilePrefix;
+	public String getDimsUnknownFilePrefix() {
+		return dimsUnknownFilePrefix;
+	}
+	public void setDimsUnknownFilePrefix(String prefix) {
+		dimsUnknownFilePrefix = prefix;
+	}
 	
 	ArrayList <String> inputLabels;
 	public ArrayList<String> getInputLabels()

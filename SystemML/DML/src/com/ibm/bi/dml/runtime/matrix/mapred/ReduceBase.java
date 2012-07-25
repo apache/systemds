@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -59,6 +60,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 	protected long[] resultsNonZeros=null;
 	protected long[] resultsMaxRowDims=null;
 	protected long[] resultsMaxColDims=null;
+	protected String dimsUnknownFilePrefix;
 	
 	//cached reporter to report the number of nonZeros for each reduce task
 	protected Reporter cachedReporter=null;
@@ -84,6 +86,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		super.configure(job);
 		
 		reducerID = job.get("mapred.task.id");
+		dimsUnknownFilePrefix = job.get("dims.unknown.file.prefix");
 
 		
 		//get the indexes of the final output matrices
@@ -163,6 +166,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		if(cachedReporter!=null)
 		{
 			String[] parts = reducerID.split("_");
+			String jobID = "job_" + parts[1] + "_" + parts[2];
 			int taskid;
 			if ( parts[0].equalsIgnoreCase("task")) {
 				taskid = Integer.parseInt(parts[parts.length-1]);
@@ -175,17 +179,25 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 			}
 			//System.out.println("Inside ReduceBase.close(): ID = " + reducerID + ", taskID = " + taskid);
 			
+			boolean dimsUnknown = false;
 			for(int i=0; i<resultIndexes.length; i++) {
 				cachedReporter.incrCounter(MRJobConfiguration.NUM_NONZERO_CELLS, Integer.toString(i), resultsNonZeros[i]);
 				
 				if ( resultDimsUnknown!=null && resultDimsUnknown[i] != (byte) 0 ) {
+					dimsUnknown = true;
 					// Each counter is of the form: (group, name)
 					// where group = max_rowdim_resultindex; name = taskid
 					//System.out.println("--> before i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
-					cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).increment(resultsMaxRowDims[i]);
-					cachedReporter.getCounter("max_coldim_"+i, ""+taskid).increment(resultsMaxColDims[i]);
+					//cachedReporter.getCounter(MRJobConfiguration.MAX_ROW_DIMENSION, Integer.toString(i)).increment(resultsMaxRowDims[i]);
+					//cachedReporter.getCounter(MRJobConfiguration.MAX_COL_DIMENSION, Integer.toString(i)).increment(resultsMaxColDims[i]);
 					//System.out.println("--> after i="+i+", row = " + cachedReporter.getCounter("max_rowdim_"+i, ""+taskid).getCounter() + ", col = " + cachedReporter.getCounter("max_coldim_"+i, ""+taskid).getCounter());
 				}
+			}
+			
+			//System.out.println("DimsUnknown = " + dimsUnknown);
+			if ( dimsUnknown ) {
+				// every task creates a file with max_row and max_col dimensions found in that task
+		        MapReduceTool.writeDimsFile(dimsUnknownFilePrefix + "/" + jobID + "_dimsFile/" + "r_" + taskid , resultDimsUnknown, resultsMaxRowDims, resultsMaxColDims);
 			}
 		}
 		collectFinalMultipleOutputs.close();

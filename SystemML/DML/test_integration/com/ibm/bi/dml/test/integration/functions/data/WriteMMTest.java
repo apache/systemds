@@ -1,9 +1,13 @@
 package com.ibm.bi.dml.test.integration.functions.data;
 
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 
+import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
@@ -47,15 +51,15 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("TextTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, 1, 1, 1, 1);
-		writeInputMatrix("testText", a);
-		writeExpectedMatrix("textTextExp", a);
+		double[][] a = getRandomMatrix(rows, cols, 0, 0, 1, 1);
+		writeInputMatrix("a", a);
+		writeExpectedMatrix("a", a);
 		
 		runTest();
 		
 		compareResults();
 	}
-	/*
+	
 	@Test
 	public void testBinary() {
 		int rows = 10;
@@ -105,5 +109,5 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		compareResults();
 	}
-*/
+
 }

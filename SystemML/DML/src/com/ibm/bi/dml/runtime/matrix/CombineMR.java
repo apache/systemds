@@ -264,6 +264,17 @@ public class CombineMR {
 	}
 
 	@SuppressWarnings("deprecation")
+	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
+			long[] rlens, long[] clens, int[] brlens, int[] bclens, String combineInstructions, 
+			int numReducers, int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) 
+	throws Exception
+	{
+		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
+		return runJob(inBlockRepresentation, inputs, inputInfos, 
+				rlens, clens, brlens, bclens, combineInstructions, 
+				numReducers, replication, resultIndexes, outputs, outputInfos);
+	}
+	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String combineInstructions, 
 			int numReducers, int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) 

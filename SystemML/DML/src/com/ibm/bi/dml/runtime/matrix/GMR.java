@@ -47,6 +47,18 @@ public class GMR{
 	 * outputInfos: output format information for the output matrices
 	 */
 	
+	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
+			int[] brlens, int[] bclens, String instructionsInMapper, String aggInstructionsInReducer, 
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix,
+			String[] outputs, OutputInfo[] outputInfos) 
+	throws Exception
+	{
+		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
+		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
+				brlens, bclens, null, instructionsInMapper, aggInstructionsInReducer, 
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix,
+				outputs, outputInfos); 
+	}
 	
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String aggInstructionsInReducer, 

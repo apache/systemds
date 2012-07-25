@@ -44,6 +44,19 @@ public class MMCJMR {
 
 	protected static final Log LOG = LogFactory.getLog(MMCJMR.class);
 	
+	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
+			int[] brlens, int[] bclens, String instructionsInMapper, 
+			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
+			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo) 
+	throws Exception
+	{
+		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
+		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
+				brlens, bclens, instructionsInMapper, 
+				aggInstructionsInReducer, aggBinInstrction, numReducers, 
+				replication, resultDimsUnknown, output, outputinfo);
+	}
+	
 	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 

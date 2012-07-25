@@ -57,7 +57,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class DMLTranslator {
 	public static final int DMLBlockSize = 1000;
-	public static DMLProgram _dmlProg;
+	public DMLProgram _dmlProg;
 		
 	public DMLTranslator(DMLProgram dmlp) {
 		_dmlProg = dmlp;
@@ -1728,7 +1728,7 @@ public class DMLTranslator {
 					 */
 
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-					FunctionStatement fstmt = (FunctionStatement)DMLTranslator._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
 					StringBuilder inst = new StringBuilder();
 
 					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
@@ -1769,7 +1769,7 @@ public class DMLTranslator {
 				Expression source = mas.getSource();
 				
 				FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-				FunctionStatement fstmt = (FunctionStatement)DMLTranslator._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
+				FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
 				StringBuilder inst = new StringBuilder();
 
 				inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");

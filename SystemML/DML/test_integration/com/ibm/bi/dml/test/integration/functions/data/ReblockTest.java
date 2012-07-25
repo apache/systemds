@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 
@@ -34,9 +33,9 @@ public class ReblockTest extends AutomatedTestBase {
 	public void testReblock() {
 		loadTestConfiguration("ReblockTest");
 		
-		double[][] a = getRandomMatrix(10, 10, 0, 1, 1, -1);
-		TestUtils.writeBinaryTestMatrixBlocks(baseDirectory + INPUT_DIR + "a/in", a, 2, 2, false);
-		inputDirectories.add(baseDirectory + INPUT_DIR + "a");
+		double[][] a = getRandomMatrix(10, 10, 0, 0, 0, 0);
+		//TestUtils.writeBinaryTestMatrixBlocks(baseDirectory + INPUT_DIR + "a/in", a, 1000, 1000, false);
+		//inputDirectories.add(baseDirectory + INPUT_DIR + "a");
 		
 		writeExpectedMatrix("a", a);
 		

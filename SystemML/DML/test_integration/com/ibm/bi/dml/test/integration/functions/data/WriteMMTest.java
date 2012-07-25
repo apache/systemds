@@ -51,7 +51,7 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("TextTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
+		double[][] a = getRandomMatrix(rows, cols, 0, 0, 0.5, -1);
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("a", a);
 		
@@ -68,18 +68,16 @@ public class WriteMMTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("BinaryTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		config.addVariable("format", "binary");
-		
 		loadTestConfiguration("BinaryTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
+		double[][] a = getRandomMatrix(rows, cols, 0, 0, 0.5, 1);
 		writeInputMatrix("a", a);
 				
 		runTest();
 		
 		//compareResults();
 		
-		BinaryMatrixCharacteristics matrix = TestUtils.readCellsFromSequenceFile(baseDirectory + OUTPUT_DIR + "a");
+		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a-writeMM",1000,1000);
 		//BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
 		assertEquals(rows, matrix.getRows());
 		assertEquals(cols, matrix.getCols());
@@ -102,7 +100,7 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("WriteTwiceTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, 0, 1, 1, -1);
+		double[][] a = getRandomMatrix(rows, cols, 0, 0, 0, -1);
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("b", a);
 		writeExpectedMatrix("c", a);

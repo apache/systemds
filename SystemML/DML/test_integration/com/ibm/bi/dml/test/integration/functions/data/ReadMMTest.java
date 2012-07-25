@@ -78,38 +78,11 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+	
 		loadTestConfiguration("TextSimpleTest");
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);
-		writeExpectedMatrix("a", a);
-
-		runTest();
-
-		compareResults();
-	}
-
-	@Test
-	public void testBinarySimple() {
-		int rows = 10;
-		int cols = 10;
-		int rowsInBlock = 8;
-		int colsInBlock = 7;
-
-		TestConfiguration config = availableTestConfigurations.get("BinarySimpleTest");
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_per_block=" + rowsInBlock);
-		config.addVariable("blockcols", ", cols_per_block=" + colsInBlock);
-
-		loadTestConfiguration("BinarySimpleTest");
-
-		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
-		writeInputBinaryMatrix("a", a, rowsInBlock, colsInBlock, false);
 		writeExpectedMatrix("a", a);
 
 		runTest();
@@ -126,9 +99,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+		
 		loadTestConfiguration("TextWrongRowDimensionTest");
 
 		createRandomMatrix("a", (rows + 5), cols, -1, 1, 1, -1);
@@ -145,9 +116,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+		
 		loadTestConfiguration("TextWrongColDimensionTest");
 
 		createRandomMatrix("a", rows, (cols + 5), -1, 1, 1, -1);
@@ -170,9 +139,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+		
 		double[][] a = new double[cols + 5][rows + 5];
 		for (int j = 0; j < cols + 5; j++) {
 			for (int i = 0; i < rows + 5; i++) {
@@ -200,9 +167,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+		
 		loadTestConfiguration("TextWrongIndexBaseTest");
 
 		runTest(true, DMLRuntimeException.class);
@@ -237,9 +202,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_in_block=" + rowsInBlock);
-		config.addVariable("blockcols", ", columns_in_block=" + colsInBlock);
-
+		
 		loadTestConfiguration("BinaryWrongRowDimensionTest");
 
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
@@ -259,9 +222,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_in_block=" + rowsInBlock);
-		config.addVariable("blockcols", ", columns_in_block=" + colsInBlock);
-
+		
 		loadTestConfiguration("BinaryWrongColDimensionTest");
 
 		double[][] a = getRandomMatrix(rows, (cols + 5), -1, 1, 1, -1);
@@ -287,9 +248,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_in_block=" + rowsInBlock);
-		config.addVariable("blockcols", ", columns_in_block=" + colsInBlock);
-
+		
 		double[][] a = new double[cols + 5][rows + 5];
 		for (int j = 0; j < cols + 5; j++) {
 			for (int i = 0; i < rows + 5; i++) {
@@ -313,9 +272,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_in_block=" + rows);
-		config.addVariable("blockcols", ", columns_in_block=" + cols);
-
+		
 		loadTestConfiguration("BinaryWrongFormatTest");
 
 		createRandomMatrix("a", rows, cols, -1, 1, 1, -1);
@@ -332,9 +289,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		config.addVariable("blockrows", "");
-		config.addVariable("blockcols", "");
-
+		
 		loadTestConfiguration("EmptyTextTest");
 
 		try {
@@ -356,9 +311,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "binary");
-		config.addVariable("blockrows", ", rows_in_block=" + rows);
-		config.addVariable("blockcols", ", columns_in_block=" + cols);
-
+		
 		loadTestConfiguration("EmptyBinaryTest");
 
 		try {

@@ -1,4 +1,4 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.data.ReblockTest.java
 
-A = read("$$indir$$a", rows=10, cols=10, rows_per_block=2, cols_per_block=2, format="binary");
+A = read("$$indir$$reblockIn", rows=10, cols=10);
 write(A, "$$outdir$$a", format="text");

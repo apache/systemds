@@ -58,13 +58,13 @@ public abstract class IOStatement extends Statement{
 		_paramsExpr = paramsExpr;
 	}
 	
-	public void addExprParam(String name, Expression value) throws ParseException
+	public void addExprParam(String name, Expression value, boolean fromMTDFile) throws ParseException
 	{
 		if (_paramsExpr.getVarParam(name) != null)
 			throw new ParseException("ERROR: attempted to add IOStatement parameter " + name + " more than once");
 		
 		// verify parameter names for InputStatement
-		if (this instanceof InputStatement && !InputStatement.isValidParamName(name))
+		if (this instanceof InputStatement && !InputStatement.isValidParamName(name, fromMTDFile))
 			throw new ParseException("ERROR: attempted to add invalid read statmement parameter " + name);
 		
 		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
@@ -119,7 +119,7 @@ public abstract class IOStatement extends Statement{
 				
 				for (Object key : configObject.keySet()){
 					
-					if (!InputStatement.isValidParamName(key.toString()))
+					if (!InputStatement.isValidParamName(key.toString(),true))
 						throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
 						
 					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file

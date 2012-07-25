@@ -9,9 +9,13 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 public class InputStatement extends IOStatement{
 	
-	public static final String[] READ_VALID_PARAM_NAMES = 
+	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
 		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
 			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM }; 
+	
+	public static final String[] READ_VALID_PARAM_NAMES = 
+	{ IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM}; 
+    
 	
 	public InputStatement(){
 		super();
@@ -20,13 +24,23 @@ public class InputStatement extends IOStatement{
 	public InputStatement(DataOp op){
 		super (op);
 	}
-
-	public static boolean isValidParamName(String key){
-		for (String paramName : READ_VALID_PARAM_NAMES)
-			if (paramName.equals(key)){
-				return true;
-			}
 	
+	public static boolean isValidParamName(String key, boolean isMTDFile){
+		
+		if (isMTDFile){
+			for (String paramName : READ_VALID_MTD_PARAM_NAMES){
+				if (paramName.equals(key)){
+					return true;
+				}
+			}
+		}
+		else {
+			for (String paramName : READ_VALID_PARAM_NAMES){
+				if (paramName.equals(key)){
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 	

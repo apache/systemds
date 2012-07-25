@@ -71,7 +71,7 @@ nmfcvtest1_ROW = function (Matrix[Double] x, Matrix[Double] wd, Matrix[Double] h
 
 
 
-mydata = read ("./scripts/cv/llr_xfile", rows=10, cols = 10, nnzs=100, format="text") ;
+mydata = read ("./scripts/cv/llr_xfile", rows=10, cols = 10, format="text") ;
 
 
 ################################### SUBMATRIX

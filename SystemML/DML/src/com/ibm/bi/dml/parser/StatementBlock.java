@@ -668,7 +668,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					+ " can only be a string with one of following values: binary, text", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		} else {
-			s.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()));
+			s.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString()),true);
 			s._id.setFormatType(FormatType.TEXT);
 		}
 	}

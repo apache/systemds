@@ -1,0 +1,87 @@
+# Note this script is externalized to customer, please do not change w/o consulting component owner.
+# Implements multiclass C-SVM with squared slack variables, uses one-against-the-rest binary classifiers
+# 
+# Assume SVM_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume number of classes is 10, epsilon = 0.000001, lambda=1.0
+# hadoop jar SystemML.jar -f $SVM_HOME/MultiClassSVM.dml -args $INPUT_DIR/X $INPUT_DIR/y 10 0.000001 1.0 $OUTPUT_DIR/w
+
+trainBinarySVM = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] w, Double epsilon, Double lambda) return (Matrix[Double] w){
+ g_old = t(X) %*% Y
+ s = g_old
+
+ iter = 0
+ continue = 1
+ while(continue == 1)  {
+  # minimizing primal obj along direction s
+  step_sz = 0
+  Xd = X %*% s
+  wd = lambda * sum(w * s)
+  dd = lambda * sum(s * s)
+  continue1 = 1
+  while(continue1 == 1){
+   tmp_w = w + step_sz*s
+   out = 1 - Y * (X %*% tmp_w)
+   sv = ppred(out, 0, ">")
+   out = out * sv
+   g = wd + step_sz*dd - sum(out * Y * Xd)
+   h = dd + sum(Xd * sv * Xd)
+   step_sz = step_sz - g/h
+   if (g*g/h < 0.0000000001){
+    continue1 = 0
+   }
+  }
+ 
+  #update weights
+  w = w + step_sz*s
+ 
+  out = 1 - Y * (X %*% w)
+  sv = ppred(out, 0, ">")
+  out = sv * out
+  obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+  g_new = t(X) %*% (out * Y) - lambda * w
+
+  tmp = sum(s * g_old)
+  if(step_sz*tmp < epsilon*obj){
+   continue = 0
+  }
+ 
+  #non-linear CG step
+  be = sum(g_new * g_new)/sum(g_old * g_old)
+  s = be * s + g_new
+  g_old = g_new
+
+  iter = iter + 1
+ }
+}
+
+X = read($1)
+Y = read($2)
+num_classes = $3
+epsilon = $4
+lambda = $5
+
+num_samples = nrow(X)
+num_features = ncol(X)
+
+iter = 1
+
+Y_local = 2 * ppred(Y, iter, "==") - 1
+w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
+
+w_class = trainBinarySVM(X, Y_local, w_class, epsilon, lambda)
+w = w_class
+
+iter = iter + 1
+
+while(iter <= num_classes){
+ Y_local = 2 * ppred(Y, iter, "==") - 1
+ w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
+ 
+ w_class = trainBinarySVM(X, Y_local, w_class, epsilon, lambda)
+ w = append(w, w_class)
+ 
+ iter = iter + 1
+}
+
+write(w, $6, format="text")

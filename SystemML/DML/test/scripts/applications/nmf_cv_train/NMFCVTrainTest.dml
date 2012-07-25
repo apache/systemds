@@ -1,7 +1,7 @@
  
-	x=read("$$indir$$x", rows=5, cols=5, nnz=20, format="text") ;
-	y=read("$$indir$$y", rows=5, cols=5, nnz=20, format="text") ;
-	z=read("$$indir$$z", rows=5, cols=5, nnz=20, format="text") ;
+	x=read("$$indir$$x", rows=5, cols=5, format="text") ;
+	y=read("$$indir$$y", rows=5, cols=5, format="text") ;
+	z=read("$$indir$$z", rows=5, cols=5, format="text") ;
 	
 	#zrow = nrow(z);
 	zrow = 5;

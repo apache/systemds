@@ -158,7 +158,7 @@ public class DataExpression extends Expression {
 					
 					for (Object key : configObject.keySet()){
 						
-						if (!InputStatement.isValidParamName(key.toString()))
+						if (!InputStatement.isValidParamName(key.toString(),true))
 							throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
 							
 						// if the InputStatement parameter is a constant, then verify value matches MTD metadata file

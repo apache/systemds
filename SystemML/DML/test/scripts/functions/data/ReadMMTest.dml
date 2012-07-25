@@ -1,4 +1,4 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.data.readTest.java
 
-A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="$$format$$"$$blockrows$$$$blockcols$$);
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
 write(A, "$$outdir$$a", format="text");

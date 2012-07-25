@@ -1,13 +1,9 @@
 package com.ibm.bi.dml.test.integration.functions.data;
 
-import static junit.framework.Assert.*;
-
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 

@@ -6,6 +6,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -52,12 +53,13 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 	
 	@Override
 	public void processInstruction(ProgramBlock pb)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-
-/*		MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		//get inputs
+		MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
 		MatrixBlock matBlock2 = pb.getMatrixInput(input2.get_name());
 		
-		//also check if offset_str matches with mat1.getNumColumns()
+		//check input dimensions
 		if(matBlock1.getNumRows() != matBlock2.getNumRows())
 			throw new DMLRuntimeException("Append is not possible for input matrices " 
 										  + input1.get_name()
@@ -65,19 +67,24 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 										  + input2.get_name()
 										  + "with unequal number of rows");
 		
+		//create output properties
 		ReorgOperator r_op = (ReorgOperator) optr;
 		OffsetColumnIndex off = ((OffsetColumnIndex)((ReorgOperator)optr).fn);
 		off.setOutputSize(matBlock1.getNumRows(), matBlock1.getNumColumns() + matBlock2.getNumColumns());
 		
-		String output_name = output.get_name();
-		
+		//execute append operations (append both inputs to initially empty output)
 		off.setOffset(0);
-		MatrixObject sores = mat1.appendOperations(r_op, (MatrixObject)pb.getVariable(output_name));
+		MatrixBlock tmp = (MatrixBlock) matBlock1.appendOperations(r_op, new MatrixBlock(), 0, 0, 0 );
+		off.setOffset(matBlock1.getNumColumns());
+		MatrixBlock ret = (MatrixBlock) matBlock2.appendOperations(r_op, tmp, 0, 0, 0 );
 		
-		off.setOffset(mat1.getNumColumns());
-		mat2.appendOperations(r_op, sores);
-		
-		pb.setVariableAndWriteToHDFS(output_name, sores);
-		return sores;
-*/	}
+		//set output
+		String output_name = output.get_name();
+		pb.setMatrixOutput(output_name, ret);
+
+		//release inputs 
+        pb.releaseMatrixInput(input1.get_name());
+		pb.releaseMatrixInput(input2.get_name());
+	
+	}
 }

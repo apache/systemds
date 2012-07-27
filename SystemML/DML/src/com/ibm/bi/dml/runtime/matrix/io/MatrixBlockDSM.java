@@ -1555,10 +1555,11 @@ public class MatrixBlockDSM extends MatrixValue{
 		return result;
 	}
 	
-	public MatrixValue appendOperations(ReorgOperator op, MatrixValue result,
-			int startRow, int startColumn, int length)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+	//TODO MB: remove row, col, len because not used (after MatrixObject is removed)
+	public MatrixValue appendOperations(ReorgOperator op, MatrixValue result, 
+										int startRow, int startColumn, int length) 	
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		checkType(result);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;

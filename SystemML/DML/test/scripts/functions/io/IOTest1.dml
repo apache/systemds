@@ -1,0 +1,16 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.io.IOTest1.java
+
+A = read("$$indir$$"+"a", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(A, "$$outdir$$"+"a", format="text");
+
+B = "a";
+C = read("$$indir$$"+B, rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(C, "$$outdir$$"+B, format="text");
+
+D = "reblock"
+A = read("$$indir$$"+D+"In", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(A, "$$outdir$$"+D+"Out", format="text");
+
+B = "12";
+C = read("$$indir$$"+B, rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(C, "$$outdir$$"+B, format="text");

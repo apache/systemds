@@ -1,0 +1,10 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.io.IOTest5.java
+
+B = 12;
+C = read("$$indir$$"+"12", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+write(C, "$$outdir$$"+B, format="text");
+
+
+
+
+

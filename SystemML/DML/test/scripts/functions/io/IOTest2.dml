@@ -1,0 +1,5 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.io.IOTest2.java
+
+A = read("$$indir$$"+a, rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+
+

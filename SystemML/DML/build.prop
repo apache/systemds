@@ -29,7 +29,7 @@ build.configjartgz=machine-learning.tar.gz
 build.jarnamejunit=JunitSystemML.jar
 
 #HADOOP local mode specific setting
-hadoop.local.path=../DevelopmentEnvironmentBinaries/ibm-hadoop-1.0.0
+hadoop.local.path=../DevelopmentEnvironmentBinaries/ibm-hadoop
 hadoop.jvmargs.localmode=-Xmx1250m
 
 #HADOOP cluster mode specific setting

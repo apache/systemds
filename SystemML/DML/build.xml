@@ -50,7 +50,7 @@
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
 	<path id="HADOOP.local.classpath">
-		<pathelement location="${hadoop.local.path}/hadoop-core-1.0.0.jar" />
+		<pathelement location="${hadoop.local.path}/hadoop-core-1.0.3.jar" />
 		<pathelement location="${hadoop.local.path}/lib/commons-configuration-1.6.jar" /> 
 		<pathelement location="${hadoop.local.path}/lib/commons-lang-2.4.jar" />
 		<pathelement location="${hadoop.local.path}/lib/jackson-core-asl-1.0.1.jar" />

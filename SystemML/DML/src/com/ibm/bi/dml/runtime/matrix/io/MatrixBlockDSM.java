@@ -1660,7 +1660,7 @@ public class MatrixBlockDSM extends MatrixValue{
 							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+".");
 		}
 		
-		if ( (rowUpper-rowLower+1) != rhsMatrix.getNumRows() || (colUpper-colLower+1) != rhsMatrix.getNumColumns()) {
+		if ( (rowUpper-rowLower+1) < rhsMatrix.getNumRows() || (colUpper-colLower+1) < rhsMatrix.getNumColumns()) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
 					"dimensions of the source matrix ["+rhsMatrix.getNumRows()+"x" + rhsMatrix.getNumColumns() + "] " +
 					"do not match the shape of the matrix specified by indices [" +

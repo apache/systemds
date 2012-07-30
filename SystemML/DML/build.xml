@@ -34,7 +34,6 @@
 		
 	<path id="OWN.classpath">
 		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
-		<pathelement location="${build.ownlib}/commons-math-2.2.jar" />       <!-- for math computations -->
 		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
 		<pathelement location="${build.ownlib}/log4j-1.2.15.jar" />           <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
 <!--	<pathelement location="${build.ownlib}/lapack_simple.jar" /> -->  <!-- for eigen value decomposition -->
@@ -51,10 +50,11 @@
 	<!-- only used for build from RTC or from your PC ant cmd line -->
 	<path id="HADOOP.local.classpath">
 		<pathelement location="${hadoop.local.path}/hadoop-core-1.0.3.jar" />
+		<pathelement location="${hadoop.local.path}/lib/commons-math-2.2.jar" />  <!-- for random number generation -->
 		<pathelement location="${hadoop.local.path}/lib/commons-configuration-1.6.jar" /> 
 		<pathelement location="${hadoop.local.path}/lib/commons-lang-2.4.jar" />
-		<pathelement location="${hadoop.local.path}/lib/jackson-core-asl-1.0.1.jar" />
-		<pathelement location="${hadoop.local.path}/lib/jackson-mapper-asl-1.0.1.jar" />
+		<pathelement location="${hadoop.local.path}/lib/jackson-core-asl-1.8.8.jar" />
+		<pathelement location="${hadoop.local.path}/lib/jackson-mapper-asl-1.8.8.jar" />
 		<pathelement location="${hadoop.local.path}/lib/commons-logging-1.1.1.jar" />  <!-- for LogFactory used by com.ibm.bi.dml.sgd.Summit.java -->
 		<pathelement location="${hadoop.local.path}/lib/commons-httpclient-3.0.1.jar" /> <!-- for running "auto" in local mode -->
 	</path>

@@ -19,14 +19,14 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-httpclient-3.0.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-configuration-1.6.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-lang-2.4.jar"/>
-	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-core-asl-1.0.1.jar"/>
-	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-mapper-asl-1.0.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/log4j-1.2.7/dist/lib/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/JSON4J.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-1.0.3.jar" sourcepath="/DevelopmentEnvironmentBinaries/ibm-hadoop/src"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/opencsv-1.8/opencsv-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli-2.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/commons-math-2.2.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-math-2.2.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-core-asl-1.8.8.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-mapper-asl-1.8.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

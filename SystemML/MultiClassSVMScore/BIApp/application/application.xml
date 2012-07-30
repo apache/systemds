@@ -1,6 +1,6 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>MultiClassSVMScore</name>
-    <description>This application scores how good the multi-class SVM classification model X * W. </description>
+    <description>This application scores how good the multi-class SVM classification model X * W is: Given X to predict y. </description>
     <properties>
         <property defaultValue="/user/biadmin/data/X" description="Matrix X" isDataset="true" isInputPath="true" isOutputPath="false" isRequired="true" label="X" name="X" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/y" description="Matrix y" isDataset="true" isInputPath="true" isOutputPath="false" isRequired="true" label="y" name="y" paramtype="FILEPATH" uitype="textfield"/>

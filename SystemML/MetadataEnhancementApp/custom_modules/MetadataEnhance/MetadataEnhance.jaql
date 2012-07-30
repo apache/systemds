@@ -1,0 +1,67 @@
+//
+// Author: minchiosa@us.ibm.com
+// Date: July, 2012
+//
+//
+// Main Flow:
+//  
+//    Initialize
+//    If attributeKind is null, replace with heuristic
+//
+
+//
+// --------------------------------------------------------------------------------
+// Initialize
+// --------------------------------------------------------------------------------
+//
+
+import recode;
+
+addClassPath("lib/metaDataParse.jar");
+eval = javaudf("com.ibm.systemML.dataTransformation.metaDataParse");
+
+
+// --------------------------------------------------------------------------------
+// Read the input data in delimited format
+// --------------------------------------------------------------------------------
+
+inputData = fn(input, metadataMem, inputDelimiter) (
+
+schemaString = metadataMem
+   -> transform $.attributeName + ":" + $.attributeType
+   -> strJoin(","),
+
+// schema of the input
+inputSchema = "schema {" + schemaString + "}",
+
+inputData = if (isnull(inputDelimiter))
+		  (
+			read (del(location=input, 
+				schema = eval(inputSchema) ) )
+		  )
+		  else
+		  (
+			read (del(location=input, delimiter=inputDelimiter,
+				schema = eval(inputSchema) ) ))
+
+);
+
+
+// --------------------------------------------------------------------------------
+// Insert a heuristically derived value for any missing (null) attributeKind fields
+// --------------------------------------------------------------------------------
+
+metaEnhance = fn(inputData, metadataMem, outputMetadata) (
+
+kindHeuristic = recode::genMetadata (inputData),
+
+join orig in metadataMem, new in kindHeuristic 
+   where orig.attributeName == new.attributeName
+   into {
+      orig{*-.attributeKind},
+      "attributeKind":(if (isnull(orig.attributeKind)) new.attributeKind else orig.attributeKind)
+   }
+   -> sort by [$.attributeColumnId]
+   -> write(jsonText(outputMetadata))
+
+);

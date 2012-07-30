@@ -1,0 +1,509 @@
+//
+// recode.jaql
+//
+// Implements functions to 
+//    - pre-process raw data
+//    - generate metadata, 
+//    - recode values, 
+//    - generate SystmML matrices.
+//
+// Author: reinwald@almaden.ibm.com
+// Date: July, 2011
+//
+// Author: minchiosa@us.ibm.com
+// Date: July, 2012
+//
+
+
+// --------------------------------------------------------------------------------
+// METADATA GENERATION
+// --------------------------------------------------------------------------------
+
+//
+// Generate meta data for derived attributes. In this example, it is "date" type.
+//
+
+genDateDrvdAttr = fn (a)
+(
+   aN = a.attributeName,
+
+   [ 		   
+     {  a{*-}
+      , attributeAccessor: fn(r) r.(aN)
+     },
+     {  
+       a{*-.attributeName,.attributeKind,.attributeCount,.attributeDistinctCount,.attributeType} 
+      , attributeName: aN+"_year" 
+      , attributeKind: "nominal"
+      , attributeAccessor: fn(r) dateParts(r.(aN)).year
+     }, 
+     {  
+        a{*-.attributeName,.attributeKind,.attributeCount,.attributeDistinctCount,.attributeType} 
+      , attributeName: aN+"_month" 
+      , attributeKind: "nominal"
+      , attributeAccessor: fn(r) dateParts(r.(aN)).month
+     }, 
+     {  
+        a{*-.attributeName,.attributeKind,.attributeCount,.attributeDistinctCount,.attributeType} 
+      , attributeName: aN+"_day" 
+      , attributeKind: "nominal"
+      , attributeAccessor: fn(r) dateParts(r.(aN)).day
+     }, 
+     {  
+        a{*-.attributeName,.attributeKind,.attributeCount,.attributeDistinctCount,.attributeType} 
+      , attributeName: aN+"_dayOfWeek" 
+      , attributeKind: "nominal"
+      , attributeAccessor: fn(r) dateParts(r.(aN)).dayOfWeek
+     }, 
+     {  
+        a{*-.attributeName,.attributeKind,.attributeCount,.attributeDistinctCount,.attributeType} 
+      , attributeName: aN+"_hour" 
+      , attributeKind: "nominal"
+      , attributeAccessor: fn(r) dateParts(r.(aN)).hour
+     } 
+   ]
+);
+
+
+//
+// Generate metadata json file
+// We do some pre-aggregation to avoid Java Heap size problem for distinct()
+// in group by.
+//
+
+// genMetadata = fn (dta, metaDta)
+genMetadata = fn (inputData)
+(
+   inputData
+      -> expand (fields($))
+      -> group by d = $ 
+            into { attributeName: d[0] 
+                  ,num: count($) 
+              }
+      -> group by d = $.attributeName 
+            into { attributeName: d
+                  ,attributeCount: sum($[*].num)
+                  ,attributeDistinctCount: count($[*].num) 
+                 }
+      -> group 
+            into (cC = inputData->count(), cA = count($),
+   	       $ -> transform each a {a.*, 
+                                         caseCount: cC,
+                                         countAttributes: cA
+                                        }
+                 ) 
+      -> expand $
+         // set attribute kind based on some heuristics
+      -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
+                       {${*-}, attributeKind: "scale", attributeType: null} 
+   		else                      
+                       {${*-}, attributeKind: "nominal", attributeType: null} 
+// I've commented out the write. -Mario
+//      -> write (metaDta)
+);
+
+
+//
+// Generate derived metadata json file including derived attributes for
+//   e.g. date binning
+//
+
+genDrvdMetadata = fn (metaData, drvdMetaData) 
+(
+   read (metaData)
+      -> transform if ($.attributeType != "date" or isnull($.attributeType))
+                      [(aN = $.attributeName,
+                       {${*-}, attributeAccessor: fn(r) r.(aN)})
+                      ]
+   	        else
+   		   genDateDrvdAttr($)
+      -> expand $		   
+      -> group 
+            into (cc = count($), 
+                  $ -> transform each a {a.*,  countAllAttributes: cc})
+      -> expand $	       
+      -> enumerate ()
+      -> transform {attributeColumnId:$[0]+1, $[1]}
+      -> write (drvdMetaData)
+);
+
+
+
+//
+// Enumerate Pairs for bivariate statistics
+//
+
+enumPairs = fn (mta)
+(
+   attrs  = mta 
+               -> filter $.attributeKind != 'scale' 
+               -> sort by [$.attributeName asc], 
+   attrs 
+      -> expand each a1 (attrs 
+                            -> filter a1.attributeName < $.attributeName 
+                            -> transform { a1:    a1.attributeName 
+   		                          ,a2:     $.attributeName
+   				          ,nrows: a1.caseCount}
+                        )
+);
+
+   
+// --------------------------------------------------------------------------------
+// RECORD and DATAFILE MANIPULATION
+// --------------------------------------------------------------------------------
+
+//
+// Parallel Enumerate
+//
+
+// helper function for parallel enumeration
+
+runningSum = fn(input, dataFn, intoFn) 
+   input -> runningCombine(0, fn(sum,i) sum + dataFn(i), intoFn);
+
+worklist = fn(array) 
+  { type: 'array', inoptions: { array }};
+
+parallelEnumerate = fn(fd)
+(
+   annotatedSplits =
+      read( worklist(inputSplits(fd)) )
+      -> transform each split { split, n: readSplit(fd, split) -> count()}
+      -> runningSum( fn(i) i.n, fn(sum,i) { i.split, n: sum - i.n } ),
+
+      read (worklist(annotatedSplits))
+      -> expand each s (readSplit(fd, s.split) -> enumerate() -> transform [s.n+$[0], $[1]])
+);
+
+
+//
+// Given a record r, use metadata attr to generate a new record according to attributeAccessors
+// Make sure, that the attrs are pinned into memory.
+//
+
+genDerivedRecord = fn (r, attrs)
+(
+   attrs -> transform each a {a.attributeName: (a.attributeAccessor)(r)} -> unrollLoop()
+);
+
+
+//
+// Enumerate records and add derived attributes based on metadata.
+// Materialize attrs in main memory to run genDerivedRecord function in
+// MapReduce, and use "unrollLoop()" when using the funciton.
+//
+
+expandData = fn (dta, mattrs)
+(
+   parallelEnumerate(hdfs(dta)) 
+      -> transform {rowId: $[0] + 1, $[1].* }
+      -> transform record(genDerivedRecord ($, mattrs))
+      -> write(hdfs(dta+".drv"))
+);
+
+
+
+//--------------------------------------------------------------------------------
+// Recode Maps
+//--------------------------------------------------------------------------------
+
+// Enumerate categorical values of attributes for recoding. The rowId of
+// attribute is used as recodeId. NULL values are recoded as -1 for list-wise deletion.
+// The default order for ordinal attributes is lexicographical order of the
+// categorical values.
+//        JSON datafile_attrName.rcd_map: <recodeId> <catValue> 
+// We use tee() to capture NULL for special incoding.
+// The helper function is doing the union.
+// Helper function to avoid Jaql problem trying to reorder operations
+
+enumCategoriesWithId = fn(dta, attrs, outDir)
+(
+   keep = attrs[*].attributeName,
+   read(hdfs(dta))
+   -> expand (fields($))
+   -> filter $[0] in keep
+   -> group by d = $ into d
+   -> group by aN = $[0] as dVals into (
+         x = dVals[*][1] 
+                -> tee (-> filter isnull $
+                        -> transform {recodeId: -1, catValue: $} 
+                        -> write(hdfs(outDir+"/tmp/"+aN+".null"))
+                       )
+                -> filter not isnull $,	      
+         attrKind = singleton(attrs -> filter $.attributeName == aN).attributeKind,
+         y = if (attrKind != "ordinal") (
+               x 
+             ) else (
+               x -> sort by [$ desc]
+             )
+             -> enumerate()
+             -> transform {recodeId: $[0] + 1, catValue: $[1]}, 
+         y -> write(hdfs(outDir+"/tmp/"+aN+".distinct"))
+      )
+);
+
+
+enumCategoriesWithIdHelper = fn(attrName, outDir)
+(
+   union (
+      read(hdfs(outDir+"/tmp/"+attrName+".distinct")),
+      read(hdfs(outDir+"/tmp/"+attrName+".null"))
+   )
+   -> write(hdfs(outDir+"/"+attrName+".rcd_map"))
+);
+
+
+//
+// The following is a different version that does parallelEnumerate of
+// the categorical values while doing the UNION.
+//
+
+enumCategories = fn(dta, attrs, outDir)
+(
+   keep = attrs[*].attributeName,
+   read(hdfs(dta))
+   -> expand (fields($))
+   -> filter $[0] in keep
+   -> group by d = $ into d
+   -> group by aN = $[0] as dVals into (
+         x = dVals[*][1] 
+                -> tee (-> filter isnull $
+                        -> write(hdfs(outDir+"/tmp/"+aN+".null"))
+                       )
+                -> filter not isnull $,	      
+         attrKind = singleton(attrs -> filter $.attributeName == aN).attributeKind,
+         y = if (attrKind != "ordinal") (
+               x 
+             ) else (
+               x -> sort by [$ asc]
+             ),
+         y -> write(hdfs(outDir+"/tmp/"+aN+".distinct"))
+      )
+);
+
+
+enumCategoriesHelper = fn(attrName, outDir)
+(
+   union (
+      parallelEnumerate(hdfs(outDir+"/tmp/"+attrName+".distinct"))
+        -> transform {recodeId: $[0] + 1, catValue: $[1]}, 
+      read(hdfs(outDir+"/tmp/"+attrName+".null"))
+        -> transform {recodeId: -1, catValue: $} 
+   )
+   -> write(hdfs(outDir +"/"+attrName+".rcd_map"))
+);
+
+
+
+genRcdMaps = fn (dta, attrs, outDir)
+(
+   // enumCategories (dta, attrs, outDir),
+   // attrs -> transform enumCategoriesHelper ($.attributeName, outDir)
+
+   keep = attrs[*].attributeName,
+   read(hdfs(dta))
+   -> expand (fields($))
+   -> filter $[0] in keep
+   -> group by d = $ into d
+   -> group by aN = $[0] as dVals into (
+         x = dVals[*][1] -> filter not isnull $,	      
+         attrKind = singleton(attrs -> filter $.attributeName == aN).attributeKind,
+         y = if (attrKind != "ordinal") (
+               x 
+             ) else (
+               x -> sort by [$ desc]
+             )
+             -> enumerate()
+             -> transform {recodeId: $[0] + 1, catValue: $[1]}, 
+         y -> write(hdfs(outDir+"/"+aN+".rcd_map"))
+      )
+);
+
+// genRcdMap was added by Mario Inchiosa, June, 2012
+
+genRcdMap = fn (inputData, attrs, outFile)
+(
+   // enumCategories (dta, attrs, outDir),
+   // attrs -> transform enumCategoriesHelper ($.attributeName, outDir)
+
+//   keep = attrs[*].attributeName,
+   keep = (attrs -> filter $.attributeKind != "scale")[*].attributeName,
+   inputData
+   -> expand (fields($))
+   -> filter $[0] in keep
+   -> group by d = $ into d
+   -> group by aN = $[0] as dVals into (
+         x = dVals[*][1] -> filter not isnull $,	      
+         attrKind = singleton(attrs -> filter $.attributeName == aN).attributeKind,
+         if (attrKind != "ordinal") (
+               x 
+             ) else (
+               x -> sort by [$ desc]
+             )
+             -> enumerate()
+             -> transform {attributeName: aN, recodeId: $[0] + 1, catValue: $[1]} 
+      )
+   -> expand
+   -> write(jsonText(outFile))
+
+);
+
+
+
+getRcdMap = fn (outDir, attrName, localDir) 
+(
+   read (hdfs(outDir+"/"+attrName+".rcd_map"))
+      -> write(file(localDir+"/"+attrName+".json"))
+);
+
+
+putRcdMap = fn (localDir, outDir, attrName)
+(
+   read (file(localDir+"/"+attrName+".json"))
+      -> write(hdfs(outDir+"/"+"/"+attrName+".rcd_map"))
+);
+
+
+
+// --------------------------------------------------------------------------------
+// Recode the data using metadata and recode maps, and write recoded data.
+// --------------------------------------------------------------------------------
+
+// Think of the enumerated data file as the fact table, and all the recode
+// maps as dimension tables. Do a starjoin over all attributes in the fact
+// table for recoding. This requires a metadata-driven starjoin for variable
+// number of attributes. We pivot fact to <rowid, attrName, attrValue>, and 
+// union with pivot-ted dimension tables. Group by <attrName, attrValue>, 
+// replace attrValue w/ recodeId. Then, pivot back the fact table. 
+
+// A. Use JAQL CompositeInputAdapter for veritcalized dimension recode maps 
+//    to make sure that parallelizes
+//    (error is Java Heap Space on single node)
+//    --> use attr_descs (descriptors) and CompositeInputAdapter
+// B. Use "expand each" for triplet representation of fact to avoid Jaql problem in union
+//    query (cast JsonArray to JsonRecord for $.rowid). It gets confused what "$" is.
+
+
+
+recodeData = fn (enumeratedData, mdmta, rcd_maps, dta_rcd)
+(
+//   attr_descs = mdmta->transform {attributeName: $.attributeName,
+//                                 descriptor: hdfs(rcd_maps+"/"+$.attributeName+".rcd_map")},
+
+   union (
+      // pivot fact: <rowId, attrName, attrValue, null>
+   
+//      read(hdfs(dta_drv))
+      enumeratedData
+         -> expand each dta (fields(dta{* - .rowId}) 
+                             -> transform each f [dta.rowId, f[0], f[1]]
+                           ),
+   
+      // pivot ALL dimensions: <null, attrName, catValue, recodeId>
+   
+//      read ({inoptions:   {adapter: "com.ibm.jaql.io.hadoop.CompositeInputAdapter"}, 
+//             outoptions:  {adapter: "com.ibm.jaql.io.hadoop.CompositeOutputAdapter"},
+//             descriptors: attr_descs[*].descriptor })  
+//         -> transform [null, attr_descs[$[0]].attributeName, $[1].catValue, $[1].recodeId]
+
+	read(jsonText(rcd_maps))     
+         -> transform [null, $.attributeName, $.catValue, $.recodeId]
+
+     )
+   
+     // recode attrValue and produce: <rowId, attrName, recodeId>
+   
+     -> group by d = [$[1],$[2]] 
+           into (m = max($[*][3]), 
+                 rids = $[*][0] -> filter not isnull($),
+     	      // copy recodeId into grouped facts iterating over the rids
+                 rids -> transform each r [r, d[0], if (isnull m) d[1] else m]) 
+     -> expand $
+   
+     // un-pivot fact
+     -> group by r = $[0] 
+          // for all <attrName, recodeId > of a given rowId
+          into (x = record($ -> transform each f {(f[1]): f[2]}),
+                {x.*, rowId: r} 
+               )
+     -> write (jsonText(dta_rcd))
+);   
+
+
+// --------------------------------------------------------------------------------
+// Matrices
+// --------------------------------------------------------------------------------
+
+//
+// Write attribute(s) of data records in <i j v> format.
+// NULL values are written as "NaN'.
+//
+
+//
+// Write <i j v>
+//
+
+writeIJV = fn (ijv, fname)
+(
+   ijv
+   -> transform [$[0], $[1], if (not isnull($[2])) ($[2]) else ("NaN")]
+   -> write(del(fname, {delimiter: " ", quoted: false})) 
+);
+
+
+//
+// Write multi-column matrix and All single-column matrices
+//
+
+writeAllMtxs = fn (dta, addr, outDirMtx, datafile)
+(
+   read (hdfs(dta))
+   -> expand each r (addr 
+                     -> transform each a [ r.rowId
+                                          ,a.attributeName
+                                          ,a.attributeColumnId
+                                          ,r.(a.attributeName)
+   				         ]
+                     -> unrollLoop()
+                    )
+   -> tee (-> transform [$[0], $[2], $[3]]
+           -> writeIJV (outDirMtx+"/"+datafile+".mtx")
+          )
+   -> group by aN = $[1] into (
+        $ -> transform [$[0], 1, $[3]]
+        -> writeIJV (outDirMtx+"/"+datafile+"_"+aN+".mtx")
+      ) 
+); 
+
+//
+// Write multi-column matrix in <i j v> format
+//
+
+writeMtx = fn (recodedData, maddr, mtx)
+(
+   recodedData
+   -> expand each r (maddr 
+                     -> transform each a [ r.rowId
+                                          ,a.attributeColumnId
+                                          ,r.(a.attributeName)
+   				         ]
+                     -> unrollLoop()
+                    )
+   -> writeIJV (mtx)
+);
+
+//
+// Write single column matrices in <i j v> format
+//
+
+writeAllAttrMtxs = fn (dta, addr, outDir, datafile)
+(
+   keep = addr[*].attributeName,
+   read (hdfs(dta))
+   -> expand each r (fields(r) -> transform each a [r.rowId, a[0], a[1]])
+   -> filter $[1] in keep     // [rowId, attName, value]
+   -> group by aN = $[1] into (
+        $ -> transform [$[0], 1, $[2]]
+        -> writeIJV(outDir+"/"+datafile+"_"+aN+".mtx")
+      ) 
+);

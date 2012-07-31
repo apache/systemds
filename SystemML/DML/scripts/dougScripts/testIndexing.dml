@@ -1,8 +1,0 @@
-#testScalar.dml:
-x = 3.14159;
-write(x, "./dougScripts/testscalar3");
-
-x = read("./dougScripts/testscalar3");
-x = x + 2;
-write(x, "./dougScripts/testscalar4");
-print(x);

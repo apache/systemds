@@ -1,8 +1,0 @@
-#testScalar.dml:
-x = 3.14159;
-write(x, "testscalar");
-
-#testScalar2.dml:
-x = read("testscalar");
-x = x + 2;
-write(x, "testscalar2");

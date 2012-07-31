@@ -96,88 +96,104 @@ public class DataExpression extends Expression {
 		
 		case READ:
 			
+			
 			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier))
 				throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 			
+			
 			String dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
+			
+			// disallow certain parameters while reading a scalar
+			if (dataTypeString != null && dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)){
+				if ( getVarParam(Statement.READROWPARAM) != null
+						|| getVarParam(Statement.READCOLPARAM) != null
+						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
+						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
+						|| getVarParam(Statement.FORMAT_TYPE) != null )
+					throw new LanguageException("ERROR: Invalid parameters in read statement of a scalar: " +
+							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
+			
 			JSONObject configObject = null;	
 
-			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
+			// read the configuration file
+			boolean exists = false;
+			FileSystem fs = FileSystem.get(new Configuration());
+			Path pt = null;
+			String filename = null;
+			
+			if (getVarParam(Statement.IO_FILENAME) instanceof ConstIdentifier){
+				filename = getVarParam(Statement.IO_FILENAME).toString() +".mtd";
 				
-				// read the configuration file
-				boolean exists = false;
-				FileSystem fs = FileSystem.get(new Configuration());
-				Path pt = null;
-				String filename = null;
-				
-				if (getVarParam(Statement.IO_FILENAME) instanceof ConstIdentifier){
-					filename = getVarParam(Statement.IO_FILENAME).toString() +".mtd";
-					
-				}
-				else if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
-					BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
-									
-					if (expr.getKind()== Expression.Kind.BinaryOp){
-						Expression.BinaryOp op = expr.getOpCode();
-						switch (op){
-						case PLUS:
-								filename = "";
-								filename = fileNameCat(expr, currConstVars, filename);
-								// Since we have computed the value of filename, we update
-								// varParams with a const string value
-								StringIdentifier fileString = new StringIdentifier(filename);
-								removeVarParam(Statement.IO_FILENAME);
-								addVarParam(Statement.IO_FILENAME, fileString);
-								filename = filename + ".mtd";
-													
-							break;
-						default:
-							throw new LanguageException("Error: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
-						}
+			}
+			else if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
+				BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
+								
+				if (expr.getKind()== Expression.Kind.BinaryOp){
+					Expression.BinaryOp op = expr.getOpCode();
+					switch (op){
+					case PLUS:
+							filename = "";
+							filename = fileNameCat(expr, currConstVars, filename);
+							// Since we have computed the value of filename, we update
+							// varParams with a const string value
+							StringIdentifier fileString = new StringIdentifier(filename);
+							removeVarParam(Statement.IO_FILENAME);
+							addVarParam(Statement.IO_FILENAME, fileString);
+							filename = filename + ".mtd";
+												
+						break;
+					default:
+						throw new LanguageException("Error: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
 					}
 				}
-				else {
-					throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+			}
+			else {
+				throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+			}
+			
+			pt=new Path(filename);
+			try {
+				if (fs.exists(pt)){
+					exists = true;
 				}
+			} catch (Exception e){
+				exists = false;
+			}
+	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
+	        if (exists){
+	        		
+		        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+				configObject = JSONObject.parse(br);
 				
-				pt=new Path(filename);
-				try {
-					if (fs.exists(pt)){
-						exists = true;
-					}
-				} catch (Exception e){
-					exists = false;
-				}
-		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
-		        if (exists){
-		        	
-		        	
-			        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
-					configObject = JSONObject.parse(br);
+				for (Object key : configObject.keySet()){
 					
-					for (Object key : configObject.keySet()){
+					if (!InputStatement.isValidParamName(key.toString(),true))
+						throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
 						
-						if (!InputStatement.isValidParamName(key.toString(),true))
-							throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
-							
-						// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
-						if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
-								&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
-							throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
-						}
-						else {
-							// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
-							if (getVarParam(key.toString()) == null)
-								addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
-						}
+					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
+					if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
+							&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+						throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
 					}
-		        }
-		        else {
-		        	//TODO: Need a warning message
-		        	System.out.println("INFO: could not find metadata file: " + pt);
-		        }
+					else {
+						// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
+						if (getVarParam(key.toString()) == null)
+							addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
+					}
+				}
+	        }
+	        else {
+	        	System.out.println("INFO: could not find metadata file: " + pt);
+	        }
+			
+	        
+	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
+			
+			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
 				
 		        _output.setDataType(DataType.MATRIX);
 				
@@ -219,18 +235,11 @@ public class DataExpression extends Expression {
 					}
 				}
 			}
+			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
 				_output.setDataType(DataType.SCALAR);
-				
-				// disallow certain parameters while reading a scalar
-				if ( getVarParam(Statement.READROWPARAM) != null
-						|| getVarParam(Statement.READCOLPARAM) != null
-						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
-						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
-						|| getVarParam(Statement.FORMAT_TYPE) != null )
-					throw new LanguageException("ERROR: Invalid parameters in read statement of a scalar: " +
-							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
+			
 			else{		
 				throw new LanguageException("ERROR: Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -271,7 +280,7 @@ public class DataExpression extends Expression {
 					Expression.BinaryOp op = expr.getOpCode();
 					switch (op){
 						case PLUS:
-							String filename = "";
+							filename = "";
 							filename = fileNameCat(expr, currConstVars, filename);
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value

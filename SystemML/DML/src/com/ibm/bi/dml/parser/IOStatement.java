@@ -89,64 +89,9 @@ public abstract class IOStatement extends Statement{
 			throw new LanguageException("ERROR: for InputStatement, parameter " + DATATYPEPARAM + " can only be a string. " +
 					"Valid values are: " + MATRIX_DATA_TYPE +", " + SCALAR_DATA_TYPE);
 		
+		// disallow certain parameters while reading a scalar
 		String dataTypeString = (getExprParam(DATATYPEPARAM) == null) ? null : getExprParam(DATATYPEPARAM).toString();
-		JSONObject configObject = null;	
-		
-		if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(MATRIX_DATA_TYPE) ) {
-			
-			// read the configuration file
-			boolean exists = false;
-			FileSystem fs = FileSystem.get(new Configuration());
-			Path pt = null;
-			String filename = null;
-			
-			if (this._paramsExpr.getVarParam(IO_FILENAME) instanceof ConstIdentifier){
-				filename = this._paramsExpr.getVarParam(IO_FILENAME).toString() +".mtd";
-				pt=new Path(filename);
-				try {
-					if (fs.exists(pt)){
-						exists = true;
-					}
-				} catch (Exception e){
-					exists = false;
-				}
-			}
-	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
-	        if (exists){
-	        
-		        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
-				configObject = JSONObject.parse(br);
-				
-				for (Object key : configObject.keySet()){
-					
-					if (!InputStatement.isValidParamName(key.toString(),true))
-						throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
-						
-					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
-					if (getExprParam(key.toString()) != null && (getExprParam(key.toString()) instanceof ConstIdentifier) 
-							&& !getExprParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
-						throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getExprParam(key.toString()));	
-					}
-					else {
-						// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
-						if (_paramsExpr.getVarParam(key.toString()) == null)
-							_paramsExpr.addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
-					}
-				}
-	        }
-	        else {
-	        	if (!(getExprParam(IO_FILENAME) instanceof ConstIdentifier))
-	        		System.out.println("INFO: non-constant expression used for filename -- no attempt to find MTD");
-	        	else
-	        		System.out.println("INFO: could not find metadata file: " + pt);
-	        }
-			_id.setDataType(DataType.MATRIX);
-		}
-		else if ( dataTypeString.equalsIgnoreCase(SCALAR_DATA_TYPE)) {
-			_id.setDataType(DataType.SCALAR);
-			
-			// disallow certain parameters while reading a scalar
+		if (dataTypeString != null && dataTypeString.equalsIgnoreCase(SCALAR_DATA_TYPE)){
 			if ( getExprParam(READROWPARAM) != null
 					|| getExprParam(READCOLPARAM) != null
 					|| getExprParam(ROWBLOCKCOUNTPARAM) != null
@@ -154,6 +99,66 @@ public abstract class IOStatement extends Statement{
 					|| getExprParam(FORMAT_TYPE) != null )
 				throw new LanguageException("ERROR: Invalid parameters in read statement of a scalar: " +
 						toString() + ". Only " + VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		JSONObject configObject = null;	
+		
+		// check if the metadata file exists
+		// read the configuration file
+		boolean exists = false;
+		FileSystem fs = FileSystem.get(new Configuration());
+		Path pt = null;
+		String filename = null;
+		
+		if (this._paramsExpr.getVarParam(IO_FILENAME) instanceof ConstIdentifier){
+			filename = this._paramsExpr.getVarParam(IO_FILENAME).toString() +".mtd";
+			pt=new Path(filename);
+			try {
+				if (fs.exists(pt)){
+					exists = true;
+				}
+			} catch (Exception e){
+				exists = false;
+			}
+		}
+        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
+        if (exists){
+        
+	        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+			configObject = JSONObject.parse(br);
+			
+			for (Object key : configObject.keySet()){
+				
+				if (!InputStatement.isValidParamName(key.toString(),true))
+					throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
+					
+				// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
+				if (getExprParam(key.toString()) != null && (getExprParam(key.toString()) instanceof ConstIdentifier) 
+						&& !getExprParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+					throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+							"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getExprParam(key.toString()));	
+				}
+				else {
+					// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
+					if (_paramsExpr.getVarParam(key.toString()) == null)
+						_paramsExpr.addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
+				}
+			}
+        }
+        else {
+        	if (!(getExprParam(IO_FILENAME) instanceof ConstIdentifier))
+        		System.out.println("INFO: non-constant expression used for filename -- no attempt to find MTD");
+        	else
+        		System.out.println("INFO: could not find metadata file: " + pt);
+        }
+		
+        dataTypeString = (getExprParam(DATATYPEPARAM) == null) ? null : getExprParam(DATATYPEPARAM).toString();
+		
+        
+		if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(MATRIX_DATA_TYPE) ) {	
+			_id.setDataType(DataType.MATRIX);
+		}
+		else if ( dataTypeString.equalsIgnoreCase(SCALAR_DATA_TYPE)) {
+			_id.setDataType(DataType.SCALAR);
 		}
 		else{		
 			throw new LanguageException("ERROR: Unknown Data Type " + dataTypeString + ". Valid  values: " + SCALAR_DATA_TYPE +", " + MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);

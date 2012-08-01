@@ -262,9 +262,14 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		
 		//if successful, prepare result variables (all distinct vars in all candidates)
+		//add own candidates
 		for( Candidate var : C )
 			addToResultVariablesNoDup( var._var );
-		//System.out.println(_resultVars);
+		//get and add child result vars
+		ArrayList<String> tmp = new ArrayList<String>();
+		rConsolidateResultVars(pfs.getBody(), tmp);
+		for( String var : tmp )
+			addToResultVariablesNoDup( var );
 		
 		System.out.println("INFO: PARFOR("+_ID+"): validate successfully finished (no dependencies) in "+time.stop()+"ms.");
 		
@@ -328,6 +333,39 @@ public class ParForStatementBlock extends ForStatementBlock
 					}
 				}
 			}
+	}
+	
+	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<String> vars) 
+		throws LanguageException 
+	{
+		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
+		{
+			if( sb instanceof ParForStatementBlock )
+			{
+				vars.addAll(((ParForStatementBlock)sb).getResultVariables());
+			}
+			
+			for( Statement s : sb._statements ) // foreach statement in statement block
+			{
+				if( s instanceof ForStatement || s instanceof ParForStatement )
+				{
+					rConsolidateResultVars(((ForStatement)s).getBody(), vars);
+				}
+				else if( s instanceof WhileStatement ) 
+				{
+					rConsolidateResultVars(((WhileStatement)s).getBody(), vars);
+				}
+				else if( s instanceof IfStatement ) 
+				{
+					rConsolidateResultVars(((IfStatement)s).getIfBody(), vars);
+					rConsolidateResultVars(((IfStatement)s).getElseBody(), vars);
+				}
+				else if( s instanceof FunctionStatement ) 
+				{
+					rConsolidateResultVars(((FunctionStatement)s).getBody(), vars);
+				}
+			}
+		}
 	}
 
 	/**

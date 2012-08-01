@@ -300,7 +300,6 @@ public class MatrixObjectNew extends CacheableData
 	public MatrixBlock acquireModify ()
 		throws CacheException
 	{
-		
 		//System.out.println("acquire modify "+_varName);
 		
 		if (! isAvailableToModify ())
@@ -316,6 +315,7 @@ public class MatrixObjectNew extends CacheableData
 			//load data
 			try
 			{
+				System.out.println("MON: load data from "+fName);
 				newData = readMatrixFromHDFS (fName);
 			}
 			catch (IOException e)
@@ -437,7 +437,7 @@ public class MatrixObjectNew extends CacheableData
 		
 		if( !_cleanupFlag ) //if cleanup not enabled, do nothing
 			return;
-			
+		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
 		
@@ -836,7 +836,10 @@ public class MatrixObjectNew extends CacheableData
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
 				iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
-   		newData.clearEnvelope ();
+		if( newData == null )
+			throw new IOException("Unable to load matrix from file "+filePathAndName);
+		
+		newData.clearEnvelope ();
    		
 		if (DMLScript.DEBUG) 
 		{
@@ -890,6 +893,8 @@ public class MatrixObjectNew extends CacheableData
 	private void writeMatrixToHDFS (String filePathAndName, String outputFormat)
 		throws DMLRuntimeException, IOException
 	{
+		//System.out.println("write matrix "+_varName+" "+filePathAndName);
+		
 		long begin = 0;
 		if (DMLScript.DEBUG) 
 		{
@@ -990,6 +995,7 @@ public class MatrixObjectNew extends CacheableData
 	 */
 	public void enableCleanup(boolean flag) 
 	{
+		//System.out.println("enable cleanup "+_varName+": "+flag);
 		_cleanupFlag = flag;
 	}
 

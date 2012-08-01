@@ -580,9 +580,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		for( String var : _resultVars )
 		{
+			//System.out.println("pin ("+_ID+") "+var);
+			
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObjectNew )
 			{
+				//System.out.println("unpin ("+_ID+") "+var);
 				MatrixObjectNew mo = (MatrixObjectNew)dat;
 				_resultVarsState.add( mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
@@ -597,6 +600,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		for( int i=0; i<_resultVars.size(); i++ )
 		{
+			//System.out.println("unpin ("+_ID+") "+var);
+			
 			String var = _resultVars.get(i);
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObjectNew )
@@ -889,6 +894,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			MatrixObjectNew[] in = new MatrixObjectNew[ results.length ];
 			for( int i=0; i< results.length; i++ )
 				in[i] = (MatrixObjectNew) results[i].get( varname ); 
+			
+			//System.out.println("ResultMerge (parfor="+_ID+"): for varname "+varname);
 			
 			//result merge
 			ResultMerge rm = new ResultMerge( out, in );

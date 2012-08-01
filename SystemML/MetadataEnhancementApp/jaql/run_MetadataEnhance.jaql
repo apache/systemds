@@ -27,13 +27,13 @@
 
 # Example of invoking this script from the Linux command line:
 
-IN_DIR=minchiosa/proj1/inputDir
-OUT_DIR=minchiosa/proj1/outputDir
+IN_DIR=input
+OUT_DIR=output
 jaqlshell -jp custom_modules -e "
-Input_input_PARAM          = \"$IN_DIR/census.csv\";
-Input_inputMetadata_PARAM  = \"$IN_DIR/census.mtd\";
-Input_outputMetadata_PARAM = \"$OUT_DIR/census.mtd\";
-Input_recodeMap_PARAM      = \"$OUT_DIR/census.map\";
+Input_input_PARAM          = \"$IN_DIR/data.csv\";
+Input_inputMetadata_PARAM  = \"$IN_DIR/data.meta.json\";
+Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
+Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
 Input_inputDelimiter_PARAM = \",\";
 " jaql/run_MetadataEnhance.jaql
 

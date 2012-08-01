@@ -14,6 +14,7 @@
             Output_predicted_y_PARAM='${predicted_y}';
             Output_error_percentage_PARAM='${error_percentage}';
     	    </eval>
+    	    <file>/biginsights/oozie/sharedLibraries/machine-learning#machine-learning</file>
         </jaql>
         <ok to="end"/>
         <error to="fail"/>

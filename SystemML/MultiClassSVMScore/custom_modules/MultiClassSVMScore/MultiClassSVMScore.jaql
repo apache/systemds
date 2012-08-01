@@ -1,4 +1,5 @@
-addClassPath("lib/SystemML.jar");
+// addClassPath("lib/SystemML.jar");
+addRelativeClassPath('.','machine-learning/SystemML.jar');
 dml = javaudf("com.ibm.bi.dml.api.JaqlUdf");
 
 invokeDML = fn(X, y, W, scores, predicted_y, error_percentage) (

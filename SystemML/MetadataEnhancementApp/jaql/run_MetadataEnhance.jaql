@@ -32,13 +32,13 @@
 
 IN_DIR=minchiosa/proj1/inputDir
 OUT_DIR=minchiosa/proj1/outputDir
-jaqlshell -jp . -e "
+jaqlshell -jp custom_modules -e "
 Input_input_PARAM          = \"$IN_DIR/census.csv\";
 Input_inputMetadata_PARAM  = \"$IN_DIR/census.mtd\";
 Input_outputMetadata_PARAM = \"$OUT_DIR/census.mtd\";
-Input_recodeMap_PARAM      = \"$OUT_DIR/census.rcd\";
+Input_recodeMap_PARAM      = \"$OUT_DIR/census.map\";
 Input_inputDelimiter_PARAM = \",\";
-" run_MetadataEnhance.jaql
+" jaql/run_MetadataEnhance.jaql
 
 */
 //
@@ -47,7 +47,7 @@ Input_inputDelimiter_PARAM = \",\";
 //  
 //    Initialize
 //    If attributeKind is null, replace with heuristic
-//    Generate recode maps for each attribute
+//    Generate recode map for categorical attributes
 //
 
 //

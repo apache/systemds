@@ -1,0 +1,24 @@
+<workflow-app name="MetadataEnhancement" xmlns="uri:oozie:workflow:0.1">
+    <start to="action1"/>
+    <action name="action1">
+        <jaql xmlns="uri:oozie:jaql-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jaql-path>custom_modules</jaql-path>
+            <script>jaql/run_MetadataEnhance.jaql</script>
+            <eval>
+				Input_input_PARAM='${input}';
+				Input_inputMetadata_PARAM='${inputMetadata}';
+				Input_outputMetadata_PARAM='${outputMetadata}';
+				Input_recodeMap_PARAM='${recodeMap}';
+				Input_inputDelimiter_PARAM='${inputDelimiter}';
+    	    </eval>
+        </jaql>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

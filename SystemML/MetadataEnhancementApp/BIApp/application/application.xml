@@ -1,0 +1,13 @@
+<application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <name>MetadataEnhancement</name>
+    <description>This application applies a heuristic to determine attribute kind (scale/nominal/ordinal) when attributeKind is null and generates recode maps for categorical (nominal or ordinal) attributes.</description>
+    <properties>
+        <property defaultValue="/user/biadmin/input/data.csv" description="Delimited input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/input/data.meta.json" description="Input metadata file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input metadata file" name="inputMetadata" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/output/data.meta.json" description="Output metadata file" isInputPath="false" isOutputPath="false" isRequired="true" label="Output metadata file" name="outputMetadata" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/output/data.map.json" description="Recode map file" isInputPath="false" isOutputPath="false" isRequired="true" label="Recode map" name="recodeMap" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="," description="Delimiter" isInputPath="false" isOutputPath="false" isRequired="true" label="Delimiter" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>
+    </properties>
+    <imagePath>defaultApp_L.png</imagePath>
+    <categories>MARIOTEST-Analytics</categories>
+</application-template>

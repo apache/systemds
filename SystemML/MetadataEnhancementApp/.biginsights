@@ -1,3 +1,4 @@
-#Wed Jul 25 16:54:15 PDT 2012
+#Tue Jul 31 21:51:54 PDT 2012
 com.ibm.biginsights.version=1.4.0.0
+bigInsights.librariesVersion=BigInsights V1.3.0.1
 jaql.searchPath=${BIGINSIGHTS_MODULES}

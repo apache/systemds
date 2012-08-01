@@ -15,7 +15,9 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter.HLObjectMapping;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * 
@@ -207,4 +209,29 @@ public class ProgramRecompiler
 		}
 	}
 	
+	
+	
+	///////
+	// additional general-purpose functionalities
+	
+	public static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//create instruction string
+		StringBuffer sb = new StringBuffer("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
+		sb.append(iterVar);
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(offset);
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(iterVar);
+		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT");
+		String str = sb.toString(); 
+		
+		//create instruction set
+		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
+		tmp.add(inst);
+		
+		return tmp;
+	}
 }

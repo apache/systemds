@@ -28,6 +28,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -41,12 +43,14 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -68,8 +72,10 @@ import com.sun.xml.internal.txw2.output.IndentingXMLStreamWriter;
  * real executions of DML instructions on random input data. Finally, during runtime, the profile
  * is used by the costs estimator in order to create statistic estimates for cost-based optimization.
  * 
+ * TODO gen input data via rand MR job instead of in-memory (otherwise we cannot work on large data)
+ * 
  * TODO: complete all CP instructions
- * TODO: add support for MR instructions
+ * TODO: add support for MR instructions (beispiel fix MR_datasize=dim*10, sort-io exec)
  * TODO: add support for TestVariable.PARALLELISM 
  * TODO: add support for instruction-invariant cost functions
  * TODO: add support for constants such as IO throughput (e.g., DFSIOTest) 
@@ -79,19 +85,24 @@ public class PerfTestTool
 {
 	//internal parameters
 	public static final boolean READ_STATS_ON_STARTUP  = false;
-	public static final int     TEST_REPETITIONS       = 5; 
+	public static final int     TEST_REPETITIONS       = 3; 
 	public static final int     NUM_SAMPLES_PER_TEST   = 11; 
 	public static final int     MODEL_MAX_ORDER        = 2;
 	public static final boolean MODEL_INTERCEPT        = true;
 	
 	public static final long    MIN_DATASIZE           = 100;
 	public static final long    MAX_DATASIZE           = 1000000;
-	public static final long    DEFAULT_DATASIZE       = (MAX_DATASIZE-MIN_DATASIZE)/2;	
+	public static final long    DEFAULT_DATASIZE       = (MAX_DATASIZE-MIN_DATASIZE)/2;
+	public static final long    DATASIZE_MR_SCALE      = 20;
 	public static final double  MIN_DIMSIZE            = 1;
 	public static final double  MAX_DIMSIZE            = 1000; 
 	public static final double  MIN_SPARSITY           = 0.1;
 	public static final double  MAX_SPARSITY           = 1.0;
 	public static final double  DEFAULT_SPARSITY       = (MAX_SPARSITY-MIN_SPARSITY)/2;
+	public static final double  MIN_SORT_IO_MEM        = 10;
+	public static final double  MAX_SORT_IO_MEM        = 500;
+	public static final double  DEFAULT_SORT_IO_MEM    = 256; //BI: default 256MB, hadoop: default 100MB
+	
 	
 	public static final String  PERF_TOOL_DIR          = "./conf/PerfTestTool/";
 	public static final String  PERF_RESULTS_FNAME     = PERF_TOOL_DIR + "%id%.dat";
@@ -127,6 +138,7 @@ public class PerfTestTool
 	
 	
 	private static Integer[] _defaultConf  = null;
+	private static Integer[] _MRConf  = null;
 	
 	//raw measurement data (instID, physical defID, results)
 	private static HashMap<Integer,HashMap<Integer,LinkedList<Double>>> _results = null;
@@ -145,7 +157,10 @@ public class PerfTestTool
 	{
 		DATA_SIZE,
 		SPARSITY,
-		PARALLELISM
+		PARALLELISM,
+		
+		//some mr specific conf properites
+		SORT_IO_MEM
 	}
 	
 	public enum InternalTestVariable //physical test variable
@@ -158,6 +173,8 @@ public class PerfTestTool
 		NUM_THREADS,
 		NUM_MAPPERS,
 		NUM_REDUCERS,
+		
+		SORT_IO_MEM
 	}
 	
 	public enum IOSchema
@@ -371,8 +388,20 @@ public class PerfTestTool
                         MIN_DIMSIZE, MAX_DIMSIZE, NUM_SAMPLES_PER_TEST ) );
 			}
 
+			
+		//register MR specific instructions FIXME: just for test
+		Integer[] mrConf = new Integer[D.length];
+		i = 0;
+		for( DataFormat d : D )
+		{
+			mrConf[i++] = registerTestDef( new PerfTestDef(TestMeasure.EXEC_TIME, TestVariable.SORT_IO_MEM, d,
+					                         InternalTestVariable.SORT_IO_MEM,
+				                             MIN_SORT_IO_MEM, MAX_SORT_IO_MEM, NUM_SAMPLES_PER_TEST ) );
+		}
+		
 		//set default testdefs
 		_defaultConf = defaultConf;
+		_MRConf = mrConf;
 	}
 	
 	/**
@@ -386,6 +415,9 @@ public class PerfTestTool
 		//reset ID sequences for consistent IDs
 		_seqInst.reset();
 		
+		///////
+		// CP instructions
+		/* FIXME
 		//matrix multiply 
 		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
@@ -409,6 +441,38 @@ public class PerfTestTool
 		//co-variance
 		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"cov", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"cov"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"c"+Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );
+		*/
+		
+		///////
+		// MR instructions
+		registerInstruction( "jobtypeMMRJ", createMRJobInstruction(JobType.MMRJ,
+							                    MRInstructionParser.parseSingleInstruction("MR°rmm°0·MATRIX·DOUBLE°1·MATRIX·DOUBLE°2·MATRIX·DOUBLE ")),
+							 _MRConf, false, IOSchema.BINARY_UNARY ); 		
+		
+		/*
+		"jobtypeMMRJ" +
+		"inputs ,##A##,##B##" +
+		"input info , BinaryBlockInputInfo, BinaryBlockInputInfo " +
+		"recReader inst  " +
+		"rand inst  " +
+		"mapper inst  " +
+		"shuffle inst MR°rmm°0·MATRIX·DOUBLE°1·MATRIX·DOUBLE°2·MATRIX·DOUBLE " +
+		"agg inst  " +
+		"other inst  " +
+		"outputs  ,scratch_space//_t0/temp6 " +
+		"output info , BinaryBlockOutputInfo " +
+		"result indices ,2 " +
+		"num reducers 10 " +
+		"replication 1 " +
+		"result dims unknown ,0 " +
+		"num rows ,-1,-1 " +
+		"num cols ,-1,-1 " +
+		"rows per block ,1000,1000 " +
+		"cols per block ,1000,1000 " +
+		"input labels [A, B]" +
+		"outputs labels [C]"		
+		*/
+		
 		
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/
 		
@@ -418,6 +482,40 @@ public class PerfTestTool
 		
 	}
 	
+	private static Instruction createMRJobInstruction(JobType type, MRInstruction inst) 
+	{
+		MRJobInstruction mrinst = new MRJobInstruction(type);
+		
+		if( type == JobType.MMRJ )
+		{
+			ArrayList<String> inLab = new ArrayList<String>();
+			ArrayList<String> outLab = new ArrayList<String>();
+			inLab.add("A");
+			inLab.add("B");
+			outLab.add("C");
+			
+			mrinst.setMMRJInstructions(new String[]{"##A##","##B##"}, 
+									   new InputInfo[]{InputInfo.BinaryBlockInputInfo,InputInfo.BinaryBlockInputInfo}, 
+									   new long[]{-1,-1},
+									   new long[]{-1,-1},
+									   new int[]{DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize},
+									   new int[]{DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize},
+									   "", 
+									   inst.toString(), 
+									   "", 
+									   "", 
+									   new String[]{"##C##"},
+									   new OutputInfo[]{OutputInfo.BinaryBlockOutputInfo},
+									   new byte[]{2},
+									   new byte[]{0}, 
+									   10, 1, inLab,outLab );
+			
+		}
+		
+		
+		return mrinst;
+	}
+
 	/**
 	 * 
 	 * @param def
@@ -718,6 +816,7 @@ public class PerfTestTool
 	 * @param pb
 	 * @param vectors
 	 * @param schema
+	 * 
 	 * @return
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
@@ -729,6 +828,7 @@ public class PerfTestTool
 		double datasize = -1;
 		double dim1 = -1, dim2 = -1;
 		double sparsity = -1;
+		double sortio = -1;
 		
 		System.out.println( "VAR VALUE "+varValue );
 	
@@ -743,6 +843,11 @@ public class PerfTestTool
 				datasize = DEFAULT_DATASIZE;
 				sparsity = varValue;
 				break;
+			case SORT_IO_MEM: //FIXME
+				datasize = DEFAULT_DATASIZE * DATASIZE_MR_SCALE;
+				sparsity = DEFAULT_SPARSITY;
+				sortio = varValue;
+				break;	
 		}
 		
 		//set specific dimensions
@@ -783,6 +888,12 @@ public class PerfTestTool
 			params.put(ExternalFunctionProgramBlock.CLASSNAME, PerfTestExtFunctCP.class.getName());			
 			ExternalFunctionProgramBlockCP fpb = new ExternalFunctionProgramBlockCP(prog, in, out, params, PERF_TOOL_DIR);	
 			prog.addFunctionProgramBlock(DMLProgram.DEFAULT_NAMESPACE, "execPerfTestExtFunct", fpb);
+		}
+		else if ( inst instanceof MRJobInstruction )
+		{
+			//FIXME hardcoded for test
+			//MMRJMR.SORT_IO_MEM = sortio;
+			RunMRJobs.flagLocalModeOpt=false; //always use cluster mode
 		}
 		
 		//generate input and output matrices
@@ -992,7 +1103,7 @@ public class PerfTestTool
 		for(int i=0; i < dim; i++)
 			for(int j=0; j < dim; j++)
 				if( d[i][j]!=0 )
-					mb.setValue(i, j, d[i][j]);		
+					mb.setValue(i, j, d[i][j]);	
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 

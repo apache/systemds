@@ -76,9 +76,6 @@ public class OptTreeConverter
 	{
 		OptNode root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );		
 		OptTree tree = new OptTree(ck, cm, root);
-		
-		if( DMLScript.DEBUG )
-			System.out.println( tree.explain(true) );
 			
 		return tree;
 	}
@@ -133,7 +130,7 @@ public class OptTreeConverter
 			for( ProgramBlock lpb : ipb.getChildBlocksIfBody() )
 				ifn.addChild( rCreateOptNode(lpb,vars,topLevel, storeObjs) );
 			//process else condition
-			if( ipb.getChildBlocksElseBody() != null )
+			if( ipb.getChildBlocksElseBody() != null && ipb.getChildBlocksElseBody().size()>0 )
 			{
 				OptNode efn = new OptNode(NodeType.GENERIC);
 				node.addChild( efn );

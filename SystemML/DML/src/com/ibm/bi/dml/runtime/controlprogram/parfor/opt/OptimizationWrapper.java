@@ -130,6 +130,9 @@ public class OptimizationWrapper
 		
 		//create opt tree
 		OptTree tree = OptTreeConverter.createOptTree(ck, cm, pb); 
+		//if( DMLScript.DEBUG )
+			System.out.println(tree.explain(false));
+		
 		
 		//optimize
 		Optimizer opt = createOptimizer( type );

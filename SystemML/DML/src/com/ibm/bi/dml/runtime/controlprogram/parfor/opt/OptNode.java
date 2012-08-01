@@ -298,7 +298,10 @@ public class OptNode
 		boolean ret = (_etype == ExecType.CP);		
 		if( _childs != null )
 			for( OptNode n : _childs )
+			{
+				if( !ret ) break; //early abort if already false
 				ret &= n.isCPOnly();
+			}
 		return ret;
 	}
 	

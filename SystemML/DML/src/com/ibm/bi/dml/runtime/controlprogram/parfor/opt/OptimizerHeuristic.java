@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -18,7 +17,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -221,30 +219,9 @@ public class OptimizerHeuristic extends Optimizer
 		pfpb2.setChildBlocks(tmpPBOld);
 		pfpb2.setResultVariables(pfpb.getResultVariables());
 		pfpb2.setFromInstructions(new ArrayList<Instruction>());
-		pfpb2.setToInstructions(createNestedParallelismToInstructionSet( ParForStatementBlock.INTERAL_FN_INDEX_ROW, String.valueOf(outIncr-1) ));
+		pfpb2.setToInstructions(ProgramRecompiler.createNestedParallelismToInstructionSet( ParForStatementBlock.INTERAL_FN_INDEX_ROW, String.valueOf(outIncr-1) ));
 		pfpb2.setIncrementInstructions(new ArrayList<Instruction>());
 		pfpb2.setExecMode(PExecMode.LOCAL);
-	}
-	
-	private ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//create instruction string
-		StringBuffer sb = new StringBuffer("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
-		sb.append(iterVar);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
-		sb.append(offset);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
-		sb.append(iterVar);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT");
-		String str = sb.toString(); 
-		
-		//create instruction set
-		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
-		Instruction inst = ArithmeticBinaryCPInstruction.parseInstruction(str);
-		tmp.add(inst);
-		
-		return tmp;
 	}
 	
 	/**

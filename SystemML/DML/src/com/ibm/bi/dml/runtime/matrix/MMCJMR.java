@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /*
@@ -57,7 +56,6 @@ public class MMCJMR {
 				replication, resultDimsUnknown, output, outputinfo);
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
@@ -276,7 +274,6 @@ public class MMCJMR {
 		return stats;
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
@@ -300,7 +297,7 @@ public class MMCJMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.MMCJ, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
-			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+			MRJobConfiguration.setStagingDir( job );
 		}
 		
 		//set unique working dir

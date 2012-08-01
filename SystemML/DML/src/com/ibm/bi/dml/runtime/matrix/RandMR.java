@@ -27,7 +27,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.RandMapper;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -68,7 +67,6 @@ public class RandMR
 				resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix, outputs, outputInfos);
 	}
 	
-	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(String[] randInstructions, int[] brlens, int[] bclens, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix, 
@@ -233,7 +231,7 @@ public class RandMR
 			ExecMode mode = RunMRJobs.getExecMode(JobType.RAND, inputStats); 
 			if ( mode == ExecMode.LOCAL ) {
 				job.set("mapred.job.tracker", "local");
-				job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+				MRJobConfiguration.setStagingDir( job );
 			}
 
 			//set unique working dir

@@ -29,8 +29,8 @@ public class OutlierWrapper extends PackageFunction {
 	//to be used when aggregating rows.
 	final long BLOCK_SIZE = 10000000;
 	private static final long serialVersionUID = 6799705939733343000L;
-	final String OUTPUT_FILE = "PackageSupport/outlierWrapperOutput";
-	final String TASK_OUTPUT = "PackageSupport/outliertaskOutput";
+	final String OUTPUT_FILE = getPackageSupportFilePrefix()+"outlierWrapperOutput";
+	final String TASK_OUTPUT = getPackageSupportFilePrefix()+"outliertaskOutput";
 	
 	Matrix return_outliers; 
 
@@ -73,7 +73,7 @@ public class OutlierWrapper extends PackageFunction {
 			
 			outlierTask = new OutlierTask();
 			outlierTask.setWithoutConfig(true);
-			outlierTask.setBinnerOutputInfo("binnerOutput");
+			outlierTask.setBinnerOutputInfo(getPackageSupportFilePrefix()+"binnerOutput");
 			outlierTask.setEntries_per_file(50000);
 			outlierTask.setK(Integer.parseInt(k.getValue()));
 			outlierTask.setM(Integer.parseInt(m.getValue()));

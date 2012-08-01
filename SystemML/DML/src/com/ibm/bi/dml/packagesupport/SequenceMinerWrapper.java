@@ -39,9 +39,9 @@ public class SequenceMinerWrapper extends PackageFunction {
 	final int numPhysicalFiles = 10;
 	final long in_memory_scratch_size = 1000000;
 	final long max_projection_size = 10000000;
-	final String NIMBLEoutFile = "PackageSupport/seq_scratch/SequenceMinerWrapperOutput";
-	public String freq_seq_file = "PackageSupport/seq_scratch/FreqSeqFile";
-	public String seq_support_file = "PackageSupport/seq_scratch/FreqSeqSupportFile";
+	final String NIMBLEoutFile = getPackageSupportFilePrefix()+"seq_scratch/SequenceMinerWrapperOutput";
+	public String freq_seq_file = getPackageSupportFilePrefix()+"seq_scratch/FreqSeqFile";
+	public String seq_support_file = getPackageSupportFilePrefix()+"seq_scratch/FreqSeqSupportFile";
 	int max_patterns = Integer.MAX_VALUE;
 	
 

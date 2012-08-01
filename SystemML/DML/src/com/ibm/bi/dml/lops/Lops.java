@@ -34,6 +34,9 @@ public abstract class Lops {
 	private DataType _dataType;
 	private ValueType _valueType;
 
+	public static final String FILE_SEPARATOR = "/";
+	public static final String PROCESS_PREFIX = "_p";
+	
 	public static final String INSTRUCTION_DELIMITOR = ",";
 	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";

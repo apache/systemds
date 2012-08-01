@@ -27,7 +27,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
@@ -127,7 +126,7 @@ public class RemoteParForMR
 			// Determine if we can optimize and run it in "local" mode.
 			if ( mode == ExecMode.LOCAL ) {
 				job.set("mapred.job.tracker", "local");	
-				job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+				MRJobConfiguration.setStagingDir( job );
 			}
 
 			

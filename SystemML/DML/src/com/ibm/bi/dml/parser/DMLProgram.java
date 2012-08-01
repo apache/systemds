@@ -383,9 +383,8 @@ public class DMLProgram {
 					rtpb = new ExternalFunctionProgramBlockCP(prog, 
 							fstmt.getInputParams(), fstmt.getOutputParams(), 
 							((ExternalFunctionStatement) fstmt).getOtherParams(),
-							scratchSpaceLoc+ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-                                            ProgramConverter.CP_ROOT_THREAD_ID + 
-                                            ProgramConverter.CP_ROOT_THREAD_SEPARATOR);					
+							scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+		   					                  Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR );					
 				}
 				else
 				{
@@ -708,6 +707,8 @@ public class DMLProgram {
 	private void addCleanupInstruction( ProgramBlock pb, Instruction inst ) 
 		throws DMLRuntimeException
 	{
+		//System.out.println("Adding rm var instructions: "+inst.toString());
+		
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;

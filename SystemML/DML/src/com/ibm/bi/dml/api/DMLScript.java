@@ -27,6 +27,7 @@ import org.nimble.control.PMLDriver;
 import org.nimble.exception.ConfigurationException;
 import org.xml.sax.SAXException;
 
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
@@ -38,7 +39,9 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
@@ -60,7 +63,8 @@ public class DMLScript {
 	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
 	// We should assume the default value is HYBRID
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
-
+	public static final String _uuid = IDHandler.createDistributedUniqueID(); 
+	
 	private String _dmlScriptString;
 	// stores name of the OPTIONAL config file
 	private String _optConfig;
@@ -212,9 +216,10 @@ public class DMLScript {
 		//////////////// for DEBUG, dump arguments /////////////////////////////
 		//if (debug){
 			System.out.println("INFO: ****** args to DML Script ****** ");
+			System.out.println("INFO: UUID: " + getUUID());
 			System.out.println("INFO: FROM-FILE: " + fromFile);
 			System.out.println("INFO: SCRIPT: " + fileName);
-			System.out.println("INFO: DMLSTRING: " + dmlScriptString);
+			//System.out.println("INFO: DMLSTRING: " + dmlScriptString);
 			System.out.println("INFO: DEBUG: "  + debug);
 			System.out.println("INFO: LOG: "  + log);
 			System.out.println("INFO: VISUALIZE: "  + visualize);
@@ -338,9 +343,8 @@ public class DMLScript {
 			System.out.println("********************** PARSER *******************");
 			System.out.println(prog.toString());
 		}
-
 		///////////////////////////////////// construct HOPS ///////////////////////////////
-
+		
 		DMLTranslator dmlt = new DMLTranslator(prog);
 		dmlt.validateParseTree(prog);
 		dmlt.liveVariableAnalysis(prog);
@@ -507,14 +511,24 @@ public class DMLScript {
 				out.close();
 			}
 	
-			//cleanup all threads
+			//cleanup all nimble threads
 			if(rtprog.getDAGQueue() != null)
 		  	    rtprog.getDAGQueue().forceShutDown();
 			
-			//cleanup scratch space (decomment this to ensure cleanup, but incurs some overhead)
+			//cleanup scratch space (everything for current uuid) 
 			//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
-			MapReduceTool.deleteFileIfExistOnHDFS(config.getTextValue(DMLConfig.SCRATCH_SPACE));
-			CacheableData.cleanupCache();
+			MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE)+
+					                               Lops.FILE_SEPARATOR+Lops.PROCESS_PREFIX+getUUID()  );
+			//cleanup working dirs (hadoop, cache)
+			MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) //TODO: check if this is required at all
+		                                           Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
+			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+                                                   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
+			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+                                                   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
+			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+                    							   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
+			CacheableData.cleanupCacheDir();			
 		}
 	} // end executeHadoop
 
@@ -693,6 +707,11 @@ public class DMLScript {
 	
 	public HashMap<String, String> getArgVals() {
 		return _argVals;
+	}
+	
+	public static String getUUID()
+	{
+		return _uuid;
 	}
 	
 }  ///~ end class

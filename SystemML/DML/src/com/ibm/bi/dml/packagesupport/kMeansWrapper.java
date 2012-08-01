@@ -28,7 +28,7 @@ public class kMeansWrapper extends PackageFunction {
 	//to be used when aggregating rows.
 	final long BLOCK_SIZE = 10000000;
 	private static final long serialVersionUID = 6799705939733343000L;
-	final String OUTPUT_FILE = "PackageSupport/kMeansWrapperOutput";
+	final String OUTPUT_FILE = getPackageSupportFilePrefix()+"kMeansWrapperOutput";
 	
 	Matrix outkcenters; 
 

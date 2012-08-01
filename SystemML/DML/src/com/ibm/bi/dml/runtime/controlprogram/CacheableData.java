@@ -3,17 +3,14 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
@@ -48,12 +45,17 @@ public abstract class CacheableData extends Data
 	public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
     public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
 	
-    public static final String cacheEvictionLocalFilePath = "/tmp/"; 
+    public static final String cacheEvictionLocalFilePath = "/tmp/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; 
     public static String cacheEvictionLocalFilePrefix = "cache";
     public static final String cacheEvictionLocalFileExtension = ".dat";
-    public static final String cacheEvictionHDFSFilePath = "scratch_space/"; 
+    public static final String cacheEvictionHDFSFilePath = "scratch_space/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; //TODO: MB replace with configured scratch space during runtime 
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
+    
+    static
+    {
+    	createCacheDir();
+    }
     
     private enum CacheStatusType {
     	EMPTY, 
@@ -134,8 +136,7 @@ public abstract class CacheableData extends Data
 	 */
 	protected abstract void freeEvictedBlob ();
 	
-	
-	public static void cleanupCache()
+	public static void cleanupCacheDir()
 	{
 		//get directory name
 		String dir = null;
@@ -155,17 +156,21 @@ public abstract class CacheableData extends Data
 			switch (CacheableData.cacheEvictionStorageType)
 			{
 				case LOCAL:
-					File[] files = new File(dir).listFiles();
-					for( File f : files )
-						if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-							f.delete();
+					new File(dir).delete();
+					//old version
+					//File[] files = new File(dir).listFiles();
+					//for( File f : files )
+					//	if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+					//		f.delete();
 					break;
 				case HDFS:
-					FileSystem fs = FileSystem.get(new Configuration());
-					FileStatus[] status = fs.listStatus(new Path(dir));
-					for( FileStatus f : status )
-						if( f.getPath().getName().startsWith(cacheEvictionHDFSFilePrefix) )
-							fs.delete(f.getPath(), true);
+					MapReduceTool.deleteFileIfExistOnHDFS( dir );
+					//old version
+					//FileSystem fs = FileSystem.get(new Configuration());
+					//FileStatus[] status = fs.listStatus(new Path(dir));
+					//for( FileStatus f : status )
+					//	if( f.getPath().getName().startsWith(cacheEvictionHDFSFilePrefix) )
+					//		fs.delete(f.getPath(), true);
 					break;
 			}
 		}
@@ -175,6 +180,32 @@ public abstract class CacheableData extends Data
 		}
 	}
 	
+	private static void createCacheDir()
+	{
+		//get directory name
+		String dir = null;
+		switch (CacheableData.cacheEvictionStorageType)
+		{
+			case LOCAL:
+				dir = cacheEvictionLocalFilePath;
+				break;
+			case HDFS:
+				dir = cacheEvictionHDFSFilePath;
+				break;
+		}
+		
+		//create dir 
+		switch (CacheableData.cacheEvictionStorageType)
+		{
+			case LOCAL:
+				new File(dir).mkdirs();
+				break;
+			case HDFS:
+				//do nothing (create on the fly)
+				break;
+		}
+
+	}
 	
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	

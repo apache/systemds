@@ -46,10 +46,8 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
-@SuppressWarnings("deprecation")
 public class SortMR {
   private static final Log LOG = LogFactory.getLog(SortMR.class);
   public static final String NUM_VALUES_PREFIX="num.values.in";
@@ -122,7 +120,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
       return findPartition(key)%numPartitions;
     }
 
-	@SuppressWarnings("unchecked")
 	private int findPartition(K key) {
 		int i=0;
 		for( ; i<splitPoints.size(); i++)
@@ -220,7 +217,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	}
   }
   
-  @SuppressWarnings("deprecation")
 	public static JobReturn runJob(String input, InputInfo inputInfo, long rlen, long clen, 
 			int brlen, int bclen, String instructionBeforesort, int numReducers, 
 			int replication, byte resultDimsUnknown, String output, OutputInfo outputInfo, boolean valueIsWeight) 
@@ -280,7 +276,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    ExecMode mode = RunMRJobs.getExecMode(JobType.SORT, s); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
-			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+			MRJobConfiguration.setStagingDir( job );
 		}
 		
 		//set unique working dir
@@ -437,7 +433,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     		new int[]{matchar.numColumnsPerBlock}, rrins, "", "", "", 0, 1, 
     		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
-  @SuppressWarnings("deprecation")
+
 public static void main(String[] args) throws Exception {
 	  testWithoutWeights(args);
   }

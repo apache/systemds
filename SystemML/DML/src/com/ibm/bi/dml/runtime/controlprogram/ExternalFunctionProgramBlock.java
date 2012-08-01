@@ -336,7 +336,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 				
 				inputs[i] = "##" + matrices.get(i).getName() + "##";
-				outputs[i] = scratchSpaceLoc + "/" +
+				outputs[i] = scratchSpaceLoc +
+				             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
 				blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 				inputInfo[i] = textCellInputInfo;
@@ -455,7 +456,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 				
 				inputs[i] = "##" + matrices.get(i).getName() + "##";
-				outputs[i] = scratchSpaceLoc + "/" +
+				outputs[i] = scratchSpaceLoc +
+				             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
 				unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 				inputInfo[i] = binBlockInputInfo;

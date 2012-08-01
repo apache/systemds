@@ -17,6 +17,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -54,6 +56,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
 
 public class MRJobConfiguration {
@@ -276,11 +279,46 @@ public class MRJobConfiguration {
 	 */
 	public static void setUniqueWorkingDir( JobConf job, ExecMode mode )
 	{
+		String uniqueSubdir =   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()
+							  + Lops.FILE_SEPARATOR + seq.getNextID();
+		
 		//unique LocalJobTracker directory for each submitted job (local mode)
-		job.set("mapred.local.dir", job.get("mapred.local.dir")+"/"+seq.getNextID());			
+		job.set("mapred.local.dir", job.get("mapred.local.dir") + uniqueSubdir );			
 		
 		//unique system dir for each submitted job (cluster mode); e.g., job.xml is placed there
-		job.set("mapred.system.dir", job.get("mapred.system.dir")+"/"+seq.getNextID());
+		job.set("mapred.system.dir", job.get("mapred.system.dir") + uniqueSubdir);
+		
+		//unique staging dir for each submitted job  
+		job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
+	}
+	
+	public static String getLocalWorkingDirPrefix()
+	{
+		JobConf job = new JobConf();
+		return job.get("mapred.local.dir");
+	}
+	
+	public static String getSystemWorkingDirPrefix()
+	{
+		JobConf job = new JobConf();
+		return job.get("mapred.system.dir");
+	}
+	
+	public static String getStagingWorkingDirPrefix()
+	{
+		JobConf job = new JobConf();
+		return job.get("mapreduce.jobtracker.staging.root.dir");
+	}
+	
+	/**
+	 * 
+	 * @param job
+	 */
+	public static void setStagingDir( JobConf job )
+	{
+		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
+		             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR;
+		job.set( "mapreduce.jobtracker.staging.root.dir", dir );
 	}
 	
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 

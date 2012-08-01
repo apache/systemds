@@ -18,8 +18,8 @@ public class EigenWrapper extends PackageFunction {
  
 	private static final long serialVersionUID = 87925877955636432L;
 	
-	String e_values_file = "PackageSupport/EigenValuesFile";
-	String e_vectors_file = "PackageSupport/EigenVectorsFile";
+	String e_values_file = getPackageSupportFilePrefix()+"EigenValuesFile";
+	String e_vectors_file = getPackageSupportFilePrefix()+"EigenVectorsFile";
 	
 	//eigen values matrix
 	Matrix return_e_values;

@@ -55,7 +55,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * @param <N>
  */
 
-@SuppressWarnings("deprecation")
 public class Dag<N extends Lops> {
 
 	static int total_reducers;
@@ -2127,9 +2126,9 @@ public class Dag<N extends Lops> {
 			}
 			else {
 				// generate temporary filename and a variable name to hold the output produced by "rootNode"
-				oparams.setFile_name(scratch + ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-											   ProgramConverter.CP_ROOT_THREAD_ID + 
-											   ProgramConverter.CP_ROOT_THREAD_SEPARATOR + "temp" + job_id++);
+				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+						   					   Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR + 
+											   "temp" + job_id++);
 				oparams.setLabel("mVar" + var_index++ );
 				
 				
@@ -2247,9 +2246,9 @@ public class Dag<N extends Lops> {
 						
 						// generate temporary filename & var name
 						String tempVarName = oparams.getLabel() + "temp";
-						String tempFileName = scratch + ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-						                                ProgramConverter.CP_ROOT_THREAD_ID + 
-						                                ProgramConverter.CP_ROOT_THREAD_SEPARATOR +  "temp" + job_id++;
+						String tempFileName = scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
+								   					    "temp" + job_id++;
 						
 						String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
 						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
@@ -2257,9 +2256,9 @@ public class Dag<N extends Lops> {
 						String constVarName = oparams.getLabel();
 						String constFileName = tempFileName + constVarName;
 						
-						oparams.setFile_name(scratch +  ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-                                						ProgramConverter.CP_ROOT_THREAD_ID + 
-                                						ProgramConverter.CP_ROOT_THREAD_SEPARATOR +  constFileName);
+						oparams.setFile_name(scratch +  Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR + 
+								   					    constFileName);
 						
 						/*
 						 * Since this is a node that denotes a transient read/write, we need to make sure 
@@ -2536,9 +2535,8 @@ public class Dag<N extends Lops> {
 		mr.setOutputs(getStringArray(outputs), getOutputInfoArray(outputInfos), resultIndicesByte);
 		mr.setOutputDimensions(resultDimsUnknown);
 		mr.setDimsUnknownFilePrefix(scratch +  
-				ProgramConverter.CP_ROOT_THREAD_SEPARATOR + 
-				ProgramConverter.CP_ROOT_THREAD_ID + 
-				ProgramConverter.CP_ROOT_THREAD_SEPARATOR );
+				                      Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+				                      Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR );
 		
 		mr.setNumberOfReducers(numReducers);
 		mr.setReplication(replication);

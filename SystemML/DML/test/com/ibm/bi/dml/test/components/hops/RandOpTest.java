@@ -16,6 +16,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -31,7 +32,7 @@ public class RandOpTest {
 	private static final double SPARSITY = 0.5;
 	private static final long SEED = 7;
 	private static final String PDF = "uniform";
-	private static final String DIR = "scratch_space/_t0/";
+	private static final String DIR = "scratch_space/_p"+IDHandler.createDistributedUniqueID()+"//_t0/";
 	
 	@Test
 	public void testConstructLops() throws HopsException {

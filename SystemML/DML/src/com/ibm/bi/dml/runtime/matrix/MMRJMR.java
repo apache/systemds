@@ -16,7 +16,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TripleIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /*
  * inBlockRepresentation: indicate whether to use block representation or cell representation
@@ -38,6 +37,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * outputInfos: output format information for the output matrices
  */
 public class MMRJMR {
+	
+	//TODO public static double SORT_IO_MEM = -1;
+	
 	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
@@ -98,6 +100,12 @@ public class MMRJMR {
 		//set up the number of reducers
 		job.setNumReduceTasks(numReducers);
 		
+		/* TODO
+		if( SORT_IO_MEM != -1 )
+		{
+			job.setInt("io.sort.mb", (int)SORT_IO_MEM);
+		}*/
+		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		
@@ -142,7 +150,7 @@ public class MMRJMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.MMRJ, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
-			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+			MRJobConfiguration.setStagingDir( job );
 		}
 
 		//set unique working dir

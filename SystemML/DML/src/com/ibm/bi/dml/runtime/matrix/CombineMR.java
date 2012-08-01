@@ -31,7 +31,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class CombineMR {
@@ -263,7 +262,6 @@ public class CombineMR {
 
 	}
 
-	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String combineInstructions, 
 			int numReducers, int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) 
@@ -274,7 +272,7 @@ public class CombineMR {
 				rlens, clens, brlens, bclens, combineInstructions, 
 				numReducers, replication, resultIndexes, outputs, outputInfos);
 	}
-	@SuppressWarnings("deprecation")
+
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String combineInstructions, 
 			int numReducers, int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) 
@@ -350,7 +348,7 @@ public class CombineMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.COMBINE, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
-			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+			MRJobConfiguration.setStagingDir( job );
 		}
 
 		//set unique working dir

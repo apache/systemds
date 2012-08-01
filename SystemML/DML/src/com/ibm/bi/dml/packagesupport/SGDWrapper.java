@@ -86,7 +86,7 @@ public class SGDWrapper extends PackageFunction {
 		//convert output to matrices
 		
 		d = new FixedWidthDataset();
-		d.setFilePath("w.txt");
+		d.setFilePath(getPackageSupportFilePrefix()+"w.txt");
 		d.setNumFields(1);
 		d.setFieldType(0, "java.lang.String");
 		FixedWidthDataset wDataset;
@@ -105,7 +105,7 @@ public class SGDWrapper extends PackageFunction {
 		}
 		
 		d = new FixedWidthDataset();
-		d.setFilePath("h.txt");
+		d.setFilePath(getPackageSupportFilePrefix()+"h.txt");
 		d.setNumFields(1);
 		d.setFieldType(0, "java.lang.String");
 		FixedWidthDataset hDataset;

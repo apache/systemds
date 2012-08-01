@@ -5,6 +5,11 @@ import java.util.ArrayList;
 
 import org.nimble.control.DAGQueue;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
+
 /**
  * Abstract class that should be extended to implement a package function.
  * 
@@ -15,6 +20,31 @@ public abstract class PackageFunction implements Serializable {
 
 	private static final long serialVersionUID = 3274150928865462856L;
 
+	private static String filePrefix = null;
+	
+	static
+	{
+		try
+		{
+			StringBuffer sb = new StringBuffer();
+			DMLConfig conf = ConfigurationManager.getConfig();
+			sb.append(conf.getTextValue(DMLConfig.SCRATCH_SPACE));
+			sb.append(Lops.FILE_SEPARATOR);
+			sb.append(Lops.PROCESS_PREFIX);
+			sb.append(DMLScript.getUUID());
+			sb.append(Lops.FILE_SEPARATOR);
+			sb.append("PackageSupport");
+			sb.append(Lops.FILE_SEPARATOR);
+			
+			filePrefix = sb.toString();
+		}
+		catch(Exception ex)
+		{
+			System.out.println("Warning: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig - using ./");
+			filePrefix = "PackageSupport/";
+		}
+	}
+	
 	// function inputs
 	ArrayList<FIO> function_inputs;
 
@@ -149,10 +179,15 @@ public abstract class PackageFunction implements Serializable {
 	public final void setDAGQueue(DAGQueue q) {
 		dQueue = q;
 	}
+	
+	public String getPackageSupportFilePrefix() 
+	{
+		return filePrefix;
+	}
 
 	/**
 	 * Method that will be executed to perform this function.
 	 */
 	public abstract void execute();
-
+	
 }

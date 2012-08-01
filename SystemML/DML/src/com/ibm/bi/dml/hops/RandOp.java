@@ -82,13 +82,12 @@ public class RandOp extends Hops
 				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 			}
 			
-			Rand rnd = new Rand(id, minValue, maxValue, sparsity, seed,
-					probabilityDensityFunction, scratchSpaceLoc
-							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR
-							+ ProgramConverter.CP_ROOT_THREAD_ID
-							+ ProgramConverter.CP_ROOT_THREAD_SEPARATOR,
+			Rand rnd = new Rand(id, minValue, maxValue, sparsity, seed, probabilityDensityFunction, 
+					scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+		   					          Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR,
 					get_dataType(), get_valueType(), et);
-			rnd.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+			rnd.getOutputParameters().setDimensions(
+					get_dim1(), get_dim2(),
 					get_rows_in_block(), get_cols_in_block(), getNnz());
 			set_lops(rnd);
 		}

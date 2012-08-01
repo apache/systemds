@@ -61,7 +61,8 @@ public class RunMRJobs {
 
 		for(String ii: inst.getInputLabels() ) {
 			Data d = pb.getVariable(ii);
-			if ( d.getDataType() == DataType.MATRIX ) {
+			//if(d instanceof MatrixObjectNew){
+			if ( d.getDataType() == DataType.MATRIX ) { 
 				MatrixObjectNew inputObj = (MatrixObjectNew) d;
 				inputObj.exportData();
 			}
@@ -452,7 +453,7 @@ public class RunMRJobs {
 					newrows[i] = matchar.numRows;
 			//	else {
 			//		if ( rows[i] != matchar.numRows ) 
-			//			throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
+			//			throw new DMLRuntimeException("Mismatch in dimensions: " + rows[i] + " != " + matchar.numRows);
 			//		else
 			//			newrows[i] = matchar.numRows;
 			//	}

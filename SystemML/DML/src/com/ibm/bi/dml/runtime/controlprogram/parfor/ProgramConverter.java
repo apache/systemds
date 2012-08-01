@@ -67,7 +67,7 @@ public class ProgramConverter
 	public static final String LEVELOUT          = "}";	
 	public static final String EXT_FUNCTION      = "extfunct";
 	
-	public static final String CP_ROOT_THREAD_SEPARATOR = "/";//File.separator;
+	//public static final String CP_ROOT_THREAD_SEPARATOR = "/";//File.separator;
 	public static final String CP_ROOT_THREAD_ID        = "_t0";       
 	public static final String CP_CHILD_THREAD          = "_t";
 		

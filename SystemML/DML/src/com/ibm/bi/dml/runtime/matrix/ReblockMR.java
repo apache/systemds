@@ -15,7 +15,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /*
@@ -37,7 +36,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class ReblockMR {
 
-	@SuppressWarnings("deprecation")
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String reblockInstructions, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, 
@@ -119,7 +117,7 @@ public class ReblockMR {
 		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK_BINARY, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
-			job.set("mapreduce.jobtracker.staging.root.dir", DMLConfig.LOCAL_MR_MODE_STAGING_DIR);
+			MRJobConfiguration.setStagingDir( job );
 		}
 		
 		//set unique working dir

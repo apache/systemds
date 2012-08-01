@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
 
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+
 /**
  * Functionalities for extracting numeric IDs from Hadoop taskIDs and other
  * things related to modification of IDs.
@@ -98,6 +101,36 @@ public class IDHandler
 			ret = (int)val; 
 				
 		return ret;
+	}
+	
+	/**
+	 * Creates a unique identifier with the pattern <process_id>_<host_ip>.
+	 * 
+	 * @return
+	 */
+	public static String createDistributedUniqueID() 
+	{
+		String uuid = null;
+		
+		try
+		{
+			//get process id		 
+		    String pname = ManagementFactory.getRuntimeMXBean().getName(); //pid@hostname
+		    String pid = pname.split("@")[0];
+		    
+		    //get ip address
+		    InetAddress addr = InetAddress.getLocalHost();
+		    String host = addr.getHostAddress();
+		    //addr.getHostName()
+		    
+			uuid = pid + "_" + host;
+		}
+		catch(Exception ex)
+		{
+			uuid = "0_0.0.0.0";
+		}
+		
+		return uuid;
 	}
 
 	/**

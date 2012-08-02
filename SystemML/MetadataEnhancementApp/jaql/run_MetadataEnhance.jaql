@@ -86,11 +86,9 @@ MetadataEnhance::metaEnhance(inputData, metadataMem, outputMetadata);
 // Generate recode map for categorical attributes
 // --------------------------------------------------------------------------------
 
-import recode;
-
 // pin metadata in memory
 metadataMem := read(jsonText(outputMetadata));
 
-recode::genRcdMap (inputData, metadataMem, recodeMap);
+MetadataEnhance::genRcdMap (inputData, metadataMem, recodeMap);
 
 "---------- END run_MetadataEnhance.jaql -----------";

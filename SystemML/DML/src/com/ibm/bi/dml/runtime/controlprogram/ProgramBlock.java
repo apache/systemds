@@ -249,7 +249,6 @@ public class ProgramBlock {
         
 		try {
 			sores.acquireModify (outputData);
-	        outputData = null;
 	        
 	        // Output matrix is stored in cache and it is written to HDFS, on demand, at a later point in time. 
 	        // downgrade() and exportData() need to be called only if we write to HDFS.

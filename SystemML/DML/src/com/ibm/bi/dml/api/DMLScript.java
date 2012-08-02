@@ -492,6 +492,9 @@ public class DMLScript {
 		Statistics.startRunTimer();		
 		try 
 		{   
+			//init caching
+			CacheableData.createCacheDir();
+			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute (new LocalVariableMap (), null);  
 		}

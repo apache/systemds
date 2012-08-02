@@ -52,11 +52,6 @@ public abstract class CacheableData extends Data
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
     
-    static
-    {
-    	createCacheDir();
-    }
-    
     private enum CacheStatusType {
     	EMPTY, 
     	READ, 
@@ -156,7 +151,7 @@ public abstract class CacheableData extends Data
 			switch (CacheableData.cacheEvictionStorageType)
 			{
 				case LOCAL:
-					new File(dir).delete();
+					new File(dir).deleteOnExit(); //replaces delete
 					//old version
 					//File[] files = new File(dir).listFiles();
 					//for( File f : files )
@@ -180,7 +175,9 @@ public abstract class CacheableData extends Data
 		}
 	}
 	
-	private static void createCacheDir()
+	
+	
+	public static void createCacheDir()
 	{
 		//get directory name
 		String dir = null;
@@ -547,4 +544,5 @@ public abstract class CacheableData extends Data
 			type = CacheStatusType.EVICTED;
 		}
 	}
+
 }

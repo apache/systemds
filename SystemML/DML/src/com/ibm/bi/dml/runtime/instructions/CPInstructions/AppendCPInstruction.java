@@ -39,7 +39,7 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 		in2.split(parts[2]);
 		out.split(parts[3]);
 		String offset_str = parts[4];
-		
+		 
 		if(!opcode.equalsIgnoreCase("append"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
 		else
@@ -86,5 +86,6 @@ public class AppendCPInstruction extends BinaryCPInstruction{
         pb.releaseMatrixInput(input1.get_name());
 		pb.releaseMatrixInput(input2.get_name());
 	
+		//System.out.println("Finish Append with output col size = "+ret.getNumColumns());
 	}
 }

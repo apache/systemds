@@ -260,29 +260,34 @@ public class MatrixObjectNew extends CacheableData
 		//get object from cache
 		getCache();
 		
-		MatrixBlock newData = null;
-		String fName = _hdfsFileName;
-		if (isEmpty () && fName != null)
+		//read data from HDFS if required
+		if( isEmpty() )
 		{
+			//check filename
+			String fName = _hdfsFileName;
+			if( fName == null )
+				throw new CacheException("Cannot read matrix for empty filename.");
+			
 			try
 			{
-				newData = readMatrixFromHDFS (fName);
+				MatrixBlock newData = readMatrixFromHDFS( fName );
+				if (newData != null)
+				{
+					newData.setEnvelope (this);
+					_data = newData;
+					_dirtyFlag = false;
+				}
 			}
 			catch (IOException e)
 			{
 				throw new CacheIOException (fName + " : Reading failed.", e);
 			}
 		}
-		
-
-		if (isEmpty () && newData != null)
-		{
-			newData.setEnvelope (this);
-			_data = newData;
-			_dirtyFlag = false;
-		}
 		acquire (false);
-		
+	
+		if( _data == null )
+			throw new CacheException("Unable to read data of matrix object " + _varName + ", fname="+_hdfsFileName);
+			
 		return _data;
 	}
 	
@@ -308,26 +313,29 @@ public class MatrixObjectNew extends CacheableData
 		//get object from cache
 		getCache();
 		
-		MatrixBlock newData = null;
-		String fName = _hdfsFileName;
-		if (isEmpty () && fName != null)
+		//read data from HDFS if required
+		if( isEmpty() )
 		{
+			//check filename
+			String fName = _hdfsFileName;
+			if( fName == null )
+				throw new CacheException("Cannot read matrix for empty filename.");
+			
 			//load data
 			try
 			{
-				System.out.println("MON: load data from "+fName);
-				newData = readMatrixFromHDFS (fName);
+				MatrixBlock newData = readMatrixFromHDFS (fName);
+				
+				//set reference to loaded data
+				if (newData != null)
+				{
+					newData.setEnvelope (this);
+					_data = newData;
+				}
 			}
 			catch (IOException e)
 			{
 				throw new CacheIOException (fName + " : Reading failed.", e);
-			}
-			
-			//set reference to loaded data
-			if (newData != null)
-			{
-				newData.setEnvelope (this);
-				_data = newData;
 			}
 		}
 
@@ -977,7 +985,11 @@ public class MatrixObjectNew extends CacheableData
 		if( _data == null && _cache !=null )
 		{
 			_data = _cache.get();
-			clearCache();
+			
+			//clear cache only if getCache successful (possible concurrent eviction)
+			//otherwise we would potentially destroy complete intermediate results
+			if( _data != null ) 
+				clearCache();
 		}
 	}
 	

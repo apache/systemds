@@ -71,8 +71,8 @@ public class DMLScript {
 	// stores optional args to parameterize DML script 
 	private HashMap<String, String> _argVals;
 	
-	private Logger mapredLogger;
-	private Logger mmcjLogger;
+	private Logger _mapredLogger;
+	private Logger _mmcjLogger;
 	
 	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	private static final String DEFAULT_MAPRED_LOGGER = "org.apache.hadoop.mapred";
@@ -109,8 +109,8 @@ public class DMLScript {
 		_optConfig = config;
 		_argVals = argVals;
 		
-		mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
-		mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
+		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
+		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
 	}
 	
 	/**
@@ -246,10 +246,10 @@ public class DMLScript {
 		/////////////// set logger level //////////////////////////////////////
 		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID){
 			if (DEBUG)
-				mapredLogger.setLevel(Level.WARN);
+				_mapredLogger.setLevel(Level.WARN);
 			else {
-				mapredLogger.setLevel(Level.WARN);
-				mmcjLogger.setLevel(Level.WARN);
+				_mapredLogger.setLevel(Level.WARN);
+				_mmcjLogger.setLevel(Level.WARN);
 			}
 		}
 		////////////// handle log output //////////////////////////

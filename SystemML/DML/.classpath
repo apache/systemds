@@ -8,8 +8,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/grappa_vis.jar"/>
 	<classpathentry kind="lib" path="lib/f2jutil.jar"/>
-	<classpathentry kind="lib" path="lib/javacc.jar"/>
-	<classpathentry kind="lib" path="lib/json.jar"/>
 	<classpathentry kind="lib" path="lib/metaTracker.jar"/>
 	<classpathentry kind="lib" path="lib/netlib-java-0.9.2.jar"/>
 	<classpathentry kind="lib" path="lib/xerbla.jar"/>
@@ -23,10 +21,9 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/JSON4J.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/opencsv-1.8/opencsv-1.8.jar"/>
-	<classpathentry kind="lib" path="lib/commons-cli-2.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-math-2.2.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-core-asl-1.8.8.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-mapper-asl-1.8.8.jar"/>
-	<classpathentry kind="lib" path="lib/hadoop-core-1.0.0.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-1.0.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

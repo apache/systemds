@@ -34,14 +34,14 @@
 		
 	<path id="OWN.classpath">
 		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
-		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
-		<pathelement location="${build.ownlib}/log4j-1.2.15.jar" />           <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
+		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->          
 <!--	<pathelement location="${build.ownlib}/lapack_simple.jar" /> -->  <!-- for eigen value decomposition -->
 <!--	<pathelement location="lib/arpack-combo-0.1.jar" /> -->  <!-- for intW in hEigenWrappper -->
 <!-- 	<pathelement location="lib/netlib-java-0.9.2.jar" /> --> <!-- for using lapack etc., mainly used by nimble-related stuff -->
 	</path>
 	
 	<path id="SHARED.classpath">
+		<pathelement location="${build.sharedlib}/log4j-1.2.7/dist/lib/log4j-1.2.15.jar" /> <!-- for org.apache.log4j.* imported by com.ibm.bi.dml.api.DMLScript.java -->
 		<pathelement location="${build.sharedlib}/Jaql-0.5/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 	    <pathelement location="${build.sharedlib}/opencsv-1.8/opencsv-1.8.jar" /> <!-- for read/write csv -->
@@ -151,9 +151,9 @@
 		<jar jarfile="${build.folder}/${build.jarnamerun}" basedir="${build.folder}">
 			<exclude name="dml/test/**" />
 			<exclude name="dml/runtime/test/**" />
-			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
 			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble.jar"/>
-			<zipfileset includes="**/*.class" src="${build.ownlib}/commons-math-2.2.jar"/>
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
+			<zipfileset includes="**/*.class" src="${hadoop.local.path}/lib/commons-math-2.2.jar"/> <!-- This will be removed once we use BI 2.0 cluster --> 
 			<!-- TZ: To include any other jar, we need code scan and legal approval -->
 			<manifest>
 				<attribute name="Class-Path" value="./" />
@@ -217,16 +217,24 @@
 	
 	<target name="junitjar">
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
-			<fileset dir="lib">
-				<include name="commons-math-2.2.jar" />
+			<fileset dir="${build.ownlib}">
 				<include name="nimble.jar" />
-				<include name="JSON4J.jar" />
 				<!-- TZ: I do not think we need them. Let's comment out first.
 				<include name="lapack_simple.jar" />
 				<include name="netlib-java-0.9.2.jar" />
 				<include name="arpack-combo-0.1.jar" />
 				<include name="grappa_vis.jar" />
 				-->
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="${build.folder}/lib">
+			<fileset dir="${build.sharedlib}">
+				<include name="JSON4J.jar" />
+			</fileset>
+		</copy>
+		<copy includeemptydirs="false" todir="${build.folder}/lib">
+			<fileset dir="${hadoop.local.path}/lib">
+				<include name="commons-math-2.2.jar" /> <!-- This will be removed once we use BI 2.0 cluster -->
 			</fileset>
 		</copy>
 		<jar jarfile="${build.folder}/${build.jarnamejunit}" basedir="${build.folder}">
@@ -251,7 +259,7 @@
 				<path id="TEST.classpath">
 					<pathelement location="${build.folder}/${build.jarnamejunit}" />
 					<pathelement location="${hadoop.local.path}" />
-					<path refid="BASE.classpath" />
+					<path refid="DML.classpath" />
 				</path>
 			</then>
 			<else>
@@ -260,7 +268,7 @@
 				<path id="TEST.classpath">
 					<pathelement location="${build.folder}/${build.jarnamejunit}" />
 					<pathelement location="${hadoop.cluster.path}" />
-					<path refid="BASE.classpath" />
+					<path refid="DML.classpath" />
 				</path>
 			</else>
 		</if>

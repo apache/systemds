@@ -15,10 +15,12 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * (1) non local var, (2) matrix object, and (3) completely independent.
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
+ * TODO: more fine-grained synchronization of _output as we know that written results will not conflict
+ * (e.g., we could just lock the getMatrixBlock and the final putMatrixBlock )
+ * 
  * RESTRICTIONS: 
  *   * assumption that each result matrix fits entirely in main-memory
  *   * currently no reduction aggregations functions
- * 
  */
 public class ResultMerge 
 {
@@ -29,6 +31,8 @@ public class ResultMerge
 	
 	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in )
 	{
+		//System.out.println( "ResultMerge for output file "+out.getFileName() );
+		
 		_output = out;
 		_inputs = in;
 	}
@@ -44,38 +48,40 @@ public class ResultMerge
 	public MatrixObjectNew executeSerialMerge() 
 		throws DMLRuntimeException
 	{
-		try
+		synchronized( _output ) //required due to caching
 		{
-			//get output matrix from cache 
-			MatrixBlock outMB = _output.acquireModify();
-	
-			//create compare matrix if required
-			_compare = createCompareMatrix(outMB);
-						
-			for( MatrixObjectNew in : _inputs ) 
+			try
 			{
-				//check for empty inputs (no iterations executed)
-				if( in != _output ) 
-				{
-					//get input matrix from cache
-					MatrixBlock inMB = in.acquireRead();
-					
-					//merge each input to output
-					merge( outMB, inMB );
-					
-					//release input
-					in.release();
-				}
-			}
-			
-			//release output
-			_output.release();
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
+				//get output matrix from cache 
+				MatrixBlock outMB = _output.acquireModify();
 		
+				//create compare matrix if required
+				_compare = createCompareMatrix(outMB);
+							
+				for( MatrixObjectNew in : _inputs ) 
+				{
+					//check for empty inputs (no iterations executed)
+					if( in != _output ) 
+					{
+						//get input matrix from cache
+						MatrixBlock inMB = in.acquireRead();
+						
+						//merge each input to output
+						merge( outMB, inMB );
+						
+						//release input
+						in.release();
+					}
+				}
+				
+				//release output
+				_output.release();
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
+		}	
 		return _output;
 	}
 	
@@ -91,51 +97,53 @@ public class ResultMerge
 	public MatrixObjectNew executeParallelMerge(int par) 
 		throws DMLRuntimeException
 	{
-		try
-		{
-			//get matrix blocks through caching 
-			MatrixBlock outMB = _output.acquireModify();
-			ArrayList<MatrixBlock> inMB = new ArrayList<MatrixBlock>();
-			for( MatrixObjectNew in : _inputs )
+		synchronized( _output ) //required due to caching
+		{	
+			try
 			{
-				//check for empty inputs (no iterations executed)
-				if( in != _output ) 
-					inMB.add( in.acquireRead() );	
-			}
-			
-			//create compare matrix if required
-			_compare = createCompareMatrix(outMB);
-			
-			//create and start threads
-			Thread[] threads = new Thread[ inMB.size() ];
-			for( int i=0; i<threads.length; i++ )
-			{
-				ResultMergeWorker rmw = new ResultMergeWorker(inMB.get(i), outMB);
-				threads[i] = new Thread(rmw);
-				threads[i].setPriority(Thread.MAX_PRIORITY);
-				threads[i].start(); // start execution
-			}
+				//get matrix blocks through caching 
+				MatrixBlock outMB = _output.acquireModify();
+				ArrayList<MatrixBlock> inMB = new ArrayList<MatrixBlock>();
+				for( MatrixObjectNew in : _inputs )
+				{
+					//check for empty inputs (no iterations executed)
+					if( in != _output ) 
+						inMB.add( in.acquireRead() );	
+				}
 				
-			//wait for all workers to finish
-			for( int i=0; i<threads.length; i++ )
-			{
-				threads[i].join();
+				//create compare matrix if required
+				_compare = createCompareMatrix(outMB);
+				
+				//create and start threads
+				Thread[] threads = new Thread[ inMB.size() ];
+				for( int i=0; i<threads.length; i++ )
+				{
+					ResultMergeWorker rmw = new ResultMergeWorker(inMB.get(i), outMB);
+					threads[i] = new Thread(rmw);
+					threads[i].setPriority(Thread.MAX_PRIORITY);
+					threads[i].start(); // start execution
+				}
+					
+				//wait for all workers to finish
+				for( int i=0; i<threads.length; i++ )
+				{
+					threads[i].join();
+				}
+				
+				//release all data
+				_output.release();
+				for( MatrixObjectNew in : _inputs )
+				{
+					//check for empty results
+					if( in != _output ) 
+						in.release(); //only if required (see above)
+				}
 			}
-			
-			//release all data
-			_output.release();
-			for( MatrixObjectNew in : _inputs )
+			catch(Exception ex)
 			{
-				//check for empty results
-				if( in != _output ) 
-					in.release(); //only if required (see above)
+				throw new DMLRuntimeException(ex);
 			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException(ex);
-		}
-		
+		}	
 		return _output;
 	}
 	

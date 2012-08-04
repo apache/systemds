@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.nimble.configuration.NimbleConfig;
 import org.nimble.control.DAGQueue;
 import org.nimble.control.PMLDriver;
-import org.nimble.exception.ConfigurationException;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import com.ibm.bi.dml.lops.Lops;
@@ -629,7 +629,19 @@ public class DMLScript {
 
 		try {
 			config.parseSystemDocuments(dmlCfg.getConfig_file_name());
-		} catch (ConfigurationException e) {
+			
+			//ensure unique working directory for nimble output
+			StringBuffer sb = new StringBuffer();
+			sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
+			sb.append( Lops.FILE_SEPARATOR );
+			sb.append( Lops.PROCESS_PREFIX );
+			sb.append( getUUID() );
+			sb.append( Lops.FILE_SEPARATOR  );
+			sb.append( dmlCfg.getTextValue(DMLConfig.NIMBLE_SCRATCH) );			
+			((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
+			                .setTextContent( sb.toString() );						
+		} catch (Exception e) {
+			e.printStackTrace();
 			throw new PackageRuntimeException ("Error parsing Nimble configuration files");
 		}
 
@@ -638,10 +650,10 @@ public class DMLScript {
 		int numReapThreads = 1;
 
 		numSowThreads = Integer.parseInt
-				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), "NumberOfSowThreads"));
+				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_SOW_THREADS));
 		numReapThreads = Integer.parseInt
-				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), "NumberOfReapThreads"));
-
+				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
+		
 		if (numSowThreads < 1 || numReapThreads < 1){
 			throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
 		}

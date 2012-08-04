@@ -58,7 +58,8 @@ public class MatrixBlockDSM extends MatrixValue{
 	 * 
 	 * @return the size of this object in bytes
 	 */
-	public long getObjectSizeInMemory ()
+	//NOTE: not required anymore
+	/*public long getObjectSizeInMemory ()
 	{
 		// TODO: Yuanyuan, please help me implement this function. --Sasha
 		long all_size = 32;
@@ -72,7 +73,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 		return all_size;
-	}
+	}*/
 	
 	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{

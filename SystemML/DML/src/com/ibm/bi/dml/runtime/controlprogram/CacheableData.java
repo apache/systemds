@@ -5,8 +5,10 @@ import java.io.IOException;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -15,6 +17,7 @@ import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
 import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -33,6 +36,10 @@ import com.ibm.bi.dml.utils.CacheStatusException;
  */
 public abstract class CacheableData extends Data
 {
+	protected static final int WAIT_TIMEOUT  = 10000; //10s
+	protected static final int WAIT_INTERVAL = 50; //50ms
+	
+	
 	public enum CACHE_EVICTION_POLICY { 
 		DEFAULT 
 	};
@@ -48,7 +55,7 @@ public abstract class CacheableData extends Data
     public static final String cacheEvictionLocalFilePath = "/tmp/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; 
     public static String cacheEvictionLocalFilePrefix = "cache";
     public static final String cacheEvictionLocalFileExtension = ".dat";
-    public static final String cacheEvictionHDFSFilePath = "scratch_space/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; //TODO: MB replace with configured scratch space during runtime 
+    public static final String cacheEvictionHDFSFilePath = Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; //prefix dir is set during runtime
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
     
@@ -64,7 +71,7 @@ public abstract class CacheableData extends Data
 	private static IDSequence _seq = new IDSequence();
 	
 	/**
-	 * The unique (JVM-wide) of a cachable data object. 
+	 * The unique (JVM-wide) of a cacheable data object. 
 	 */
 	private final int _uniqueID;
 	
@@ -131,6 +138,9 @@ public abstract class CacheableData extends Data
 	 */
 	protected abstract void freeEvictedBlob ();
 	
+	/**
+	 * Deletes the DML-script-specific caching working dir.
+	 */
 	public static void cleanupCacheDir()
 	{
 		//get directory name
@@ -176,7 +186,9 @@ public abstract class CacheableData extends Data
 	}
 	
 	
-	
+	/**
+	 * Creates the DML-script-specific caching working dir.
+	 */
 	public static void createCacheDir()
 	{
 		//get directory name
@@ -187,7 +199,13 @@ public abstract class CacheableData extends Data
 				dir = cacheEvictionLocalFilePath;
 				break;
 			case HDFS:
-				dir = cacheEvictionHDFSFilePath;
+				try {
+					dir = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + 
+					      Lops.FILE_SEPARATOR + cacheEvictionHDFSFilePath;
+				} 
+				catch (ParseException e){ 
+					System.out.println("Error parsing configuration file."); 
+				}
 				break;
 		}
 		
@@ -214,7 +232,7 @@ public abstract class CacheableData extends Data
 	
 	public String getStatusAsString ()
 	{
-		return _cacheStatus.type.toString();
+		return _cacheStatus.getType().toString();
 	}
 		
 	/**
@@ -319,33 +337,34 @@ public abstract class CacheableData extends Data
 	 *     <code>false</code> for a shared "read" lock.
 	 * @throws CacheException
 	 */
-	protected void acquire (boolean isModify) 
+	protected void acquire (boolean isModify, boolean restore) 
 		throws CacheException
 	{
 		switch ( _cacheStatus.getType() )
 		{
 			case EVICTED:
-				restoreBlobIntoMemory ();
+				if(restore)
+					restoreBlobIntoMemory ();
 			case EMPTY:
 			case EVICTABLE:
 				if (isModify)
-					_cacheStatus.setModify ();
+					_cacheStatus.setModify();
 				else
-					_cacheStatus.addOneRead ();
+					_cacheStatus.addOneRead();
 				break;
 			case READ:
 				if (isModify)
 					throw new CacheStatusException ("READ-MODIFY not allowed.");
 				else
-					_cacheStatus.addOneRead ();
+					_cacheStatus.addOneRead();
 				break;
 			case MODIFY:
 				throw new CacheStatusException ("MODIFY-MODIFY not allowed.");
 		}
 
-		if(DMLScript.DEBUG) {
+		if(DMLScript.DEBUG) 
 			System.out.println("    CACHE: acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
-		}
+		
 	}
 
 	
@@ -361,7 +380,7 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @throws CacheException 
 	 */
-	public void release ()
+	public void release()
 		throws CacheException
 	{
 		switch ( _cacheStatus.getType() )
@@ -410,10 +429,16 @@ public abstract class CacheableData extends Data
 			_cacheStatus.setEvicted();
 			ret = true;
 		}
-		
+		else //robustness: handle other case to prevent data loss
+		{
+			//System.out.println("AttemptEviction, but object not evictable ("+getStatusAsString()+"). UNDO PARTIAL EVICTION.");
+			undoPartialEviction( mb );
+		}	
+	
 		return ret;
 	}
 	
+	protected abstract void undoPartialEviction( MatrixBlock mb );
 	
 	
 	/**
@@ -456,92 +481,93 @@ public abstract class CacheableData extends Data
 	
 	protected class CacheStatus
 	{
-		protected CacheStatusType type = CacheStatusType.EMPTY;
-		protected int numReadThreads = 0;
+		protected CacheStatusType _type = null;
+		protected int _numReadThreads = 0;
 	    
 		protected CacheStatus ()
 	    {
-	    	
+			_type = CacheStatusType.EMPTY;
+			_numReadThreads = 0;
 	    }
 	    
 		protected CacheStatusType getType ()
 	    {
-	    	return type;
+	    	return _type;
 	    }
 	    
-		protected boolean isEmpty ()
+		protected boolean isEmpty()
 		{
-			return (type == CacheStatusType.EMPTY);
+			return (_type == CacheStatusType.EMPTY);
 		}
 		
 		protected boolean isAvailableToRead ()
 		{
-			return (   type == CacheStatusType.EMPTY 
-					|| type == CacheStatusType.EVICTABLE 
-					|| type == CacheStatusType.EVICTED 
-					|| type == CacheStatusType.READ);
+			return (   _type == CacheStatusType.EMPTY 
+					|| _type == CacheStatusType.EVICTABLE 
+					|| _type == CacheStatusType.EVICTED 
+					|| _type == CacheStatusType.READ);
 		}
 		
 		protected boolean isAvailableToModify ()
 		{
-			return (   type == CacheStatusType.EMPTY 
-					|| type == CacheStatusType.EVICTABLE 
-					|| type == CacheStatusType.EVICTED);
+			return (   _type == CacheStatusType.EMPTY 
+					|| _type == CacheStatusType.EVICTABLE 
+					|| _type == CacheStatusType.EVICTED);
 		}
 		
 		protected boolean isModify ()
 		{
-			return (type == CacheStatusType.MODIFY);
+			return (_type == CacheStatusType.MODIFY);
 		}
 		
 		protected boolean isInMemory ()
 		{
-			return (   type == CacheStatusType.READ 
-					|| type == CacheStatusType.MODIFY
-					|| type == CacheStatusType.EVICTABLE);
+			return (   _type == CacheStatusType.READ 
+					|| _type == CacheStatusType.MODIFY
+					|| _type == CacheStatusType.EVICTABLE);
 		}
 		
 		protected boolean isEvictable ()
 		{
-			return (type == CacheStatusType.EVICTABLE);
+			return (_type == CacheStatusType.EVICTABLE);
 		}
 		
 		protected boolean isEvicted ()
 		{
-			return (type == CacheStatusType.EVICTED);
+			return (_type == CacheStatusType.EVICTED);
 		}
 
 		protected void addOneRead ()
 		{
-			numReadThreads ++;
-			type = CacheStatusType.READ;
+			_numReadThreads ++;
+			_type = CacheStatusType.READ;
 		}
 		
 		protected void removeOneRead (boolean doesBlobExist)
 		{
-			numReadThreads --;					
-			if (numReadThreads == 0)
-				type = (doesBlobExist ? CacheStatusType.EVICTABLE : CacheStatusType.EMPTY);
+			_numReadThreads --;					
+			if (_numReadThreads == 0)
+				_type = (doesBlobExist ? CacheStatusType.EVICTABLE : CacheStatusType.EMPTY);
 		}
 		
 		protected void setEmpty ()
 		{
-			type = CacheStatusType.EMPTY;
+			_type = CacheStatusType.EMPTY;
 		}
 		
 		protected void setModify ()
 		{
-			type = CacheStatusType.MODIFY;
+			_type = CacheStatusType.MODIFY;
 		}
 		
 		protected void setEvictable ()
 		{
-			type = CacheStatusType.EVICTABLE;
+			_type = CacheStatusType.EVICTABLE;
 		}
 		
 		protected void setEvicted ()
 		{
-			type = CacheStatusType.EVICTED;
+			_type = CacheStatusType.EVICTED;
 		}
 	}
 

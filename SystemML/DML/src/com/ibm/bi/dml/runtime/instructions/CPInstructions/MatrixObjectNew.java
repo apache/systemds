@@ -46,6 +46,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class MatrixObjectNew extends CacheableData
 {
+	private static final boolean LDEBUG = false;
+	
 	private SoftReference<MatrixBlock> _cache;
 	private boolean _cleanupFlag = true;;
 	
@@ -104,6 +106,11 @@ public class MatrixObjectNew extends CacheableData
 	public void setVarName(String s) 
 	{
 		_varName = s;
+	}
+	
+	public String getVarName() 
+	{
+		return _varName;
 	}
 	
 	@Override
@@ -249,44 +256,52 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public synchronized MatrixBlock acquireRead () 
+	public MatrixBlock acquireRead () 
 		throws CacheException
 	{
-		//System.out.println("acquire read "+_varName);
-	
-		if (! isAvailableToRead ())
-			throw new CacheStatusException ("MatrixObject not available to read.");
+		if( LDEBUG )
+			System.out.println("acquire read "+_varName);
 		
-		//get object from cache
-		getCache();
-		
-		//read data from HDFS if required
-		if( isEmpty() )
+		synchronized( this ) 
 		{
-			//check filename
-			String fName = _hdfsFileName;
-			if( fName == null )
-				throw new CacheException("Cannot read matrix for empty filename.");
+			if (! isAvailableToRead ())
+				throw new CacheStatusException ("MatrixObject not available to read.");
 			
-			try
+			//get object from cache
+			getCache();
+			
+			//read data from HDFS if required
+			if( isEmpty() ) 
 			{
-				MatrixBlock newData = readMatrixFromHDFS( fName );
-				if (newData != null)
+				//check filename
+				String fName = _hdfsFileName;
+				if( fName == null )
+					throw new CacheException("Cannot read matrix for empty filename.");
+				
+				try
 				{
-					newData.setEnvelope (this);
-					_data = newData;
-					_dirtyFlag = false;
+					MatrixBlock newData = readMatrixFromHDFS( fName );
+					if (newData != null)
+					{
+						newData.setEnvelope (this);
+						_data = newData;
+						_dirtyFlag = false;
+					}
+				}
+				catch (IOException e)
+				{
+					throw new CacheIOException (fName + " : Reading failed.", e);
 				}
 			}
-			catch (IOException e)
-			{
-				throw new CacheIOException (fName + " : Reading failed.", e);
-			}
+			acquire( false, true );
+		
 		}
-		acquire (false);
-	
+		
+		//unsynchronized in order to enable undo partial eviction
 		if( _data == null )
-			throw new CacheException("Unable to read data of matrix object " + _varName + ", fname="+_hdfsFileName);
+		{
+			waitForUndoPartialEviction();
+		}
 			
 		return _data;
 	}
@@ -302,46 +317,56 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public MatrixBlock acquireModify ()
+	public MatrixBlock acquireModify()
 		throws CacheException
 	{
-		//System.out.println("acquire modify "+_varName);
-		
-		if (! isAvailableToModify ())
-			throw new CacheStatusException("MatrixObject not available to modify.");
-		
-		//get object from cache
-		getCache();
-		
-		//read data from HDFS if required
-		if( isEmpty() )
+		if( LDEBUG )
+			System.out.println("acquire modify "+_varName);
+
+		synchronized( this )
 		{
-			//check filename
-			String fName = _hdfsFileName;
-			if( fName == null )
-				throw new CacheException("Cannot read matrix for empty filename.");
+			if (! isAvailableToModify ())
+				throw new CacheStatusException("MatrixObject not available to modify.");
 			
-			//load data
-			try
+			//get object from cache
+			getCache();
+			
+			//read data from HDFS if required
+			if( isEmpty() )
 			{
-				MatrixBlock newData = readMatrixFromHDFS (fName);
+				//check filename
+				String fName = _hdfsFileName;
+				if( fName == null )
+					throw new CacheException("Cannot read matrix for empty filename.");
 				
-				//set reference to loaded data
-				if (newData != null)
+				//load data
+				try
 				{
-					newData.setEnvelope (this);
-					_data = newData;
+					MatrixBlock newData = readMatrixFromHDFS (fName);
+					
+					//set reference to loaded data
+					if (newData != null)
+					{
+						newData.setEnvelope (this);
+						_data = newData;
+					}
+				}
+				catch (IOException e)
+				{
+					throw new CacheIOException (fName + " : Reading failed.", e);
 				}
 			}
-			catch (IOException e)
-			{
-				throw new CacheIOException (fName + " : Reading failed.", e);
-			}
+	
+			//cache status maintenance
+			acquire( true, true );
+			_dirtyFlag = true;
 		}
-
-		//cache status maintenance
-		acquire (true);
-		_dirtyFlag = true;
+		
+		//unsynchronized in order to enable undo partial eviction
+		if( _data == null )
+		{
+			waitForUndoPartialEviction();
+		}
 		
 		return _data;
 	}
@@ -358,10 +383,11 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference, which is the same as the argument
 	 * @throws CacheException 
 	 */
-	public MatrixBlock acquireModify (MatrixBlock newData) 
+	public synchronized MatrixBlock acquireModify (MatrixBlock newData)
 		throws CacheException
 	{
-		//System.out.println("acquire modify newdata "+_varName);
+		if( LDEBUG )
+			System.out.println("acquire modify newdata "+_varName);
 		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
@@ -370,7 +396,7 @@ public class MatrixObjectNew extends CacheableData
 		clearData(); 
 		
 		//cache status maintenance
-		acquire (true); //TODO: MB couldnt we optimize this and just say free_evicted_blob?
+		acquire (true, false); //no need to load evicted matrix
 		_dirtyFlag = true;
 		
 		//set references to new data
@@ -400,7 +426,8 @@ public class MatrixObjectNew extends CacheableData
 	public synchronized void release () 
 		throws CacheException
 	{
-		//System.out.println("release "+_varName);
+		if( LDEBUG )
+			System.out.println("release "+_varName);
 		
 		if (isModify ())
 		{
@@ -438,10 +465,11 @@ public class MatrixObjectNew extends CacheableData
 		clearData(false);
 	}
 	
-	public void clearData ( boolean delFileOnHDFS )   //TODO usage in variable cp instruction
+	public synchronized void clearData ( boolean delFileOnHDFS ) //TODO usage in variable cp instruction
 		throws CacheStatusException
 	{
-		//System.out.println("clear data "+_varName);
+		if( LDEBUG )
+			System.out.println("clear data "+_varName);
 		
 		if( !_cleanupFlag ) //if cleanup not enabled, do nothing
 			return;
@@ -469,10 +497,12 @@ public class MatrixObjectNew extends CacheableData
 			setEmpty();
 		}
 		
-		//TODO delete from file
+		//TODO delete from file; currently not necessary as we cleanup everything at the end of script execution 
 	}
 
 	/**
+	 * NOTE: never used
+	 * 
 	 * Same as {@link #clearData()}, but in addition, sets the HDFS source file name
 	 * for the matrix.  The next {@link #acquireRead()} will read it from HDFS.  So,
 	 * this is a "lazy" import.
@@ -522,7 +552,8 @@ public class MatrixObjectNew extends CacheableData
 	public synchronized void exportData (String fName, String outputFormat)
 		throws CacheException
 	{
-		//System.out.println("export data "+_varName+" "+fName);
+		if( LDEBUG )
+			System.out.println("export data "+_varName+" "+fName);
 		
 		//prevent concurrent modifications
 		if (! isAvailableToRead ())
@@ -535,13 +566,20 @@ public class MatrixObjectNew extends CacheableData
 		{
 			// CASE 1: write matrix to fname 
 			// (at this point, obj should never be in state empty)
-			
+
 			getCache();
-			acquire (false); //incl. read matrix if evicted
+			acquire( false, true ); //incl. read matrix if evicted
+			
 			try
 			{
 				if (DMLScript.DEBUG)
 					System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+						
+				//unsynchronized in order to enable undo partial eviction
+				if( _data == null )
+				{
+					waitForUndoPartialEviction();
+				}
 				
 				writeMetaData (fName, outputFormat);
 				writeMatrixToHDFS (fName, outputFormat);
@@ -633,6 +671,55 @@ public class MatrixObjectNew extends CacheableData
 	}
 	
 	
+	
+	private void createCache( ) 
+	{
+		_cache = new SoftReference<MatrixBlock>( _data );	
+	}
+
+	private void getCache()
+	{
+		if( _data == null && _cache !=null )
+		{
+			_data = _cache.get();
+			
+			//clear cache only if getCache successful (possible concurrent eviction)
+			//otherwise we would potentially destroy complete intermediate results
+			if( _data != null ) 
+				clearCache();
+		}
+	}
+	
+	private void clearCache()
+	{
+		if( _cache != null )
+		{
+			_cache.clear();
+			_cache = null;
+		}
+	}
+
+	
+	/**
+	 * see clear data
+	 * 
+	 * @param flag
+	 */
+	public void enableCleanup(boolean flag) 
+	{
+		//System.out.println("enable cleanup "+_varName+": "+flag);
+		_cleanupFlag = flag;
+	}
+
+	/**
+	 * see clear data
+	 * 
+	 * @return
+	 */
+	public boolean isCleanupEnabled() 
+	{
+		return _cleanupFlag;
+	}
 
 	// *********************************************
 	// ***                                       ***
@@ -654,7 +741,7 @@ public class MatrixObjectNew extends CacheableData
 	protected void evictBlobFromMemory ( MatrixBlock mb ) 
 		throws CacheIOException
 	{
-		if ( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("EVICTION of Matrix "+_varName+" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()/(1024*1024)+"MB free");
 
 		_data = mb; //reference to garbage-collected matrix block
@@ -681,8 +768,11 @@ public class MatrixObjectNew extends CacheableData
 		{
 			throw new CacheIOException (filePath + " : Eviction failed.", e);
 		}
+		
+		//clear data and cache
 		_data.clearEnvelope ();
 		_data = null;
+		clearCache();
 		
 		if (DMLScript.DEBUG) 
 		{
@@ -694,10 +784,10 @@ public class MatrixObjectNew extends CacheableData
 	protected void restoreBlobIntoMemory () 
 		throws CacheIOException, CacheAssignmentException
 	{
-		if (DMLScript.DEBUG) 
+		if( LDEBUG ) 
 			System.out.println("RESTORE of Matrix "+_varName);
 		
-		String filePath = getCacheFilePathAndName ();
+		String filePath = getCacheFilePathAndName();
 		long begin = 0;
 		if (DMLScript.DEBUG) 
 		{
@@ -734,6 +824,49 @@ public class MatrixObjectNew extends CacheableData
 	}		
 	
 	@Override
+	protected void undoPartialEviction( MatrixBlock mb ) 	
+	{
+		//NOTE: this method is only invoked of matrix object is not evictable
+		//during invocation of attempteviction.
+		
+		if( LDEBUG )
+			System.out.println("UNDO PARTIAL EVICTION "+_varName);
+		
+		if( isEvicted() || isEmpty() )
+		{
+			//do nothing, because data exists on disk, or object properly cleaned up.
+		}
+		else //isRead or is Modify
+		{
+			//restore matrix block into main memory
+			//(alternatively, we could evict and restore into main memory, but not necessary)
+			_data = mb;
+		}
+	}
+	
+	/**
+	 * Only used for specific cases, where eviction is triggered (but not fully realized) concurrently to acquire read
+	 * 
+	 * @throws CacheException
+	 */
+	private void waitForUndoPartialEviction() 
+		throws CacheException
+	{
+		int pollCount = WAIT_TIMEOUT / WAIT_INTERVAL;
+		if( LDEBUG )
+			System.out.println("wait for undo partial eviction: count "+pollCount);
+		while( --pollCount >= 0 )
+		{
+			try{ Thread.sleep(WAIT_INTERVAL); }catch(Exception e){}
+			if( _data!=null )
+				break;
+		}
+		
+		if( _data==null )
+			throw new CacheException("Unable to read data of matrix object " + _varName + " (status="+getStatusAsString()+", dirty="+_dirtyFlag+"), fname="+_hdfsFileName);
+	}
+		
+	@Override
 	protected void freeEvictedBlob ()
 	{
 		String cacheFilePathAndName = getCacheFilePathAndName ();
@@ -769,6 +902,7 @@ public class MatrixObjectNew extends CacheableData
 		}
 	}
 		
+	
 	
 	// *******************************************
 	// ***                                     ***
@@ -845,13 +979,18 @@ public class MatrixObjectNew extends CacheableData
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
 				iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
 		if( newData == null )
+		{
+			//enable export of empty matrices
+			//newData = new MatrixBlock((int)mc.numRows,(int)mc.numColumns, true);
 			throw new IOException("Unable to load matrix from file "+filePathAndName);
+		}
 		
 		newData.clearEnvelope ();
    		
 		if (DMLScript.DEBUG) 
 		{
-			System.out.println ("    Reading Completed: read ~" + newData.getObjectSizeInMemory() + " bytes, " + (System.currentTimeMillis()-begin) + " msec.");
+			//System.out.println ("    Reading Completed: read ~" + newData.getObjectSizeInMemory() + " bytes, " + (System.currentTimeMillis()-begin) + " msec.");
+			System.out.println ("    Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
 		}
 		return newData;
 	}
@@ -924,12 +1063,12 @@ public class MatrixObjectNew extends CacheableData
 
 			if (DMLScript.DEBUG) 
 			{
-				System.out.println ("    Writing matrix to HDFS - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
+				System.out.println ("    Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 			}
 		}
-		else if (DMLScript.DEBUG) 
+		else if (DMLScript.DEBUG)
 		{
-			System.out.println ("Writing matrix to HDFS - NOTHING TO WRITE (_data == null).");
+			System.out.println ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
 	}
 	
@@ -973,68 +1112,6 @@ public class MatrixObjectNew extends CacheableData
 				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
 		return _varName + " " + debugNameEnding;
 	}
-	
-	
-	private void createCache( ) 
-	{
-		_cache = new SoftReference<MatrixBlock>( _data );	
-	}
-
-	private void getCache()
-	{
-		if( _data == null && _cache !=null )
-		{
-			_data = _cache.get();
-			
-			//clear cache only if getCache successful (possible concurrent eviction)
-			//otherwise we would potentially destroy complete intermediate results
-			if( _data != null ) 
-				clearCache();
-		}
-	}
-	
-	private void clearCache()
-	{
-		_cache.clear();
-		_cache = null;
-	}
 
 	
-	/**
-	 * see clear data
-	 * 
-	 * @param flag
-	 */
-	public void enableCleanup(boolean flag) 
-	{
-		//System.out.println("enable cleanup "+_varName+": "+flag);
-		_cleanupFlag = flag;
-	}
-
-	/**
-	 * see clear data
-	 * 
-	 * @return
-	 */
-	public boolean isCleanupEnabled() 
-	{
-		return _cleanupFlag;
-	}
-	
-	/*
-	@Override
-	public void finalize()
-	{
-		//todo if this always works properly
-		
-		try 
-		{
-			clearData();
-		} 
-		catch (CacheStatusException e) 
-		{
-			e.printStackTrace();
-		}
-	}
-	*/
 }

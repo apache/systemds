@@ -32,11 +32,11 @@ public class MatrixBlock extends MatrixBlockDSM
 		return m;
 	}
 	
-	@Override
+	/*@Override
 	public long getObjectSizeInMemory ()
 	{
 		return 0 + super.getObjectSizeInMemory ();
-	}
+	}*/
 	
 	public MatrixObjectNew getEnvelope ()
 	{
@@ -58,7 +58,7 @@ public class MatrixBlock extends MatrixBlockDSM
 		throws CacheAssignmentException
 	{
 		if (envelope != null && envelope != newEnvelope)
-			throw new CacheAssignmentException ();
+			throw new CacheAssignmentException("MatrixBlock cannot be assigned to multiple envelopes.");
 		envelope = newEnvelope; 
 	}
 	
@@ -74,5 +74,6 @@ public class MatrixBlock extends MatrixBlockDSM
 		{
 			e.printStackTrace();
 		}
+		
 	}
 }

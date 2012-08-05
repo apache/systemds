@@ -87,6 +87,11 @@ join orig in metadataMem, new in kindHeuristic
 // Recode Maps
 //--------------------------------------------------------------------------------
 
+jsonLines = fn(location)
+    lines ( location,
+        inoptions = { converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"},
+        outoptions = { converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"});
+
 genRcdMap = fn (inputData, attrs, outFile) (
 
    keep = (attrs -> filter $.attributeKind != "scale")[*].attributeName,
@@ -106,6 +111,6 @@ genRcdMap = fn (inputData, attrs, outFile) (
              -> transform {attributeName: aN, recodeId: $[0] + 1, catValue: $[1]} 
       )
    -> expand
-   -> write(jsonText(outFile))
+   -> write(jsonLines(outFile))
 
 );

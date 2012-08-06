@@ -7,11 +7,12 @@
             <jaql-path>custom_modules</jaql-path>
             <script>jaql/run_MetadataEnhance.jaql</script>
             <eval>
+				Input_inputFormat_PARAM='${inputFormat}';
+				Input_inputDelimiter_PARAM='${inputDelimiter}';
 				Input_input_PARAM='${input}';
 				Input_inputMetadata_PARAM='${inputMetadata}';
 				Input_outputMetadata_PARAM='${outputMetadata}';
 				Input_recodeMap_PARAM='${recodeMap}';
-				Input_inputDelimiter_PARAM='${inputDelimiter}';
     	    </eval>
         </jaql>
         <ok to="end"/>

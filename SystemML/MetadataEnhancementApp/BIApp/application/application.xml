@@ -2,11 +2,12 @@
     <name>1. Metadata Enhancement</name>
     <description>This application applies a heuristic to determine attribute kind (scale/nominal/ordinal) when attributeKind is null and generates recode maps for categorical (nominal or ordinal) attributes.</description>
     <properties>
-        <property defaultValue="input/data.csv" description="Delimited input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="JSON Text Records" description="Input file format" isInputPath="false" isOutputPath="false" isRequired="true" label="Input Format" name="inputFormat" paramtype="LIST" uitype="textfield" validValues="CSV, JSON Text Records"/>
+        <property defaultValue="," description="Delimiter" isInputPath="false" isOutputPath="false" isRequired="true" label="Delimiter" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>
+        <property defaultValue="input/data.json" description="Input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="input/data.meta.json" description="Input metadata file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input metadata file" name="inputMetadata" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="output/data.meta.json" description="Output metadata file" isInputPath="false" isOutputPath="false" isRequired="true" label="Output metadata file" name="outputMetadata" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="output/data.map.json" description="Recode map file" isInputPath="false" isOutputPath="false" isRequired="true" label="Recode map" name="recodeMap" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="," description="Delimiter" isInputPath="false" isOutputPath="false" isRequired="true" label="Delimiter" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>
     </properties>
     <imagePath>analysis_L.png</imagePath>
     <categories>MARIOTEST-Analytics</categories>

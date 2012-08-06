@@ -30,11 +30,12 @@
 IN_DIR=input
 OUT_DIR=output
 jaqlshell -jp custom_modules -e "
+Input_inputFormat_PARAM    = \"CSV\";
+Input_inputDelimiter_PARAM = \",\";
 Input_input_PARAM          = \"$IN_DIR/data.csv\";
 Input_inputMetadata_PARAM  = \"$IN_DIR/data.meta.json\";
 Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
 Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
-Input_inputDelimiter_PARAM = \",\";
 " jaql/run_MetadataEnhance.jaql
 
 */
@@ -53,7 +54,10 @@ Input_inputDelimiter_PARAM = \",\";
 // --------------------------------------------------------------------------------
 //
 
-// DFS Path + filename for delimited text input file
+// Input file format: CSV or JSON Text Records
+inputFormat = Input_inputFormat_PARAM;
+
+// DFS Path + filename for delimited or JSON text input file
 input = Input_input_PARAM;
 
 // DFS Path + filename for JSON text metadata input file
@@ -74,7 +78,19 @@ import MetadataEnhance;
 // pin metadata in memory
 metadataMem := read(jsonText(inputMetadata));
 
-inputData = MetadataEnhance::inputData(input, metadataMem, inputDelimiter);
+jsonLines = fn(location)
+    lines ( location,
+        inoptions = { converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"},
+        outoptions = { converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"});
+
+inputData = if (inputFormat == "CSV")
+(
+   MetadataEnhance::inputData(input, metadataMem, inputDelimiter)
+)
+else
+(
+   read(jsonLines(input))
+);
 
 // --------------------------------------------------------------------------------
 // Enhance the metadata by filling any "null" attributeKind fields using a heuristic

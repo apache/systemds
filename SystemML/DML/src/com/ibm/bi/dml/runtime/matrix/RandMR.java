@@ -14,6 +14,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -63,7 +64,7 @@ public class RandMR
 			String instructionsInMapper, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix)
 	throws Exception
 	{
-		return runJob(instructionsInMapper.split(","), blockRowSize, blockColSize, "", "", "", 0, replication, 
+		return runJob(instructionsInMapper.split(Lops.INSTRUCTION_DELIMITOR), blockRowSize, blockColSize, "", "", "", 0, replication, 
 				resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix, outputs, outputInfos);
 	}
 	
@@ -99,7 +100,7 @@ public class RandMR
 		int numblocks=0;
 		for(int i = 0; i < randInstructions.length; i++)
 		{
-			randInsStr=randInsStr+","+randInstructions[i];
+			randInsStr=randInsStr+Lops.INSTRUCTION_DELIMITOR+randInstructions[i];
 			RandInstruction ins=(RandInstruction)RandInstruction.parseInstruction(randInstructions[i]);
 			inputs[i]=ins.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
 			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));

@@ -333,7 +333,7 @@ public class RunMRJobs {
 			
 			if (inst.getJobType() == JobType.RAND) {
 
-				String[] randJobs = inst.getIv_randInstructions().split(",");
+				String[] randJobs = inst.getIv_randInstructions().split( Lops.INSTRUCTION_DELIMITOR );
 				ret = RandMR.runJob(randJobs, inst.getIv_num_rows_per_block(), inst.getIv_num_cols_per_block(),
 						updateLabels(inst.getIv_instructionsInMapper(), inst.getInputLabelValueMapping()), inst
 								.getIv_aggInstructions(), updateLabels(inst.getIv_otherInstructions(), inst

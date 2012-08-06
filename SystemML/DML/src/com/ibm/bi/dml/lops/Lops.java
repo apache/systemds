@@ -37,7 +37,8 @@ public abstract class Lops {
 	public static final String FILE_SEPARATOR = "/";
 	public static final String PROCESS_PREFIX = "_p";
 	
-	public static final String INSTRUCTION_DELIMITOR = ",";
+	//TODO MB: change delimiters to specific chars or check literals in script; otherwise potential conflicts on instruction serialization
+	public static final String INSTRUCTION_DELIMITOR = "\u002c"; //",";
 	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
 	public static final String DATATYPE_PREFIX = "\u00b7" ; //":#:";

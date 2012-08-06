@@ -151,7 +151,9 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		int colCut=UtilFunctions.cellInBlockCalculation(indexRange.colStart, blockColFactor);
 		
 		int rowsInLastBlock=(int)((indexRange.rowEnd-indexRange.rowStart+1)%blockRowFactor);
+		if(rowsInLastBlock==0) rowsInLastBlock=blockRowFactor;
 		int colsInLastBlock=(int)((indexRange.colEnd-indexRange.colStart+1)%blockColFactor);
+		if(colsInLastBlock==0) colsInLastBlock=blockColFactor;
 		
 		long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-indexRange.rowStart+1, blockRowFactor);
 		long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-indexRange.rowStart+1, blockRowFactor);

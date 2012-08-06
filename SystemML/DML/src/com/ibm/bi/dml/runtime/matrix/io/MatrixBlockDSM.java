@@ -1800,6 +1800,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			bottomright=(MatrixBlockDSM) p.next().getValue();
 			bottomright.reset(boundaryRlen, boundaryClen, 
 					checkSparcityOnSlide((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
+			//System.out.println("bottomright size: "+bottomright.rlen+" X "+bottomright.clen);
 		}
 		
 		if(sparse)

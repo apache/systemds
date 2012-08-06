@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -36,9 +35,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 
 {
-	private static String SET_BASE_DIR = "setBaseDir"; 
-	private String _baseDir = null;
-	
 	/**
 	 * Constructor that also provides otherParams that are needed for external
 	 * functions. Remaining parameters will just be passed to constructor for
@@ -53,21 +49,14 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 			HashMap<String, String> otherParams,
 			String baseDir) throws DMLRuntimeException {
 
-		super(prog, inputParams, outputParams); //w/o instruction generation
+		super(prog, inputParams, outputParams, baseDir); //w/o instruction generation
 		
 		// copy other params 
 		_otherParams = new HashMap<String, String>();
 		_otherParams.putAll(otherParams);
 
-		_baseDir = baseDir;
-		
 		// generate instructions (overwritten)
 		createInstructions();
-	}
-
-	public String getBaseDir()
-	{
-		return _baseDir;
 	}
 
 	/**
@@ -110,12 +99,6 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		{
 			Class<Instruction> cla = (Class<Instruction>) Class.forName(className);
 			o = cla.newInstance();
-			
-			//set the base directory
-			Method m = cla.getMethod(SET_BASE_DIR, String.class);
-			if( m == null )
-				throw new DMLRuntimeException("External functions of type CP must contain a method setBaseDir(string)");
-			m.invoke(o, _baseDir);
 		} 
 		catch (Exception e) 
 		{
@@ -131,7 +114,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		// and their mappings.
 		setupInputs(func, inst.getInputParams(), this.getVariables());
 		func.setConfiguration(configFile);
-
+		func.setBaseDir(_baseDir);
+		
 		//executes function
 		func.execute();
 		

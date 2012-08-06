@@ -5,61 +5,32 @@ import java.util.ArrayList;
 
 import org.nimble.control.DAGQueue;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * Abstract class that should be extended to implement a package function.
  * 
  * 
- * 
  */
-public abstract class PackageFunction implements Serializable {
-
+public abstract class PackageFunction implements Serializable 
+{
 	private static final long serialVersionUID = 3274150928865462856L;
-
-	private static String filePrefix = null;
 	
-	static
-	{
-		try
-		{
-			StringBuffer sb = new StringBuffer();
-			DMLConfig conf = ConfigurationManager.getConfig();
-			sb.append(conf.getTextValue(DMLConfig.SCRATCH_SPACE));
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append(Lops.PROCESS_PREFIX);
-			sb.append(DMLScript.getUUID());
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append("PackageSupport");
-			sb.append(Lops.FILE_SEPARATOR);
-			
-			filePrefix = sb.toString();
-		}
-		catch(Exception ex)
-		{
-			System.out.println("Warning: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig - using ./");
-			filePrefix = "PackageSupport/";
-		}
-	}
+	private ArrayList<FIO> _function_inputs; // function inputs
+	private String _configurationFile; // configuration file parameter that is provided during declaration
+	private DAGQueue _dQueue; // DAG queue that can be used to spawn other tasks.
 	
-	// function inputs
-	ArrayList<FIO> function_inputs;
-
-	// configuration file parameter that is provided during declaration
-	String configurationFile;
-
-	// DAG queue that can be used to spawn other tasks.
-	DAGQueue dQueue;
-
+	private String _baseDir; // base dir for all created files of that external function
+	private IDSequence _seq = null;
+	
 	/**
 	 * Constructor
 	 */
 
-	public PackageFunction() {
-		function_inputs = new ArrayList<FIO>();
+	public PackageFunction() 
+	{
+		_function_inputs = new ArrayList<FIO>();
+		_seq = new IDSequence();
 	}
 
 	/**
@@ -68,10 +39,10 @@ public abstract class PackageFunction implements Serializable {
 	 * @return
 	 */
 	public final int getNumFunctionInputs() {
-		if (function_inputs == null)
+		if (_function_inputs == null)
 			throw new PackageRuntimeException("function inputs null");
 
-		return (function_inputs.size());
+		return (_function_inputs.size());
 	}
 
 	/**
@@ -81,11 +52,11 @@ public abstract class PackageFunction implements Serializable {
 	 * @return
 	 */
 	public final FIO getFunctionInput(int pos) {
-		if (function_inputs == null || function_inputs.size() <= pos)
+		if (_function_inputs == null || _function_inputs.size() <= pos)
 			throw new PackageRuntimeException(
 					"function inputs null or size <= pos");
 
-		return (function_inputs.get(pos));
+		return (_function_inputs.get(pos));
 	}
 
 	/**
@@ -113,15 +84,15 @@ public abstract class PackageFunction implements Serializable {
 	 */
 
 	public final void setNumFunctionInputs(int numInputs) {
-		if (function_inputs == null)
+		if (_function_inputs == null)
 			throw new PackageRuntimeException("function inputs null");
 
-		if (function_inputs.size() > numInputs)
+		if (_function_inputs.size() > numInputs)
 			throw new PackageRuntimeException(
 					"function inputs size > numInputs -- cannot reduce size");
 
-		while (function_inputs.size() < numInputs)
-			function_inputs.add(null);
+		while (_function_inputs.size() < numInputs)
+			_function_inputs.add(null);
 
 	}
 
@@ -133,11 +104,11 @@ public abstract class PackageFunction implements Serializable {
 	 */
 
 	public final void setInput(FIO input, int pos) {
-		if (function_inputs == null || function_inputs.size() <= pos)
+		if (_function_inputs == null || _function_inputs.size() <= pos)
 			throw new PackageRuntimeException(
 					"function inputs null or size <= pos");
 
-		function_inputs.set(pos, input);
+		_function_inputs.set(pos, input);
 
 	}
 
@@ -148,7 +119,7 @@ public abstract class PackageFunction implements Serializable {
 	 */
 
 	public final void setConfiguration(String fName) {
-		configurationFile = fName;
+		_configurationFile = fName;
 	}
 
 	/**
@@ -158,7 +129,7 @@ public abstract class PackageFunction implements Serializable {
 	 */
 
 	public final String getConfiguration() {
-		return configurationFile;
+		return _configurationFile;
 	}
 
 	/**
@@ -167,7 +138,7 @@ public abstract class PackageFunction implements Serializable {
 	 * @return
 	 */
 	public final DAGQueue getDAGQueue() {
-		return dQueue;
+		return _dQueue;
 	}
 
 	/**
@@ -177,13 +148,32 @@ public abstract class PackageFunction implements Serializable {
 	 */
 
 	public final void setDAGQueue(DAGQueue q) {
-		dQueue = q;
+		_dQueue = q;
 	}
 	
-	public String getPackageSupportFilePrefix() 
+	/**
+	 * 
+	 * @param dir
+	 */
+	public void setBaseDir(String dir)
 	{
-		return filePrefix;
+		_baseDir = dir;
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public String getBaseDir()
+	{
+		return _baseDir;
+	}
+	
+	public String createOutputFilePathAndName( String fname )
+	{
+		return _baseDir + fname + _seq.getNextID();
+	}
+	
 
 	/**
 	 * Method that will be executed to perform this function.

@@ -28,7 +28,7 @@ public class kMeansWrapper extends PackageFunction {
 	//to be used when aggregating rows.
 	final long BLOCK_SIZE = 10000000;
 	private static final long serialVersionUID = 6799705939733343000L;
-	final String OUTPUT_FILE = getPackageSupportFilePrefix()+"kMeansWrapperOutput";
+	final String OUTPUT_FILE = "kMeansWrapperOutput";
 	
 	Matrix outkcenters; 
 
@@ -82,7 +82,8 @@ public class kMeansWrapper extends PackageFunction {
 			kmeans = (SparseKMeansTask) this.getDAGQueue().waitOnTask(kmeans);
 			
 			//write out centers
-			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(OUTPUT_FILE, true);
+			String fname = createOutputFilePathAndName( OUTPUT_FILE );
+			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(fname, true);
 			for(Integer row: kmeans.prevkCenters.getRows())
 			{
 				int [] col_indices = kmeans.prevkCenters.getColumnIndices(row);
@@ -95,7 +96,7 @@ public class kMeansWrapper extends PackageFunction {
 			
 			ostream.close();
 			//setup output to be returned
-			outkcenters = new Matrix(OUTPUT_FILE, Integer.parseInt(k.getValue()) , m.getNumCols(), ValueType.Double);
+			outkcenters = new Matrix(fname, Integer.parseInt(k.getValue()) , m.getNumCols(), ValueType.Double);
 			
 
 		}

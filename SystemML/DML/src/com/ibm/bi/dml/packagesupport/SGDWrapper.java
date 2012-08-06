@@ -13,7 +13,7 @@ import com.ibm.bi.dml.sgd.TestDist;
 /**
  * Wrapper function for the stochastic gradient descent matrix factorization algorithm. 
  * 
- *
+ * TODO ensure unique filenames, requires Nimble changes
  */
 public class SGDWrapper extends PackageFunction {
 
@@ -86,7 +86,7 @@ public class SGDWrapper extends PackageFunction {
 		//convert output to matrices
 		
 		d = new FixedWidthDataset();
-		d.setFilePath(/*getPackageSupportFilePrefix()+*/"w.txt");
+		d.setFilePath("w.txt");
 		d.setNumFields(1);
 		d.setFieldType(0, "java.lang.String");
 		FixedWidthDataset wDataset;
@@ -105,7 +105,7 @@ public class SGDWrapper extends PackageFunction {
 		}
 		
 		d = new FixedWidthDataset();
-		d.setFilePath(/*getPackageSupportFilePrefix()+*/"h.txt");
+		d.setFilePath("h.txt");
 		d.setNumFields(1);
 		d.setFieldType(0, "java.lang.String");
 		FixedWidthDataset hDataset;

@@ -15,16 +15,15 @@ import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
  */
 public class EigenWrapper extends PackageFunction {
 
- 
 	private static final long serialVersionUID = 87925877955636432L;
 	
-	String e_values_file = getPackageSupportFilePrefix()+"EigenValuesFile";
-	String e_vectors_file = getPackageSupportFilePrefix()+"EigenVectorsFile";
+	private String e_values_file = "EigenValuesFile";
+	private String e_vectors_file = "EigenVectorsFile";
 	
 	//eigen values matrix
-	Matrix return_e_values;
+	private Matrix return_e_values;
 	//eigen vectors matrix
-	Matrix return_e_vectors; 
+	private Matrix return_e_vectors; 
 
 	@Override
 	public int getNumFunctionOutputs() {
@@ -65,9 +64,11 @@ public class EigenWrapper extends PackageFunction {
 			//compute eigen values and vectors
 			org.netlib.lapack.DSYEVR.DSYEVR("V", "A", "U", arr.length, arr, -1, -1, -1, -1, 0.0, numValues, e_values, e_vectors, i_suppz, work, 26*arr.length, iwork, 10*arr.length, info);
 	 		
+			String fnameValues = createOutputFilePathAndName( e_values_file );
+			String fnameVectors = createOutputFilePathAndName( e_vectors_file );
 
 			//write out eigen values and eigen vectors
-			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(e_values_file, true);
+			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(fnameValues, true);
 			
 			for(int i=0; i < e_values.length; i++)
 			{
@@ -77,7 +78,7 @@ public class EigenWrapper extends PackageFunction {
 		
 			ostream.close();
 			
-			ostream = HDFSFileManager.getOutputStreamStatic(e_vectors_file, true);
+			ostream = HDFSFileManager.getOutputStreamStatic(fnameVectors, true);
 			for(int i=0; i < e_vectors.length; i++)
 			{
 				for(int j=0; j < e_vectors[i].length; j++)
@@ -89,8 +90,8 @@ public class EigenWrapper extends PackageFunction {
 		
 			ostream.close();
 			
-			return_e_values = new Matrix(e_values_file, e_values.length, e_values.length, ValueType.Double);
-			return_e_vectors = new Matrix(e_vectors_file, e_vectors.length, e_vectors.length, ValueType.Double);
+			return_e_values = new Matrix(fnameValues, e_values.length, e_values.length, ValueType.Double);
+			return_e_vectors = new Matrix(fnameVectors, e_vectors.length, e_vectors.length, ValueType.Double);
 		}
 		catch(Exception e)
 		{

@@ -51,8 +51,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
-
+	
 	protected static IDSequence _idSeq;
+	protected String _baseDir = null;
 
 	public static final String CLASSNAME = "classname";
 	public static final String EXECLOCATION = "execlocation";
@@ -88,18 +89,22 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 	protected ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
-			Vector<DataIdentifier> outputParams) throws DMLRuntimeException
+			Vector<DataIdentifier> outputParams,
+			String baseDir) throws DMLRuntimeException
 	{
-		super(prog, inputParams, outputParams);
+		super(prog, inputParams, outputParams);		
+		_baseDir = baseDir;
 	}
 	
 	public ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
 			Vector<DataIdentifier> outputParams,
-			HashMap<String, String> otherParams) throws DMLRuntimeException {
+			HashMap<String, String> otherParams,
+			String baseDir) throws DMLRuntimeException {
 
 		super(prog, inputParams, outputParams);
-
+		_baseDir = baseDir;
+		
 		// copy other params
 		_otherParams = new HashMap<String, String>();
 		_otherParams.putAll(otherParams);
@@ -129,12 +134,21 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		ArrayList<DataIdentifier> outputParams = getOutputParams();
 		cell2BlockInst = getCell2BlockInstructions(outputParams, _blockedFileNames);
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getBaseDir()
+	{
+		return _baseDir;
+	}
+	
 	/**
 	 * Method to be invoked to execute instructions for the external function
 	 * invocation
 	 * @throws DMLRuntimeException 
 	 */
-
 	public void execute(ExecutionContext ec) throws DMLRuntimeException {
 	
 		_runID = _idSeq.getNextID();
@@ -349,7 +363,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				resultDimsUnknown[i] = 1;
 	
 				if (i > 0)
-					reblock += ",";
+					reblock += Lops.INSTRUCTION_DELIMITOR;
 	
 				reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + i
 						+ ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType()
@@ -551,6 +565,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// and their mappings.
 		setupInputs(func, inst.getInputParams(), this.getVariables());
 		func.setConfiguration(configFile);
+		func.setBaseDir(_baseDir);
 
 		AbstractTask t = null;
 

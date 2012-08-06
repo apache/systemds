@@ -39,9 +39,9 @@ public class SequenceMinerWrapper extends PackageFunction {
 	final int numPhysicalFiles = 10;
 	final long in_memory_scratch_size = 1000000;
 	final long max_projection_size = 10000000;
-	final String NIMBLEoutFile = getPackageSupportFilePrefix()+"seq_scratch/SequenceMinerWrapperOutput";
-	public String freq_seq_file = getPackageSupportFilePrefix()+"seq_scratch/FreqSeqFile";
-	public String seq_support_file = getPackageSupportFilePrefix()+"seq_scratch/FreqSeqSupportFile";
+	final String NIMBLEoutFile = "SequenceMinerWrapperOutput";
+	public String freq_seq_file = "FreqSeqFile";
+	public String seq_support_file = "FreqSeqSupportFile";
 	int max_patterns = Integer.MAX_VALUE;
 	
 
@@ -100,9 +100,12 @@ public class SequenceMinerWrapper extends PackageFunction {
 				max_patterns = (int) Double.parseDouble(((Scalar) this.getFunctionInput(3)).getValue());
 			}
 			
+			String fnameNimble = createOutputFilePathAndName(NIMBLEoutFile);
+			String fnameFreq = createOutputFilePathAndName(freq_seq_file);
+			String fnameSeq = createOutputFilePathAndName(seq_support_file);
 			
 			//invoke sequence mining
-			SequenceMinerTask seqMiner = new SequenceMinerTask(min_sup, data_block_size, sequence_block_size, in_memory_scratch_size,  max_projection_size,  max_sequence_size,  NIMBLEoutFile, max_patterns);
+			SequenceMinerTask seqMiner = new SequenceMinerTask(min_sup, data_block_size, sequence_block_size, in_memory_scratch_size,  max_projection_size,  max_sequence_size,  fnameNimble, max_patterns);
 			seqMiner.setNumInputDatasets(1);
 			seqMiner.addInputDataset(seqMiningDataset, 0);
 			this.getDAGQueue().pushTask(seqMiner);
@@ -110,8 +113,8 @@ public class SequenceMinerWrapper extends PackageFunction {
 			
 			//write out output matrices
 			
-			String [] files1 = new HDFSFileManager().getFileNamesWithPrefix(NIMBLEoutFile + "/part");
-			String [] files2 = new HDFSFileManager().getFileNamesWithPrefix(NIMBLEoutFile + "/inmemory");
+			String [] files1 = new HDFSFileManager().getFileNamesWithPrefix(fnameNimble + "/part");
+			String [] files2 = new HDFSFileManager().getFileNamesWithPrefix(fnameNimble + "/inmemory");
 			
 
 			ArrayList <String> files = new ArrayList<String>();
@@ -129,8 +132,8 @@ public class SequenceMinerWrapper extends PackageFunction {
 		    
 			
 			//output sequences
-			DataOutputStream ostream1 = HDFSFileManager.getOutputStreamStatic(freq_seq_file, true);
-			DataOutputStream ostream2 = HDFSFileManager.getOutputStreamStatic(seq_support_file, true);
+			DataOutputStream ostream1 = HDFSFileManager.getOutputStreamStatic(fnameFreq, true);
+			DataOutputStream ostream2 = HDFSFileManager.getOutputStreamStatic(fnameSeq, true);
 			
 		
 			boolean empty_file = true;
@@ -163,13 +166,13 @@ public class SequenceMinerWrapper extends PackageFunction {
 			
 			if(empty_file)
 			{
-				freq_sequences = new Matrix(freq_seq_file, 1 , 1, ValueType.Double);
-				seq_support = new Matrix(seq_support_file, 1, 1, ValueType.Double);
+				freq_sequences = new Matrix(fnameFreq, 1 , 1, ValueType.Double);
+				seq_support = new Matrix(fnameSeq, 1, 1, ValueType.Double);
 			}
 			else
 			{
-				freq_sequences = new Matrix(freq_seq_file, seq_id-1 , max_col.getLong(), ValueType.Double);
-				seq_support = new Matrix(seq_support_file, seq_id-1, 2, ValueType.Double);
+				freq_sequences = new Matrix(fnameFreq, seq_id-1 , max_col.getLong(), ValueType.Double);
+				seq_support = new Matrix(fnameSeq, seq_id-1, 2, ValueType.Double);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

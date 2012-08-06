@@ -371,34 +371,46 @@ public class DMLProgram {
                 				  .getOtherParams().get("execlocation");
 				boolean isCP = (execLoc!=null && execLoc.equals("CP")) ? true : false;
 				
+				String scratchSpaceLoc = null;
+				try {
+					scratchSpaceLoc = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+				} catch (Exception e){
+					System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+				}				
+				StringBuffer buff = new StringBuffer();
+				buff.append(scratchSpaceLoc);
+				buff.append(Lops.FILE_SEPARATOR);
+				buff.append(Lops.PROCESS_PREFIX);
+				buff.append(DMLScript.getUUID());
+				buff.append(Lops.FILE_SEPARATOR);
+				buff.append(ProgramConverter.CP_ROOT_THREAD_ID);
+				buff.append(Lops.FILE_SEPARATOR);
+				buff.append("PackageSupport");
+				buff.append(Lops.FILE_SEPARATOR);
+				String basedir =  buff.toString();
+				
 				if( isCP )
 				{
-					String scratchSpaceLoc = null;
-					try {
-						scratchSpaceLoc = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-					} catch (Exception e){
-						System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-					}
 					
 					rtpb = new ExternalFunctionProgramBlockCP(prog, 
-							fstmt.getInputParams(), fstmt.getOutputParams(), 
-							((ExternalFunctionStatement) fstmt).getOtherParams(),
-							scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-		   					                  Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR );					
+									fstmt.getInputParams(), fstmt.getOutputParams(), 
+									((ExternalFunctionStatement) fstmt).getOtherParams(),
+									basedir );					
 				}
 				else
 				{
 					rtpb = new ExternalFunctionProgramBlock(prog, 
 									fstmt.getInputParams(), fstmt.getOutputParams(), 
-									((ExternalFunctionStatement) fstmt).getOtherParams());
+									((ExternalFunctionStatement) fstmt).getOtherParams(),
+									basedir);
 				}
+				
 				if (fstmt.getBody().size() > 0){
 					throw new LopsException("ExternalFunctionStatementBlock should have no statement blocks in body");
 				}
 			}
 			else 
 			{
-		
 				// create function program block
 				rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());
 				

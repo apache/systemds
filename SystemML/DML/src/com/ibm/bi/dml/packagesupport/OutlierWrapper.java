@@ -29,8 +29,8 @@ public class OutlierWrapper extends PackageFunction {
 	//to be used when aggregating rows.
 	final long BLOCK_SIZE = 10000000;
 	private static final long serialVersionUID = 6799705939733343000L;
-	final String OUTPUT_FILE = getPackageSupportFilePrefix()+"outlierWrapperOutput";
-	final String TASK_OUTPUT = getPackageSupportFilePrefix()+"outliertaskOutput";
+	final String OUTPUT_FILE = "outlierWrapperOutput";
+	final String TASK_OUTPUT = "outliertaskOutput";
 	
 	Matrix return_outliers; 
 
@@ -51,8 +51,6 @@ public class OutlierWrapper extends PackageFunction {
 			//preprocess matrix to convert to fixed width dataset
 			Matrix o = (Matrix) this.getFunctionInput(0);
 			
-			 
-			
 			MatrixtoFixedWidth dataConv = new MatrixtoFixedWidth(o.getNumRows(), o.getNumCols(), BLOCK_SIZE, BLOCK_SIZE);
 			FixedWidthDataset d = new FixedWidthDataset();
 			d.setFilePath(o.getFilePath());
@@ -64,6 +62,10 @@ public class OutlierWrapper extends PackageFunction {
 			dataConv = (MatrixtoFixedWidth) this.getDAGQueue().waitOnTask(dataConv);
 			FixedWidthDataset outlierDataset = dataConv.getProcessedDataset();
 			
+			String fnameOutput = createOutputFilePathAndName( OUTPUT_FILE );
+			String fnameTask = createOutputFilePathAndName( TASK_OUTPUT );
+			
+			
 			//execute outlier detection on converted dataset
 			//top m outliers
 			Scalar m = (Scalar) this.getFunctionInput(1);
@@ -73,14 +75,14 @@ public class OutlierWrapper extends PackageFunction {
 			
 			outlierTask = new OutlierTask();
 			outlierTask.setWithoutConfig(true);
-			outlierTask.setBinnerOutputInfo(getPackageSupportFilePrefix()+"binnerOutput");
+			outlierTask.setBinnerOutputInfo(createOutputFilePathAndName("binnerOutput"));
 			outlierTask.setEntries_per_file(50000);
 			outlierTask.setK(Integer.parseInt(k.getValue()));
 			outlierTask.setM(Integer.parseInt(m.getValue()));
 			outlierTask.setMaxBinSize(2000);
 			outlierTask.setNumCenters(3);
 			outlierTask.setPruneInMemory(false);
-			outlierTask.setResultFile(TASK_OUTPUT);
+			outlierTask.setResultFile(fnameTask);
 			outlierTask.setRunBinner(true);
 			outlierTask.setRunProcessor(true);
 			outlierTask.setTriHeuristic(false);
@@ -96,12 +98,12 @@ public class OutlierWrapper extends PackageFunction {
 			
 			DataInputStream inStream = 
 					this.getDAGQueue().getRuntimeDriver().getFileManager().getInputStream
-					(TASK_OUTPUT);
+					( fnameTask );
 			
 			double [][] outliers = MatrixUtils.readMatrixAsIVJText(inStream, Integer.parseInt(m.getValue()), (int)o.getNumCols(), ",");
 			
 			//write out centers
-			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(OUTPUT_FILE, true);
+			DataOutputStream ostream = HDFSFileManager.getOutputStreamStatic(fnameOutput, true);
 			for(int i=0; i < outliers.length; i++)
 			{
 				for(int j=0; j < outliers[i].length; j++)
@@ -113,7 +115,7 @@ public class OutlierWrapper extends PackageFunction {
 			ostream.close();
 
 			//setup output to be returned
-			return_outliers = new Matrix(OUTPUT_FILE, outliers.length , o.getNumCols(), ValueType.Double);
+			return_outliers = new Matrix(fnameOutput, outliers.length , o.getNumCols(), ValueType.Double);
 			
 
 		}

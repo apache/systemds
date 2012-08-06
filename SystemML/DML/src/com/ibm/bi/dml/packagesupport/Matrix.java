@@ -182,11 +182,11 @@ public class Matrix extends FIO {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void setMatrixDoubleArray(double[][] data, OutputInfo oinfo, InputInfo iinfo) 
+	public void setMatrixDoubleArray(double[][] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
 		throws IOException 
 	{
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
-		setMatrixDoubleArray(mb, oinfo, iinfo);
+		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 	}
 	
 	/**

@@ -31,7 +31,7 @@ public class ResultMerge
 	
 	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in )
 	{
-		//System.out.println( "ResultMerge for output file "+out.getFileName() );
+		//System.out.println( "ResultMerge for output file "+out.getFileName()+", "+out.hashCode() );
 		
 		_output = out;
 		_inputs = in;

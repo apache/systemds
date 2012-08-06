@@ -50,10 +50,7 @@ public class CostFunction
 				double v2 = Math.pow(in, i);
 				if( i>1 && Math.abs(Math.sqrt( v2 ) - v1) > 1.0 ) //issue if larger than 1ms or 1byte
 				{
-					System.out.println(" NUMERICAL STABILITY ISSUE ");
-					System.out.println(v1);
-					System.out.println(v2);
-					//throw new RuntimeException("Numerical Stability no given."); 
+					System.out.println(" NUMERICAL STABILITY ISSUE " + v1 + " vs " + v2 );
 					continue;
 				}
 				//end test

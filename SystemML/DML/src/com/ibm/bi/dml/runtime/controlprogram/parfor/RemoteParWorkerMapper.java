@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -29,12 +30,20 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not required (no op implementations of configure, close)
 	implements Mapper<LongWritable, Text, Writable, Writable>
 {
-	//self reference for future reuse (in case of JVM reuse)
-	private static RemoteParWorkerMapper _sCache = null; 
+	//cache for future reuse (in case of JVM reuse)
+	//NOTE: Hashmap to support multiple parfor MR jobs for local mode and if JVM reuse across jobs
+	private static HashMap<String,RemoteParWorkerMapper> _sCache = null; 
 	
 	//MR ParWorker attributes  
-	protected String            _stringID       = null; 
-	protected boolean           _binaryTasks    = false;
+	protected String  _stringID       = null; 
+	protected boolean _binaryTasks    = false;
+
+	
+	static
+	{
+		//init cache (once per JVM)
+		_sCache = new HashMap<String, RemoteParWorkerMapper>();
+	}
 	
 	
 	public RemoteParWorkerMapper( ) 
@@ -75,6 +84,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				//export output variable to HDFS (see RunMRJobs)
 				if ( dat.getDataType() == DataType.MATRIX ) {
 					MatrixObjectNew inputObj = (MatrixObjectNew) dat;
+					//System.out.println("exporting "+inputObj.getFileName());
 					inputObj.exportData(); //TODO maybe once in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
 				}
 				
@@ -101,24 +111,28 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	public void configure(JobConf job)
 	{
 		boolean requiresConfigure = true;
+		String jobID = job.get("mapred.job.id");
 		
+		//probe cache for existing worker (parfor body, symbol table, etc)
 		if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
 		{
-			synchronized( ParForProgramBlock.class )
+			synchronized( _sCache )
 			{
-				if( _sCache != null )
+				if( _sCache.containsKey(jobID) )
 				{
-					_stringID       = _sCache._stringID;
-					_workerID       = _sCache._workerID;
-					_binaryTasks    = _sCache._binaryTasks;
+					RemoteParWorkerMapper tmp = _sCache.get(jobID);
 					
-					_childBlocks    = _sCache._childBlocks;
-					_variables      = _sCache._variables;
-					_resultVars     = _sCache._resultVars;
-					_ec             = _sCache._ec;
+					_stringID       = tmp._stringID;
+					_workerID       = tmp._workerID;
+					_binaryTasks    = tmp._binaryTasks;
 					
-					_numIters       = _sCache._numIters;
-					_numTasks       = _sCache._numTasks;
+					_childBlocks    = tmp._childBlocks;
+					_variables      = tmp._variables;
+					_resultVars     = tmp._resultVars;
+					_ec             = tmp._ec;
+					
+					_numIters       = tmp._numIters;
+					_numTasks       = tmp._numTasks;
 										
 					requiresConfigure = false;
 				}
@@ -137,9 +151,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
 				//init local cache manager
-				CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
-				CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
-				
+				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
+				{
+					CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+					CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
+				}
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
@@ -164,8 +180,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			//disable stat monitoring, reporting execution times via counters not useful 
 			StatisticMonitor.disableStatMonitoring();
 			
+			//put into cache if required
 			if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
-				_sCache = this;
+				_sCache.put(jobID, this);
 		} 
 		else
 		{

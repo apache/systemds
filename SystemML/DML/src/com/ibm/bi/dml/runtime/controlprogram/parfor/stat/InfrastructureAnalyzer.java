@@ -221,7 +221,7 @@ public class InfrastructureAnalyzer
 				_remoteParMap = stat.getMaxMapTasks(); 
 				_remoteParReduce = stat.getMaxReduceTasks(); 
 				_remoteJVMMaxMem = (1024*1024) * job.getLong("mapred.child.java.opts",1024); //1GB
-				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",256); //1GB
+				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
 			}		
 		} 
 		catch (IOException e) 

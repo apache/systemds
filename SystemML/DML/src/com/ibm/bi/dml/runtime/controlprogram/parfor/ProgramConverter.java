@@ -52,24 +52,25 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  *   * creating deep copies of program blocks, instructions, function program blocks
  *   * serializing and parsing of programs, program blocks, functions program blocks
  * 
- * TODO: CV, EL, ELUse program blocks not considered so far
+ * TODO: CV, EL, ELUse program blocks not considered so far (not for BI 2.0 release)
  *
  */
 public class ProgramConverter 
 {
-	//TODO change delimiters to escaped specific characters
+	//use escaped unicodes for separators in order to prevent string conflict
 	public static final String NEWLINE           = "\n"; //System.lineSeparator();
-	public static final String COMPONENTS_DELIM  = ";";
-	public static final String ELEMENT_DELIM     = ",";
-	public static final String DATA_FIELD_DELIM  = "|";
+	public static final String COMPONENTS_DELIM  = "\u003b"; //";";
+	public static final String ELEMENT_DELIM     = "\u002c"; //",";
+	public static final String DATA_FIELD_DELIM  = "\u007c"; //"|";
+	public static final String KEY_VALUE_DELIM   = "\u003d"; //"=";
+	public static final String LEVELIN           = "\u007b"; //"{";
+	public static final String LEVELOUT          = "\u007d"; //"}";	
 	public static final String EMPTY             = "null";
-	public static final String LEVELIN           = "{";
-	public static final String LEVELOUT          = "}";	
 	public static final String EXT_FUNCTION      = "extfunct";
 	
 	//public static final String CP_ROOT_THREAD_SEPARATOR = "/";//File.separator;
-	public static final String CP_ROOT_THREAD_ID        = "_t0";       
-	public static final String CP_CHILD_THREAD          = "_t";
+	public static final String CP_ROOT_THREAD_ID = "_t0";       
+	public static final String CP_CHILD_THREAD   = "_t";
 		
 	public static final String PARFOR_PROG_BEGIN = " PROG" + LEVELIN;
 	public static final String PARFOR_PROG_END   = LEVELOUT;	
@@ -344,8 +345,7 @@ public class ProgramConverter
 		if( fpb instanceof ExternalFunctionProgramBlockCP )
 		{
 			ExternalFunctionProgramBlockCP efpb = (ExternalFunctionProgramBlockCP) fpb;
-			HashMap<String,String> tmp3 = efpb.getOtherParams();
-			
+			HashMap<String,String> tmp3 = efpb.getOtherParams();		
 			if( IDPrefix!=-1 )
 				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
 			else	
@@ -355,7 +355,10 @@ public class ProgramConverter
 		{
 			ExternalFunctionProgramBlock efpb = (ExternalFunctionProgramBlock) fpb;
 			HashMap<String,String> tmp3 = efpb.getOtherParams();
-			copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3);
+			if( IDPrefix!=-1 )
+				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
+			else	
+				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
 		}
 		else
 		{
@@ -713,7 +716,7 @@ public class ProgramConverter
 			if(count>0)
 				sb.append( ELEMENT_DELIM );
 			sb.append( e.getKey() );
-			sb.append("=");
+			sb.append( KEY_VALUE_DELIM );
 			sb.append( e.getValue() );
 			count++;
 		}
@@ -821,7 +824,7 @@ public class ProgramConverter
 			   sb.append( NEWLINE );
 			}
 			sb.append( pb.getKey() );
-			sb.append("=");
+			sb.append( KEY_VALUE_DELIM );
 			sb.append( rSerializeProgramBlock( pb.getValue() ) );
 			
 			count++;
@@ -1156,7 +1159,7 @@ public class ProgramConverter
 			String lvar  = st.nextToken(); //with ID = CP_CHILD_THREAD+id for current use
 			
 			//put first copy into prog (for direct use)
-			int index = lvar.indexOf("=");
+			int index = lvar.indexOf( KEY_VALUE_DELIM );
 			String tmp1 = lvar.substring(0, index); // + CP_CHILD_THREAD+id;
 			String tmp2 = lvar.substring(index + 1);
 			ret.put(tmp1, (FunctionProgramBlock)rParseProgramBlock(tmp2, prog, id));
@@ -1533,7 +1536,7 @@ public class ProgramConverter
 		while( st.hasMoreTokens() )
 		{
 			String lin = st.nextToken();
-			int index = lin.indexOf("=");
+			int index = lin.indexOf( KEY_VALUE_DELIM );
 			String tmp1 = lin.substring(0, index);
 			String tmp2 = lin.substring(index + 1);			
 			vars.put(tmp1, tmp2);
@@ -1676,6 +1679,7 @@ public class ProgramConverter
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
+				mo.setVarName( name );
 				dat = mo;
 				break;
 			}

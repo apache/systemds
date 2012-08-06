@@ -70,6 +70,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames.add( OPT_MODE ); 
 		
 		// populate defaults lookup-table
+		//TODO exec-type specific defaults
 		_paramDefaults = new HashMap<String, String>();
 		_paramDefaults.put( CHECK,            "1" );
 		_paramDefaults.put( PAR,              String.valueOf(InfrastructureAnalyzer.getLocalParallelism()) );
@@ -180,6 +181,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 * - for and parfor increments must be integer values 
 		 * - only static (integer lower, upper bounds) range indexing
 		 * - only input variables considered as potential candidates for checking 
+		 * 
 		 *   (TODO: in order to remove the last restriction, dependencies must be checked again after 
 		 *   live variable analysis against LIVEOUT)
 		 * 
@@ -985,8 +987,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 			else
 			{
-				//TODO: mark for deferred validation and evaluate on execute
-				
+				//TODO: mark for deferred validation and evaluate on execute (see ParForProgramBlock)
 				System.out.println("PARFOR: WARNING - matrix dimensionality unknown, cannot scale linear functions.");				
 			}
 		}

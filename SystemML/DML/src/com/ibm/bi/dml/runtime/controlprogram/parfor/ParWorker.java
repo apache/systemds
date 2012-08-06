@@ -218,36 +218,7 @@ public abstract class ParWorker
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
 		}
 	}
-	
-	
-	/*
-	public void cleanupCachedVariables()
-	{
-		try
-		{
-			for( String var : _variables.keySet() )
-			{
-				Data dat = _variables.get(var);
-				DataType dt = dat.getDataType();
-				
-				if ( dt == DataType.MATRIX )
-				{
-					((MatrixObjectNew)dat).clearData();
-				}
-				else if ( dt == null || dt == DataType.UNKNOWN )
-				{
-					if( dat instanceof MatrixObjectNew )
-						((MatrixObjectNew)dat).clearData();
-				}
-				
-			}
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
-	}*/
-	
+		
 }
 
 	

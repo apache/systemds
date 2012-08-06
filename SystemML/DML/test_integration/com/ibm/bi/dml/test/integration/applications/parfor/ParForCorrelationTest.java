@@ -47,12 +47,11 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
 	}*/
 
-	/*FIXME: decomment as soon as export of empty matrices is fixed.
 	@Test
 	public void testParForCorrleationLocalRemoteCP() 
 	{
 		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP);
-	}*/
+	}
 	
 	@Test
 	public void testParForCorrleationRemoteLocalCP() 

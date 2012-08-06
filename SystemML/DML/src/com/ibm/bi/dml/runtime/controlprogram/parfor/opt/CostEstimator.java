@@ -19,7 +19,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * instructions combination, default values are used. Furthermore, the cost estimator provides
  * basic functionalities for estimation of cardinality and sparsity of intermediate results.
  * 
- * 
+ * TODO: inst names as constants in perftesttool
  * TODO: complexity corrections for sparse matrices
  */
 public class CostEstimator 

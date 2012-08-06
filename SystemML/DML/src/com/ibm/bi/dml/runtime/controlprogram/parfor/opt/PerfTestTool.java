@@ -121,7 +121,7 @@ public class PerfTestTool
 	public static final String  XML_VARIABLE           = "lvariable";
 	public static final String  XML_INTERNAL_VARIABLES = "pvariables";
 	public static final String  XML_DATAFORMAT         = "dataformat";
-	public static final String  XML_ELEMENT_DELIMITER  = ","; 
+	public static final String  XML_ELEMENT_DELIMITER  = "\u002c"; //","; 
 		
 	//ID sequences for instructions and test definitions
 	private static IDSequence _seqInst     = null;

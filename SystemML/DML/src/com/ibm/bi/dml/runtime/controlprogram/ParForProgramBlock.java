@@ -13,6 +13,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -42,7 +43,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -54,19 +54,17 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * TODO awareness of central configuration property
+ * TODO address potential export<->read file access conflict (for specific cases in local-remote nested parfor)
+ * TODO fix jvm reuse (fails for parallel MR jobs in local mode, )
  * 
- * TODO fix read write performance issue + exploration
- * TODO fix parsing overhead issue
+ * TODO awareness of central configuration property
+ * TODO external configurations properties and constraints 
  * 
  * TODO perftesttool: create dir if not existing
  * TODO perftesttool: dml via text in code 
+ * TODO clarify lapack usage in perftest tool
  *  
- * TODO external configurations properties and constraints 
- * TODO testcases application (parfor corr, linreg); incl external functions
- * 
- *
- * NEW FUNCTIONALITIES
+ * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, and *=)
  * TODO: deferred dependency checking during runtime (for unknown matrix dimensionality)
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository => modules OK, but second-order functions required
@@ -77,10 +75,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	// execution modes
 	public enum PExecMode{
 		LOCAL,      //local (master) multi-core execution mode
-		REMOTE_MR,	//remote (MR cluster) execution mode	
-		
-		@Deprecated
-		REMOTE_MR_STREAM //remote (MR cluster) execution mode via MR Streaming	
+		REMOTE_MR	//remote (MR cluster) execution mode	
 	}
 
 	// task partitioner
@@ -343,11 +338,6 @@ public class ParForProgramBlock extends ForProgramBlock
 				case REMOTE_MR: // create parworkers as MR tasks (one job per parfor)
 					executeRemoteParFor(ec, iterVar, from, to, incr);
 					break;
-				
-				case REMOTE_MR_STREAM:
-					throw new DMLRuntimeException("ParFOR: exec mode REMOTE_MR_STREAM not supported yet. Use REMOTE_MR.");
-					//executeRemoteParFor2(ec, iterVar, from, to, incr);
-					//break;
 					
 				default:
 					throw new DMLRuntimeException("Undefined execution mode: '"+_execMode+"'.");
@@ -469,7 +459,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			numExecutedTasks += workers[i].getExecutedTasks();
 			numExecutedIterations += workers[i].getExecutedIterations();			
 		}
-		//concolidate results into global symbol table
+		//consolidate results into global symbol table
 		consolidateAndCheckResults( numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
 				                    localVariables );
 		
@@ -609,23 +599,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		_resultVarsState = null;
-	}
-	
-	/**
-	 * Cleanup result variables of parallel workers after result merge.
-	 * @param in 
-	 * @param out 
-	 * @throws CacheStatusException 
-	 */
-	private void cleanWorkerResultVariables(MatrixObjectNew out, MatrixObjectNew[] in) 
-		throws CacheStatusException
-	{
-		for( MatrixObjectNew tmp : in )
-		{
-			//check for empty inputs (no iterations executed)
-			if( tmp != null && tmp != out )
-				tmp.clearData();
-		}
 	}
 	
 	/**
@@ -895,14 +868,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( int i=0; i< results.length; i++ )
 				in[i] = (MatrixObjectNew) results[i].get( varname ); 
 			
-			//System.out.println("ResultMerge (parfor="+_ID+"): for varname "+varname);
-			
 			//result merge
 			ResultMerge rm = new ResultMerge( out, in );
 			_variables.put( varname, rm.executeParallelMerge( _numThreads ));
-			
-			//cleanup of intermediate result variables
-			cleanWorkerResultVariables( out, in );
 		}
 		
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
@@ -974,7 +942,14 @@ public class ParForProgramBlock extends ForProgramBlock
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 	
-		return scratchSpaceLoc + PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
+		StringBuffer sb = new StringBuffer();
+		sb.append(scratchSpaceLoc);
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
+		
+		return sb.toString();   
 	}
 	
 	/**
@@ -992,6 +967,13 @@ public class ParForProgramBlock extends ForProgramBlock
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 		
-		return scratchSpaceLoc + PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID));   
+		StringBuffer sb = new StringBuffer();
+		sb.append(scratchSpaceLoc);
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
+		
+		return sb.toString();   
 	}
 }

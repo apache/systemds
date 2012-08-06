@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -87,7 +88,8 @@ public class DataConverter {
 				br.close();
 			}
 			else if ( outputinfo == OutputInfo.BinaryCellOutputInfo ) {
-				SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(job), job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
+				FileSystem fs = FileSystem.get(job);// TODO MapReduceTool.getURIAwareFileSystem(dir, job);
+				SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
 				Converter outputConverter = new BinaryBlockToBinaryCellConverter();
 				
 				outputConverter.setBlockSize((int)rlen, (int)clen);
@@ -103,7 +105,8 @@ public class DataConverter {
 				writer.close();
 			}
 			else{
-				SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(job), job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
+				FileSystem fs = FileSystem.get(job);//TODO MapReduceTool.getURIAwareFileSystem(dir, job);
+				SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
 				//reblock
 				MatrixBlock fullBlock = new MatrixBlock(brlen, bclen, false);
 				
@@ -183,7 +186,10 @@ public class DataConverter {
 			
 			ret.examSparsity();
 		} catch (Exception e) {
-			throw new IOException(e);
+			if( e instanceof EOFException )
+				throw (EOFException)e; //in order to allow robust read
+			else
+				throw new IOException(e);
 		}
 		
 		return ret;

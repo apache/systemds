@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -290,7 +291,7 @@ public class MatrixObjectNew extends CacheableData
 				}
 				catch (IOException e)
 				{
-					throw new CacheIOException (fName + " : Reading failed.", e);
+					throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
 				}
 			}
 			acquire( false, true );
@@ -595,7 +596,7 @@ public class MatrixObjectNew extends CacheableData
 				release();
 			}
 		}
-		else if(DMLScript.DEBUG) 
+		else if(DMLScript.DEBUG)  
 		{
 			//CASE 3: data already in hdfs (do nothing, no need for export)
 			System.out.println(this.getDebugName() + ": Skip export to hdfs since data already exists.");
@@ -976,13 +977,27 @@ public class MatrixObjectNew extends CacheableData
 
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
-		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
-				iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+		MatrixBlock newData = null;
+		
+		try
+		{
+			newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
+					      iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+		}
+		catch(EOFException ee) //robustness with regard to checksum errors (different reasons, e.g., occasional parallel write+read)
+		{
+			//wait and one retry
+			System.out.println("Warning: Retrying to read matrix object.");
+			try{Thread.sleep(CacheableData.WAIT_INTERVAL);} catch (InterruptedException e){}
+			newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
+				      iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+		}
+		
 		if( newData == null )
 		{
-			//enable export of empty matrices
-			//newData = new MatrixBlock((int)mc.numRows,(int)mc.numColumns, true);
-			throw new IOException("Unable to load matrix from file "+filePathAndName);
+			//enable export of empty matrices (required for parfor remote)
+			newData = new MatrixBlock((int)mc.numRows,(int)mc.numColumns, true);
+			//throw new IOException("Unable to load matrix from file "+filePathAndName);
 		}
 		
 		newData.clearEnvelope ();

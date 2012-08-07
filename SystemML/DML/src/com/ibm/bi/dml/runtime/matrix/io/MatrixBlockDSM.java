@@ -61,7 +61,6 @@ public class MatrixBlockDSM extends MatrixValue{
 	//NOTE: not required anymore
 	/*public long getObjectSizeInMemory ()
 	{
-		// TODO: Yuanyuan, please help me implement this function. --Sasha
 		long all_size = 32;
 		if (denseBlock != null)
 			all_size += denseBlock.length * 8;
@@ -1173,10 +1172,10 @@ public class MatrixBlockDSM extends MatrixValue{
 				return;
 			
 			int limit=rlen*clen;
-			if(denseBlock==null)
+			if(denseBlock==null || denseBlock.length<limit)
 			{
 				denseBlock=new double[limit];
-				Arrays.fill(denseBlock, 0, limit, 0);
+				//Arrays.fill(denseBlock, 0, limit, 0);
 			}
 			
 			int index=r*clen+c;
@@ -1188,6 +1187,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		
 	}
+	
+	
 	/*
 	 * append value is only used when values are appended at the end of each row for the sparse representation
 	 * This can only be called, when the caller knows the access pattern of the block
@@ -1243,11 +1244,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
 				return 0;
-			Double d=sparseRows[r].get(c);
-			if(d!=null)
-				return d;
-			else
-				return 0;
+			return sparseRows[r].get(c);
 		}else
 		{
 			if(denseBlock==null)
@@ -3618,6 +3615,195 @@ public class MatrixBlockDSM extends MatrixValue{
 		return ret;
 	}
 	
+	
+	/*
+	 * Recalculate nonzeros
+	 */
+	
+	public void recomputeNonZeros()
+	{
+		nonZeros=0;
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				for(int i=0; i<Math.min(rlen, sparseRows.length); i++)
+					if(sparseRows[i]!=null)
+						nonZeros+=sparseRows[i].size();
+			}
+		}else
+		{
+			if(denseBlock!=null)
+			{
+				int limit=rlen*clen;
+				for(int i=0; i<limit; i++)
+					if(denseBlock[i]!=0)
+						nonZeros++;
+			}
+		}
+	}
+	
+	/*
+	 * this should be called only in the read and write functions for CP
+	 * This function should be called before calling any setValueDenseUnsafe()
+	 */
+	public void spaceAllocForDenseUnsafe(int rl, int cl)
+	{
+		sparse=false;
+		rlen=rl;
+		clen=cl;
+		int limit=rlen*clen;
+		if(denseBlock==null || denseBlock.length<limit)
+		{
+			denseBlock=new double[limit];
+		}else
+			Arrays.fill(denseBlock, 0, limit, 0);
+	}
+	
+	
+	/*
+	 * this should be called only in the read and write functions for CP
+	 * This function should be called before calling any setValueSparseUnsafe() or appendValueSparseUnsafe()
+	 */
+	public void spaceAllocForSparseUnsafe(int rl, int cl)
+	{
+		sparse=true;
+		rlen=rl;
+		clen=cl;
+		if(sparseRows!=null)
+		{
+			if(sparseRows.length>=rlen)
+			{
+				for(int i=0; i<rlen; i++)
+				{
+					if(sparseRows[i]==null)
+						sparseRows[i]=new SparseRow();
+					else
+						sparseRows[i].reset();
+				}
+			}else
+			{
+				SparseRow[] temp=sparseRows;
+				sparseRows=new SparseRow[rlen];
+				int i=0;
+				for(; i<temp.length; i++)
+				{
+					if(temp[i]!=null)
+					{
+						sparseRows[i]=temp[i];
+						sparseRows[i].reset();
+					}else
+						sparseRows[i]=new SparseRow();
+				}
+				for(; i<rlen; i++)
+					sparseRows[i]=new SparseRow();
+			}
+			
+		}else
+		{
+			sparseRows=new SparseRow[rlen];
+			for(int i=0; i<rlen; i++)
+				sparseRows[i]=new SparseRow();
+		}
+	}
+	
+	/*
+	 * This can be only called when you know you have properly allocated spaces for a sparse representation
+	 * and r and c are in the the range of the dimension
+	 * Note: this function won't keep track of the nozeros
+	 */
+	
+	public void setValueSparseUnsafe(int r, int c, double v) {
+		sparseRows[r].set(c, v);		
+	}
+	
+	/*
+	 * This can be only called when you know you have properly allocated spaces for a sparse representation
+	 * and r and c are in the the range of the dimension
+	 * Note: this function won't keep track of the nozeros
+	 * This can only be called, when the caller knows the access pattern of the block
+	 */
+	
+	public void appendValueSparseUnsafe(int r, int c, double v) {
+		sparseRows[r].append(c, v);		
+	}
+	
+	/*
+	 * This can be only called when you know you have properly allocated spaces for a dense representation
+	 * and r and c are in the the range of the dimension
+	 * Note: this function won't keep track of the nozeros
+	 */
+	
+	public void setValueDenseUnsafe(int r, int c, double v) {
+		denseBlock[r*clen+c]=v;		
+	}
+	
+	
+	public double getValueSparseUnsafe(int r, int c) {
+		if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
+			return 0;
+		return sparseRows[r].get(c);
+		
+	}
+	
+	public double getValueDenseUnsafe(int r, int c) {
+		if(denseBlock==null)
+			return 0;
+		return denseBlock[r*clen+c]; 
+	}
+	
+	public static void testUnsafeSetNGet(int r, int c)
+	{
+		MatrixBlockDSM b1=new MatrixBlockDSM();
+		b1.spaceAllocForDenseUnsafe(r, c);
+		Random rand=new Random();
+		int n=rand.nextInt(r*c);
+		for(int i=0; i<n; i++)
+			b1.setValueDenseUnsafe(rand.nextInt(r), rand.nextInt(c), rand.nextDouble());
+		b1.recomputeNonZeros();
+		System.out.println("~~~~~~~~~~~~\nb1\n");
+		System.out.println(b1);
+		
+		MatrixBlockDSM b2=new MatrixBlockDSM();
+		b2.spaceAllocForSparseUnsafe(r, c);
+		for(int i=0; i<r; i++)
+			for(int j=0; j<c; j++)
+				b2.setValueSparseUnsafe(i, j, b1.getValueDenseUnsafe(i, j));
+		b2.recomputeNonZeros();
+		System.out.println("~~~~~~~~~~~~\nb2\n");
+		System.out.println(b2);
+		
+		//append is better than set, if you control the order of set
+		MatrixBlockDSM b3=new MatrixBlockDSM();
+		b3.spaceAllocForSparseUnsafe(r, c);
+		for(int i=0; i<r; i++)
+			for(int j=0; j<c; j++)
+				b3.appendValueSparseUnsafe(i, j, b2.getValueSparseUnsafe(i, j));
+		b3.recomputeNonZeros();
+		System.out.println("~~~~~~~~~~~~\nb3\n");
+		System.out.println(b3);
+		if(!equal(b1, b2) || !equal(b1, b3))
+			System.err.println("the results are not equal!");
+		
+		
+		
+		if(b1.getNonZeros()!=b2.getNonZeros() || b2.getNonZeros()!=b3.getNonZeros())
+			System.err.println("non zeros do not match!");
+	}
+	
+	public static boolean equal(MatrixBlockDSM m1, MatrixBlockDSM m2)
+	{
+		boolean ret=true;
+		for(int i=0; i<m1.getNumRows(); i++)
+			for(int j=0; j<m1.getNumColumns(); j++)
+				if(Math.abs(m1.getValue(i, j)-m2.getValue(i, j))>0.0000000001)
+				{
+					System.out.println(m1.getValue(i, j)+" vs "+m2.getValue(i, j)+":"+ (Math.abs(m1.getValue(i, j)-m2.getValue(i, j))));
+					ret=false;
+				}
+		return ret;
+	}
+	
 	public static boolean equal(MatrixBlock1D m1, MatrixBlockDSM m2)
 	{
 		boolean ret=true;
@@ -3866,14 +4052,16 @@ public class MatrixBlockDSM extends MatrixValue{
 	public static void  main(String[] args) throws Exception
 	{
 		
-		int rows=10, cols=10, runs=10;
+		testUnsafeSetNGet(10, 10);
+		
+	//	int rows=10, cols=10, runs=10;
 		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
 		for(double sparsity: sparsities)
 			onerun(rows, cols, sparsity, runs);
 			*/
 		//testSelection(10, 10, 1);
 		
-		double sparsity=0.5;
+	/*	double sparsity=0.5;
 	//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
 		//m.examSparsity();
@@ -3891,7 +4079,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOCOLUMNS);
 		System.out.println("~~~~~~~~~~~~");
 		System.out.println(m);
-
+*/
 		
 		/*
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());

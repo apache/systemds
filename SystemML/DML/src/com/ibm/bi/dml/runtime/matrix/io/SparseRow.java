@@ -98,6 +98,8 @@ public class SparseRow {
 	
 	public void append(int col, double v)
 	{
+		if(v==0.0)
+			return;
 		if(size==values.length)
 			recap();
 		values[size]=v;
@@ -141,6 +143,8 @@ public class SparseRow {
 		}
 		else
 		{
+			if(v==0.0)
+				return false;
 			if(size==values.length)
 				resizeAndInsert(index, col, v);
 			else

@@ -82,11 +82,11 @@ public class DMLScript {
 	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + /*"-exec <runtime>" +  " (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + "-exec <mode>" +  /*" (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
 			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
-			//+ " -exec: <runtime> runtime platform (hadoop, nz, sequential)\n"
+			+ " -exec: <mode> execution mode (hadoop, singlenode, hybrid)\n"
 			+ " [-d | -debug]: (optional) output debug info \n"
 			// TODO: COMMENT OUT -v option before RELEASE
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
@@ -664,7 +664,7 @@ public class DMLScript {
 			driver = new PMLDriver(numSowThreads, numReapThreads, config);
 			driver.startEmptyDriver(config);
 		} catch (Exception e) {
-
+			e.printStackTrace();
 			throw new PackageRuntimeException("Problem starting nimble driver");
 		} 
 

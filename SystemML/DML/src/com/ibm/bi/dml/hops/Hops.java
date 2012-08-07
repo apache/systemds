@@ -232,10 +232,10 @@ abstract public class Hops {
 			}
 			
 			// Constraint C1:
-			else if ( (this instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)this)._op == ParamBuiltinOp.GROUPEDAGG) ) {
-				set_rows_in_block(-1);
-				set_cols_in_block(-1);
-			}
+			//else if ( (this instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)this)._op == ParamBuiltinOp.GROUPEDAGG) ) {
+			//	set_rows_in_block(-1);
+			//	set_cols_in_block(-1);
+			//}
 			
 			// Constraint C2:
 			else if ( this.get_dataType() == DataType.SCALAR ) {

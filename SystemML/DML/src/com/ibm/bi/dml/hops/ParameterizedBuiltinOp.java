@@ -8,6 +8,7 @@ import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.GroupedAggregate;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
+import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -153,7 +154,22 @@ public class ParameterizedBuiltinOp extends Hops {
 				// output dimensions are unknown at compilation time
 				grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 
-				set_lops(grp_agg);
+				//set_lops(grp_agg);
+				
+				ReBlock reblock = null;
+				try {
+					reblock = new ReBlock(
+							grp_agg, get_rows_in_block(),
+							get_cols_in_block(), get_dataType(),
+							get_valueType());
+				} catch (Exception e) {
+					throw new HopsException(e);
+				}
+				reblock.getOutputParameters().setDimensions(-1, -1, 
+						get_rows_in_block(), get_cols_in_block(), -1);
+
+				set_lops(reblock);
+				
 			}
 
 		}

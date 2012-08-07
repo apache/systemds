@@ -291,6 +291,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			else {
 				MatrixBlock wtBlock = pb.getMatrixInput(input2.get_name());
 				cmobj = matBlock.cmOperations(cm_op, wtBlock);
+				pb.releaseMatrixInput(input2.get_name());
 			}
 			
 			matBlock = null;

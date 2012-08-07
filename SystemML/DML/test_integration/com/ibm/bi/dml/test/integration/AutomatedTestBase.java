@@ -676,8 +676,12 @@ public abstract class AutomatedTestBase {
 		//cleanup scratch folder (prevent side effect between tests)
 		cleanupScratchSpace();
 			
-		if (DEBUG)
-			TestUtils.printDMLScript(executionFile);
+		if (DEBUG) {
+			if ( newWay == false )
+				TestUtils.printDMLScript(executionFile);
+			else 
+				TestUtils.printDMLScript(dmlArgsDebug[1]);
+		}
 		
 		try {
 				if (newWay == false) {

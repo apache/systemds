@@ -476,7 +476,7 @@ public class MatrixObjectNew extends CacheableData
 			return;
 		
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ("MatrixObject not available to modify.");
+			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
 		
 		if (_data != null) //e.g., in case of evicted matrix
 		{

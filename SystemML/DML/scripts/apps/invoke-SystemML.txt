@@ -1,0 +1,64 @@
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Univariate statistics: scripts/apps/univariate.dml
+~~~~~~~~~~~~~~~~~~~~
+/*
+ * DML Script to compute univariate statistics for all attributes in a given data set
+ *
+ * Three inputs:  
+ *    $1) A - input data
+ *    $2) K - row matrix that denotes the "kind" for each attribute
+ *            kind=1 for scale, kind=2 for nominal, kind=3 for ordinal
+ *    $3) maxC - maximum number of categories in any categorical attribute
+ * 
+ * One output:    
+ *    $4) output directory in which following three statistics files are created
+ *        + base.stats - matrix with all 17 statistics (14 scale, 3 categorical) computed for all attributes
+ *        + categorical.counts - matrix in which each column gives the category-wise counts for all categories in that attribute 
+ *
+ */
+
+Invocation
+~~~~~~~~~~
+   -f scripts/apps/univariate.dml -args scripts/apps/data/alldata scripts/apps/data/univariate/alldata_kinds 10 scripts/apps/data/univariate/univar.out
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Bivariate statistics: scripts/apps/bivariate.dml
+~~~~~~~~~~~~~~~~~~~~
+
+/*
+ *
+ * For a given pair of attribute sets, compute bivariate statistics between all attribute pairs 
+ *   Given, S_1 = {A_11, A_12, ... A_1m} and S_2 = {A_21, A_22, ... A_2n} 
+ *          compute bivariate stats for m*n pairs (A_1i, A_2j), (1<= i <=m) and (1<= j <=n)
+ *
+ * Seven inputs:  
+ *    $1) D  - input data
+ *    $2) S1 - First attribute set {A_11, A_12, ... A_1m}
+ *    $3) S2 - Second attribute set {A_21, A_22, ... A_2n}
+ *    $4) K1 - kind for attributes in S1 
+ *    $5) K2 - kind for attributes in S2
+ *             kind=1 for scale, kind=2 for nominal, kind=3 for ordinal
+ *    $6) numPairs - total number of pairs (m*n)
+ *    $7) maxC - maximum number of categories in any categorical attribute
+ * 
+ * One output:    
+ *    $8) output directory in which following four statistics files are created
+ *        + bivar.stats - matrix with all 6 bivariate statistics computed for different attribute pairs
+ *                        (R, chi-sq, cramersv, spearman, Eta, F)
+ *        + categorical.counts - 
+ *        + categorical.means - 
+ *        + categorical.variances - 
+ *          -> Values in these three matrices are applicable only for scale-categorical attribute pairs. 
+ *          k^th column in these matrices denote the attribute pair (A_1i,A_2j) where i*j = k.
+ *
+ */
+
+Invocation
+~~~~~~~~~~
+   -f scripts/apps/bivariate.dml -args scripts/apps/data/alldata scripts/apps/data/bivariate/set1 scripts/apps/data/bivariate/set2 scripts/apps/data/bivariate/set1kinds scripts/apps/data/bivariate/set2kinds 15 10 scripts/apps/data/bivariate/bivar.out 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -1811,6 +1811,10 @@ public class DMLTranslator {
 				RandStatement rs = (RandStatement) current;
 				DataIdentifier target = rs.getIdentifier();
 				
+				if ( target.getDim1() <= 0 || target.getDim2() <=0 ) {
+					throw new ParseException("Invalid dimensions (" + target.getDim1() + "x" + target.getDim2() + ") in Rand statement: \"" + rs.toString() + "\"");
+				}
+				
 				// TODO: DRB: BEGIN RETROFIT FOR RAND ///////////////////////////////////// 
 				double randMinValue = new Double(rs.getExprParam(RandStatement.RAND_MIN).toString());
 				double randMaxValue = new Double(rs.getExprParam(RandStatement.RAND_MAX).toString());

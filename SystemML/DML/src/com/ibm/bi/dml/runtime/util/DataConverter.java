@@ -69,7 +69,7 @@ public class DataConverter {
 		
 		try{
 			OutputFormat informat = outputinfo.outputFormatClass.newInstance();
-
+			long numEntriesWritten = 0;
 			// If the file already exists on HDFS, remove it.
 			MapReduceTool.deleteFileIfExistOnHDFS(dir);
 			
@@ -84,7 +84,13 @@ public class DataConverter {
 				outputConverter.convert(new MatrixIndexes(1, 1), mat);
 				while(outputConverter.hasNext()){
 					br.write(outputConverter.next().getValue().toString() + "\n");
+					numEntriesWritten++;
 				}
+				
+				if ( numEntriesWritten == 0 ) {
+					br.write("1 1 0\n");
+				}
+				
 				br.close();
 			}
 			else if ( outputinfo == OutputInfo.BinaryCellOutputInfo ) {
@@ -95,12 +101,19 @@ public class DataConverter {
 				outputConverter.setBlockSize((int)rlen, (int)clen);
 				
 				outputConverter.convert(new MatrixIndexes(1, 1), mat);
+				Pair pair;
+				Writable index, cell;
 				while(outputConverter.hasNext()){
-					Pair pair = outputConverter.next();
-					Writable index = (Writable) pair.getKey();
-					Writable cell = (Writable) pair.getValue();
+					pair = outputConverter.next();
+					index = (Writable) pair.getKey();
+					cell = (Writable) pair.getValue();
 					
 					writer.append(index, cell);
+					numEntriesWritten++;
+				}
+				
+				if ( numEntriesWritten == 0 ) {
+					writer.append(new MatrixIndexes(1, 1), new MatrixCell(0));
 				}
 				writer.close();
 			}

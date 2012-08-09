@@ -2591,7 +2591,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			++index;
 		}
 		
-		System.out.println(fromPos + ", " + toPos + ": " + count + ", "+ runningSum + ", " + selectedCount);
+		//System.out.println(fromPos + ", " + toPos + ": " + count + ", "+ runningSum + ", " + selectedCount);
 		
 		return runningSum/selectedCount;
 	}
@@ -3497,7 +3497,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	////////////////////////////////////////////////////////////////////////////////
 	public static MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, long seed)
 	{
-		int min=1, max=5;
+		int min=0, max=1;
 		Random random=new Random(seed);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
 		m.allocateDenseBlock();
@@ -3510,10 +3510,30 @@ public class MatrixBlockDSM extends MatrixValue{
 		return m;
 	}
 	
+	public MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, double min, double max, long seed)
+	{
+		if ( min == 0.0 && max == 0.0 )
+			// nothing to do here
+			return this;
+		
+		Random random=new Random(seed);
+		this.allocateDenseBlock();
+		for(int i=0; i<rows; i++) {
+			for(int j=0; j<cols; j++) {
+				this.denseBlock[i*cols+j] = min + ((max-min)*random.nextDouble());
+				this.nonZeros++;
+			}
+		}
+		return this;
+	}
+	
 	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
 	{
+		if ( min == 0.0 && max == 0.0 )
+			// nothing to do here
+			return this;
+		
 		Random random=new Random(seed);
-		//MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true);
 		this.sparseRows=new SparseRow[rows];
 		for(int i=0; i<rows; i++)
 		{

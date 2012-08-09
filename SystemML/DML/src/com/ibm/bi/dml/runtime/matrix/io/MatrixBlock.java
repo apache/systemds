@@ -25,10 +25,15 @@ public class MatrixBlock extends MatrixBlockDSM
 	
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, long seed)
 	{
-		//TODO: MB: why do we always generate sparse matrices? Shouldn't we decide this according to the given sparsity?
-		
-		MatrixBlock m = new MatrixBlock(rows,cols,true);
-		m.getRandomSparseMatrix(rows, cols, sparsity, min, max, seed);
+		MatrixBlock m = null;
+		if ( sparsity < SPARCITY_TURN_POINT ) {
+			m = new MatrixBlock(rows,cols,true);
+			m.getRandomSparseMatrix(rows, cols, sparsity, min, max, seed);
+		}
+		else {
+			m = new MatrixBlock(rows, cols, false);
+			m.getRandomDenseMatrix(rows, cols, min, max, seed);
+		}
 		return m;
 	}
 	

@@ -1,0 +1,23 @@
+<!DOCTYPE workflow-app SYSTEM "workflow-app.dtd"><workflow-app name="FilterProjection" xmlns="uri:oozie:workflow:0.1">
+    <start to="action1"/>
+    <action name="action1">
+        <jaql xmlns="uri:oozie:jaql-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <jaql-path></jaql-path>
+            <script>jaql/filterProject.jaql</script>
+            <eval>Input_data_PARAM='${inputDataFile}';
+Input_metaData_PARAM='${metaDataFile}';
+Input_filterExpression_PARAM='${wf:conf(filterExpression)}';
+Input_projectColumns_PARAM='${wf:conf(projectColumnsFile)}';
+Input_outMetaData_PARAM = '${outputMetaDataFile}';
+Input_outData_PARAM = '${outputDataFile}';</eval>
+        </jaql>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

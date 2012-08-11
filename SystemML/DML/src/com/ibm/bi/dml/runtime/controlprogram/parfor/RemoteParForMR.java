@@ -196,6 +196,7 @@ public class RemoteParForMR
 		FileStatus[] status = fs.listStatus(path);
 		for( FileStatus f : status )
 		{
+			//System.out.println("Result filepath: "+f.getPath().getName());
 			if( f.getPath().getName().startsWith("_") ) //reject system-internal filenames
 				continue;
 				
@@ -210,6 +211,7 @@ public class RemoteParForMR
 		        	if( !tmp.containsKey( key.get() ) )
 		        		tmp.put(key.get(), new LocalVariableMap ());	        	
 		        	Object[] dat = ProgramConverter.parseDataObject( value.toString() );
+		        	//System.out.println("Result line: key="+key.get()+", value="+value.toString());
 		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
 		        }
 			}

@@ -4,8 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -15,8 +22,6 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * (1) non local var, (2) matrix object, and (3) completely independent.
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
- * TODO: more fine-grained synchronization of _output as we know that written results will not conflict
- * (e.g., we could just lock the getMatrixBlock and the final putMatrixBlock )
  * 
  * RESTRICTIONS: 
  *   * assumption that each result matrix fits entirely in main-memory
@@ -24,17 +29,25 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class ResultMerge 
 {
-	private MatrixObjectNew   _output = null;
-	private MatrixObjectNew[] _inputs = null; 
+	//inputs to result merge
+	private MatrixObjectNew   _output      = null;
+	private MatrixObjectNew[] _inputs      = null; 
+	private String            _outputFName = null;
+	private int               _par         = -1;
 	
-	private double[][]        _compare = null;
 	
-	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in )
+	//internal comparison matrix
+	private double[][]        _compare     = null;
+	
+	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in, String outputFilename, int par )
 	{
 		//System.out.println( "ResultMerge for output file "+out.getFileName()+", "+out.hashCode() );
 		
 		_output = out;
 		_inputs = in;
+		_outputFName = outputFilename;
+		
+		_par = par;
 	}
 	
 	/**
@@ -48,41 +61,7 @@ public class ResultMerge
 	public MatrixObjectNew executeSerialMerge() 
 		throws DMLRuntimeException
 	{
-		synchronized( _output ) //required due to caching
-		{
-			try
-			{
-				//get output matrix from cache 
-				MatrixBlock outMB = _output.acquireModify();
-		
-				//create compare matrix if required
-				_compare = createCompareMatrix(outMB);
-							
-				for( MatrixObjectNew in : _inputs ) 
-				{
-					//check for empty inputs (no iterations executed)
-					if( in != _output ) 
-					{
-						//get input matrix from cache
-						MatrixBlock inMB = in.acquireRead();
-						
-						//merge each input to output
-						merge( outMB, inMB );
-						
-						//release input
-						in.release();
-					}
-				}
-				
-				//release output
-				_output.release();
-			}
-			catch(Exception ex)
-			{
-				throw new DMLRuntimeException(ex);
-			}
-		}	
-		return _output;
+		return executeResultMerge( false );
 	}
 	
 	/**
@@ -94,57 +73,109 @@ public class ResultMerge
 	 * @return output (merged) matrix
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObjectNew executeParallelMerge(int par) 
+	public MatrixObjectNew executeParallelMerge() 
 		throws DMLRuntimeException
 	{
-		synchronized( _output ) //required due to caching
-		{	
-			try
+		return executeResultMerge( true );
+	}
+	
+	/**
+	 * 
+	 * @param inParallel
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private MatrixObjectNew executeResultMerge( boolean inParallel ) 
+		throws DMLRuntimeException
+	{
+		MatrixObjectNew moNew = null; //always create new matrix object (required for nested parallelism)
+
+		try
+		{
+			//get matrix blocks through caching 
+			MatrixBlock outMB = _output.acquireRead();
+			ArrayList<MatrixBlock> inMB = new ArrayList<MatrixBlock>();
+			for( MatrixObjectNew in : _inputs )
 			{
-				//get matrix blocks through caching 
-				MatrixBlock outMB = _output.acquireModify();
-				ArrayList<MatrixBlock> inMB = new ArrayList<MatrixBlock>();
-				for( MatrixObjectNew in : _inputs )
-				{
-					//check for empty inputs (no iterations executed)
-					if( in != _output ) 
-						inMB.add( in.acquireRead() );	
-				}
-				
-				//create compare matrix if required
+				//check for empty inputs (no iterations executed)
+				if( in !=null && in != _output ) 
+					inMB.add( in.acquireRead() );	
+			}
+			
+			if( inMB.size() > 0 ) //if there exist something to merge
+			{
+				//get old output matrix from cache for compare
+				MatrixBlock outMBNew = new MatrixBlock(outMB.getNumRows(), outMB.getNumColumns(), outMB.isInSparseFormat());
+
+				//create compare matrix if required (existing data in result)
 				_compare = createCompareMatrix(outMB);
-				
-				//create and start threads
-				Thread[] threads = new Thread[ inMB.size() ];
-				for( int i=0; i<threads.length; i++ )
-				{
-					ResultMergeWorker rmw = new ResultMergeWorker(inMB.get(i), outMB);
-					threads[i] = new Thread(rmw);
-					threads[i].setPriority(Thread.MAX_PRIORITY);
-					threads[i].start(); // start execution
-				}
+				if( _compare != null )
+					outMBNew.copy(outMB);
 					
-				//wait for all workers to finish
-				for( int i=0; i<threads.length; i++ )
-				{
-					threads[i].join();
-				}
+				//create new output matrix 
+				String varname = _output.getVarName();
+				moNew = new MatrixObjectNew(_output.getValueType(), _outputFName);
+				moNew.setVarName( varname.contains("resultmerge") ? varname : varname+"rm" );
+				moNew.setDataType(DataType.MATRIX);
+				moNew.setMetaData(createDeepCopyMetaData((MatrixFormatMetaData)_output.getMetaData()));
 				
-				//release all data
-				_output.release();
-				for( MatrixObjectNew in : _inputs )
+				//actual merge
+				if( inParallel && !outMBNew.isInSparseFormat() ) //TODO remove degradation to serial once we synchronized internally
 				{
-					//check for empty results
-					if( in != _output ) 
-						in.release(); //only if required (see above)
+					Timing time = new Timing();
+					time.start();
+					
+					//parallel merge
+					int numThreads = (_par > 0 && _par<inMB.size()) ? _par : Math.min(inMB.size(), InfrastructureAnalyzer.getLocalParallelism());
+					Thread[] threads = new Thread[ numThreads ];
+					//create and start threads
+					for( int i=0; i<threads.length; i++ )
+					{
+						ResultMergeWorker rmw = new ResultMergeWorker(inMB.get(i), outMBNew);
+						threads[i] = new Thread(rmw);
+						threads[i].setPriority(Thread.MAX_PRIORITY);
+						threads[i].start(); // start execution
+					}	
+					//wait for all workers to finish
+					for( int i=0; i<threads.length; i++ )
+					{
+						threads[i].join();
+					}
+					
+					System.out.println("PARALLEL RESULT MERGE with par="+inMB.size()+" in "+time.stop());
 				}
+				else
+				{
+					//serial merge
+					for( MatrixBlock linMB : inMB )
+						merge( outMBNew, linMB );
+				}
+
+				//release new output
+				moNew.acquireModify(outMBNew);	
+				moNew.release();
 			}
-			catch(Exception ex)
+			else
 			{
-				throw new DMLRuntimeException(ex);
+				moNew = _output; //return old matrix, to prevent copy
 			}
-		}	
-		return _output;
+			
+			//release old output, and all inputs
+			_output.release();
+			//_output.clearData(); //save, since it respects pin/unpin  
+			for( MatrixObjectNew in : _inputs )
+			{
+				//check for empty results
+				if( in != _output ) 
+					in.release(); //only if required (see above)
+			}	
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException(ex);
+		}
+
+		return moNew;		
 	}
 	
 	private double[][] createCompareMatrix( MatrixBlock output )
@@ -158,6 +189,18 @@ public class ResultMerge
 		}
 		
 		return ret;
+	}
+
+	private MatrixFormatMetaData createDeepCopyMetaData(MatrixFormatMetaData metaOld)
+	{
+		MatrixCharacteristics mcOld = metaOld.getMatrixCharacteristics();
+		OutputInfo oiOld = metaOld.getOutputInfo();
+		InputInfo iiOld = metaOld.getInputInfo();
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.get_rows(),mcOld.get_cols(),
+				                                             mcOld.get_rows_per_block(),mcOld.get_cols_per_block());
+		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,oiOld,iiOld);
+		return meta;
 	}
 	
 	/**
@@ -177,8 +220,6 @@ public class ResultMerge
 		else
 			mergeWithComp(out, in);
 	}
-	
-	//TODO fine-gained synchronization in setValue (for sparse and dense) due to dynamic allocations, 
 	
 	private void mergeWithComp( MatrixBlock out, MatrixBlock in )
 	{

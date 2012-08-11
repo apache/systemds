@@ -11,6 +11,7 @@ import org.xml.sax.SAXException;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
@@ -61,6 +62,9 @@ public class ParForResultMergeTest
 	private void runResultMerge(boolean parallel, boolean inMem) 
 		throws ParserConfigurationException, SAXException, IOException, DMLRuntimeException
 	{
+		//init cache
+		CacheableData.createCacheDir();
+		
 		//init input, output, comparison obj
 		MatrixObjectNew[] in = new MatrixObjectNew[ _par ];
 		for( int i=0; i<_par; i++ )
@@ -84,9 +88,9 @@ public class ParForResultMergeTest
 			}
 		
 		//run result merge
-		ResultMerge rm = new ResultMerge(out, in);
+		ResultMerge rm = new ResultMerge(out, in, "./out", _par);
 		if( parallel )
-			out = rm.executeParallelMerge(_par);
+			out = rm.executeParallelMerge();
 		else
 			out = rm.executeSerialMerge();
 		
@@ -99,6 +103,8 @@ public class ParForResultMergeTest
 			inMO.clearData();
 		out.clearData();
 		ref.clearData();
+		
+		CacheableData.cleanupCacheDir();
 	}
 
 	private MatrixObjectNew createMatrixObject(int dim, boolean withData) 
@@ -151,7 +157,7 @@ public class ParForResultMergeTest
 		MatrixBlock refData = ref.acquireModify();
 		MatrixBlock inData = in[ index ].acquireModify();
 		
-		for( int i=0; i<rows; i++ )
+		for( int i=0; i<rows; i++ ) 
 			for( int j=0; j<cols; j++ )
 			{
 				value = i*cols+(j+1);
@@ -192,7 +198,7 @@ public class ParForResultMergeTest
 				for( int j=0; j<cols; j++ )
 					if( refMB.getValue(i, j) != outMB.getValue(i, j) )
 					{
-						//System.out.println(ref.getValue(i, j)+" vs "+out.getValue(i, j));
+						System.out.println(refMB.getValue(i, j)+" vs "+outMB.getValue(i, j));
 						ret=false;
 						i=rows; break;
 					}

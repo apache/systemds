@@ -31,7 +31,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		addTestConfiguration(
 				TEST_NAME, 
 				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   ); //TODO this specification is not intuitiv
+				new String[] { "Rout" })   ); //TODO this specification is not intuitive
 	}
 	
 	@Test
@@ -40,12 +40,11 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP);
 	}
 
-	/* FIXME: decomment as soon as indexing is fixed.
 	@Test
 	public void testParForCorrleationLocalLocalMR() 
 	{
 		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}*/
+	}
 
 	@Test
 	public void testParForCorrleationLocalRemoteCP() 
@@ -103,7 +102,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 0.1, seed);
+        double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;

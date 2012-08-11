@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
+import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -107,12 +108,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_REUSE_MR_JVMS         = true;     // potential benefits: less setup costs per task
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
-	public static final boolean WRITE_RESULTS_TO_FILE       = true;
+	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial //TODO change back to parallel once we synchronized set for all matrix formats
 	public static final int     WRITE_REPLICATION_FACTOR    = 3;
-	public static final int     MAX_RETRYS_ON_ERROR         = 0;
+	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	
-	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_taskfile.dat"; 
-	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_results.dat"; 
+	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
+	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_MR_results.dat"; 
+	public static final String PARFOR_MR_RESULTMERGE_FNAME   = "/parfor/%ID%_resultmerge.dat"; 
 	
 	// static ID generator sequences
 	private static IDSequence   _pfIDSeq        = null;
@@ -510,8 +512,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		// Step 2) create tasks 
 		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
-		String taskFile = constructTaskfileName();
-		String resultFile = constructResultfileName();
+		String taskFile = constructTaskFileName();
+		String resultFile = constructResultFileName();
 		
 		int numIterations = partitioner.getNumIterations();
 		int numCreatedTasks = -1;
@@ -602,6 +604,23 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	/**
+	 * Cleanup result variables of parallel workers after result merge.
+	 * @param in 
+	 * @param out 
+	 * @throws CacheStatusException 
+	 */
+	private void cleanWorkerResultVariables(MatrixObjectNew out, MatrixObjectNew[] in) 
+		throws CacheStatusException
+	{
+		for( MatrixObjectNew tmp : in )
+		{
+			//check for empty inputs (no iterations executed)
+			if( tmp != null && tmp != out )
+				tmp.clearData();
+		}
+	}
+	
+	/**
 	 * 
 	 * @throws CacheException
 	 */
@@ -639,7 +658,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String program = ProgramConverter.serializeParForBody( body );
 		
 		// Step 2) obtain remaining tasks
-		String taskFile = constructTaskfileName();
+		String taskFile = constructTaskFileName();
 		if( USE_STREAMING_TASK_CREATION )
 		{
 			//write available tasks to task file
@@ -657,7 +676,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		// Step 3) submit MR job (wait for finished work)
-		String resultFile = constructResultfileName();
+		String resultFile = constructResultFileName();
 		
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
 				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR); 	
@@ -869,8 +888,18 @@ public class ParForProgramBlock extends ForProgramBlock
 				in[i] = (MatrixObjectNew) results[i].get( varname ); 
 			
 			//result merge
-			ResultMerge rm = new ResultMerge( out, in );
-			_variables.put( varname, rm.executeParallelMerge( _numThreads ));
+			String fname = constructResultMergeFileName();
+			ResultMerge rm = new ResultMerge( out, in, fname, _numThreads );
+			MatrixObjectNew outNew = null;
+			if( USE_PARALLEL_RESULT_MERGE )
+				outNew = rm.executeParallelMerge();
+			else
+				outNew = rm.executeSerialMerge(); 
+			
+			_variables.put( varname, outNew);
+	
+			//cleanup of intermediate result variables
+			cleanWorkerResultVariables( out, in );
 		}
 		
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
@@ -933,7 +962,7 @@ public class ParForProgramBlock extends ForProgramBlock
  	 * 
 	 * @return
 	 */
-	private String constructTaskfileName()
+	private String constructTaskFileName()
 	{
 		String scratchSpaceLoc = null;
 		try {
@@ -958,7 +987,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @return
 	 */
-	private String constructResultfileName()
+	private String constructResultFileName()
 	{
 		String scratchSpaceLoc = null;
 		try {
@@ -975,5 +1004,24 @@ public class ParForProgramBlock extends ForProgramBlock
 		sb.append(PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
 		
 		return sb.toString();   
+	}
+	
+	private String constructResultMergeFileName()
+	{
+		String scratchSpaceLoc = null;
+		try {
+			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+		} catch (Exception e){
+			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append(scratchSpaceLoc);
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(PARFOR_MR_RESULTMERGE_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
+		
+		return sb.toString();   		
 	}
 }

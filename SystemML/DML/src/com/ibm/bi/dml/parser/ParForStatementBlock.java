@@ -19,7 +19,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 /**
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate
- * for checking optional parfor parameters and running the loop dependency analysis.
+ * for checking/setting optional parfor parameters and running the loop dependency analysis.
  * 
  * NOTE: related test suite: dml.test.components.parser.ParForDependencyAnalysisTest 
  * 
@@ -248,7 +248,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				throw new LanguageException( "PARFOR loop dependency analysis: " +
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
 						                     depVars.toString() +".\n " +
-						                     "Please ensure independence of iterations." );				
+						                     "Please, ensure independence of iterations." );				
 			}
 			else
 			{

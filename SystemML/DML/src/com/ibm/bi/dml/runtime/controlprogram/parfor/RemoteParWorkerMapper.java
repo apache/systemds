@@ -113,10 +113,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		boolean requiresConfigure = true;
 		String jobID = job.get("mapred.job.id");
 		
+		//System.out.println(jobID);
 		//probe cache for existing worker (parfor body, symbol table, etc)
 		if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
 		{
-			synchronized( _sCache )
+			synchronized( _sCache ) //for multiple jobs in local mode
 			{
 				if( _sCache.containsKey(jobID) )
 				{
@@ -150,7 +151,10 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
-				//init local cache manager
+				//init local cache manager TODO
+				//if( !CacheableData.isCachingActive() ) 
+				//	throw new RuntimeException("Caching not active."); 
+				
 				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
 				{
 					CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
@@ -164,6 +168,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_variables   = body.getVariables();
 				_ec          = body.getEc();				
 				_resultVars  = body.getResultVarNames();
+		
+				//ensure that resultvar files are not removed
+				pinResultVariables();
 				
 				_numTasks    = 0;
 				_numIters    = 0;
@@ -182,12 +189,27 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			
 			//put into cache if required
 			if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
-				_sCache.put(jobID, this);
+				synchronized( _sCache ){ //for multiple jobs in local mode
+					_sCache.put(jobID, this);
+				}
 		} 
 		else
 		{
 			if( DMLScript.DEBUG )
 				System.out.println("reuse configuration RemoteParWorkerMapper "+_stringID);
+		}
+	}
+	
+	private void pinResultVariables()
+	{
+		for( String var : _resultVars )
+		{
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObjectNew )
+			{
+				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				mo.enableCleanup(false); 
+			}
 		}
 	}
 

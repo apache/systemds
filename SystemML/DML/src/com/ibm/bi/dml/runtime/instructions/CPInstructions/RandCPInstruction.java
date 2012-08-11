@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -71,6 +72,9 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		long lSeed = seed; //seed per invocation
 		if( lSeed == RandOp.UNSPECIFIED_SEED ) 
 			lSeed = RandOp.generateRandomSeed();
+		
+		if( DMLScript.DEBUG )
+			System.out.println("process RandCPInstruction with seed="+lSeed+".");
 		
 		//execute rand
 		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, lSeed) );

@@ -13,6 +13,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -116,6 +117,9 @@ public class RandMR
 				seeds[s]=random.nextInt();
 			bigrand.setSeed(seeds);
 			
+			if( DMLScript.DEBUG )
+				System.out.println("process RandMR with seed="+lSeed+".");
+
 			if(ins==null)
 				throw new RuntimeException("bad rand instruction: "+randInstructions[i]);
 			rlens[i]=ins.rows;

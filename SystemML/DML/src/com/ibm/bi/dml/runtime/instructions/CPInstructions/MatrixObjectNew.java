@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -47,10 +46,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class MatrixObjectNew extends CacheableData
 {
-	private static final boolean LDEBUG = false;
-	
 	private SoftReference<MatrixBlock> _cache;
-	private boolean _cleanupFlag = true;;
+	private boolean _cleanupFlag = true;
 	
 	/**
 	 * Container object that holds the actual data.
@@ -162,7 +159,7 @@ public class MatrixObjectNew extends CacheableData
 
 	public void setFileName (String file)
 	{
-		if (! _hdfsFileName.equals (file))
+		if (!_hdfsFileName.equals (file))
 		{
 			_hdfsFileName = file;
 			if (! isEmpty ())
@@ -257,46 +254,42 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public MatrixBlock acquireRead () 
+	public synchronized MatrixBlock acquireRead ()
 		throws CacheException
 	{
 		if( LDEBUG )
 			System.out.println("acquire read "+_varName);
 		
-		synchronized( this ) 
+		if (! isAvailableToRead ())
+			throw new CacheStatusException ("MatrixObject not available to read.");
+		
+		//get object from cache
+		getCache();
+		
+		//read data from HDFS if required
+		if( isEmpty() ) 
 		{
-			if (! isAvailableToRead ())
-				throw new CacheStatusException ("MatrixObject not available to read.");
+			//check filename
+			String fName = _hdfsFileName;
+			if( fName == null )
+				throw new CacheException("Cannot read matrix for empty filename.");
 			
-			//get object from cache
-			getCache();
-			
-			//read data from HDFS if required
-			if( isEmpty() ) 
+			try
 			{
-				//check filename
-				String fName = _hdfsFileName;
-				if( fName == null )
-					throw new CacheException("Cannot read matrix for empty filename.");
-				
-				try
+				MatrixBlock newData = readMatrixFromHDFS( fName );
+				if (newData != null)
 				{
-					MatrixBlock newData = readMatrixFromHDFS( fName );
-					if (newData != null)
-					{
-						newData.setEnvelope (this);
-						_data = newData;
-						_dirtyFlag = false;
-					}
-				}
-				catch (IOException e)
-				{
-					throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
+					newData.setEnvelope (this);
+					_data = newData;
+					_dirtyFlag = false;
 				}
 			}
-			acquire( false, true );
-		
+			catch (IOException e)
+			{
+				throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
+			}
 		}
+		acquire( false, true );
 		
 		//unsynchronized in order to enable undo partial eviction
 		if( _data == null )
@@ -318,50 +311,47 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public MatrixBlock acquireModify()
+	public synchronized MatrixBlock acquireModify() 
 		throws CacheException
 	{
 		if( LDEBUG )
 			System.out.println("acquire modify "+_varName);
 
-		synchronized( this )
+		if (! isAvailableToModify ())
+			throw new CacheStatusException("MatrixObject not available to modify.");
+		
+		//get object from cache
+		getCache();
+		
+		//read data from HDFS if required
+		if( isEmpty() )
 		{
-			if (! isAvailableToModify ())
-				throw new CacheStatusException("MatrixObject not available to modify.");
+			//check filename
+			String fName = _hdfsFileName;
+			if( fName == null )
+				throw new CacheException("Cannot read matrix for empty filename.");
 			
-			//get object from cache
-			getCache();
-			
-			//read data from HDFS if required
-			if( isEmpty() )
+			//load data
+			try
 			{
-				//check filename
-				String fName = _hdfsFileName;
-				if( fName == null )
-					throw new CacheException("Cannot read matrix for empty filename.");
+				MatrixBlock newData = readMatrixFromHDFS (fName);
 				
-				//load data
-				try
+				//set reference to loaded data
+				if (newData != null)
 				{
-					MatrixBlock newData = readMatrixFromHDFS (fName);
-					
-					//set reference to loaded data
-					if (newData != null)
-					{
-						newData.setEnvelope (this);
-						_data = newData;
-					}
-				}
-				catch (IOException e)
-				{
-					throw new CacheIOException (fName + " : Reading failed.", e);
+					newData.setEnvelope (this);
+					_data = newData;
 				}
 			}
-	
-			//cache status maintenance
-			acquire( true, true );
-			_dirtyFlag = true;
+			catch (IOException e)
+			{
+				throw new CacheIOException (fName + " : Reading failed.", e);
+			}
 		}
+
+		//cache status maintenance
+		acquire( true, true );
+		_dirtyFlag = true;
 		
 		//unsynchronized in order to enable undo partial eviction
 		if( _data == null )
@@ -407,6 +397,8 @@ public class MatrixObjectNew extends CacheableData
 			_data = newData; 
 			//refreshMetaData (); //MB: not required as still in state modify
 		}
+		else
+			throw new CacheException("acquireModify with empty matrix block.");
 
 		return _data;
 	}
@@ -521,7 +513,7 @@ public class MatrixObjectNew extends CacheableData
 			throw new CacheStatusException ("MatrixObject not available to modify.");
 		
 		_hdfsFileName = filePath;
-		clearData ();
+		clearData();
 	}
 
 	/**
@@ -841,7 +833,7 @@ public class MatrixObjectNew extends CacheableData
 		{
 			//restore matrix block into main memory
 			//(alternatively, we could evict and restore into main memory, but not necessary)
-			_data = mb;
+			_data = mb; 
 		}
 	}
 	
@@ -854,8 +846,8 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		int pollCount = WAIT_TIMEOUT / WAIT_INTERVAL;
-		if( LDEBUG )
-			System.out.println("wait for undo partial eviction: count "+pollCount);
+		//if( LDEBUG )
+			System.out.println("Warning: wait for undo partial eviction: count "+pollCount); //TODO later only in DEBUG
 		while( --pollCount >= 0 )
 		{
 			try{ Thread.sleep(WAIT_INTERVAL); }catch(Exception e){}
@@ -977,27 +969,12 @@ public class MatrixObjectNew extends CacheableData
 
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
-		MatrixBlock newData = null;
-		
-		try
-		{
-			newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
-					      iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
-		}
-		catch(EOFException ee) //robustness with regard to checksum errors (different reasons, e.g., occasional parallel write+read)
-		{
-			//wait and one retry
-			System.out.println("Warning: Retrying to read matrix object.");
-			try{Thread.sleep(CacheableData.WAIT_INTERVAL);} catch (InterruptedException e){}
-			newData = DataConverter.readMatrixFromHDFS(filePathAndName, 
-				      iimd.getInputInfo(), mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
-		}
+		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
+				                           mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
 		
 		if( newData == null )
 		{
-			//enable export of empty matrices (required for parfor remote)
-			newData = new MatrixBlock((int)mc.numRows,(int)mc.numColumns, true);
-			//throw new IOException("Unable to load matrix from file "+filePathAndName);
+			throw new IOException("Unable to load matrix from file "+filePathAndName);
 		}
 		
 		newData.clearEnvelope ();
@@ -1081,7 +1058,7 @@ public class MatrixObjectNew extends CacheableData
 				System.out.println ("    Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 			}
 		}
-		else if (DMLScript.DEBUG)
+		else if (DMLScript.DEBUG) 
 		{
 			System.out.println ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}

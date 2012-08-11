@@ -36,8 +36,13 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
-	protected static final int WAIT_TIMEOUT  = 10000; //10s
+	protected static final boolean LDEBUG = false;
+	
+	protected static final int WAIT_TIMEOUT  = 15000; //15s
 	protected static final int WAIT_INTERVAL = 50; //50ms
+
+	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
+	private static boolean _activeFlag = false;
 	
 	
 	public enum CACHE_EVICTION_POLICY { 
@@ -66,9 +71,13 @@ public abstract class CacheableData extends Data
     	EVICTABLE, 
     	EVICTED
     };
+	    
+	private static IDSequence _seq = null; //TODO ensure that each JVM writes to its own cache dir, otherwise id will fail; MB: well, those ID need only be globally unique if we use HDFS cache dirs, what we dont do 
 	
-    
-	private static IDSequence _seq = new IDSequence();
+	static
+	{
+		_seq = new IDSequence();
+	}
 	
 	/**
 	 * The unique (JVM-wide) of a cacheable data object. 
@@ -141,7 +150,7 @@ public abstract class CacheableData extends Data
 	/**
 	 * Deletes the DML-script-specific caching working dir.
 	 */
-	public static void cleanupCacheDir()
+	public synchronized static void cleanupCacheDir()
 	{
 		//get directory name
 		String dir = null;
@@ -161,12 +170,12 @@ public abstract class CacheableData extends Data
 			switch (CacheableData.cacheEvictionStorageType)
 			{
 				case LOCAL:
-					new File(dir).deleteOnExit(); //replaces delete
-					//old version
-					//File[] files = new File(dir).listFiles();
-					//for( File f : files )
-					//	if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-					//		f.delete();
+					File fdir = new File(dir);
+					File[] files = fdir.listFiles();
+					for( File f : files )
+						if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+							f.delete();
+					fdir.delete();
 					break;
 				case HDFS:
 					MapReduceTool.deleteFileIfExistOnHDFS( dir );
@@ -183,13 +192,15 @@ public abstract class CacheableData extends Data
 		{
 			e.printStackTrace();
 		}
+		
+		_activeFlag = false;
 	}
 	
 	
 	/**
 	 * Creates the DML-script-specific caching working dir.
 	 */
-	public static void createCacheDir()
+	public synchronized static void createCacheDir()
 	{
 		//get directory name
 		String dir = null;
@@ -220,6 +231,12 @@ public abstract class CacheableData extends Data
 				break;
 		}
 
+		_activeFlag = true; //turn on caching
+	}
+	
+	public static synchronized boolean isCachingActive()
+	{
+		return _activeFlag;
 	}
 	
 	
@@ -418,22 +435,38 @@ public abstract class CacheableData extends Data
 	 *         <code>false</code> otherwise.
 	 * @throws CacheIOException 
 	 */
-	public synchronized boolean attemptEviction (MatrixBlock mb) 
+	public boolean attemptEviction (MatrixBlock mb) 
 		throws CacheIOException
 	{
 		boolean ret = false;
-	
-		if( isEvictable() )
+		
+		if( isCachingActive() ) //discard eviction requests after caching already turned off
 		{
-			evictBlobFromMemory( mb );
-			_cacheStatus.setEvicted();
-			ret = true;
+			if( isEvictable() ) //proceed with eviction request
+			{
+				synchronized(this)
+				{ 
+					if( isEvictable() )
+					{
+						evictBlobFromMemory( mb );
+						_cacheStatus.setEvicted();
+						ret = true;
+					}
+					else
+					{
+						//just for chase something changed during synchronized wait
+						undoPartialEviction( mb ); 
+					}
+				}
+			}
+			else //robustness: handle other case to prevent data loss
+			{
+				undoPartialEviction( mb );
+			}	
 		}
-		else //robustness: handle other case to prevent data loss
-		{
-			//System.out.println("AttemptEviction, but object not evictable ("+getStatusAsString()+"). UNDO PARTIAL EVICTION.");
-			undoPartialEviction( mb );
-		}	
+		else //if ( LDEBUG )  //TODO later only in DEBUG
+			System.out.println("Warning: caching not active, discard eviction request.");
+		
 	
 		return ret;
 	}

@@ -397,12 +397,14 @@ public class VariableCPInstruction extends CPInstruction {
 			if ( del == true ) {
 				//TODO MB: potentially move whole block into clearCachedMatrix
 				// delete the file on disk
+
 				try {
 					MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable( input1.get_name());
-					if( mo.isCleanupEnabled() )
+					if( mo != null && mo.isCleanupEnabled() )
 					{
 						String fpath = mo.getFileName();
 						if ( fpath != null ) {
+							//System.out.println("VarCP: deleting "+fpath);
 							MapReduceTool.deleteFileIfExistOnHDFS( fpath );
 							// delete metadata associated with the file
 							pb.removeMetaData(input1.get_name());

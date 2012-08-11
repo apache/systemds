@@ -1,6 +1,6 @@
 eigen = externalFunction(Matrix[Double] A) 
 return (Matrix[Double] E, Matrix[Double] V) 
-implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper",execlocation="master")
+implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper",execlocation="CP")
  
 A = read( "$$indir$$A", rows=$$rows$$, cols=$$cols$$, format="text");
 [E,V] = eigen(A);

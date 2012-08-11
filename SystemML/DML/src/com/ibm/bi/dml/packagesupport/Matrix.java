@@ -10,6 +10,7 @@ import org.nimble.hadoop.HDFSFileManager;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression;
+import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -39,6 +40,20 @@ public class Matrix extends FIO {
 		Double, 
 		Integer
 	};
+	
+	/**
+	 * This constructor invokes Matrix(String path, long rows, long cols, ValueType vType)
+	 * with a default filename of ExternalFunctionProgramBlockCP and hence, should only
+	 * be used by CP external functions.
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param vType
+	 */
+	public Matrix(long rows, long cols, ValueType vType) {
+		this( ExternalFunctionProgramBlockCP.DEFAULT_FILENAME, 
+			  rows, cols, vType );
+	}
 
 	/**
 	 * Constructor that takes matrix file path, num rows, num cols, and matrix
@@ -49,7 +64,6 @@ public class Matrix extends FIO {
 	 * @param cols
 	 * @param vType
 	 */
-
 	public Matrix(String path, long rows, long cols, ValueType vType) {
 		super(Type.Matrix);
 		_filePath = path;

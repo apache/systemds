@@ -10,8 +10,10 @@ import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.packagesupport.Matrix;
 import com.ibm.bi.dml.packagesupport.PackageFunction;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -35,6 +37,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 
 {
+	public static String DEFAULT_FILENAME = "ext_funct";
+	private static IDSequence _defaultSeq = new IDSequence();
+	
 	/**
 	 * Constructor that also provides otherParams that are needed for external
 	 * functions. Remaining parameters will just be passed to constructor for
@@ -167,11 +172,24 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		
 		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
 		{
-			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
+			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			ret = new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
 		}
 		
+		//for allowing in-memory packagesupport matrices w/o filesnames
+		if( ret.getFileName().equals( DEFAULT_FILENAME ) ) 
+		{
+			ret.setFileName( createDefaultOutputFilePathAndName() );
+		}
+			
 		return ret;
 	}	
+	
+	
+	public String createDefaultOutputFilePathAndName( )
+	{
+		return _baseDir + DEFAULT_FILENAME + _defaultSeq.getNextID();
+	}	
+
 }

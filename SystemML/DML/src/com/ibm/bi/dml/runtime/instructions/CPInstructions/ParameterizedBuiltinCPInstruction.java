@@ -8,6 +8,8 @@ import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -61,13 +63,26 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			if ( paramsMap.get("dist") == null ) 
 				throw new DMLRuntimeException("Probability distribution must to be specified to compute cumulative probability. (e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist") );
+			// Determine appropriate Function Object based on opcode
+			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
 		} 
+		else if ( opcode.equalsIgnoreCase("groupedagg")) {
+			// check for mandatory arguments
+			String fnStr = paramsMap.get("fn");
+			if ( fnStr == null ) 
+				throw new DMLRuntimeException("Function parameter is missing in groupedAggregate.");
+			if ( fnStr.equalsIgnoreCase("centralmoment") ) {
+				if ( paramsMap.get("order") == null )
+					throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
+			}
+			
+			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, str);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
 
-		// Determine appropriate Function Object based on opcode
-		return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
 	}
 	
 	@Override 
@@ -80,11 +95,32 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			SimpleOperator op = (SimpleOperator) optr;
 			double result =  op.fn.execute(params);
 			sores = new DoubleObject(result);
-		} else {
+			pb.setScalarOutput(output.get_name(), sores);
+		} 
+		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
+			// acquire locks
+			MatrixBlock target = pb.getMatrixInput(params.get("target"));
+			MatrixBlock groups = pb.getMatrixInput(params.get("groups"));
+			MatrixBlock weights= null;
+			if ( params.get("weights") != null )
+				weights = pb.getMatrixInput(params.get("weights"));
+			
+			// compute the result
+			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), optr));
+			
+			pb.setMatrixOutput(output.get_name(), soresBlock);
+			// release locks
+			target = groups = weights = null;
+			pb.releaseMatrixInput(params.get("target"));
+			pb.releaseMatrixInput(params.get("groups"));
+			if ( params.get("weights") != null )
+				pb.releaseMatrixInput(params.get("weights"));
+			
+		}
+		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
 		
-		pb.setScalarOutput(output.get_name(), sores);
 	}
 	
 

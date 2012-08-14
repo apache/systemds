@@ -1,11 +1,13 @@
 package com.ibm.bi.dml.lops;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
@@ -23,45 +25,117 @@ public class GroupedAggregate extends Lops {
 	 *   "function" -- aggregate function
 	 */
 
+	private void init(HashMap<String, Lops> inputParameterLops, 
+			DataType dt, ValueType vt, ExecType et) {
+		if ( et == ExecType.MR ) {
+			/*
+			 * Inputs to ParameterizedBuiltinOp can be in an arbitrary order. However,
+			 * piggybacking (Dag.java:getAggAndOtherInstructions()) expects the first 
+			 * input to be the data (named as "combinedinput") on which the aggregate 
+			 * needs to be computed. Make sure that "combinedinput" is the first input
+			 * to GroupedAggregate lop. 
+			 */
+			this.addInput(inputParameterLops.get("combinedinput"));
+			inputParameterLops.get("combinedinput").addOutput(this);
+			
+			// process remaining parameters
+			for ( String k : inputParameterLops.keySet()) {
+				if ( !k.equalsIgnoreCase("combinedinput") ) {
+					this.addInput(inputParameterLops.get(k));
+					inputParameterLops.get(k).addOutput(this);
+				}
+			}
+			
+			_inputParams = inputParameterLops;
+			
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = true;
+			lps.addCompatibility(JobType.GROUPED_AGG);
+			this.lps.setProperties(et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		}
+		else {
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			
+			// First, add inputs corresponding to "target" and "groups"
+			this.addInput(inputParameterLops.get("target"));
+			inputParameterLops.get("target").addOutput(this);
+			this.addInput(inputParameterLops.get("groups"));
+			inputParameterLops.get("groups").addOutput(this);
+			
+			// process remaining parameters
+			for ( String k : inputParameterLops.keySet()) {
+				if ( !k.equalsIgnoreCase("target") && !k.equalsIgnoreCase("groups") ) {
+					this.addInput(inputParameterLops.get(k));
+					inputParameterLops.get(k).addOutput(this);
+				}
+			}
+			_inputParams = inputParameterLops;
+			
+			lps.addCompatibility(JobType.INVALID);
+			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
+	}
+	
 	public GroupedAggregate(
 			HashMap<String, Lops> inputParameterLops, 
 			DataType dt, ValueType vt) {
+		this(inputParameterLops, dt, vt, ExecType.MR);
+	}
+
+	public GroupedAggregate(
+			HashMap<String, Lops> inputParameterLops, 
+			DataType dt, ValueType vt, ExecType et) {
 		super(Lops.Type.GroupedAgg, dt, vt);
-
-		/*
-		 * First input should be the data on which aggregate has to be computed
-		 * This is required due to Dag.java:getAggAndOtherInstructions()
-		 * -- in that function, getInstructions() is invoked with inputIndices.get(0)
-		 * -- therefore, first input should point to the data! 
-		 */
-		this.addInput(inputParameterLops.get("combinedinput"));
-		inputParameterLops.get("combinedinput").addOutput(this);
-		
-		// process remaining parameters
-		for ( String k : inputParameterLops.keySet()) {
-			if ( !k.equalsIgnoreCase("combinedinput") ) {
-				this.addInput(inputParameterLops.get(k));
-				inputParameterLops.get(k).addOutput(this);
-			}
-		}
-		
-		_inputParams = inputParameterLops;
-		
-		/*
-		 * This lop can be executed only in GROUPED_AGG job.
-		 */
-
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		lps.addCompatibility(JobType.GROUPED_AGG);
-		this.lps.setProperties(ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		init(inputParameterLops, dt, vt, et);
 	}
 
 	@Override
 	public String toString() {
 
 		return "Operation = GroupedAggregate";
+	}
+
+	@Override
+	// This version of getInstructions() is invoked when groupedAgg is executed in CP
+	public String getInstructions(String output) throws LopsException {
+		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+		inst += "groupedagg";
+		
+		if ( _inputParams.get("target") == null || _inputParams.get("groups") == null || _inputParams.get("fn") == null ) 
+			throw new LopsException("Invalid parameters to groupedAggregate -- \"target\", \"groups\", \"fn\" must be provided");
+		
+		String targetVar = _inputParams.get("target").getOutputParameters().getLabel();
+		String groupsVar = _inputParams.get("groups").getOutputParameters().getLabel();
+		
+		inst += Lops.OPERAND_DELIMITOR + "target" + Lops.NAME_VALUE_SEPARATOR + targetVar;
+		inst += Lops.OPERAND_DELIMITOR + "groups" + Lops.NAME_VALUE_SEPARATOR + groupsVar;
+		if ( _inputParams.get("weights") != null )
+			inst += Lops.OPERAND_DELIMITOR + "weights" + Lops.NAME_VALUE_SEPARATOR + _inputParams.get("weights").getOutputParameters().getLabel();
+		
+		// Process all the other parameters, which are scalars
+		String name, valueString;
+		Lops value;
+		for(Entry<String, Lops>  e : _inputParams.entrySet()) {
+			name = e.getKey();
+			if ( !name.equalsIgnoreCase("target") && !name.equalsIgnoreCase("groups") && !name.equalsIgnoreCase("weights") ) {
+				value =  e.getValue();
+				
+				if ( value.getExecLocation() == ExecLocation.Data && 
+						((Data)value).isLiteral() ) {
+					valueString = value.getOutputParameters().getLabel();
+				}
+				else {
+					valueString = "##" + value.getOutputParameters().getLabel() + "##";
+				}
+				inst += OPERAND_DELIMITOR + name + Lops.NAME_VALUE_SEPARATOR + valueString;
+			}
+		}
+		
+		inst += OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
+		return inst;
 	}
 
 	@Override

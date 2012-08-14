@@ -100,7 +100,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "round" ,CPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
-		String2CPInstructionType.put( "cdf"	 , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "groupedagg"	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);

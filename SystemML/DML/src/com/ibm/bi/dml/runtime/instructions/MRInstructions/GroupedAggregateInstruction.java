@@ -49,18 +49,21 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase{
 			throw new DMLRuntimeException("Invalid opcode in GroupedAggregateInstruction: " + opcode);
 		}
 		
-		// parts[2] should point to the function
+		Operator optr = parseGroupedAggOperator(parts[2], parts[3]);
+		return new GroupedAggregateInstruction(optr, in, out, str);
+	}
+	
+	public static Operator parseGroupedAggOperator(String fn, String other) throws DMLRuntimeException {
 		AggregateOperationTypes op = AggregateOperationTypes.INVALID;
-		if ( parts[2].equalsIgnoreCase("centralmoment") )
+		if ( fn.equalsIgnoreCase("centralmoment") )
 			// in case of CM, we also need to pass "order"
-			op = CMOperator.getAggOpType(parts[2], parts[3]);
+			op = CMOperator.getAggOpType(fn, other);
 		else 
-			op = CMOperator.getAggOpType(parts[2], null);
-		
+			op = CMOperator.getAggOpType(fn, null);
+	
 		switch(op) {
 		case SUM:
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-			return new GroupedAggregateInstruction(agg, in, out, str);
+			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			
 		case COUNT:
 		case MEAN:
@@ -68,30 +71,11 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase{
 		case CM2:
 		case CM3:
 		case CM4:
-			CMOperator cm = new CMOperator(CM.getCMFnObject(), op);
-			return new GroupedAggregateInstruction(cm, in, out, str);
+			return new CMOperator(CM.getCMFnObject(), op);
 		case INVALID:
 		default:
 			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
-		
-		/*
-		if ( opcode.equalsIgnoreCase("grpak+") ) {
-		} 
-		
-		else if ( opcode.equalsIgnoreCase("grpcm") ) {
-			// RowSums
-			if(parts.length<3)
-				throw new DMLRuntimeException("the number of fields of instruction "+str+" is less than 3!");
-			int cst=Integer.parseInt(parts[3]);
-			if(cst>4 || cst<0)
-				throw new DMLRuntimeException("constant for central moment has to be 0<= <5");
-			
-			CMOperator cm = new CMOperator(CM.getCMFnObject(), cst);
-			return new GroupedAggregateInstruction(cm, in, out, str);
-		} 		
-		return null;
-		*/
 	}
 
 }

@@ -3,6 +3,8 @@ package com.ibm.bi.dml.hops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.GroupedAggregate;
@@ -85,91 +87,120 @@ public class ParameterizedBuiltinOp extends Hops {
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} else if (_op == ParamBuiltinOp.GROUPEDAGG) {
-				// construct necessary lops: combineBinary/combineTertiary and
-				// groupedAgg
-
-				boolean isWeighted = (_paramIndexMap.get("weights") != null);
-				if (isWeighted) {
-					// combineTertiary followed by groupedAgg
-					CombineTertiary combine = CombineTertiary
-							.constructCombineLop(
-									com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreGroupedAggWeighted,
-									(Lops) inputlops.get("target"),
-									(Lops) inputlops.get("groups"),
-									(Lops) inputlops.get("weights"),
-									DataType.MATRIX, get_valueType());
-
-					// the dimensions of "combine" would be same as that of the
-					// input data
-					combine.getOutputParameters().setDimensions(
-							getInput().get(_paramIndexMap.get("target"))
-									.get_dim1(),
-							getInput().get(_paramIndexMap.get("target"))
-									.get_dim2(),		
-							getInput().get(_paramIndexMap.get("target"))
-									.get_rows_in_block(),
-							getInput().get(_paramIndexMap.get("target"))
-									.get_cols_in_block(), 
-							getInput().get(_paramIndexMap.get("target"))
-									.getNnz());
-
-					// add the combine lop to parameter list, with a new name
-					// "combinedinput"
-					inputlops.put("combinedinput", combine);
-					inputlops.remove("target");
-					inputlops.remove("groups");
-					inputlops.remove("weights");
-
-				} else {
-					// combineBinary followed by groupedAgg
-					CombineBinary combine = CombineBinary.constructCombineLop(
-							OperationTypes.PreGroupedAggUnweighted,
-							(Lops) inputlops.get("target"), (Lops) inputlops
-									.get("groups"), DataType.MATRIX,
-							get_valueType());
-
-					// the dimensions of "combine" would be same as that of the
-					// input data
-					combine.getOutputParameters().setDimensions(
-							getInput().get(_paramIndexMap.get("target"))
-									.get_dim1(),
-							getInput().get(_paramIndexMap.get("target"))
-									.get_dim2(),
-							getInput().get(_paramIndexMap.get("target"))
-									.get_rows_in_block(),
-							getInput().get(_paramIndexMap.get("target"))
-									.get_cols_in_block(), 
-							getInput().get(_paramIndexMap.get("target"))
-									.getNnz());
-
-					// add the combine lop to parameter list, with a new name
-					// "combinedinput"
-					inputlops.put("combinedinput", combine);
-					inputlops.remove("target");
-					inputlops.remove("groups");
-
-				}
-				GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-						get_dataType(), get_valueType());
-				// output dimensions are unknown at compilation time
-				grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-
-				//set_lops(grp_agg);
 				
-				ReBlock reblock = null;
-				try {
-					reblock = new ReBlock(
-							grp_agg, get_rows_in_block(),
-							get_cols_in_block(), get_dataType(),
-							get_valueType());
-				} catch (Exception e) {
-					throw new HopsException(e);
+				ExecType et = optFindExecType();
+				if ( et == ExecType.MR ) {
+					// construct necessary lops: combineBinary/combineTertiary and
+					// groupedAgg
+	
+					boolean isWeighted = (_paramIndexMap.get("weights") != null);
+					if (isWeighted) {
+						// combineTertiary followed by groupedAgg
+						CombineTertiary combine = CombineTertiary
+								.constructCombineLop(
+										com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreGroupedAggWeighted,
+										(Lops) inputlops.get("target"),
+										(Lops) inputlops.get("groups"),
+										(Lops) inputlops.get("weights"),
+										DataType.MATRIX, get_valueType());
+	
+						// the dimensions of "combine" would be same as that of the
+						// input data
+						combine.getOutputParameters().setDimensions(
+								getInput().get(_paramIndexMap.get("target"))
+										.get_dim1(),
+								getInput().get(_paramIndexMap.get("target"))
+										.get_dim2(),		
+								getInput().get(_paramIndexMap.get("target"))
+										.get_rows_in_block(),
+								getInput().get(_paramIndexMap.get("target"))
+										.get_cols_in_block(), 
+								getInput().get(_paramIndexMap.get("target"))
+										.getNnz());
+	
+						// add the combine lop to parameter list, with a new name
+						// "combinedinput"
+						inputlops.put("combinedinput", combine);
+						inputlops.remove("target");
+						inputlops.remove("groups");
+						inputlops.remove("weights");
+	
+					} else {
+						// combineBinary followed by groupedAgg
+						CombineBinary combine = CombineBinary.constructCombineLop(
+								OperationTypes.PreGroupedAggUnweighted,
+								(Lops) inputlops.get("target"), (Lops) inputlops
+										.get("groups"), DataType.MATRIX,
+								get_valueType());
+	
+						// the dimensions of "combine" would be same as that of the
+						// input data
+						combine.getOutputParameters().setDimensions(
+								getInput().get(_paramIndexMap.get("target"))
+										.get_dim1(),
+								getInput().get(_paramIndexMap.get("target"))
+										.get_dim2(),
+								getInput().get(_paramIndexMap.get("target"))
+										.get_rows_in_block(),
+								getInput().get(_paramIndexMap.get("target"))
+										.get_cols_in_block(), 
+								getInput().get(_paramIndexMap.get("target"))
+										.getNnz());
+	
+						// add the combine lop to parameter list, with a new name
+						// "combinedinput"
+						inputlops.put("combinedinput", combine);
+						inputlops.remove("target");
+						inputlops.remove("groups");
+	
+					}
+					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
+							get_dataType(), get_valueType());
+					// output dimensions are unknown at compilation time
+					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+	
+					//set_lops(grp_agg);
+					
+					ReBlock reblock = null;
+					try {
+						reblock = new ReBlock(
+								grp_agg, get_rows_in_block(),
+								get_cols_in_block(), get_dataType(),
+								get_valueType());
+					} catch (Exception e) {
+						throw new HopsException(e);
+					}
+					reblock.getOutputParameters().setDimensions(-1, -1, 
+							get_rows_in_block(), get_cols_in_block(), -1);
+	
+					set_lops(reblock);
 				}
-				reblock.getOutputParameters().setDimensions(-1, -1, 
-						get_rows_in_block(), get_cols_in_block(), -1);
-
-				set_lops(reblock);
-				
+				else {
+					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
+							get_dataType(), get_valueType(), et);
+					// output dimensions are unknown at compilation time
+					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					
+					// introduce a reblock lop only if it is NOT single_node execution
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
+						set_lops(grp_agg);
+					}
+					else {
+						ReBlock reblock = null;
+						try {
+							reblock = new ReBlock(
+									grp_agg, get_rows_in_block(),
+									get_cols_in_block(), get_dataType(),
+									get_valueType());
+						} catch (Exception e) {
+							throw new HopsException(e);
+						}
+						reblock.getOutputParameters().setDimensions(-1, -1, 
+								get_rows_in_block(), get_cols_in_block(), -1);
+		
+						set_lops(reblock);
+					}
+				}
 			}
 
 		}
@@ -201,7 +232,21 @@ public class ParameterizedBuiltinOp extends Hops {
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		// TODO Auto-generated method stub
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return ExecType.CP;
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
+			return ExecType.MR;
+
+		if( _etype != null ) 			
+			return _etype;
+				
+		if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
+			if ( this.getInput().get(0).areDimsBelowThreshold() )
+				return ExecType.CP;
+			else
+				return ExecType.MR;
+		}
+		
 		return null;
 	}
 }

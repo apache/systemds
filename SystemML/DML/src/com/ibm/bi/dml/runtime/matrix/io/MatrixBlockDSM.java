@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
+import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -3084,6 +3085,118 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
+	public MatrixValue groupedAggOperations(MatrixValue target, MatrixValue weights, MatrixValue result, Operator op) throws DMLRuntimeException {
+		// this <- groups
+		
+		if (this.getNumColumns() != 1 || target.getNumColumns() != 1 || (weights!=null && weights.getNumColumns()!=1) )
+			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices.");
+		if ( this.getNumRows() != target.getNumRows() || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
+			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
+		
+		// Determine the number of groups
+		double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+		double d;
+		if ( sparse ) {
+			for ( int i=0; i < sparseRows.length; i++ ) {
+				if ( sparseRows[i] == null)
+					continue;
+				double[] values = sparseRows[i].getValueContainer();
+				for ( int j=0; j < values.length; j++ ) {
+					d = values[j];
+					min = (d < min ? d : min);
+					max = (d > max ? d : max);
+				}
+			}
+		}
+		else {
+			for ( int i=0; i < denseBlock.length; i++ ) {
+				d = denseBlock[i];
+				min = (d < min ? d : min);
+				max = (d > max ? d : max);
+			}
+		}
+		if ( min <= 0 )
+			throw new DMLRuntimeException("Invalid value (" + min + ") encountered in \"groups\" while computing groupedAggregate.");
+		if ( max <= 0 )
+			throw new DMLRuntimeException("Invalid value (" + max + ") encountered in \"groups\" while computing groupedAggregate.");
+		int numGroups = (int) max;
+	
+		// Allocate memory to hold the result
+		boolean result_sparsity = false; // it is likely that resulting matrix is dense
+		if(result==null)
+			result=new MatrixBlockDSM(numGroups, 1, result_sparsity);
+		else
+			result.reset(numGroups, 1, result_sparsity);
+
+		// Compute the result
+		int g;
+		double w = 1; // default weight
+		if(op instanceof CMOperator) {
+			// initialize required objects for storing the result of CM operations
+			CM cmFn = CM.getCMFnObject();
+			CM_COV_Object[] cmValues = new CM_COV_Object[numGroups];
+			for ( int i=0; i < numGroups; i++ )
+				cmValues[i] = new CM_COV_Object();
+			
+			for ( int i=0; i < this.getNumRows(); i++ ) {
+				g = (int) this.getValue(i, 0);
+				d = target.getValue(i,0);
+				if ( weights != null )
+					w = weights.getValue(i,0);
+				// cmValues is 0-indexed, whereas range of values for g = [1,numGroups]
+				cmFn.execute(cmValues[g-1], d, w); 
+			}
+			
+			// extract the required value from each CM_COV_Object
+			for ( int i=0; i < numGroups; i++ )
+				// result is 0-indexed, so is cmValues
+				result.setValue(i, 0, cmValues[i].getRequiredResult(op));
+		}
+		else if(op instanceof AggregateOperator) {
+			AggregateOperator aggop=(AggregateOperator) op;
+				
+			if(aggop.correctionExists) {
+				
+				KahanObject[] buffer = new KahanObject[numGroups];
+				for(int i=0; i < numGroups; i++ )
+					buffer[i] = new KahanObject(aggop.initialValue, 0);
+				
+				for ( int i=0; i < this.getNumRows(); i++ ) {
+					g = (int) this.getValue(i, 0);
+					d = target.getValue(i,0);
+					if ( weights != null )
+						w = weights.getValue(i,0);
+					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+					aggop.increOp.fn.execute(buffer[g-1], d*w);
+				}
+
+				// extract the required value from each KahanObject
+				for ( int i=0; i < numGroups; i++ )
+					// result is 0-indexed, so is buffer
+					result.setValue(i, 0, buffer[i]._sum);
+			}
+			else {
+				for ( int i=0; i < numGroups; i++ )
+					result.setValue(i, 0, aggop.initialValue);
+				
+				double v;
+				for ( int i=0; i < this.getNumRows(); i++ ) {
+					g = (int) this.getValue(i, 0);
+					d = target.getValue(i,0);
+					if ( weights != null )
+						w = weights.getValue(i, 0);
+					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+					v = aggop.increOp.fn.execute(result.getValue(g-1,1), d*w);
+					result.setValue(g-1, 0, v);
+				}
+			}
+			
+		}else
+			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
+		
+		return result;
+	}
+	
 	@Override
 	/*
 	 *  D = ctable(A,v2,W)
@@ -3501,38 +3614,51 @@ public class MatrixBlockDSM extends MatrixValue{
 		Random random=new Random(seed);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
 		m.allocateDenseBlock();
+		double val;
 		for(int i=0; i<rows; i++) {
 			for(int j=0; j<cols; j++) {
-				m.denseBlock[i*cols+j] = min + ((max-min)*random.nextDouble());
-				m.nonZeros++;
+				val = min + ((max-min)*random.nextDouble());
+				m.denseBlock[i*cols+j] = val;
+				//if ( val != 0) {
+				//	m.nonZeros++;
+				//}
 			}
 		}
+		m.updateNonZeros();
 		return m;
 	}
 	
 	public MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, double min, double max, long seed)
 	{
-		if ( min == 0.0 && max == 0.0 )
+		if ( min == 0.0 && max == 0.0 ) {
 			// nothing to do here
+			this.reset();
 			return this;
+		}
 		
 		Random random=new Random(seed);
 		this.allocateDenseBlock();
+		double val;
 		for(int i=0; i<rows; i++) {
 			for(int j=0; j<cols; j++) {
-				this.denseBlock[i*cols+j] = min + ((max-min)*random.nextDouble());
-				this.nonZeros++;
+				val = min + ((max-min)*random.nextDouble());
+				this.denseBlock[i*cols+j] = val; 
+				//if ( val != 0 )
+				//	this.nonZeros++;
 			}
 		}
+		this.updateNonZeros();
 		return this;
 	}
 	
 	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
 	{
-		if ( min == 0.0 && max == 0.0 )
+		if ( min == 0.0 && max == 0.0 ) {
 			// nothing to do here
+			this.reset();
 			return this;
-		
+		}
+		double val;
 		Random random=new Random(seed);
 		this.sparseRows=new SparseRow[rows];
 		for(int i=0; i<rows; i++)
@@ -3542,20 +3668,23 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				if(random.nextDouble()>sparsity)
 					continue;
-				this.sparseRows[i].append(j, min + ((max-min)*random.nextDouble()) );
-				this.nonZeros++;
+				val = min + ((max-min)*random.nextDouble());
+				this.sparseRows[i].append(j, val );
+				//if ( val != 0)
+				//	this.nonZeros++;
 			}
 		}
+		this.updateNonZeros();
 		return this;
 	}
 	
 
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
-		//int min=1, max=5;
 		Random random=new Random(seed);
 		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true);
 		m.sparseRows=new SparseRow[rows];
+		double val;
 		for(int i=0; i<rows; i++)
 		{
 			m.sparseRows[i]=new SparseRow();	
@@ -3563,10 +3692,13 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				if(random.nextDouble()>sparsity)
 					continue;
-				m.sparseRows[i].append(j, random.nextDouble()); // Math.ceil(min + ((max-min)*random.nextDouble())));
-				m.nonZeros++;
+				val = random.nextDouble();
+				m.sparseRows[i].append(j, val); 
+				//if ( val != 0)
+				//	m.nonZeros++;
 			}
 		}
+		m.updateNonZeros();
 		return m;
 	}
 	

@@ -26,6 +26,7 @@ import com.ibm.bi.dml.packagesupport.bObject;
 import com.ibm.bi.dml.packagesupport.Scalar.ScalarType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
@@ -54,13 +55,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	
 	protected static IDSequence _idSeq;
 	protected String _baseDir = null;
-
-	public static final String CLASSNAME = "classname";
-	public static final String EXECLOCATION = "execlocation";
-	public static final String CONFIGFILE = "configfile";
-	final String WORKER = "worker";
-	final int ROWS_PER_BLOCK = DMLTranslator.DMLBlockSize;
-	final int COLS_PER_BLOCK = DMLTranslator.DMLBlockSize;
 
 	ArrayList<Instruction> block2CellInst; 
 	ArrayList<Instruction> cell2BlockInst; 
@@ -269,14 +263,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		block2CellInst = getBlock2CellInstructions(getInputParams(),_unblockedFileNames);
 
 		// assemble information provided through keyvalue pairs
-		String className = _otherParams.get(CLASSNAME);
-		String configFile = _otherParams.get(CONFIGFILE);
-		String execLocation = _otherParams.get(EXECLOCATION);
+		String className = _otherParams.get(ExternalFunctionStatement.CLASS_NAME);
+		String configFile = _otherParams.get(ExternalFunctionStatement.CONFIG_FILE);
+		String execLocation = _otherParams.get(ExternalFunctionStatement.EXEC_LOCATION);
 
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
-			throw new PackageRuntimeException(CLASSNAME + " not provided!");
+			throw new PackageRuntimeException(ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());
@@ -352,7 +346,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				inputs[i] = "##" + matrices.get(i).getName() + "##";
 				outputs[i] = scratchSpaceLoc +
 				             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Output";
+	                         _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Output";
 				blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 				inputInfo[i] = textCellInputInfo;
 				outputInfo[i] = binaryBlockOutputInfo;
@@ -369,8 +363,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 						+ ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType()
 						+ ReBlock.OPERAND_DELIMITOR + i + ReBlock.VALUETYPE_PREFIX
 						+ matrices.get(i).getValueType()
-						+ ReBlock.OPERAND_DELIMITOR + ROWS_PER_BLOCK
-						+ ReBlock.OPERAND_DELIMITOR + COLS_PER_BLOCK;
+						+ ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize
+						+ ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;
 				
 				// create metadata instructions to populate symbol table 
 				// with variables that hold blocked matrices
@@ -472,7 +466,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				inputs[i] = "##" + matrices.get(i).getName() + "##";
 				outputs[i] = scratchSpaceLoc +
 				             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-	                         _otherParams.get(CLASSNAME) + _runID + "_" + i + "Input";
+	                         _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
 				unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 				inputInfo[i] = binBlockInputInfo;
 				outputInfo[i] = textCellOutputInfo;
@@ -571,7 +565,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// determine exec location, default is control node
 		// and allocate the appropriate NIMBLE task
-		if (inst.getExecLocation().compareTo(WORKER) == 0)
+		if (inst.getExecLocation().equals(ExternalFunctionStatement.WORKER))
 			t = new WrapperTaskForWorkerNode(func);
 		else
 			t = new WrapperTaskForControlNode(func);
@@ -586,7 +580,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// get updated function
 		PackageFunction returnFunc;
-		if (inst.getExecLocation().compareTo(WORKER) == 0)
+		if (inst.getExecLocation().equals(ExternalFunctionStatement.WORKER))
 			returnFunc = ((WrapperTaskForWorkerNode) t)
 			.getUpdatedPackageFunction();
 		else

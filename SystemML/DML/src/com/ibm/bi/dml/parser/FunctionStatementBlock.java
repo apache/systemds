@@ -20,7 +20,9 @@ public class FunctionStatementBlock extends StatementBlock {
 	 *    2)  The other parameters for External Functions
 	 * @throws IOException 
 	 */
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) 
+		throws LanguageException, ParseException, IOException 
+	{
 		
 		if (_statements.size() > 1)
 			throw new LanguageException("FunctionStatementBlock should have only 1 statement (FunctionStatement)");
@@ -42,15 +44,17 @@ public class FunctionStatementBlock extends StatementBlock {
 			_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
 		}
 		else {
-				
+			//validate specified attributes and attribute values
+			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
+			efstmt.validateParameters();
+			
+			//validate child statements
 			this._dmlProg = dmlProg;
-			for(StatementBlock sb : fstmt.getBody())
+			for(StatementBlock sb : efstmt.getBody()) //TODO MB: Is this really necessary? Can an ExternalFunction, implemented in Java, really have child statement blocks?
 			{
 				ids = sb.validate(dmlProg, ids, constVars);
 				constVars = sb.getConstOut();
 			}
-			
-			
 		}
 		
 		

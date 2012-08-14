@@ -367,9 +367,9 @@ public class DMLProgram {
 			if (fstmt instanceof ExternalFunctionStatement) {
 				 // create external function program block
 				
-				String execLoc = ((ExternalFunctionStatement) fstmt)
-                				  .getOtherParams().get("execlocation");
-				boolean isCP = (execLoc!=null && execLoc.equals("CP")) ? true : false;
+				String execType = ((ExternalFunctionStatement) fstmt)
+                				    .getOtherParams().get(ExternalFunctionStatement.EXEC_TYPE);
+				boolean isCP = (execType.equals(ExternalFunctionStatement.IN_MEMORY)) ? true : false;
 				
 				String scratchSpaceLoc = null;
 				try {

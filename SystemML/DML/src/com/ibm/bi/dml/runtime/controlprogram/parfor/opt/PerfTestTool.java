@@ -33,10 +33,10 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -885,7 +885,7 @@ public class PerfTestTool
 			dat2.setValueType(ValueType.DOUBLE);
 			out.add(dat2);
 			HashMap<String, String> params = new HashMap<String, String>();
-			params.put(ExternalFunctionProgramBlock.CLASSNAME, PerfTestExtFunctCP.class.getName());			
+			params.put(ExternalFunctionStatement.CLASS_NAME, PerfTestExtFunctCP.class.getName());			
 			ExternalFunctionProgramBlockCP fpb = new ExternalFunctionProgramBlockCP(prog, in, out, params, PERF_TOOL_DIR);	
 			prog.addFunctionProgramBlock(DMLProgram.DEFAULT_NAMESPACE, "execPerfTestExtFunct", fpb);
 		}

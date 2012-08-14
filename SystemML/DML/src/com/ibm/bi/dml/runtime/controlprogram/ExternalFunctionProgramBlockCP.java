@@ -12,6 +12,7 @@ import com.ibm.bi.dml.packagesupport.PackageFunction;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -136,14 +137,14 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		_inst = new ArrayList<Instruction>();
 
 		// assemble information provided through keyvalue pairs
-		String className = _otherParams.get(CLASSNAME);
-		String configFile = _otherParams.get(CONFIGFILE);
-		String execLocation = _otherParams.get(EXECLOCATION);
+		String className = _otherParams.get(ExternalFunctionStatement.CLASS_NAME);
+		String configFile = _otherParams.get(ExternalFunctionStatement.CONFIG_FILE);
+		String execLocation = _otherParams.get(ExternalFunctionStatement.EXEC_LOCATION);
 
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
-			throw new PackageRuntimeException(CLASSNAME + " not provided!");
+			throw new PackageRuntimeException(ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());

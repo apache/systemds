@@ -2,17 +2,22 @@ package com.ibm.bi.dml.api;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Properties;
+import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -57,6 +62,7 @@ import com.ibm.bi.dml.utils.visualize.DotGraph;
 
 public class DMLScript {
 	//TODO: Change these static variables to non-static, and create corresponding access methods
+	public enum EXECUTION_PROPERTIES {LOG, DEBUG, VISUALIZE, RUNTIME_PLATFORM, CONFIG};
 	public static boolean DEBUG = false;
 	public static boolean VISUALIZE = false;
 	public static boolean LOG = false;	
@@ -82,11 +88,11 @@ public class DMLScript {
 	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + "-exec <mode>" +  /*" (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
 			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
-			+ " -exec: <mode> execution mode (hadoop, singlenode, hybrid)\n"
+			+ " -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			+ " [-d | -debug]: (optional) output debug info \n"
 			// TODO: COMMENT OUT -v option before RELEASE
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
@@ -97,11 +103,13 @@ public class DMLScript {
 			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
 			+ "<args-list>: (optional) args to DML script \n" ;
 	
-
+	public DMLScript (){
+		
+	}
 	
 	public DMLScript(String dmlScript, boolean debug, boolean log, boolean visualize, RUNTIME_PLATFORM rt, String config, HashMap<String, String> argVals){
 		_dmlScriptString = dmlScript;
-		DMLScript.DEBUG = debug;
+		DEBUG = debug;
 		LOG = log;
 		VISUALIZE = visualize;
 		rtplatform = rt;
@@ -113,136 +121,16 @@ public class DMLScript {
 		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
 	}
 	
+	
 	/**
-	 * createDMLScript: Do the diligent work to parse the parameters provided by the user and create a DMLScript object
-	 * @param args[] parameters array 
-	 * @throws IOException 
-	 */
-	public static DMLScript createDMLScript(String[] args) throws IOException{
-		DMLScript d = null;
-		
-		RUNTIME_PLATFORM rt = RUNTIME_PLATFORM.HYBRID;
-		
-		// stores the (filename | DMLScript string) passed
-		String fileName = null;
-		
-		// stores if <filename> arg is file (if true) or is a string (if false)
-		boolean fromFile = false;
-		
-		/////////// if the args is incorrect, print usage /////////////
-		if (args.length < 2){
-			System.err.println(USAGE);
-			return d;
-		}
-		
-		//////////// process -f | -s to set dmlScriptString ////////////////
-		if (!(args[0].equals("-f") || args[0].equals("-s"))){
-			System.err.println("ERROR: first argument must be either -f or -s");
-			System.err.println(USAGE);
-			return d;
-		}
-		
-		StringBuilder dmlScriptString = new StringBuilder();
-		fromFile = (args[0].equals("-f")) ? true : false;
-		fileName = args[1];
-
-		// DML script can be from local or from hdfs
-		// from local file - e.g., command invocation of DML
-		// hdfs file - e.g., application oozie workflow.xml -> Jaql -> DML
-		if (fromFile){
-			String s1 = null;
-			BufferedReader in = null;
-			//TODO: update this hard coded line
-			if (fileName.startsWith("hdfs:")){ // from hdfs 	
-                FileSystem hdfs = FileSystem.get(new Configuration());
-                Path scriptPath = new Path(fileName);
-                in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
-			}
-			else { // from local file system
-				in = new BufferedReader(new FileReader(fileName));
-			}
-			while ((s1 = in.readLine()) != null)
-				dmlScriptString.append(s1 + "\n");
-			in.close();	
-		}
-		else {
-			dmlScriptString.append(fileName);
-		}
-		
-		//////////////////process rest of args list ////////////////////////
-		int argid = 2;
-		boolean debug = false, log = false, visualize = false;
-		String optConfig = null;
-		HashMap<String, String> argVals = new HashMap<String, String>();
-		while (argid < args.length) {
-			if (args[argid].equalsIgnoreCase("-d") || args[argid].equalsIgnoreCase("-debug")) {
-				debug = true;
-			} else if (args[argid].equalsIgnoreCase("-l") || args[argid].equalsIgnoreCase("-log")) {
-				log = true;
-			} else if (args[argid].equalsIgnoreCase("-v") || args[argid].equalsIgnoreCase("-visualize")) {
-				visualize = true;
-			} else if ( args[argid].equalsIgnoreCase("-exec")) {
-				argid++;
-				if ( args[argid].equalsIgnoreCase("hadoop")) 
-					rt = RUNTIME_PLATFORM.HADOOP;
-				else if ( args[argid].equalsIgnoreCase("singlenode"))
-					rt = RUNTIME_PLATFORM.SINGLE_NODE;
-				else if ( args[argid].equalsIgnoreCase("hybrid"))
-					rt = RUNTIME_PLATFORM.HYBRID;
-				else if ( args[argid].equalsIgnoreCase("nz"))
-					rt = RUNTIME_PLATFORM.NZ;
-				else {
-					System.err.println("ERROR: Unknown runtime platform: " + args[argid]);
-					return d;
-				}
-			// handle config file
-			} else if (args[argid].startsWith("-config=")){
-				optConfig = args[argid].substring(8).replaceAll("\"", "");
-			}
-			// handle the args to DML Script -- rest of args will be passed here to 
-			else if (args[argid].startsWith("-args")) {
-				argid++;
-				int index = 1;
-				while( argid < args.length){
-					argVals.put("$"+index ,args[argid]);
-					argid++;
-					index++;
-				}
-			} 
-			argid++;
-		} 
-		
-		d = new DMLScript(dmlScriptString.toString(), debug, log, visualize, rt, optConfig, argVals);
-		//////////////// for DEBUG, dump arguments /////////////////////////////
-		//if (debug){
-			System.out.println("INFO: ****** args to DML Script ****** ");
-			System.out.println("INFO: UUID: " + getUUID());
-			System.out.println("INFO: FROM-FILE: " + fromFile);
-			System.out.println("INFO: SCRIPT: " + fileName);
-			//System.out.println("INFO: DMLSTRING: " + dmlScriptString);
-			System.out.println("INFO: DEBUG: "  + debug);
-			System.out.println("INFO: LOG: "  + log);
-			System.out.println("INFO: VISUALIZE: "  + visualize);
-			System.out.println("INFO: RUNTIME: " + rt);
-			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			System.out.println("INFO: OPTIONAL CONFIG: " + optConfig);
-			
-			if (argVals.size() > 0)
-				System.out.println("INFO: Value for script parameter args: ");
-			for (int i=1; i<= argVals.size(); i++)
-				System.out.println("INFO: $" + i + " = " + argVals.get("$" + i) );
-		//}
-		return d;
-	}
-
-	/**
-	 * run: Execute a DML script
+	 * run: The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
+	 * and customized parameters have been put into _argVals
 	 * @throws ParseException 
 	 * @throws IOException 
 	 * @throws DMLException 
 	 */
-	public void run()throws IOException, ParseException, DMLException {
-		
+	private boolean run()throws IOException, ParseException, DMLException {
+		boolean success = false;
 		/////////////// set logger level //////////////////////////////////////
 		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID){
 			if (DEBUG)
@@ -256,13 +144,15 @@ public class DMLScript {
 		BufferedWriter out = null;
 		if (LOG && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
 			// copy the input DML script to ./log folder
+			// TODO: define the default path to store SystemML.log
 			String hadoop_home = System.getenv("HADOOP_HOME");
+			System.out.println("HADOOP_HOME: " + hadoop_home);
 			File logfile = new File(hadoop_home + "/" + LOG_FILE_NAME);
 			if (!logfile.exists()) {
-				boolean success = logfile.createNewFile(); // creates the file
-				// if it does not
+				success = logfile.createNewFile(); // creates the file
 				if (success == false) 
 					System.err.println("ERROR: Failed to create log file: " + hadoop_home + "/" + LOG_FILE_NAME);	
+					return success;
 			}
 
 			out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile, true)));
@@ -288,7 +178,7 @@ public class DMLScript {
 			} catch (Exception e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
 				System.err.println("ERROR: Error parsing optional configuration file: " + _optConfig);
-				System.exit(-1);
+				System.exit(1);
 			}
 			if (defaultConfig != null) {
 				try {
@@ -296,7 +186,7 @@ public class DMLScript {
 				}
 				catch(Exception e){
 					System.err.println("ERROR: failed to merge default ");
-					System.exit(-1);
+					System.exit(1);
 				}
 			}
 			else {
@@ -309,7 +199,7 @@ public class DMLScript {
 			} catch (Exception e) { // it is not OK to not have the default
 				defaultConfig = null;
 				System.out.println("ERROR: Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-				System.exit(-1);
+				System.exit(1);
 			}
 		}
 		ConfigurationManager.setConfig(defaultConfig);
@@ -336,7 +226,8 @@ public class DMLScript {
 
 		if (prog == null){
 			System.err.println("ERROR: Parsing failed");
-			System.exit(-1);
+			success = false;
+			return success;
 		}
 
 		if (DEBUG) {
@@ -393,11 +284,229 @@ public class DMLScript {
 		}
 
 		executeHadoop(dmlt, prog, defaultConfig, out);
+		
+		success = true;
+		return success;
 
 	}
 	
-	
+	/**
+	 * executeScript: Execute a DML script, which is provided by the user as a file path to the script file.
+	 * @param scriptPathName Path to the DML script file
+	 * @param executionProperties DMLScript runtime and debug settings
+	 * @param scriptArguments Variant arguments provided by the user to run with the DML Script
+	 * @throws ParseException 
+	 * @throws IOException 
+	 * @throws DMLException 
+	 */
+	public boolean executeScript (String scriptPathName, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+		boolean success = false;
+		DEBUG = false;
+		VISUALIZE = false;
+		LOG = false;	
+		
+		_dmlScriptString = null;
+		_optConfig = null;
+		_argVals = new HashMap<String, String>();
+		
+		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
+		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
+		
+		//Process the script path, get the content of the script
+		StringBuilder dmlScriptString = new StringBuilder();
+		
+		if (scriptPathName == null){
+			System.err.println("ERROR: script path must be provided!");
+			success = false;
+			return success;
+		}
+		else {
+			String s1 = null;
+			BufferedReader in = null;
+			//TODO: update this hard coded line
+			if (scriptPathName.startsWith("hdfs:")){ 
+              FileSystem hdfs = FileSystem.get(new Configuration());
+              Path scriptPath = new Path(scriptPathName);
+              in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
+			}
+			else { // from local file system
+				in = new BufferedReader(new FileReader(scriptPathName));
+			}
+			while ((s1 = in.readLine()) != null)
+				dmlScriptString.append(s1 + "\n");
+			in.close();	
+		}
+		_dmlScriptString=dmlScriptString.toString();
+		
+		success = processDMLScriptProperties(executionProperties);
+		
+		if (!success){
+			System.err.println("ERROR: There are invalid execution properties!");
+			return success;
+		}
+		
+		success = processOptionalScriptArgs(scriptArguments);
+		if (!success){
+			System.err.println("ERROR: There are invalid script arguments!");
+			return success;
+		}
+		
+		if (DEBUG){
+			System.out.println("INFO: ****** args to DML Script ****** ");
+			System.out.println("INFO: UUID: " + getUUID());
+			System.out.println("INFO: SCRIPT PATH: " + scriptPathName);
+			System.out.println("INFO: DEBUG: "  + DEBUG);
+			System.out.println("INFO: LOG: "  + LOG);
+			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
+			System.out.println("INFO: RUNTIME: " + rtplatform);
+			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			System.out.println("INFO: OPTIONAL CONFIG: " + _optConfig);
 
+			if (_argVals.size() > 0)
+				System.out.println("INFO: Value for script parameter args: ");
+			for (int i=1; i<= _argVals.size(); i++)
+				System.out.println("INFO: $" + i + " = " + _argVals.get("$" + i) );
+		}
+
+		
+		success = run();
+		// reset flags
+		DEBUG = false;
+		VISUALIZE = false;
+		LOG = false;	
+		return success;
+	}
+	
+	
+	/**
+	 * executeScript: Execute a DML script. The content of the script is provided by the user as an input stream.
+	 * @param script InputStream as the DML script
+	 * @param executionProperties DMLScript runtime and debug settings
+	 * @param scriptArguments Variant arguments provided by the user to run with the DML Script
+	 * @throws ParseException 
+	 * @throws IOException 
+	 * @throws DMLException 
+	 */
+	public boolean executeScript (InputStream script, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+		boolean success = false;
+		DEBUG = false;
+		VISUALIZE = false;
+		LOG = false;	
+		
+		_dmlScriptString = null;
+		_optConfig = null;
+		_argVals = new HashMap<String, String>();
+		
+		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
+		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
+		
+		if (script == null){
+			System.err.println("ERROR: Script string must be provided!");
+			success = false;
+			return success;
+		}
+		else {		
+			_dmlScriptString = new Scanner(script).useDelimiter("\\A").next();
+		}
+		
+		if (!success){
+			System.err.println("ERROR: There are invalid execution properties!");
+			return success;
+		}
+		
+		success = processOptionalScriptArgs(scriptArguments);
+		if (!success){
+			System.err.println("ERROR: There are invalid script arguments!");
+			return success;
+		}
+		
+		if (DEBUG){
+			System.out.println("INFO: ****** args to DML Script ****** ");
+			System.out.println("INFO: UUID: " + getUUID());
+			System.out.println("INFO: SCRIPT: " + _dmlScriptString);
+			System.out.println("INFO: DEBUG: "  + DEBUG);
+			System.out.println("INFO: LOG: "  + LOG);
+			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
+			System.out.println("INFO: RUNTIME: " + rtplatform);
+			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			System.out.println("INFO: OPTIONAL CONFIG: " + _optConfig);
+
+			if (_argVals.size() > 0)
+				System.out.println("INFO: Value for script parameter args: ");
+			for (int i=1; i<= _argVals.size(); i++)
+				System.out.println("INFO: $" + i + " = " + _argVals.get("$" + i) );
+		}
+
+		success = run();
+		//reset flags
+		DEBUG = false;
+		VISUALIZE = false;
+		LOG = false;	
+		return success;
+	}
+	
+	//Process execution properties
+	private boolean processDMLScriptProperties(Properties executionProperties){
+		boolean success = false;
+		//Make sure that the properties are in the defined property list that can be handled
+		@SuppressWarnings("unchecked")
+		Enumeration<String> e = (Enumeration<String>) executionProperties.propertyNames();
+		
+		while (e.hasMoreElements()){
+			String key = e.nextElement();
+			boolean validProperty = false;
+			for (EXECUTION_PROPERTIES p : EXECUTION_PROPERTIES.values()){
+				if (p.name().equals(key)){
+					validProperty = true;
+					break;
+				}
+			}
+			if (!validProperty){
+				success = false;
+				return success;
+				
+			}
+			
+		}
+
+		LOG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.LOG.toString(), "false"));
+		DEBUG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.DEBUG.toString(), "false"));
+		VISUALIZE = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.VISUALIZE.toString(), "false"));
+		
+		String runtime_pt = executionProperties.getProperty(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
+		if (runtime_pt.equalsIgnoreCase("hadoop"))
+			rtplatform = RUNTIME_PLATFORM.HADOOP;
+		else if ( runtime_pt.equalsIgnoreCase("singlenode"))
+			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		else if ( runtime_pt.equalsIgnoreCase("hybrid"))
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
+		else if ( runtime_pt.equalsIgnoreCase("nz"))
+			rtplatform = RUNTIME_PLATFORM.NZ;
+	
+		_optConfig = executionProperties.getProperty(EXECUTION_PROPERTIES.CONFIG.toString(), null);
+
+
+		
+		success = true;
+		return success;
+	}
+	
+	//Process the optional script arguments provided by the user to run with the DML script
+	private boolean processOptionalScriptArgs(String... scriptArguments){
+		boolean success = false;
+		if (scriptArguments != null){
+			int index = 1;
+			for (String arg : scriptArguments){
+				_argVals.put("$"+index ,arg);
+				index++;
+			}
+
+		}
+		success = true;
+		return success;
+	}
+	
+	
 	
 	/**
 	 * @param args
@@ -409,8 +518,88 @@ public class DMLScript {
 	public static void main(String[] args) throws IOException, ParseException, DMLException {
 		// This is a show case how to create a DMLScript object to accept a DML script provided by the user,
 		// and how to run it.
-		DMLScript d = DMLScript.createDMLScript(args);
-		d.run();		
+		
+		/////////// if the args is incorrect, print usage /////////////
+		if (args.length < 2){
+			System.err.println(USAGE);
+			System.exit(1);
+		}
+		////////////process -f | -s to set dmlScriptString ////////////////
+		else if (!(args[0].equals("-f") || args[0].equals("-s"))){
+			System.err.println("ERROR: First argument must be either -f or -s");
+			System.err.println(USAGE);
+			System.exit(1);
+		}
+		
+		DMLScript d = new DMLScript();
+		boolean fromFile = (args[0].equals("-f")) ? true : false;
+		boolean success = false;
+		String script = args[1];	
+		Properties executionProperties = new Properties();
+		String[] scriptArgs = null;
+		int i = 2;
+		while (i<args.length){
+			if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("-debug")) {
+				executionProperties.put(EXECUTION_PROPERTIES.DEBUG.toString(), "true");
+			} else if (args[i].equalsIgnoreCase("-l") || args[i].equalsIgnoreCase("-log")) {
+				executionProperties.put(EXECUTION_PROPERTIES.LOG.toString(), "true");
+			} else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize")) {
+				executionProperties.put(EXECUTION_PROPERTIES.VISUALIZE.toString(), "true");
+			} else if ( args[i].equalsIgnoreCase("-exec")) {
+				i++;
+				if ( args[i].equalsIgnoreCase("hadoop")) 
+					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hadoop");
+				else if ( args[i].equalsIgnoreCase("singlenode"))
+					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "singlenode");
+				else if ( args[i].equalsIgnoreCase("hybrid"))
+					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
+				else if ( args[i].equalsIgnoreCase("nz"))
+					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "nz");
+				else {
+					System.err.println("ERROR: Unknown runtime platform: " + args[i]);
+					System.exit(1);
+				}
+			// handle config file
+			} else if (args[i].startsWith("-config=")){
+				executionProperties.put(EXECUTION_PROPERTIES.CONFIG.toString(), args[i].substring(8).replaceAll("\"", "")); 
+			}
+			// handle the args to DML Script -- rest of args will be passed here to 
+			else if (args[i].startsWith("-args")) {
+				i++;
+				scriptArgs = new String[args.length - i];
+				int j = 0;
+				while( i < args.length){
+					if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("-debug")||
+						args[i].equalsIgnoreCase("-l") || args[i].equalsIgnoreCase("-log") ||
+						args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize")||
+						args[i].equalsIgnoreCase("-exec") ||
+						args[i].startsWith("-config=")){
+						System.err.println("ERROR: -args must be the final argument for DMLScript!");
+						System.exit(1);
+					}
+						
+					scriptArgs[j++]=args[i++];
+				}
+			} 
+			else {
+				System.err.println("ERROR: Unknown argument " + args[i]);
+				System.err.println(USAGE);
+				System.exit(1);
+			}
+			i++;
+		}
+		if (fromFile){
+			success = d.executeScript(script, executionProperties, scriptArgs);
+		}
+		else {
+			InputStream is = new ByteArrayInputStream(script.getBytes());
+			success = d.executeScript(is, executionProperties, scriptArgs);
+		}
+		
+		if (!success){
+			System.err.println("ERROR: Script cannot be executed");
+			System.exit(1);
+		}
 	} ///~ end main
 
 	

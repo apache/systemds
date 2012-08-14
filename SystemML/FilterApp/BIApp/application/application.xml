@@ -1,16 +1,13 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <name>Filter & Project</name>
+    <name>Filter &amp; Project</name>
     <description>This application perform filtering / column projection on input data</description>
     <properties>
-        <property defaultValue="input/data.json" description="input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="input data file name" name="inputDataFile" paramtype="FILEPATH" uitype="textfield"></property>
-        <property defaultValue='input/data.meta.json' description="meta data file of input data" isInputPath="false" isOutputPath="false" isRequired="true" label="Metadata file" name="metaDataFile" paramtype="FILEPATH" uitype="textfield"/><property
-        	defaultValue="" description="Filter expression" isInputPath="false" isOutputPath="false" isRequired="false" label="filter expression" name="filterExpression" uitype="textfield" paramtype="STRING">
-</property>
-    	<property description="projection columns json file" isInputPath="false" isOutputPath="false" isRequired="false" label="projection columns" name="projectColumnsFile" paramtype="FILEPATH" uitype="textfield" defaultValue="">ccdcdgcdgmcdgcdc</property><property
-    		defaultValue="/output/data.update.meta.json" description="updated meta data after projection " isInputPath="false" isOutputPath="false" isRequired="true" label="updated meta data file" name="outputMetaDataFileName" paramtype="FILEPATH" uitype="textfield">
-</property>
-    	<property defaultValue="/output/data.filterProject.json" description="output data after filter/project" isInputPath="false" isOutputPath="false" isRequired="true" label="output data file" name="outputDataFileName" paramtype="FILEPATH" uitype="textfield"></property>
+        <property defaultValue="input/data.json" description="input data file name" isInputPath="false" isOutputPath="false" isRequired="true" label="input data file name" name="inputDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="input/data.meta.json" description="meta data file of input data" isInputPath="false" isOutputPath="false" isRequired="true" label="Metadata file name" name="metaDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property isInputPath="false" isOutputPath="false" isRequired="false" label="filter expression" name="filterExpression" paramtype="STRING" uitype="textfield"/>
+        <property description="projection columns json file" isInputPath="false" isOutputPath="false" isRequired="false" label="projection column file name" name="projectColumnsFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/output/data.update.meta.json" description="updated meta data after projection" isInputPath="false" isOutputPath="false" isRequired="true" label="updated meta data file name" name="outputMetaDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/output/data.filterProject.json" description="output data after filter/project" isInputPath="false" isOutputPath="false" isRequired="true" label="output data file name" name="outputDataFile" paramtype="FILEPATH" uitype="textfield"/>
     </properties>
-    <imagePath>analysis_L.png</imagePath>
-    <categories>DML app</categories>
+    <imagePath>defaultApp_L.png</imagePath>
 </application-template>

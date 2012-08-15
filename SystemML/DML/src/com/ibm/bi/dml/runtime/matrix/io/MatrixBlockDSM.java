@@ -1711,7 +1711,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		int ru = (int)rowUpper-1;
 		int cl = (int)colLower-1;
 		int cu = (int)colUpper-1;
-		System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
+		//System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
 		boolean result_sparsity = this.sparse;

@@ -1711,7 +1711,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		int ru = (int)rowUpper-1;
 		int cl = (int)colLower-1;
 		int cu = (int)colUpper-1;
-		
+		System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
 		boolean result_sparsity = this.sparse;
@@ -1727,10 +1727,10 @@ public class MatrixBlockDSM extends MatrixValue{
 						int[] cols=sparseRows[r].getIndexContainer();
 						double[] values=sparseRows[r].getValueContainer();
 						int j=0;
-						while(cols[j] < cl && j < sparseRows[r].size())
+						while(j < sparseRows[r].size() && cols[j] < cl )
 							j++;
 						int result_c = 0;
-						while(cols[j] <= Math.min(cu,getNumColumns()) && j < sparseRows[r].size()) {
+						while(j < sparseRows[r].size() && cols[j] <= Math.min(cu,getNumColumns())) {
 							((MatrixBlockDSM)result).appendValue(result_r, result_c, values[j]);
 							result_c++;
 							j++;

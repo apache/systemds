@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
@@ -70,6 +71,9 @@ public class MatrixBlock extends MatrixBlockDSM
 	@Override
 	public void finalize()
 	{
+		if( CacheableData.LDEBUG )
+			System.out.println("Matrix Block: finalize matrix block for "+envelope.getVarName()+", "+envelope.getFileName()+" at "+envelope.getStatusAsString());
+		
 		try 
 		{
 			if( envelope != null )
@@ -80,5 +84,17 @@ public class MatrixBlock extends MatrixBlockDSM
 			e.printStackTrace();
 		}
 		
+	}
+
+	public MatrixBlock createShallowCopy() 
+	{
+		MatrixBlock mb = new MatrixBlock( getNumRows(), getNumColumns(), isInSparseFormat());
+		//mb.copy(this); //MB: replaced by following code because only shallow copy (new MatrixBlock obj) required 
+		if( mb.isInSparseFormat() )
+			mb.sparseRows = sparseRows;
+		else
+			mb.denseBlock = denseBlock;
+			
+		return mb;
 	}
 }

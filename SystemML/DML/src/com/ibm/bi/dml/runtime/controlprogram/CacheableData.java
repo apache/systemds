@@ -36,7 +36,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
-	protected static final boolean LDEBUG = false;
+	public static final boolean LDEBUG = false;
 	
 	protected static final int WAIT_TIMEOUT  = 15000; //15s
 	protected static final int WAIT_INTERVAL = 50; //50ms
@@ -436,12 +436,12 @@ public abstract class CacheableData extends Data
 	 * @throws CacheIOException 
 	 */
 	public boolean attemptEviction (MatrixBlock mb) 
-		throws CacheIOException
+		throws CacheException
 	{
 		boolean ret = false;
 		
 		if( isCachingActive() ) //discard eviction requests after caching already turned off
-		{
+		{			
 			if( isEvictable() ) //proceed with eviction request
 			{
 				synchronized(this)
@@ -464,14 +464,15 @@ public abstract class CacheableData extends Data
 				undoPartialEviction( mb );
 			}	
 		}
-		else //if ( LDEBUG )  //TODO later only in DEBUG
+		else if ( LDEBUG )  
 			System.out.println("Warning: caching not active, discard eviction request.");
 		
 	
 		return ret;
 	}
 	
-	protected abstract void undoPartialEviction( MatrixBlock mb );
+	protected abstract void undoPartialEviction( MatrixBlock mb ) 
+		throws CacheException;
 	
 	
 	/**

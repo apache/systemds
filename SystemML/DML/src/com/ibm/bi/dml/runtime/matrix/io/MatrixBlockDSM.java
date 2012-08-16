@@ -46,11 +46,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	private int clen;
 	private int maxrow, maxcolumn;
 	private boolean sparse;
-	private double[] denseBlock=null;
+	protected double[] denseBlock=null;
 	private int nonZeros=0;
 	public static final double SPARCITY_TURN_POINT=0.4;
 	
-	private SparseRow[] sparseRows=null;
+	protected SparseRow[] sparseRows=null;
 	
 	
 	/**

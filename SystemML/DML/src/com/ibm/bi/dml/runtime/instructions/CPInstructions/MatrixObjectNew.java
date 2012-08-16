@@ -678,6 +678,7 @@ public class MatrixObjectNew extends CacheableData
 			
 			//clear cache only if getCache successful (possible concurrent eviction)
 			//otherwise we would potentially destroy complete intermediate results
+			
 			if( _data != null ) 
 				clearCache();
 		}
@@ -735,7 +736,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheIOException
 	{
 		if( LDEBUG )
-			System.out.println("EVICTION of Matrix "+_varName+" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()/(1024*1024)+"MB free");
+			System.out.println("EVICTION of Matrix "+_varName+" "+ _hdfsFileName +" (status="+getStatusAsString()+") at "+Runtime.getRuntime().freeMemory()/(1024*1024)+"MB free");
 
 		_data = mb; //reference to garbage-collected matrix block
 			
@@ -778,7 +779,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheIOException, CacheAssignmentException
 	{
 		if( LDEBUG ) 
-			System.out.println("RESTORE of Matrix "+_varName);
+			System.out.println("RESTORE of Matrix "+_varName+", "+_hdfsFileName);
 		
 		String filePath = getCacheFilePathAndName();
 		long begin = 0;
@@ -817,23 +818,26 @@ public class MatrixObjectNew extends CacheableData
 	}		
 	
 	@Override
-	protected void undoPartialEviction( MatrixBlock mb ) 	
+	protected void undoPartialEviction( MatrixBlock mb ) 
+		throws CacheException
 	{
 		//NOTE: this method is only invoked of matrix object is not evictable
 		//during invocation of attempteviction.
 		
 		if( LDEBUG )
-			System.out.println("UNDO PARTIAL EVICTION "+_varName);
+			System.out.println("UNDO PARTIAL EVICTION "+_varName+", "+_hdfsFileName);
 		
-		if( isEvicted() || isEmpty() )
+		if( isEvicted() || isEmpty() ) 
 		{
 			//do nothing, because data exists on disk, or object properly cleaned up.
 		}
 		else //isRead or is Modify
 		{
-			//restore matrix block into main memory
+			//restore matrix block into main memory and create shallow copy
 			//(alternatively, we could evict and restore into main memory, but not necessary)
 			_data = mb; 
+			_data = mb.createShallowCopy(); // required because finalize only called once per object.
+			_data.setEnvelope(this);
 		}
 	}
 	
@@ -846,11 +850,16 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		int pollCount = WAIT_TIMEOUT / WAIT_INTERVAL;
-		//if( LDEBUG )
-			System.out.println("Warning: wait for undo partial eviction: count "+pollCount); //TODO later only in DEBUG
+		if( LDEBUG ) 
+			System.out.println("Warning: wait for undo partial eviction of matrix object " + _varName + ", "+_hdfsFileName+ ": count "+pollCount);
 		while( --pollCount >= 0 )
 		{
-			try{ Thread.sleep(WAIT_INTERVAL); }catch(Exception e){}
+			try{Thread.sleep(WAIT_INTERVAL);}catch(Exception e){}
+			
+			if( LDEBUG )
+				System.out.println("Warning: wait for undo partial eviction of matrix object " + _varName + ", "+_hdfsFileName+ ": count "+pollCount); 
+			
+			//exit loop for successful undo eviction
 			if( _data!=null )
 				break;
 		}

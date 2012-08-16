@@ -1,5 +1,5 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.data.writeTest.java
 
-A = read("$$indir$$reBlockIn");
+A = read("$$indir$$reblockIn");
 write(A, "$$outdir$$b", format="text");
 write(A, "$$outdir$$c", format="text");

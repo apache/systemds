@@ -49,6 +49,7 @@ public class MMCJMR {
 			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo) 
 	throws Exception
 	{
+		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
 		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, 

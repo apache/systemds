@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.lops.compile;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.OutputParameters;
-import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.PartitionLop;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.Unary;
@@ -44,6 +42,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -1084,9 +1083,9 @@ public class Dag<N extends Lops> {
   		return inst.toString();
   	}
 
-	String prepareVariableInstruction(String opcode, N node) {
+	String prepareVariableInstruction(String opcode, N node) throws LopsException {
 		OutputParameters oparams = node.getOutputParameters();
-  		return prepareVariableInstruction(opcode, oparams.getLabel(), node.get_dataType(), node.get_valueType(), oparams.getFile_name(), oparams, getOutputInfo(node));
+  		return prepareVariableInstruction(opcode, oparams.getLabel(), node.get_dataType(), node.get_valueType(), oparams.getFile_name(), oparams, getOutputInfo(node, false));
   	}
 
 	/**
@@ -1134,14 +1133,14 @@ public class Dag<N extends Lops> {
 				if (node.get_dataType() == DataType.SCALAR) {
 					// Output from lops with SCALAR data type must
 					// go into Temporary Variables (Var0, Var1, etc.)
-					NodeOutput out = setupNodeOutputs(node, ExecType.CP);
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false);
 					inst.addAll(out.getPreInstructions()); // dummy
 					deleteInst.addAll(out.getLastInstructions());
 				} else {
 					// Output from lops with non-SCALAR data type must
 					// go into Temporary Files (temp0, temp1, etc.)
 					
-					NodeOutput out = setupNodeOutputs(node, ExecType.CP);
+					NodeOutput out = setupNodeOutputs(node, ExecType.CP, false);
 					inst.addAll(out.getPreInstructions());
 					
 					boolean hasTransientWriteParent = false;
@@ -1161,15 +1160,17 @@ public class Dag<N extends Lops> {
 
 				String inst_string = "";
 
-				// Since ParameterizedBuiltins have arbitrary number of inputs, we handle it separately
-				if (node.getType() == Lops.Type.ParameterizedBuiltin){
+				// Lops with aribitrary number of inputs (ParameterizedBuiltin, GroupedAggregate)
+				// are handled separately, by simply passing ONLY the output variable to getInstructions()
+				if (node.getType() == Lops.Type.ParameterizedBuiltin
+						|| node.getType() == Lops.Type.GroupedAgg ){
 					// TODO NEW: check why SCALAR and MATRIX have to be differentiated
-					if ( node.get_dataType() == DataType.SCALAR ) {
-						inst_string = ((ParameterizedBuiltin) node).getInstructions(node.getOutputParameters().getLabel());
-					}
-					else {
-						inst_string = ((ParameterizedBuiltin) node).getInstructions(node.getOutputParameters().getFile_name());
-					}
+					//if ( node.get_dataType() == DataType.SCALAR ) {
+						inst_string = node.getInstructions(node.getOutputParameters().getLabel());
+					//}
+					//else {
+					//	inst_string = node.getInstructions(node.getOutputParameters().getFile_name());
+					//}
 					
 				} 
 				else {
@@ -1245,7 +1246,7 @@ public class Dag<N extends Lops> {
 						// we don't have to do anything here
 					}
 					else {
-						out = setupNodeOutputs(node, ExecType.CP);
+						out = setupNodeOutputs(node, ExecType.CP, false);
 						if ( dnode.get_dataType() == DataType.SCALAR ) {
 							// processing is same for both transient and persistent scalar writes 
 							writeInst.addAll(out.getLastInstructions());
@@ -2037,17 +2038,34 @@ public class Dag<N extends Lops> {
 	 * 
 	 * @param node
 	 * @return
+	 * @throws LopsException 
 	 */
-	OutputInfo getOutputInfo(N node) {
+	OutputInfo getOutputInfo(N node, boolean cellModeOverride) throws LopsException {
 		OutputInfo oinfo = null;
 		
 		if ( node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP)
 			return null;
 		
-		if (node.getOutputParameters().isBlocked_representation()) {
-			oinfo = OutputInfo.BinaryBlockOutputInfo;
+		OutputParameters oparams = node.getOutputParameters();
+		if (oparams.isBlocked_representation()) {
+			if ( !cellModeOverride )
+				oinfo = OutputInfo.BinaryBlockOutputInfo;
+			else {
+				// output format is overridden, for example, due to recordReaderInstructions in the job
+				oinfo = OutputInfo.BinaryCellOutputInfo;
+				
+				// record decision of overriding in the lop so that 
+				// subsequent jobs that use this lop's output know the correct format.
+				// TODO: ideally, this should be done by having a member variable in Lop 
+				//       which stores the outputInfo.   
+				try {
+					oparams.setDimensions(oparams.getNum_rows(), oparams.getNum_cols(), -1, -1, oparams.getNnz());
+				} catch(HopsException e) {
+					throw new LopsException(e);
+				}
+			}
 		} else {
-			if (node.getOutputParameters().getFormat() == Format.TEXT)
+			if (oparams.getFormat() == Format.TEXT)
 				oinfo = OutputInfo.TextCellOutputInfo;
 			else {
 				oinfo = OutputInfo.BinaryCellOutputInfo;
@@ -2092,24 +2110,24 @@ public class Dag<N extends Lops> {
 	 * @param node
 	 * @return
 	 */
-  	String getOutputFormat(N node) {
-  		return OutputInfo.outputInfoToString(getOutputInfo(node));
+/*  	String getOutputFormat(N node) {
+  		return OutputInfo.outputInfoToString(getOutputInfo(node, false));
   	}
-  	
+*/  	
 	/**
 	 * Method to setup output filenames and outputInfos, and to generate related instructions
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 */
-	private NodeOutput setupNodeOutputs(N node, ExecType et) 
+	private NodeOutput setupNodeOutputs(N node, ExecType et, boolean cellModeOverride) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException, LopsException {
 		
 		OutputParameters oparams = node.getOutputParameters();
 		NodeOutput out = new NodeOutput();
 		
 		// Compute the output format for this node
-		out.setOutInfo(getOutputInfo(node));
+		out.setOutInfo(getOutputInfo(node, cellModeOverride));
 		
 		// If node is NOT of type Data then we must generate 
 		// a variable to hold the value produced by this node
@@ -2382,6 +2400,7 @@ public class Dag<N extends Lops> {
 		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
 		
+		boolean cellModeOverride = false;
 		
 		/* Find the nodes that produce an output */
 		Vector<N> rootNodes = new Vector<N>();
@@ -2427,6 +2446,7 @@ public class Dag<N extends Lops> {
 					inputs, inputInfos, numRows, numCols, numRowsPerBlock,
 					numColsPerBlock, nodeIndexMapping, inputLabels);
 		}
+		
 		// In case of RAND job, instructions are defined in the input file
 		if (jt == JobType.RAND)
 			randInstructions = inputs;
@@ -2442,8 +2462,29 @@ public class Dag<N extends Lops> {
 				getRecordReaderInstructions(rootNodes.elementAt(i), execNodes,
 						inputs, recordReaderInstructions, nodeIndexMapping,
 						start_index, inputLabels);
+				if ( recordReaderInstructions.size() > 1 )
+					throw new LopsException("MapReduce job can only have a single recordreader instruction: " + recordReaderInstructions.toString());
 			}
 		}
+		
+		/*
+		 * Handle cases when job's output is FORCED to be cell format.
+		 * - If there exist a cell input, then output can not be blocked. 
+		 *   Only exception is when jobType = REBLOCK.
+		 * - If there exists a recordReader instruction
+		 * - If jobtype = GroupedAgg. This job can only run in cell mode.
+		 */
+		
+		// 
+		if ( jt != JobType.REBLOCK_BINARY && jt != JobType.REBLOCK_TEXT ) {
+			for (int i=0; i < inputInfos.size(); i++)
+				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
+					cellModeOverride = true;
+		}
+		
+		if ( recordReaderInstructions.size() > 0 || jt == JobType.GROUPED_AGG )
+			cellModeOverride = true;
+		
 		
 		/* Get Mapper Instructions */
 	
@@ -2476,7 +2517,7 @@ public class Dag<N extends Lops> {
 			resultIndices.add(new Byte((byte) resultIndex));
 			
 			// setup output filenames and outputInfos and generate related instructions
-			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR);
+			NodeOutput out = setupNodeOutputs(rootNodes.elementAt(i), ExecType.MR, cellModeOverride);
 			outputLabels.add(out.getVarName());
 			outputs.add(out.getFileName());
 			//if ( out.getFileName() == null )

@@ -137,10 +137,10 @@ public class Reblock extends Hops {
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			throw new HopsException("REBLOCKing is an invalid operation when runtime = SINGLE_NODE");
+			throw new HopsException("REBLOCKing is an invalid operation when execution mode = SINGLE_NODE");
 		
 		if( _etype != null & _etype != ExecType.MR ) 			
-			throw new HopsException("REBLOCKing is an invalid operation when runtime = SINGLE_NODE");
+			throw new HopsException("REBLOCKing is an invalid operation when execution mode = SINGLE_NODE");
 		
 		// Reblock operation always gets executed in MR. 
 		// It may not be meaningful to perform it in CP.

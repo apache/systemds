@@ -48,6 +48,7 @@ public class MMRJMR {
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
+		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
 		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, 

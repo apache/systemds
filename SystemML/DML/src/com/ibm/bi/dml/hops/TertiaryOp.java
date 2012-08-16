@@ -238,19 +238,24 @@ public class TertiaryOp extends Hops {
 							tertiaryOp,
 							get_dataType(), get_valueType(), et);
 					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-					ReBlock reblock = null;
-					try {
-						reblock = new ReBlock(
-								tertiary, get_rows_in_block(),
-								get_cols_in_block(), get_dataType(),
-								get_valueType());
-					} catch (Exception e) {
-						throw new HopsException(e);
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+						set_lops(tertiary);
 					}
-					reblock.getOutputParameters().setDimensions(-1, -1,  
-							get_rows_in_block(), get_cols_in_block(), -1);
-
-					set_lops(reblock);
+					else {
+						ReBlock reblock = null;
+						try {
+							reblock = new ReBlock(
+									tertiary, get_rows_in_block(),
+									get_cols_in_block(), get_dataType(),
+									get_valueType());
+						} catch (Exception e) {
+							throw new HopsException(e);
+						}
+						reblock.getOutputParameters().setDimensions(-1, -1,  
+								get_rows_in_block(), get_cols_in_block(), -1);
+	
+						set_lops(reblock);
+					}
 				}
 				else {
 					Group group1, group2, group3, group4;
@@ -649,7 +654,8 @@ public class TertiaryOp extends Hops {
 		
 		if ( (getInput().get(0).areDimsBelowThreshold() 
 				&& getInput().get(1).areDimsBelowThreshold()
-				&& getInput().get(2).areDimsBelowThreshold())
+				&& getInput().get(2).areDimsBelowThreshold()) 
+				//|| (getInput().get(0).isVector() && getInput().get(1).isVector() && getInput().get(1).isVector() )
 			)
 			return ExecType.CP;
 		else

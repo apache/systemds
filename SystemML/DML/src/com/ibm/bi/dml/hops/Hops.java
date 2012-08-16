@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -158,17 +159,15 @@ abstract public class Hops {
 		if (this instanceof DataOp) {
 
 			// if block size does not match
-			if (get_dataType() != DataType.SCALAR
+			if (DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE && get_dataType() != DataType.SCALAR
 					&& (get_rows_in_block() != GLOBAL_BLOCKSIZE || get_cols_in_block() != GLOBAL_BLOCKSIZE)) {
 
 				if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
-
+				
 					// insert reblock after the hop
-
 					Reblock r = new Reblock(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
-
 					r.set_visited(Hops.VISIT_STATUS.DONE);
-
+				
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
 
 					if (get_rows_in_block() == -1 && get_cols_in_block() == -1) {
@@ -196,8 +195,16 @@ abstract public class Hops {
 
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| ((DataOp) this).get_dataop() == DataOp.DataOpTypes.TRANSIENTREAD) {
-					set_rows_in_block(GLOBAL_BLOCKSIZE);
-					set_cols_in_block(GLOBAL_BLOCKSIZE);
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+						// simply copy the values from its input
+						set_rows_in_block(getInput().get(0).get_rows_in_block());
+						set_cols_in_block(getInput().get(0).get_cols_in_block());
+					}
+					else {
+						// by default, all transient reads and writes are in blocked format
+						set_rows_in_block(GLOBAL_BLOCKSIZE);
+						set_cols_in_block(GLOBAL_BLOCKSIZE);
+					}
 
 				} else {
 					throw new HopsException("unexpected non-scalar Data HOP in reblock.\n");
@@ -245,8 +252,14 @@ abstract public class Hops {
 
 			// Constraint C3:
 			else {
-				set_rows_in_block(GLOBAL_BLOCKSIZE);
-				set_cols_in_block(GLOBAL_BLOCKSIZE);
+				if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+					set_rows_in_block(-1);
+					set_cols_in_block(-1);
+				}
+				else {
+					set_rows_in_block(GLOBAL_BLOCKSIZE);
+					set_cols_in_block(GLOBAL_BLOCKSIZE);
+				}
 				
 				// if any input is not blocked then the output of current Hop should not be blocked
 				for ( Hops h : getInput() ) {

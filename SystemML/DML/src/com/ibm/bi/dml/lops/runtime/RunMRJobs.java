@@ -109,19 +109,19 @@ public class RunMRJobs {
 				updatedColsPerBlock = updateColsPerBlock(inst.getIv_num_cols_per_block(), updatedInputLabels, inst.getInputLabels(), pb);
 			
 			if (inst.getJobType() == JobType.GMR) {
-				boolean blocked_rep = true;
+				//boolean blocked_rep = true;
 				
 				// If any input value class is Cell then the whole job should run in "Cell" mode
 				// Remaining blocked input is implicitly converted into cell format
-				for ( InputInfo ii : inst.getIv_inputInfos()) {
-					if ( ii == InputInfo.TextCellInputInfo || ii == InputInfo.BinaryCellInputInfo ) {
-						blocked_rep = false;
-						break;
-					}
-				}
+				//for ( InputInfo ii : inst.getIv_inputInfos()) {
+				//	if ( ii == InputInfo.TextCellInputInfo || ii == InputInfo.BinaryCellInputInfo ) {
+				//		blocked_rep = false;
+				//		break;
+				//	}
+				//}
 				
 				// TODO: statiko -- how to remove this check?
-				if ( blocked_rep == false ) {
+				/*if ( blocked_rep == false ) {
 					// Check if any outputs are of type BinaryBlock!
 					// output info must not be blocked
 					for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
@@ -129,26 +129,26 @@ public class RunMRJobs {
 							inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
 						}
 					}
-				}
+				}*/
 				
 				if ( !inst.getIv_recordReaderInstructions().equals("") ) {
 					// if there are record reader instructions, we need to update MetaData
 					
 					// In the presence of recordReader instructions (valuepick/rangepick), the job must operate in cell mode
-					blocked_rep = false;
+					//blocked_rep = false;
 					
 					// output info must not be blocked
-					for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
-						if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
-							inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
-						}
-					}
+					//for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
+					//	if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
+					//		inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
+					//	}
+					//}
 					
 					// get the index of the matrix whose metadata needs to be fetched
 					String[] ins = inst.getIv_recordReaderInstructions().split(Lops.INSTRUCTION_DELIMITOR);
 					
-					if ( ins.length > 1 ) 
-						throw new DMLRuntimeException("There can not be more than one recordreader instructions");
+					//if ( ins.length > 1 ) 
+					//	throw new DMLRuntimeException("There can not be more than one recordreader instructions");
 					
 					// look at the first instruction
 					String[] parts = ins[0].split(Lops.OPERAND_DELIMITOR);
@@ -164,11 +164,9 @@ public class RunMRJobs {
 					}
 					else 
 						throw new DMLRuntimeException("Recordreader instructions for opcode=" + parts[0] + " are not supported yet.");
-						
 				}
 				
-				
-				ret = GMR.runJob(blocked_rep, updatedInputLabels, inst.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock,
+				ret = GMR.runJob(updatedInputLabels, inst.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock,
 						updatedColsPerBlock, updateLabels(inst.getIv_recordReaderInstructions(), inst
 								.getInputLabelValueMapping()), updateLabels(inst.getIv_instructionsInMapper(), inst
 										.getInputLabelValueMapping()), inst.getIv_aggInstructions(), updateLabels(inst
@@ -186,13 +184,13 @@ public class RunMRJobs {
 			}
 			
 			if (inst.getJobType() == JobType.GROUPED_AGG) {
-				// GroupedAgg job must always run in cell mode
+				/*// GroupedAgg job must always run in cell mode
 				// hence, no output info must be blocked
 				for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
 					if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
 						inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
 					}
-				}
+				}*/
 				
 				ret = GroupedAggMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst
 						.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
@@ -212,9 +210,7 @@ public class RunMRJobs {
 			}
 
 			if (inst.getJobType() == JobType.MMCJ) {
-				boolean blocked_rep = true;
-
-				ret = MMCJMR.runJob(blocked_rep, updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
+				ret = MMCJMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
 						inst.getIv_inputInfos(), updatedRows, updatedCols, 
 						updatedRowsPerBlock, updatedColsPerBlock, updateLabels(inst.getIv_instructionsInMapper(), inst
 								.getInputLabelValueMapping()), inst.getIv_aggInstructions(), inst
@@ -223,9 +219,7 @@ public class RunMRJobs {
 			}
 
 			if (inst.getJobType() == JobType.MMRJ) {
-				boolean blocked_rep = true;
-
-				ret = MMRJMR.runJob(blocked_rep, updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
+				ret = MMRJMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
 						inst.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
 						updateLabels(inst.getIv_instructionsInMapper(), inst.getInputLabelValueMapping()), inst.getIv_aggInstructions(), 
 						inst.getIv_shuffleInstructions(), updateLabels(inst.getIv_otherInstructions(), inst.getInputLabelValueMapping()), 
@@ -247,13 +241,13 @@ public class RunMRJobs {
 			if (inst.getJobType() == JobType.COMBINE) {
 				boolean blocked_rep = true;
 				
-				// If any input value class is Cell then the whole job should run in "Cell" mode
+				/*// If any input value class is Cell then the whole job should run in "Cell" mode
 				// Remaining blocked input is implicitly converted into cell format
 				for ( InputInfo ii : inst.getIv_inputInfos()) {
 					if ( ii == InputInfo.TextCellInputInfo || ii == InputInfo.BinaryCellInputInfo ) {
 						blocked_rep = false;
 					}
-				}
+				}*/
 				ret = CombineMR.runJob(blocked_rep, updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst.getIv_inputInfos(), 
 									updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
 									inst.getIv_shuffleInstructions(), inst.getIv_numReducers(), inst.getIv_replication(),  

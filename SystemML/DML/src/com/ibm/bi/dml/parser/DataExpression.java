@@ -209,7 +209,10 @@ public class DataExpression extends Expression {
 					// these are strings that are long values
 					Long dim1 = (getVarParam(Statement.READROWPARAM) == null) ? null : new Long (getVarParam(Statement.READROWPARAM).toString());
 					Long dim2 = (getVarParam(Statement.READCOLPARAM) == null) ? null : new Long(getVarParam(Statement.READCOLPARAM).toString());
-			
+					
+					if ( dim1 <= 0 || dim2 <= 0 ) {
+						throw new LanguageException("Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					}
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
 						_output.setDimensions(dim1, dim2);
@@ -220,7 +223,17 @@ public class DataExpression extends Expression {
 				
 				// initialize block dimensions to UNKNOWN 
 				_output.setBlockDimensions(-1, -1);
-				 
+				
+				// find "format": 1=text, 2=binary
+				int format = 1; // default is "text"
+				if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("text")){
+					format = 1;
+				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
+					format = 2;
+				} else {
+					throw new LanguageException("Invalid format in statement: " + this.toString());
+				}
+				
 				if (getVarParam(Statement.ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
 				
 					Long rowBlockCount = (getVarParam(Statement.ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getVarParam(Statement.ROWBLOCKCOUNTPARAM).toString());
@@ -234,6 +247,12 @@ public class DataExpression extends Expression {
 						 _output.setBlockDimensions(-1, -1);
 					}
 				}
+				
+				// block dimensions must be -1x-1 when format="text"
+				// and they must be 1000x1000 when format="binary"
+				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))
+						|| (format == 2 && (_output.getRowsInBlock() != DMLTranslator.DMLBlockSize || _output.getColumnsInBlock() != DMLTranslator.DMLBlockSize)))
+					throw new LanguageException("Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 			}
 			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
@@ -295,7 +314,12 @@ public class DataExpression extends Expression {
 				}
 			}
 			
-			_output.setBlockDimensions(-1, -1);
+			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("text"))
+				_output.setBlockDimensions(-1, -1);
+			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
+				_output.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			else
+				throw new LanguageException("Invalid format in statement: " + this.toString());
 			
 			break;
 

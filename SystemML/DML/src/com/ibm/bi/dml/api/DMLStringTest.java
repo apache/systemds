@@ -3,9 +3,6 @@ package com.ibm.bi.dml.api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
-
-import com.ibm.bi.dml.api.DMLScript.EXECUTION_PROPERTIES;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.utils.DMLException;
 
@@ -23,10 +20,9 @@ public class DMLStringTest {
 				"} \n";
 		
 		InputStream is = new ByteArrayInputStream(s.getBytes());
-		Properties executionProperties = new Properties();
-		executionProperties.put(EXECUTION_PROPERTIES.DEBUG.toString(), "true");
-		executionProperties.put("funny", true);
-		d.executeScript(is, executionProperties, (String[])null);
+		String[] executionOptions = null;
+		String[] scriptArgs = {"1", "2"};
+		d.executeScript(is, executionOptions, "1", "2");
 		
 	}
 }

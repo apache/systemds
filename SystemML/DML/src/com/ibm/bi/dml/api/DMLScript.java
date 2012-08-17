@@ -14,9 +14,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -96,6 +94,7 @@ public class DMLScript {
 			+ " [-d | -debug]: (optional) output debug info \n"
 			// TODO: COMMENT OUT -v option before RELEASE
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
+			// TODO: Maybe we should remove -l for BigInsights 2.0 release
 			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
 			+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
@@ -299,7 +298,7 @@ public class DMLScript {
 	 * @throws IOException 
 	 * @throws DMLException 
 	 */
-	public boolean executeScript (String scriptPathName, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+	public boolean executeScript (String scriptPathName, String[] executionOptions, String... scriptArguments) throws IOException, ParseException, DMLException{
 		boolean success = false;
 		DEBUG = false;
 		VISUALIZE = false;
@@ -338,7 +337,7 @@ public class DMLScript {
 		}
 		_dmlScriptString=dmlScriptString.toString();
 		
-		success = processDMLScriptProperties(executionProperties);
+		success = processDMLExecutionOptions(executionOptions);
 		
 		if (!success){
 			System.err.println("ERROR: There are invalid execution properties!");
@@ -370,10 +369,7 @@ public class DMLScript {
 
 		
 		success = run();
-		// reset flags
-		DEBUG = false;
-		VISUALIZE = false;
-		LOG = false;	
+		resetExecutionOptions();
 		return success;
 	}
 	
@@ -387,7 +383,7 @@ public class DMLScript {
 	 * @throws IOException 
 	 * @throws DMLException 
 	 */
-	public boolean executeScript (InputStream script, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+	public boolean executeScript (InputStream script, String[] executionOptions, String... scriptArguments) throws IOException, ParseException, DMLException{
 		boolean success = false;
 		DEBUG = false;
 		VISUALIZE = false;
@@ -409,6 +405,7 @@ public class DMLScript {
 			_dmlScriptString = new Scanner(script).useDelimiter("\\A").next();
 		}
 		
+		success = processDMLExecutionOptions(executionOptions);
 		if (!success){
 			System.err.println("ERROR: There are invalid execution properties!");
 			return success;
@@ -438,55 +435,63 @@ public class DMLScript {
 		}
 
 		success = run();
-		//reset flags
-		DEBUG = false;
-		VISUALIZE = false;
-		LOG = false;	
+		resetExecutionOptions();
 		return success;
 	}
 	
+	private void resetExecutionOptions(){
+		DEBUG = false;
+		VISUALIZE = false;
+		LOG = false;	
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		_optConfig = null;
+	}
+	
 	//Process execution properties
-	private boolean processDMLScriptProperties(Properties executionProperties){
+	private boolean processDMLExecutionOptions(String[] executionOptions){
 		boolean success = false;
 		//Make sure that the properties are in the defined property list that can be handled
-		@SuppressWarnings("unchecked")
-		Enumeration<String> e = (Enumeration<String>) executionProperties.propertyNames();
-		
-		while (e.hasMoreElements()){
-			String key = e.nextElement();
-			boolean validProperty = false;
-			for (EXECUTION_PROPERTIES p : EXECUTION_PROPERTIES.values()){
-				if (p.name().equals(key)){
-					validProperty = true;
-					break;
+		if (executionOptions !=null){
+			int i = 0;
+			while (i < executionOptions.length){
+				if (executionOptions[i].equalsIgnoreCase("-d") || executionOptions[i].equalsIgnoreCase("-debug")) {
+					DEBUG = true;
+				} else if (executionOptions[i].equalsIgnoreCase("-l") || executionOptions[i].equalsIgnoreCase("-log")) {
+					LOG = true;
+				} else if (executionOptions[i].equalsIgnoreCase("-v") || executionOptions[i].equalsIgnoreCase("-visualize")) {
+					VISUALIZE = true;
+				} else if ( executionOptions[i].equalsIgnoreCase("-exec")) {
+					i++;
+					if ( executionOptions[i].equalsIgnoreCase("hadoop")) 
+						rtplatform = RUNTIME_PLATFORM.HADOOP;
+					else if ( executionOptions[i].equalsIgnoreCase("singlenode"))
+						rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+					else if ( executionOptions[i].equalsIgnoreCase("hybrid"))
+						rtplatform = RUNTIME_PLATFORM.HYBRID;
+					else if ( executionOptions[i].equalsIgnoreCase("nz"))
+						rtplatform = RUNTIME_PLATFORM.NZ;
+					else {
+						System.err.println("ERROR: Unknown runtime platform: " + executionOptions[i]);
+						System.err.println(USAGE);
+						resetExecutionOptions();
+						success = false;
+						return success;
+					}
+					// handle config file
+				} else if (executionOptions[i].startsWith("-config=")){
+					_optConfig= executionOptions[i].substring(8).replaceAll("\"", ""); 
 				}
+				// handle the args to DML Script -- rest of args will be passed here to 
+				else {
+					System.err.println("ERROR: Unknown execution option " + executionOptions[i]);
+					System.err.println(USAGE);
+					resetExecutionOptions();
+					success = false;
+					return success;
+				}
+				i++;
 			}
-			if (!validProperty){
-				success = false;
-				return success;
-				
-			}
-			
 		}
-
-		LOG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.LOG.toString(), "false"));
-		DEBUG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.DEBUG.toString(), "false"));
-		VISUALIZE = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.VISUALIZE.toString(), "false"));
-		
-		String runtime_pt = executionProperties.getProperty(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
-		if (runtime_pt.equalsIgnoreCase("hadoop"))
-			rtplatform = RUNTIME_PLATFORM.HADOOP;
-		else if ( runtime_pt.equalsIgnoreCase("singlenode"))
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		else if ( runtime_pt.equalsIgnoreCase("hybrid"))
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
-		else if ( runtime_pt.equalsIgnoreCase("nz"))
-			rtplatform = RUNTIME_PLATFORM.NZ;
-	
-		_optConfig = executionProperties.getProperty(EXECUTION_PROPERTIES.CONFIG.toString(), null);
-
-
-		
 		success = true;
 		return success;
 	}
@@ -497,6 +502,16 @@ public class DMLScript {
 		if (scriptArguments != null){
 			int index = 1;
 			for (String arg : scriptArguments){
+				if (arg.equalsIgnoreCase("-d") || arg.equalsIgnoreCase("-debug")||
+						arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
+						arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
+						arg.equalsIgnoreCase("-exec") ||
+						arg.startsWith("-config=")){
+						System.err.println("ERROR: -args must be the final argument for DMLScript!");
+						System.err.println(USAGE);
+						success = false;
+						return success;
+				}
 				_argVals.put("$"+index ,arg);
 				index++;
 			}
@@ -505,7 +520,6 @@ public class DMLScript {
 		success = true;
 		return success;
 	}
-	
 	
 	
 	/**
@@ -535,37 +549,11 @@ public class DMLScript {
 		boolean fromFile = (args[0].equals("-f")) ? true : false;
 		boolean success = false;
 		String script = args[1];	
-		Properties executionProperties = new Properties();
-		String[] scriptArgs = null;
-		int i = 2;
-		while (i<args.length){
-			if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("-debug")) {
-				executionProperties.put(EXECUTION_PROPERTIES.DEBUG.toString(), "true");
-			} else if (args[i].equalsIgnoreCase("-l") || args[i].equalsIgnoreCase("-log")) {
-				executionProperties.put(EXECUTION_PROPERTIES.LOG.toString(), "true");
-			} else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize")) {
-				executionProperties.put(EXECUTION_PROPERTIES.VISUALIZE.toString(), "true");
-			} else if ( args[i].equalsIgnoreCase("-exec")) {
-				i++;
-				if ( args[i].equalsIgnoreCase("hadoop")) 
-					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hadoop");
-				else if ( args[i].equalsIgnoreCase("singlenode"))
-					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "singlenode");
-				else if ( args[i].equalsIgnoreCase("hybrid"))
-					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
-				else if ( args[i].equalsIgnoreCase("nz"))
-					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "nz");
-				else {
-					System.err.println("ERROR: Unknown runtime platform: " + args[i]);
-					System.exit(1);
-				}
-			// handle config file
-			} else if (args[i].startsWith("-config=")){
-				executionProperties.put(EXECUTION_PROPERTIES.CONFIG.toString(), args[i].substring(8).replaceAll("\"", "")); 
-			}
-			// handle the args to DML Script -- rest of args will be passed here to 
-			else if (args[i].startsWith("-args")) {
-				i++;
+		String[] scriptArgs = null, executionOptions = null;
+		int i = 2, k = args.length;
+		while (i < args.length){
+			if (args[i].startsWith("-args")) {
+				k = i++; 
 				scriptArgs = new String[args.length - i];
 				int j = 0;
 				while( i < args.length){
@@ -575,25 +563,25 @@ public class DMLScript {
 						args[i].equalsIgnoreCase("-exec") ||
 						args[i].startsWith("-config=")){
 						System.err.println("ERROR: -args must be the final argument for DMLScript!");
+						System.err.println(USAGE);
 						System.exit(1);
 					}
 						
 					scriptArgs[j++]=args[i++];
 				}
 			} 
-			else {
-				System.err.println("ERROR: Unknown argument " + args[i]);
-				System.err.println(USAGE);
-				System.exit(1);
-			}
 			i++;
 		}
+		executionOptions = new String[k - 2];
+		for (i = 2; i< k; i++){
+			executionOptions[i-2]=args[i];
+		}
 		if (fromFile){
-			success = d.executeScript(script, executionProperties, scriptArgs);
+			success = d.executeScript(script, executionOptions, scriptArgs);
 		}
 		else {
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			success = d.executeScript(is, executionProperties, scriptArgs);
+			success = d.executeScript(is, executionOptions, scriptArgs);
 		}
 		
 		if (!success){

@@ -64,6 +64,11 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 	}
 
 	@Override
+	public void copy(MatrixValue that, boolean sp) {
+		throw new RuntimeException("operation not supported fro WeightedCell");
+	}
+
+	@Override
 	public void copy(MatrixValue that) {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}

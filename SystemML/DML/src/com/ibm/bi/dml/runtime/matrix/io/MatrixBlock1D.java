@@ -279,6 +279,28 @@ public class MatrixBlock1D extends MatrixValue{
 			}
 	}
 	
+	public void copy(MatrixValue thatValue, boolean sp) 
+	{
+		MatrixBlock1D that;
+		try {
+			that = checkType(thatValue);
+		} catch (DMLUnsupportedOperationException e) {
+			throw new RuntimeException(e);
+		}		
+		this.rlen=that.rlen;
+		this.clen=that.clen;
+		this.sparse=sp;
+		if(this.sparse && that.sparse)
+			copySparseToSparse(that);
+		else if(this.sparse && !that.sparse)
+			copyDenseToSparse(that);
+		else if(!this.sparse && that.sparse)
+			copySparseToDense(that);
+		else
+			copyDenseToDense(that);
+		
+	}
+	
 	public void copy(MatrixValue thatValue) 
 	{
 		MatrixBlock1D that;

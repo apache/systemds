@@ -62,6 +62,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 
 	
 	@Override
+	public void copy(MatrixValue that, boolean sp){
+		copy(that);
+	}
+
+	@Override
 	public void copy(MatrixValue that){
 		MatrixCell c2=MatrixCell.class.cast(that);
 		if(c2==null)

@@ -410,6 +410,26 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
+	public void copy(MatrixValue thatValue, boolean sp) {
+		MatrixBlockDSM that;
+		try {
+			that = checkType(thatValue);
+		} catch (DMLUnsupportedOperationException e) {
+			throw new RuntimeException(e);
+		}		
+		this.rlen=that.rlen;
+		this.clen=that.clen;
+		this.sparse=sp;
+		if(this.sparse && that.sparse)
+			copySparseToSparse(that);
+		else if(this.sparse && !that.sparse)
+			copyDenseToSparse(that);
+		else if(!this.sparse && that.sparse)
+			copySparseToDense(that);
+		else
+			copyDenseToDense(that);
+	}
+	
 	public void copy(MatrixValue thatValue) 
 	{
 		MatrixBlockDSM that;
@@ -584,9 +604,18 @@ public class MatrixBlockDSM extends MatrixValue{
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		checkType(result);
+		
+		// estimate the sparsity structure of result matrix
+		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
+		if (!op.sparseSafe)
+			sp = false; // if the operation is not sparse safe, then result will be in dense format
+		
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sparse);
-		result.copy(this);
+			result=new MatrixBlockDSM(rlen, clen, sp);
+		else
+			result.reset(rlen, clen, sp);
+		
+		result.copy(this, sp);
 		
 		if(op.sparseSafe)
 			((MatrixBlockDSM)result).sparseScalarOperationsInPlace(op);

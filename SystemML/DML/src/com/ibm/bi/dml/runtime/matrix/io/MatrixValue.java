@@ -94,6 +94,7 @@ public abstract class MatrixValue implements WritableComparable {
 	public abstract void resetDenseWithValue(int rl, int cl, double v);
 
 	public abstract void copy(MatrixValue that);
+	public abstract void copy(MatrixValue that, boolean sp);
 
 	public abstract int getNonZeros();
 

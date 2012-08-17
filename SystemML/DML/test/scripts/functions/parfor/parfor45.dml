@@ -1,0 +1,16 @@
+numC = 5;
+numF = 10;
+
+A = Rand(rows=numC, cols=numF, min=0.0, max=1.0, sparsity=1.0)
+
+parfor(i in 1:numC ) {
+	A[i,:] = A[i,:]/sum(A[i,:]);
+}	
+
+B = Rand(rows=numC, cols=numF, min=0.0, max=0.0, sparsity=1.0)
+	
+parfor(i in 1:numC) {
+	for (j in 2:numF) {
+    B[i,j] = B[i,j-1] + A[i,j];
+	}
+}

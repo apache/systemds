@@ -23,10 +23,11 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 
  * NOTE: related test suite: dml.test.components.parser.ParForDependencyAnalysisTest 
  * 
- *
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
+	private static final boolean LDEBUG = DMLScript.DEBUG || false; //local debug flag
+	
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
@@ -43,12 +44,15 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static final boolean NORMALIZE                 = false; //normalize FOR from to incr
 	private static final boolean USE_FN_CACHE              = true; //useful for larger scripts (due to O(n^2))
 	private static final boolean ABORT_ON_FIRST_DEPENDENCY = true;
+	private static final boolean CONSERVATIVE_CHECK        = false; //include FOR into dep analysis, reject unknown vars (otherwise use internal vars for whole row or column)
+	
 	
 	public static final String INTERAL_FN_INDEX_ROW       = "__ixr"; //pseudo index for range indexing row
 	public static final String INTERAL_FN_INDEX_COL       = "__ixc"; //pseudo index for range indexing col 
 	
 	//class members
 	private static IDSequence _idSeq = null;
+	private static IDSequence _idSeqfn = null;
 	
 	private static HashMap<String, LinearFunction> _fncache; //slower for most (small cases) cases
 	
@@ -70,7 +74,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames.add( OPT_MODE ); 
 		
 		// populate defaults lookup-table
-		//TODO exec-type specific defaults
 		_paramDefaults = new HashMap<String, String>();
 		_paramDefaults.put( CHECK,            "1" );
 		_paramDefaults.put( PAR,              String.valueOf(InfrastructureAnalyzer.getLocalParallelism()) );
@@ -80,6 +83,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( OPT_MODE,         String.valueOf(POptMode.NONE) );
 		
 		_idSeq = new IDSequence();
+		_idSeqfn = new IDSequence();
 	}
 	
 	public ParForStatementBlock()
@@ -90,7 +94,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( USE_FN_CACHE )
 			_fncache = new HashMap<String, LinearFunction>();
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR("+_ID+"): ParForStatementBlock instance created");
 	}
 	
@@ -115,16 +119,14 @@ public class ParForStatementBlock extends ForStatementBlock
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars)
 		throws LanguageException, ParseException, IOException 
 	{	
-		//DMLScript.DEBUG=true;
-		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR("+_ID+"): validating ParForStatementBlock.");		
 		
 		//create parent variable set via cloning
 		_vsParent = new VariableSet();
 		_vsParent._variables = (HashMap<String, DataIdentifier>) ids.getVariables().clone();
 				
-		if(DMLScript.DEBUG) //note: A is matrix, and A[i,1] is scalar  
+		if(LDEBUG) //note: A is matrix, and A[i,1] is scalar  
 			for( DataIdentifier di : _vsParent._variables.values() )
 				System.out.println("PARFOR: non-local "+di._name+": "+di.getDataType().toString()+" with rowDim = "+di.getDim1()); 
 		
@@ -188,7 +190,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 * NOTE: validity is only checked during compilation, i.e., for dynamic from, to, incr MIN MAX values assumed.        
 		 */ 
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: running loop dependency analysis ...");
 
 		//### Step 1 ###: determine candidate set C
@@ -197,13 +199,12 @@ public class ParForStatementBlock extends ForStatementBlock
 		Integer sCount = 0; //object for call by ref 
 		rDetermineCandidates(pfs.getBody(), C, sCount);
 
-		
 		boolean check = (Integer.parseInt(params.get(CHECK))==1);
 		if( check ) 
 		{			
 			//### Step 2 ###: prune c without dependencies
 			_bounds = new Bounds();
-			rDetermineBounds( dmlProg.getBlocks() ); //writes to _bounds
+			rDetermineBounds( dmlProg.getBlocks(), false ); //writes to _bounds
 			
 			for( Candidate c : C )
 			{
@@ -215,7 +216,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				rCheckCandidates(c, cdt, pfs.getBody(), sCount, dep);
 				
 
-				if( DMLScript.DEBUG )
+				if( LDEBUG )
 				{
 					if( dep[0] ) System.out.println("PARFOR: output dependency detected for var '"+c._var+"'.");
 					if( dep[1] ) System.out.println("PARFOR: data dependency detected for var '"+c._var+"'.");
@@ -234,7 +235,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			//### Step 3 ###: raise an exception / warning
 			if( C2.size() > 0 )
 			{
-				if( DMLScript.DEBUG )
+				if( LDEBUG )
 					System.out.println("PARFOR: loop dependencies detected.");
 
 				StringBuffer depVars = new StringBuffer();
@@ -248,19 +249,18 @@ public class ParForStatementBlock extends ForStatementBlock
 				throw new LanguageException( "PARFOR loop dependency analysis: " +
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
 						                     depVars.toString() +".\n " +
-						                     "Please, ensure independence of iterations." );				
+						                     "Please, ensure independence of iterations." + ((LDEBUG)? "\nDEBUG Context: \n"+this.toString():"") );				
 			}
 			else
 			{
-				if( DMLScript.DEBUG )
+				if( LDEBUG )
 					System.out.println("PARFOR: no loop dependencies detected.");
 			}
 			
 		}
 		else
 		{
-			if( DMLScript.DEBUG )
-				System.out.println("PARFOR: loop dependency analysis skipped.");
+			System.out.println("INFO: PARFOR("+_ID+"): loop dependency analysis skipped.");
 		}
 		
 		//if successful, prepare result variables (all distinct vars in all candidates)
@@ -273,7 +273,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		for( String var : tmp )
 			addToResultVariablesNoDup( var );
 		
-		System.out.println("INFO: PARFOR("+_ID+"): validate successfully finished (no dependencies) in "+time.stop()+"ms.");
+		System.out.println("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
+		
+		
 		
 		return vs;
 	}
@@ -298,6 +300,10 @@ public class ParForStatementBlock extends ForStatementBlock
 				if( s instanceof ForStatement && !(s instanceof ParForStatement) )
 				{
 					rDetermineCandidates(((ForStatement)s).getBody(), C, sCount);
+				}
+				else if( s instanceof ParForStatement )
+				{
+					//do nothing, investigated in separate dependency analysis
 				}
 				else if( s instanceof WhileStatement ) 
 				{
@@ -329,7 +335,7 @@ public class ParForStatementBlock extends ForStatementBlock
 								C.add( c );
 							}
 							
-							if( DMLScript.DEBUG )
+							if( LDEBUG )
 								System.out.println("PARFOR: dependency candidate: var '"+write+"'");
 						}
 					}
@@ -400,7 +406,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			if( runConstantCheck(c._dat) )
 			{
-				if( DMLScript.DEBUG )
+				if( LDEBUG )
 					System.out.println("PARFOR: Possible output dependency detected via constant self-check: var '"+c._var+"'.");
 				dep[0] = true;
 				if( ABORT_ON_FIRST_DEPENDENCY )
@@ -454,7 +460,7 @@ public class ParForStatementBlock extends ForStatementBlock
 										}
 										else if(runBanerjeeGCDTest( c._dat, dat2 ))
 										{
-											if( DMLScript.DEBUG )
+											if( LDEBUG )
 												System.out.println("PARFOR: Possible output dependency detected via GCD/Banerjee: var '"+write+"'.");
 											dep[0] = true;
 											if( ABORT_ON_FIRST_DEPENDENCY )
@@ -508,7 +514,7 @@ public class ParForStatementBlock extends ForStatementBlock
 									}
 									else if( runBanerjeeGCDTest( c._dat, dat2 ) )
 									{
-										if( DMLScript.DEBUG )
+										if( LDEBUG )
 											System.out.println("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
 										dep[1] = true;
 										dep[2] = true;
@@ -569,6 +575,44 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 
+	private boolean isRowIgnorable(IndexedIdentifier dat1, IndexedIdentifier dat2)
+	{
+		for( IndexedIdentifier dat : new IndexedIdentifier[]{dat1,dat2} )
+		{
+			if( dat1.getRowLowerBound()!=null )
+				for( DataIdentifier datsub : rGetDataIdentifiers(dat.getRowLowerBound()) )
+					if( _bounds._lower.containsKey(datsub.getName()) &&
+						!datsub.getName().startsWith(INTERAL_FN_INDEX_ROW) )
+						return false;
+			if( dat1.getRowUpperBound()!=null )
+				for( DataIdentifier datsub : rGetDataIdentifiers(dat.getRowUpperBound()) )
+					if( _bounds._lower.containsKey(datsub.getName()) &&
+						!datsub.getName().startsWith(INTERAL_FN_INDEX_ROW) )
+						return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean isColumnIgnorable(IndexedIdentifier dat1, IndexedIdentifier dat2)
+	{
+		for( IndexedIdentifier dat : new IndexedIdentifier[]{dat1,dat2} )
+		{
+			if( dat1.getColLowerBound()!=null )
+				for( DataIdentifier datsub : rGetDataIdentifiers(dat.getColLowerBound()) )
+					if( _bounds._lower.containsKey(datsub.getName()) &&
+						!datsub.getName().startsWith(INTERAL_FN_INDEX_COL) )
+						return false;
+			if( dat1.getColUpperBound()!=null )
+				for( DataIdentifier datsub : rGetDataIdentifiers(dat.getColUpperBound()) )
+					if( _bounds._lower.containsKey(datsub.getName()) &&
+						!datsub.getName().startsWith(INTERAL_FN_INDEX_COL) )
+						return false;
+		}
+		
+		return true;
+	}
+	
 	private Collection<DataIdentifier> rGetDataIdentifiers(Expression e)
 	{
 		Collection<DataIdentifier> ret = new ArrayList<DataIdentifier>();
@@ -621,10 +665,11 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * Determines the lower/upper bounds of all nested for/parfor indexes.
 	 * 
 	 * @param sbs
+	 * @param flag indicates that method is already in subtree of THIS.
 	 * @return
 	 * @throws LanguageException 
 	 */
-	private void rDetermineBounds( ArrayList<StatementBlock> sbs ) 
+	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) 
 		throws LanguageException
 	{
 		// catch all known for/ parfor bounds 
@@ -633,46 +678,133 @@ public class ParForStatementBlock extends ForStatementBlock
 		for( StatementBlock sb : sbs )
 			for( Statement s : sb._statements )
 			{
-				if( s instanceof ForStatement ) // for, parfor
+				boolean lFlag = flag;
+				if( s instanceof ParForStatement || (s instanceof ForStatement && CONSERVATIVE_CHECK) ) //incl. for if conservative
 				{
 					ForStatement fs = (ForStatement)s;
 					IterablePredicate ip = fs._predicate;
 			
-					//check for internal names
-					if(   ip.getIterVar()._name.equals( INTERAL_FN_INDEX_ROW )
-					   || ip.getIterVar()._name.equals( INTERAL_FN_INDEX_COL ))
+					//checks for position in overall tree
+					if( sb==this )
+						lFlag = true;
+					
+					if( lFlag || rIsParent(sb,this) ) //add only if in subtree of this
 					{
-						throw new LanguageException(" The iteration variable must not use the " +
-								"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
-					}
+						//check for internal names
+						if(   ip.getIterVar()._name.equals( INTERAL_FN_INDEX_ROW )
+						   || ip.getIterVar()._name.equals( INTERAL_FN_INDEX_COL ))
+						{
+							throw new LanguageException(" The iteration variable must not use the " +
+									"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
+						}
+						
+						long low = Integer.MIN_VALUE;
+						long up = Integer.MAX_VALUE;
+						long incr = -1;
+						
+						if( ip.getFromExpr()instanceof IntIdentifier)
+							low = ((IntIdentifier)ip.getFromExpr()).getValue();
+						if( ip.getToExpr()instanceof IntIdentifier)
+							up = ((IntIdentifier)ip.getToExpr()).getValue();
+						
+						//NOTE: conservative approach: include all index variables (also from for)
+						if( ip.getIncrementExpr() instanceof IntIdentifier )
+							incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
+						else
+							throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
+									                    "because increment expression '"+ip.getIncrementExpr().toString()+"' cannot be normalized.");
 					
-					long low = Integer.MIN_VALUE;
-					long up = Integer.MAX_VALUE;
-					long incr = -1;
-					
-					if( ip.getFromExpr()instanceof IntIdentifier)
-						low = ((IntIdentifier)ip.getFromExpr()).getValue();
-					if( ip.getToExpr()instanceof IntIdentifier)
-						up = ((IntIdentifier)ip.getToExpr()).getValue();
-					
-					//NOTE: conservative approach: include all index variables (also from for)
-					if( ip.getIncrementExpr() instanceof IntIdentifier )
-						incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
-					else
-						throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
-								                    "because increment expression '"+ip.getIncrementExpr().toString()+"' cannot be normalized.");
-				
-					_bounds._lower.put(ip.getIterVar()._name, low);
-					_bounds._upper.put(ip.getIterVar()._name, up);
-					_bounds._increment.put(ip.getIterVar()._name, incr);
+						_bounds._lower.put(ip.getIterVar()._name, low);
+						_bounds._upper.put(ip.getIterVar()._name, up);
+						_bounds._increment.put(ip.getIterVar()._name, incr);
+					}	
 					
 					//recursive invocation
-					if( fs._body!=null )
-					{
-						rDetermineBounds(fs._body);
-					}
+					ArrayList<StatementBlock> tmp = fs.getBody();
+					if( tmp != null )
+						rDetermineBounds(tmp, lFlag);
+				}
+				else if( s instanceof ForStatement ) 
+				{
+					//recursive invocation
+					ArrayList<StatementBlock> tmp = ((ForStatement) s).getBody();
+					if( tmp != null )
+						rDetermineBounds(tmp, lFlag);
+				}
+				else if( s instanceof WhileStatement ) 
+				{
+					//recursive invocation
+					ArrayList<StatementBlock> tmp = ((WhileStatement) s).getBody();
+					if( tmp != null )
+						rDetermineBounds(tmp, lFlag);
+				}
+				else if( s instanceof IfStatement )
+				{
+					//recursive invocation
+					ArrayList<StatementBlock> tmp = ((IfStatement) s).getIfBody();
+					if( tmp != null )
+						rDetermineBounds(tmp, lFlag);
+					ArrayList<StatementBlock> tmp2 = ((IfStatement) s).getElseBody();
+					if( tmp2 != null )
+						rDetermineBounds(tmp2, lFlag);
 				}
 			}
+	}
+	
+	/**
+	 * 
+	 * @param cParent
+	 * @param cChild
+	 * @return
+	 */
+	private boolean rIsParent( ArrayList<StatementBlock> cParent, StatementBlock cChild)
+	{
+		for( StatementBlock sb : cParent  ) 
+			if( rIsParent(sb, cChild) ) 
+				return true;
+		
+		return false;
+	}
+		
+	/**
+	 * 
+	 * @param cParent
+	 * @param cChild
+	 * @return
+	 */
+	private boolean rIsParent( StatementBlock cParent, StatementBlock cChild)
+	{
+		boolean ret = false;
+		
+		if( cParent == cChild )
+		{
+			ret = true; 
+		}
+		else
+		{
+			for( Statement s : cParent.getStatements() )
+			{
+				//check all the complex control flow constructs
+				if( s instanceof ForStatement ) //for, parfor
+				{
+					ret = rIsParent( ((ForStatement) s).getBody(), cChild );
+				}
+				else if( s instanceof WhileStatement ) 
+				{
+					ret = rIsParent( ((WhileStatement) s).getBody(), cChild );
+				}
+				else if( s instanceof IfStatement )
+				{
+					ret  = rIsParent( ((IfStatement) s).getIfBody(), cChild );
+					ret |= rIsParent( ((IfStatement) s).getElseBody(), cChild );
+				}
+					
+				//early return if already found
+				if( ret ) break;
+			}
+		}
+		
+		return ret;
 	}
 
 	/**
@@ -713,7 +845,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 *   non-linear functions) but this is a tradeoff between number of false positives and overhead
 		 */
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: runBanerjeeGCDCheck.");
 		
 		boolean ret = true; //anti or data dependency
@@ -723,7 +855,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		LinearFunction f2 = getLinearFunction(dat2);		
 		forceConsistency(f1,f2);
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 		{
 			System.out.println("PARFOR: f1: "+f1.toString());
 			System.out.println("PARFOR: f2: "+f2.toString());
@@ -744,7 +876,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			ret = false;
 		}	
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: GCD result: "+ret);
 
 		///////
@@ -764,6 +896,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				String var=(f1._b.length>i) ? f1._vars[i] : f2._vars[i];
 				
+				//get lower and upper bound for specific var or internal var
 				long lower = _bounds._lower.get(var); //bounds equal for f1 and f2
 				long upper = _bounds._upper.get(var);
 				
@@ -792,7 +925,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}			
 
-			if( DMLScript.DEBUG )
+			if( LDEBUG )
 			{
 				System.out.println("PARFOR: Banerjee lintercept "+lintercept);
 				System.out.println("PARFOR: Banerjee lmax "+lmax);
@@ -805,7 +938,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				ret = false;
 			}
 			
-			if( DMLScript.DEBUG )
+			if( LDEBUG )
 				System.out.println("PARFOR: Banerjee result: "+ret);
 		}
 	
@@ -823,13 +956,13 @@ public class ParForStatementBlock extends ForStatementBlock
 	private boolean runConstantCheck(DataIdentifier dat1) 
 		throws LanguageException 
 	{
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: runConstantCheck.");
 		
 		boolean ret = true; //data dependency to itself		
 		LinearFunction f1 = getLinearFunction(dat1);
 
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: f1: "+f1.toString());
 		
 		// no output dependency to itself if no index access will happen twice
@@ -873,21 +1006,55 @@ public class ParForStatementBlock extends ForStatementBlock
 	private boolean runEqualsCheck(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
 	{
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 			System.out.println("PARFOR: runEqualsCheck.");
 		
+		//general case function comparison
 		boolean ret = true; //true if equal index functions
 		LinearFunction f1 = getLinearFunction(dat1);
 		LinearFunction f2 = getLinearFunction(dat2);
 		forceConsistency(f1, f2);
+		ret = f1.equals(f2);
 		
-		if( DMLScript.DEBUG )
+		if( LDEBUG )
 		{
 			System.out.println("PARFOR: f1: "+f1.toString());
 			System.out.println("PARFOR: f2: "+f2.toString());
+			System.out.println("PARFOR: (f1==f2) = "+ret);
 		}
 		
-		ret = f1.equals(f2);
+		//additional check we cols/rows could be ignored
+		if( !CONSERVATIVE_CHECK && !ret ) //only if not already equal
+		{
+			//NOTE: cases both and none ignorable already converd (constant check, general case) 
+			boolean ignoreRow = isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ignoreCol = isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+	
+			LinearFunction f1p=null, f2p=null;
+			if( ignoreRow )
+			{
+				f1p = getColLinearFunction(dat1);
+				f2p = getColLinearFunction(dat2);
+			}
+			if( ignoreCol )
+			{
+				f1p = getRowLinearFunction(dat1);
+				f2p = getRowLinearFunction(dat2);
+			}
+			
+			if( f1p!=null && f2p!=null )
+			{
+				forceConsistency(f1p, f2p);
+				ret = f1p.equals(f2p);
+				
+				if( LDEBUG )
+				{
+					System.out.println("PARFOR: f1p: "+f1.toString());
+					System.out.println("PARFOR: f2p: "+f2.toString());
+					System.out.println("PARFOR: (f1p==f2p) = "+ret);
+				}
+			}
+		}
 		
 		return ret;
 	}
@@ -952,16 +1119,28 @@ public class ParForStatementBlock extends ForStatementBlock
 					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name);
 				else
 					out = rParseBinaryExpression((BinaryExpression)sub1);			
+				
+				if( !CONSERVATIVE_CHECK )
+					if(out.hasNonIndexVariables())
+					{
+						String id = INTERAL_FN_INDEX_ROW+_idSeqfn.getNextID();
+						out = new LinearFunction(0, 1l, id);
+						
+						_bounds._lower.put(id, 1l);
+						_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim1()); //row dim
+						_bounds._increment.put(id, 1l);	
+					}
 			}
 			else //range indexing
 			{
 				Expression sub1a = sub1;
 				Expression sub1b = idat.getRowUpperBound();
 				
-				String id = INTERAL_FN_INDEX_ROW;
+				String id = INTERAL_FN_INDEX_ROW+_idSeqfn.getNextID();
 				out = new LinearFunction(0, 1l, id);
 				
-				if( sub1a == null && sub1b == null ) //: operator
+				if(   sub1a == null && sub1b == null //: operator
+				   || !(sub1a instanceof IntIdentifier) || !(sub1b instanceof IntIdentifier) ) //for robustness
 				{
 					_bounds._lower.put(id, 1l);
 					_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim1()); //row dim
@@ -987,13 +1166,13 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 			else
 			{
-				//TODO: mark for deferred validation and evaluate on execute (see ParForProgramBlock)
+				//NOTE: we could mark sb for deferred validation and evaluate on execute (see ParForProgramBlock)
 				System.out.println("PARFOR: WARNING - matrix dimensionality unknown, cannot scale linear functions.");				
 			}
 		}
 		catch(Exception ex)
 		{
-			if(DMLScript.DEBUG)
+			if(LDEBUG)
 			{
 				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
 				//ex.printStackTrace();
@@ -1007,6 +1186,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			try
 			{
+				LinearFunction tmpOut = null;
+				
 				//loop index or constant (default case)
 				if( idat.getColLowerBound()!=null && idat.getColUpperBound()!=null &&
 						idat.getColLowerBound() == idat.getColUpperBound()             ) 
@@ -1014,19 +1195,30 @@ public class ParForStatementBlock extends ForStatementBlock
 					if( sub2 instanceof IntIdentifier )
 						out.addConstant( ((IntIdentifier)sub2).getValue() );
 					else if( sub2 instanceof DataIdentifier )
-						out.addFunction( new LinearFunction(0, 1, ((DataIdentifier)sub2)._name) );
+						tmpOut = new LinearFunction(0, 1, ((DataIdentifier)sub2)._name) ;
 					else
-						out.addFunction( rParseBinaryExpression((BinaryExpression)sub2) );	
+						tmpOut = rParseBinaryExpression((BinaryExpression)sub2);	
+					
+					if( !CONSERVATIVE_CHECK )
+						if(tmpOut!=null && tmpOut.hasNonIndexVariables())
+						{
+							String id = INTERAL_FN_INDEX_COL+_idSeqfn.getNextID();
+							tmpOut = new LinearFunction(0, 1l, id); 
+							_bounds._lower.put(id, 1l);
+							_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim2()); //col dim
+							_bounds._increment.put(id, 1l);	
+						}
 				}
 				else //range indexing
 				{
 					Expression sub2a = sub2;
 					Expression sub2b = idat.getColUpperBound();
 					
-					String id = INTERAL_FN_INDEX_COL;
-					out.addFunction( new LinearFunction(0, 1l, id) );
+					String id = INTERAL_FN_INDEX_COL+_idSeqfn.getNextID();
+					tmpOut = new LinearFunction(0, 1l, id);
 					
-					if( sub2a == null && sub2b == null ) //: operator
+					if(   sub2a == null && sub2b == null  //: operator 
+					   || !(sub2a instanceof IntIdentifier) || !(sub2b instanceof IntIdentifier) ) //for robustness
 					{
 						_bounds._lower.put(id, 1l);
 						_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim2()); //col dim
@@ -1043,10 +1235,14 @@ public class ParForStatementBlock extends ForStatementBlock
 						out = null;
 					}
 				}
+				
+				//final merge of row and col functions
+				if( tmpOut != null )
+					out.addFunction(tmpOut);
 			}
 			catch(Exception ex)
 			{
-				if(DMLScript.DEBUG)
+				if(LDEBUG)
 				{
 					System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub2)+"'.");
 					//ex.printStackTrace();
@@ -1073,7 +1269,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					long low  = _bounds._lower.get(var);
 					long up   = _bounds._upper.get(var);
 					long incr = _bounds._increment.get(var);
-					if( incr < 0 || 1 < incr ) 
+					if( incr < 0 || 1 < incr ) //does never apply to internal (artificial) vars
 					{
 						out.normalize(index,low,incr); // normalize linear functions
 						_bounds._upper.put(var,(long)Math.ceil(((double)up)/incr)); // normalize upper bound
@@ -1092,6 +1288,92 @@ public class ParForStatementBlock extends ForStatementBlock
 		return out;
 	}
 	
+	private LinearFunction getRowLinearFunction(DataIdentifier dat) 
+		throws LanguageException
+	{
+		//NOTE: would require separate function cache, not realized due to inexpensive operations
+		
+		LinearFunction out = null;
+		IndexedIdentifier idat = (IndexedIdentifier) dat;		
+		Expression sub1 = idat.getRowLowerBound();
+		
+		try
+		{			
+			//loop index or constant (default case)
+			if( idat.getRowLowerBound()!=null && idat.getRowUpperBound()!=null &&
+					idat.getRowLowerBound() == idat.getRowUpperBound()         ) 
+			{
+				if( sub1 instanceof IntIdentifier )
+					out = new LinearFunction((int)((IntIdentifier)sub1).getValue(), 0, null);
+				else if( sub1 instanceof DataIdentifier )
+					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
+				else
+					out = rParseBinaryExpression((BinaryExpression)sub1);			
+			}
+		}
+		catch(Exception ex)
+		{
+			if(LDEBUG)
+			{
+				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
+			}			
+			out = null; //let dependency analysis fail
+		}
+		
+		//post processing after creation
+		if( out != null )
+		{
+			//cleanup and verify created function; raise exceptions if needed
+			cleanupFunction(out);
+			verifyFunction(out);
+		}
+		
+		return out;
+	}
+	
+	private LinearFunction getColLinearFunction(DataIdentifier dat) 
+		throws LanguageException
+	{
+		//NOTE: would require separate function cache, not realized due to inexpensive operations
+		
+		LinearFunction out = null;
+		IndexedIdentifier idat = (IndexedIdentifier) dat;		
+		Expression sub1 = idat.getColLowerBound();
+		
+		try
+		{			
+			//loop index or constant (default case)
+			if( idat.getColLowerBound()!=null && idat.getColUpperBound()!=null &&
+					idat.getColLowerBound() == idat.getColUpperBound()         ) 
+			{
+				if( sub1 instanceof IntIdentifier )
+					out = new LinearFunction((int)((IntIdentifier)sub1).getValue(), 0, null);
+				else if( sub1 instanceof DataIdentifier )
+					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
+				else
+					out = rParseBinaryExpression((BinaryExpression)sub1);			
+			}
+		}
+		catch(Exception ex)
+		{
+			if(LDEBUG)
+			{
+				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
+			}			
+			out = null; //let dependency analysis fail
+		}
+		
+		//post processing after creation
+		if( out != null )
+		{
+			//cleanup and verify created function; raise exceptions if needed
+			cleanupFunction(out);
+			verifyFunction(out);
+		}
+		
+		return out;
+	}
+	
 	/**
 	 * Creates a functionID for a given data identifier (mainly used for caching purposes),
 	 * where data identifiers with equal name and matrix subscripts results in equal
@@ -1100,7 +1382,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param dat
 	 * @return
 	 */
-	private String getFunctionID( IndexedIdentifier dat)
+	private String getFunctionID( IndexedIdentifier dat )
 	{
 		/* note: using dat.hashCode can be different for same functions, 
 		 *       hence, we use a custom String ID
@@ -1123,6 +1405,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		return sb.toString();
 	}
+	
+	
 	
 	/**
 	 * Removes all zero intercepts created by recursive computation.
@@ -1154,10 +1438,10 @@ public class ParForStatementBlock extends ForStatementBlock
 		//check for required form of linear functions
 		if( f1 == null || f1._b.length != f1._vars.length )
 		{
-			if( DMLScript.DEBUG )
+			if( LDEBUG )
 			{
 				if( f1!=null ) 
-					System.out.println("PARFOR: F1: "+f1.toString());
+					System.out.println("PARFOR: f1: "+f1.toString());
 			}
 			
 			throw new LanguageException("PARFOR loop dependency analysis: " +
@@ -1169,7 +1453,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			if( !_bounds._lower.containsKey(var) )
 			{
-				if( DMLScript.DEBUG )
+				if( LDEBUG )
 				{
 					System.out.println("PARFOR: not allowed variable in matrix subscript: "+var);
 				}
@@ -1196,12 +1480,16 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( f2._b.length<(i+1) )
 				break;
 			
-			if( !f1._vars[i].equals(f2._vars[i]) )
+			if(   !f1._vars[i].equals(f2._vars[i])
+			    &&!(f1._vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
+			    &&!(f1._vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)))
 			{
 				boolean exchange = false;
 				//scan 
 				for( int j=i+1; j<f2._b.length; j++ )
-					if( f1._vars[i].equals(f2._vars[j]) )
+					if(    f1._vars[i].equals(f2._vars[j]) 
+						||(f1._vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[j].startsWith(INTERAL_FN_INDEX_ROW)) 
+						||(f1._vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[j].startsWith(INTERAL_FN_INDEX_COL)) )
 					{
 						//exchange
 						long btmp = f2._b[i];
@@ -1218,7 +1506,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 
 		
-		if( warn )
+		if( warn && LDEBUG )
 			System.out.println( "PARFOR: WARNING - index functions f1 and f2 cannot be made consistent." );
 	}
 	
@@ -1337,7 +1625,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	 *
 	 */
 	private class LinearFunction
-	{		
+	{	
 		long     _a;     // intercept
 		long[]   _b;     // slopes 
 		String[] _vars; // b variable names
@@ -1350,7 +1638,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars    = new String[1];
 			_vars[0] = name;
 		}
-
+		
 		public void addConstant(long value)
 		{
 			_a += value;	
@@ -1444,12 +1732,28 @@ public class ParForStatementBlock extends ForStatementBlock
 					for( int i=0; i<_b.length; i++ )
 					{
 						ret &= (_b[i] == f2._b[i] );
-						ret &= (_vars[i].equals(f2._vars[i]));
+						ret &= (_vars[i].equals(f2._vars[i]) 
+								||(_vars[i].startsWith(INTERAL_FN_INDEX_ROW) && f2._vars[i].startsWith(INTERAL_FN_INDEX_ROW)) 
+								||(_vars[i].startsWith(INTERAL_FN_INDEX_COL) && f2._vars[i].startsWith(INTERAL_FN_INDEX_COL)) )  ;
 					}
 				}
 			}
 			
 			return ret;
 		}
+
+		public boolean hasNonIndexVariables() 
+		{
+			boolean ret = false;
+			for( String var : _vars )
+				if( var!=null && !_bounds._lower.containsKey(var) )
+				{
+					ret = true;
+					break;
+				}
+			
+			return ret;
+		}
+		
 	}
 }

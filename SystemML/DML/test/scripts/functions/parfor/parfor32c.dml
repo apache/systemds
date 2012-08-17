@@ -4,9 +4,9 @@ C = Rand(rows=20,cols=20,min=0,max=0);
 
 parfor( i in 1:20 )
 {
-   A[1:10,i]=i;
-   A[i,5]=i;
-   
+   A[i:i,1]=i;
+   A[i:i,2]=i;
+   A[i,1]=i; 
 }
 
 #print(C);

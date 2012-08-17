@@ -19,21 +19,21 @@ import com.ibm.bi.dml.utils.LanguageException;
  *    1: no, 2: dep, 3: no, 4: no, 5: dep, 6: no, 7: no, 8: dep, 9: dep, 10: no   
  * * matrix 1D tests - expected results
  *    11: no, 12: no, 13: no, 14:dep, 15: no, 16: dep, 17: dep, 18: no, 19: no (DEP, hard), 20: no, 
- *    21: dep, 22: no, 23: no, 24: no, 25: no, 26:no, 29: ERR
+ *    21: dep, 22: no, 23: no, 24: no, 25: no, 26:no, 29: no (previously ERR)
  * * nested control structures
  *    27:dep                                                                    
- * * nested parallelism
- *    28: no, 
+ * * nested parallelism and nested for/parfor
+ *    28: no, 28b: no, 28c: no, 28d: dep
  * * range indexing
- *    30: no, 31: no, 32: dep
+ *    30: no, 31: no, 32: dep, 32b: dep, 32c: dep (TODO: no, dep is false positive), 32d: dep, 32e:dep
  * * set indexing
  *    33: dep, 34: dep, 35: no
  * * multiple matrix references per statement
  *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
  * * scoping (create object in loop, but used afterwards)
  *    44: dep   
- * 
- *
+ * * application testcases
+ *    45: no dep, 46: no dep   
  */
 public class ParForDependencyAnalysisTest 
 {
@@ -123,9 +123,18 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis28() { runTest("parfor28.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis28b() { runTest("parfor28b.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis28c() { runTest("parfor28c.dml", false ); } //SEE ParForStatementBlock.CONSERVATIVE_CHECK false if false, otherwise true
 	
 	@Test
-	public void testDependencyAnalysis29() { runTest("parfor29.dml", true); } //ERR, but also dependency
+	public void testDependencyAnalysis28d() { runTest("parfor28d.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis29() { runTest("parfor29.dml", false); } 
 	
 	@Test
 	public void testDependencyAnalysis30() { runTest("parfor30.dml", false); }
@@ -136,6 +145,18 @@ public class ParForDependencyAnalysisTest
 	@Test
 	public void testDependencyAnalysis32() { runTest("parfor32.dml", true); }
 
+	@Test
+	public void testDependencyAnalysis32b() { runTest("parfor32b.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis32c() { runTest("parfor32c.dml", true); }
+
+	@Test
+	public void testDependencyAnalysis32d() { runTest("parfor32d.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis32e() { runTest("parfor32e.dml", true); }
+	
 	@Test
 	public void testDependencyAnalysis33() { runTest("parfor33.dml", true); }
 	
@@ -172,7 +193,13 @@ public class ParForDependencyAnalysisTest
 	//TODO: requires dynamic re-execution of dependency analysis after live variable analysis has been done
 	//@Test
 	//public void testDependencyAnalysis44() { runTest("parfor44.dml", true); } 	
-	
+
+	@Test
+	public void testDependencyAnalysis45() { runTest("parfor45.dml", false); } 	//SEE ParForStatementBlock.CONSERVATIVE_CHECK false if false, otherwise true
+
+	@Test
+	public void testDependencyAnalysis46() { runTest("parfor46.dml", false); } 	//SEE ParForStatementBlock.CONSERVATIVE_CHECK false if false, otherwise true
+
 	
 	private void runTest( String scriptFilename, boolean expectedException )
 	{

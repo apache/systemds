@@ -1,0 +1,18 @@
+A = Rand(rows=20,cols=20,min=0,max=0);
+B = Rand(rows=20,cols=20);
+
+parfor( i in 1:20 )
+{ 
+   k = 0;
+   while( k < 10 )
+   {
+     parfor( j in 1:20 )
+     {
+         A[i,j] = B[i,j]+(i+j);
+     }
+     
+     k = k + 1;
+   }
+}
+
+#print(A);

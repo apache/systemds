@@ -27,7 +27,7 @@ public class IterablePredicate extends Expression
 	public String toString()
 	{ 
 		StringBuffer sb = new StringBuffer();
-		sb.append( "(");
+		sb.append( "(" );
 		sb.append( _iterVar.getName() );
 		sb.append(" in seq(");
 		sb.append(_fromExpr.toString());
@@ -35,6 +35,7 @@ public class IterablePredicate extends Expression
 		sb.append(_toExpr.toString());
 		sb.append(",");
 		sb.append(_incrementExpr.toString());
+		sb.append( ")" );
 		if (_parforParams != null && _parforParams.size() > 0){
 			for (String key : _parforParams.keySet())
 			{

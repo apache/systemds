@@ -557,16 +557,7 @@ public class DMLScript {
 				scriptArgs = new String[args.length - i];
 				int j = 0;
 				while( i < args.length){
-					if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("-debug")||
-						args[i].equalsIgnoreCase("-l") || args[i].equalsIgnoreCase("-log") ||
-						args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize")||
-						args[i].equalsIgnoreCase("-exec") ||
-						args[i].startsWith("-config=")){
-						System.err.println("ERROR: -args must be the final argument for DMLScript!");
-						System.err.println(USAGE);
-						System.exit(1);
-					}
-						
+					
 					scriptArgs[j++]=args[i++];
 				}
 			} 

@@ -21,8 +21,8 @@ public class DMLStringTest {
 		
 		InputStream is = new ByteArrayInputStream(s.getBytes());
 		String[] executionOptions = null;
-		String[] scriptArgs = {"1", "2"};
-		d.executeScript(is, executionOptions, "1", "2");
+		String[] scriptArgs = {"1", "-d"};
+		d.executeScript(is, executionOptions, "1", "-d");
 		
 	}
 }

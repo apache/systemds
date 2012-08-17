@@ -509,6 +509,7 @@ public class DMLScript {
 						arg.startsWith("-config=")){
 						System.err.println("ERROR: -args must be the final argument for DMLScript!");
 						System.err.println(USAGE);
+						resetExecutionOptions();
 						success = false;
 						return success;
 				}

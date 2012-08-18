@@ -7,11 +7,11 @@
             <jaql-path></jaql-path>
             <script>jaql/filterProject.jaql</script>
             <eval>Input_data_PARAM='${inputDataFile}';
-Input_metaData_PARAM='${metaDataFile}';
-Input_filterExpression_PARAM='${wf:conf(filterExpression)}';
-Input_projectColumns_PARAM='${wf:conf(projectColumnsFile)}';
-Input_outMetaData_PARAM = '${outputMetaDataFile}';
-Input_outData_PARAM = '${outputDataFile}';</eval>
+            Input_metaData_PARAM='${metaDataFile}';
+            Input_filterExpression_PARAM='${filterExpression}';
+    	    Input_projectColumns_PARAM='${projectColumnsFile}';
+    	    Output_metaData_PARAM='${outputMetaDataFile}';
+            Output_data_PARAM='${outputDataFile}';</eval>
         </jaql>
         <ok to="end"/>
         <error to="fail"/>

@@ -35,6 +35,13 @@
 // ---------------------------------------------------------------
 
 
+input = Input_data_PARAM;
+meta = Input_metaData_PARAM;
+filterExpr = Input_filterExpression_PARAM;
+projectColumnsFile = Input_projectColumns_PARAM;
+outMeta = Output_metaData_PARAM;
+outData = Output_data_PARAM;
+
 // register eval function to parse the meta data
 
 addClassPath("lib/metaDataParse.jar");
@@ -58,24 +65,17 @@ jsonLines = fn(location)
 // ---------------------------------------------------------------
 // Perform Filtering, Projecting on the input data
 // ---------------------------------------------------------------
-/*
-Input_data_PARAM = "./data/inputdata.json";
-Input_metaData_PARAM = "./data/meta.json";
-Input_filterExpression_PARAM ="$.GPA > 3.6 and $.Salary > 6000";
-Input_projectColumns_PARAM ="./data/projListFile.json";
-Input_outMetaData_PARAM = "./data/meta-update.json";
-Input_outData_PARAM = "./data/inputData-update.json";
-*/
+
 
 // pin in meta data in memory
-metaDataMem := read (jsonText(Input_metaData_PARAM));
+metaDataMem := read (jsonText(meta));
 
 // read in input data
-inputData = read(jsonLines(Input_data_PARAM));
+inputData = read(jsonLines(input));
 
 // e.g: Input_filterExpression_PARAM= '$.GPA > 3.6 and $.Salary > 6000';
-filterFunc = if (isnull(Input_filterExpression_PARAM)) null
-                else eval('fn($) ' + Input_filterExpression_PARAM);
+filterFunc = if (isnull(filterExpr)) null
+                else eval('fn($) ' + filterExpr);
 
 // filter input data
 inputData = if (not isnull(filterFunc)) (
@@ -83,8 +83,8 @@ inputData = if (not isnull(filterFunc)) (
               ) else inputData;
 
 // read in projection column file
-projListFile := if (not isnull (Input_projectColumns_PARAM)) (
-                  read (jsonText(Input_projectColumns_PARAM))
+projListFile := if (not isnull (projectColumnsFile)) (
+                  read (jsonText(projectColumnsFile))
                 ) else null;
 // get projection columns if there exists one
 projectColumns = if (not isnull (projListFile)) (
@@ -115,7 +115,7 @@ projectColumnStr = if (not isnull(projectColumns)) (
                                -> transform each e { e{*-.attributeColumnId}}
                                -> enumerate()
                                -> transform {"attributeColumnId":$[0]+1, $[1]}
-                               -> write (jsonText (Input_outMetaData_PARAM)),
+                               -> write (jsonText (outMeta)),
                    projectColumns -> strJoin(",.")
                    ) else null;
 
@@ -133,5 +133,5 @@ inputData = if (not isnull(projectionFunc)) (
 
 // output the data if done projection or filtering 
 if ( (not isnull(projectionFunc)) or (not isnull(filterFunc))) (
-               inputData -> write(jsonLines(Input_outData_PARAM))
+               inputData -> write(jsonLines(outData))
 );

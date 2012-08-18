@@ -108,4 +108,14 @@ metadataMem := read(jsonText(outputMetadata));
 
 MetadataEnhance::genRcdMap (inputData, metadataMem, recodeMap);
 
+
+// --------------------------------------------------------------------------------
+// If the input data was in CSV format, write it as JSON
+// --------------------------------------------------------------------------------
+
+if (inputFormat == "CSV")
+(
+   inputData -> write(jsonLines(input + ".json"))
+);
+
 "---------- END run_MetadataEnhance.jaql -----------";

@@ -1,6 +1,6 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>1. Metadata Enhancement</name>
-    <description>This application applies a heuristic to determine attribute kind (scale/nominal/ordinal) when attributeKind is null and generates recode maps for categorical (nominal or ordinal) attributes.</description>
+    <description>This application applies a heuristic to determine attribute kind (scale/nominal/ordinal) when attributeKind is null and generates recode maps for categorical (nominal or ordinal) attributes. Also, if the input data is in delimited format, this app will generate a copy in JSON text records format. The path and name of the copy will be the same as the input data file plus the suffix ".json".</description>
     <properties>
         <property defaultValue="JSON Text Records" description="Input file format" isInputPath="false" isOutputPath="false" isRequired="true" label="Input Format" name="inputFormat" paramtype="LIST" uitype="textfield" validValues="CSV, JSON Text Records"/>
         <property defaultValue="," description="Delimiter" isInputPath="false" isOutputPath="false" isRequired="true" label="Delimiter" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>

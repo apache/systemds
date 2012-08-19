@@ -9,14 +9,30 @@ eval = javaudf("com.ibm.systemML.dataTransformation.metaDataParse");
 
 inputData = fn(input, metadataMem, inputDelimiter) (
 
-schemaString = metadataMem
-   -> transform $.attributeName + ":" + $.attributeType
-   -> strJoin(","),
+if (metadataMem == [])
+(
+   inputArray = if (isnull(inputDelimiter))
+		  (
+			read (del(location=input) )
+		  )
+		  else
+		  (
+			read (del(location=input, delimiter=inputDelimiter) )
+		  ),
+   numCols = inputArray[0] -> count(),
+   attributeNames = range(1, numCols) -> transform serialize($),
+   inputArray -> transform arrayToRecord(attributeNames, $)
+)
+else
+(
+   schemaString = metadataMem
+      -> transform $.attributeName + ":" + $.attributeType
+      -> strJoin(","),
 
-// schema of the input
-inputSchema = "schema {" + schemaString + "}",
+   // schema of the input
+   inputSchema = "schema {" + schemaString + "}",
 
-inputData = if (isnull(inputDelimiter))
+   if (isnull(inputDelimiter))
 		  (
 			read (del(location=input, 
 				schema = eval(inputSchema) ) )
@@ -24,9 +40,11 @@ inputData = if (isnull(inputDelimiter))
 		  else
 		  (
 			read (del(location=input, delimiter=inputDelimiter,
-				schema = eval(inputSchema) ) ))
-
+				schema = eval(inputSchema) ) )
+		  )
+)
 );
+
 
 //
 // Generate metadata json file
@@ -57,9 +75,12 @@ genMetadata = fn (inputData)
       -> expand $
          // set attribute kind based on some heuristics
       -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
-                       {${*-}, attributeKind: "scale", attributeType: null} 
+                       {${*-}, attributeKind: "scale", attributeType: "double"} 
    		else                      
-                       {${*-}, attributeKind: "nominal", attributeType: null} 
+                       {${*-}, attributeKind: "nominal", attributeType: "string"}
+      -> sort by [$.attributeName] 
+      -> enumerate()
+      -> transform {"attributeColumnId":$[0] + 1, $[1].*}
 );
 
 
@@ -71,11 +92,13 @@ metaEnhance = fn(inputData, metadataMem, outputMetadata) (
 
 kindHeuristic = genMetadata (inputData),
 
-join orig in metadataMem, new in kindHeuristic 
+join orig in metadataMem, preserve new in kindHeuristic 
    where orig.attributeName == new.attributeName
    into {
-      orig{*-.attributeKind},
-      "attributeKind":(if (isnull(orig.attributeKind)) new.attributeKind else orig.attributeKind)
+      new.attributeName,
+      "attributeColumnId":(if (isnull(orig.attributeColumnId)) new.attributeColumnId else orig.attributeColumnId),
+      "attributeKind":(if (isnull(orig.attributeKind)) new.attributeKind else orig.attributeKind),
+      "attributeType":(if (isnull(orig.attributeType)) new.attributeType else orig.attributeType)
    }
    -> sort by [$.attributeColumnId]
    -> write(jsonText(outputMetadata))

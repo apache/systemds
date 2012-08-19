@@ -25,7 +25,7 @@
 //
 /*
 
-# Example of invoking this script from the Linux command line:
+# Example of invoking this script from the Linux command line, using JSON as input:
 
 IN_DIR=input
 OUT_DIR=output
@@ -34,6 +34,32 @@ Input_inputFormat_PARAM    = \"JSON Text Records\";
 Input_inputDelimiter_PARAM = \",\";
 Input_input_PARAM          = \"$IN_DIR/data.json\";
 Input_inputMetadata_PARAM  = \"$IN_DIR/data.meta.json\";
+Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
+Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
+" jaql/run_MetadataEnhance.jaql
+
+# Example of invoking this script from the Linux command line, using JSON as input and no metadata:
+
+IN_DIR=input
+OUT_DIR=output
+jaqlshell -jp custom_modules -e "
+Input_inputFormat_PARAM    = \"JSON Text Records\";
+Input_inputDelimiter_PARAM = \",\";
+Input_input_PARAM          = \"$IN_DIR/data.json\";
+Input_inputMetadata_PARAM  = \"\";
+Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
+Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
+" jaql/run_MetadataEnhance.jaql
+
+# Example of invoking this script from the Linux command line, using CSV as input and no metadata:
+
+IN_DIR=input
+OUT_DIR=output
+jaqlshell -jp custom_modules -e "
+Input_inputFormat_PARAM    = \"CSV\";
+Input_inputDelimiter_PARAM = \",\";
+Input_input_PARAM          = \"$IN_DIR/data.csv\";
+Input_inputMetadata_PARAM  = \"\";
 Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
 Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
 " jaql/run_MetadataEnhance.jaql
@@ -77,7 +103,14 @@ recodeMap = Input_recodeMap_PARAM;
 import MetadataEnhance;
 
 // pin metadata in memory
-metadataMem := read(jsonText(inputMetadata));
+metadataMem := if (ls(inputMetadata) == [])
+(
+   []
+)
+else
+(
+   read(jsonText(inputMetadata))
+);
 
 jsonLines = fn(location)
     lines ( location,

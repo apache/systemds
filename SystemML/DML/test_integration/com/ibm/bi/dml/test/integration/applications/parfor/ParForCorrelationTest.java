@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -17,8 +18,8 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	private final static String TEST_DIR = "applications/parfor/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows1 = 1000;  // # of rows in each vector (for CP instructions)
-	private final static int rows2 = 10000;  // # of rows in each vector (for MR instructions)
+	private final static int rows1 = (int)Hops.CPThreshold;  // # of rows in each vector (for CP instructions)
+	private final static int rows2 = (int)Hops.CPThreshold+1;  // # of rows in each vector (for MR instructions)
 	private final static int cols = 20;      // # of columns in each vector  
 	
 	private final static double minVal=0;    // minimum value in each vector 
@@ -33,29 +34,42 @@ public class ParForCorrelationTest extends AutomatedTestBase
 				new TestConfiguration(TEST_DIR, TEST_NAME, 
 				new String[] { "Rout" })   ); //TODO this specification is not intuitive
 	}
+
+	@Test
+	public void testForCorrleationSerialSerialCP() 
+	{
+		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP);
+	}
+
+	//Note MB: Comment this test if test suite has time constraints (requires more than 5 minutes)
+	@Test
+	public void testForCorrleationSerialSerialMR() 
+	{
+		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
+	}
 	
 	@Test
 	public void testParForCorrleationLocalLocalCP() 
 	{
-		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP);
+		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP);
 	}
 
 	@Test
 	public void testParForCorrleationLocalLocalMR() 
 	{
-		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
+		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
 	}
 
 	@Test
 	public void testParForCorrleationLocalRemoteCP() 
 	{
-		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP);
+		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP);
 	}
 	
 	@Test
 	public void testParForCorrleationRemoteLocalCP() 
 	{
-		runParForCorrelationTest(PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
+		runParForCorrelationTest(true, PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
 	}
 	
 	/**
@@ -64,7 +78,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	 * @param inner execution mode of inner parfor loop
 	 * @param instType execution mode of instructions
 	 */
-	private void runParForCorrelationTest( PExecMode outer, PExecMode inner, ExecType instType )
+	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType )
 	{
 		//inst exec type, influenced via rows
 		int rows = -1;
@@ -75,10 +89,16 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		
 		//script
 		int scriptNum = -1;
-		if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
-		else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
-		else 									scriptNum=1;
-		
+		if( parallel )
+		{
+			if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
+			else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
+			else 									scriptNum=1;
+		}
+		else
+		{
+			scriptNum = 0;
+		}
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
@@ -96,7 +116,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 						                   Integer.toString(cols),
 						                   HOME + OUTPUT_DIR + "PearsonR" };
 		
-		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".r" + " " + 
+		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".R" + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

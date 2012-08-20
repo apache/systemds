@@ -22,8 +22,7 @@ parfor( i in 1:(n-1), par=4, mode=REMOTE_MR )
       covXY = cov(X,Y);      
       rXY = covXY / (sigmaX*sigmaY); 
       
-      #rs = "R[("+i+"/"+j+")]="+rXY;
-      #print(rs);
+      print("R[("+i+","+j+")]="+rXY); #test robustness of ProgramConverter
       R[i,j] = dummy * rXY; 
       
    }

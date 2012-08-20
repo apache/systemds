@@ -22,8 +22,7 @@ parfor( i in 1:(n-1), par=4, mode=LOCAL )
       covXY = cov(X,Y);      
       rXY = covXY / (sigmaX*sigmaY); 
       
-      #rs = "R[("+i+"/"+j+")]="+rXY;
-      #print(rs);
+      #print("R[("+i+","+j+")]="+rXY); 
       R[i,j] = dummy * rXY; 
       
    }

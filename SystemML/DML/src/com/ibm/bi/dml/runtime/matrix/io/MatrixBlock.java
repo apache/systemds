@@ -94,7 +94,12 @@ public class MatrixBlock extends MatrixBlockDSM
 			mb.sparseRows = sparseRows;
 		else
 			mb.denseBlock = denseBlock;
-			
+		mb.maxrow = maxrow;
+		mb.maxcolumn = maxcolumn;
+		mb.nonZeros = nonZeros;	
+		
+		mb.envelope = envelope;
+		
 		return mb;
 	}
 }

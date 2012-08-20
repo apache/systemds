@@ -41,16 +41,17 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class MatrixBlockDSM extends MatrixValue{
 
+	public static final double SPARCITY_TURN_POINT=0.4;
 	//protected static final Log LOG = LogFactory.getLog(MatrixBlock1D.class);
+	
 	private int rlen;
 	private int clen;
-	private int maxrow, maxcolumn;
 	private boolean sparse;
-	protected double[] denseBlock=null;
-	private int nonZeros=0;
-	public static final double SPARCITY_TURN_POINT=0.4;
 	
+	protected int maxrow, maxcolumn;
+	protected double[] denseBlock=null;
 	protected SparseRow[] sparseRows=null;
+	protected int nonZeros=0;
 	
 	
 	/**

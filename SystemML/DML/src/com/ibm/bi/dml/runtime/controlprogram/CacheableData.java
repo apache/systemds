@@ -37,14 +37,10 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 public abstract class CacheableData extends Data
 {
 	public static final boolean LDEBUG = false;
-	
-	protected static final int WAIT_TIMEOUT  = 15000; //15s
-	protected static final int WAIT_INTERVAL = 50; //50ms
 
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
 	private static boolean _activeFlag = false;
-	
-	
+		
 	public enum CACHE_EVICTION_POLICY { 
 		DEFAULT 
 	};
@@ -72,7 +68,7 @@ public abstract class CacheableData extends Data
     	EVICTED
     };
 	    
-	private static IDSequence _seq = null; //TODO ensure that each JVM writes to its own cache dir, otherwise id will fail; MB: well, those ID need only be globally unique if we use HDFS cache dirs, what we dont do 
+	private static IDSequence _seq = null; //TODO ensure that each JVM writes to its own cache dir, otherwise id will fail; MB: well, those ID need only be globally unique if we use HDFS cache dirs, what we dont do; separation maybe even necessary to prevent conflict on single node  
 	
 	static
 	{
@@ -435,58 +431,27 @@ public abstract class CacheableData extends Data
 	 *         <code>false</code> otherwise.
 	 * @throws CacheIOException 
 	 */
-	public boolean attemptEviction (MatrixBlock mb) 
+	public synchronized boolean attemptEviction (MatrixBlock mb) 
 		throws CacheException
 	{
 		boolean ret = false;
 		
 		if( isCachingActive() ) //discard eviction requests after caching already turned off
 		{			
-			if( isEvictable() ) //proceed with eviction request
+			if( isEvictable() )//proceed with eviction request
 			{
-				synchronized(this)
-				{ 
-					if( isEvictable() )
-					{
-						evictBlobFromMemory( mb );
-						_cacheStatus.setEvicted();
-						ret = true;
-					}
-					else
-					{
-						//just for chase something changed during synchronized wait
-						undoPartialEviction( mb ); 
-					}
-				}
+				evictBlobFromMemory( mb );
+				_cacheStatus.setEvicted();
+				ret = true;
 			}
-			else //robustness: handle other case to prevent data loss
-			{
-				undoPartialEviction( mb );
-			}	
 		}
 		else if ( LDEBUG )  
+		{
 			System.out.println("Warning: caching not active, discard eviction request.");
+		}
 		
-	
 		return ret;
 	}
-	
-	protected abstract void undoPartialEviction( MatrixBlock mb ) 
-		throws CacheException;
-	
-	
-	/**
-	 * When the envelope is garbage collected, it has to free its evicted
-	 * data object if it has any.
-	 */
-	/*@Override
-	protected void finalize()
-	{
-		if ( _cacheStatus.isEvicted() )
-			freeEvictedBlob ();
-	}*/
-	
-	
 	
 	
 	//  **************************************************

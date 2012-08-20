@@ -39,6 +39,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * matrices from HDFS and convert them to a specific format/representation. It
  * is also able to write several formats/representation of matrices to HDFS.
  * 
+ * TODO tuning possibility: -XX:SoftRefLRUPolicyMSPerMB=<value>  time in ms to hold an object per MB of free mem
+ * 
  * IMPORTANT: Preserve one-to-one correspondence between {@link MatrixObjectNew}
  * and {@link MatrixBlock} objects, for cache purposes.  Do not change a
  * {@link MatrixBlock} object without informing its {@link MatrixObjectNew} object.
@@ -46,13 +48,13 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class MatrixObjectNew extends CacheableData
 {
-	private SoftReference<MatrixBlock> _cache;
+	private CacheReference _cache = null;
 	private boolean _cleanupFlag = true;
 	
 	/**
 	 * Container object that holds the actual data.
 	 */
-	private MatrixBlock _data;
+	private MatrixBlock _data = null;
 
 	/**
 	 * The name of HDFS file by which the data is backed up.
@@ -78,7 +80,7 @@ public class MatrixObjectNew extends CacheableData
 	 * When the matrix is written to HDFS (local file system, as well?), one
 	 * must get the OutputInfo that matches with InputInfo stored inside _mtd.
 	 */
-	private MetaData _metaData;
+	private MetaData _metaData = null;
 
 	/**
 	 * Constructor that takes only the HDFS filename.
@@ -290,13 +292,7 @@ public class MatrixObjectNew extends CacheableData
 			}
 		}
 		acquire( false, true );
-		
-		//unsynchronized in order to enable undo partial eviction
-		if( _data == null )
-		{
-			waitForUndoPartialEviction();
-		}
-			
+
 		return _data;
 	}
 	
@@ -353,12 +349,6 @@ public class MatrixObjectNew extends CacheableData
 		acquire( true, true );
 		_dirtyFlag = true;
 		
-		//unsynchronized in order to enable undo partial eviction
-		if( _data == null )
-		{
-			waitForUndoPartialEviction();
-		}
-		
 		return _data;
 	}
 	
@@ -395,11 +385,10 @@ public class MatrixObjectNew extends CacheableData
 		{
 			newData.setEnvelope (this);
 			_data = newData; 
-			//refreshMetaData (); //MB: not required as still in state modify
 		}
 		else
 			throw new CacheException("acquireModify with empty matrix block.");
-
+		
 		return _data;
 	}
 
@@ -506,7 +495,7 @@ public class MatrixObjectNew extends CacheableData
 	 * @param filePath : the new HDFS path and file name
 	 * @throws CacheStatusException
 	 */
-	public void importData (String filePath) 
+	/*public void importData (String filePath) 
 		throws CacheStatusException
 	{
 		if (! isAvailableToModify ())
@@ -514,7 +503,7 @@ public class MatrixObjectNew extends CacheableData
 		
 		_hdfsFileName = filePath;
 		clearData();
-	}
+	}*/
 
 	/**
 	 * Writes, or flushes, the matrix data to HDFS.
@@ -567,12 +556,6 @@ public class MatrixObjectNew extends CacheableData
 			{
 				if (DMLScript.DEBUG)
 					System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
-						
-				//unsynchronized in order to enable undo partial eviction
-				if( _data == null )
-				{
-					waitForUndoPartialEviction();
-				}
 				
 				writeMetaData (fName, outputFormat);
 				writeMatrixToHDFS (fName, outputFormat);
@@ -662,58 +645,7 @@ public class MatrixObjectNew extends CacheableData
 		}
 		*/
 	}
-	
-	
-	
-	private void createCache( ) 
-	{
-		_cache = new SoftReference<MatrixBlock>( _data );	
-	}
 
-	private void getCache()
-	{
-		if( _data == null && _cache !=null )
-		{
-			_data = _cache.get();
-			
-			//clear cache only if getCache successful (possible concurrent eviction)
-			//otherwise we would potentially destroy complete intermediate results
-			
-			if( _data != null ) 
-				clearCache();
-		}
-	}
-	
-	private void clearCache()
-	{
-		if( _cache != null )
-		{
-			_cache.clear();
-			_cache = null;
-		}
-	}
-
-	
-	/**
-	 * see clear data
-	 * 
-	 * @param flag
-	 */
-	public void enableCleanup(boolean flag) 
-	{
-		//System.out.println("enable cleanup "+_varName+": "+flag);
-		_cleanupFlag = flag;
-	}
-
-	/**
-	 * see clear data
-	 * 
-	 * @return
-	 */
-	public boolean isCleanupEnabled() 
-	{
-		return _cleanupFlag;
-	}
 
 	// *********************************************
 	// ***                                       ***
@@ -723,7 +655,6 @@ public class MatrixObjectNew extends CacheableData
 	// ***                                       ***
 	// *********************************************
 	
-
 
 	@Override
 	protected boolean isBlobPresent()
@@ -816,58 +747,7 @@ public class MatrixObjectNew extends CacheableData
 			System.out.println ("\t\tRestoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
 		}
 	}		
-	
-	@Override
-	protected void undoPartialEviction( MatrixBlock mb ) 
-		throws CacheException
-	{
-		//NOTE: this method is only invoked of matrix object is not evictable
-		//during invocation of attempteviction.
-		
-		if( LDEBUG )
-			System.out.println("UNDO PARTIAL EVICTION "+_varName+", "+_hdfsFileName);
-		
-		if( isEvicted() || isEmpty() ) 
-		{
-			//do nothing, because data exists on disk, or object properly cleaned up.
-		}
-		else //isRead or is Modify
-		{
-			//restore matrix block into main memory and create shallow copy
-			//(alternatively, we could evict and restore into main memory, but not necessary)
-			_data = mb; 
-			_data = mb.createShallowCopy(); // required because finalize only called once per object.
-			_data.setEnvelope(this);
-		}
-	}
-	
-	/**
-	 * Only used for specific cases, where eviction is triggered (but not fully realized) concurrently to acquire read
-	 * 
-	 * @throws CacheException
-	 */
-	private void waitForUndoPartialEviction() 
-		throws CacheException
-	{
-		int pollCount = WAIT_TIMEOUT / WAIT_INTERVAL;
-		if( LDEBUG ) 
-			System.out.println("Warning: wait for undo partial eviction of matrix object " + _varName + ", "+_hdfsFileName+ ": count "+pollCount);
-		while( --pollCount >= 0 )
-		{
-			try{Thread.sleep(WAIT_INTERVAL);}catch(Exception e){}
-			
-			if( LDEBUG )
-				System.out.println("Warning: wait for undo partial eviction of matrix object " + _varName + ", "+_hdfsFileName+ ": count "+pollCount); 
-			
-			//exit loop for successful undo eviction
-			if( _data!=null )
-				break;
-		}
-		
-		if( _data==null )
-			throw new CacheException("Unable to read data of matrix object " + _varName + " (status="+getStatusAsString()+", dirty="+_dirtyFlag+"), fname="+_hdfsFileName);
-	}
-		
+
 	@Override
 	protected void freeEvictedBlob ()
 	{
@@ -903,8 +783,6 @@ public class MatrixObjectNew extends CacheableData
 			System.out.println ("\t\tFreeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
 		}
 	}
-		
-	
 	
 	// *******************************************
 	// ***                                     ***
@@ -1115,4 +993,106 @@ public class MatrixObjectNew extends CacheableData
 	}
 
 	
+	// *******************************************
+	// ***                                     ***
+	// ***      LOW-LEVEL PRIVATE METHODS      ***
+	// ***       FOR SOFTREFERENCE CACHE       ***
+	// ***                                     ***
+	// *******************************************
+	
+	
+	private void createCache( ) 
+	{
+		_cache = new CacheReference( _data );	
+	}
+
+	private void getCache()
+	{
+		if( _data == null && _cache !=null )
+		{
+			_data = _cache.get();
+			
+			if( _data != null ) 
+			{
+				clearCache();
+			}
+		}
+	}
+	
+	private void clearCache()
+	{
+		if( _cache != null )
+		{
+			_cache.clear();
+			_cache = null;
+		}
+	}
+	
+	/**
+	 * see clear data
+	 * 
+	 * @param flag
+	 */
+	public void enableCleanup(boolean flag) 
+	{
+		//System.out.println("enable cleanup "+_varName+": "+flag);
+		_cleanupFlag = flag;
+	}
+
+	/**
+	 * see clear data
+	 * 
+	 * @return
+	 */
+	public boolean isCleanupEnabled() 
+	{
+		return _cleanupFlag;
+	}
+	
+	public class CacheReference extends SoftReference<MatrixBlock>
+	{
+		private MatrixBlock _imb = null;
+		
+		public CacheReference(MatrixBlock o) 
+		{
+			//put object into cache
+			super( o );
+			
+			//prepare recovery object
+			_imb = o.createShallowCopy();
+		}
+		
+		/**
+		 * Guarantees to return the cached matrix block, if not cleared/evicted before.
+		 * If the matrixblock is already collected by the garbage collector, but eviction
+		 * did not happen so far, a recovery object is returned. 
+		 */
+		@Override
+		public MatrixBlock get() 
+		{
+			// get the cache referent
+			MatrixBlock ret = super.get();
+			
+			//get the recovery object if required
+			if( ret == null )
+			{
+				ret = _imb; 
+				System.out.println(" CACHING> GET RECOVERY OBJ because old object not present xxxxxxxxxx ");
+			}
+			
+			return ret;
+		}
+
+		@Override
+		public void clear() 
+		{
+			//clear referent in soft reference
+			super.clear();
+			
+			//clear recovery object
+			_imb.clearEnvelope();
+			_imb = null;
+		}	
+	}
+
 }

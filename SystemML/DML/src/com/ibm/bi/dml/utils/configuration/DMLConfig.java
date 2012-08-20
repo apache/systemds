@@ -1,11 +1,20 @@
 package com.ibm.bi.dml.utils.configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringWriter;
+
 import com.ibm.bi.dml.parser.*;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,6 +49,12 @@ public class DMLConfig
 		return config_file_name;
 	}
 	Element xml_root;
+	
+	
+	public DMLConfig( Element root )
+	{
+		xml_root = root;
+	}
 	
 	/**
 	 * Constructor to setup a DML configuration
@@ -164,4 +179,46 @@ public class DMLConfig
 		}
 	}
 	
+	public String serializeDMLConfig() 
+		throws DMLRuntimeException
+	{
+		String ret = null;
+		try
+		{		
+			Transformer transformer = TransformerFactory.newInstance().newTransformer();
+			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+			//transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			StreamResult result = new StreamResult(new StringWriter());
+			DOMSource source = new DOMSource(xml_root);
+			transformer.transform(source, result);
+			ret = result.getWriter().toString();
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to serialize DML config.", ex);
+		}
+		
+		return ret;
+	}
+	
+	public static DMLConfig parseDMLConfig( String content ) 
+		throws DMLRuntimeException
+	{
+		DMLConfig ret = null;
+		try
+		{
+			System.out.println(content);
+			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document domTree = null;
+			domTree = builder.parse( new ByteArrayInputStream(content.getBytes("utf-8")) );
+			Element root = domTree.getDocumentElement();
+			ret = new DMLConfig( root );
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to parse DML config.", ex);
+		}
+		
+		return ret;
+	}
 }

@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+//import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -25,6 +26,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
@@ -46,6 +48,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Static functionalities for 
@@ -523,6 +526,19 @@ public class ProgramConverter
 		sb.append( PARFORBODY_BEGIN );
 		sb.append( NEWLINE );
 		
+		/* TODO MB: decide if master UUID should be used for all nodes
+		 * if yes, this is required.
+		//handle DMLScript UUID
+		sb.append( DMLScript.getUUID() );
+		sb.append( COMPONENTS_DELIM );
+		sb.append( NEWLINE );		
+		*/
+		
+		//handle DML config
+		sb.append( ConfigurationManager.getConfig().serializeDMLConfig() );
+		sb.append( COMPONENTS_DELIM );
+		sb.append( NEWLINE );
+		
 		//handle program
 		sb.append( PARFOR_PROG_BEGIN );
 		sb.append( NEWLINE );
@@ -695,11 +711,42 @@ public class ProgramConverter
 			if( count > 0 )
 				sb.append( ELEMENT_DELIM );
 			
-			sb.append(linst.toString());
+			sb.append( checkAndReplaceLiterals( linst.toString() ) );
 			count++;
 		}
 		
 		return sb.toString();	
+	}
+	
+	/**
+	 * Replacement of internal delimiters occurring in literals of instructions
+	 * in order to ensure robustness of serialization and parsing.
+	 * (e.g. print( "a,b" ) would break the parsing of instruction that internally
+	 * are separated with a "," )
+	 * 
+	 * @param instStr
+	 * @return
+	 */
+	public static String checkAndReplaceLiterals( String instStr )
+	{
+		String tmp = instStr;
+
+		if( tmp.contains(COMPONENTS_DELIM) )
+			tmp = tmp.replaceAll(COMPONENTS_DELIM, ".");
+		
+		if( tmp.contains(ELEMENT_DELIM) )
+			tmp = tmp.replaceAll(ELEMENT_DELIM, ".");
+
+		if( tmp.contains(LEVELIN) )
+			tmp = tmp.replaceAll(LEVELIN, ".");
+
+		if( tmp.contains(LEVELOUT) )
+			tmp = tmp.replaceAll(LEVELOUT, ".");
+		
+		//NOTE: DATA_FIELD_DELIM and KEY_VALUE_DELIM not required
+		//because those literals cannot occur in critical places.
+		
+		return tmp;
 	}
 	
 	/**
@@ -1068,6 +1115,17 @@ public class ProgramConverter
 		String tmpin = in.replaceAll(NEWLINE, ""); //normalization
 		tmpin = tmpin.substring(PARFORBODY_BEGIN.length(),tmpin.length()-PARFORBODY_END.length()); //remove start/end
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(tmpin, COMPONENTS_DELIM);
+		
+		/* TODO MB: decide if master UUID should be used for all nodes
+		 * if yes, this is required.
+		//handle DMLScript UUID (NOTE: set directly in DMLScript)
+		DMLScript.setUUID( st.nextToken() );
+		*/
+		
+		//handle DML config (NOTE: set directly in ConfigurationManager)
+		String confStr = st.nextToken();
+		DMLConfig config = DMLConfig.parseDMLConfig(confStr);
+		ConfigurationManager.setConfig(config);
 		
 		//handle program
 		String progStr = st.nextToken();

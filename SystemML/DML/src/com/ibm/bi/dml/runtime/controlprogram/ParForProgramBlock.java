@@ -572,12 +572,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		for( String var : _resultVars )
 		{
-			//System.out.println("pin ("+_ID+") "+var);
-			
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObjectNew )
 			{
-				//System.out.println("unpin ("+_ID+") "+var);
+				//System.out.println("pin ("+_ID+") "+var);
+				
 				MatrixObjectNew mo = (MatrixObjectNew)dat;
 				_resultVarsState.add( mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 

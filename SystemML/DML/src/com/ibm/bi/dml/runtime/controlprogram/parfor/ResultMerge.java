@@ -99,7 +99,9 @@ public class ResultMerge
 			{
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
+				{
 					inMB.add( in.acquireRead() );	
+				}
 			}
 			
 			if( inMB.size() > 0 ) //if there exist something to merge
@@ -115,7 +117,7 @@ public class ResultMerge
 				//create new output matrix 
 				String varname = _output.getVarName();
 				moNew = new MatrixObjectNew(_output.getValueType(), _outputFName);
-				moNew.setVarName( varname.contains("resultmerge") ? varname : varname+"rm" );
+				moNew.setVarName( varname.contains("_rm") ? varname : varname+"_rm" );
 				moNew.setDataType(DataType.MATRIX);
 				moNew.setMetaData(createDeepCopyMetaData((MatrixFormatMetaData)_output.getMetaData()));
 				

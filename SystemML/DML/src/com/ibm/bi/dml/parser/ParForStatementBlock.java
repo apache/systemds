@@ -132,6 +132,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		//normal validate via ForStatement (sequential)
 		//NOTE: validate/dependency checking of nested parfor-loops happens at this point
+		//NOTE: validate includes also constant propagation for from, to, incr expressions
 		VariableSet vs = super.validate(dmlProg, ids, constVars);
 		
 		//check of correctness of specified parfor parameter names and 

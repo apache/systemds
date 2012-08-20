@@ -897,5 +897,13 @@ public class DMLScript {
 	{
 		return _uuid;
 	}
+
+	/* TODO MB: decide if master UUID should be used for all nodes
+	 * if yes, this is required.
+	public static void setUUID(String uuid) 
+	{
+		_uuid = uuid;
+	}
+	*/
 	
 }  ///~ end class

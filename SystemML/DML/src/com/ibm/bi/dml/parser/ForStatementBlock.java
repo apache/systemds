@@ -38,6 +38,11 @@ public class ForStatementBlock extends StatementBlock {
 		predicate.validateExpression(ids.getVariables());
 		ArrayList<StatementBlock> body = fs.getBody();
 		
+		//perform constant propagation for ( from, to, incr )
+		//(e.g., useful for reducing false positives in parfor dependency analysis)
+		performConstantPropagation(constVars);
+		
+		//validate body
 		this._dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
@@ -149,7 +154,9 @@ public class ForStatementBlock extends StatementBlock {
 	public Hops getToHops()        { return _toHops; }
 	public Hops getIncrementHops() { return _incrementHops; }
 
-	public void setFromLops(Lops lops) { _fromLops = lops; }
+	public void setFromLops(Lops lops) { 
+		_fromLops = lops; 
+	}
 	public void setToLops(Lops lops) { _toLops = lops; }
 	public void setIncrementLops(Lops lops) { _incrementLops = lops; }
 	
@@ -210,5 +217,40 @@ public class ForStatementBlock extends StatementBlock {
 		liveInReturn.addVariables(_liveIn);
 		
 		return liveInReturn;
+	}
+	
+
+	public void performConstantPropagation(HashMap<String, ConstIdentifier> currConstVars) 
+		throws LanguageException
+	{
+		IterablePredicate ip = getIterPredicate();
+		ip.setFromExpr( replaceConstantVar(ip.getFromExpr(), currConstVars) );
+		ip.setToExpr( replaceConstantVar(ip.getToExpr(), currConstVars) );
+		ip.setIncrementExpr( replaceConstantVar(ip.getIncrementExpr(), currConstVars) );
+	}
+	
+	private Expression replaceConstantVar(Expression expr, HashMap<String, ConstIdentifier> currConstVars)
+	{
+		Expression ret = null;
+		
+		if (expr instanceof DataIdentifier && !(expr instanceof IndexedIdentifier)) 
+		{	
+			// check if the DataIdentifier variable is a ConstIdentifier
+			String identifierName = ((DataIdentifier)expr).getName();
+			if (currConstVars.containsKey(identifierName))
+			{
+				ConstIdentifier constValue = currConstVars.get(identifierName);
+				ret = new IntIdentifier((IntIdentifier)constValue);
+				
+				//System.out.println("ForStatement constant propagation: repacing "+expr.toString()+" with "+ret.toString());
+			}
+		}
+		else
+		{
+			//do nothing, cannot replace full expression
+			ret = expr;
+		}
+		
+		return ret;
 	}
 }

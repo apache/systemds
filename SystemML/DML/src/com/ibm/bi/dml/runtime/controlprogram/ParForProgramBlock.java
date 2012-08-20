@@ -114,7 +114,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_MR_results.dat"; 
-	public static final String PARFOR_MR_RESULTMERGE_FNAME   = "/parfor/%ID%_resultmerge.dat"; 
+	public static final String PARFOR_MR_RESULTMERGE_FNAME   = "/parfor/%ID%_resultmerge%VAR%.dat"; 
 	
 	// static ID generator sequences
 	private static IDSequence   _pfIDSeq        = null;
@@ -137,10 +137,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected int                 _IDPrefix     = -1;
 	protected ArrayList<String>  _resultVars      = null;
 	protected ArrayList<Boolean> _resultVarsState = null;
-	
+	protected IDSequence         _resultVarsIDSeq = null;
 	
 	// local parworker data
-	protected long[] 		   	                     _pwIDs   = null;
+	protected long[] 		   	                    _pwIDs   = null;
 	protected HashMap<Long,ArrayList<ProgramBlock>> _pbcache = null;
 
 	
@@ -174,6 +174,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
+		_resultVarsIDSeq = new IDSequence();
 		
 		//parse and use internal parameters (already set to default if not specified)
 		_params = params;
@@ -1014,12 +1015,16 @@ public class ParForProgramBlock extends ForProgramBlock
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 		
+		String fname = PARFOR_MR_RESULTMERGE_FNAME;
+		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID
+		fname = fname.replaceAll("%VAR%", String.valueOf(_resultVarsIDSeq.getNextID()));
+		
 		StringBuffer sb = new StringBuffer();
 		sb.append(scratchSpaceLoc);
 		sb.append(Lops.FILE_SEPARATOR);
 		sb.append(Lops.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
-		sb.append(PARFOR_MR_RESULTMERGE_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
+		sb.append(fname);
 		
 		return sb.toString();   		
 	}

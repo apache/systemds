@@ -1077,7 +1077,6 @@ public class MatrixObjectNew extends CacheableData
 			if( ret == null )
 			{
 				ret = _imb; 
-				System.out.println(" CACHING> GET RECOVERY OBJ because old object not present xxxxxxxxxx ");
 			}
 			
 			return ret;

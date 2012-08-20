@@ -4,7 +4,7 @@
         <jaql xmlns="uri:oozie:jaql-action:0.1">
             <job-tracker>${jobTracker}</job-tracker>
             <name-node>${nameNode}</name-node>
-            <jaql-path></jaql-path>
+            <jaql-path>jaql</jaql-path>
             <script>jaql/filterProject.jaql</script>
             <eval>Input_data_PARAM='${inputDataFile}';
             Input_metaData_PARAM='${metaDataFile}';

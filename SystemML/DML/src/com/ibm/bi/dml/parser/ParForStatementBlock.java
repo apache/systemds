@@ -268,11 +268,12 @@ public class ParForStatementBlock extends ForStatementBlock
 		//add own candidates
 		for( Candidate var : C )
 			addToResultVariablesNoDup( var._var );
-		//get and add child result vars
+		//get and add child result vars (if required)
 		ArrayList<String> tmp = new ArrayList<String>();
 		rConsolidateResultVars(pfs.getBody(), tmp);
 		for( String var : tmp )
-			addToResultVariablesNoDup( var );
+			if(_vsParent.containsVariable(var))
+				addToResultVariablesNoDup( var );
 		
 		System.out.println("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
 		

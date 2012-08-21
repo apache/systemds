@@ -891,11 +891,11 @@ public class ParForProgramBlock extends ForProgramBlock
 			String fname = constructResultMergeFileName();
 			ResultMerge rm = new ResultMerge( out, in, fname, _numThreads );
 			MatrixObjectNew outNew = null;
+			//System.out.println("DEBUG: PARFOR("+_ID+"): Executing result merge for var: "+var);
 			if( USE_PARALLEL_RESULT_MERGE )
 				outNew = rm.executeParallelMerge();
 			else
-				outNew = rm.executeSerialMerge(); 
-			
+				outNew = rm.executeSerialMerge(); 			
 			_variables.put( varname, outNew);
 	
 			//cleanup of intermediate result variables

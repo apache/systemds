@@ -4,14 +4,16 @@
         <jaql xmlns="uri:oozie:jaql-action:0.1">
             <job-tracker>${jobTracker}</job-tracker>
             <name-node>${nameNode}</name-node>
-            <jaql-path>jaql</jaql-path>
-            <script>jaql/filterProject.jaql</script>
-            <eval>Input_data_PARAM='${inputDataFile}';
-            Input_metaData_PARAM='${metaDataFile}';
-            Input_filterExpression_PARAM='${filterExpression}';
-    	    Input_projectColumns_PARAM='${projectColumnsFile}';
-    	    Output_metaData_PARAM='${outputMetaDataFile}';
-            Output_data_PARAM='${outputDataFile}';</eval>
+            <jaql-path>custom_modules</jaql-path>
+            <script>jaql/run_filterProject.jaql</script>
+            <eval>
+				Input_data_PARAM='${inputDataFile}';
+				Input_metaData_PARAM='${metaDataFile}';
+				Input_filterExpression_PARAM='${filterExpression}';
+				Input_projectColumns_PARAM='${projectColumnsFile}';
+				Output_data_PARAM='${outputDataFile}';
+				Output_label_PARAM='${outputLabelFile}';
+    	    </eval>
         </jaql>
         <ok to="end"/>
         <error to="fail"/>

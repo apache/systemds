@@ -32,8 +32,26 @@ public class KahanPlus extends ValueFunction {
 		KahanObject kahanObj=(KahanObject)in1;
 		double correction=in2+kahanObj._correction;
 		double sum=kahanObj._sum+correction;
-		kahanObj._correction=correction-(sum-kahanObj._sum);
-		kahanObj._sum=sum;
+		//kahanObj._correction=(correction-(sum-kahanObj._sum)); //MB: commented	
+		//kahanObj._sum=sum;                                     //MB: commented
+		kahanObj.set(sum, correction-(sum-kahanObj._sum));       //MB: instead of previous lines  
+		
+		/* TODO: Yuanyuan and Shirish, please review
+		 * 
+		 * Problem description: The tests ParForBivariateStatsTests produces
+		 * (weakly reproducible) incorrect results (for COV). At the beginning
+		 * iterations all results are correct and after a certain point 
+		 * scale-scale computations return extremely small or extremely large values. 
+		 * 
+		 * Solution:  It seams that aggressive JVM optimizations in KahanPlus - targeting
+		 * the algebraically 0 correction term - cause this problem. Those optimizations 
+		 * are not applied in Debug mode and hence we didn't saw the error there. 
+		 * Using a function call indirection for assigning sum and correction solved the 
+		 * problem for many consecutive runs.
+		 * 
+		 * -- MB
+		 * */
+		
 		return kahanObj;
 	}
 	
@@ -42,8 +60,11 @@ public class KahanPlus extends ValueFunction {
 		KahanObject kahanObj=(KahanObject)in1;
 		double correction=in2+(kahanObj._correction+in3);
 		double sum=kahanObj._sum+correction;
-		kahanObj._correction=correction-(sum-kahanObj._sum);
-		kahanObj._sum=sum;
+		//kahanObj._correction=correction-(sum-kahanObj._sum);
+		//kahanObj._sum=sum;
+		kahanObj.set(sum, correction-(sum-kahanObj._sum));
+		//TODO: see method above
+		
 		return kahanObj;
 	}
 }

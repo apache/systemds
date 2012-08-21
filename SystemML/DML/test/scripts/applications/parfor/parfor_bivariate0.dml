@@ -113,8 +113,8 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
             if (k1 == 1 | k2 == 1) {
                 # Scale-nominal/ordinal      TODO MB correctness errors
                 print("[" + i + "," + j + "] scale-categorical");
-                /*
-                if ( k1 == 1 ) {
+                
+               if ( k1 == 1 ) {
                     [eta,f, counts, means, vars] = bivar_sc(A1,A2);
                 }
                 else {
@@ -124,7 +124,7 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 basestats[8,pairID] = dummy*f;
                 cat_counts[:,pairID] = counts;
                 cat_means[:,pairID] = means;
-                cat_vars[:,pairID] = vars;  */
+                cat_vars[:,pairID] = vars; 
             }
             else {
                 # nominal-ordinal or ordinal-nominal

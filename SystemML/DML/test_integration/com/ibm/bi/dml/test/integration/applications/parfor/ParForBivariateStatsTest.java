@@ -2,7 +2,7 @@ package com.ibm.bi.dml.test.integration.applications.parfor;
 
 import java.util.HashMap;
 
-//import org.junit.Test;
+import org.junit.Test;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -37,11 +37,13 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	/* TODO even serial test produces incorrect results, for specific datasets
 	 * (result mismatch occurs on COV, on second scale-scale of same dataset and
 	 *  AFTER a scale-categorical was computed (grouped aggregate error?))
+	*/
+	
 	@Test
 	public void testForBivariateStatsSerialSerialMR() 
 	{
 		runParForBivariateStatsTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}*/
+	}
 
 	
 	/*

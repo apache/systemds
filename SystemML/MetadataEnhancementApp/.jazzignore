@@ -1,8 +1,9 @@
 ### Jazz Ignore 0
-# The property core.ignore specifies a list of file patterns that will be
-# ignored in this directory. 
+# Default value for core.ignore.recursive is *.class
+#  Changing this value changes check-in behaviour for the entire project. 
 #
-# The value of core.ignore.recursive will be ignored.
+# Default value for core.ignore is bin
+#  Changing this value changes check-in behaviour for the local directory.
 #
 # Ignored files and folders will not be committed, but may be modified during
 # accept or update.
@@ -15,8 +16,9 @@
 # NOTE: modifying ignore files will not change the ignore status of derived 
 # resources.
 
-core.ignore.recursive= 
+core.ignore.recursive= \
+	{*.class} 
 
 core.ignore= \
-	{PerformanceTest.jaql} \
+	{bin} \
 	{perftest.sh} 

@@ -46,7 +46,7 @@ jaqlshell -jp custom_modules -e "
 Input_inputFormat_PARAM    = \"JSON Text Records\";
 Input_inputDelimiter_PARAM = \",\";
 Input_input_PARAM          = \"$IN_DIR/data.json\";
-Input_inputMetadata_PARAM  = \"\";
+Input_inputMetadata_PARAM  = \" \";
 Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
 Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
 " jaql/run_MetadataEnhance.jaql
@@ -59,7 +59,7 @@ jaqlshell -jp custom_modules -e "
 Input_inputFormat_PARAM    = \"CSV\";
 Input_inputDelimiter_PARAM = \",\";
 Input_input_PARAM          = \"$IN_DIR/data.csv\";
-Input_inputMetadata_PARAM  = \"\";
+Input_inputMetadata_PARAM  = \" \";
 Input_outputMetadata_PARAM = \"$OUT_DIR/data.meta.json\";
 Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
 " jaql/run_MetadataEnhance.jaql
@@ -101,6 +101,9 @@ recodeMap = Input_recodeMap_PARAM;
 
 "---------- BEGIN run_MetadataEnhance.jaql ---------";
 import MetadataEnhance;
+
+setOptions( { conf: { "mapred.reduce.tasks.speculative.execution" : false } });
+setOptions( { conf: { "mapred.child.java.opts" : "-Xmx2000M" } });
 
 // pin metadata in memory
 metadataMem := if (ls(inputMetadata) == [])

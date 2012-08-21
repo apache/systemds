@@ -3,14 +3,11 @@
     <description>This application perform filtering / column projection on input data</description>
     <properties>
         <property defaultValue="/user/biadmin/data/inputdata.json" description="input data file name" isInputPath="false" isOutputPath="false" isRequired="true" label="input data file name" name="inputDataFile" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="/user/biadmin/meta.json" description="meta data file of input data" isInputPath="false" isOutputPath="false" isRequired="true" label="Metadata file name" name="metaDataFile" paramtype="FILEPATH" uitype="textfield"/>
-        <property isInputPath="false" isOutputPath="false" isRequired="false" label="filter expression" name="filterExpression" paramtype="STRING" uitype="textfield"/>
-        <property description="projection columns json file"
-        	isInputPath="false" isOutputPath="false" isRequired="false"
-        	label="projection column file name" name="projectColumnsFile"
-        	paramtype="FILEPATH" uitype="textfield" defaultValue="/user/biadmin/data/projColumns.json" />
-        <property defaultValue="/user/biadmin/meta-updated.json" description="updated meta data after projection" isInputPath="false" isOutputPath="false" isRequired="true" label="updated meta data file name" name="outputMetaDataFile" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="/user/biadmin/data/inputdata-updated.json" description="output data after filter/project" isInputPath="false" isOutputPath="false" isRequired="true" label="output data file name" name="outputDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/meta.json" description="meta data file of input data" isInputPath="false" isOutputPath="false" isRequired="true" label="Metadata file name" name="metaDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property description="filter expression" isInputPath="false" isOutputPath="false" isRequired="false" label="filter expression" name="filterExpression" paramtype="STRING" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/projColumns.json" description="projection columns json file" isInputPath="false" isOutputPath="false" isRequired="false" label="projection column file name" name="projectColumnsFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/inputdata-updated.json" description="output data after filtering/projection" isInputPath="false" isOutputPath="false" isRequired="true" label="output data file name" name="outputDataFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/labeldata.json" description="output label data after filtering" isInputPath="false" isOutputPath="false" isRequired="true" label="output label file name" name="outputLabelFile" paramtype="FILEPATH" uitype="textfield"/>
     </properties>
     <imagePath>defaultApp_L.png</imagePath>
 </application-template>

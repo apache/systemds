@@ -75,7 +75,7 @@ genMetadata = fn (inputData)
       -> expand $
          // set attribute kind based on some heuristics
       -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
-                       {${*-}, attributeKind: "scale", attributeType: "double"} 
+                       {${*-}, attributeKind: "scale", attributeType: "string"} 
    		else                      
                        {${*-}, attributeKind: "nominal", attributeType: "string"}
       -> sort by [$.attributeName] 

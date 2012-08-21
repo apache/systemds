@@ -1,0 +1,63 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IBM Confidential
+//
+// OCO Source Materials
+//
+// (C) Copyright IBM Corp. 2009, 2010, 2011, 2012
+//
+// The source code for this program is not published or
+//
+// otherwise divested of its trade secrets, irrespective of
+//
+// what has been deposited with the U.S. Copyright Office.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// FILE run_filterProject.jaql
+//
+// DESCRIPTION: The jaql file that is called from oozie workflow.xml
+///////////////////////////////////////////////////////////////////////////////
+
+// -------------------------------------------------------------
+// this script is used to perform Filter/Projection of input
+// data in Json text format
+// Input:
+//        input Data File Name (JSON file stored on HDFS)
+//        Meta Data File Name (JSON file stored on HDFS),
+//        Filter expression ,
+//        Projection List File Name(Json file stored on HDFS),
+//        Output Data File Name (JSON file stored on HDFS),
+//        Output label Data File Name (JSON file stored on HDFS)
+// Output: output Data file (JSON file stored on HDFS)
+//         output label Data File (JSON file stored on HDFS)
+// ---------------------------------------------------------------
+/*
+Input_data_PARAM = "/user/biadmin/data/inputdata.json";
+Input_metaData_PARAM = "/user/biadmin/data/meta.json";
+Input_filterExpression_PARAM ="$.GPA > 3.6 and $.Salary > 6000";
+Input_projectColumns_PARAM ="/user/biadmin/data/projColumns.json";
+Output_data_PARAM = "/user/biadmin/data/inputData-update.json";
+Output_label_PARAM = "/user/biadmin/data/label-data.json";
+*/
+
+input = Input_data_PARAM;
+meta = Input_metaData_PARAM;
+filterExpr = Input_filterExpression_PARAM;
+projectColumnsFile = Input_projectColumns_PARAM;
+outData = Output_data_PARAM;
+outLabel = Output_label_PARAM;
+
+// pin in meta data in memory
+metaDataMem := read (jsonText(meta));
+
+"---------- BEGIN run_filterProject.jaql ---------";
+import filterProject;
+
+// read in input data
+inputData = read(filterProject::jsonLines(input));
+
+filterProject::filterProject(inputData, metaDataMem, filterExpr, projectColumnsFile, outData, outLabel);
+
+"---------- END run_filterProject.jaql -----------";

@@ -55,4 +55,14 @@ public class UtilFunctions {
 		long upos=(long)Math.ceil(total*(1-p))+1;//upper bound is non inclusive
 		return upos-lpos;
 	}
+	
+	public static long parseToLong( String str )
+	{
+		long ret = -1;
+		if( str.contains(".") )
+			ret = (long) Double.parseDouble(str);
+		else
+			ret = Long.parseLong(str);
+		return ret;
+	}	
 }

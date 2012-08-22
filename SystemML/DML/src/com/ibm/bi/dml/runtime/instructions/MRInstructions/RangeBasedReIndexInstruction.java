@@ -51,10 +51,10 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 			String[] strs=str.split(DELIMITOR);
 			if(strs.length!=4)
 				throw new RuntimeException("ill formated range " + str);
-			rowStart=Long.parseLong(strs[0]);
-			rowEnd=Long.parseLong(strs[1]);
-			colStart=Long.parseLong(strs[2]);
-			colEnd=Long.parseLong(strs[3]);
+			rowStart = UtilFunctions.parseToLong(strs[0]);
+			rowEnd   = UtilFunctions.parseToLong(strs[1]);
+			colStart = UtilFunctions.parseToLong(strs[2]);
+			colEnd   = UtilFunctions.parseToLong(strs[3]);
 		}
 	}
 	
@@ -90,8 +90,11 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 			forLeft=true;
 		else if(!opcode.equalsIgnoreCase("rangeReIndex"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a Select: " + str);
-		byte in = Byte.parseByte(parts[1]);
-		IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
+		byte in = Byte.parseByte(parts[1]); 
+		IndexRange rng=new IndexRange(UtilFunctions.parseToLong(parts[2]), 
+									  UtilFunctions.parseToLong(parts[3]), 
+									  UtilFunctions.parseToLong(parts[4]),
+									  UtilFunctions.parseToLong(parts[5]));
 		byte out = Byte.parseByte(parts[6]);
 		long leftIndexingNrow=Long.parseLong(parts[7]);
 		long leftIndexingNcol=Long.parseLong(parts[8]);

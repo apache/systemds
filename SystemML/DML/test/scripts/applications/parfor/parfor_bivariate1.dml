@@ -25,6 +25,14 @@
  *          -> Values in these three matrices are applicable only for scale-categorical attribute pairs. 
  *          k^th column in these matrices denote the attribute pair (A_1i,A_2j) where i*j = k.
  *
+ *
+ *  TODO discussion script:
+ *    - changed ID
+ *    - exploit symmetry and compute only upper-triangular matrix
+ *    - exploit fine-grained opt potential ( why are certain statistics for
+ *      the outer loop var computed over and over again in the innner loop )  
+ *    - reject computations on same data sets / already processed combinations  
+ *   
  */
 
 /*
@@ -63,19 +71,16 @@ cat_vars = Rand(rows=maxC, cols=numPairs, min=0, max=0);
 dummy = Rand(rows=1, cols=1, min=1, max=1);
 
 
-for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
+parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
     a1 = castAsScalar(S1[:,i]);
     k1 = castAsScalar(K1[1,i]);
     A1 = D[:,a1];
-    print("a1="+a1);
 
-    for( j in 1:s2size, par=4, mode=LOCAL, check=0) {
+    parfor( j in 1:s2size, par=4, mode=LOCAL, check=0) {
         pairID = (i-1)*s2size+j; 
-        print("ID="+pairID+"(i="+i+",j="+j+")");
         a2 = castAsScalar(S2[:,j]);
         k2 = castAsScalar(K2[1,j]);
         A2 = D[:,a2];
-        print("a2="+a2);
     
         if (k1 == k2) {
             if (k1 == 1) {
@@ -83,7 +88,6 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 print("[" + i + "," + j + "] scale-scale");
                 r = bivar_ss(A1,A2);   
                 basestats[1,pairID] = dummy*r;
-                print("scale:"+r);
             } else {
                 # nominal-nominal or ordinal-ordinal
                 print("[" + i + "," + j + "] categorical-categorical");
@@ -97,7 +101,7 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                     # ordinal-ordinal
                     print("[" + i + "," + j + "] ordinal-ordinal");
                     sp = spearman(A1,A2);
-                    basestats[6,pairID] = dummy*sp;
+                    #FIXME basestats[6,pairID] = dummy*sp;
                 }
             }
         } 
@@ -105,8 +109,8 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
             if (k1 == 1 | k2 == 1) {
                 # Scale-nominal/ordinal      TODO MB correctness errors
                 print("[" + i + "," + j + "] scale-categorical");
-                /*
-                if ( k1 == 1 ) {
+                
+               if ( k1 == 1 ) {
                     [eta,f, counts, means, vars] = bivar_sc(A1,A2);
                 }
                 else {
@@ -116,7 +120,7 @@ for( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 basestats[8,pairID] = dummy*f;
                 cat_counts[:,pairID] = counts;
                 cat_means[:,pairID] = means;
-                cat_vars[:,pairID] = vars;  */
+                cat_vars[:,pairID] = vars; 
             }
             else {
                 # nominal-ordinal or ordinal-nominal
@@ -185,12 +189,6 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R) {
 
     # Pearson's R
     R = covXY / (sigmaX*sigmaY);
-    print("Rmx="+m2X);
-    print("Rmy="+m2Y);
-    print("Rcov="+covXY);
-    print("Rsx="+sigmaX);
-    print("Rsy="+sigmaY);
-    print("R="+R);
 }
 
 # -----------------------------------------------------------------------------------------------------------

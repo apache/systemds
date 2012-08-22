@@ -21,7 +21,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -319,8 +318,7 @@ public class DMLProgram {
 				rtpb = new ParForProgramBlock(prog, iterPredData,iterPred.getParForParams());
 				ParForProgramBlock pfrtpb = (ParForProgramBlock)rtpb;
 				pfrtpb.setResultVariables( ((ParForStatementBlock)sb).getResultVariables() );
-				if( pfrtpb.getOptimizationMode() != POptMode.NONE )
-					pfrtpb.setStatementBlock((ParForStatementBlock)sb);
+				pfrtpb.setStatementBlock((ParForStatementBlock)sb); //used for optimization and creating unscoped variables
 			}
 			else //ForStatementBlock
 			{

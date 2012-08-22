@@ -16,7 +16,7 @@ public class ConfigurationManager
 	 * 
 	 * @param conf
 	 */
-	public static void setConfig( DMLConfig conf )
+	public synchronized static void setConfig( DMLConfig conf )
 	{
 		_conf = conf;
 	}
@@ -25,7 +25,7 @@ public class ConfigurationManager
 	 * 
 	 * @return
 	 */
-	public static DMLConfig getConfig()
+	public synchronized static DMLConfig getConfig()
 	{
 		return _conf;
 	}

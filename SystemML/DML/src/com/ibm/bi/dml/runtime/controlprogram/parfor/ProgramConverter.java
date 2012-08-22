@@ -272,6 +272,7 @@ public class ProgramConverter
 	{
 		ParForProgramBlock tmpPB = new ParForProgramBlock(prog,pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
+		tmpPB.setStatementBlock( pfpb.getStatementBlock() );
 		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		
 		tmpPB.setFromInstructions( pfpb.getFromInstructions() );
@@ -303,6 +304,7 @@ public class ProgramConverter
 		else //child of remote ParWorker at any level
 			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
+		tmpPB.setStatementBlock( pfpb.getStatementBlock() );
 		tmpPB.disableOptimization(); //already done in top-level parfor
 		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		

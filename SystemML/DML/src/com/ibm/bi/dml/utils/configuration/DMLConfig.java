@@ -179,7 +179,7 @@ public class DMLConfig
 		}
 	}
 	
-	public String serializeDMLConfig() 
+	public synchronized String serializeDMLConfig() 
 		throws DMLRuntimeException
 	{
 		String ret = null;
@@ -207,7 +207,7 @@ public class DMLConfig
 		DMLConfig ret = null;
 		try
 		{
-			System.out.println(content);
+			//System.out.println(content);
 			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document domTree = null;
 			domTree = builder.parse( new ByteArrayInputStream(content.getBytes("utf-8")) );

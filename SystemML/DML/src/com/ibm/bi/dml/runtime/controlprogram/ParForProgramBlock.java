@@ -15,8 +15,12 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
@@ -38,9 +42,12 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheStatusException;
@@ -109,6 +116,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial //TODO change back to parallel once we synchronized set for all matrix formats
+	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static final int     WRITE_REPLICATION_FACTOR    = 3;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	
@@ -271,6 +279,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	public int getNumIterations()
 	{
 		return _numIterations;
+	}
+
+	public ParForStatementBlock getStatementBlock( )
+	{
+		return _sb;
 	}
 	
 	public void setStatementBlock( ParForStatementBlock sb )
@@ -621,6 +634,55 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	/**
+	 * Create empty matrix objects and scalars for all unscoped vars 
+	 * (created within the parfor).
+	 * 
+	 * NOTE: parfor gives no guarantees on the values of those objects - hence
+	 * we return -1 for sclars and empty matrix objects.
+	 * 
+	 * @param out
+	 * @param sb
+	 * @throws DMLRuntimeException 
+	 */
+	private void createEmptyUnscopedVariables( LocalVariableMap out, StatementBlock sb ) 
+		throws DMLRuntimeException
+	{
+		VariableSet updated = sb.variablesUpdated();
+		VariableSet livein = sb.liveIn();
+		
+		//for all vars IN <updated> AND NOT IN <livein>
+		for( String var : updated.getVariableNames() )
+			if( !livein.containsVariable(var) )
+			{
+				//create empty output
+				DataIdentifier dat = updated.getVariable(var);
+				DataType datatype = dat.getDataType();
+				ValueType valuetype = dat.getValueType();
+				Data dataObj = null;
+				switch( datatype )
+				{
+					case SCALAR:
+						switch( valuetype )
+						{
+							case BOOLEAN: dataObj = new BooleanObject(var,false); break;
+							case INT:     dataObj = new IntObject(var,-1);        break;
+							case DOUBLE:  dataObj = new DoubleObject(var,-1d);    break;
+							case STRING:  dataObj = new StringObject(var,"-1");   break;
+						}
+					case MATRIX:
+						//TODO currently we do not create any unscoped matrix object outputs
+						//because metadata (e.g., outputinfo) not known at this place.
+						break;
+					default:
+						throw new DMLRuntimeException("Datatype not supported: "+datatype);
+				}
+				
+				if( dataObj != null )
+					out.put(var, dataObj);
+			}
+	}
+	
+	/**
 	 * 
 	 * @throws CacheException
 	 */
@@ -879,19 +941,20 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void consolidateAndCheckResults(int expIters, int expTasks, int numIters, int numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
+		//result merge
 		for( String var : _resultVars ) //foreach non-local write
 		{
+			//System.out.println("DEBUG: PARFOR("+_ID+"): Executing result merge for var: "+var);
+			
 			String varname = var;
 			MatrixObjectNew out = (MatrixObjectNew) getVariable(varname);
 			MatrixObjectNew[] in = new MatrixObjectNew[ results.length ];
 			for( int i=0; i< results.length; i++ )
 				in[i] = (MatrixObjectNew) results[i].get( varname ); 
 			
-			//result merge
 			String fname = constructResultMergeFileName();
 			ResultMerge rm = new ResultMerge( out, in, fname, _numThreads );
 			MatrixObjectNew outNew = null;
-			//System.out.println("DEBUG: PARFOR("+_ID+"): Executing result merge for var: "+var);
 			if( USE_PARALLEL_RESULT_MERGE )
 				outNew = rm.executeParallelMerge();
 			else
@@ -902,6 +965,11 @@ public class ParForProgramBlock extends ForProgramBlock
 			cleanWorkerResultVariables( out, in );
 		}
 		
+		//handle unscoped variables (vars created in parfor, but potentially used afterwards)
+		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && _variables != null ) //sb might be null for nested parallelism
+			createEmptyUnscopedVariables( _variables, _sb );
+		
+		//check expected counters
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
 	}

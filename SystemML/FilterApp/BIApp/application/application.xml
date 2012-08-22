@@ -7,7 +7,7 @@
         <property description="filter expression" isInputPath="false" isOutputPath="false" isRequired="false" label="filter expression" name="filterExpression" paramtype="STRING" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/projColumns.json" description="projection columns json file" isInputPath="false" isOutputPath="false" isRequired="false" label="projection column file name" name="projectColumnsFile" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/inputdata-updated.json" description="output data after filtering/projection" isInputPath="false" isOutputPath="false" isRequired="true" label="output data file name" name="outputDataFile" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="/user/biadmin/data/labeldata.json" description="output label data after filtering" isInputPath="false" isOutputPath="false" isRequired="true" label="output label file name" name="outputLabelFile" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/labeldata.json" description="output label data after filtering" isInputPath="false" isOutputPath="false" isRequired="false" label="output label file name" name="outputLabelFile" paramtype="FILEPATH" uitype="textfield"/>
     </properties>
     <imagePath>defaultApp_L.png</imagePath>
 </application-template>

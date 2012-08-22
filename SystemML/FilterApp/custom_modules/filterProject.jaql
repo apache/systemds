@@ -45,9 +45,9 @@ filterFunc = if (isnull(filterExpr)) null
                 else eval('fn($) ' + filterExpr),
 
 // filter input data
-filteredData = if (not isnull(filterFunc)) (
-                  inputData-> filter each e filterFunc(e)
-                ) else inputData,
+inputData = if (not isnull(filterFunc)) (
+               inputData-> filter each e filterFunc(e)
+            ) else inputData,
 
 // read in projection column file
 projListFile = if (not isnull (projectColumnsFile)) (
@@ -85,14 +85,14 @@ projectionFunc = if( not isnull(projectColumnStr)) (
                    )
                    else null,
 
-// project input data
-filteredProjectedData = if (not isnull(projectionFunc)) (
-                         filteredData -> transform each r projectionFunc(r)
-                      )else filteredData,
-
-// output the data if done projection or filtering
-if ( (not isnull(projectionFunc)) or (not isnull(filterFunc))) (
-               filteredProjectedData -> write(jsonLines(outData))
+// project input data and output the data 
+if (not isnull(projectionFunc)) (
+      inputData -> transform each r projectionFunc(r)
+                -> write(jsonLines(outData))
+)else (
+   if (not isnull(filterFunc)) (
+       inputData -> write(jsonLines(outData))
+   )
 ),
 
 // take the label column
@@ -100,18 +100,12 @@ labelColumn = if (not isnull(projListFile)) (
                   singleton(projListFile -> transform $.labelColumn)
               ) else null,
 
-              // output the label data
-labelStr = if (not isnull(labelColumn)) (
-             labelColumn -> strJoin(',.')
-           ) else null,
-
-labelColumnFunc = if (not isnull(labelStr)) (
-                     eval ('fn (r) r{.' + labelStr + '}')
-                  ) else null,
-
-if (not isnull(labelColumnFunc)) (
-      filteredData -> transform each r labelColumnFunc (r)
-                   -> write (jsonLines(outLabel))
+// output the label data
+if (not isnull(labelColumn)) (
+      labelStr =  labelColumn -> strJoin(',.'),
+      labelColumnFunc = eval ('fn (r) r{.' + labelStr + '}'),
+      inputData -> transform each r labelColumnFunc (r)
+                -> write (jsonLines(outLabel))
 )
 
 );

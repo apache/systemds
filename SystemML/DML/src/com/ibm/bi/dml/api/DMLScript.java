@@ -577,7 +577,7 @@ public class DMLScript {
 		}
 		
 		if (!success){
-			System.err.println("ERROR: Script cannot be executed");
+			System.err.println("ERROR: Script cannot be executed!");
 			System.exit(1);
 		}
 	} ///~ end main

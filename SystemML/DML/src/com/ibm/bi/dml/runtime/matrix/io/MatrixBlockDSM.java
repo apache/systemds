@@ -78,6 +78,9 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
+		//TODO: memory fix
+		if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
+			return false;
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
 		double m=m2.getNumColumns();
@@ -88,8 +91,15 @@ public class MatrixBlockDSM extends MatrixValue{
 		return ( 1-Math.pow(1-pq, k) < SPARCITY_TURN_POINT );
 	}
 	
+	/*private boolean isVector() {
+		return (this.getNumRows() == 1 || this.getNumColumns() == 1);
+	}*/
+	
 	private static boolean checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
+		//TODO: memory fix
+		//if ( m1.isVector() )
+		//	return false;
 		double n=m1.getNumRows();
 		double m=m1.getNumColumns();
 		double nz1=m1.getNonZeros();
@@ -252,10 +262,23 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(sparse)
 		{
+			//TODO: memory fix
+			// deallocate memory for denseBlock, if any 
+			//denseBlock = null;
 			resetSparse();
 		}
 		else
 		{
+			//TODO: memory fix
+			// deallocate memory for sparseRows, if any 
+			/*if(sparseRows!=null)
+			{
+				for(int i=0; i<Math.min(rlen, sparseRows.length); i++)
+					if(sparseRows[i]!=null)
+						sparseRows[i] = null;
+			}
+			sparseRows = null;*/
+			
 			if(denseBlock!=null)
 			{
 				if(denseBlock.length<rlen*clen)
@@ -1696,13 +1719,6 @@ public class MatrixBlockDSM extends MatrixValue{
 					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
 		}
 		
-		/*
-		int rl = (int)rowLower-1;
-		int ru = (int)rowUpper-1;
-		int cl = (int)colLower-1;
-		int cu = (int)colUpper-1;
-		*/
-		
 		if(result==null)
 			result=new MatrixBlockDSM(this);
 		else {
@@ -1752,17 +1768,15 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		if (sparse) {
 			if ( sparseRows != null ) {
-				for(int r=rl, result_r=0; r <= Math.min(ru,getNumRows()); r++, result_r++) {
+				for(int r=rl; r <= Math.min(ru,getNumRows()); r++) {
 					if(sparseRows[r] != null) {
 						int[] cols=sparseRows[r].getIndexContainer();
 						double[] values=sparseRows[r].getValueContainer();
 						int j=0;
 						while(j < sparseRows[r].size() && cols[j] < cl )
 							j++;
-						int result_c = 0;
 						while(j < sparseRows[r].size() && cols[j] <= Math.min(cu,getNumColumns())) {
-							((MatrixBlockDSM)result).appendValue(result_r, result_c, values[j]);
-							result_c++;
+							((MatrixBlockDSM)result).appendValue(r-rl, cols[j]-cl, values[j]);
 							j++;
 						}
 					}
@@ -1773,9 +1787,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(denseBlock!=null)
 			{
 				int i = rl*clen;
-				for(int r = rl, result_r=0; r <= Math.min(ru,getNumRows()); r++, result_r++) {
-					for(int c = cl, result_c=0; c <= Math.min(cu, getNumColumns()); c++, result_c++) {
-						result.setValue(result_r, result_c, denseBlock[i+c]);
+				for(int r = rl; r <= Math.min(ru,getNumRows()); r++) {
+					for(int c = cl; c <= Math.min(cu, getNumColumns()); c++) {
+						result.setValue(r-rl, c-cl, denseBlock[i+c]);
 					}
 					i+=clen;
 				}

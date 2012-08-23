@@ -24,16 +24,16 @@ public class MatrixBlock extends MatrixBlockDSM
 		super(map);
 	}
 	
-	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, long seed)
+	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed)
 	{
 		MatrixBlock m = null;
-		if ( sparsity < SPARCITY_TURN_POINT ) {
-			m = new MatrixBlock(rows,cols,true);
-			m.getRandomSparseMatrix(rows, cols, sparsity, min, max, seed);
+		m = new MatrixBlock(); // rows, cols, (sparsity < SPARCITY_TURN_POINT));
+		
+		if ( pdf.equalsIgnoreCase("normal") ) {
+			m.getNormalRandomSparseMatrix(rows, cols, sparsity, seed);
 		}
 		else {
-			m = new MatrixBlock(rows, cols, false);
-			m.getRandomDenseMatrix(rows, cols, min, max, seed);
+			m.getRandomSparseMatrix(rows, cols, sparsity, min, max, seed);
 		}
 		return m;
 	}

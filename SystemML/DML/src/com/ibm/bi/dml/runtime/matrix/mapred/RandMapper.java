@@ -47,9 +47,20 @@ implements Mapper<Writable, Writable, Writable, Writable>
 			double minValue = rand_instructions.get(i).minValue;
 			double maxValue = rand_instructions.get(i).maxValue;
 			double sparsity = rand_instructions.get(i).sparsity;
+			String pdf = rand_instructions.get(i).probabilityDensityFunction;
 			
 			indexes.setIndexes(blockRowNumber, blockColNumber);
-			if(sparsity > MatrixBlock.SPARCITY_TURN_POINT)
+			
+			if ( pdf.equalsIgnoreCase("normal") ) 
+				block.getNormalRandomSparseMatrix(blockRowSize, blockColSize, sparsity, seed);
+			else
+				block.getRandomSparseMatrix(blockRowSize, blockColSize, sparsity, minValue, maxValue, seed);
+			
+			
+			// TODO: statiko: check with Yuanyuan if commenting out the following code is ok.
+			//       instead, getRandomSparseMatrix() is invoked, as above.
+			
+			/*if(sparsity > MatrixBlock.SPARCITY_TURN_POINT)
 				block.reset(blockRowSize, blockColSize, false);
 			else
 				block.reset(blockRowSize, blockColSize, true);
@@ -66,7 +77,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 					currentValue = (currentValue * (maxValue - minValue) + minValue);
 					block.setValue(r, c, currentValue);
 				}
-			}
+			}*/
 			
 			//put the input in the cache
 			cachedValues.reset();

@@ -18,7 +18,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 	public double minValue;
 	public double maxValue;
 	public double sparsity;
-	public String probabilityDensityFunction;
+	public String pdf;
 	public long seed=0;
 	
 	public RandCPInstruction (Operator op, 
@@ -39,7 +39,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
 		this.seed = seed;
-		this.probabilityDensityFunction = probabilityDensityFunction;
+		this.pdf = probabilityDensityFunction;
 	}
 
 	public static Instruction parseInstruction(String str) 
@@ -77,7 +77,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 			System.out.println("process RandCPInstruction with seed="+lSeed+".");
 		
 		//execute rand
-		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, lSeed) );
+		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, pdf, lSeed) );
         pb.setMatrixOutput(output_name, soresBlock);
 	}
 }

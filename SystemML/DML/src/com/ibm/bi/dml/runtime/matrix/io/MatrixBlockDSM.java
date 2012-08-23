@@ -34,6 +34,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import com.ibm.bi.dml.runtime.util.RandN;
+import com.ibm.bi.dml.runtime.util.RandNPair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -3652,58 +3654,29 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
-	public static MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, long seed)
+/*	public MatrixBlockDSM getRandomDenseMatrix_normal(int rows, int cols, long seed)
 	{
-		int min=0, max=1;
-		Random random=new Random(seed);
-		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
-		m.allocateDenseBlock();
-		double val;
-		for(int i=0; i<rows; i++) {
-			for(int j=0; j<cols; j++) {
-				val = min + ((max-min)*random.nextDouble());
-				m.denseBlock[i*cols+j] = val;
-				//if ( val != 0) {
-				//	m.nonZeros++;
-				//}
-			}
-		}
-		m.updateNonZeros();
-		return m;
-	}
-	
-	public MatrixBlockDSM getRandomDenseMatrix(int rows, int cols, double min, double max, long seed)
-	{
-		if ( min == 0.0 && max == 0.0 ) {
-			// nothing to do here
-			this.reset();
-			return this;
-		}
-		
 		Random random=new Random(seed);
 		this.allocateDenseBlock();
-		double val;
-		for(int i=0; i<rows; i++) {
-			for(int j=0; j<cols; j++) {
-				val = min + ((max-min)*random.nextDouble());
-				this.denseBlock[i*cols+j] = val; 
-				//if ( val != 0 )
-				//	this.nonZeros++;
-			}
+		
+		RandNPair pair = new RandNPair();
+		int index = 0;
+		while ( index < rows*cols ) {
+			pair.compute(random);
+			this.denseBlock[index++] = pair.getFirst();
+			if ( index < rows*cols )
+				this.denseBlock[index++] = pair.getSecond();
 		}
 		this.updateNonZeros();
 		return this;
 	}
 	
-	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
+	public MatrixBlockDSM getRandomSparseMatrix_normal(int rows, int cols, double sparsity, long seed)
 	{
-		if ( min == 0.0 && max == 0.0 ) {
-			// nothing to do here
-			this.reset();
-			return this;
-		}
 		double val;
-		Random random=new Random(seed);
+		Random random = new Random(System.currentTimeMillis());
+		RandN rn = new RandN(seed);
+		
 		this.sparseRows=new SparseRow[rows];
 		for(int i=0; i<rows; i++)
 		{
@@ -3712,16 +3685,127 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				if(random.nextDouble()>sparsity)
 					continue;
-				val = min + ((max-min)*random.nextDouble());
+				val = rn.nextDouble();
 				this.sparseRows[i].append(j, val );
-				//if ( val != 0)
-				//	this.nonZeros++;
 			}
 		}
 		this.updateNonZeros();
 		return this;
 	}
 	
+*/	/**
+	 * Generates a matrix of random numbers from uniform distribution U[0,1).
+	 */
+	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
+	{
+		sparse = (sparsity < SPARCITY_TURN_POINT);
+		this.reset(rows, cols, sparse);
+		
+		if ( min == 0.0 && max == 0.0 ) {
+			// nothing to do here
+			return this;
+		}
+
+		double val;
+		Random random=new Random(System.currentTimeMillis()); // for checking sparsity
+		Random ru = new Random(seed); // for actual values
+		double range = max - min;
+
+		if ( sparse ) {
+			// sparse representation
+			this.sparseRows=new SparseRow[rows];
+			for(int i=0; i<rows; i++) {
+				this.sparseRows[i]=new SparseRow();	
+				for(int j=0; j<cols; j++) {
+					if(random.nextDouble() <= sparsity) {
+						val = min + (range * ru.nextDouble());
+						this.sparseRows[i].append(j, val );
+					}
+				}
+			}
+		}
+		else {
+			// dense representation
+			this.allocateDenseBlock();
+			if ( sparsity == 1.0 ) {
+				// special handling for the case sparsity=1.0, for better efficiency
+				for(int index=0; index < rows*cols; index++) {
+					val = min + (range * ru.nextDouble());
+					this.denseBlock[index] = val;
+				}
+			}
+			else {
+				for(int index=0; index < rows*cols; index++) {
+					if(random.nextDouble() <= sparsity) {
+						val = min + (range * ru.nextDouble());
+						this.denseBlock[index] = val;
+					}
+				}
+			}
+		}
+		
+		this.updateNonZeros();
+		return this;
+	}
+	
+	/**
+	 * Generates a matrix of random numbers from standard normal distribution N(0,1).
+	 * Unlike in <code>getRandomSparseMatrix()</code>, parameters <code>min</code> and
+	 * <code>max</code> are not relevant for this function, since the range of values
+	 * in N(0,1) is (-Inf,+Inf).
+	 * 
+	 */
+	public MatrixBlockDSM getNormalRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
+	{
+		sparse = (sparsity < SPARCITY_TURN_POINT);
+		this.reset(rows, cols, sparse);
+
+		double val;
+		Random random=new Random(System.currentTimeMillis());
+		
+		if ( sparse ) {
+			// sparse representation
+			RandN rn = new RandN(seed);
+			this.sparseRows=new SparseRow[rows];
+			for(int i=0; i<rows; i++) {
+				this.sparseRows[i]=new SparseRow();	
+				for(int j=0; j<cols; j++) {
+					if(random.nextDouble()>sparsity)
+						continue;
+					val = rn.nextDouble();
+					this.sparseRows[i].append(j, val );
+				}
+			}
+		}
+		else {
+			// dense representation
+			this.allocateDenseBlock();
+			if ( sparsity == 1.0 ) {
+				// special handling for the case sparsity=1.0, for better efficiency
+				
+				Random ru = new Random(seed); // uniform generator, used internally within RandNPair 
+				RandNPair pair = new RandNPair();
+				int index = 0;
+				while ( index < rows*cols ) {
+					pair.compute(ru);
+					this.denseBlock[index++] = pair.getFirst();
+					if ( index < rows*cols )
+						this.denseBlock[index++] = pair.getSecond();
+				}
+			}
+			else {
+				RandN rn = new RandN(seed);
+				for(int index=0; index < rows*cols; index++) {
+					if(random.nextDouble() <= sparsity) {
+						this.denseBlock[index] = rn.nextDouble();
+					}
+				}
+			}
+		}
+		
+		this.updateNonZeros();
+		return this;
+	}
 
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{

@@ -15,7 +15,7 @@ public class RandNPair {
 	public double getSecond() { return N2; }
 	
 	public void compute(double U1, double U2) {
-		// Box–Muller transform
+		// Box-Muller transform
 		double v1 = Math.sqrt(-2*Math.log(U1));
 		double v2 = 2*Math.PI*U2;
 		N1 = v1 * Math.cos(v2);

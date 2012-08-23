@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class DoubleObject extends ScalarObject {
 
@@ -20,11 +21,11 @@ public class DoubleObject extends ScalarObject {
 	}
 
 	public int getIntValue(){
-		return (int)_value;
+		return UtilFunctions.toInt(_value);
 	}
 	
 	public long getLongValue() {
-		return (long)_value;
+		return UtilFunctions.toLong(_value);
 	}
 	
 

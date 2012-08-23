@@ -4,6 +4,12 @@ import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 
 public class UtilFunctions {
 
+	//for accurate cast of double values to int and long 
+	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
+	//(same epsilon as used for matrix index cast in R)
+	public static double DOUBLE_EPS = Math.pow(2, -53);
+	
+	
 	public static int longHashFunc(long v)
 	{
 		return (int)(v^(v>>>32));
@@ -55,14 +61,34 @@ public class UtilFunctions {
 		long upos=(long)Math.ceil(total*(1-p))+1;//upper bound is non inclusive
 		return upos-lpos;
 	}
+
+	public static int parseToInt( String str )
+	{
+		int ret = -1;
+		if( str.contains(".") )
+			ret = toInt( Double.parseDouble(str) );
+		else
+			ret = Integer.parseInt(str);
+		return ret;
+	}
 	
 	public static long parseToLong( String str )
 	{
 		long ret = -1;
 		if( str.contains(".") )
-			ret = (long) Double.parseDouble(str);
+			ret = toLong( Double.parseDouble(str) );
 		else
 			ret = Long.parseLong(str);
 		return ret;
-	}	
+	}
+	
+	public static int toInt( double val )
+	{
+		return (int) Math.floor( val + DOUBLE_EPS );
+	}
+	
+	public static long toLong( double val )
+	{
+		return (long) Math.floor( val + DOUBLE_EPS );
+	}
 }

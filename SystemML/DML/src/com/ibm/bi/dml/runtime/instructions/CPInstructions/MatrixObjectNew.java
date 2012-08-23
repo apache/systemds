@@ -17,6 +17,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -1094,4 +1095,69 @@ public class MatrixObjectNew extends CacheableData
 		}	
 	}
 
+	
+	
+	//FIXME this is an experimental section
+	
+	private boolean _partitioned = false;
+	
+	public void setPartitioned( )
+	{
+		_partitioned = true;
+	}
+	
+	public boolean isPartitioned()
+	{
+		return _partitioned;
+	}
+	
+	public String getFileName( IndexRange pred )
+	{
+		//TODO if multiple partitions touched return the directory
+		return null;
+	}
+	
+	//TODO check if acquire Read can be used normally on partitioned data as well???
+	private SoftReference _partitioncache = null; //not here really only a cache, no envelope information, never evicted because read-only matrices
+	
+	public synchronized MatrixBlock acquireRead( IndexRange pred ) //TODO consistentcy state with global data, maybe just a read index with internal cache, ansonsten 
+		throws CacheException
+	{
+		if( LDEBUG )
+			System.out.println("acquire read "+_varName);
+		
+		if (! isAvailableToRead ())
+			throw new CacheStatusException ("MatrixObject not available to read.");
+		
+		//get object from cache
+		getCache();
+		
+		//read data from HDFS if required
+		if( isEmpty() ) 
+		{
+			//check filename
+			String fName = _hdfsFileName;
+			if( fName == null )
+				throw new CacheException("Cannot read matrix for empty filename.");
+			
+			try
+			{
+				//TODO modify read to read only the data partition
+				MatrixBlock newData = readMatrixFromHDFS( fName );
+				if (newData != null)
+				{
+					newData.setEnvelope (this);
+					_data = newData;
+					_dirtyFlag = false;
+				}
+			}
+			catch (IOException e)
+			{
+				throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
+			}
+		}
+		acquire( false, true );
+	
+		return _data;
+	}
 }

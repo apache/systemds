@@ -81,8 +81,9 @@ public class MatrixBlockDSM extends MatrixValue{
 	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
 		//TODO: memory fix
-		if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
-			return false;
+		// if result is a vector (1D matrix), then use "dense" format 
+		//if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
+		//	return false;
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
 		double m=m2.getNumColumns();

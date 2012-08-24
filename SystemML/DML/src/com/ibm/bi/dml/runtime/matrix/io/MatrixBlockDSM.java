@@ -82,8 +82,8 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		//TODO: memory fix
 		// if result is a vector (1D matrix), then use "dense" format 
-		//if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
-		//	return false;
+		if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
+			return false;
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
 		double m=m2.getNumColumns();
@@ -94,15 +94,17 @@ public class MatrixBlockDSM extends MatrixValue{
 		return ( 1-Math.pow(1-pq, k) < SPARCITY_TURN_POINT );
 	}
 	
-	/*private boolean isVector() {
+	private boolean isVector() {
 		return (this.getNumRows() == 1 || this.getNumColumns() == 1);
-	}*/
+	}
 	
 	private static boolean checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
 		//TODO: memory fix
-		//if ( m1.isVector() )
-		//	return false;
+		// if result is a vector (1D matrix), then use "dense" format 
+		if ( m1.isVector() )
+			return false;
+		
 		double n=m1.getNumRows();
 		double m=m1.getNumColumns();
 		double nz1=m1.getNonZeros();
@@ -265,23 +267,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(sparse)
 		{
-			//TODO: memory fix
-			// deallocate memory for denseBlock, if any 
-			//denseBlock = null;
 			resetSparse();
 		}
 		else
 		{
-			//TODO: memory fix
-			// deallocate memory for sparseRows, if any 
-			/*if(sparseRows!=null)
-			{
-				for(int i=0; i<Math.min(rlen, sparseRows.length); i++)
-					if(sparseRows[i]!=null)
-						sparseRows[i] = null;
-			}
-			sparseRows = null;*/
-			
 			if(denseBlock!=null)
 			{
 				if(denseBlock.length<rlen*clen)
@@ -3535,8 +3524,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				denseBlock[r*clen+cols[i]]=values[i];
 				nonZeros++;
 			}
-			sparseRows[r].setValueContainer(null);
-			sparseRows[r].setIndexContainer(null);
+			//sparseRows[r].setValueContainer(null);
+			//sparseRows[r].setIndexContainer(null);
 		}
 		
 	}

@@ -156,7 +156,12 @@ public class DataConverter {
 			int brlen, int bclen) 
 	throws IOException
 	{	
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, true);
+		// TODO: memory fix
+		// force dense representation for 1D matrices (vectors)
+		boolean sp = true;
+		if ( rlen == 1 || clen == 1 )
+			sp = false;
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sp);
 		
 	//	String filename = getSubDirsIgnoreLogs(dir);
 		JobConf job = new JobConf();

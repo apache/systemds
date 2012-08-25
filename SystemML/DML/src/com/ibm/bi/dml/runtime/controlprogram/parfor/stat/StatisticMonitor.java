@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 
 /**
  * This singleton statistic monitor is used to consolidate all parfor runtime statistics.
@@ -151,6 +152,7 @@ public class StatisticMonitor
 				sb.append("  Num Threads      = "+(int)(double)stats.get(Stat.PARFOR_NUMTHREADS).get(i)+"\n");
 				sb.append("  TaskSize         = "+(int)(double)stats.get(Stat.PARFOR_TASKSIZE).get(i)+"\n");
 				sb.append("  Task Partitioner = "+PTaskPartitioner.values()[(int)(double)stats.get(Stat.PARFOR_TASKPARTITIONER).get(i)]+"\n");
+				sb.append("  Data Partitioner = "+PDataPartitioner.values()[(int)(double)stats.get(Stat.PARFOR_DATAPARTITIONER).get(i)]+"\n");
 				sb.append("  Exec Mode        = "+PExecMode.values()[(int)(double)stats.get(Stat.PARFOR_EXECMODE).get(i)]+"\n");
 				sb.append("  Num Tasks        = "+(int)(double)stats.get(Stat.PARFOR_NUMTASKS).get(i)+"\n");
 				sb.append("  Num Iterations   = "+(int)(double)stats.get(Stat.PARFOR_NUMITERS).get(i)+"\n");
@@ -163,6 +165,7 @@ public class StatisticMonitor
 					sb.append("  Time INIT OPTIM   = "+stats.get(Stat.OPT_T).get(i)+"ms\n");
 				}
 				
+				sb.append("  Time INIT DATA  = "+stats.get(Stat.PARFOR_INIT_DATA_T).get(i)+"ms\n");
 				sb.append("  Time INIT PARWRK  = "+stats.get(Stat.PARFOR_INIT_PARWRK_T).get(i)+"ms\n");
 				sb.append("  Time INIT TASKS   = "+stats.get(Stat.PARFOR_INIT_TASKS_T).get(i)+"ms\n");
 				sb.append("  Time WAIT EXEC    = "+stats.get(Stat.PARFOR_WAIT_EXEC_T).get(i)+"ms\n");

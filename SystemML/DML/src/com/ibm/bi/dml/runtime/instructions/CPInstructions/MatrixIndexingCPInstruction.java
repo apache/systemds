@@ -4,6 +4,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -105,31 +106,41 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 		
 		String opcode = InstructionUtils.getOpCode(this.instString);
 		
-		MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
-		MatrixBlock rhsMatBlock = null;
-		if (opcode.equalsIgnoreCase("leftIndex")) {
-			rhsMatBlock = pb.getMatrixInput(input2.get_name());
-		}
-		
 		long rl = pb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
 		long ru = pb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
 		long cl = pb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
 		long cu = pb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
 		
+		MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable(input1.get_name());
 		MatrixBlock resultBlock = null;
 		
-		if ( opcode.equalsIgnoreCase("rangeReIndex"))
-			resultBlock = (MatrixBlock) matBlock.slideOperations(rl, ru, cl, cu, new MatrixBlock());
-		else if ( opcode.equalsIgnoreCase("leftIndex"))
-			resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
-		else
-			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
-		
-		pb.releaseMatrixInput(input1.get_name());
-		if (opcode.equalsIgnoreCase("leftIndex")) {
-			pb.releaseMatrixInput(input2.get_name());
+		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) //MB: it will always be rangeReIndex!
+		{
+			resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
 		}
+		else
+		{
+			MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
+			MatrixBlock rhsMatBlock = null;
+			if (opcode.equalsIgnoreCase("leftIndex")) {
+				rhsMatBlock = pb.getMatrixInput(input2.get_name());
+			}
+			
+			if ( opcode.equalsIgnoreCase("rangeReIndex"))
+				resultBlock = (MatrixBlock) matBlock.slideOperations(rl, ru, cl, cu, new MatrixBlock());
+			else if ( opcode.equalsIgnoreCase("leftIndex"))
+				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
+			else
+				throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
+			
+			pb.releaseMatrixInput(input1.get_name());
+			if (opcode.equalsIgnoreCase("leftIndex")) {
+				pb.releaseMatrixInput(input2.get_name());
+			}
+			matBlock = rhsMatBlock = null;
+		}
+		
 		pb.setMatrixOutput(output.get_name(), resultBlock);
-		matBlock = rhsMatBlock = resultBlock = null;
+		resultBlock = null;
 	}
 }

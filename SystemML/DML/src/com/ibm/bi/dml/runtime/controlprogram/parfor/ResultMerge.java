@@ -115,6 +115,8 @@ public class ResultMerge
 					outMBNew.copy(outMB);
 					
 				//create new output matrix 
+				//(e.g., to prevent potential export<->read file access conflict in specific cases of 
+				// local-remote nested parfor))
 				String varname = _output.getVarName();
 				moNew = new MatrixObjectNew(_output.getValueType(), _outputFName);
 				moNew.setVarName( varname.contains("_rm") ? varname : varname+"_rm" );

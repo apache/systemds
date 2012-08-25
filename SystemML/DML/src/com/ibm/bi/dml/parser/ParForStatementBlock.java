@@ -5,10 +5,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
@@ -31,9 +34,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
-	public static final String PAR              = "par";         //number of parallel workers
+	public static final String PAR              = "par";         //number of parallel workers	
+	public static final String TASK_PARTITIONER = "taskpartitioner"; //task partitioner 
 	public static final String TASK_SIZE        = "tasksize";    //number of tasks 
-	public static final String TASK_PARTITIONER = "partitioner"; //task partitioner 
+	public static final String DATA_PARTITIONER = "datapartitioner"; //task partitioner 
 	public static final String EXEC_MODE        = "mode";        //runtime execution mode	
 	public static final String OPT_MODE         = "opt";        //runtime execution mode	
 	
@@ -68,19 +72,21 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames = new HashSet<String>();
 		_paramNames.add( CHECK ); 
 		_paramNames.add( PAR ); 
-		_paramNames.add( TASK_SIZE ); 
 		_paramNames.add( TASK_PARTITIONER ); 
+		_paramNames.add( TASK_SIZE ); 
+		_paramNames.add( DATA_PARTITIONER ); 
 		_paramNames.add( EXEC_MODE ); 
 		_paramNames.add( OPT_MODE ); 
 		
 		// populate defaults lookup-table
 		_paramDefaults = new HashMap<String, String>();
-		_paramDefaults.put( CHECK,            "1" );
-		_paramDefaults.put( PAR,              String.valueOf(InfrastructureAnalyzer.getLocalParallelism()) );
-		_paramDefaults.put( TASK_SIZE,        "1" );
-		_paramDefaults.put( TASK_PARTITIONER, String.valueOf(PTaskPartitioner.FIXED) );
-		_paramDefaults.put( EXEC_MODE,        String.valueOf(PExecMode.LOCAL) );
-		_paramDefaults.put( OPT_MODE,         String.valueOf(POptMode.NONE) );
+		_paramDefaults.put( CHECK,             "1" );
+		_paramDefaults.put( PAR,               String.valueOf(InfrastructureAnalyzer.getLocalParallelism()) );
+		_paramDefaults.put( TASK_PARTITIONER,  String.valueOf(PTaskPartitioner.FIXED) );
+		_paramDefaults.put( TASK_SIZE,         "1" );
+		_paramDefaults.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.NONE) );
+		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
+		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.NONE) );
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();
@@ -283,6 +289,48 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 
 	/**
+	 * Determines the PDataPartitioningFormat for read-only parent variables according
+	 * to the access pattern of that variable within the parfor statement block.
+	 * Row-wise or column wise partitioning is only suggested if we see pure row-wise or
+	 * column-wise access patterns.
+	 * 
+	 * @param var
+	 * @return
+	 */
+	public PDataPartitionFormat determineDataPartitionFormat(String var) 
+	{
+		PDataPartitionFormat dpf = null;
+		Collection<PDataPartitionFormat> dpfc = new LinkedList<PDataPartitionFormat>();
+		
+		try 
+		{
+			//determine partitioning candidates
+			ParForStatement pfs = (ParForStatement) _statements.get(0);
+			rDeterminePartitioningCandidates(var, pfs.getBody(), dpfc);
+			
+			//determine final solution		
+			for( PDataPartitionFormat tmp : dpfc )
+			{
+				//System.out.println(var+": "+tmp);
+				if( dpf != null && dpf!=tmp ) //if no consensus
+					dpf = PDataPartitionFormat.NONE;	
+				else
+					dpf = tmp;
+			}
+			if( dpf == null )
+				dpf = PDataPartitionFormat.NONE;
+		}
+		catch (LanguageException e) 
+		{
+			if( LDEBUG )
+				e.printStackTrace();
+			dpf = PDataPartitionFormat.NONE;
+		}
+		
+		return dpf;
+	}
+	
+	/**
 	 * This method recursively determines candidates for output,data,anti dependencies. 
 	 * Candidates are defined as writes to non-local variables.
 	 * 
@@ -343,6 +391,81 @@ public class ParForStatementBlock extends ForStatementBlock
 					}
 				}
 			}
+	}
+
+	/**
+	 * This method recursively determines partitioning candidates for input variables. 
+	 * Candidates are defined as index reads of non-local variables.
+	 * 
+	 * @param asb
+	 * @param C
+	 * @throws LanguageException 
+	 */
+	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, Collection<PDataPartitionFormat> C) 
+		throws LanguageException 
+	{
+		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
+			for( Statement s : sb._statements ) // foreach statement in statement block
+			{
+				if( s instanceof ForStatement ) //includes for and partfor
+				{
+					rDeterminePartitioningCandidates(var,((ForStatement)s).getBody(), C);
+				}
+				else if( s instanceof WhileStatement ) 
+				{
+					rDeterminePartitioningCandidates(var,((WhileStatement)s).getBody(), C);
+				}
+				else if( s instanceof IfStatement ) 
+				{
+					rDeterminePartitioningCandidates(var,((IfStatement)s).getIfBody(), C);
+					rDeterminePartitioningCandidates(var,((IfStatement)s).getElseBody(), C);
+				}
+				else if( s instanceof FunctionStatement ) 
+				{
+					rDeterminePartitioningCandidates(var,((FunctionStatement)s).getBody(), C);
+				}
+				else
+				{
+					Collection<DataIdentifier> datsRead = getDataIdentifiers(s, false);
+					if( datsRead != null )
+						for(DataIdentifier read : datsRead)
+						{ 
+							String readStr = read.getName();							
+							if( var.equals( readStr ) && read instanceof IndexedIdentifier  ) 
+							{
+								IndexedIdentifier idat = (IndexedIdentifier) read;
+								C.add( determineAccessPattern(idat) );
+							}
+						}
+				}
+			}
+	}
+	
+	private PDataPartitionFormat determineAccessPattern( IndexedIdentifier dat )
+	{
+		PDataPartitionFormat dpf = null;
+		
+		Expression rowL = dat.getRowLowerBound();
+		Expression rowU = dat.getRowUpperBound();
+		Expression colL = dat.getColLowerBound();
+		Expression colU = dat.getColUpperBound();
+		boolean flag1=false, flag2=false;
+		
+		//flag1: true if row expr is colon
+		if( rowL == null && rowU == null )
+			flag1 = true;
+		//flag2: true if col expr is colon
+		if( colL == null && colU == null )
+			flag2 = true;
+		
+		if( flag1 && !flag2 )
+			dpf = PDataPartitionFormat.COLUMN_WISE;
+		else if( !flag1 && flag2 )
+			dpf = PDataPartitionFormat.ROW_WISE;
+		else
+			dpf = PDataPartitionFormat.NONE;
+		
+		return dpf;
 	}
 	
 	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<String> vars) 

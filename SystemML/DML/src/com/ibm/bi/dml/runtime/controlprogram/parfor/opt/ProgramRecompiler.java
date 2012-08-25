@@ -3,12 +3,20 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Dag;
+import com.ibm.bi.dml.parser.ForStatement;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
@@ -233,5 +241,117 @@ public class ProgramRecompiler
 		tmp.add(inst);
 		
 		return tmp;
+	}
+	
+
+	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var )
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		if( pb instanceof IfProgramBlock )
+		{
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			IfStatement is = (IfStatement) sb.getStatement(0);
+			
+			for( int i=0; i<ipb.getChildBlocksIfBody().size(); i++ )
+			{
+				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
+				StatementBlock lsb = is.getIfBody().get(0);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+			}
+			//process else condition
+			if( ipb.getChildBlocksElseBody() != null )
+			{
+				for( int i=0; i<ipb.getChildBlocksElseBody().size(); i++ )
+				{
+					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
+					StatementBlock lsb = is.getElseBody().get(i);
+					rFindAndRecompileIndexingHOP(lsb,lpb,var);
+				}
+			}				
+		}
+		else if( pb instanceof WhileProgramBlock )
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			//process body
+			for( int i=0; i<wpb.getChildBlocks().size(); i++ )
+			{
+				ProgramBlock lpb = wpb.getChildBlocks().get(i);
+				StatementBlock lsb = ws.getBody().get(i);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+			}			
+		}
+		else if( pb instanceof ForProgramBlock ) //for or parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			ForStatementBlock fsb = (ForStatementBlock)sb;
+			ForStatement fs = (ForStatement) fsb.getStatement(0);
+			//process body
+			for( int i=0; i<fpb.getChildBlocks().size(); i++ )
+			{
+				ProgramBlock lpb = fpb.getChildBlocks().get(i);
+				StatementBlock lsb = fs.getBody().get(i);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+			}	
+		}
+		else //last level program block
+		{
+			try
+			{
+				//process actual hops
+				boolean ret = false;
+				for( Hops h : sb.get_hops() )
+				{
+					ret |= rFindAndSetCPIndexingHOP(h, var);
+				}
+				
+				//recompilation on-demand
+				if( ret )
+				{
+					//get all hops of statement and construct new instructions
+					ArrayList<Instruction> newInst = null;
+					Dag<Lops> dag = new Dag<Lops>();
+					for( Hops hops : sb.get_hops() )
+					{
+						rClearLops(hops);
+						Lops lops = hops.constructLops();
+						lops.addToDag(dag);
+						newInst = dag.getJobs(false,ConfigurationManager.getConfig());
+					}
+					
+					//exchange instructions
+					pb.getInstructions().clear();
+					pb.getInstructions().addAll(newInst);
+				}
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
+		}
+	}
+	
+	public static boolean rFindAndSetCPIndexingHOP(Hops hop, String var) 
+	{
+		boolean ret = false;
+		ArrayList<Hops> in = hop.getInput();
+		
+		if( hop instanceof IndexingOp )
+		{
+			String inMatrix = hop.getInput().get(0).get_name();
+			if( inMatrix.equals(var) )
+			{
+				hop.setExecType(LopProperties.ExecType.CP);
+				hop.set_lops(null); //for fresh reconstruction
+				ret = true;
+			}
+		}
+		
+		//recursive search
+		if( in != null )
+			for( Hops hin : in )
+				ret |= rFindAndSetCPIndexingHOP(hin,var);
+		
+		return ret;
 	}
 }

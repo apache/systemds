@@ -50,7 +50,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 public class MatrixObjectNew extends CacheableData
 {
 	private CacheReference _cache = null;
-	private boolean _cleanupFlag = true;
+	private boolean _cleanupFlag = true; //indicates if obj unpinned
+	private boolean _partitioned = false; //indicates if obj partitioned
+	
 	
 	/**
 	 * Container object that holds the actual data.
@@ -431,7 +433,6 @@ public class MatrixObjectNew extends CacheableData
 		}
 	}
 
-
 	/**
 	 * Sets the matrix data reference to <code>null</code>, abandons the old matrix.
 	 * Makes the "envelope" empty.  Run it to finalize the matrix (otherwise the
@@ -647,6 +648,92 @@ public class MatrixObjectNew extends CacheableData
 		*/
 	}
 
+	
+	// *********************************************
+	// ***                                       ***
+	// ***       HIGH-LEVEL PUBLIC METHODS       ***
+	// ***     FOR PARTITIONED MATRIX ACCESS     ***
+	// ***   (all other methods still usable)    ***
+	// ***                                       ***
+	// *********************************************
+	
+	/**
+	 * 
+	 */
+	public void setPartitioned()
+	{
+		_partitioned = true;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isPartitioned()
+	{
+		return _partitioned;
+	}
+	
+	/**
+	 * NOTE: for reading matrix partitions, we could cache (in its real sense) the read block
+	 * with soft references (no need for eviction, as partitioning only applied for read-only matrices).
+	 * However, since we currently only support row- and column-wise partitioning caching is not applied yet.
+	 * This could be changed once we also support column-block-wise and row-block-wise. Furthermore,
+	 * as we reject to partition vectors and support only full row or column indexing, no metadata (apart from
+	 * the partition flag) is required.  
+	 * 
+	 * @param pred
+	 * @return
+	 * @throws CacheException
+	 */
+	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
+		throws CacheException
+	{
+		if ( !_partitioned )
+			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+		
+		String fname = getFileName( pred );
+		MatrixBlock mb = null;
+		
+		try
+		{
+			//System.out.println("Reading partitioned matrix block "+fname);
+			mb = readMatrixFromHDFS( fname );
+			
+			//TODO MB> check if special treatment of non-existing partitions necessary (e.g., for very sparse datasets)
+		}
+		catch(Exception ex)
+		{
+			throw new CacheException(ex);
+		}
+		
+		return mb;
+	}
+	
+	
+	/**
+	 * 
+	 * @param pred
+	 * @return
+	 * @throws CacheStatusException 
+	 */
+	public String getFileName( IndexRange pred ) 
+		throws CacheStatusException
+	{
+		if ( !_partitioned )
+			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+		
+		String fname = _hdfsFileName;
+		if( pred.colStart == pred.colEnd )
+			fname = fname + "/" + pred.colStart;
+		else if( pred.rowStart == pred.rowEnd )
+			fname = fname + "/" + pred.rowStart;
+		else
+			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+
+		return fname;
+	}	
+	
 
 	// *********************************************
 	// ***                                       ***
@@ -1093,71 +1180,5 @@ public class MatrixObjectNew extends CacheableData
 			_imb.clearEnvelope();
 			_imb = null;
 		}	
-	}
-
-	
-	
-	//FIXME this is an experimental section
-	
-	private boolean _partitioned = false;
-	
-	public void setPartitioned( )
-	{
-		_partitioned = true;
-	}
-	
-	public boolean isPartitioned()
-	{
-		return _partitioned;
-	}
-	
-	public String getFileName( IndexRange pred )
-	{
-		//TODO if multiple partitions touched return the directory
-		return null;
-	}
-	
-	//TODO check if acquire Read can be used normally on partitioned data as well???
-	private SoftReference _partitioncache = null; //not here really only a cache, no envelope information, never evicted because read-only matrices
-	
-	public synchronized MatrixBlock acquireRead( IndexRange pred ) //TODO consistentcy state with global data, maybe just a read index with internal cache, ansonsten 
-		throws CacheException
-	{
-		if( LDEBUG )
-			System.out.println("acquire read "+_varName);
-		
-		if (! isAvailableToRead ())
-			throw new CacheStatusException ("MatrixObject not available to read.");
-		
-		//get object from cache
-		getCache();
-		
-		//read data from HDFS if required
-		if( isEmpty() ) 
-		{
-			//check filename
-			String fName = _hdfsFileName;
-			if( fName == null )
-				throw new CacheException("Cannot read matrix for empty filename.");
-			
-			try
-			{
-				//TODO modify read to read only the data partition
-				MatrixBlock newData = readMatrixFromHDFS( fName );
-				if (newData != null)
-				{
-					newData.setEnvelope (this);
-					_data = newData;
-					_dirtyFlag = false;
-				}
-			}
-			catch (IOException e)
-			{
-				throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
-			}
-		}
-		acquire( false, true );
-	
-		return _data;
 	}
 }

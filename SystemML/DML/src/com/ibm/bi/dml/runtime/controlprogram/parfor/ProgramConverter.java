@@ -607,7 +607,7 @@ public class ProgramConverter
 	public static String serializeVariables (LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
-		return vars.serialize ();
+		return vars.serialize();
 	}
 	
 	/**
@@ -644,13 +644,14 @@ public class ProgramConverter
 				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
-				matrixMetaData = new String[6];
+				matrixMetaData = new String[7];
 				matrixMetaData[0] = String.valueOf( mc.get_rows() );
 				matrixMetaData[1] = String.valueOf( mc.get_cols() );
 				matrixMetaData[2] = String.valueOf( mc.get_rows_per_block() );
 				matrixMetaData[3] = String.valueOf( mc.get_cols_per_block() );
 				matrixMetaData[4] = InputInfo.inputInfoToString( md.getInputInfo() );
 				matrixMetaData[5] = OutputInfo.outputInfoToString( md.getOutputInfo() );
+				matrixMetaData[6] = String.valueOf( mo.isPartitioned() );
 				break;
 			default:
 				throw new DMLRuntimeException("Unable to serialize datatype "+datatype);
@@ -1735,11 +1736,14 @@ public class ProgramConverter
 				int brows = Integer.parseInt( st.nextToken() );
 				int bcols = Integer.parseInt( st.nextToken() );
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
-				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );				
+				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
+				boolean partitioned = Boolean.parseBoolean( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
+				if( partitioned )
+					mo.setPartitioned();
 				dat = mo;
 				break;
 			}

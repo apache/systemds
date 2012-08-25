@@ -72,6 +72,10 @@ import com.sun.xml.internal.txw2.output.IndentingXMLStreamWriter;
  * real executions of DML instructions on random input data. Finally, during runtime, the profile
  * is used by the costs estimator in order to create statistic estimates for cost-based optimization.
  * 
+ * TODO perftesttool: create dir if not existing
+ * TODO perftesttool: dml via text in code 
+ * TODO clarify lapack usage in perftest tool
+ * 
  * TODO gen input data via rand MR job instead of in-memory (otherwise we cannot work on large data)
  * 
  * TODO: complete all CP instructions

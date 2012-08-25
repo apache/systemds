@@ -21,6 +21,8 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocalSplit;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
@@ -36,6 +38,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -62,15 +65,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * TODO address potential export<->read file access conflict (for specific cases in local-remote nested parfor)
- * TODO fix jvm reuse (fails for parallel MR jobs in local mode, )
+ * TODO datapartitioning
+ * TODO exploiting data partitioning
  * 
- * TODO awareness of central configuration property
- * TODO external configurations properties and constraints 
- * 
- * TODO perftesttool: create dir if not existing
- * TODO perftesttool: dml via text in code 
- * TODO clarify lapack usage in perftest tool
  *  
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, and *=)
@@ -94,6 +91,20 @@ public class ParForProgramBlock extends ForProgramBlock
 		FACTORING,  //factoring task partitioner  
 		CFACTORING  //constrained factoring task partitioner, uses tasksize as min constraint
 	}
+	
+	public enum PDataPartitionFormat {
+		NONE,
+		ROW_WISE,
+		//ROW_BLOCK_WISE,
+		COLUMN_WISE,
+		//COLUMN_BLOCK_WISE
+	}
+	
+	public enum PDataPartitioner {
+		NONE,       // no data partitioning
+		LOCAL,      // local file based partition split on master node
+		REMOTE_MR   // remote partition split using a reblock MR job 
+  	}
 	
 	//optimizer
 	public enum POptMode{
@@ -131,8 +142,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	// runtime parameters
 	protected HashMap<String,String> _params    = null;
 	protected int              _numThreads      = -1;
-	protected int              _taskSize        = -1;
 	protected PTaskPartitioner _taskPartitioner = null; 
+	protected int              _taskSize        = -1;
+	protected PDataPartitioner _dataPartitioner = null; 
 	protected PExecMode        _execMode        = null;
 	protected POptMode         _optMode         = null;
 	
@@ -189,8 +201,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			_numThreads      = Integer.parseInt( _params.get(ParForStatementBlock.PAR) );
-			_taskSize        = Integer.parseInt( _params.get(ParForStatementBlock.TASK_SIZE) );
 			_taskPartitioner = PTaskPartitioner.valueOf( _params.get(ParForStatementBlock.TASK_PARTITIONER).toUpperCase() );
+			_taskSize        = Integer.parseInt( _params.get(ParForStatementBlock.TASK_SIZE) );
+			_dataPartitioner = PDataPartitioner.valueOf( _params.get(ParForStatementBlock.DATA_PARTITIONER).toUpperCase() );
 			_execMode        = PExecMode.valueOf( _params.get(ParForStatementBlock.EXEC_MODE).toUpperCase() );
 			_optMode         = POptMode.valueOf( _params.get(ParForStatementBlock.OPT_MODE).toUpperCase());		
 		}
@@ -321,7 +334,45 @@ public class ParForProgramBlock extends ForProgramBlock
 			incr = executePredicateInstructions( 3, _incrementInstructions, ec );
 		}
 		
-
+		///////
+		//DATA PARTITIONING of read-only parent variables of type (matrix,unpartitioned)
+		///////
+		Timing time = null;
+		if( MONITOR )
+		{
+			time = new Timing();
+			time.start();
+		}
+		if( _dataPartitioner != PDataPartitioner.NONE )
+		{			
+			ArrayList<String> vars = getReadOnlyParentVars(_sb);
+			for( String var : vars )
+			{
+				Data dat = _variables.get(var);
+				if( dat != null && dat instanceof MatrixObjectNew )
+				{
+					MatrixObjectNew moVar = (MatrixObjectNew) dat;
+					if( !moVar.isPartitioned() )
+					{
+						PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
+						System.out.println("INFO: PARFOR ID="+_ID+": Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
+						if( dpf != PDataPartitionFormat.NONE )
+						{
+							Timing ltime = new Timing();//TODO remove for final version
+							ltime.start();
+							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
+							MatrixObjectNew moVarNew = dp.createPartitionedMatrix(moVar);
+							_variables.put(var, moVarNew);
+							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
+							System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
+						}
+					}
+				}
+			}
+		}
+		if( MONITOR ) 
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
+			
 		// initialize iter var to form value
 		IntObject iterVar = new IntObject(iterVarName, from.getIntValue() );
 		
@@ -337,6 +388,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTHREADS,      _numThreads);
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_TASKSIZE,        _taskSize);
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_TASKPARTITIONER, _taskPartitioner.ordinal());
+			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_DATAPARTITIONER, _dataPartitioner.ordinal());
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_EXECMODE,        _execMode.ordinal());
 		}
 		
@@ -379,6 +431,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 		execute(_exitInstructions, ec);			
 	}
+
 
 	/**
 	 * Executes the parfor locally, i.e., the parfor is realized with numThreads local threads that drive execution.
@@ -681,6 +734,28 @@ public class ParForProgramBlock extends ForProgramBlock
 					out.put(var, dataObj);
 			}
 	}
+
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 */
+	private ArrayList<String> getReadOnlyParentVars(ParForStatementBlock sb) 
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+		
+		if( sb != null )
+		{
+			VariableSet read = sb.variablesRead();
+			VariableSet updated = sb.variablesUpdated();
+			VariableSet livein = sb.liveIn();	
+			for( String var : livein.getVariableNames() ) //for all parent variables
+				if( read.containsVariable(var) && !updated.containsVariable(var) ) //read-only
+					ret.add( var );
+		}
+		
+		return ret;
+	}
 	
 	/**
 	 * 
@@ -850,6 +925,34 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		return tp;
+	}
+	
+	/**
+	 * Creates a new data partitioner according to the specified runtime parameter.
+	 * 
+	 * @param dpf
+	 * @param dataPartitioner
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private DataPartitioner createDataPartitioner(PDataPartitionFormat dpf, PDataPartitioner dataPartitioner) 
+		throws DMLRuntimeException 
+	{
+		DataPartitioner dp = null;
+		
+		switch( dataPartitioner )
+		{
+			case LOCAL:
+				dp = new DataPartitionerLocalSplit(dpf);
+				break;
+			case REMOTE_MR:
+				throw new DMLRuntimeException("Not implemented yet.");
+				//break;
+			default:
+				throw new DMLRuntimeException("Undefined data partitioner: '" +dataPartitioner.toString()+"'.");
+		}
+		
+		return dp;
 	}
 	
 	/**

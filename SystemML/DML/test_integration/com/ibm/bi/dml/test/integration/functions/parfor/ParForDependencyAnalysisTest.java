@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.test.components.parser;
+package com.ibm.bi.dml.test.integration.functions.parfor;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -33,7 +33,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  * * scoping (create object in loop, but used afterwards)
  *    44: dep   
  * * application testcases
- *    45: no dep, 46: no dep   
+ *    45: no, 46: no, 47 no   
  */
 public class ParForDependencyAnalysisTest 
 {
@@ -132,7 +132,7 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis28d() { runTest("parfor28d.dml", true); }
-	
+
 	@Test
 	public void testDependencyAnalysis29() { runTest("parfor29.dml", false); } 
 	
@@ -200,6 +200,10 @@ public class ParForDependencyAnalysisTest
 	@Test
 	public void testDependencyAnalysis46() { runTest("parfor46.dml", false); } 	//SEE ParForStatementBlock.CONSERVATIVE_CHECK false if false, otherwise true
 
+	@Test
+	public void testDependencyAnalysis47() { runTest("parfor47.dml", false); }
+	
+	
 	
 	private void runTest( String scriptFilename, boolean expectedException )
 	{

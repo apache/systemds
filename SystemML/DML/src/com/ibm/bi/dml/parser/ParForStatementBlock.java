@@ -271,19 +271,21 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		
 		//if successful, prepare result variables (all distinct vars in all candidates)
-		//add own candidates
+		//a) add own candidates
 		for( Candidate var : C )
 			addToResultVariablesNoDup( var._var );
-		//get and add child result vars (if required)
+		//b) get and add child result vars (if required)
 		ArrayList<String> tmp = new ArrayList<String>();
 		rConsolidateResultVars(pfs.getBody(), tmp);
 		for( String var : tmp )
 			if(_vsParent.containsVariable(var))
 				addToResultVariablesNoDup( var );
 		
+		//cleanup function cache in order to prevent side effects between parfor statements
+		if( USE_FN_CACHE )
+			_fncache.clear();
+		
 		System.out.println("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
-		
-		
 		
 		return vs;
 	}

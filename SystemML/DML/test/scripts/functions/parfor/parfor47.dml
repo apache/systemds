@@ -1,0 +1,23 @@
+a = 5
+b = 10
+c = 20
+d = 5
+
+A = Rand(rows=a, cols=b, min=0.0, max=1.0, sparsity=1.0)
+B = Rand(rows=c, cols=d, min=0.0, max=0.0, pdf="uniform")
+
+parfor(i in 1:a){
+	for(j in 2:b){
+		A[i,j] = A[i,j-1] + A[i,j]
+	}
+}
+
+parfor(i in 1:c){
+	  parfor(j in 1:d){
+    	for(k in 1:b){
+    		B[i,j] = i*j;
+    	}
+    }
+}   
+
+

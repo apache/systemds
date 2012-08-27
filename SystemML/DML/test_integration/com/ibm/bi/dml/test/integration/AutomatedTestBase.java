@@ -14,6 +14,9 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
@@ -237,6 +240,13 @@ public abstract class AutomatedTestBase {
 		createRandomMatrix(matrix.getMatrixName(), matrix.getRows(), matrix.getCols(), matrix.getMinValue(), matrix
 				.getMaxValue(), matrix.getSparsity(), matrix.getSeed());
 	}
+	
+	private void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
+		MapReduceTool.deleteFileIfExistOnHDFS(fname);
+		MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
+		if ( cleanupRData ) 
+			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtx");
+	}
 
 	/**
 	 * <p>
@@ -253,6 +263,15 @@ public abstract class AutomatedTestBase {
 	protected double[][] writeInputMatrix(String name, double[][] matrix, boolean bIncludeR) {
 		String completePath = baseDirectory + INPUT_DIR + name + "/in";
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
+		
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
 		TestUtils.writeTestMatrix(completePath, matrix);
 		if (bIncludeR) {
 			TestUtils.writeTestMatrix(completeRPath, matrix, true);
@@ -265,6 +284,16 @@ public abstract class AutomatedTestBase {
 		return matrix;
 	}
 
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
+		writeInputMatrix(name, matrix, bIncludeR);
+		
+		// write metadata file
+		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+		MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
+		
+		return matrix;
+	}
+	
 	protected double[][] createTable(String name, double[][] matrix) throws ClassNotFoundException
 	{
 		NetezzaConnector con = null;
@@ -326,6 +355,15 @@ public abstract class AutomatedTestBase {
 	protected void writeInputBinaryMatrix(String name, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
 		String completePath = baseDirectory + INPUT_DIR + name + "/in";
+		
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, false);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
 		if (rowsInBlock == 1 && colsInBlock == 1) {
 			TestUtils.writeBinaryTestMatrixCells(completePath, matrix);
 			if (DEBUG)
@@ -337,6 +375,25 @@ public abstract class AutomatedTestBase {
 						sparseFormat);
 		}
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
+	}
+
+	/**
+	 * Writes the given matrix to input path, and writes the associated metadata file. 
+	 * 
+	 * @param name
+	 * @param matrix
+	 * @param rowsInBlock
+	 * @param colsInBlock
+	 * @param sparseFormat
+	 * @param mc
+	 * @throws IOException
+	 */
+	protected void writeInputBinaryMatrixWithMTD(String name, double[][] matrix, int rowsInBlock, int colsInBlock,
+			boolean sparseFormat, MatrixCharacteristics mc) throws IOException {
+		writeInputBinaryMatrix(name, matrix, rowsInBlock, colsInBlock, sparseFormat);
+		// write metadata file
+		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+		MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 	}
 
 	/**

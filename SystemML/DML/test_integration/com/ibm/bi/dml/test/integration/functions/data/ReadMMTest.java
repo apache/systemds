@@ -6,10 +6,16 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -192,11 +198,11 @@ public class ReadMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testBinaryWrongRowDimension() {
+	public void testBinaryWrongRowDimension() throws IOException {
 		int rows = 5;
 		int cols = 10;
-		int rowsInBlock = 7;
-		int colsInBlock = 8;
+		int rowsInBlock = DMLTranslator.DMLBlockSize;
+		int colsInBlock = DMLTranslator.DMLBlockSize;
 
 		TestConfiguration config = availableTestConfigurations.get("BinaryWrongRowDimensionTest");
 		config.addVariable("rows", rows);
@@ -206,17 +212,17 @@ public class ReadMMTest extends AutomatedTestBase {
 		loadTestConfiguration("BinaryWrongRowDimensionTest");
 
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
-		writeInputBinaryMatrix("a", a, rowsInBlock, colsInBlock, false);
-
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
+		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
-	public void testBinaryWrongColDimension() {
+	public void testBinaryWrongColDimension() throws IOException {
 		int rows = 10;
 		int cols = 5;
-		int rowsInBlock = 7;
-		int colsInBlock = 8;
+		int rowsInBlock = DMLTranslator.DMLBlockSize;
+		int colsInBlock = DMLTranslator.DMLBlockSize;
 
 		TestConfiguration config = availableTestConfigurations.get("BinaryWrongColDimensionTest");
 		config.addVariable("rows", rows);
@@ -226,7 +232,8 @@ public class ReadMMTest extends AutomatedTestBase {
 		loadTestConfiguration("BinaryWrongColDimensionTest");
 
 		double[][] a = getRandomMatrix(rows, (cols + 5), -1, 1, 1, -1);
-		writeInputBinaryMatrix("a", a, rowsInBlock, colsInBlock, false);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
+		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
 		runTest(true, DMLRuntimeException.class);
 	}
@@ -236,13 +243,14 @@ public class ReadMMTest extends AutomatedTestBase {
 	 * expected matrix. <br>
 	 * The given input matrix has larger dimensions then specified in readMM as
 	 * rows and cols parameter.
+	 * @throws IOException 
 	 */
 	@Test
-	public void testBinaryWrongDimensions() {
+	public void testBinaryWrongDimensions() throws IOException {
 		int rows = 3;
 		int cols = 2;
-		int rowsInBlock = 7;
-		int colsInBlock = 8;
+		int rowsInBlock = DMLTranslator.DMLBlockSize;
+		int colsInBlock = DMLTranslator.DMLBlockSize;
 
 		TestConfiguration config = availableTestConfigurations.get("TextWrongDimensionsTest");
 		config.addVariable("rows", rows);
@@ -257,14 +265,14 @@ public class ReadMMTest extends AutomatedTestBase {
 		}
 
 		loadTestConfiguration("TextWrongDimensionsTest");
-
-		writeInputMatrix("a", a);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
+		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
 		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
-	public void testBinaryWrongFormat() {
+	public void testBinaryWrongFormat() throws IOException {
 		int rows = 10;
 		int cols = 10;
 
@@ -275,9 +283,16 @@ public class ReadMMTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("BinaryWrongFormatTest");
 
-		createRandomMatrix("a", rows, cols, -1, 1, 1, -1);
+		//createRandomMatrix("a", rows, cols, -1, 1, 1, -1);
 
-		runTest(true, DMLRuntimeException.class);
+		double[][] a = getRandomMatrix(rows, cols, -1, 1, 1, -1);
+
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
+		writeInputMatrixWithMTD("a", a, false, mc);
+		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
+
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -315,7 +330,12 @@ public class ReadMMTest extends AutomatedTestBase {
 		loadTestConfiguration("EmptyBinaryTest");
 
 		try {
-			TestUtils.createFile(baseDirectory + INPUT_DIR + "a/in");
+			String fname = baseDirectory + INPUT_DIR + "a";
+			MapReduceTool.deleteFileIfExistOnHDFS(fname);
+			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
+			TestUtils.createFile(fname + "/in");
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 			runTest(true, DMLRuntimeException.class);
 		} catch (IOException e) {
 			e.printStackTrace();

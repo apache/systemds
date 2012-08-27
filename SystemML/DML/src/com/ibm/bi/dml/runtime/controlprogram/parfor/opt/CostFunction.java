@@ -111,7 +111,7 @@ public class CostFunction
 	@Override
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer( "f(x) = " );
+		StringBuilder sb = new StringBuilder( "f(x) = " );
 		
 		//compute the estimate for arbitrary orders of F
 		if( _params != null )

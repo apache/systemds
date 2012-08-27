@@ -50,7 +50,7 @@ public abstract class DataPartitioner
 		throws ParseException
 	{
 		//build dir name to be cleaned up
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(STAGING_DIR);
 		sb.append(Lops.FILE_SEPARATOR);
 		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));

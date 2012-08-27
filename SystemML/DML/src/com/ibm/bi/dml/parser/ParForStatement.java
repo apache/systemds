@@ -11,7 +11,7 @@ public class ParForStatement extends ForStatement
 	@Override
 	public String toString() 
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("parfor ");
 		sb.append(_predicate.toString());
 		sb.append(" { \n");

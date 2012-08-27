@@ -65,12 +65,11 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * TODO datapartitioning
- * TODO exploiting data partitioning
+ * TODO Datapartitioning for textcell and binary cell
  * 
  *  
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
- * TODO: reduction variables (operations: +=, -=, /=, and *=)
+ * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
  * TODO: deferred dependency checking during runtime (for unknown matrix dimensionality)
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository => modules OK, but second-order functions required
  *
@@ -1142,7 +1141,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 	
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
 		sb.append(Lops.FILE_SEPARATOR);
 		sb.append(Lops.PROCESS_PREFIX);
@@ -1167,7 +1166,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 		}
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
 		sb.append(Lops.FILE_SEPARATOR);
 		sb.append(Lops.PROCESS_PREFIX);
@@ -1190,7 +1189,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID
 		fname = fname.replaceAll("%VAR%", String.valueOf(_resultVarsIDSeq.getNextID()));
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
 		sb.append(Lops.FILE_SEPARATOR);
 		sb.append(Lops.PROCESS_PREFIX);

@@ -524,7 +524,7 @@ public class ProgramConverter
 		
 		Program prog = pbs.get( 0 ).getProgram();
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( PARFORBODY_BEGIN );
 		sb.append( NEWLINE );
 		
@@ -623,7 +623,7 @@ public class ProgramConverter
 		// SCHEMA: <name>|<datatype>|<valuetype>|value
 		// (scalars are serialize by value, matrices by filename)
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 	
 		//prepare data for serialization
 		String name = key;
@@ -700,7 +700,7 @@ public class ProgramConverter
 	public static String serializeInstructions( ArrayList<Instruction> inst ) 
 		throws DMLRuntimeException
 	{	
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count = 0;
 		for( Instruction linst : inst )
 		{
@@ -759,7 +759,7 @@ public class ProgramConverter
 	 */
 	public static String serializeStringHashMap( HashMap<String,String> vars)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count=0;
 		for( Entry<String,String> e : vars.entrySet() )
 		{
@@ -780,7 +780,7 @@ public class ProgramConverter
 	 */
 	public static String serializeStringArrayList( ArrayList<String> vars)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count=0;
 		for( String s : vars )
 		{
@@ -799,7 +799,7 @@ public class ProgramConverter
 	 */
 	public static String serializeStringArray( String[] vars)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count=0;
 		for( String s : vars )
 		{
@@ -822,7 +822,7 @@ public class ProgramConverter
 	 */
 	public static String serializeDataIdentifiers( ArrayList<DataIdentifier> var)
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count=0;
 		for( DataIdentifier dat : var )
 		{
@@ -843,7 +843,7 @@ public class ProgramConverter
 	{
 		// SCHEMA: <name>|<datatype>|<valuetype>
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(dat.getName());
 		sb.append(DATA_FIELD_DELIM);
 		sb.append(dat.getDataType());
@@ -863,7 +863,7 @@ public class ProgramConverter
 	public static String rSerializeFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		int count = 0;
 		for( Entry<String,FunctionProgramBlock> pb : pbs.entrySet() )
@@ -893,7 +893,7 @@ public class ProgramConverter
 	public static String rSerializeProgramBlocks(ArrayList<ProgramBlock> pbs) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int count = 0;
 		for( ProgramBlock pb : pbs )
 		{
@@ -919,7 +919,7 @@ public class ProgramConverter
 	public static String rSerializeProgramBlock( ProgramBlock pb ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		//handle header
 		if( pb instanceof WhileProgramBlock ) 

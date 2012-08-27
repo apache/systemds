@@ -1436,7 +1436,7 @@ public class PerfTestTool
 		//AutomatedTestBase.cleanupScratchSpace();
 		
 		//read DML template
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		BufferedReader br = new BufferedReader( new FileReader(new File( dmlname )) );
 		String line = "";
 		while( (line=br.readLine()) != null )
@@ -1514,7 +1514,7 @@ public class PerfTestTool
 	 */
 	private static String serializeTestVariables( InternalTestVariable[] vars )
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<vars.length; i++ )
 		{
 			if( i>0 )
@@ -1545,7 +1545,7 @@ public class PerfTestTool
 	 */
 	private static String serializeParams( double[] vals )
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<vals.length; i++ )
 		{
 			if( i>0 )

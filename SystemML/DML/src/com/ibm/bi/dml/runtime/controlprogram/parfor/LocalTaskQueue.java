@@ -100,7 +100,7 @@ public class LocalTaskQueue
 	@Override
 	public synchronized String toString() 
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("TASK QUEUE (size=");
 		sb.append(_data.size());
 		sb.append(",close=");

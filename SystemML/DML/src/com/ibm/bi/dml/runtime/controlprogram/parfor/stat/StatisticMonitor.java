@@ -127,7 +127,7 @@ public class StatisticMonitor
 	 */
 	public static String createReport()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append("############################################## \n");
 		sb.append("## ParFOR Runtime Statistics Report         ## \n");

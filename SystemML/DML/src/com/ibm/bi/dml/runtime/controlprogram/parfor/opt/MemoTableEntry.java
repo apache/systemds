@@ -79,7 +79,7 @@ public class MemoTableEntry
 	@Override
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("ID = ");
 		sb.append(_id);
 		sb.append("RtOptNode = ");

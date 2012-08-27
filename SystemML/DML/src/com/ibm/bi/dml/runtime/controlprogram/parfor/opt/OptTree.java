@@ -59,7 +59,7 @@ public class OptTree
 	 */
 	public String explain( boolean withDetails )
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append(" OPT TREE (size=");
 		sb.append(_root.size());

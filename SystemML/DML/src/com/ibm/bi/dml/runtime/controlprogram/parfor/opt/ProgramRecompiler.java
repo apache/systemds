@@ -226,7 +226,7 @@ public class ProgramRecompiler
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//create instruction string
-		StringBuffer sb = new StringBuffer("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
+		StringBuilder sb = new StringBuilder("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
 		sb.append(iterVar);
 		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
 		sb.append(offset);

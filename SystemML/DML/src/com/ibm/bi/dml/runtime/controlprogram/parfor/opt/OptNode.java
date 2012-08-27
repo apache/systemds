@@ -314,7 +314,7 @@ public class OptNode
 	 */
 	public String explain(int level, boolean withDetails) 
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<level; i++ )
 			sb.append("--");	
 		if( _ntype == NodeType.INST )

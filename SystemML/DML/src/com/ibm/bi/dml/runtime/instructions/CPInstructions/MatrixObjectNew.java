@@ -884,7 +884,7 @@ public class MatrixObjectNew extends CacheableData
 	{
 		if( _cacheFileName==null )
 		{
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			switch (CacheableData.cacheEvictionStorageType)
 			{
 				case LOCAL:

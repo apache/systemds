@@ -93,7 +93,7 @@ public class Task
 	 */
 	public String toFormatedString()
 	{
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("task (type=");
 		sb.append(_type);
 		sb.append(", iterations={");
@@ -120,7 +120,7 @@ public class Task
 	 */
 	public String toCompactString()
 	{
-		StringBuffer sb = new StringBuffer( );
+		StringBuilder sb = new StringBuilder( );
 		sb.append(_type);
 		
 		if( size() > 0 )

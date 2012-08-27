@@ -51,7 +51,7 @@ public class ForStatement extends Statement
 	}
 	
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("for ");
 		sb.append(_predicate.toString());
 		sb.append(" { \n");

@@ -245,7 +245,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				if( LDEBUG )
 					System.out.println("PARFOR: loop dependencies detected.");
 
-				StringBuffer depVars = new StringBuffer();
+				StringBuilder depVars = new StringBuilder();
 				for( Candidate c : C2 )
 				{
 					if( depVars.length()>0 )
@@ -1521,7 +1521,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		Expression ex2a = idat.getColLowerBound();
 		Expression ex2b = idat.getColUpperBound();
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(String.valueOf(ex1a));
 		sb.append(',');
 		sb.append(String.valueOf(ex1b));
@@ -1818,7 +1818,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		@Override
 		public String toString()
 		{
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append("(");
 			sb.append(_a);
 			sb.append(") + ");

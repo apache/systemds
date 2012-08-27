@@ -77,7 +77,7 @@ public class LocalVariableMap implements Cloneable
 	
 	public String serialize () throws DMLRuntimeException
 	{
-		StringBuffer sb = new StringBuffer ();
+		StringBuilder sb = new StringBuilder();
 		
 		int count = 0;
 		for (Entry <String, Data> e : localMap.entrySet ())

@@ -35,9 +35,11 @@ public class WhileStatementBlock extends StatementBlock {
 			ids = sb.validate(dmlProg, ids, constVars);
 			constVars = sb.getConstOut();
 		}
-		_constVarsIn.putAll(body.get(0).getConstIn());
-		_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 		
+		if (body.size() > 0) {
+			_constVarsIn.putAll(body.get(0).getConstIn());
+			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
+		}
 		return ids;
 	}
 

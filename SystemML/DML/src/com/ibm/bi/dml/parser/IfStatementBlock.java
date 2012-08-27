@@ -73,7 +73,6 @@ public class IfStatementBlock extends StatementBlock {
 		return allIdVars;
 	}
 	
-	// FIXED
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);

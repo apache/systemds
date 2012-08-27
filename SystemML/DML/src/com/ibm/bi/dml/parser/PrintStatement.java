@@ -20,26 +20,17 @@ public class PrintStatement extends Statement{
 		return lo;
 	}
 	
-	/*
+	
 	public String toString(){
 		 StringBuffer sb = new StringBuffer();
-		 boolean first = true;
-		 sb.append(Statement.PRINTSTATEMENT + " ( " );
-		 if (_msg != null){
-			 sb.append(_msg);
-			 first = false;
+		 sb.append(Statement.PRINTSTATEMENT + " (" );
+		 if (_expr != null){
+			 sb.append(_expr.toString());
 		 }
-		 if (_id != null){
-			 if (!first){
-				 sb.append(",");
-			 }
-			 sb.append(_id.toString());
-		 }
-		 
 		 sb.append(");");
 		 return sb.toString(); 
 	}
-	*/
+	
 	
 	@Override
 	public VariableSet variablesRead() {
@@ -49,13 +40,11 @@ public class PrintStatement extends Statement{
 
 	@Override
 	public VariableSet variablesUpdated() {
-		 
 	  	return new VariableSet();
 	}
 
 	@Override
-	public boolean controlStatement() {
-		 
+	public boolean controlStatement() {	 
 		return false;
 	}
 

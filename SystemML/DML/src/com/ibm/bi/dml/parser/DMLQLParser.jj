@@ -1,12 +1,12 @@
 // Parser for DML QL files
 
 options { 
- STATIC = false;
-// JDK_VERSION = "5.0";
- DEBUG_PARSER = false;
- DEBUG_TOKEN_MANAGER = false;
- //USER_TOKEN_MANAGER = true; 
- UNICODE_INPUT = true;
+	STATIC = false;
+	// JDK_VERSION = "5.0";
+ 	DEBUG_PARSER = false;
+ 	DEBUG_TOKEN_MANAGER = false;
+ 	UNICODE_INPUT = true;
+ 	//COMMON_TOKEN_ACTION = true;
 }
 
 PARSER_BEGIN(DMLQLParser)
@@ -30,79 +30,76 @@ import java.util.ArrayList;
  */
 public class DMLQLParser extends DMLQLParserBase{
 
- /** stores the listing of command-line arguments, which are indexed from 1 and being with '$' --  $1, $2, etc. **/
- private HashMap<String,String> commandArgs; 
+	/** stores the listing of command-line arguments, which are indexed from 1 and being with '$' --  $1, $2, etc. **/
+ 	private HashMap<String,String> commandArgs; 
 
- /** stores list of paths to DML packages (directories to look for modules) **/
- private ArrayList<String> dmlPathSet;
+	/** stores list of paths to DML packages (directories to look for modules) **/
+ 	private ArrayList<String> dmlPathSet;
+	private boolean alreadySeen = false;
 
- private boolean alreadySeen = false;
+	/** stores the mapping of absolute path to namespace program **/
+	/** if the module in the absolute path has been processed, then use this program  **/
+	static private HashMap<String, DMLProgram> allNamespacesByAbsolutePath = new HashMap<String, DMLProgram>();
 
- /** stores the mapping of absolute path to namespace program **/
- /** if the module in the absolute path has been processed, then use this program  **/
- static private HashMap<String, DMLProgram> allNamespacesByAbsolutePath = new HashMap<String, DMLProgram>();
-
- /** Convenience constructor for reading from a string. */
- public DMLQLParser(String s)throws IOException, ParseException {
-  this(new StringReader(s));
- }
+ 	/** Convenience constructor for reading from a string. */
+ 	public DMLQLParser(String s)throws IOException, ParseException {
+  		this(new StringReader(s));
+ 	}
  
- /** Convenience constructor for reading from a string. */
- public DMLQLParser(String s2, String encoding, HashMap<String,String> commandArgs)throws IOException, ParseException {
+	/** Convenience constructor for reading from a string. */
+	public DMLQLParser(String s2, String encoding, HashMap<String,String> commandArgs)throws IOException, ParseException {
+	
+		this(new BufferedReader(new StringReader(s2)));
+		setFileEncoding(encoding);
+	    setCommandArgs(commandArgs);
+	        
+	  	// initialize pathset to current working directory
+	  	dmlPathSet = new ArrayList<String>();
+	    dmlPathSet.add(".");
+	    alreadySeen = false;
+	}
 
-  this(new BufferedReader(new StringReader(s2)));
-  setFileEncoding(encoding);
-        setCommandArgs(commandArgs);
-        
-  // initialize pathset to current working directory
-  dmlPathSet = new ArrayList<String>();
-        dmlPathSet.add(".");
-        alreadySeen = false;
- }
+ 	public DMLQLParser(File f, String encoding, HashMap<String,String> commandArgs)throws IOException, ParseException {
+		this(new BufferedReader(new InputStreamReader(new FileInputStream(f), encoding)));         
+		setFileEncoding(encoding);
+		setCommandArgs(commandArgs);
+		      
+		// initialize pathset to current working directory
+		dmlPathSet = new ArrayList<String>();
+		dmlPathSet.add(".");
 
- public DMLQLParser(File f, String encoding, HashMap<String,String> commandArgs)throws IOException, ParseException {
+		if (DMLQLParser.allNamespacesByAbsolutePath.get(f.getAbsolutePath()) != null)
+			alreadySeen = true;
+		else {
+			alreadySeen = false;
+			DMLQLParser.allNamespacesByAbsolutePath.put(f.getAbsolutePath(), new DMLProgram());
+		}       
+	}
 
-  this(new BufferedReader(new InputStreamReader(new FileInputStream(f), encoding)));         
-        setFileEncoding(encoding);
-        setCommandArgs(commandArgs);
-      
-  // initialize pathset to current working directory
-  dmlPathSet = new ArrayList<String>();
-      dmlPathSet.add(".");
+	private void setCommandArgs(HashMap<String,String> ca){
+		commandArgs = ca;
+	}
 
-  if (DMLQLParser.allNamespacesByAbsolutePath.get(f.getAbsolutePath()) != null)
-   alreadySeen = true;
-  else {
-   alreadySeen = false;
-   DMLQLParser.allNamespacesByAbsolutePath.put(f.getAbsolutePath(), new DMLProgram());
-      }       
- }
-
- private void setCommandArgs(HashMap<String,String> ca){
-  commandArgs = ca;
- }
-
- private void setDmlPathSet(ArrayList<String> passed){
-  dmlPathSet = passed;
- }
+ 	private void setDmlPathSet(ArrayList<String> passed){
+  		dmlPathSet = passed;
+ 	}
     
- public DMLQLParser(File f, HashMap<String,String> commandArgs)throws IOException, ParseException {
-  this(f, DEFAULT_ENCODING, commandArgs);
- }
+	public DMLQLParser(File f, HashMap<String,String> commandArgs)throws IOException, ParseException {
+		this(f, DEFAULT_ENCODING, commandArgs);
+	}
 
- public DMLQLParser(String s2, HashMap<String,String> commandArgs)throws IOException, ParseException {
-  this(s2, DEFAULT_ENCODING, commandArgs);
- }
+	public DMLQLParser(String s2, HashMap<String,String> commandArgs)throws IOException, ParseException {
+		this(s2, DEFAULT_ENCODING, commandArgs);
+	}
 
- public static final String LANG_JAVA = "Java";
+	public static final String LANG_JAVA = "Java";
 
- private String getTokenInfo(Token t){
-         if (t == null)
-                return ""; 
-         else
-          return "(" + t.toString() + " in line " + t.beginLine + ", column " + t.beginColumn + ")";
-         
-    }
+	private String getTokenInfo(Token t){
+		if (t == null)
+			return ""; 
+		else
+			return "(" + t.toString() + " in line " + t.beginLine + ", column " + t.beginColumn + ")";
+	}
 }  // end class DMLQLParser
 
 PARSER_END(DMLQLParser)
@@ -113,10 +110,10 @@ PARSER_END(DMLQLParser)
 
 SKIP :
 {
-  " "
-| "\t"
-| "\n"
-| "\r"
+	" "
+	| "\t"
+	| "\n"
+	| "\r"
 }
 
 
@@ -126,19 +123,19 @@ SKIP :
 
 MORE :
 {
- "#" : IN_SINGLE_LINE_COMMENT
+	"#" : IN_SINGLE_LINE_COMMENT
 }  
 
 <IN_SINGLE_LINE_COMMENT>
 SPECIAL_TOKEN :
 {
- <SINGLE_LINE_COMMENT : (~["\n","\r"])* ("\n"|"\r"|"\r\n")? > : DEFAULT
+	<SINGLE_LINE_COMMENT : (~["\n","\r"])* ("\n"|"\r"|"\r\n")? > : DEFAULT
 }
 
 <IN_SINGLE_LINE_COMMENT>
 MORE :
 {
- < ~[] >
+	< ~[] >
 }
 
 
@@ -154,6 +151,8 @@ MORE : { "/*": IN_COMMENT }
 // When a */ is seen in the IN_COMMENT state, skip it and switch back to the DEFAULT state
 < IN_COMMENT > SKIP : { "*/": DEFAULT } 
 
+
+
 // Block comments
 //SPECIAL_TOKEN : /* COMMENTS */
 //{
@@ -163,150 +162,144 @@ MORE : { "/*": IN_COMMENT }
 
 TOKEN :
 {
- //////////////////////////////////////////////////////////////////////
- // KEYWORDS
- <IF  : "if">
- |<ELSE  : "else">
- |<WHILE  : "while">
- |<FUNCTION  : "function">
- |<EXTERNALFUNCTION  : "externalFunction" >
- |<IMPLEMENTED :    "implemented" >
- |<FOR  : "for">
- |<PARFOR : "parfor">
- |<IN  : "in">
- //|<NEXT  : "next">
- //|<BREAK  : "break">
- |<TRUE  : "true">
- |<FALSE  : "false">
-  |<NULL  : "null">
- //|<INF  : "Inf">
- //|<NAN  : "NaN">
- //|<NA  : "NA">
+	//////////////////////////////////////////////////////////////////////
+	// KEYWORDS
+	<IF  			: "if">
+	| <ELSE  		: "else">
+	| <WHILE  		: "while">
+	| <FUNCTION  	: "function">
+	| <EXTERNALFUNCTION : "externalFunction" >
+	| <IMPLEMENTED 		: "implemented" >
+	| <FOR  	: "for">
+	| <PARFOR 	: "parfor">
+	| <IN  		: "in">
+	//|<NEXT  	: "next">
+	//|<BREAK  	: "break">
+	| <TRUE  	: "true">
+	| <FALSE  	: "false">
+	| <NULL  	: "null">
+	//| <INF  	: "Inf">
+	//| <NAN  	: "NaN">
+	//| <NA  	: "NA">
 
- |<SEQ : "seq">  
-
- |<AS  : "as">
- | <RETURN : "return" >
-
-
- |<TRAIN : "train">
- |<TEST : "test">
- |<AGG  : "aggregate">
- | < BUILD : "build" >
- | < ON : "on" >
- | < USE : "use" >
+ 	| <SEQ 		: "seq">  
+ 	| <AS  		: "as">
+ 	| <RETURN 	: "return" >
+ 	| <TRAIN 	: "train">
+ 	| <TEST 	: "test">
+ 	| <AGG  	: "aggregate">
+ 	| <BUILD	: "build" >
+ 	| <ON 		: "on" >
+ 	| <USE 		: "use" >
   
- //////////////////////////////////////////////////////////////////////
- // BUILT-IN FUNCTIONS
- | <COS  : "cos">
- | <SIN  : "sin">
- | <TAN  : "tan">
- | <DIAG : "diag">
- | <EXP  : "exp">
- | <ABS  : "abs">
- | <MIN  : "min">
- | <MAX  : "max">
- | <PMIN  : "pmin">
- | <PMAX  : "pmax">
- | <PPRED : "ppred">
- | <LOG  : "log">
- | <LENGTH  : "length">
- | <NCOL  : "ncol">
- | <NROW  : "nrow">
- | <SQRT  : "sqrt">
- | <SUM      : "sum">
- | <MEAN     : "mean">
- | <TRANS  : "t">
- | <APPEND : "append">
- | <RANGE  : "range">
- | <PROD  : "prod">
- | <ROWSUM  : "rowSums">
- | <COLSUM  : "colSums">
- | <ROWMIN  : "rowMins">
- | <COLMIN  : "colMins">
- | <ROWMAX  : "rowMaxs">
- | <ROWINDEXMAX : "rowIndexMax">
- | <COLMAX  : "colMaxs">
- | <ROWMEAN  : "rowMeans">
- | <COLMEAN  : "colMeans">
- | <TRACE : "trace" >
+ 	//////////////////////////////////////////////////////////////////////
+ 	// BUILT-IN FUNCTIONS
+ 	| <COS  	: "cos">
+ 	| <SIN  	: "sin">
+ 	| <TAN  	: "tan">
+ 	| <DIAG 	: "diag">
+ 	| <EXP  	: "exp">
+	| <ABS  	: "abs">
+	| <MIN  	: "min">
+	| <MAX		: "max">
+	| <PMIN 	: "pmin">
+	| <PMAX 	: "pmax">
+	| <PPRED	: "ppred">	
+	| <LOG  	: "log">
+	| <LENGTH  	: "length">
+	| <NCOL  	: "ncol">
+	| <NROW  	: "nrow">
+	| <SQRT  	: "sqrt">
+	| <SUM      : "sum">
+	| <MEAN     : "mean">
+	| <TRANS  	: "t">
+	| <APPEND 	: "append">
+	| <RANGE  	: "range">
+	| <PROD  	: "prod">
+	| <ROWSUM  	: "rowSums">
+	| <COLSUM  	: "colSums">
+	| <ROWMIN  	: "rowMins">
+	| <COLMIN  	: "colMins">
+	| <ROWMAX  	: "rowMaxs">
+	| <ROWINDEXMAX : "rowIndexMax">
+	| <COLMAX  	: "colMaxs">
+	| <ROWMEAN  : "rowMeans">
+	| <COLMEAN  : "colMeans">
+	| <TRACE 	: "trace" >
+
+	| <READMATRIX 	: "read">
+	| <WRITEMATRIX 	: "write">
+	| <IMPORT 		: "import"> 
+	| <DMLPATH 		: "dml-path">  
+	| <PRINT 		: "print">
+	| <CROSSVAL 	: "crossval">
+	| <ENSEMBLE 	: "ensemble">
+	| <PARTITION 	: "partition">	
+	| <AVG   		: "avg" >
+	| <RAND     	: "Rand">
+	| <CAST_AS_SCALAR	: "castAsScalar" >
+	| <QUANTILE			: "quantile">
+	| <INTERQUANTILE	: "interQuantile">	
+	| <IQM				: "interQuartileMean">
+	| <CTABLE			: "ctable" >
+	| <SPEARMAN			: "spearman" >
+	| <ROUND			: "round" >
+	| <CENTRALMOMENT	: "centralMoment" >
+	| <COVARIANCE		: "cov" >
+	| <CDF				: "cumulativeProbability" >
+	| <GROUPEDAGG		: "groupedAggregate" >
+
+	/////////////////////////////////////////////////////////
+	// Operators
+	| <PLUS  		: "+">
+	| <MINUS  		: "-">
+	| <MULT  		: "*">
+	| <DIV  		: "/">
+	| <MATRIXMULT 	: "%*%">
+	| <POWER  		: "^">
+	| <LESSEQUAL  	: "<=">
+	| <LESS 		: "<">
+	| <GREATEREQUAL : ">=">
+	| <GREATER  	: ">">
+	| <EQUAL  		: "==">
+	| <NOTEQUAL  	: "!=">
+	| <ASSIGN  		: "=">
+	| <LEFTASSIGN  	: "<-">
+	| <CONDITIONALAND  	: "&&">
+	| <LOGICALAND  		: "&">
+	| <CONDITIONALOR  	: "||">
+	| <LOGICALOR  		: "|">
+	| <NOT 				: "!">
  
- | <READMATRIX : "read">
- | <WRITEMATRIX : "write">
-
- | <IMPORT : "import"> 
- | <DMLPATH : "dml-path">  
-
- | <PRINT : "print">
-// | <CROSSVAL  : "crossval">
-// | <ENSEMBLE  : "ensemble">
-// | <PARTITION : "partition">
- | <AVG   : "avg" >
- | <RAND      : "Rand">
- | <CAST_AS_SCALAR: "castAsScalar" >
- | <QUANTILE: "quantile">
- | <INTERQUANTILE: "interQuantile">
- | <IQM: "interQuartileMean">
- | <CTABLE: "ctable" >
- | <SPEARMAN: "spearman" >
- | <ROUND: "round" >
- | <CENTRALMOMENT: "centralMoment" >
- | <COVARIANCE: "cov" >
- | <CDF: "cumulativeProbability" >
- | < GROUPEDAGG: "groupedAggregate" >
-
-  /////////////////////////////////////////////////////////
- // Operators
- | <PLUS  : "+">
- | <MINUS  : "-">
- | <MULT  : "*">
- | <DIV  : "/">
- | <MATRIXMULT : "%*%">
- | <POWER  : "^">
- | <LESSEQUAL  : "<=">
- | <LESS : "<">
- | <GREATEREQUAL  : ">=">
- | <GREATER  : ">">
- | <EQUAL  : "==">
- | <NOTEQUAL  : "!=">
- | <ASSIGN  : "=">
- | <LEFTASSIGN  : "<-">
- | <CONDITIONALAND  : "&&">
- | <LOGICALAND  : "&">
- | <CONDITIONALOR  : "||">
- | <LOGICALOR  : "|">
- | <NOT : "!">
- 
- ////////////////////////////////////////////////////////
- // DELIMITERS
- |  <SEMICOLON  : ";">
- |  <COLON  : ":" >
- |  <LEFTPAREN   : "(">
- |  <RIGHTPAREN  : ")">
- |  <COMMA       : ",">
- |  <LEFTCURLYPAREN   : "{">
- |  <RIGHTCURLYPAREN  : "}">
- |  <LEFTSQUARE  : "[">
- |  <RIGHTSQUARE  : "]">
+	////////////////////////////////////////////////////////
+	// DELIMITERS
+ 	|  <SEMICOLON  		: ";">
+ 	|  <COLON  			: ":" >
+ 	|  <LEFTPAREN   	: "(">
+ 	|  <RIGHTPAREN  	: ")">
+ 	|  <COMMA       	: ",">
+ 	|  <LEFTCURLYPAREN  : "{">
+ 	|  <RIGHTCURLYPAREN : "}">
+ 	|  <LEFTSQUARE  	: "[">
+ 	|  <RIGHTSQUARE  	: "]">
   
- /////////////////////////////////////////////////////////
- // LITERALS
+ 	/////////////////////////////////////////////////////////
+ 	// LITERALS
  
- // The name of an optree or an existing annotation type.
- | <ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","0"-"9","_"])* >
- | <DOLLAR_ID : "$"(["a"-"z","A"-"Z","0"-"9","_"])* >
- // A number with no decimal point -- minus sign is a separate token
- //| <INTEGER : ("-")? (["0"-"9"])+>
- | <INTEGER : (["0"-"9"])+>
+ 	// The name of an optree or an existing annotation type.
+ 	| <ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <DOLLAR_ID : "$"(["a"-"z","A"-"Z","0"-"9","_"])* >
+
+ 	// A number with no decimal point -- minus sign is a separate token
+ 	| <INTEGER : (["0"-"9"])+>
  
- // A number with decimal point -- minus sign is a separate token
- //| <FLOAT : ("-")? (["0"-"9"])+ "." (["0"-"9"])+>
- | <DOUBLE : (["0"-"9"])+ "." (["0"-"9"])+>
+ 	// A number with decimal point -- minus sign is a separate token
+ 	| <DOUBLE : (["0"-"9"])* "." (["0"-"9"])+>
  
- // A double-quoted string literal (Based on JavaCC.jj)
- | <DBLQUOTE_STRING_LITERAL :
-  "\""
-       (   (~["\"","\\","\n","\r"])
+	// A double-quoted string literal (Based on JavaCC.jj)
+ 	| <DBLQUOTE_STRING_LITERAL :
+  	"\""
+     	(   (~["\"","\\","\n","\r"])
          | ("\\"
              ( ["n","t","b","r","f","\\","'","\""]
              | ["0"-"7"] ( ["0"-"7"] )?
@@ -316,9 +309,10 @@ TOKEN :
        )*
        "\""
     > 
- // SQL-style string literal in single quotes
- | <SQL_STRING_LITERAL :
-  "'"
+
+ 	// SQL-style string literal in single quotes
+ 	| <SQL_STRING_LITERAL :
+  	"'"
        (   (~["'","\\","\n","\r"])
          | ("\\"
              ( ["n","t","b","r","f","\\","'","\""]
@@ -338,472 +332,498 @@ TOKEN :
 
 DMLProgram __inputInternal() :
 {
- DMLProgram dmlp = new DMLProgram();
- Statement current = null;
- Token reserved = null;
+	DMLProgram dmlp = new DMLProgram();
+	Statement current = null;
+	Token reserved = null;
 }
 {
- (
-  (
-     LOOKAHEAD(PathStatement())					current = PathStatement() 
-   | LOOKAHEAD(ImportStatement())				current = ImportStatement()
-   | LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
-  ){
-   StatementBlock sb = null;
-   if (current instanceof WhileStatement) {
-    sb = new WhileStatementBlock();
-   }
-   else if (current instanceof ParForStatement) {
-    sb = new ParForStatementBlock();
-   }
-   else if (current instanceof ForStatement) {
-    sb = new ForStatementBlock();
-   }
-   else if (current instanceof IfStatement){
-    sb = new IfStatementBlock(); 
-   } 
-  // else if (current instanceof CVStatement) {
-  //  sb = new CVStatementBlock();
-  // }
-  // else if (current instanceof ELStatement) {
-  //  sb = new ELStatementBlock();
-  // }
-  // else if (current instanceof ELUseStatement) {
-  //  sb = new ELUseStatementBlock();
-  // }   
-   else if (current instanceof FunctionStatement) {
-    sb = new FunctionStatementBlock();
-   }
-   else {
-    sb = new StatementBlock();
-   }
-   sb.addStatement(current);
+	(
+		(
+			LOOKAHEAD(PathStatement())					current = PathStatement() 
+			| LOOKAHEAD(ImportStatement())				current = ImportStatement()
+			| LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
+			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+			| LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+			| LOOKAHEAD(ForStatement())					current = ForStatement()
+			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+			| LOOKAHEAD(IfStatement())					current = IfStatement()
+			//|  LOOKAHEAD(CVStatement())					current = CVStatement()
+			//| LOOKAHEAD(ELStatement())					current = ELStatement()
+			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+		)
+		{
+			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+				sb = new WhileStatementBlock();
+			}
+			else if (current instanceof ParForStatement) {
+				sb = new ParForStatementBlock();
+			}
+			else if (current instanceof ForStatement) {
+				sb = new ForStatementBlock();
+			}
+			else if (current instanceof IfStatement){
+				sb = new IfStatementBlock(); 
+			} 
+			// else if (current instanceof CVStatement) {
+			//  sb = new CVStatementBlock();
+			// }
+			// else if (current instanceof ELStatement) {
+			//  sb = new ELStatementBlock();
+			// }
+			// else if (current instanceof ELUseStatement) {
+			//  sb = new ELUseStatementBlock();
+			// }   
+			else if (current instanceof FunctionStatement) {
+				sb = new FunctionStatementBlock();
+			}
+			else {
+				sb = new StatementBlock();
+			}
+			sb.addStatement(current);
 
-   // handle import statements
-   if (current instanceof ImportStatement)
-   {
-    // if the path verifies, parse the file to create a DMLProgram
-    ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
-    if (importStmt.verify(dmlPathSet)) {
+			// handle import statements
+			if (current instanceof ImportStatement) {
 
-     try {
-        DMLProgram importedProg = null;
-      File moduleFile = new File(importStmt.getCompletePath());
-      System.out.println("INFO: importing module file: " + ((ImportStatement)current).getCompletePath());
+				// if the path verifies, parse the file to create a DMLProgram
+				ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
+				if (importStmt.verify(dmlPathSet)) {
 
-      
-
-      //if (DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath()) == null){  
-      DMLQLParser parser = new DMLQLParser(moduleFile,null);
-      if (parser.alreadySeen)
-       importedProg = DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath());
-      else {
-       importedProg = parser.parse();
-       DMLQLParser.allNamespacesByAbsolutePath.put(((ImportStatement)current).getAbsolutePath(), importedProg);
-       
-      }
+					try {
+						DMLProgram importedProg = null;
+						File moduleFile = new File(importStmt.getCompletePath());
+						System.out.println("INFO: importing module file: " + ((ImportStatement)current).getCompletePath());
+						
+						      
+						
+						//if (DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath()) == null){  
+						DMLQLParser parser = new DMLQLParser(moduleFile,null);
+						if (parser.alreadySeen)
+							importedProg = DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath());
+						else {
+							importedProg = parser.parse();
+							DMLQLParser.allNamespacesByAbsolutePath.put(((ImportStatement)current).getAbsolutePath(), importedProg);       
+						}
      
-      // set the key to be the name of the module or the alias      
-      String namespaceKey = (importStmt.getAlias() == null) ? importStmt.getModuleName() : importStmt.getAlias();
+						// set the key to be the name of the module or the alias      
+						String namespaceKey = (importStmt.getAlias() == null) ? importStmt.getModuleName() : importStmt.getAlias();
 
-      // IF (alias is defined OR no filter placed on functions to import) THEN
-      //  1) attempt to create new namespace for imported DML module file if not already defined
-      //  2) attempt to add functions to existing namespace
-      if (importStmt.getAlias() != null || ( !importStmt.getImportAll() && importStmt.getImportVarList().size() == 0)){
+						// IF (alias is defined OR no filter placed on functions to import) THEN
+						//  1) attempt to create new namespace for imported DML module file if not already defined
+						//  2) attempt to add functions to existing namespace
+						if (importStmt.getAlias() != null || ( !importStmt.getImportAll() && importStmt.getImportVarList().size() == 0)) {
 
-       if (!dmlp.getNamespaces().containsKey(namespaceKey))
-          dmlp.getNamespaces().put(namespaceKey,importedProg);
-    
-       else {
-        // attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
-        for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
-         if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)
-          throw new ParseException("function " + fname + " already defined in namespace " + namespaceKey);
-         else 
-          dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
-        }
-       }
-      }
-        
-      // import all functions into the current "null" namespace
-      if(importStmt.getImportAll()){
-       for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
-        if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-         throw new ParseException("function " + fname + " is already defined in current namespace ");
-        String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
-       } 
-      }
+							if (!dmlp.getNamespaces().containsKey(namespaceKey))
+								dmlp.getNamespaces().put(namespaceKey,importedProg);
+	  
+							else {
+								// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
+								for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
+									if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)
+										throw new ParseException("function " + fname + " already defined in namespace " + namespaceKey);
+									else 
+	          							dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
+	        					}
+	       					}
+						}
+
+
+	        			// import all functions into the current "null" namespace
+						if(importStmt.getImportAll()){
+	
+							for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
+				
+				        		if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
+									throw new ParseException("function " + fname + " is already defined in current namespace ");
+				
+								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
+								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
+							} 
+						}
       
-      // import named functions into current namespace. Named functions must NOT exist in current namespace ("null" namespace).
-      else if (importStmt.getImportVarList().size() > 0){
-       for (String fname : importStmt.getImportVarList()) {
-        if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-         throw new ParseException("function " + fname + " is already defined in current namespace ");
-        if (!importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-         throw new ParseException("function " + fname + " not defined in module path " + importStmt.getModulePath());
-        String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-        dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
-       }
-      }     
-     }
-     catch(Exception e){
-      throw new ParseException(e.getMessage());
-     }
-    } // if (importStmt.verify(dmlPathSet))
+						// import named functions into current namespace. Named functions must NOT exist in current namespace ("null" namespace).
+						else if (importStmt.getImportVarList().size() > 0){
+							for (String fname : importStmt.getImportVarList()) {
+				
+								if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
+									throw new ParseException("function " + fname + " is already defined in current namespace ");
+				
+								if (!importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
+									throw new ParseException("function " + fname + " not defined in module path " + importStmt.getModulePath());
+				
+								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
+								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
+							}
+						}     
+					}
+					catch(Exception e){
+						throw new ParseException(e.getMessage());
+					}
+				} // if (importStmt.verify(dmlPathSet))
     
-    else {
-     throw new ParseException("failed to import  " + importStmt.toString());
-    }
+    			else {
+     				throw new ParseException("failed to import  " + importStmt.toString());
+    			}
 
-    // add import statement to DML program
-    dmlp.addStatementBlock(sb);
-    
-   } // if (current instanceof ImportStatement)
+    			// add import statement to DML program
+    			dmlp.addStatementBlock(sb);
 
-   // handle function declarations
-   else if (sb instanceof FunctionStatementBlock) {
-      FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
-    try {
-      // check if the function is defined in the current namespace
-      if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName()))
-        throw new LanguageException("function " + first.getName() + " already defined in current namespace ");
-      dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
-    } catch (LanguageException e) {
-     throw new ParseException(e.getMessage());
-    }
-   } 
-   else {
-      dmlp.addStatementBlock(sb);
-   }
-  }
- )+ <EOF>
- {
-  dmlp.mergeStatementBlocks();
-  return dmlp;
- }
+			} // if (current instanceof ImportStatement)
+
+			// handle function declarations
+			else if (sb instanceof FunctionStatementBlock) {
+				FunctionStatement first  = (FunctionStatement)((FunctionStatementBlock)sb)._statements.get(0);
+				try {
+
+					// check if the function is defined in the current namespace
+					if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName()))
+						throw new LanguageException("function " + first.getName() + " already defined in current namespace ");
+
+					dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
+				} catch (LanguageException e) {
+					throw new ParseException(e.getMessage());
+				}
+			} 
+			else {
+				dmlp.addStatementBlock(sb);
+			}
+		}
+ 	)* <EOF>
+
+ 	{
+  		dmlp.mergeStatementBlocks();
+  		return dmlp;
+ 	}
 }
 
 PathStatement PathStatement():
 {
- Token t1 = null;
- PathStatement pstmt = new PathStatement();
+	Token t1 = null;
+	PathStatement pstmt = new PathStatement();
 }
 {
- <DMLPATH> t1 = <DBLQUOTE_STRING_LITERAL>
-  {
-   String dequotedString = dequoteStr('\"',t1.image);
-     pstmt.addPackagePaths(dequotedString);
-   dmlPathSet.addAll(pstmt.getPackagePaths());
-  }
- [<SEMICOLON>]
- {
-  return pstmt;
- }
+	<DMLPATH> t1 = <DBLQUOTE_STRING_LITERAL>
+	{
+		String dequotedString = dequoteStr('\"',t1.image);
+		pstmt.addPackagePaths(dequotedString);
+		dmlPathSet.addAll(pstmt.getPackagePaths());
+	}
+	[<SEMICOLON>]
+
+	{
+		return pstmt;
+	}
 }
 
 ImportStatement ImportStatement() :
 {
- Token t1 = null, t2 = null, t3 = null, t4 = null;
- ImportStatement importStmt = new ImportStatement();
+	Token t1 = null, t2 = null, t3 = null, t4 = null;
+	ImportStatement importStmt = new ImportStatement();
 
- // directory structure of DML package containing module being imported
- // last entry is the name of the module.
- ArrayList<String> modulePathPieces = new ArrayList<String>();
+	// directory structure of DML package containing module being imported
+	// last entry is the name of the module.
+	ArrayList<String> modulePathPieces = new ArrayList<String>();
 }
 {
- <IMPORT> t1 = <ID> {modulePathPieces.add(t1.image);}
-  (<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
+	<IMPORT> t1 = <ID> { int beginLine = t1.beginLine; int beginColumn = t1.beginColumn; modulePathPieces.add(t1.image);}
+	(<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
  
- [<LEFTPAREN>
-   [ t2 = <MULT>{ importStmt.setImportAll(true);} | t3 = <ID> {importStmt.addVar(t3.image);}
-    (<COMMA> t3 = <ID>{importStmt.addVar(t3.image);} )*]
- <RIGHTPAREN>]
+	[<LEFTPAREN>
+		[ t2 = <MULT>{ importStmt.setImportAll(true);} | t3 = <ID> {importStmt.addVar(t3.image);}
+			(<COMMA> t3 = <ID>{importStmt.addVar(t3.image);} )*]
+	<RIGHTPAREN>]
 
- [<AS> t4 = <ID> {importStmt.setAlias(t4.image);}] [<SEMICOLON>]
+	[<AS> t4 = <ID> {importStmt.setAlias(t4.image);}] [<SEMICOLON>]
 
-    { 
-  importStmt.setModulePathAndName(modulePathPieces);
-  return importStmt;
- }
+	{ 
+		importStmt.setModulePathAndName(modulePathPieces);
+		return importStmt;
+	}
 }
 
 FunctionStatement FunctionStatement() :
 {
-  Vector <DataIdentifier> functionInputs = new Vector<DataIdentifier>(), functionOutputs = new Vector<DataIdentifier>() ;
-  FunctionStatement fstmt = new FunctionStatement();
-  Token t;
-  Statement current = null;
+	Vector <DataIdentifier> functionInputs = new Vector<DataIdentifier>(), functionOutputs = new Vector<DataIdentifier>() ;
+	FunctionStatement fstmt = new FunctionStatement();
+	Token t;
+	Statement current = null;
 }
 {
-  t = <ID> <ASSIGN> <FUNCTION> functionInputs = ReadTypedArgList()
-  (<RETURN> functionOutputs = ReadTypedArgList())?
-  <LEFTCURLYPAREN>
- (
-  (
-  
-    LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
-  ){
-   StatementBlock sb = null;
-   if (current instanceof WhileStatement) {
-    sb = new WhileStatementBlock();
-   }
-   else if (current instanceof ParForStatement) {
-    sb = new ParForStatementBlock();
-   }
-   else if (current instanceof ForStatement) {
-    sb = new ForStatementBlock();
-   }
-   else if (current instanceof IfStatement){
-    sb = new IfStatementBlock(); 
-   } 
-   //else if (current instanceof CVStatement) {
-   // sb = new CVStatementBlock() ;
-   //}
-   //else if (current instanceof ELStatement) {
-   // sb = new ELStatementBlock() ;
-   //}
-   //else if (current instanceof ELUseStatement) {
-   // sb = new ELUseStatementBlock() ;
-   //}
-   else if (current instanceof FunctionStatement) {
-    throw new ParseException(" Nested function definitions are not supported ");
-   }
-	else if (current instanceof ExternalFunctionStatement) {
-    	throw new ParseException(" Nested function definitions are not supported ");
-   }
-   
-   else {
-    sb = new StatementBlock();
-   }
-   sb.addStatement(current);
-   fstmt.addStatementBlock(sb);
-  }
- )+
- {
-  fstmt.mergeStatementBlocks(); 
- }
+	t = <ID> <ASSIGN> <FUNCTION> functionInputs = ReadTypedArgList()
+		(<RETURN> functionOutputs = ReadTypedArgList())?
+	<LEFTCURLYPAREN>
+	(
+		(
 
-   <RIGHTCURLYPAREN>
-   {
-     fstmt._inputParams = functionInputs ;
-     fstmt._outputParams = functionOutputs ;
-  fstmt.setName(t.image);
-     return fstmt;
-   }
+  			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+  			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement()
+  			| LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+  			| LOOKAHEAD(InputStatement()) 				current = InputStatement()
+  			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+  			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+			| LOOKAHEAD(ForStatement())					current = ForStatement()
+			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+			| LOOKAHEAD(IfStatement())					current = IfStatement()
+			// | LOOKAHEAD(CVStatement())					current = CVStatement()
+			// | LOOKAHEAD(ELStatement())					current = ELStatement()
+			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+		)
+
+		{
+   			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+				sb = new WhileStatementBlock();
+			}
+			else if (current instanceof ParForStatement) {
+				sb = new ParForStatementBlock();
+			}
+			else if (current instanceof ForStatement) {
+				sb = new ForStatementBlock();
+			}
+			else if (current instanceof IfStatement){
+				sb = new IfStatementBlock(); 
+			} 
+			//else if (current instanceof CVStatement) {
+			// sb = new CVStatementBlock() ;
+			//}
+			//else if (current instanceof ELStatement) {
+			// sb = new ELStatementBlock() ;
+			//}
+			//else if (current instanceof ELUseStatement) {
+			// sb = new ELUseStatementBlock() ;
+			//}
+			else if (current instanceof FunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			else if (current instanceof ExternalFunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}	
+		   
+			else {
+				sb = new StatementBlock();
+			}
+			sb.addStatement(current);
+			fstmt.addStatementBlock(sb);
+		}
+ 	)*
+ 	{
+  		fstmt.mergeStatementBlocks(); 
+ 	}
+	<RIGHTCURLYPAREN>
+	{
+		fstmt._inputParams = functionInputs ;
+		fstmt._outputParams = functionOutputs ;
+		fstmt.setName(t.image);
+		return fstmt;
+	}
 }
 
 ExternalFunctionStatement ExternalFunctionStatement() :
 {
-  Vector <DataIdentifier> functionInputs = null, functionOutputs = null ;
-  ExternalFunctionStatement fstmt = new ExternalFunctionStatement();
-  Token t;
-  Statement current = null;
-  HashMap<String,String> map = null;
+	Vector <DataIdentifier> functionInputs = null, functionOutputs = null ;
+	ExternalFunctionStatement fstmt = new ExternalFunctionStatement();
+	Token t;
+	Statement current = null;
+	HashMap<String,String> map = null;
 }
 {
-  t = <ID> <ASSIGN> <EXTERNALFUNCTION> functionInputs = ReadTypedArgList()
-  <RETURN> functionOutputs = ReadTypedArgList()
-  <IMPLEMENTED><IN> map = ReadGenericParamList()[<SEMICOLON>]
+	t = <ID> <ASSIGN> <EXTERNALFUNCTION> functionInputs = ReadTypedArgList()
+	<RETURN> functionOutputs = ReadTypedArgList()
+	<IMPLEMENTED><IN> map = ReadGenericParamList()[<SEMICOLON>]
  
-  {
-     fstmt.setOtherParams(map);
-     fstmt._inputParams = functionInputs ;
-     fstmt._outputParams = functionOutputs ;
-  fstmt.setName(t.image);
-     return fstmt;
-  }
+	{
+		fstmt.setOtherParams(map);
+		fstmt._inputParams = functionInputs ;
+		fstmt._outputParams = functionOutputs ;
+		fstmt.setName(t.image);
+     	return fstmt;
+  	}
 }
-
 
 
 HashMap <String,String > ReadGenericParamList() :
 {
-  HashMap<String,String > map = new HashMap<String,String >() ;
-  Token t1 = null, t2 = null ;
-  IntIdentifier intid = null;
-  DoubleIdentifier doubleid = null;
-  BooleanIdentifier boolid = null;
-  
+	HashMap<String,String > map = new HashMap<String,String >() ;
+	Token t1 = null, t2 = null ;
+	IntIdentifier intid = null;
+	DoubleIdentifier doubleid = null;
+	BooleanIdentifier boolid = null;  
 }
 {
-  < LEFTPAREN >
- t1 = < ID > <ASSIGN>
- 
- (
-   LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
-  | doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString()); }
-  | boolid = BooleanConstant() { map.put(t1.image, boolid.toString()); }
-  | t2 = <SQL_STRING_LITERAL> { map.put(t1.image, dequoteStr('\'',t2.image)); }
-  | t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
+	<LEFTPAREN> t1 = <ID> <ASSIGN>
+	(
+		LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
+		| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
+		| boolid = BooleanConstant()  { map.put(t1.image, boolid.toString());     }
+		| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
+		| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
+	)
+	
+	(
+		< COMMA > t1 = < ID > <ASSIGN>
 
- )
- ( < COMMA > t1 = < ID > <ASSIGN>
- (
-   LOOKAHEAD(2) intid = IntConstant() { map.put( t1.image, intid.toString());       }
-  | doubleid = DoubleConstant()    { map.put( t1.image, doubleid.toString());       }
-  | boolid = BooleanConstant()     { map.put( t1.image, boolid.toString());         } 
-  | t2 = <SQL_STRING_LITERAL>      { map.put( t1.image, dequoteStr('\'',t2.image)); }
-  | t2 = <DBLQUOTE_STRING_LITERAL> { map.put( t1.image, dequoteStr('\"',t2.image)); }
- ))*
-  < RIGHTPAREN >
-  {return  map ;}
+		(
+			LOOKAHEAD(2) intid = IntConstant() { map.put( t1.image, intid.toString());}
+			| doubleid = DoubleConstant()    { map.put( t1.image, doubleid.toString());}
+			| boolid = BooleanConstant()     { map.put( t1.image, boolid.toString());} 
+			| t2 = <SQL_STRING_LITERAL>      { map.put( t1.image, dequoteStr('\'',t2.image));}
+			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put( t1.image, dequoteStr('\"',t2.image));}
+		)
+	)*
+	<RIGHTPAREN>
+	{return map ;}
 }
-
 
 
 // NOTE: DML only supports default values for scalar datatype
 Vector<DataIdentifier> ReadTypedArgList() :
 {
-  Vector<DataIdentifier> params = new Vector<DataIdentifier>() ;
-  DataIdentifier d1=null, d2=null ;
-  Token t1 = null, t2 = null, t3 = null;
-  String valueType = null;
-  String dataType = null;
-  IntIdentifier intid = null;
-  DoubleIdentifier doubleid = null;
-  BooleanIdentifier boolid = null;
-  
+	Vector<DataIdentifier> params = new Vector<DataIdentifier>() ;
+	DataIdentifier d1=null, d2=null ;
+	Token t1 = null, t2 = null, t3 = null;
+	String valueType = null;
+	String dataType = null;
+	IntIdentifier intid = null;
+	DoubleIdentifier doubleid = null;
+	BooleanIdentifier boolid = null;  
 } 
-
 {
-  
-  <LEFTPAREN> 
-   t1 =<ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>] d1 = Identifier() 
-   (
-     <ASSIGN> intid = IntConstant() { d1.setDefaultValue(intid.toString());}
-      | doubleid = DoubleConstant() { d1.setDefaultValue(doubleid.toString()); }
-      | boolid = BooleanConstant()  { d1.setDefaultValue(boolid.toString()); }
-      | t3 = <SQL_STRING_LITERAL>   { d1.setDefaultValue(dequoteStr('\'',t3.image)); }
-      | t3 = <DBLQUOTE_STRING_LITERAL> { d1.setDefaultValue(dequoteStr('\"',t3.image)); }
+	<LEFTPAREN> t1 =<ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>] d1 = Identifier() 
+	(
+		<ASSIGN> intid = IntConstant() { d1.setDefaultValue(intid.toString());}
+				| doubleid = DoubleConstant() { d1.setDefaultValue(doubleid.toString()); }
+      			| boolid = BooleanConstant()  { d1.setDefaultValue(boolid.toString()); }
+      			| t3 = <SQL_STRING_LITERAL>   { d1.setDefaultValue(dequoteStr('\'',t3.image)); }
+      			| t3 = <DBLQUOTE_STRING_LITERAL> { d1.setDefaultValue(dequoteStr('\"',t3.image)); }
+	)?
 
-  )?
-
-  {
-      if (t1.image.equalsIgnoreCase("matrix")){
-    if (t2 == null){
-     throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-    }
-    else{
-     dataType = "matrix";
-     valueType = t2.image;
-    }
-       }
-     else if (t1.image.equalsIgnoreCase("object")){
-    dataType = "object";
-    valueType = "object";
-     }
-       else {
-         dataType = "scalar";
-         valueType = t1.image;
+	{
+		if (t1.image.equalsIgnoreCase("matrix")){
+			if (t2 == null){
+			  
+     			throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
+    		}
+    		else {
+     			dataType = "matrix";
+     			valueType = t2.image;
+    		}
+       	}
+     	else if (t1.image.equalsIgnoreCase("object")){
+    		dataType = "object";
+    		valueType = "object";
+     	}
+		else {
+			dataType = "scalar";
+			valueType = t1.image;
         }
-     d1.setTypeInfo(valueType, dataType);      
-       params.add(d1);
-     }
 
- (<COMMA>  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier()
-  (
-     <ASSIGN>
-    intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
-    | doubleid = DoubleConstant() { d2.setDefaultValue(doubleid.toString()); }
-    | boolid = BooleanConstant()  { d2.setDefaultValue(boolid.toString()); }
-    | t3 = <SQL_STRING_LITERAL>   { d2.setDefaultValue(dequoteStr('\'',t3.image)); }
-    | t3 = <DBLQUOTE_STRING_LITERAL> {d2.setDefaultValue(dequoteStr('\"',t3.image));}
-  )?
+     	d1.setTypeInfo(valueType, dataType);      
+       	params.add(d1);
+	}
 
-  {
-   if (t1.image.equalsIgnoreCase("matrix")){
-    if (t2 == null){
-     throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-    }
-    else{
-     dataType = "matrix";
-     valueType = t2.image;
-    }
-     }
-   else if (t1.image.equalsIgnoreCase("object")){
-    dataType = "object";
-    valueType = "object";
-   }
-     else {
-         dataType = "scalar";
-         valueType = t1.image;
-   }  
-     d2.setTypeInfo(valueType, dataType);        
-       params.add(d2);
-  }
- )*
-  <RIGHTPAREN>
+	(
+		<COMMA>  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier()
+
+  		(
+			<ASSIGN> intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
+	    		| doubleid = DoubleConstant() { d2.setDefaultValue(doubleid.toString()); }
+	    		| boolid = BooleanConstant()  { d2.setDefaultValue(boolid.toString()); }
+	    		| t3 = <SQL_STRING_LITERAL>   { d2.setDefaultValue(dequoteStr('\'',t3.image)); }
+	    		| t3 = <DBLQUOTE_STRING_LITERAL> {d2.setDefaultValue(dequoteStr('\"',t3.image));}
+	  	)?
+
+		{
+			if (t1.image.equalsIgnoreCase("matrix")){
+				if (t2 == null){
+	     			throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
+	    		}
+	    		else {
+	     			dataType = "matrix";
+	    	 		valueType = t2.image;
+	    		}
+	     	}
+			else if (t1.image.equalsIgnoreCase("object")){
+	    		dataType = "object";
+	    		valueType = "object";
+	   		}
+	     	else {
+	        	dataType = "scalar";
+	         	valueType = t1.image;
+	   		}  
+	     	d2.setTypeInfo(valueType, dataType);        
+	       	params.add(d2);
+	  	}
+ 	)*
+	<RIGHTPAREN>
   
-  { return params; }
+	{ return params; }
 }
 
 ArrayList<String> ReadList() :
 {
-  ArrayList<String> params = new ArrayList<String>() ;
-  Token t1 = null, t2=null ;
+	ArrayList<String> params = new ArrayList<String>() ;
+	Token t1 = null, t2=null ;
 } 
 {
-  <LEFTPAREN> 
-  t1 = <ID> {params.add(t1.image);} (<COMMA> t2 = <ID> {params.add(t2.image);})*
-  <RIGHTPAREN> 
-  {return params;}
+	<LEFTPAREN> 
+		t1 = <ID> {params.add(t1.image);} (<COMMA> t2 = <ID> {params.add(t2.image);})*
+	<RIGHTPAREN> 
+	{return params;}
 }
 
 
 ArrayList<ArrayList<Expression>> ReadIndexList() :
 {
-  ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
-  ArrayList<Expression> targetList = new ArrayList<Expression>();
-  Expression target = null;
+	ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
+	ArrayList<Expression> targetList = null;
+	Expression target = null;
 }
 { 
-     <LEFTSQUARE>
-   ( LOOKAHEAD( ColonDelimitedExpression())
-     targetList = ColonDelimitedExpression() {targetListList.add(targetList);} | target = Expression()
-       { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
-   )
+	<LEFTSQUARE>
+	(
+		LOOKAHEAD(ColonDelimitedExpression())
+     	targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+     	| target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
+	)?
+	{	  	// CASE: no indexing dimensions given
+		if (targetList == null){
+			targetList = new ArrayList<Expression>();
+			targetList.add(null);
+			targetList.add(null);
+			targetListList.add(targetList);
+		}
+	}
     
+	(
+		<COMMA>
+		(
+			LOOKAHEAD( ColonDelimitedExpression())
+			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
+   		)?
+   		{			// CASE: no indexing dimesnions given
+			if (targetList == null)			{				targetList = new ArrayList<Expression>();
+				targetList.add(null);
+				targetList.add(null);
+				targetListList.add(targetList);
+			}
 
-  (<COMMA>
+   		}
+  	)* 
+  	<RIGHTSQUARE> 
 
-   ( LOOKAHEAD( ColonDelimitedExpression())
-     targetList = ColonDelimitedExpression() {targetListList.add(targetList);} | target = Expression()
-      { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
-   )
-  )* 
-  <RIGHTSQUARE> 
-
-  { return targetListList; }
+  	{return targetListList; }
 }
+
 
 ArrayList<Expression> ColonDelimitedExpression() :
 {
@@ -821,501 +841,527 @@ ArrayList<Expression> ColonDelimitedExpression() :
 
 MultiAssignmentStatement MultiAssignmentStatement() :
 {
-  Expression source;
-  ArrayList<ArrayList<Expression>> targetListList = null;
+	Expression source;
+	ArrayList<ArrayList<Expression>> targetListList = null;
 }
 {
-  targetListList = ReadIndexList()
-  <ASSIGN>
-       source = Expression() 
-     [<SEMICOLON>] 
- {
-   return new MultiAssignmentStatement(targetListList, source, 0);
- }
+	targetListList = ReadIndexList() <ASSIGN> source = Expression() [<SEMICOLON>] 
+	{
+   		return new MultiAssignmentStatement(targetListList, source, 0);
+	}
 }
 
 AssignmentStatement AssignmentStatement() :
 {
-  Expression source;
-  DataIdentifier target;
+	Expression source;
+	DataIdentifier target;
 }
 {
-  target = Identifier()
-  {
-  if (target.getName().startsWith("$"))
-   throw new ParseException("cannot assign variable on left-hand side of assignment statement from command-line");
-  }
-  <ASSIGN>
-      source = Expression()
-   
-       [<SEMICOLON>] 
- {
-   return new AssignmentStatement(target, source);
- }
+	target = Identifier()
+	{
+		if (target.getName().startsWith("$"))
+			throw new ParseException("cannot assign variable on left-hand side of assignment statement from command-line");
+		}
+
+  		<ASSIGN> source = Expression() [<SEMICOLON>] 
+	{
+		return new AssignmentStatement(target, source);
+	}
 }
 
 
 IfStatement IfStatement() :
 {
- IfStatement is = new IfStatement();
- Statement current = null;
- ConditionalPredicate cp = null;
+	IfStatement is = new IfStatement();
+	Statement current = null;
+	ConditionalPredicate cp = null;
 }
 {
- <IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
+	<IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
+ 	<LEFTCURLYPAREN>
+ 	(
+		(
+			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
+			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+			| LOOKAHEAD(ForStatement())					current = ForStatement()
+			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+			| LOOKAHEAD(IfStatement())					current = IfStatement()
+			//| LOOKAHEAD(CVStatement())					current = CVStatement()
+			//| LOOKAHEAD(ELStatement())					current = ELStatement()
+			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 
- <LEFTCURLYPAREN>
- ( (  LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+	   	)
+		{
+			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+	 			sb = new WhileStatementBlock();
+			}
+			else if (current instanceof IfStatement) {
+				sb = new IfStatementBlock();
+			}
+			else if (current instanceof ParForStatement) {
+				sb = new ParForStatementBlock();
+			}
+			else if (current instanceof ForStatement) {
+				sb = new ForStatementBlock();
+			}
+			else if (current instanceof FunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			else if (current instanceof ExternalFunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			//else if (current instanceof CVStatement) {
+			// 	sb = new CVStatementBlock() ;
+			//}
+			//else if (current instanceof ELStatement) {
+			// 	sb = new ELStatementBlock() ;
+			//}
+			//else if (current instanceof ELUseStatement) {
+			// 	sb = new ELUseStatementBlock() ;
+			//} 
+			else {
+				sb = new StatementBlock();
+			}
+			sb.addStatement(current);
+			is.addStatementBlockIfBody(sb);
+		}
+	)*
+ 	<RIGHTCURLYPAREN>
 
-   ){
-    StatementBlock sb = null;
-    if (current instanceof WhileStatement) {
-     sb = new WhileStatementBlock();
-    }
-    else if (current instanceof IfStatement) {
-     sb = new IfStatementBlock();
-    }
-    else if (current instanceof ParForStatement) {
-     sb = new ParForStatementBlock();
-    }
-    else if (current instanceof ForStatement) {
-     sb = new ForStatementBlock();
-    }
-     else if (current instanceof FunctionStatement) {
-    	throw new ParseException(" Nested function definitions are not supported ");
-  	}
-  	else if (current instanceof ExternalFunctionStatement) {
-  		throw new ParseException(" Nested function definitions are not supported ");
-  	}
-    //else if (current instanceof CVStatement) {
-    // sb = new CVStatementBlock() ;
-    //}
-    //else if (current instanceof ELStatement) {
-    // sb = new ELStatementBlock() ;
-    //}
-    //else if (current instanceof ELUseStatement) {
-    // sb = new ELUseStatementBlock() ;
-    //} 
-    else {
-     sb = new StatementBlock();
-    }
-    sb.addStatement(current);
-    is.addStatementBlockIfBody(sb);
-   }
-   )+
- 
- <RIGHTCURLYPAREN>
- {
-  is.mergeStatementBlocksIfBody();
- }
+ 	{
+		is.mergeStatementBlocksIfBody();
+ 	}
 
- (LOOKAHEAD(1) <ELSE>
-  <LEFTCURLYPAREN>
-   ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+ 	(
+		LOOKAHEAD(1) <ELSE>
+  		<LEFTCURLYPAREN>
+   		(
+			(
+				LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+   				| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+				| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
+				| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+				| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+				| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+				| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+				| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+				| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+				| LOOKAHEAD(ForStatement())					current = ForStatement()
+				| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+				| LOOKAHEAD(IfStatement())					current = IfStatement()
+				//| LOOKAHEAD(CVStatement())					current = CVStatement()
+				//| LOOKAHEAD(ELStatement())					current = ELStatement()
+				//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
    
-   ){
-    StatementBlock sb = null;
-    if (current instanceof WhileStatement) {
-     sb = new WhileStatementBlock();
-    }
-    else if (current instanceof IfStatement) {
-     sb = new IfStatementBlock();
-    }
-    else if (current instanceof ParForStatement) {
-     sb = new ParForStatementBlock();
-    }
-    else if (current instanceof ForStatement) {
-     sb = new ForStatementBlock();
-    }
-	else if (current instanceof FunctionStatement) {
-    	throw new ParseException(" Nested function definitions are not supported ");
-  	}
-  	else if (current instanceof ExternalFunctionStatement) {
-  		throw new ParseException(" Nested function definitions are not supported ");
-  	}
-    //else if (current instanceof CVStatement) {
-    // sb = new CVStatementBlock() ;
-    //}
-    //else if (current instanceof ELStatement) {
-    // sb = new ELStatementBlock() ;
-    //}
-    //else if (current instanceof ELUseStatement) {
-    // sb = new ELUseStatementBlock() ;
-    //}
-    else {
-     sb = new StatementBlock();
-    }
-    sb.addStatement(current);
-    is.addStatementBlockElseBody(sb);
-   }
-   )+
- 
-  <RIGHTCURLYPAREN>
-  {
-    is.mergeStatementBlocksElseBody();
-  }
- )?
- {
-  return is;
- }
+   			)
+   			{
+			    StatementBlock sb = null;
+			    if (current instanceof WhileStatement) {
+			    	sb = new WhileStatementBlock();
+			    }
+			    else if (current instanceof IfStatement) {
+			    	sb = new IfStatementBlock();
+			    }
+			    else if (current instanceof ParForStatement) {
+			    	sb = new ParForStatementBlock();
+			    }
+			    else if (current instanceof ForStatement) {
+			    	sb = new ForStatementBlock();
+			    }
+				else if (current instanceof FunctionStatement) {
+			    	throw new ParseException(" Nested function definitions are not supported ");
+			  	}
+			  	else if (current instanceof ExternalFunctionStatement) {
+			  		throw new ParseException(" Nested function definitions are not supported ");
+			  	}
+			    //else if (current instanceof CVStatement) {
+			    //	sb = new CVStatementBlock() ;
+			    //}
+			    //else if (current instanceof ELStatement) {
+			    //	sb = new ELStatementBlock() ;
+			    //}
+			    //else if (current instanceof ELUseStatement) {
+			    //	sb = new ELUseStatementBlock() ;
+			    //}
+			    else {
+			    	sb = new StatementBlock();
+			    }
+			    sb.addStatement(current);
+			    is.addStatementBlockElseBody(sb);
+			}
+   		)*
+ 		<RIGHTCURLYPAREN>
+
+  		{
+    		is.mergeStatementBlocksElseBody();
+  		}
+ 	)?
+ 	{
+		return is;
+ 	}
 }
+
 
 ForStatement ForStatement() :
 {
- ForStatement fs = new ForStatement();
- Statement current = null;
- IterablePredicate ip = null;
+	ForStatement fs = new ForStatement();
+	Statement current = null;
+	IterablePredicate ip = null;
 }
 {
  
-  <FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
-  <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+	<FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
+	<LEFTCURLYPAREN>
+	(
+		(
+			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
+   			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+   			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+   			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+   			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+   			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+   			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+   			| LOOKAHEAD(ForStatement())					current = ForStatement()
+   			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+   			| LOOKAHEAD(IfStatement())					current = IfStatement()
+			// | LOOKAHEAD(CVStatement())					current = CVStatement()
+			// | LOOKAHEAD(ELStatement())					current = ELStatement()
+			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
- ){
-  StatementBlock sb = null;
-  if (current instanceof WhileStatement) {
-   sb = new WhileStatementBlock();
-  }
-  else if (current instanceof IfStatement) {
-   sb = new IfStatementBlock();
-  }
-  else if (current instanceof ParForStatement) {
-   sb = new ParForStatementBlock();
-  } 
-  else if (current instanceof ForStatement) {
-   sb = new ForStatementBlock();
-  }
-  else if (current instanceof FunctionStatement) {
-    throw new ParseException(" Nested function definitions are not supported ");
-  }
-  else if (current instanceof ExternalFunctionStatement) {
-  	throw new ParseException(" Nested function definitions are not supported ");
-  }
-  //else if (current instanceof CVStatement) {
-  // sb = new CVStatementBlock() ;
-  //}
-  //else if (current instanceof ELStatement) {
-  // sb = new ELStatementBlock() ;
-  //}
-  //else if (current instanceof ELUseStatement) {
-  // sb = new ELUseStatementBlock() ;
-  //}
-  else {
-   sb = new StatementBlock();
-  }
-  sb.addStatement(current);
-  fs.addStatementBlock(sb);
- }
- )+
+		)
+		{
+			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+				sb = new WhileStatementBlock();
+			}
+			else if (current instanceof IfStatement) {
+				sb = new IfStatementBlock();
+			}
+			else if (current instanceof ParForStatement) {
+				sb = new ParForStatementBlock();
+			} 
+			else if (current instanceof ForStatement) {
+				sb = new ForStatementBlock();
+			}
+			else if (current instanceof FunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			else if (current instanceof ExternalFunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			//else if (current instanceof CVStatement) {
+			//	sb = new CVStatementBlock() ;
+			//}
+			//else if (current instanceof ELStatement) {
+			// 	sb = new ELStatementBlock() ;
+			//}
+			//else if (current instanceof ELUseStatement) {
+			// 	sb = new ELUseStatementBlock() ;
+			//}
+			else {
+				sb = new StatementBlock();
+			}
+			sb.addStatement(current);
+			fs.addStatementBlock(sb);
+		}
+	)*
+   	<RIGHTCURLYPAREN>
    
-  <RIGHTCURLYPAREN>
-   
- {
-  fs.mergeStatementBlocks();
-  return fs;
- }
+ 	{
+		fs.mergeStatementBlocks();
+		return fs;
+ 	}
 }
+
 
 ParForStatement ParForStatement() :
 {
- ParForStatement fs = new ParForStatement();
- Statement current = null;
- IterablePredicate ip = null;
+	ParForStatement fs = new ParForStatement();
+	Statement current = null;
+	IterablePredicate ip = null;
 }
 {
  
-  <PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
-  <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement())	 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+	<PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
+	<LEFTCURLYPAREN>
+  	(
+		(
+			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
+			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+			| LOOKAHEAD(ExternalFunctionStatement())	current = ExternalFunctionStatement()
+			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+			| LOOKAHEAD(ForStatement())					current = ForStatement()
+			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+			| LOOKAHEAD(IfStatement())					current = IfStatement()
+			//| LOOKAHEAD(CVStatement())				current = CVStatement()
+			//| LOOKAHEAD(ELStatement())				current = ELStatement()
+			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
- ){
-  StatementBlock sb = null;
-  if (current instanceof WhileStatement) {
-   sb = new WhileStatementBlock();
-  }
-  else if (current instanceof IfStatement) {
-   sb = new IfStatementBlock();
-  }
-  else if (current instanceof ParForStatement) {
-   sb = new ParForStatementBlock();
-  }
-  else if (current instanceof ForStatement) {
-   sb = new ForStatementBlock();
-  }
-   else if (current instanceof FunctionStatement) {
-    throw new ParseException(" Nested function definitions are not supported ");
-  }
-  else if (current instanceof ExternalFunctionStatement) {
-  	throw new ParseException(" Nested function definitions are not supported ");
-  }
-  //else if (current instanceof CVStatement) {
-  // sb = new CVStatementBlock() ;
-  //}
-  //else if (current instanceof ELStatement) {
-  // sb = new ELStatementBlock() ;
-  //}
-  //else if (current instanceof ELUseStatement) {
-  // sb = new ELUseStatementBlock() ;
-  //}
-  else {
-   sb = new StatementBlock();
-  }
-  sb.addStatement(current);
-  fs.addStatementBlock(sb);
- }
- )+
+ 		)
+ 		{
+			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+				sb = new WhileStatementBlock();
+			}
+			else if (current instanceof IfStatement) {
+				sb = new IfStatementBlock();
+			}
+			else if (current instanceof ParForStatement) {
+				sb = new ParForStatementBlock();
+			}
+			else if (current instanceof ForStatement) {
+				sb = new ForStatementBlock();
+			}
+			else if (current instanceof FunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			else if (current instanceof ExternalFunctionStatement) {
+				throw new ParseException(" Nested function definitions are not supported ");
+			}
+			//else if (current instanceof CVStatement) {
+			// sb = new CVStatementBlock() ;
+			//}
+			//else if (current instanceof ELStatement) {
+			// sb = new ELStatementBlock() ;
+			//}
+			//else if (current instanceof ELUseStatement) {
+			// sb = new ELUseStatementBlock() ;
+			//}
+			else {
+				sb = new StatementBlock();
+			}
+			sb.addStatement(current);
+			fs.addStatementBlock(sb);
+		}
+	)*
+  	<RIGHTCURLYPAREN>
    
-  <RIGHTCURLYPAREN>
-   
- {
-  fs.mergeStatementBlocks();
-  return fs;
- }
+ 	{
+  		fs.mergeStatementBlocks();
+		return fs;
+ 	}
 }
 
 
 WhileStatement WhileStatement() :
 {
- WhileStatement ws = new WhileStatement();
- Statement current = null;
- ConditionalPredicate cp = null;
+	WhileStatement ws = new WhileStatement();
+	Statement current = null;
+	ConditionalPredicate cp = null;
 }
 {
-  <WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
-  <LEFTCURLYPAREN>
-  ( ( LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-   | LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   | LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-   | LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   | LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   | LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   | LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   | LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   | LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   | LOOKAHEAD(ForStatement())					current = ForStatement()
-   | LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   | LOOKAHEAD(IfStatement())					current = IfStatement()
-// | LOOKAHEAD(CVStatement())					current = CVStatement()
-// | LOOKAHEAD(ELStatement())					current = ELStatement()
-// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+	<WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
+  	<LEFTCURLYPAREN>
+  	(
+		(
+			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
+   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
+   			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
+   			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
+			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
+			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
+			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
+			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
+			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
+			| LOOKAHEAD(ForStatement())					current = ForStatement()
+			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
+			| LOOKAHEAD(IfStatement())					current = IfStatement()
+ 			// | LOOKAHEAD(CVStatement())					current = CVStatement()
+ 			// | LOOKAHEAD(ELStatement())					current = ELStatement()
+ 			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
- ){
-  StatementBlock sb = null;
-  if (current instanceof WhileStatement) {
-   sb = new WhileStatementBlock();
-  }
-  else if (current instanceof IfStatement) {
-   sb = new IfStatementBlock();
-  }
-  else if (current instanceof ParForStatement) {
-   sb = new ParForStatementBlock();
-  }
-  else if (current instanceof ForStatement) {
-   sb = new ForStatementBlock();
-  }
-  else if (current instanceof FunctionStatement) {
-    throw new ParseException(" Nested function definitions are not supported ");
-  }
-  else if (current instanceof ExternalFunctionStatement) {
-  	throw new ParseException(" Nested function definitions are not supported ");
-  }
-  //else if (current instanceof CVStatement) {
-  // sb = new CVStatementBlock() ;
-  //}
-  //else if (current instanceof ELStatement) {
-  // sb = new ELStatementBlock() ;
-  //}
-  //else if (current instanceof ELUseStatement) {
-  // sb = new ELUseStatementBlock() ;
-  //}
-  else {
-   sb = new StatementBlock();
-  }
-  sb.addStatement(current);
-  ws.addStatementBlock(sb);
- }
- )+
-   
-  <RIGHTCURLYPAREN>
+		)
+		{
+			StatementBlock sb = null;
+			if (current instanceof WhileStatement) {
+		   		sb = new WhileStatementBlock();
+		  	}
+		  	else if (current instanceof IfStatement) {
+		   		sb = new IfStatementBlock();
+		  	}
+		  	else if (current instanceof ParForStatement) {
+		   		sb = new ParForStatementBlock();
+		  	}
+		  	else if (current instanceof ForStatement) {
+		   		sb = new ForStatementBlock();
+		  	}
+		 	else if (current instanceof FunctionStatement) {
+		    	throw new ParseException(" Nested function definitions are not supported ");
+		  	}
+		  	else if (current instanceof ExternalFunctionStatement) {
+		  		throw new ParseException(" Nested function definitions are not supported ");
+		  	}
+		  	//else if (current instanceof CVStatement) {
+		  	// sb = new CVStatementBlock() ;
+		  	//}
+		  	//else if (current instanceof ELStatement) {
+		  	// sb = new ELStatementBlock() ;
+		  	//}
+		  	//else if (current instanceof ELUseStatement) {
+		  	// sb = new ELUseStatementBlock() ;
+		  	//}
+		  	else {
+	   			sb = new StatementBlock();
+	  		}
+	  		sb.addStatement(current);
+	  		ws.addStatementBlock(sb);
+		}
+	)*
+  	<RIGHTCURLYPAREN>
    
  {
-  ws.mergeStatementBlocks();
-  return ws;
+	ws.mergeStatementBlocks();
+	return ws;
  }
 }
  
 IterablePredicate IterablePredicate() :
 {
- DataIdentifier iterVar = null;
- Expression fromExpr = null, toExpr = null, incrementExpr = null;
- FunctionCallIdentifier fci = null;
- Token paramName = null, paramVal = null;
- HashMap<String,String> parforParamValues = new HashMap<String,String>();
- ArrayList<Expression> exprParams = new ArrayList<Expression>(); 
+	 DataIdentifier iterVar = null;
+	 Expression fromExpr = null, toExpr = null, incrementExpr = null;
+	 FunctionCallIdentifier fci = null;
+	 Token paramName = null, paramVal = null;
+	 HashMap<String,String> parforParamValues = new HashMap<String,String>();
+	 ArrayList<Expression> exprParams = new ArrayList<Expression>(); 
 }
 {
- <LEFTPAREN>
- 
-  iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> fci = FunctionCall()) )
-   (<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
+	<LEFTPAREN>
+ 	iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> fci = FunctionCall()) )
+   	(<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
+	{
+   		if (fci == null && exprParams == null)
+  			throw new ParseException("iterable predicate in for loop must specify parameters"); 
   
-  {
-   if (fci == null && exprParams == null)
-   {
-    throw new ParseException("iterable predicate in for loop must specify parameters"); 
-   }
+		if (fci != null) {
+    		ArrayList<Expression> seqExprs = fci.getParamExpressions();
 
-   // 
-   if (fci != null)
-   {
-    ArrayList<Expression> seqExprs = fci.getParamExpressions();
-    if (seqExprs.size() <  2 || seqExprs.size() > 3)
-    {
-     throw new ParseException("for seq, must specify both from and to value and cannot specify more than 3 args to seq");
-    }
-    else
-    {
-     fromExpr = seqExprs.get(0);
-     toExpr   = seqExprs.get(1); 
-     incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : new IntIdentifier(1);  
-    } 
+    		if (seqExprs.size() <  2 || seqExprs.size() > 3)
+    			throw new ParseException("for seq, must specify both from and to value and cannot specify more than 3 args to seq");
     
-   }
-   else {
-    // use exprParams
-    fromExpr = exprParams.get(0);
-    toExpr   = exprParams.get(1);
-    incrementExpr = new IntIdentifier(1);
-   }
+    		else {
+     			fromExpr = seqExprs.get(0);
+     			toExpr   = seqExprs.get(1); 
+     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : new IntIdentifier(1);  
+    		} 
     
-  // if (params.size() > 2)
-  }
+   		}
+   		else {
+    		// use exprParams
+    		fromExpr = exprParams.get(0);
+    		toExpr   = exprParams.get(1);
+    		incrementExpr = new IntIdentifier(1);
+   		}
+    	// if (params.size() > 2)
+  	}
   
- <RIGHTPAREN>
- {return new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);}
+ 	<RIGHTPAREN>
+ 	{
+ 		return new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
+	}
 }
+
 
 ConditionalPredicate ConditionalPredicate() :  
 {
- Expression expr;
+	Expression expr;
 }
 {
- <LEFTPAREN> 
- //IdentifierOrConstant() RelationalOp() IdentifierOrConstant() 
- expr = BooleanOrExpression()
- <RIGHTPAREN>
- {return new ConditionalPredicate(expr);}
+	<LEFTPAREN> expr = BooleanOrExpression() <RIGHTPAREN>
+	{
+		return new ConditionalPredicate(expr);
+	}
 }
+
 
 Expression Expression() : 
-{ Expression expr = null; }
 {
- ( expr = BooleanOrExpression()  )
- { return expr;}
+	Expression expr = null;
 }
+{
+	(expr = BooleanOrExpression())
+	{
+		return expr;
+	}
+}
+
 
 Expression BooleanOrExpression() :  
-{ Expression expr = null; }
 {
-
- expr = BooleanAndExpression() 
- (
-   
-     {Expression left, right; Expression.BooleanOp bop = null; Token t;}
-     (t = <CONDITIONALOR> | t = <LOGICALOR>) 
-     {bop = Expression.getBooleanOp(t.image); }
-     right = BooleanAndExpression() 
-     {
-        left = expr;
-       BooleanExpression exprb = new BooleanExpression(bop);
-       exprb.setLeft(left);
-       exprb.setRight(right);
-       expr = exprb;
-     }
-//      {throw new ParseException("Unsupported Boolean Or operations");}
-     )*
- { return expr;}
+	Expression expr = null;
 }
+{
+	expr = BooleanAndExpression() 
+	(
+		{
+			Expression left = null, right = null;
+		  	Expression.BooleanOp bop = null;
+		  	Token t = null;
+		}
+		(
+			t = <CONDITIONALOR> | t = <LOGICALOR>
+		) 
+		{
+			bop = Expression.getBooleanOp(t.image);
+		}
+     	right = BooleanAndExpression() 
+     	{
+        	left = expr;
+			BooleanExpression exprb = new BooleanExpression(bop);
+			exprb.setLeft(left);
+			exprb.setRight(right);
+			expr = exprb;
+		}
+	)*
+ 	{
+		return expr;
+	}
+}
+
  
 Expression BooleanAndExpression() : 
-{ Expression expr = null; }
 {
- 
- expr = BooleanNotExpression() 
- (
-    
-     {Expression left, right; Expression.BooleanOp bop = null; Token t;}
-    
-     (t = <CONDITIONALAND> | t = <LOGICALAND>) 
-     {bop = Expression.getBooleanOp(t.image); }
-     right = BooleanNotExpression() 
-      {
-        left = expr;
-       BooleanExpression exprb = new BooleanExpression(bop);
-       exprb.setLeft(left);
-       exprb.setRight(right);
-       expr = exprb;
-      }
-    )*
- { return expr;}
+	Expression expr = null;
 }
+{
+	expr = BooleanNotExpression() 
+ 	(
+    	{
+   			Expression left = null, right = null;
+   			Expression.BooleanOp bop = null;
+   			Token t = null;
+   		}
+    
+     	(t = <CONDITIONALAND> | t = <LOGICALAND>) 
+     	{bop = Expression.getBooleanOp(t.image); }
+     	right = BooleanNotExpression() 
+      	{
+			left = expr;
+       		BooleanExpression exprb = new BooleanExpression(bop);
+       		exprb.setLeft(left);
+       		exprb.setRight(right);
+       		expr = exprb;
+      	}
+    )*
+	{
+		return expr;
+	}
+}
+
 
 Expression BooleanNotExpression() : 
 { Expression expr = null; Token t = null;}
@@ -1334,216 +1380,255 @@ Expression BooleanNotExpression() :
   }
 }
 
+
 Expression RelationalExpression() :
-{ Expression expr = null; }
 {
- expr = PlusMinusExpression() 
- (
-    {Expression left, right; Expression.RelationalOp bop = null; Token t;}
-    
-   (t=<LESSEQUAL> | t=<LESS> | t=<GREATEREQUAL> | t=<GREATER> | t=<EQUAL> | t=<NOTEQUAL>) 
-   {bop = Expression.getRelationalOp(t.image); }
-     right =  PlusMinusExpression() 
-       {
-        left = expr;
-       RelationalExpression exprb = new RelationalExpression(bop);
-       exprb.setLeft(left);
-       exprb.setRight(right);
-       expr = exprb;
-      }
-     )*
- { return expr;}
+	Expression expr = null;
 }
+{
+	expr = PlusMinusExpression() 
+	(
+    	{Expression left, right; Expression.RelationalOp bop = null; Token t;}
+   		(t=<LESSEQUAL> | t=<LESS> | t=<GREATEREQUAL> | t=<GREATER> | t=<EQUAL> | t=<NOTEQUAL>) 
+   		{bop = Expression.getRelationalOp(t.image); }
+
+     	right =  PlusMinusExpression() 
+       	{
+        	left = expr;
+			RelationalExpression exprb = new RelationalExpression(bop);
+       		exprb.setLeft(left);
+      	 	exprb.setRight(right);
+       		expr = exprb;
+      	}
+	)*
+ 	{
+   		return expr;
+   	}
+}
+
 
 Expression PlusMinusExpression() : 
-{ Expression expr; }
 {
- expr = MultDivExpression() 
- (
-   {Expression left, right; Expression.BinaryOp bop = null; Token t;}
-    (t = <PLUS> | t = <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
-   right = MultDivExpression() 
-    {
-     left = expr;
-    BinaryExpression exprb = new BinaryExpression(bop);
-    exprb.setLeft(left);
-    exprb.setRight(right);
-    expr = exprb;
-   }
-     )*
- {return expr;}
+	Expression expr = null;
 }
+{
+	expr = MultDivExpression() 
+ 	(
+   		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+    	(t = <PLUS> | t = <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
+   		right = MultDivExpression() 
+    	{
+     		left = expr;
+    		BinaryExpression exprb = new BinaryExpression(bop);
+    		exprb.setLeft(left);
+    		exprb.setRight(right);
+    		expr = exprb;
+   		}
+	)*
+ 	{
+		return expr;
+	}
+}
+
 
 Expression MultDivExpression() : 
-{ Expression expr; }
 {
- expr = MatrixMultExpression() 
- (
-   
-   {Expression left, right; Expression.BinaryOp bop = null; Token t;}
-   (t = <MULT> | t = <DIV>)  {bop = Expression.getBinaryOp(t.image); }
-   right = MatrixMultExpression() 
-   {
-    left = expr;
-    BinaryExpression exprb = new BinaryExpression(bop);
-    exprb.setLeft(left);
-    exprb.setRight(right);
-    expr = exprb;
-   }
+	Expression expr = null;
+}
+{
+	expr = MatrixMultExpression() 
+ 	(
+   		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+   		(t = <MULT> | t = <DIV>)  {bop = Expression.getBinaryOp(t.image); }
+   		right = MatrixMultExpression() 
+   		{
+		    left = expr;
+		    BinaryExpression exprb = new BinaryExpression(bop);
+		    exprb.setLeft(left);
+		    exprb.setRight(right);
+		    expr = exprb;
+   		}
     )*
- {return expr;}
+ 	{
+		return expr;
+	}
 }
 
+
 Expression MatrixMultExpression() : 
-{ Expression expr; }
 {
- expr = UnaryExpression() 
- (
-   
- {Expression left, right; Expression.BinaryOp bop = null; Token t;}
-  t = <MATRIXMULT>  {bop = Expression.getBinaryOp(t.image); }
-  right =  UnaryExpression() 
- {
-    left = expr;
-    BinaryExpression exprb = new BinaryExpression(bop);
-    exprb.setLeft(left);
-    exprb.setRight(right);
-    expr = exprb;
-   }
+	Expression expr = null;
+}
+{
+	expr = UnaryExpression() 
+ 	(
+ 		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+  		t = <MATRIXMULT>  {bop = Expression.getBinaryOp(t.image); }
+ 	 	right =  UnaryExpression() 
+ 		{
+			left = expr;
+			BinaryExpression exprb = new BinaryExpression(bop);
+			exprb.setLeft(left);
+			exprb.setRight(right);
+			expr = exprb;
+   		}
     )*
-   {return expr;}
+	{
+		return expr;
+	}
 }
 
 
 Expression UnaryExpression() : 
-{ Expression expr = null; }
 {
- ( LOOKAHEAD(3) expr = PowerExpression() | (
-   {Token t; Expression right = null; BinaryOp bop = null;}
-   (t = <PLUS> | t =  <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
-   right = PowerExpression() 
-     {
-      BinaryExpression exprb = new BinaryExpression(bop);
-     IntIdentifier id = new IntIdentifier(0);
-  id.setDimensions(0,0);
-  id.computeDataType();
-  id.setValueType(ValueType.INT);
-    exprb.setLeft(id);
-    exprb.setRight(right);
-    expr = exprb;
-     })
-   )
-   {return expr;}
+	Expression expr = null;
 }
+{
+	(
+	  	LOOKAHEAD(3) expr = PowerExpression() |
+	  	(
+   			{Token t; Expression right = null; BinaryOp bop = null;}
+   			(t = <PLUS> | t =  <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
+   			right = PowerExpression() 
+
+     		{
+				BinaryExpression exprb = new BinaryExpression(bop);
+     			IntIdentifier id = new IntIdentifier(0);
+				id.setDimensions(0,0);
+				id.computeDataType();
+				id.setValueType(ValueType.INT);
+				exprb.setLeft(id);
+				exprb.setRight(right);
+				expr = exprb;
+     		}
+     	)
+	)
+	{
+		return expr;
+	}
+}
+
 
 Expression PowerExpression() : 
-{ Expression expr = null;}
 {
- expr = PrimaryExpression() 
-  [ 
-   {Expression left, right; Expression.BinaryOp bop = null; Token t;}
-    t = <POWER>  {bop = Expression.getBinaryOp(t.image); }
-   right = PowerExpression() 
-    {
-     left = expr;
-    BinaryExpression exprb = new BinaryExpression(bop);
-    exprb.setLeft(left);
-    exprb.setRight(right);
-    expr = exprb;
-   }
+	Expression expr = null;
+}
+{
+	expr = PrimaryExpression() 
+  	[ 
+   		{
+   			Expression left = null, right = null;
+   			Expression.BinaryOp bop = null;
+   			Token t;
+   		}
+    	t = <POWER>  {bop = Expression.getBinaryOp(t.image); }
+
+   		right = PowerExpression() 
+    	{
+     		left = expr;
+			BinaryExpression exprb = new BinaryExpression(bop);
+    		exprb.setLeft(left);
+    		exprb.setRight(right);
+    		expr = exprb;
+   		}
     ]
-  { return expr;}
+	{
+		return expr;
+	}
 }
 
+
 Expression PrimaryExpression() : 
-{ Expression expr = null;
+{
+	Expression expr = null;
 }
 {
- ( LOOKAHEAD(2) expr = IdentifierOrConstant()
-  | <LEFTPAREN> expr = Expression() <RIGHTPAREN>
-     | LOOKAHEAD(2) expr = BuiltInFunction()
-     | LOOKAHEAD(2) expr = ParameterizedBuiltInFunction()
-   )
-  {return expr;} 
+	( LOOKAHEAD(2) expr = IdentifierOrConstant()
+  		| <LEFTPAREN> expr = Expression() <RIGHTPAREN>
+     	| LOOKAHEAD(2) expr = BuiltInFunction()
+     	| LOOKAHEAD(2) expr = ParameterizedBuiltInFunction()
+   	)
+	{
+		return expr;
+	} 
 }
+
 
 Identifier IdentifierOrConstant() :
 {
  	Identifier id = null;
  	Token t1 = null;
 }
-
 {
 	(
 
 		t1 = <DOLLAR_ID>
-			{
-		
-				///////// BEGIN handle variable param ///////////////
-				{
-				  String argVal = commandArgs.get(t1.image);
-		
-					if (argVal == null)
-						throw new ParseException("ERROR: value for " + t1.image + " is undefined ");
-										
-					try {
-					  	// try to assign to long value
-						Long longVal = new Long(argVal);
-						id = new IntIdentifier(longVal);
-						id.setDimensions(0,0);
-				    	id.computeDataType();
-				    	id.setValueType(ValueType.INT);
-						
-					} catch(Exception e1){
-						  	try {
-						  	  	// try to assign to double value
-						  	  	Double doubleVal = new Double(argVal);
-						  	  	id = new DoubleIdentifier(doubleVal);
-							  	id.setDimensions(0,0);
-				    		  	id.computeDataType();
-				    		  	id.setValueType(ValueType.DOUBLE);
-						  	  
-						  	} catch (Exception e2) {
-
-								// try to assign to boolean value
-								if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
-									Boolean boolVal = new Boolean(argVal);
-						  	  		id = new BooleanIdentifier(boolVal);
-									id.setDimensions(0,0);
-				    				id.computeDataType();
-				    				id.setValueType(ValueType.BOOLEAN);
-								}
-								else {
-								  	// try to assign to string value
-									id = new StringIdentifier(argVal);
-									id.setDimensions(0,0);
-				    				id.computeDataType();
-				    				id.setValueType(ValueType.STRING);
-								}	
-		
-						  	} // end catch e2
-						  						  	 
-						} // end catch e1
-					}  // end if	
-			   	}
-				///////// END handle variable param ///////////////
-		|	id = Identifier()
-	   	| 	id = Constant()
-		   
+		{
 	
+		///////// BEGIN handle variable param ///////////////
+		
+			String argVal = commandArgs.get(t1.image);
 
-	   
-	 )
+			if (argVal == null)
+				throw new ParseException("ERROR: value for " + t1.image + " is undefined ");
+								
+			try {
+			  	// try to assign to long value
+				Long longVal = new Long(argVal);
+				id = new IntIdentifier(longVal);
+				id.setDimensions(0,0);
+		    	id.computeDataType();
+		    	id.setValueType(ValueType.INT);
+				
+			} catch(Exception e1){
+			  	try {
+			  	  	// try to assign to double value
+			  	  	Double doubleVal = new Double(argVal);
+			  	  	id = new DoubleIdentifier(doubleVal);
+				  	id.setDimensions(0,0);
+	    		  	id.computeDataType();
+	    		  	id.setValueType(ValueType.DOUBLE);
+			  	  
+			  	} catch (Exception e2) {
+
+					// try to assign to boolean value
+					if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
+						Boolean boolVal = new Boolean(argVal);
+			  	  		id = new BooleanIdentifier(boolVal);
+						id.setDimensions(0,0);
+	    				id.computeDataType();
+	    				id.setValueType(ValueType.BOOLEAN);
+					}
+					else {
+					  	// try to assign to string value
+						id = new StringIdentifier(argVal);
+						id.setDimensions(0,0);
+	    				id.computeDataType();
+	    				id.setValueType(ValueType.STRING);
+					}	
+
+			  	} // end catch e2
+				  						  	 
+			} // end catch e1
+	
+	   	}
+		///////// END handle variable param ///////////////
+				
+		|	id = Identifier()
+		| 	id = Constant()
+
+	)
 	{ 
 		return id; 
 	}
 }
 
+
 ConstIdentifier Constant() :
 {
- Token t;
- Boolean minus = false;
- ConstIdentifier id = null;
+	Token t = null;
+	Boolean minus = false;
+	ConstIdentifier id = null;
 }
 {
    (
@@ -1552,323 +1637,346 @@ ConstIdentifier Constant() :
       | id = BooleanConstant()
       | id = StringConstant()
     )
- { 
-  return id; 
- }
+ 	{ 
+  		return id; 
+ 	}
 }
+
 
 IntIdentifier IntConstant() :
 {
- Token t;
- Boolean minus = false;
- IntIdentifier id = null;
+	Token t = null;
+	Boolean minus = false;
+	IntIdentifier id = null;
 }
 {
-     (<MINUS >
-        {minus = true;})?
- (
-  t = <INTEGER> {
-     long intval = Long.parseLong(t.image);
-     if (minus)
-     {
-     intval = -intval;
-     }
-   id = new IntIdentifier(intval);
-   id.setDimensions(0,0);
-      id.computeDataType();
-      id.setValueType(ValueType.INT);
-  }
- )
- { 
- return id; 
- }
+	(<MINUS > {minus = true;})?
+ 	(
+  		t = <INTEGER>
+  		{
+     		long intval = Long.parseLong(t.image);
+     		if (minus)
+     		{
+     			intval = -intval;
+     		}
+
+   			id = new IntIdentifier(intval);
+   			id.setDimensions(0,0);
+      		id.computeDataType();
+      		id.setValueType(ValueType.INT);
+  		}
+ 	)
+ 	{ 
+ 		return id; 
+ 	}
 }
+
 
 DoubleIdentifier DoubleConstant() :
 {
- Token t;
- Boolean minus = false;
- DoubleIdentifier id = null;
+Token t;
+Boolean minus = false;
+DoubleIdentifier id = null;
 }
 {
-     (<MINUS >
-        {minus = true;})?
- (
-   t = <DOUBLE> {
-      Double doubleval = Double.parseDouble(t.image);
-      if (minus)
-      {
-        doubleval = -doubleval;
-      }
-   id = new DoubleIdentifier(doubleval);
-   id.setDimensions(0,0);
-      id.computeDataType();
-      id.setValueType(ValueType.DOUBLE);
-  }
- )
- { 
- return id; 
- }
+	(<MINUS > {minus = true;})?
+ 	(
+		t = <DOUBLE>
+		{
+      		Double doubleval = Double.parseDouble(t.image);
+      		if (minus)
+      		{
+        		doubleval = -doubleval;
+      		}
+   			id = new DoubleIdentifier(doubleval);
+   			id.setDimensions(0,0);
+      		id.computeDataType();
+      		id.setValueType(ValueType.DOUBLE);
+  		}
+ 	)
+ 	{ 
+ 		return id; 
+ 	}
 }
+
 
 BooleanIdentifier BooleanConstant() :
 {
- Token t;
-  BooleanIdentifier id = null;
+	Token t;
+	BooleanIdentifier id = null;
 }
 {
     (
-  ((t = <TRUE>) | (t =<FALSE>))  {
-   id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
-   id.setDimensions(0,0);
-      id.computeDataType();
-      id.setValueType(ValueType.BOOLEAN);
-  }
- )
- { 
- return id; 
- }
+  		((t = <TRUE>) | (t =<FALSE>))
+  		{
+   			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
+   			id.setDimensions(0,0);
+			id.computeDataType();
+			id.setValueType(ValueType.BOOLEAN);
+  		}
+ 	)
+ 	{ 
+ 		return id; 
+ 	}
 }
+
 
 StringIdentifier StringConstant() :
 {
- Token t;
-  StringIdentifier id = null;
+	Token t = null;
+	StringIdentifier id = null;
 }
 {
     (
-  (t =<DBLQUOTE_STRING_LITERAL>)  {
-   id = new StringIdentifier(dequoteStr('\"',t.image));
-   id.setDimensions(0,0);
-      id.computeDataType();
-      id.setValueType(ValueType.STRING);
-  }
- )
- { 
- return id; 
- }
+  		(t =<DBLQUOTE_STRING_LITERAL>)
+  		{
+			id = new StringIdentifier(dequoteStr('\"',t.image));
+   			id.setDimensions(0,0);
+      		id.computeDataType();
+      		id.setValueType(ValueType.STRING);
+  		}
+ 	)
+ 	{ 
+ 		return id; 
+ 	}
 }
+
 
 DataIdentifier Identifier() :
 {
- Token t = null;
- Token tNamespace = null;
- DataIdentifier id = null;
- FunctionCallIdentifier functCall = null;
- ArrayList<ArrayList<Expression>> exprListList = null;
+	Token t = null;
+	Token tNamespace = null;
+	DataIdentifier id = null;
+	FunctionCallIdentifier functCall = null;
+	ArrayList<ArrayList<Expression>> exprListList = null;
 }
-
 {
-    [LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
+	[LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
+  	{
+		id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
   
- 	{
-    	  id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
-  
-		  if (functCall != null) {
-		  		String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
-		     	functCall.setFunctionNamespace(namespaceName);
-		    	functCall.setFunctionName(t.image);
-		   		return functCall;
-		  } else if (exprListList != null){
-				IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
-				iid.setIndices(exprListList);			
-		   		return iid;
-		  } else{
-		   		return id; 
-		  }
+		if (functCall != null) {
+			String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
+		    functCall.setFunctionNamespace(namespaceName);
+		    functCall.setFunctionName(t.image);
+		   	return functCall;
+		}
+		else if (exprListList != null){
+			IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
+			iid.setIndices(exprListList);			
+		   	return iid;
+		} else{
+			return id;
+		}
  	}
 }
 
 
 FunctionCallIdentifier FunctionCall():
 {
-    Expression expr = null;
- FunctionCallIdentifier functCall = null;
- ArrayList<Expression> exprs = new ArrayList<Expression>();
+	Expression expr = null;
+	FunctionCallIdentifier functCall = null;
+	ArrayList<Expression> exprs = new ArrayList<Expression>();
 }
 {
-   <LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>  
- {
-  functCall = new FunctionCallIdentifier(exprs);
-  return functCall;
- }     
+	<LEFTPAREN> (expr = Expression()) { exprs.add(expr); }
+			(<COMMA> (expr = Expression()) { exprs.add(expr); } )*
+	<RIGHTPAREN>  
+	{
+		functCall = new FunctionCallIdentifier(exprs);
+		return functCall;
+	}     
 }
 
 
 // parsing rule for parameterized builtins  
 Expression ParameterizedBuiltInFunction():
 {
- Expression.ParameterizedBuiltinFunctionOp bifop = null;
- ParameterizedBuiltinFunctionExpression pbfe = null;
+	Expression.ParameterizedBuiltinFunctionOp bifop = null;
+	ParameterizedBuiltinFunctionExpression pbfe = null;
 }
 {
- (  <CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
-  | < GROUPEDAGG > {bifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;}
-   
- )
+	(
+		<CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
+		| < GROUPEDAGG > {bifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;}
+ 	)
  
- pbfe = readParameterizedBuiltInParameters()
- [LOOKAHEAD(2)<SEMICOLON >] 
+ 	pbfe = readParameterizedBuiltInParameters()
+ 	[LOOKAHEAD(2)<SEMICOLON >] 
 
- {
-   pbfe.setOpcode (bifop);
-   return pbfe;
- } 
+ 	{
+		pbfe.setOpcode (bifop);
+   		return pbfe;
+ 	} 
 }
+
 
 // Process the comma separated parameter list of parameterized builtins
 // Allowed format: function( expression [, name=vexpr]* )
 //   WHERE vexpr is an expression that refers to the "value" for the parameter "name"
 ParameterizedBuiltinFunctionExpression readParameterizedBuiltInParameters() :
 {
- ParameterizedBuiltinFunctionExpression pbfe = new ParameterizedBuiltinFunctionExpression();
- Token t1 = null;
- Expression t2 = null;
- String unnamed = "unnamed";
- int unnamedParamCount = 0;
- IntIdentifier intid = null;
- DoubleIdentifier doubleid = null;
+	ParameterizedBuiltinFunctionExpression pbfe = new ParameterizedBuiltinFunctionExpression();
+	Token t1 = null;
+	Expression t2 = null;
+	String unnamed = "unnamed";
+	int unnamedParamCount = 0;
+	IntIdentifier intid = null;
+	DoubleIdentifier doubleid = null;
 }
 {
-   <LEFTPAREN>
-   t1 = <ID> < ASSIGN > t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
-    (< COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {pbfe.addVarParam(t1.image, t2);}))*
- <RIGHTPAREN>
-
- {return pbfe;}
+	<LEFTPAREN>
+	t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
+	(
+		< COMMA >
+		(
+			t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
+		)
+	)*
+ 	<RIGHTPAREN>
+	{
+		return pbfe;
+	}
 }
 
 
 Expression BuiltInFunction():
 {
-    Expression expr = null;
- ArrayList<Expression> exprs = new ArrayList<Expression>();
- Expression.BuiltinFunctionOp bifop = null;
- Token t = null;
+	Expression expr = null;
+	ArrayList<Expression> exprs = new ArrayList<Expression>();
+	Expression.BuiltinFunctionOp bifop = null;
+	Token t = null;
 }
 {
- ( <COS> { bifop = Expression.BuiltinFunctionOp.COS;}
- | <SIN> { bifop = Expression.BuiltinFunctionOp.SIN;}
- | <TAN> { bifop = Expression.BuiltinFunctionOp.TAN;}
- | <DIAG> { bifop = Expression.BuiltinFunctionOp.DIAG;}
- | <EXP> { bifop = Expression.BuiltinFunctionOp.EXP;}
- | <ABS> { bifop = Expression.BuiltinFunctionOp.ABS;}
- | <MIN> { bifop = Expression.BuiltinFunctionOp.MIN;}
- | <MAX> { bifop = Expression.BuiltinFunctionOp.MAX;}
- | <PMIN> { bifop = Expression.BuiltinFunctionOp.PMIN;}
- | <PMAX> { bifop = Expression.BuiltinFunctionOp.PMAX;}
- | <PPRED> { bifop = Expression.BuiltinFunctionOp.PPRED;} 
- | <LOG> { bifop = Expression.BuiltinFunctionOp.LOG;}
- | <LENGTH> { bifop = Expression.BuiltinFunctionOp.LENGTH;}
- | <NCOL> { bifop = Expression.BuiltinFunctionOp.NCOL;}
- | <NROW> { bifop = Expression.BuiltinFunctionOp.NROW;}
- | <SQRT> { bifop = Expression.BuiltinFunctionOp.SQRT;}
- | <SUM> { bifop = Expression.BuiltinFunctionOp.SUM;}
- | <MEAN> { bifop = Expression.BuiltinFunctionOp.MEAN;}
- | <TRACE> { bifop = Expression.BuiltinFunctionOp.TRACE;}
- | <TRANS> { bifop = Expression.BuiltinFunctionOp.TRANS;}
- | <APPEND> { bifop = Expression.BuiltinFunctionOp.APPEND;}
- | <RANGE> { bifop = Expression.BuiltinFunctionOp.RANGE;}
- | <PROD> { bifop = Expression.BuiltinFunctionOp.PROD;}
- | <ROWSUM> { bifop = Expression.BuiltinFunctionOp.ROWSUM;}
- | <COLSUM> { bifop = Expression.BuiltinFunctionOp.COLSUM;}
- | <ROWMIN> { bifop = Expression.BuiltinFunctionOp.ROWMIN;}
- | <COLMIN> { bifop = Expression.BuiltinFunctionOp.COLMIN;}
- | <ROWMAX> { bifop = Expression.BuiltinFunctionOp.ROWMAX;}
- | <ROWINDEXMAX> { bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;}
- | <COLMAX> { bifop = Expression.BuiltinFunctionOp.COLMAX;}
- | <ROWMEAN> { bifop = Expression.BuiltinFunctionOp.ROWMEAN;}
- | <COLMEAN> { bifop = Expression.BuiltinFunctionOp.COLMEAN;}
- | <CAST_AS_SCALAR> { bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;}
- | <QUANTILE> {bifop= Expression.BuiltinFunctionOp.QUANTILE;}
- | <INTERQUANTILE> {bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;}
- | <IQM> {bifop= Expression.BuiltinFunctionOp.IQM;}
- | <CTABLE> { bifop = Expression.BuiltinFunctionOp.CTABLE;}
- | <SPEARMAN> { bifop = Expression.BuiltinFunctionOp.SPEARMAN;}
- | <ROUND> { bifop = Expression.BuiltinFunctionOp.ROUND;}
- | <CENTRALMOMENT> { bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;}
- | <COVARIANCE> { bifop = Expression.BuiltinFunctionOp.COVARIANCE;}
- )
- 
- <LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>  
- {
-   Expression expr1 = exprs.size() >= 1 ? expr1 = exprs.get(0) : null;
-   Expression expr2 = exprs.size() >= 2 ? expr2 = exprs.get(1) : null;
-   Expression expr3 = exprs.size() >= 3 ? expr3 = exprs.get(2) : null;
-   return new BuiltinFunctionExpression(bifop,expr1, expr2, expr3);
- }     
+	 ( <COS> { bifop = Expression.BuiltinFunctionOp.COS;}
+		 | <SIN> { bifop = Expression.BuiltinFunctionOp.SIN;}
+		 | <TAN> { bifop = Expression.BuiltinFunctionOp.TAN;}
+		 | <DIAG> { bifop = Expression.BuiltinFunctionOp.DIAG;}
+		 | <EXP> { bifop = Expression.BuiltinFunctionOp.EXP;}
+		 | <ABS> { bifop = Expression.BuiltinFunctionOp.ABS;}
+		 | <MIN> { bifop = Expression.BuiltinFunctionOp.MIN;}
+		 | <MAX> { bifop = Expression.BuiltinFunctionOp.MAX;}
+		 | <PMIN> { bifop = Expression.BuiltinFunctionOp.PMIN;}
+		 | <PMAX> { bifop = Expression.BuiltinFunctionOp.PMAX;}
+		 | <PPRED> { bifop = Expression.BuiltinFunctionOp.PPRED;} 
+		 | <LOG> { bifop = Expression.BuiltinFunctionOp.LOG;}
+		 | <LENGTH> { bifop = Expression.BuiltinFunctionOp.LENGTH;}
+		 | <NCOL> { bifop = Expression.BuiltinFunctionOp.NCOL;}
+		 | <NROW> { bifop = Expression.BuiltinFunctionOp.NROW;}
+		 | <SQRT> { bifop = Expression.BuiltinFunctionOp.SQRT;}
+		 | <SUM> { bifop = Expression.BuiltinFunctionOp.SUM;}
+		 | <MEAN> { bifop = Expression.BuiltinFunctionOp.MEAN;}
+		 | <TRACE> { bifop = Expression.BuiltinFunctionOp.TRACE;}
+		 | <TRANS> { bifop = Expression.BuiltinFunctionOp.TRANS;}
+		 | <APPEND> { bifop = Expression.BuiltinFunctionOp.APPEND;}
+		 | <RANGE> { bifop = Expression.BuiltinFunctionOp.RANGE;}
+		 | <PROD> { bifop = Expression.BuiltinFunctionOp.PROD;}
+		 | <ROWSUM> { bifop = Expression.BuiltinFunctionOp.ROWSUM;}
+		 | <COLSUM> { bifop = Expression.BuiltinFunctionOp.COLSUM;}
+		 | <ROWMIN> { bifop = Expression.BuiltinFunctionOp.ROWMIN;}
+		 | <COLMIN> { bifop = Expression.BuiltinFunctionOp.COLMIN;}
+		 | <ROWMAX> { bifop = Expression.BuiltinFunctionOp.ROWMAX;}
+		 | <ROWINDEXMAX> { bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;}
+		 | <COLMAX> { bifop = Expression.BuiltinFunctionOp.COLMAX;}
+		 | <ROWMEAN> { bifop = Expression.BuiltinFunctionOp.ROWMEAN;}
+		 | <COLMEAN> { bifop = Expression.BuiltinFunctionOp.COLMEAN;}
+		 | <CAST_AS_SCALAR> { bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;}
+		 | <QUANTILE> {bifop= Expression.BuiltinFunctionOp.QUANTILE;}
+		 | <INTERQUANTILE> {bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;}
+		 | <IQM> {bifop= Expression.BuiltinFunctionOp.IQM;}
+		 | <CTABLE> { bifop = Expression.BuiltinFunctionOp.CTABLE;}
+		 | <SPEARMAN> { bifop = Expression.BuiltinFunctionOp.SPEARMAN;}
+		 | <ROUND> { bifop = Expression.BuiltinFunctionOp.ROUND;}
+		 | <CENTRALMOMENT> { bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;}
+		 | <COVARIANCE> { bifop = Expression.BuiltinFunctionOp.COVARIANCE;}
+ 	)
+
+ 	<LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>  
+ 	{
+		Expression expr1 = exprs.size() >= 1 ? expr1 = exprs.get(0) : null;
+   		Expression expr2 = exprs.size() >= 2 ? expr2 = exprs.get(1) : null;
+   		Expression expr3 = exprs.size() >= 3 ? expr3 = exprs.get(2) : null;
+   		return new BuiltinFunctionExpression(bifop,expr1, expr2, expr3);
+ 	}     
 }
 
  
-//TODO: need to check with Doug's fix
 InputStatement InputStatement() :
 {
-  DataIdentifier id = null;
-  InputStatement is = new InputStatement(Expression.DataOp.READ);
-  Expression t2 = null;
+	DataIdentifier id = null;
+	InputStatement is = new InputStatement(Expression.DataOp.READ);
+	Expression t2 = null;
 }
 {
-  id = Identifier()
-  {
-  if (id.getName().startsWith("$"))
-    throw new ParseException("command-line parameters (e.g. $1) do not support assignment");
-  }
-  <ASSIGN> <READMATRIX>
-    		<LEFTPAREN>
-   			
-			 t2 = Expression(){is.addExprParam(Statement.IO_FILENAME,t2,false);}
-					
-   			//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
-   			(< COMMA >(   			{   			  Token t1 = null;   			}   			t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}))*
-
+	id = Identifier()
+	{
+		if (id.getName().startsWith("$"))
+			throw new ParseException("command-line parameters (e.g. $1) do not support assignment");
+  		}
+		<ASSIGN> <READMATRIX> <LEFTPAREN>
+		t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
+				
+		//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
+		(
+			<COMMA>
+			(				{Token t1 = null;}				t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}
+			)
+		)*
 		<RIGHTPAREN> [<SEMICOLON>]
- {
-  is.setIdentifier(id);
-  id.setDimensions(is);
-  id.computeDataType();
-  return is;
- }
+	{
+ 		is.setIdentifier(id);
+ 		id.setDimensions(is);
+ 		id.computeDataType();
+ 		return is;
+	}
 }
 
 
 OutputStatement OutputStatement() :
 {
-	 DataIdentifier fn = null;
-	 Token t1 = null;
-	 Expression t2 = null;
-	 OutputStatement os = null;
-	 	
+	DataIdentifier fn = null;
+	Token t1 = null;
+	Expression t2 = null;
+	OutputStatement os = null; 	
 }
 {
-	    <WRITEMATRIX>
-	    	<LEFTPAREN>
-	    		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
-	    		t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
-	     		( < COMMA >(t1 = <ID> < ASSIGN > t2 = Expression() {os.addExprParam(t1.image, t2,false);}) )*
-	
-			<RIGHTPAREN>  [<SEMICOLON>]
+	<WRITEMATRIX> <LEFTPAREN>
+		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
+    	t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
+     	(
+			<COMMA>
+			(
+				t1 = <ID> <ASSIGN> t2 = Expression()
+				{
+					os.addExprParam(t1.image, t2,false);
+				}
+			)
+		)*
+		<RIGHTPAREN>  [<SEMICOLON>]
 	{
-	  return os;
+		return os;
 	}
 }
 
 
 PrintStatement PrintStatement() :
 {
-  Expression source;
+	Expression source;
 }
 {
-     <PRINT> <LEFTPAREN> source = Expression()  
-  <RIGHTPAREN>  [<SEMICOLON>]
-  {
-   return new PrintStatement(source);
-  }
+	<PRINT> <LEFTPAREN> source = Expression()  <RIGHTPAREN>  [<SEMICOLON>]
+	{
+		return new PrintStatement(source);
+	}
 }
 
-void RelationalOp() : {}
+
+void RelationalOp() :
+{}
 {
- (<LESS> | <GREATER> | <GREATEREQUAL> | <LESSEQUAL> | <EQUAL> | <NOTEQUAL>)
+	(<LESS> | <GREATER> | <GREATEREQUAL> | <LESSEQUAL> | <EQUAL> | <NOTEQUAL>)
 }
+
 
 RandStatement RandStatement() :
 {

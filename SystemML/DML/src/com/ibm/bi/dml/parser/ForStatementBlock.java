@@ -49,9 +49,10 @@ public class ForStatementBlock extends StatementBlock {
 			ids = sb.validate(dmlProg, ids, constVars);
 			constVars = sb.getConstOut();
 		}
-		_constVarsIn.putAll(body.get(0).getConstIn());
-		_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
-		
+		if (body.size() > 0){
+			_constVarsIn.putAll(body.get(0).getConstIn());
+			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
+		}
 		return ids;
 	}
 	
@@ -224,9 +225,21 @@ public class ForStatementBlock extends StatementBlock {
 		throws LanguageException
 	{
 		IterablePredicate ip = getIterPredicate();
-		ip.setFromExpr( replaceConstantVar(ip.getFromExpr(), currConstVars) );
-		ip.setToExpr( replaceConstantVar(ip.getToExpr(), currConstVars) );
-		ip.setIncrementExpr( replaceConstantVar(ip.getIncrementExpr(), currConstVars) );
+		
+		// handle replacement in from expression
+		Expression replacementExpr = replaceConstantVar(ip.getFromExpr(), currConstVars); 
+		if (replacementExpr != null)
+			ip.setFromExpr(replacementExpr);
+		
+		// handle replacment in to expression
+		replacementExpr = replaceConstantVar(ip.getToExpr(), currConstVars);  
+		if (replacementExpr != null)
+			ip.setToExpr(replacementExpr);
+		
+		// handle replacement in increment expression
+		replacementExpr = replaceConstantVar(ip.getIncrementExpr(), currConstVars);
+		if (replacementExpr != null)
+			ip.setIncrementExpr(replacementExpr);
 	}
 	
 	private Expression replaceConstantVar(Expression expr, HashMap<String, ConstIdentifier> currConstVars)

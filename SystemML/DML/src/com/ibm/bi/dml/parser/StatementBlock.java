@@ -535,7 +535,11 @@ public class StatementBlock extends LiveVariableAnalysis{
 						} else {
 							intid = new IntIdentifier((int)currVal.getDim2());
 						}
-						currConstVars.put(target.getName(), intid);
+						// handle case when nrow / ncol called on variable with size unknown (dims == -1) 
+						//	--> const prop NOT possible 
+						if (intid.getValue() != -1){
+							currConstVars.put(target.getName(), intid);
+						}
 					}
 				}
 				// CASE: target NOT indexed identifier

@@ -643,10 +643,8 @@ public class Dag<N extends Lops> {
 		                + node.toString() + " (code 1)");
 		
 		          queuedNodes.add(node);
+		          removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
 		          continue;
-		
-		          //no other nodes need to be dropped.
-		          //hence we do not need to invoke removeNodesForNextIteration
 		        }
 
 				// if child is queued, this node will be processed in the later
@@ -2470,13 +2468,15 @@ public class Dag<N extends Lops> {
 		/*
 		 * Handle cases when job's output is FORCED to be cell format.
 		 * - If there exist a cell input, then output can not be blocked. 
-		 *   Only exception is when jobType = REBLOCK.
+		 *   Only exception is when jobType = REBLOCK (for obvisous reason)
+		 *   or when jobType = RAND since RandJob takes a special input file, 
+		 *   whose format should not be used to dictate the output format.
 		 * - If there exists a recordReader instruction
 		 * - If jobtype = GroupedAgg. This job can only run in cell mode.
 		 */
 		
 		// 
-		if ( jt != JobType.REBLOCK_BINARY && jt != JobType.REBLOCK_TEXT ) {
+		if ( jt != JobType.REBLOCK_BINARY && jt != JobType.REBLOCK_TEXT && jt != JobType.RAND ) {
 			for (int i=0; i < inputInfos.size(); i++)
 				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
 					cellModeOverride = true;

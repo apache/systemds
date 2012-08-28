@@ -58,7 +58,12 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 		if(!opcode.equalsIgnoreCase("zeroOut"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a zeroout: " + str);
 		byte in = Byte.parseByte(parts[1]);
-		IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
+
+		//IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
+		IndexRange rng=new IndexRange(UtilFunctions.parseToLong(parts[2]), 
+				UtilFunctions.parseToLong(parts[3]), 
+				UtilFunctions.parseToLong(parts[4]), 
+				UtilFunctions.parseToLong(parts[5]));
 		byte out = Byte.parseByte(parts[6]);
 		return new ZeroOutInstruction(new ZeroOutOperator(), in, out, rng, str);
 	}

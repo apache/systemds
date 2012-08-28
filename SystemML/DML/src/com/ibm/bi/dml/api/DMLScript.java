@@ -178,7 +178,7 @@ public class DMLScript {
 			} catch (Exception e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
 				System.err.println("ERROR: Error parsing optional configuration file: " + _optConfig);
-				System.exit(1);
+				//return false;
 			}
 			if (defaultConfig != null) {
 				try {
@@ -186,7 +186,7 @@ public class DMLScript {
 				}
 				catch(Exception e){
 					System.err.println("ERROR: failed to merge default ");
-					System.exit(1);
+					//return false;
 				}
 			}
 			else {
@@ -199,7 +199,7 @@ public class DMLScript {
 			} catch (Exception e) { // it is not OK to not have the default
 				defaultConfig = null;
 				System.out.println("ERROR: Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-				System.exit(1);
+				//System.exit(1);
 			}
 		}
 		ConfigurationManager.setConfig(defaultConfig);
@@ -538,13 +538,13 @@ public class DMLScript {
 		/////////// if the args is incorrect, print usage /////////////
 		if (args.length < 2){
 			System.err.println(USAGE);
-			System.exit(1);
+			return;
 		}
 		////////////process -f | -s to set dmlScriptString ////////////////
 		else if (!(args[0].equals("-f") || args[0].equals("-s"))){
 			System.err.println("ERROR: First argument must be either -f or -s");
 			System.err.println(USAGE);
-			System.exit(1);
+			return;
 		}
 		
 		DMLScript d = new DMLScript();
@@ -579,7 +579,7 @@ public class DMLScript {
 		
 		if (!success){
 			System.err.println("ERROR: Script cannot be executed!");
-			System.exit(1);
+			return;
 		}
 	} ///~ end main
 

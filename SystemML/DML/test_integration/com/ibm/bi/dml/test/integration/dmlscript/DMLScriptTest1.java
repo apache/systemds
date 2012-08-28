@@ -22,7 +22,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * 
  * 
  */
-public class DMLScriptTest extends AutomatedTestBase {
+public class DMLScriptTest1 extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/dmlscript/";
 	
 	@Override

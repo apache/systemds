@@ -3,7 +3,7 @@ B = Rand(rows=20,cols=3,min=1,max=20);
 
 parfor( i in 1:20 )
 {
-   b = A[i,B[i,:]];  
+   b = A[i,B[i,]];  
    c = b+i;
 }
 

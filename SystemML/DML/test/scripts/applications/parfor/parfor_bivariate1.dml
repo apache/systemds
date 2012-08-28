@@ -72,15 +72,15 @@ dummy = Rand(rows=1, cols=1, min=1, max=1);
 
 
 parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
-    a1 = castAsScalar(S1[:,i]);
+    a1 = castAsScalar(S1[,i]);
     k1 = castAsScalar(K1[1,i]);
-    A1 = D[:,a1];
+    A1 = D[,a1];
 
     parfor( j in 1:s2size, par=4, mode=LOCAL, check=0) {
         pairID = (i-1)*s2size+j; 
-        a2 = castAsScalar(S2[:,j]);
+        a2 = castAsScalar(S2[,j]);
         k2 = castAsScalar(K2[1,j]);
-        A2 = D[:,a2];
+        A2 = D[,a2];
     
         if (k1 == k2) {
             if (k1 == 1) {
@@ -118,9 +118,9 @@ parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 }
                 basestats[7,pairID] = dummy*eta;
                 basestats[8,pairID] = dummy*f;
-                cat_counts[:,pairID] = counts;
-                cat_means[:,pairID] = means;
-                cat_vars[:,pairID] = vars; 
+                cat_counts[,pairID] = counts;
+                cat_means[,pairID] = means;
+                cat_vars[,pairID] = vars; 
             }
             else {
                 # nominal-ordinal or ordinal-nominal

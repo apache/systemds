@@ -37,8 +37,8 @@ bivar_cc = function(Matrix[Double] Data, Integer col1, Integer col2) return (Dou
 # -----------------------------------------------------------------------------------------------------------
 
 bivar_ss = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double R) {
-    X = Data[:,col1];
-    Y = Data[:,col2];
+    X = Data[,col1];
+    Y = Data[,col2];
 
     # Unweighted co-variance
     covXY = cov(X,Y);
@@ -59,8 +59,8 @@ bivar_ss = function(Matrix[Double] Data, Integer col1, Integer col2) return (Dou
 # col1 points to SCALE variable
 # col2 points to CATEGORICAL variable
 bivar_sc = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double Eta, Double AnovaF) {
-    Y = Data[:,col1];
-    A = Data[:,col2];
+    Y = Data[,col1];
+    A = Data[,col2];
 
     # mean and variance in target variable
     W = nrow(A);
@@ -95,8 +95,8 @@ add = function(Integer x, Integer y) return (Integer z) {
 # -----------------------------------------------------------------------------------------------------------
 
 bivar_oo = function(Matrix[Double] Data, Integer col1, Integer col2) return (Double Sp) {
-    A = Data[:,col1];
-    B = Data[:,col2];
+    A = Data[,col1];
+    B = Data[,col2];
 
     Sp = spearman(A,B);
 }
@@ -112,7 +112,7 @@ bivar_oo = function(Matrix[Double] Data, Integer col1, Integer col2) return (Dou
  *   Mode = Mode in V
  */
 univar_c = function(Matrix[Double] Data, Integer col) return(Double R, Matrix[Double] Nc, Matrix[Double] Pc, Matrix[Double] Mode) {
-    V = Data[:,col];
+    V = Data[,col];
 
     # Histogram of distinct categories in V
     Nc = ctable(V,1);
@@ -137,7 +137,7 @@ univar_c = function(Matrix[Double] Data, Integer col) return(Double R, Matrix[Do
 # -----------------------------------------------------------------------------------------------------------
 
 univar_s = function(Matrix[Double] Data, Integer col) return(Double Mu, Double Var, Double SD, Double CV){
-    V = Data[:,col];
+    V = Data[,col];
     
     Mu = mean(V);
 
@@ -156,7 +156,7 @@ univar_s = function(Matrix[Double] Data, Integer col) return(Double Mu, Double V
 # -----------------------------------------------------------------------------------------------------------
 
 univar_moments = function(Matrix[Double] Data, Integer col) return(Double M2, Double M3, Double M4, Double Skew, Double Kurt){
-    V = Data[:,col];
+    V = Data[,col];
     
     n = nrow(V);
     M2 = centralMoment(V, 2);
@@ -171,7 +171,7 @@ univar_moments = function(Matrix[Double] Data, Integer col) return(Double M2, Do
 # -----------------------------------------------------------------------------------------------------------
 
 univar_order = function(Matrix[Double] Data, Integer col) return(Double Min, Double Max, Double Rng, Double Median, Double IQM){
-    V = Data[:,col];
+    V = Data[,col];
     Min = min(V);
     Max = max(V);
     Rng = Max - Min;
@@ -182,7 +182,7 @@ univar_order = function(Matrix[Double] Data, Integer col) return(Double Min, Dou
 # -----------------------------------------------------------------------------------------------------------
 
 univar_errors = function(Matrix[Double] Data, Integer col) return(Double SE_Mean, Double SE_Skew, Double SE_Kurt){
-    V = Data[:,col];
+    V = Data[,col];
     
     #[mu, var, sd, cv] = stats::univar_s(Data, col);
     n = nrow(V);

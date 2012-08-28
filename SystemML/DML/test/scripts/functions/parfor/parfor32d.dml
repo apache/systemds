@@ -2,7 +2,7 @@ A = Rand(rows=20,cols=20,min=0,max=0);
 
 parfor( i in 1:20 )
 {
-   A[:,:]=i; 
+   A[,]=i; 
 }
 
 #print(C);

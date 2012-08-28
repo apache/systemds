@@ -7,7 +7,7 @@ C = Rand(rows=numC, cols=numF, min=0.0, max=0.0)  #tempCumulative
 
 parfor(i in 1:numC ) 
 {
-	A[i,:] = A[i,:]/sum(A[i,:]);
+	A[i,] = A[i,]/sum(A[i,]);
   C[i,1] = A[i,1];
 	
   for (j in 2:numFeatures) 
@@ -15,7 +15,7 @@ parfor(i in 1:numC )
 		 C[i,j] = C[i,j-1] + A[i,j];
   }
   
-  B[i,:] = C[i,:];
+  B[i,] = C[i,];
 }	
 
 

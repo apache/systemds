@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
-import java.io.IOException;
 
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.utils.LanguageException;

@@ -18,14 +18,6 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * <b>Negative tests:</b>
  * </p>
  * <ul>
- * <li>wrong row dimension (format=text)</li>
- * <li>wrong column dimension (format=text)</li>
- * <li>wrong row and column dimensions (format=text)</li>
- * <li>wrong format (format=text)</li>
- * <li>wrong row dimension (format=binary)</li>
- * <li>wrong column dimension (format=binary)</li>
- * <li>wrong row and column dimensions (format=binary)</li>
- * <li>wrong format (format=binary)</li>
  * </ul>
  * 
  * 
@@ -37,7 +29,7 @@ public class IOTest1 extends AutomatedTestBase {
 		baseDirectory = SCRIPT_DIR + "functions/io/";
 
 		// positive tests
-		availableTestConfigurations.put("SimpleTest", new TestConfiguration("IOTest1", new String[] { "a" }));
+		availableTestConfigurations.put("SimpleTest", new TestConfiguration("functions/io/", "IOTest1", new String[] { "a" }));
 		
 
 		// negative tests
@@ -54,7 +46,7 @@ public class IOTest1 extends AutomatedTestBase {
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 	
-		loadTestConfiguration("SimpleTest");
+		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);

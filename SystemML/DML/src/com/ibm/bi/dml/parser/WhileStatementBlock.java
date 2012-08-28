@@ -27,7 +27,7 @@ public class WhileStatementBlock extends StatementBlock {
 		wstmt.setBody(StatementBlock.mergeFunctionCalls(wstmt.getBody(), dmlProg));
 		
 		// process the statement blocks in the body of the while statement
-		predicate.getPredicate().validateExpression(ids.getVariables());
+		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
 		ArrayList<StatementBlock> body = wstmt.getBody();
 		this._dmlProg = dmlProg;
 		for(StatementBlock sb : body)

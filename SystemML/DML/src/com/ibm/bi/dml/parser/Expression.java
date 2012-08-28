@@ -93,11 +93,12 @@ public abstract class Expression {
 	public Identifier getOutput() {
 		return _output;
 	}
-
+	/*
 	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException{
 		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
 	};
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException, IOException{
+	*/
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
 		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
 	};
 	

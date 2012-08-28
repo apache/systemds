@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ConstIdentifier;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Identifier;
 import com.ibm.bi.dml.parser.ParseException;
@@ -106,8 +107,10 @@ public class IdentifierTest {
         DataIdentifier originalId = new DataIdentifier("idToTest");
         originalId.setDimensions(100, 101);
         ids.put("idToTest", originalId);
+        HashMap<String,ConstIdentifier> dummyConst = new HashMap<String,ConstIdentifier>();
+        
         try {
-			idToTest.validateExpression(ids);
+			idToTest.validateExpression(ids, dummyConst);
 		} catch (LanguageException e) {
 			fail("unable to validate expression");
 		}
@@ -115,7 +118,7 @@ public class IdentifierTest {
         assertEquals(101, idToTest.getDim2());
         
         try {
-            idToTest.validateExpression(new HashMap<String, DataIdentifier>());
+            idToTest.validateExpression(new HashMap<String, DataIdentifier>(), dummyConst);
             fail("validation should have failed");
         } catch(NullPointerException e) {
         	
@@ -124,7 +127,7 @@ public class IdentifierTest {
         }
         
         try {
-            idToTest.validateExpression(null);
+            idToTest.validateExpression(null, dummyConst);
             fail("validation should have failed");
         } catch(NullPointerException e) {
         	

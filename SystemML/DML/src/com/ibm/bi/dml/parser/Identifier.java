@@ -124,41 +124,41 @@ public abstract class Identifier extends Expression{
 		return _nnz;
 	}
 	
-	public void validateExpression(HashMap<String,DataIdentifier> ids) throws LanguageException {
-		Identifier out = this.getOutput();
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException {
+		//Identifier out = this.getOutput();
 		
-		if (out instanceof DataIdentifier){
+		if (this.getOutput() instanceof DataIdentifier){
 			
 			// set properties for Data identifer
-			String name = ((DataIdentifier)out).getName();
+			String name = ((DataIdentifier)this.getOutput()).getName();
 			Identifier id = ids.get(name);
 			if ( id == null )
 				LiveVariableAnalysis.throwUndefinedVar(name, "");
 			this.getOutput().setProperties(id);
 			
 			// validate IndexedIdentifier -- which is substype of DataIdentifer with index
-			if (out instanceof IndexedIdentifier){
+			if (this.getOutput() instanceof IndexedIdentifier){
 				
 				// validate the row / col index bounds (if defined)
-				IndexedIdentifier indexedIdentiferOut = (IndexedIdentifier)out;
+				IndexedIdentifier indexedIdentiferOut = (IndexedIdentifier)this.getOutput();
 				if (indexedIdentiferOut.getRowLowerBound() != null) 
-					indexedIdentiferOut.getRowLowerBound().validateExpression(ids);
+					indexedIdentiferOut.getRowLowerBound().validateExpression(ids, constVars);
 				if (indexedIdentiferOut.getRowUpperBound() != null) 
-					indexedIdentiferOut.getRowUpperBound().validateExpression(ids);
+					indexedIdentiferOut.getRowUpperBound().validateExpression(ids, constVars);
 				if (indexedIdentiferOut.getColLowerBound() != null) 
-					indexedIdentiferOut.getColLowerBound().validateExpression(ids);	
+					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars);	
 				if (indexedIdentiferOut.getColUpperBound() != null) 
-					indexedIdentiferOut.getColUpperBound().validateExpression(ids);
+					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars);
 				
 				// update the size of the indexed expression output
-				((IndexedIdentifier)out).updateIndexedDimensions();
+				((IndexedIdentifier)this.getOutput()).updateIndexedDimensions(constVars);
 				
 				
 				
 			}
 							
 		} else {
-			this.getOutput().setProperties(out);
+			this.getOutput().setProperties(this.getOutput());
 		}
 	}
 	

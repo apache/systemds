@@ -389,54 +389,6 @@ public class StatementBlock extends LiveVariableAnalysis{
 								
 			} // end if (isRewritableFunctionCall(current, dmlProg)
 				
-//			else if (isNonRewritableFunctionCall(current, dmlProg)){
-//				
-//				FunctionCallIdentifier fcall = null;
-//				if (current instanceof AssignmentStatement)
-//					fcall = (FunctionCallIdentifier)((AssignmentStatement)current).getSource();
-//				else
-//					fcall = (FunctionCallIdentifier)((MultiAssignmentStatement)current).getSource();
-//					
-//				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getName());
-//				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
-//				
-			//	ArrayList<Expression> newfcallExprs = new ArrayList<Expression>();
-				
-				// create a new assignment statement for each input
-			//	for (int i=0; i < fstmt.inputParams.size(); i++){
-					
-			//		DataIdentifier currFormalParam = fstmt.inputParams.get(i);
-			//		newfcallExprs.add(new DataIdentifier(currFormalParam));
-			//		
-			//		Expression currCallParam = null;
-			//		if (fcall.getParamExpressions().size() > i){
-			//			// function call has value for parameter
-			//			currCallParam = fcall.getParamExpressions().get(i);
-			//		}
-			//		else {
-			//			// use default value for parameter
-			//			if (fstmt.inputParams.get(i).getDefaultValue() == null)
-			//				throw new LanguageException("line " + currFormalParam.getDefinedLine() + ": default parameter for " + currFormalParam + " is undefined");
-			//			currCallParam = new DataIdentifier(fstmt.inputParams.get(i).getDefaultValue(),fstmt.inputParams.get(i).getDefinedLine(), fstmt.inputParams.get(i).getDefinedCol());
-			//		}
-			//		
-			//		// create the assignment statement to bind the call parameter to formal parameter
-			//		AssignmentStatement binding = new AssignmentStatement(currFormalParam, currCallParam);
-			//		newStatements.add(binding);
-			//	}
-			//	
-			//	// rewrite current assignment statement to have function call using the given bindings
-			//	FunctionCallIdentifier newfcall = new FunctionCallIdentifier(fcall.getName(), newfcallExprs);
-			//	
-			//	if (current instanceof AssignmentStatement)
-			//		((AssignmentStatement)current).setSource(newfcall);
-			//	else
-			//	((MultiAssignmentStatement)current).setSource(newfcall);
-			//	
-			//	
-			//	newStatements.add(current);
-			//
-			//}
 			else {
 				newStatements.add(current);
 			}
@@ -494,8 +446,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					if (paramsOkay == false)
 						throw new LanguageException("Invalid parameters in write statement: " + os.toString());
 				}
-				
-				
+					
 				Expression source = os.getSource();
 				source.setOutput(target);
 				source.validateExpression(ids.getVariables(), currConstVars);
@@ -510,9 +461,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 				Expression source = as.getSource();
 				
 				if (source instanceof FunctionCallIdentifier)			
-					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables());
+					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars);
 				else
-					source.validateExpression(ids.getVariables());
+					source.validateExpression(ids.getVariables(), currConstVars);
 				
 				// Handle const vars: Basic Constant propagation 
 				currConstVars.remove(target.getName());
@@ -547,7 +498,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					target.setProperties(source.getOutput());
 				}
 				// CASE: target is indexed identifier
-				else{
+				else {
 					// process the "target" being indexed
 					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 					if (targetAsSeen == null)
@@ -556,14 +507,35 @@ public class StatementBlock extends LiveVariableAnalysis{
 					
 					// process the expressions for the indexing
 					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
-						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables(), currConstVars);
 					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
-						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables(), currConstVars);
 					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
-						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables(), currConstVars);
 					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
-						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables());
+						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars);
 					
+					// validate that LHS indexed identifier is being assigned a matrix value
+					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
+						throw new LanguageException("ERROR: Indexed expression " + target.toString() + " can only be assigned matrix value");
+					}
+					
+					// validate that size of LHS index ranges is being assigned a matrix value
+					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
+					
+					if (targetSize._row >= 0 && source.getOutput().getDim1() >= 0 && targetSize._row != source.getOutput().getDim1()){
+						throw new LanguageException("ERROR: Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
+										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
+					}
+					
+					if (targetSize._col >= 0 && source.getOutput().getDim2() >= 0 && targetSize._col != source.getOutput().getDim2()){
+						throw new LanguageException("ERROR: Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
+										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
+					}
+					
+				
 				}
 				ids.addVariable(target.getName(), target);
 				
@@ -580,7 +552,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				}
 				else {
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-					fci.validateExpression(dmlProg, ids.getVariables());
+					fci.validateExpression(dmlProg, ids.getVariables(), currConstVars);
 				}
 				
 		
@@ -631,7 +603,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 			else if (current instanceof PrintStatement){
 				PrintStatement pstmt = (PrintStatement) current;
 				Expression expr = pstmt.getExpression();	
-				expr.validateExpression(ids.getVariables());
+				expr.validateExpression(ids.getVariables(), currConstVars);
 				
 				// check that variables referenced in print statement expression are scalars
 				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){

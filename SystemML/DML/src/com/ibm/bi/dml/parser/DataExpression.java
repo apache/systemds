@@ -79,11 +79,11 @@ public class DataExpression extends Expression {
 	 * @throws IOException 
 	 */
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars)
-			throws LanguageException, IOException {
+			throws LanguageException {
 		
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
-			getVarParam(s).validateExpression(ids);
+			getVarParam(s).validateExpression(ids, currConstVars);
 			
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				throw new LanguageException("Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -120,7 +120,12 @@ public class DataExpression extends Expression {
 
 			// read the configuration file
 			boolean exists = false;
-			FileSystem fs = FileSystem.get(new Configuration());
+			FileSystem fs = null;
+			try {
+				fs = FileSystem.get(new Configuration());
+			} catch (Exception e){
+				throw new LanguageException(e);
+			}
 			Path pt = null;
 			String filename = null;
 			
@@ -165,9 +170,13 @@ public class DataExpression extends Expression {
 	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
 	        if (exists){
 	        		
-		        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
-				configObject = JSONObject.parse(br);
-				
+		        try {
+		        	BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+		        	configObject = JSONObject.parse(br);
+		        } catch (Exception e){
+		        	throw new LanguageException(e);
+		        }
+		        
 				for (Object key : configObject.keySet()){
 					
 					if (!InputStatement.isValidParamName(key.toString(),true))

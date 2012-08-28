@@ -47,10 +47,10 @@ public class RelationalExpression extends Expression{
 	 * Validate parse tree : Process Relational Expression  
 	 * @throws LanguageException 
 	 */
-	public void validateExpression(HashMap<String,DataIdentifier> ids) throws LanguageException{
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
 		 
-		this.getLeft().validateExpression(ids);
-		this.getRight().validateExpression(ids);
+		this.getLeft().validateExpression(ids, constVars);
+		this.getRight().validateExpression(ids, constVars);
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);

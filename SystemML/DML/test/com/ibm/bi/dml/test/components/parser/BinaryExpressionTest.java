@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.ibm.bi.dml.parser.BinaryExpression;
+import com.ibm.bi.dml.parser.ConstIdentifier;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -25,10 +26,11 @@ public class BinaryExpressionTest {
         ids.put("left", left);
         ids.put("right", right);
         
+        HashMap<String, ConstIdentifier> dummyConst = new HashMap<String, ConstIdentifier>();
         BinaryExpression beToTest = new BinaryExpression(BinaryOp.PLUS);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids);
+        beToTest.validateExpression(ids, dummyConst);
         assertEquals(-1, beToTest.getOutput().getDim1());
         assertEquals(-1, beToTest.getOutput().getDim2());
         
@@ -37,7 +39,7 @@ public class BinaryExpressionTest {
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, dummyConst);
             fail("dimensions do not match for matrix multiplication");
         } catch(Exception e) { }
         
@@ -46,21 +48,21 @@ public class BinaryExpressionTest {
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids);
+        beToTest.validateExpression(ids, dummyConst);
         assertEquals(100, beToTest.getOutput().getDim1());
         assertEquals(102, beToTest.getOutput().getDim2());
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("right", right);
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, dummyConst);
             fail("left expression not validated");
         } catch(Exception e) { }
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("left", left);
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, dummyConst);
             fail("right expression not validated");
         } catch(Exception e) { }
     }

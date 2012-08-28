@@ -61,12 +61,12 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(HashMap<String, DataIdentifier> ids)
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
 			throws LanguageException {
 		
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
-			getVarParam(s).validateExpression(ids);
+			getVarParam(s).validateExpression(ids, constVars);
 			
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 			//	throw new LanguageException("Non-scalar data types are not supported for parameterized builtin functions.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);

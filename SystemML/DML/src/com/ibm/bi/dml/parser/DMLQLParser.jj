@@ -800,6 +800,7 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 			targetList.add(null);
 			targetList.add(null);
 			targetListList.add(targetList);
+			targetList = null;
 		}
 	}
     
@@ -810,11 +811,12 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
 			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
    		)?
-   		{			// CASE: no indexing dimesnions given
+   		{   	  				// CASE: no indexing dimesnions given
 			if (targetList == null)			{				targetList = new ArrayList<Expression>();
 				targetList.add(null);
 				targetList.add(null);
 				targetListList.add(targetList);
+				targetList = null;
 			}
 
    		}
@@ -833,6 +835,8 @@ ArrayList<Expression> ColonDelimitedExpression() :
 {
  	[left = Expression()] <COLON> [right = Expression()] 
  	{
+		if (left == null && right == null)
+			throw new ParseException("ERROR: colon delimiter should not be specified when no indexing expressions used");
   		exprsList.add(left);
   		exprsList.add(right); 
   		return exprsList;

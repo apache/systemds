@@ -69,7 +69,7 @@ public class FunctionCallIdentifier extends DataIdentifier {
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids) throws LanguageException, IOException{
+	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException, IOException{
 		
 		// check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null)
@@ -89,7 +89,7 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		
 		// validate expressions for each passed parameter
 		for (Expression cur : _inputParamExpressions) {
-			cur.validateExpression(ids);
+			cur.validateExpression(ids, constVars);
 		}
 
 		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);

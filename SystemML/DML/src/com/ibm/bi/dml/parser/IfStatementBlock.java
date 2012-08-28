@@ -27,7 +27,7 @@ public class IfStatementBlock extends StatementBlock {
 		ifstmt.setElseBody(StatementBlock.mergeFunctionCalls(ifstmt.getElseBody(), dmlProg));
 		
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
-		predicate.getPredicate().validateExpression(ids.getVariables());
+		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
 		
 		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier> ();
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> ();

@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.ibm.bi.dml.parser.BooleanExpression;
+import com.ibm.bi.dml.parser.ConstIdentifier;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.BooleanOp;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -26,23 +27,24 @@ public class BooleanExpressionTest {
         ids.put("left", left);
         ids.put("right", right);
         
+        HashMap<String,ConstIdentifier> dummyConst = new HashMap<String,ConstIdentifier>();
         BooleanExpression beToTest = new BooleanExpression(BooleanOp.LOGICALAND);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids);
+        beToTest.validateExpression(ids, dummyConst);
         assertEquals(ValueType.BOOLEAN, beToTest.getOutput().getValueType());
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("right", right);
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, dummyConst);
             fail("left expression not validated");
         } catch(Exception e) { }
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("left", left);
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, dummyConst);
             fail("right expression not validated");
         } catch(Exception e) { }
     }

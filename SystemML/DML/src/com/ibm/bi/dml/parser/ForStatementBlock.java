@@ -35,7 +35,7 @@ public class ForStatementBlock extends StatementBlock {
 		IterablePredicate predicate = fs.getIterablePredicate();
 		
 		// process the statement blocks in the body of the for statement
-		predicate.validateExpression(ids.getVariables());
+		predicate.validateExpression(ids.getVariables(), constVars);
 		ArrayList<StatementBlock> body = fs.getBody();
 		
 		//perform constant propagation for ( from, to, incr )

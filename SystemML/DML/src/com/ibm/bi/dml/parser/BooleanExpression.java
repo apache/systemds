@@ -47,11 +47,11 @@ public class BooleanExpression extends Expression{
 	/**
 	 * Validate parse tree : Process Boolean Expression  
 	 */
-	public void validateExpression(HashMap<String,DataIdentifier> ids) throws LanguageException{
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
 		 	 
-		this.getLeft().validateExpression(ids);
+		this.getLeft().validateExpression(ids, constVars);
 		if (this.getRight() != null) {
-			this.getRight().validateExpression(ids);
+			this.getRight().validateExpression(ids, constVars);
 		}
 			
 		String outputName = getTempName();

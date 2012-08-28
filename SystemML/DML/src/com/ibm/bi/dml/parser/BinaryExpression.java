@@ -51,10 +51,12 @@ public class BinaryExpression extends Expression {
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(HashMap<String, DataIdentifier> ids)
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
 			throws LanguageException {
-		this.getLeft().validateExpression(ids);
-		this.getRight().validateExpression(ids);
+		
+		this.getLeft().validateExpression(ids, constVars);
+		this.getRight().validateExpression(ids, constVars);
+		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setDataType(computeDataType(this.getLeft(), this.getRight(),

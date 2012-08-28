@@ -66,13 +66,13 @@ public class BuiltinFunctionExpression extends Expression {
 	 * 
 	 * @throws LanguageException
 	 */
-	public void validateExpression(HashMap<String, DataIdentifier> ids)
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
 			throws LanguageException {
-		this.getFirstExpr().validateExpression(ids);
+		this.getFirstExpr().validateExpression(ids, constVars);
 		if (_second != null)
-			_second.validateExpression(ids);
+			_second.validateExpression(ids, constVars);
 		if (_third != null)
-			_third.validateExpression(ids);
+			_third.validateExpression(ids, constVars);
 
 		// checkIdentifierParams();
 		String outputName = getTempName();

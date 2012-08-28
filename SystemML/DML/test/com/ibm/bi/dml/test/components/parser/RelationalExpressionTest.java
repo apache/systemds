@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ConstIdentifier;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.RelationalExpression;
 import com.ibm.bi.dml.parser.Expression.RelationalOp;
@@ -29,13 +30,13 @@ public class RelationalExpressionTest {
         RelationalExpression beToTest = new RelationalExpression(RelationalOp.EQUAL);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
-        beToTest.validateExpression(ids);
+        beToTest.validateExpression(ids, new HashMap<String,ConstIdentifier>());
         assertEquals(ValueType.BOOLEAN, beToTest.getOutput().getValueType());
         
         ids = new HashMap<String, DataIdentifier>();
         ids.put("right", right);
         try {
-            beToTest.validateExpression(ids);
+            beToTest.validateExpression(ids, new HashMap<String,ConstIdentifier>());
             fail("left expression not validated");
         } catch(Exception e) { }
         

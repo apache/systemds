@@ -78,7 +78,7 @@ public class IterablePredicate extends Expression
 	}
 
 	@Override
-	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException 
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException 
 	{		
 		//1) VALIDATE ITERATION VARIABLE (index)
 		

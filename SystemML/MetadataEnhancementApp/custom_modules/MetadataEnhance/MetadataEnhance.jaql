@@ -98,7 +98,8 @@ join orig in metadataMem, preserve new in kindHeuristic
       new.attributeName,
       "attributeColumnId":(if (isnull(orig.attributeColumnId)) new.attributeColumnId else orig.attributeColumnId),
       "attributeKind":(if (isnull(orig.attributeKind)) new.attributeKind else orig.attributeKind),
-      "attributeType":(if (isnull(orig.attributeType)) new.attributeType else orig.attributeType)
+      "attributeType":(if (isnull(orig.attributeType)) new.attributeType else orig.attributeType),
+      "attributeDistinctCount": (if (isnull(orig.attributeDistinctCount)) new.attributeDistinctCount else orig.attributeDistinctCount)
    }
    -> sort by [$.attributeColumnId]
    -> write(jsonText(outputMetadata))

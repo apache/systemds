@@ -190,11 +190,40 @@
 		<tar basedir="${release.detica}" destfile="${release.detica}/../machine-learning.tar.gz" compression="gzip"/>
 	</target>
 	
+	<!-- Target for SystemML applications -->
+	<target name="apps" depends="jar">
+		<ant antfile="../LinearRegressionApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../LinearRegressionScoreApp/build/build.xml" 
+             target="buildAppZipFile" 
+		     inheritAll="false">
+		</ant>
+		<ant antfile="../MultiClassSVMApp/build/build.xml" 
+		     target="buildAppZipFile" 
+			 inheritAll="false">
+		</ant>
+		<ant antfile="../MultiClassSVMScoreApp/build/build.xml" 
+		     target="buildAppZipFile" 
+		     inheritAll="false">
+		</ant>
+	</target>
+		
 	<!-- Target for Nov. 2012 release -->
-	<target name="2012_Nov" depends="jar">
+	<target name="2012_Nov" depends="apps">
+		<delete dir="${release.2012_Nov}" failonerror="false" />
+		<mkdir dir="${release.2012_Nov}" />
 		<copy file="${build.folder}/${build.jarnamerun}" todir="${release.2012_Nov}" overwrite="true"/>
 		<copy file="${build.configfile}" todir="${release.2012_Nov}" overwrite="true"/>
-		<tar basedir="${release.2012_Nov}" destfile="${release.2012_Nov}/${build.configjartgz}" compression="gzip"/>
+		<tar basedir="${release.2012_Nov}" 
+			 destfile="${release.2012_Nov}/${build.configjartgz}" 
+			 compression="gzip"/>
+        <mkdir dir="${release.2012_Nov}/Apps" />
+        <copy file="../LinearRegressionApp/build/LinearRegressionApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../LinearRegressionScoreApp/build/LinearRegressionScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../MultiClassSVMApp/build/MultiClassSVMApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../MultiClassSVMScoreApp/build/MultiClassSVMScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 	</target>
 	
 	<target name="auto">

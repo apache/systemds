@@ -1,3 +1,0 @@
-#Wed Jul 25 16:54:41 PDT 2012
-com.ibm.biginsights.version=1.4.0.0
-jaql.searchPath=${BIGINSIGHTS_MODULES}

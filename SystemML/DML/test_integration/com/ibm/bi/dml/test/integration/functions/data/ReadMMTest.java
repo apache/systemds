@@ -214,7 +214,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
-		runTest(false, DMLRuntimeException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -235,7 +235,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(false, DMLRuntimeException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	/**
@@ -268,7 +268,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(false, DMLRuntimeException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test

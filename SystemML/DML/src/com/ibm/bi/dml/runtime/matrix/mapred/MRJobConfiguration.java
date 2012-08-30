@@ -493,7 +493,7 @@ public class MRJobConfiguration {
 		for(int i=0; i<matrices.length; i++)
 		{
 			Path p = fs.getFileStatus(new Path(matrices[i])).getPath();
-			if(thisFile.compareTo(p)==0 || thisDir.compareTo(p)==0)
+			if(thisFile.toUri().compareTo(p.toUri())==0 || thisDir.toUri().compareTo(p.toUri())==0)
 				representativeMatrixes.add(indexes[i]);
 			/*if(thisDirName.endsWith(matrices[i]) || thisFileName.endsWith(matrices[i]))
 			{

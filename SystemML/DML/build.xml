@@ -208,6 +208,10 @@
 		     target="buildAppZipFile" 
 		     inheritAll="false">
 		</ant>
+		<ant antfile="../FrequentSequenceMinerApp/build/build.xml" 
+			     target="buildAppZipFile" 
+			     inheritAll="false">
+		</ant>
 	</target>
 		
 	<!-- Target for Nov. 2012 release -->
@@ -224,6 +228,7 @@
 		<copy file="../LinearRegressionScoreApp/build/LinearRegressionScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../MultiClassSVMApp/build/MultiClassSVMApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../MultiClassSVMScoreApp/build/MultiClassSVMScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../FrequentSequenceMinerApp/build/FrequentSequenceMinerApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 	</target>
 	
 	<target name="auto">

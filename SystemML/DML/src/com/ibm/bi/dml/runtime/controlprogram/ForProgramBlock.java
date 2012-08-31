@@ -7,6 +7,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
@@ -180,6 +181,7 @@ public class ForProgramBlock extends ProgramBlock
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
+		ScalarObject tmp = null;
 		IntObject ret = null;
 			
 		try
@@ -187,7 +189,7 @@ public class ForProgramBlock extends ProgramBlock
 			if( _iterablePredicateVars[pos] != null )
 			{
 				//check for literals or scalar variables
-				ret = (IntObject) getScalarInput(_iterablePredicateVars[pos], ValueType.INT); 		
+				tmp = (ScalarObject) getScalarInput(_iterablePredicateVars[pos], ValueType.INT);
 			}		
 			else
 			{
@@ -213,9 +215,9 @@ public class ForProgramBlock extends ProgramBlock
 					}
 					
 					if(!isSQL)
-						ret = (IntObject) getScalarInput(retName, ValueType.INT);
+						tmp = (IntObject) getScalarInput(retName, ValueType.INT);
 					else
-						ret = (IntObject) ec.getVariable(retName, ValueType.INT);
+						tmp = (IntObject) ec.getVariable(retName, ValueType.INT);
 					
 					// Execute all other instructions in the predicate (variableCPInstruction, etc.)
 					for (Instruction si : instructions ) {
@@ -230,8 +232,18 @@ public class ForProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if ( ret == null )
+		//final check of resulting int object
+		if ( tmp == null )
+		{
 			throw new DMLRuntimeException("Failed to evaluate the FOR predicate.");
+		}
+		else
+		{
+			if( tmp instanceof IntObject )
+				ret = (IntObject)tmp;
+			else //downcast to int if necessary
+				ret = new IntObject(tmp.getName(),tmp.getIntValue()); 
+		}
 		
 		return ret;
 	}

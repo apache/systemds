@@ -784,23 +784,25 @@ ArrayList<String> ReadList() :
 ArrayList<ArrayList<Expression>> ReadIndexList() :
 {
 	ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
-	ArrayList<Expression> targetList = null;
-	Expression target = null;
+	ArrayList<Expression> targetList1 = null;
+	ArrayList<Expression> targetList2 = null;
+	Expression target1 = null;
+	Expression target2 = null;
 }
 { 
 	<LEFTSQUARE>
 	(
 		LOOKAHEAD(ColonDelimitedExpression())
-     	targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
-     	| target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
+     	targetList1 = ColonDelimitedExpression() {targetListList.add(targetList1);}
+     	| target1 = Expression() {targetList1 = new ArrayList<Expression>(); targetList1.add(target1); targetListList.add(targetList1); } 	
 	)?
 	{	  	// CASE: no indexing dimensions given
-		if (targetList == null){
-			targetList = new ArrayList<Expression>();
-			targetList.add(null);
-			targetList.add(null);
-			targetListList.add(targetList);
-			targetList = null;
+		if (targetList1 == null){
+			targetList1 = new ArrayList<Expression>();
+			targetList1.add(null);
+			targetList1.add(null);
+			targetListList.add(targetList1);
+			targetList1 = null;
 		}
 	}
     
@@ -808,17 +810,16 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 		<COMMA>
 		(
 			LOOKAHEAD( ColonDelimitedExpression())
-			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
-			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
+			targetList2 = ColonDelimitedExpression() {targetListList.add(targetList2);}
+			|	target2 = Expression() { targetList2 = new ArrayList<Expression>(); targetList2.add(target2); targetListList.add(targetList2);}
    		)?
-   		{   	  				// CASE: no indexing dimesnions given
-			if (targetList == null)			{				targetList = new ArrayList<Expression>();
-				targetList.add(null);
-				targetList.add(null);
-				targetListList.add(targetList);
-				targetList = null;
+   		{			// CASE: no indexing dimesnions given
+			if (targetList2 == null)			{				targetList2 = new ArrayList<Expression>();
+				targetList2.add(null);
+				targetList2.add(null);
+				targetListList.add(targetList2);
+				targetList2 = null;
 			}
-
    		}
   	)* 
   	<RIGHTSQUARE> 

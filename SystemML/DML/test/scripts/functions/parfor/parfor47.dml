@@ -5,6 +5,7 @@ d = 5
 
 A = Rand(rows=a, cols=b, min=0.0, max=1.0, sparsity=1.0)
 B = Rand(rows=c, cols=d, min=0.0, max=0.0, pdf="uniform")
+dummy = Rand(rows=1,cols=1,min=1.0,max=1.0);
 
 parfor(i in 1:a){
 	for(j in 2:b){
@@ -15,7 +16,7 @@ parfor(i in 1:a){
 parfor(i in 1:c){
 	  parfor(j in 1:d){
     	for(k in 1:b){
-    		B[i,j] = i*j;
+    		B[i,j] = dummy*(i*j);
     	}
     }
 }   

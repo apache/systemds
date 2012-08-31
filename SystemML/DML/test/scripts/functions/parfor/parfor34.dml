@@ -1,10 +1,11 @@
 A = Rand(rows=20,cols=20,min=0,max=0);
 B = Rand(rows=20,cols=3,min=1,max=20);
+dummy = Rand(rows=1,cols=1,min=1.0,max=1.0);
 
 parfor( i in 1:20 )
 {
-   A[1,i]=i;
-   A[B[,1],2]=i;  
+   A[1,i]=dummy*i;
+   A[B[,1],2]=dummy*i;  
 }
 
 #print(C);

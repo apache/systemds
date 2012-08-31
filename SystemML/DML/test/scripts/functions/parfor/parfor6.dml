@@ -2,6 +2,6 @@ A = Rand(rows=10,cols=1);
 
 parfor( i in 1:10 )
 {
-   b = i + A[i,1];
+   b = i + castAsScalar(A[i,1]);
    #print(b);
 }

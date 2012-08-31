@@ -1,9 +1,10 @@
 A = Rand(rows=20,cols=20,min=0,max=0);
+dummy = Rand(rows=1,cols=1,min=1.0,max=1.0);
 
 parfor( i in 1:20 )
 {
    k = i;
-   A[i,k] = i;
+   A[i,k] = dummy*i;
 }
 
 #print(A);

@@ -54,24 +54,22 @@ public class ELProgramBlock extends ProgramBlock {
 			if (currInst instanceof MRJobInstruction) {
 				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 				//populate varbls table with output matrix filepaths
-				for ( int index=0; index < currMRInst.getIv_outputs().length; index++) {
+				for ( int index=0; index < currMRInst.getOutputVars().length; index++) {
 					//Arun: now, the output matrices (A1, A2...) have filepaths "./data/A1".. - now A1 
-					_variables.put(currMRInst.getIv_outputs()[index], new FileObject(currMRInst.getIv_outputs()[index], 
-																			"" + currMRInst.getIv_outputs()[index])); 
+					_variables.put(currMRInst.getOutputVars()[index], new FileObject(currMRInst.getOutputVars()[index], 
+																			"" + currMRInst.getOutputVars()[index])); 
 				}	
-				currMRInst.setInputLabelValueMapping(_variables);
-				currMRInst.setOutputLabelValueMapping(_variables);
 				
 				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
 				//Note that submitjob has the varblnames as inputs; runjob call takes in filepathsnames after updatelabels on varblname inputs
-				if(jb.getMetaData().length != currMRInst.getIv_outputs().length) {
+				if(jb.getMetaData().length != currMRInst.getOutputVars().length) {
 					System.out.println("Error after partitioning in cv progm blk - no. matrices don't match!");
 					System.exit(1);
 				}
 				//Populate returned stats into symbol table of matrices
 				for ( int index=0; index < jb.getMetaData().length; index++) {
 					// TODO: Fix This
-					//_matrices.put(new String("" + currMRInst.getIv_outputs()[index]), jb.getMetaData(index));
+					//_matrices.put(new String("" + currMRInst.getOutputVars()[index]), jb.getMetaData(index));
 				}
 				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 			} else if (currInst instanceof CPInstruction) {
@@ -128,11 +126,13 @@ public class ELProgramBlock extends ProgramBlock {
 		 * int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 		 * String reblockInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, 
 		 * byte[] resultDimsUnknown, int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)*/
-		reblksmr.setReBlockInstructions(reblksinps, reblksinpsinfos, numrows, numcols, numrpbs, numcpbs, "", reblksinsts, "",
-				reblksouts, reblksoutsinfos, resinds, resdims, 1, 1, null, null);	//as per statiko
+
 		
-		reblksmr.setInputLabelValueMapping(_variables);
-		reblksmr.setOutputLabelValueMapping(_variables);
+		// TODO: following setReblockInstructions() is commented since this does not adhere to the new method of setting up MR jobs.
+		// TODO: One must create input and output variables and use them to set up the jobs, instead of reblkinps and reblkouts
+		//reblksmr.setReBlockInstructions(reblksinps, reblksinpsinfos, numrows, numcols, numrpbs, numcpbs, "", reblksinsts, "",
+		//		reblksouts, reblksoutsinfos, resinds, resdims, 1, 1, null, null);	//as per statiko
+		
 		JobReturn jb = RunMRJobs.submitJob(reblksmr, this);
 		if(jb.getMetaData().length != nummats) {
 			System.out.println("Error after reblocking in cv progm blk - no. matrices don't match!");
@@ -213,10 +213,14 @@ return retapt;
 	
 	public void execute() throws DMLRuntimeException, DMLUnsupportedOperationException{
 		//the accesspath has to be computed here (and not in runmrjobs) since we need to know if post partition reblocks are needed!
-		long nr = ((MRJobInstruction) _inst.get(0)).getIv_rows()[0];	//only one instcn exists, so use it for input matr stats
-		long nc = ((MRJobInstruction) _inst.get(0)).getIv_cols()[0];
-		int bnr = ((MRJobInstruction) _inst.get(0)).getIv_num_rows_per_block()[0];
-		int bnc = ((MRJobInstruction) _inst.get(0)).getIv_num_cols_per_block()[0];
+
+		// TODO: following code for setting up nr, nc, bnr, bnc are commented. These values 
+		// must be pulled from the symbol table.
+		
+		long nr = -1; // ((MRJobInstruction) _inst.get(0)).getIv_rows()[0];	//only one instcn exists, so use it for input matr stats
+		long nc = -1; // ((MRJobInstruction) _inst.get(0)).getIv_cols()[0];
+		int bnr = -1; // ((MRJobInstruction) _inst.get(0)).getIv_num_rows_per_block()[0];
+		int bnc = -1; // ((MRJobInstruction) _inst.get(0)).getIv_num_cols_per_block()[0];
 		_pp.apt = computeAccessPath(nr, nc, bnr, bnc);
 		((MRJobInstruction) _inst.get(0)).getPartitionParams().apt = _pp.apt;
 		System.out.println("$$$$$$$$$$$$$ Chosen accesspath: " + _pp.apt + "$$$$$$$$$$$$$");

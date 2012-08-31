@@ -11,7 +11,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.runtime.matrix.MetaData;
-import com.ibm.bi.dml.runtime.matrix.sort.CompactInputFormat;
+import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
@@ -55,7 +55,7 @@ public class InputInfo {
 			DoubleWritable.class, IntWritable.class);
 	
 	// Format that denotes the output of a SORT job
-	public static InputInfo InputInfoForSortOutput = new InputInfo(CompactInputFormat.class,
+	public static InputInfo InputInfoForSortOutput = new InputInfo(PickFromCompactInputFormat.class,
 			DoubleWritable.class, IntWritable.class);
 
 	public static InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 

@@ -109,16 +109,13 @@ public class ProgramBlock {
 				long begin = System.currentTimeMillis();
 				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 				
-				currMRInst.setInputLabelValueMapping(_variables);
-				currMRInst.setOutputLabelValueMapping(_variables);
-				
 				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
 				
 				if ( currMRInst.getJobType() == JobType.SORT ) {
 					if ( jb.getMetaData().length > 0 ) {
 						/* Populate returned stats into symbol table of matrices */
 						for ( int index=0; index < jb.getMetaData().length; index++) {
-							String varname = currMRInst.getOutputLabels().get(index);
+							String varname = currMRInst.getOutputVars()[index];
 							_variables.get(varname).setMetaData(jb.getMetaData()[index]); // updateMatrixCharacteristics(mc);
 						}
 					}
@@ -127,7 +124,7 @@ public class ProgramBlock {
 					if ( jb.getMetaData().length > 0 ) {
 						/* Populate returned stats into symbol table of matrices */
 						for ( int index=0; index < jb.getMetaData().length; index++) {
-							String varname = currMRInst.getOutputLabels().get(index);
+							String varname = currMRInst.getOutputVars()[index];
 							MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
 							_variables.get(varname).updateMatrixCharacteristics(mc);
 						}
@@ -158,6 +155,8 @@ public class ProgramBlock {
 						System.out.println("Processing CPInstruction: " + currInst.toString());
 					((CPInstruction) currInst).processInstruction(this); 
 				}
+				if ( DMLScript.DEBUG )
+					System.out.println("    memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "].");
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{

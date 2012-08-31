@@ -7,10 +7,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -43,10 +41,34 @@ public class MMCJMR {
 
 	protected static final Log LOG = LogFactory.getLog(MMCJMR.class);
 	
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstrction, 
+			String[] outputVars, MatrixObjectNew[] outputMatrices, int numReducers, int replication
+			) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, 
+				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction,  
+				numReducers, replication, outputs[0], outputInfos[0]);
+	}
+	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
-			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo) 
+			int replication, String output, OutputInfo outputinfo) 
 	throws Exception
 	{
 		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
@@ -54,22 +76,20 @@ public class MMCJMR {
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, 
 				aggInstructionsInReducer, aggBinInstrction, numReducers, 
-				replication, resultDimsUnknown, output, outputinfo);
+				replication, output, outputinfo);
 	}
 	
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
-			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo) 
+			int replication, String output, OutputInfo outputinfo) 
 	throws Exception
 	{
 		JobConf job;
 		job = new JobConf(MMCJMR.class);
 		
-		byte []resultDimsUnknown_arr = new byte[1];
-		resultDimsUnknown_arr[0] = resultDimsUnknown;
-	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown_arr);
-		
+		// by default, assume that dimensions of MMCJ's output are known at compile time
+		byte resultDimsUnknown = (byte) 0;   
 		MatrixCharacteristics[] stats=commonSetup(job, inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, numReducers, 
 				replication, resultDimsUnknown, output, outputinfo);
@@ -77,13 +97,15 @@ public class MMCJMR {
 		// Update resultDimsUnknown based on computed "stats"
 		// There is always a single output
 		if ( stats[0].numRows == -1 || stats[0].numColumns == -1 ) {
-			if ( resultDimsUnknown != (byte) 1 ) {
-				throw new Exception("Unexpected error while configuring GMR job.");
-			}
+			resultDimsUnknown = (byte) 1;
+			
+			// if the dimensions are unknown, then setup done in commonSetup() must be updated
+			byte[] resultIndexes=new byte[]{MRInstructionParser.parseSingleInstruction(aggBinInstrction).output};
+			byte[] resultDimsUnknown_Array = new byte[]{resultDimsUnknown};
+			//set up the multiple output files, and their format information
+			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown_Array, new String[]{output}, new OutputInfo[]{outputinfo}, inBlockRepresentation);
 		}
-		else {
-			resultDimsUnknown = (byte) 0;
-		}
+
 		
 		//get the total amount of jvm memory
 		int partialAggCacheSize=MRJobConfiguration.getJVMMaxMemSize(job);
@@ -275,7 +297,7 @@ public class MMCJMR {
 		return stats;
 	}
 	
-	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
+	/*public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, int numReducers, 
 			int replication, byte resultDimsUnknown, String output, OutputInfo outputinfo, int partialAggCacheSize) 
@@ -307,11 +329,11 @@ public class MMCJMR {
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
-		/*
+		
 		 * Process different counters
 		 *   NOTE: MMCJ job always has only a single output. 
 		 *   Hence, no need to scan resultIndexes[] like other jobs
- 		 */
+ 		 
 		
 		//Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		//stats[0].nonZeros=group.getCounter(Byte.toString(MRInstructionParser.parseSingleInstruction(aggBinInstrction).output));
@@ -324,27 +346,6 @@ public class MMCJMR {
 		// number of non-zeros
 		stats[outputIndex].nonZero=group.getCounter(Byte.toString(outputMatrixID));
 		
-/*		Group rowgroup, colgroup;
-		// compute dimensions for output matrices whose dimensions are unknown at compilation time 
-		if ( stats[outputIndex].numRows == -1 || stats[outputIndex].numColumns == -1 ) {
-			if ( resultDimsUnknown != (byte) 1 )
-				throw new DMLRuntimeException("Unexpected error after executing MMCJ Job");
-		
-			rowgroup = runjob.getCounters().getGroup("max_rowdim_" + outputMatrixID );
-			colgroup = runjob.getCounters().getGroup("max_coldim_" + outputMatrixID );
-			int maxrow, maxcol;
-			maxrow = maxcol = 0;
-			for ( int rid=0; rid < numReducers; rid++ ) {
-				if ( maxrow < (int) rowgroup.getCounter(Integer.toString(rid)) )
-					maxrow = (int) rowgroup.getCounter(Integer.toString(rid));
-				if ( maxcol < (int) colgroup.getCounter(Integer.toString(rid)) )
-					maxcol = (int) colgroup.getCounter(Integer.toString(rid)) ;
-			}
-			//System.out.println("Resulting Rows = " + maxrow + ", Cols = " + maxcol );
-			stats[outputIndex].numRows = maxrow;
-			stats[outputIndex].numColumns = maxcol;
-		}
-*/
 		return new JobReturn(stats[outputIndex], outputinfo, runjob.isSuccessful());
-	}
+	}*/
 }

@@ -72,9 +72,6 @@ public class ELUseProgramBlock extends ProgramBlock {
 			if (currInst instanceof MRJobInstruction) {
 				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 					
-				currMRInst.setInputLabelValueMapping(_variables);
-				currMRInst.setOutputLabelValueMapping(_variables);
-				
 				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
 				
 				/* Populate returned stats into symbol table of matrices */

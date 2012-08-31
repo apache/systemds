@@ -1,11 +1,12 @@
 package com.ibm.bi.dml.runtime.instructions;
 
-import java.util.ArrayList;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -34,20 +35,24 @@ public class MRJobInstruction extends Instruction
 	//public enum JobType {MMCJ, MMRJ, GMR, Partition, RAND, ReBlock, SortKeys, Combine, CMCOV, GroupedAgg}; 
 	JobType jobType;
 	
+	public String iv_randInstructions = "";
+	String iv_recordReaderInstructions = "";
+	String iv_instructionsInMapper = ""; 
+	String iv_shuffleInstructions = ""; 
+	String iv_aggInstructions = "";
+	String iv_otherInstructions = "";
+	
+	String[] inputVars;
+	String[] outputVars;
+	byte [] iv_resultIndices;
+	
+	int iv_numReducers;
+	int iv_replication;
+	public String dimsUnknownFilePrefix;
 	
 	public JobType getJobType()
 	{
 		return jobType;
-	}
-
-	public String[] getIv_inputs()
-	{
-		return iv_inputs;
-	}
-
-	public InputInfo[] getIv_inputInfos()
-	{
-		return iv_inputInfos;
 	}
 
 	public String getIv_instructionsInMapper()
@@ -80,16 +85,6 @@ public class MRJobInstruction extends Instruction
 		return iv_otherInstructions;
 	}
 
-	public String[] getIv_outputs()
-	{
-		return iv_outputs;
-	}
-
-	public OutputInfo[] getIv_outputInfos()
-	{
-		return iv_outputInfos;
-	}
-
 	public byte[] getIv_resultIndices()
 	{
 		return iv_resultIndices;
@@ -105,67 +100,6 @@ public class MRJobInstruction extends Instruction
 		return iv_replication;
 	}
 
-	String[] iv_inputs;
-	InputInfo[] iv_inputInfos;
-	
-	public long[] getIv_rows()
-	{
-		return iv_rows;
-	}
-
-	public long[] getIv_cols()
-	{
-		return iv_cols;
-	}
-
-	public int[] getIv_num_rows_per_block()
-	{
-		for(int i=0; i < iv_num_rows_per_block.length; i++)
-		{
-			if(iv_num_rows_per_block[i] == -1)
-				iv_num_rows_per_block[i] = 1;
-		}
-		return iv_num_rows_per_block;
-	}
-
-	public int[] getIv_num_cols_per_block()
-	{
-		for(int i=0; i < iv_num_cols_per_block.length; i++)
-		{
-			if(iv_num_cols_per_block[i] == -1)
-				iv_num_cols_per_block[i] = 1;
-		}
-		return iv_num_cols_per_block;
-	}
-
-	public long [] iv_rows; 
-	public long [] iv_cols;
-	int [] iv_num_rows_per_block;
-	int [] iv_num_cols_per_block;
-	public String iv_randInstructions = "";
-	String iv_recordReaderInstructions = "";
-	String iv_instructionsInMapper = ""; 
-	String iv_shuffleInstructions = ""; 
-	String iv_aggInstructions = "";
-	String iv_otherInstructions = "";
-	String[] iv_outputs;
-	OutputInfo[] iv_outputInfos;
-	byte [] iv_resultIndices;
-	int iv_numReducers;
-	int iv_replication;
-	
-	/*
-	 *  For each result index i, iv_resultDimsUnknown[i] indicates whether or not the output matrix dimensions are known at compile time
-	 *  iv_resultDimsUnknown[i] = 0 --> dimensions are known at compile time
-	 *  iv_resultDimsUnknown[i] = 1 --> dimensions are unknown at compile time
-	 */
-	public byte[] iv_resultDimsUnknown; 
-	public byte[] getIv_resultDimsUnknown()
-	{
-		return iv_resultDimsUnknown;
-	}
-
-	public String dimsUnknownFilePrefix;
 	public String getDimsUnknownFilePrefix() {
 		return dimsUnknownFilePrefix;
 	}
@@ -173,61 +107,15 @@ public class MRJobInstruction extends Instruction
 		dimsUnknownFilePrefix = prefix;
 	}
 	
-	ArrayList <String> inputLabels;
-	public ArrayList<String> getInputLabels()
+	public String[] getInputVars()
 	{
-		return inputLabels;
+		return inputVars;
 	}
 
 
-	ArrayList <String> outputLabels;
-	public ArrayList<String> getOutputLabels()
+	public String[] getOutputVars()
 	{
-		return outputLabels;
-	}
-
-	
-	LocalVariableMap inputLabelValues;
-	public void setInputLabelValueMapping (LocalVariableMap labValues)
-	{
-	
-		/*
-		Iterator <String> it = labValues.keySet().iterator();
-		while(it.hasNext())
-		{
-			String s = it.next();
-			
-		}
-		*/
-		
-		inputLabelValues = labValues;
-	}
-	
-	public void setOutputLabelValueMapping (LocalVariableMap labValues)
-	{
-	
-		/*
-		Iterator <String> it = labValues.keySet().iterator();
-		while(it.hasNext())
-		{
-			String s = it.next();
-			
-		}
-		*/
-		
-		outputLabelValues = labValues;
-	}
-	
-	
-	public LocalVariableMap getInputLabelValueMapping()
-	{
-		return inputLabelValues;
-	}
-	
-	LocalVariableMap outputLabelValues;
-	public LocalVariableMap getOutputLabelValueMapping()
-	{
-		return outputLabelValues;
+		return outputVars;
 	}
 
 	// Used for partitioning jobs..
@@ -252,56 +140,34 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	/**
-	 * Method to set inputs (HDFS file paths, and input formats) of a MapReduce Instruction
-	 * @param inputLocations
-	 * @param inputInfos
-	 * @throws DMLRuntimeException 
-	 */
-	public void setInputs(String []inputLocations, InputInfo []inputInfos) throws DMLRuntimeException {
-		if ( inputLocations.length != inputInfos.length ) {
-			throw new DMLRuntimeException("Unexpected error while setting inputs for MapReduce Instruction -- size of inputLocations (" + inputLocations.length + ") and inputInfos (" + inputInfos.length + ") do not match.");
-		}
-		iv_inputs = inputLocations;
-		iv_inputInfos = inputInfos;
-	}
-	
-	/**
-	 * Method to set dimensions and block dimensions for inputs of a MapReduce Instruction.
-	 *  
-	 * @param inputRows
-	 * @param inputRowBlocks
-	 * @param inputCols
-	 * @param inputColBlocks
-	 * @throws DMLRuntimeException
-	 */
-	public void setInputDimensions(long[] inputRows, int[] inputRowBlocks, long[] inputCols, int[] inputColBlocks) throws DMLRuntimeException {
-		if ( inputRows.length != inputCols.length || inputRows.length != inputRowBlocks.length || inputRows.length != inputColBlocks.length ) {
-			throw new DMLRuntimeException("Unexpected error while setting input dimensions (" + inputRows.length + ", " + inputCols.length + "," + inputRowBlocks.length + "," + inputColBlocks.length + ") for MapReduce Instruction.");
-		}
-		iv_rows = inputRows;
-		iv_cols = inputCols;
-		iv_num_rows_per_block = inputRowBlocks; 
-		iv_num_cols_per_block = inputColBlocks; 
-	}
-	
-	/**
-	 * Method to set outputs (HDFS file paths, output formats, output indices) for a MapReduce instruction.
+	 * (deep) Copy constructor, primarily used in parfor.
+	 * Additionally, replace all occurrences of <code>srcPattern</code> with <code>targetPattern</code>
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
 	 * 
-	 * @param outputLocations
-	 * @param outputInfos
-	 * @throws DMLRuntimeException
 	 */
-	public void setOutputs(String[] outputLocations, OutputInfo[] outputInfos, byte[] outputIndices) throws DMLRuntimeException {
-		if ( outputLocations.length != outputInfos.length || outputLocations.length != outputIndices.length) {
-			throw new DMLRuntimeException("Unexpected error while setting outputs (" + outputLocations.length + ", " + outputInfos.length + ", " + outputIndices.length + ") for MapReduce Instruction.");
+	public MRJobInstruction(MRJobInstruction that, String srcPattern, String targetPattern) throws IllegalArgumentException, IllegalAccessException {
+		this(that.getJobType());
+		Class<MRJobInstruction> cla = MRJobInstruction.class;
+		
+		Field[] fields = cla.getDeclaredFields();
+		for( Field f : fields )
+		{
+			f.setAccessible(true);
+			if(!Modifier.isStatic(f.getModifiers()))
+				f.set(this, f.get(that));
 		}
-		iv_outputs = outputLocations;
-		iv_outputInfos = outputInfos;
-		iv_resultIndices = outputIndices;
+		this.dimsUnknownFilePrefix.replaceAll(srcPattern, targetPattern);
 	}
 	
-	public void setOutputDimensions(byte[] outputDimensionsUnknown) {
-		iv_resultDimsUnknown = outputDimensionsUnknown;
+	/**
+	 * Method to set outputs (output indices) for a MapReduce instruction.
+	 * 
+	 * @param outputIndices
+	 * @throws DMLRuntimeException
+	 */
+	public void setOutputs(byte[] outputIndices) {
+		iv_resultIndices = outputIndices;
 	}
 	
 	/**
@@ -327,9 +193,9 @@ public class MRJobInstruction extends Instruction
 	 * @param inputLabels
 	 * @param outputLabels
 	 */
-	public void setInputOutputLabels(ArrayList<String> inputLabels, ArrayList<String> outputLabels) {
-		this.inputLabels = inputLabels;
-		this.outputLabels = outputLabels;
+	public void setInputOutputLabels(String[] inputLabels, String[] outputLabels) {
+		this.inputVars = inputLabels;
+		this.outputVars = outputLabels;
 	}
 	
 	public void setRecordReaderInstructions(String rrInstructions) {
@@ -356,7 +222,7 @@ public class MRJobInstruction extends Instruction
 		iv_randInstructions = randInstructions;
 	}
 	
-	public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
+	/*public void setPartitionInstructions(String inputs[], InputInfo[] inputInfo, String[] outputs,  int numReducers, int replication,
 			long[] nr, long[] nc, int[] bnr, int[] bnc, byte[] resultIndexes, byte[] resultDimsUnknown, PartitionParams pp, ArrayList <String> inLabels, 
 			ArrayList <String> outLabels, LocalVariableMap outputLabelValueMapping) {
 		this.iv_inputs = inputs ;
@@ -384,377 +250,173 @@ public class MRJobInstruction extends Instruction
 		this.inputLabels = inLabels ;
 		this.outputLabels = outLabels ;
 		this.outputLabelValues = outputLabelValueMapping ;
-	}
+	}*/
 
-	public void setGMRInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
+	public void setGMRInstructions(String[] inLabels,  
 			String recordReaderInstructions, String mapperInstructions, 
-			String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+			String aggInstructions, String otherInstructions, String [] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setRecordReaderInstructions(recordReaderInstructions);
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions("");
-			setAggregateInstructionsInReducer(aggInstructions);
-			setOtherInstructionsInReducer(otherInstructions);
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		setOutputs(resultIndex);
+
+		setRecordReaderInstructions(recordReaderInstructions);
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions("");
+		setAggregateInstructionsInReducer(aggInstructions);
+		setOtherInstructionsInReducer(otherInstructions);
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
 	}	
 
-	public void setRandInstructions(long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
+	public void setRandInstructions(long [] numRows, String[] inLabels,  
 			String randInstructions, String mapperInstructions, 
-			String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown,
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+			String aggInstructions, String otherInstructions, String [] outLabels, byte [] resultIndex, 
+			int numReducers, int replication)
 	{
-		try {
-			//setInputs(null, null);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
+		setOutputs(resultIndex);
 			
-			setRecordReaderInstructions("");
-			setRandInstructions(randInstructions);
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions("");
-			setAggregateInstructionsInReducer(aggInstructions);
-			setOtherInstructionsInReducer(otherInstructions);
+		setRecordReaderInstructions("");
+		setRandInstructions(randInstructions);
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions("");
+		setAggregateInstructionsInReducer(aggInstructions);
+		setOtherInstructionsInReducer(otherInstructions);
 			
-			setInputOutputLabels(inLabels, outLabels);
+		setInputOutputLabels(inLabels, outLabels);
 			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-/*		this.iv_inputs = null; // inputs;
-		this.iv_inputInfos = null; // inputInfo;
-		this.iv_outputs = output;
-		this.iv_outputInfos = outputInfo;
-		this.iv_randInstructions = randInstructions;
-		this.iv_instructionsInMapper = mapperInstructions;
-		this.iv_aggInstructions = aggInstructions;
-		this.iv_otherInstructions = otherInstructions;
-		this.iv_resultIndices = resultIndex;
-		this.iv_resultDimsUnknown = resultDimsUnknown;
-		this.iv_numReducers = numReducers;
-		this.iv_replication = replication;
-		this.inputLabels = inLabels;
-		this.outputLabels = outLabels;
-		//this.outputLabelValues = outputLabelValueMapping;
-		
-		this.iv_rows = numRows;
-		this.iv_cols = numCols;
-		this.iv_num_rows_per_block = num_rows_per_block;
-		this.iv_num_cols_per_block = num_cols_per_block;*/
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
 	}
 	
 
-	public void setMMCJInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
-			String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+	public void setMMCJInstructions(String[] inLabels, 
+			String mapperInstructions, String shuffleInstructions, 
+			String [] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions(shuffleInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer("");
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-/*		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_instructionsInMapper = mapperInstructions;
-		iv_shuffleInstructions = aggBinInstructions;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-		//outputLabelValues = outputLabelValueMapping;
-*/	}
+		setOutputs(resultIndex);
 
-	public void setMMRJInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
-			String shuffleInstructions, String aggInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer("");
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}
+
+	public void setMMRJInstructions(String[] inLabels, 
+			String mapperInstructions, String shuffleInstructions, String aggInstructions, String otherInstructions, 
+			String [] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions(shuffleInstructions);
-			// TODO: check if aggInstructions are applicable to MMRJ
-			setAggregateInstructionsInReducer(aggInstructions);
-			setOtherInstructionsInReducer(otherInstructions);
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-/*		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_instructionsInMapper = mapperInstructions;
-		iv_shuffleInstructions = aggBinInstructions;
-		iv_otherInstructions = otherInstructions;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-		//outputLabelValues = outputLabelValueMapping;
-*/	}
+		setOutputs(resultIndex);
+
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer(aggInstructions);
+		setOtherInstructionsInReducer(otherInstructions);
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}
 	
 	// SortKeys Job does not have any instructions either in mapper or in reducer.
 	// It just has two inputs
-	public void setSORTKEYSInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block,  
-			String mapperInstructions, String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+	public void setSORTKEYSInstructions(String [] inLabels,   
+			String mapperInstructions, String shuffleInstructions, 
+			String[] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions(shuffleInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer("");
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-/*		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		iv_shuffleInstructions = aggBinInstructions;
-		iv_instructionsInMapper = mapperInstructions;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-*/	}
+		setOutputs(resultIndex);
 
-	public void setCombineInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
-			String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer("");
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}
+
+	public void setCombineInstructions(String[] inLabels,  
+			String shuffleInstructions, String[] outLabels, byte[] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions("");
-			setShuffleInstructions(shuffleInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer("");
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-/*		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_instructionsInMapper = mapperInstructions;
-		iv_aggInstructions = aggInstructions;
-		iv_otherInstructions = otherInstructions;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-		//outputLabelValues = outputLabelValueMapping;
-*/	}	
+		setOutputs(resultIndex);
+
+		setMapperInstructions("");
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer("");
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}	
 	
-	public void setCentralMomentInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
-			String mapperInstructions, String shuffleInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+	public void setCentralMomentInstructions(String[] inLabels, 
+			String mapperInstructions, String shuffleInstructions, 
+			String[] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions(shuffleInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer("");
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-/*		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_instructionsInMapper = mapperInstructions;
-		iv_aggInstructions = aggInstructions;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-		//outputLabelValues = outputLabelValueMapping;
-*/	}	
+		setOutputs(resultIndex);
+
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer("");
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}	
 	
-	public void setGroupedAggInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, 
-			String shuffleInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+	public void setGroupedAggInstructions(String[] inLabels, 
+			String shuffleInstructions, String otherInstructions, 
+			String[] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions("");
-			setShuffleInstructions(shuffleInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer(otherInstructions);
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-/*
-		iv_inputs = input;
-		iv_inputInfos = inputInfo;
-		iv_instructionsInMapper = mapperInstructions;
-		iv_aggInstructions = aggInstructions;
-		iv_otherInstructions = otherInstructions;
-		iv_outputs = output;
-		iv_outputInfos = outputInfo;
-		iv_resultIndices = resultIndex;
-		iv_resultDimsUnknown = resultDimsUnknown;
-		iv_numReducers = numReducers;
-		iv_replication = replication;
-		iv_rows = numRows;
-		iv_cols = numCols;
-		iv_num_rows_per_block = num_rows_per_block;
-		iv_num_cols_per_block = num_cols_per_block;
-		inputLabels = inLabels;
-		outputLabels = outLabels;
-		//outputLabelValues = outputLabelValueMapping;
-*/	}	
+		setOutputs(resultIndex);
+
+		setMapperInstructions("");
+		setShuffleInstructions(shuffleInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer(otherInstructions);
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
+	}	
 	
-	public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
-			String reblockInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, byte[] resultDimsUnknown, 
-			int numReducers, int replication, ArrayList <String> inLabels, ArrayList <String> outLabels)
+	public void setReBlockInstructions(String[] inLabels, 
+			String mapperInstructions, String reblockInstructions, String otherInstructions, 
+			String[] outLabels, byte [] resultIndex,  
+			int numReducers, int replication)
 	{
-		try {
-			setInputs(input, inputInfo);
-			setInputDimensions(numRows, num_rows_per_block, numCols, num_cols_per_block);
-			setOutputs(output, outputInfo, resultIndex);
-			setOutputDimensions(resultDimsUnknown);
-			
-			setMapperInstructions(mapperInstructions);
-			setShuffleInstructions(reblockInstructions);
-			setAggregateInstructionsInReducer("");
-			setOtherInstructionsInReducer(otherInstructions);
-			
-			setInputOutputLabels(inLabels, outLabels);
-			
-			setNumberOfReducers(numReducers);
-			setReplication(replication);
-			
-		} catch (DMLRuntimeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		setOutputs(resultIndex);
+
+		setMapperInstructions(mapperInstructions);
+		setShuffleInstructions(reblockInstructions);
+		setAggregateInstructionsInReducer("");
+		setOtherInstructionsInReducer(otherInstructions);
+
+		setInputOutputLabels(inLabels, outLabels);
+
+		setNumberOfReducers(numReducers);
+		setReplication(replication);
 	}
 	
 	
@@ -834,30 +496,18 @@ public class MRJobInstruction extends Instruction
 	{
 		String instruction = "";
 		instruction += "jobtype" + jobType + " \n";
-		if ( iv_inputs != null )
-			instruction += "inputs " + getString(iv_inputs) + " \n";
-		if ( iv_inputInfos != null )
-			instruction += "input info " + getString(iv_inputInfos) + " \n";
+		instruction += "input labels " + Arrays.toString(inputVars) + " \n";
 		instruction += "recReader inst " + iv_recordReaderInstructions + " \n";
 		instruction += "rand inst " + iv_randInstructions + " \n";
 		instruction += "mapper inst " + iv_instructionsInMapper + " \n";
 		instruction += "shuffle inst " + iv_shuffleInstructions + " \n";
 		instruction += "agg inst " + iv_aggInstructions + " \n";
-		//instruction += "reblock inst " + iv_reblockInstructions + " \n";
 		instruction += "other inst " + iv_otherInstructions + " \n";
-		instruction += "outputs  " + getString(iv_outputs) + " \n";
-		instruction += "output info " + getString(iv_outputInfos) + " \n";
+		instruction += "output labels " + Arrays.toString(outputVars) + " \n";
 		instruction += "result indices " + getString(iv_resultIndices) + " \n";
+		//instruction += "result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
 		instruction += "num reducers " + iv_numReducers + " \n";
 		instruction += "replication " + iv_replication + " \n";
-		instruction += "result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
-		instruction += "num rows " + getString(iv_rows) + " \n";
-		instruction += "num cols " + getString(iv_cols) + " \n";
-		instruction += "rows per block " + getString(iv_num_rows_per_block) + " \n";
-		instruction += "cols per block " + getString(iv_num_cols_per_block) + " \n";
-		instruction += "input labels " + inputLabels + "\n";
-		instruction += "outputs labels " + outputLabels + "\n";
-		//instruction += "output label values " + outputLabelValues +  " " + outputLabelValues.keySet().size() + " " + outputLabelValues.values().size() + "\n";
 		return instruction;
 	}
 	
@@ -904,13 +554,4 @@ public class MRJobInstruction extends Instruction
 		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
 	}
 	
-	public void setIv_inputs(String[] in)
-	{
-		iv_inputs=in;
-	}
-	
-	public void setIv_outputs(String[] out)
-	{
-		iv_outputs=out;
-	}
 }

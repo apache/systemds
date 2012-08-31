@@ -2022,12 +2022,12 @@ public class Dag<N extends Lops> {
 		outputLabelValueMapping = pp.getOutputLabelValueMapping();
 		String[] outputStrings = pp.getOutputStrings();
 		
-		mr.setPartitionInstructions(getStringArray(inputs), inputInfo,
+		/*mr.setPartitionInstructions(getStringArray(inputs), inputInfo,
 				outputStrings, numReducers, replication, getLongArray(numRows),
 				getLongArray(numCols), getIntArray(numRowsPerBlock),
 				getIntArray(numColsPerBlock), pp.getResultIndexes(), pp
 						.getResultDimsUnknown(), pp, inputLabels, outputLabels,
-				outputLabelValueMapping);
+				outputLabelValueMapping);*/
 		inst.add(mr);
 	}
 	
@@ -2537,17 +2537,8 @@ public class Dag<N extends Lops> {
 		/* Determine if the output dimensions are known */
 		
 		byte[] resultIndicesByte = new byte[resultIndices.size()];
-		byte[] resultDimsUnknown = new byte[resultIndices.size()];
 		for (int i = 0; i < resultIndicesByte.length; i++) {
 			resultIndicesByte[i] = resultIndices.get(i).byteValue();
-			// check if the output matrix dimensions are known at compile time
-			if (rootNodes.elementAt(i).getOutputParameters().getNum_rows() == -1
-					&& rootNodes.elementAt(i).getOutputParameters()
-							.getNum_cols() == -1) {
-				resultDimsUnknown[i] = (byte) 1;
-			} else {
-				resultDimsUnknown[i] = (byte) 0;
-			}
 		}
 		
 		if (DEBUG) {
@@ -2555,7 +2546,6 @@ public class Dag<N extends Lops> {
 			System.out.println("    Other instructions =" + getCSVString(otherInstructionsReducer));
 			System.out.println("    Output strings: " + outputs.toString());
 			System.out.println("    ResultIndices = " + resultIndices.toString());
-			System.out.println("    ResultDimsUnknown = " + resultDimsUnknown.toString());
 		}
 		
 		/* Prepare the MapReduce job instruction */
@@ -2563,26 +2553,18 @@ public class Dag<N extends Lops> {
 		MRJobInstruction mr = new MRJobInstruction(jt);
 		
 		// check if this is a map-only job. If not, set the number of reducers
-		//if (getCSVString(shuffleInstructions).compareTo("") != 0 || getCSVString(aggInstructionsReducer).compareTo("") != 0
-		//		|| getCSVString(otherInstructionsReducer).compareTo("") != 0)
-		//	numReducers = total_reducers;
 		if ( shuffleInstructions.size() > 0 || aggInstructionsReducer.size() > 0 || otherInstructionsReducer.size() > 0 )
 			numReducers = total_reducers;
 		
 		// set inputs, outputs, and other other properties for the job 
-		mr.setInputs(getStringArray(inputs),getInputInfoArray(inputInfos));
-		mr.setInputDimensions(getLongArray(numRows), getIntArray(numRowsPerBlock), getLongArray(numCols), getIntArray(numColsPerBlock));
-		
-		mr.setOutputs(getStringArray(outputs), getOutputInfoArray(outputInfos), resultIndicesByte);
-		mr.setOutputDimensions(resultDimsUnknown);
+		mr.setInputOutputLabels(getStringArray(inputLabels), getStringArray(outputLabels));
+		mr.setOutputs(resultIndicesByte);
 		mr.setDimsUnknownFilePrefix(scratch +  
 				                      Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 				                      Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR );
 		
 		mr.setNumberOfReducers(numReducers);
 		mr.setReplication(replication);
-		
-		mr.setInputOutputLabels(inputLabels, outputLabels);
 		
 		// set instructions for recordReader and mapper
 		mr.setRecordReaderInstructions(getCSVString(recordReaderInstructions));

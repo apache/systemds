@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -217,9 +218,35 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	}
   }
   
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String instructionBeforesort, String[] outputVars, MatrixObjectNew[] outputMatrices,
+			int numReducers, int replication) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		boolean weightsflag = true;
+		if ( !instructionBeforesort.equalsIgnoreCase("") )
+			weightsflag = false;
+		return runJob(inputs[0], inputInfos[0], rlens[0], clens[0], brlens[0], bclens[0],
+				instructionBeforesort, numReducers, replication, 
+				outputs[0], outputInfos[0], weightsflag);
+	}
+  
 	public static JobReturn runJob(String input, InputInfo inputInfo, long rlen, long clen, 
 			int brlen, int bclen, String instructionBeforesort, int numReducers, 
-			int replication, byte resultDimsUnknown, String output, OutputInfo outputInfo, boolean valueIsWeight) 
+			int replication, String output, OutputInfo outputInfo, boolean valueIsWeight) 
 	  throws Exception 
 	  {
 		//  if(!inputInfo.inputKeyClass.equals(outputInfo.outputKeyClass) 
@@ -372,7 +399,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     OutputInfo outputInfo=new OutputInfo(CompactOutputFormat.class, DoubleWritable.class, IntWritable.class);
     
     JobReturn ret=runJob(args[0], InputInfo.BinaryBlockInputInfo, 100, 1, 10, 1, "combineunary:::0:DOUBLE:::1:DOUBLE", 
-    		Integer.parseInt(args[2]), 1, (byte) 0, args[1], outputInfo, false);
+    		Integer.parseInt(args[2]), 1, args[1], outputInfo, false);
    // System.out.println(MapReduceTool.pickValue(args[1], (NumItemsByEachReducerMetaData) ret.otherMetadata[0], 0.5));
     inputinfo.inputFormatClass=PickFromCompactInputFormat.class;
     inputinfo.inputKeyClass=DoubleWritable.class;
@@ -385,13 +412,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     GMR.runJob(false, new String[]{args[1], args[3]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
     		new int[]{matchar.numColumnsPerBlock, 1}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(false, new String[]{args[1]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
     		new int[]{matchar.numColumnsPerBlock}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
   
   public static void testWithWeights(String[] args)throws Exception 
@@ -411,7 +438,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     
     InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
     outputInfo=new OutputInfo(CompactOutputFormat.class, DoubleWritable.class, IntWritable.class);
-    JobReturn ret=runJob("temp", inputinfo, 100, 1, 10, 1, null, Integer.parseInt(args[3]), 1, (byte) 0, args[2], outputInfo, true);
+    JobReturn ret=runJob("temp", inputinfo, 100, 1, 10, 1, null, Integer.parseInt(args[3]), 1, args[2], outputInfo, true);
 
    // System.out.println(MapReduceTool.pickValue(args[2], (NumItemsByEachReducerMetaData) ret.otherMetadata[0], 0.5));
     inputinfo.inputFormatClass=PickFromCompactInputFormat.class;
@@ -425,13 +452,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     GMR.runJob(false, new String[]{args[2], args[4]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
     		new int[]{matchar.numColumnsPerBlock, 1}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(false, new String[]{args[2]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
     		new int[]{matchar.numColumnsPerBlock}, rrins, "", "", "", 0, 1, 
-    		new byte[]{2}, new byte[2], "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
+    		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
 
 public static void main(String[] args) throws Exception {

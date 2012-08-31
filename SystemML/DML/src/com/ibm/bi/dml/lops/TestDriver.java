@@ -7,7 +7,6 @@ import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -184,8 +183,8 @@ public class TestDriver {
 		data2.addToDag(dag);
 		ArrayList<Instruction> inst = dag.getJobs(true, null);
 		printInstructions(inst);
-		((MRJobInstruction) (inst.get(0)))
-				.setInputLabelValueMapping (new LocalVariableMap ());
+		//((MRJobInstruction) (inst.get(0)))
+		//		.setInputLabelValueMapping (new LocalVariableMap ());
 		try {
 			RunMRJobs.submitJob((MRJobInstruction) inst.get(0), null);
 		} catch (Exception e) {

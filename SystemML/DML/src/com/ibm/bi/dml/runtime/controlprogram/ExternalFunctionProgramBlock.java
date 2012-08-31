@@ -381,10 +381,13 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				}
 			}
 	
-			reblkInst.setReBlockInstructions(inputs, inputInfo, numRows, numCols,
-					numRowsPerBlock, numColsPerBlock, "", reblock, "", outputs,
-					outputInfo, resultIndex, resultDimsUnknown, 1, 1, inLabels,
-					outLabels);
+			/*public void setReBlockInstructions(String[] inLabels, 
+					String mapperInstructions, String reblockInstructions, String otherInstructions, 
+					String[] outLabels, byte [] resultIndex, byte[] resultDimsUnknown, 
+					int numReducers, int replication)*/
+			
+			reblkInst.setReBlockInstructions(inLabels.toArray(new String[inLabels.size()]), "", reblock, "", 
+					outLabels.toArray(new String[inLabels.size()]), resultIndex, 1, 1);
 			c2binst.add(reblkInst);
 	
 			// generate instructions that rename the output variables of REBLOCK job
@@ -492,10 +495,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			}
 		
 			// Finally, generate GMR instruction that performs block2cell conversion
-			gmrInst.setGMRInstructions(inputs, inputInfo, numRows, numCols,
-					numRowsPerBlock, numColsPerBlock, "", "", "", "", outputs,
-					outputInfo, resultIndex, resultDimsUnknown, 0, 1, inLabels,
-					outLabels);
+			gmrInst.setGMRInstructions(inLabels.toArray(new String[inLabels.size()]), "", "", "", "", 
+					outLabels.toArray(new String[outLabels.size()]), resultIndex, 0, 1);
 				
 			b2cinst.add(gmrInst);
 		

@@ -8,6 +8,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -36,9 +37,33 @@ import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
 
 public class ReblockMR {
 
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String instructionsInMapper, String reblockInstructions, String otherInstructionsInReducer, 
+			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes,
+			int numReducers, int replication) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, brlens, bclens, 
+				instructionsInMapper, reblockInstructions, otherInstructionsInReducer, 
+				numReducers, replication, resultIndexes, outputs, outputInfos);
+	}
+	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String reblockInstructions, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, 
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -82,17 +107,15 @@ public class ReblockMR {
 				instructionsInMapper, reblockInstructions, null, null, otherInstructionsInReducer, resultIndexes);
 		
 		// Update resultDimsUnknown based on computed "stats"
+		byte[] resultDimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
 			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 ) {
-					throw new Exception("Unexpected error while configuring GMR job.");
-				}
+				resultDimsUnknown[i] = (byte) 1;
 			}
 			else {
 				resultDimsUnknown[i] = (byte) 0;
 			}
 		}
-	//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, true);

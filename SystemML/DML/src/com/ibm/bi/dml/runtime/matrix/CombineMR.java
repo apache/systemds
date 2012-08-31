@@ -15,6 +15,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -262,6 +263,26 @@ public class CombineMR {
 
 	}
 
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String combineInstructions, String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes,
+			int numReducers, int replication) throws Exception {
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, brlens, bclens, combineInstructions,
+				numReducers, replication, resultIndexes, outputs, outputInfos);
+	}
+	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String combineInstructions, 
 			int numReducers, int replication, byte[] resultIndexes, String[] outputs, OutputInfo[] outputInfos) 

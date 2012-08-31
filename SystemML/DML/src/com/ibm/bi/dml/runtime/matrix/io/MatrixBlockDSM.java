@@ -2582,6 +2582,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		return result;
 	}
 	
+	// In a given two column matrix, the second column denotes weights.
+	// This function computes the total weight
 	private double sumWeightForQuantile() throws DMLRuntimeException {
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ )
@@ -2592,6 +2594,14 @@ public class MatrixBlockDSM extends MatrixValue{
 		return sum_wt;
 	}
 	
+	/**
+	 * Computes the weighted interQuartileMean.
+	 * The matrix block ("this" pointer) has two columns, in which the first column 
+	 * refers to the data and second column denotes corresponding weights.
+	 * 
+	 * @return InterQuartileMean
+	 * @throws DMLRuntimeException
+	 */
 	public double interQuartileMean() throws DMLRuntimeException {
 		double sum_wt = sumWeightForQuantile();
 		
@@ -2599,13 +2609,21 @@ public class MatrixBlockDSM extends MatrixValue{
 		int toPos = (int) Math.ceil(0.75*sum_wt);
 		int selectRange = toPos-fromPos; // range: (fromPos,toPos]
 		
+		if ( selectRange == 0 )
+			return 0.0;
+		
 		int index, count=0;
 		
+		// The first row (0^th row) has value 0.
+		// If it has a non-zero weight i.e., input data has zero values
+		// then "index" must start from 0, otherwise we skip the first row 
+		// and start with the next value in the data, which is in the 1st row.
 		if ( getValue(0,1) > 0 ) 
 			index = 0;
 		else
 			index = 1;
 		
+		// keep scanning the weights, until we hit the required position <code>fromPos</code>
 		while ( count < fromPos ) {
 			count += getValue(index,1);
 			++index;

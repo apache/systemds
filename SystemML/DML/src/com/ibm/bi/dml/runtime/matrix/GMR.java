@@ -10,6 +10,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -46,34 +47,93 @@ public class GMR{
 	 * outputInfos: output format information for the output matrices
 	 */
 	
+	/**
+	 * Given an array of input variable names and corresponding MatrixObjects (from symbol table), 
+	 * this function updates the remaining parameters (rlens, clens, ... ) with the information required 
+	 * to spawn the MapReduce job. 
+	 */
+	static void populateInputs(String []inputVars, MatrixObjectNew[] inputMatrices, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, int[] brlens, int []bclens) {
+		// Since inputVars can potentially contain scalar variables,
+		// the loop is made over inputMatrices and not inputVars
+		for ( int i=0; i < inputMatrices.length; i++ ) {
+			inputs[i] = inputMatrices[i].getFileName();
+			MatrixCharacteristics mc = ((MatrixDimensionsMetaData) inputMatrices[i].getMetaData()).getMatrixCharacteristics();
+			rlens[i] = mc.get_rows();
+			clens[i] = mc.get_cols();
+			brlens[i] = mc.get_rows_per_block();
+			bclens[i] = mc.get_cols_per_block();
+			if ( inputMatrices[i].getMetaData() instanceof MatrixFormatMetaData ) {
+				inputInfos[i] = ((MatrixFormatMetaData) inputMatrices[i].getMetaData()).getInputInfo();
+			}
+			else if (inputMatrices[i].getMetaData() instanceof NumItemsByEachReducerMetaData ) {
+				inputInfos[i] = InputInfo.InputInfoForSortOutput;
+				inputInfos[i].metadata = inputMatrices[i].getMetaData();
+			}
+		}
+	}
+	
+	static void populateOutputs(String[] outputVars, MatrixObjectNew[] outputMatrices, String[] outputs, OutputInfo[] outputInfos) {
+		for(int i=0; i < outputVars.length; i++) {
+			outputs[i] = outputMatrices[i].getFileName();
+			MatrixFormatMetaData md = (MatrixFormatMetaData) outputMatrices[i].getMetaData();
+			outputInfos[i] = md.getOutputInfo();
+		}
+	}
+	
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
+			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes,
+			int numReducers, int replication, String dimsUnknownFilePrefix) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, 
+				brlens, bclens, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, 
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, dimsUnknownFilePrefix,
+				outputs, outputInfos);
+	}
+	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix,
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix,
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
 		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, recordReaderInstruction, instructionsInMapper, aggInstructionsInReducer, 
-				otherInstructionsInReducer, numReducers, replication, resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix,
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, dimsUnknownFilePrefix,
 				outputs, outputInfos); 
 	}
 	
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix,
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix,
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, null, instructionsInMapper, aggInstructionsInReducer, 
-				otherInstructionsInReducer, numReducers, replication, resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix,
+				otherInstructionsInReducer, numReducers, replication, resultIndexes, dimsUnknownFilePrefix,
 				outputs, outputInfos); 
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix, 
+			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -186,20 +246,19 @@ public class GMR{
 				instructionsInMapper, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
 		
 		// Update resultDimsUnknown based on computed "stats"
+		byte[] dimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 
 			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-				if ( resultDimsUnknown[i] != (byte) 1 ) {
-					throw new Exception("Unexpected error while configuring GMR job.");
-				}
+				dimsUnknown[i] = (byte)1;
 			}
 			else {
-				resultDimsUnknown[i] = (byte) 0;
+				dimsUnknown[i] = (byte) 0;
 			}
 		}
 		//MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, dimsUnknown, outputs, outputInfos, inBlockRepresentation, true);
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GMRMapper.class);

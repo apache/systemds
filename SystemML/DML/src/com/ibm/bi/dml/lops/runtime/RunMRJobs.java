@@ -2,7 +2,6 @@ package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -13,12 +12,6 @@ import org.apache.hadoop.io.SequenceFile;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.meta.PartitionBlockHashMapMR;
-import com.ibm.bi.dml.meta.PartitionBlockJoinMR;
-import com.ibm.bi.dml.meta.PartitionBlockMR;
-import com.ibm.bi.dml.meta.PartitionCellMR;
-import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.meta.PartitionSubMatrixMR;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -37,16 +30,15 @@ import com.ibm.bi.dml.runtime.matrix.MMCJMR;
 import com.ibm.bi.dml.runtime.matrix.MMRJMR;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.RandMR;
 import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class RunMRJobs {
@@ -59,22 +51,43 @@ public class RunMRJobs {
 		if ( DMLScript.DEBUG  )
 			System.out.println(inst.toString());
 
-		for(String ii: inst.getInputLabels() ) {
+		// Obtain references to all input matrices. Also, export them to HDFS if they are dirty in the cache
+		// NOTE that there can be SCALAR inputs
+		ArrayList<MatrixObjectNew> inputmat = new ArrayList<MatrixObjectNew>();
+		MatrixObjectNew m = null;
+		for(String ii: inst.getInputVars() ) {
 			Data d = pb.getVariable(ii);
-			//if(d instanceof MatrixObjectNew){
-			if ( d.getDataType() == DataType.MATRIX ) { 
-				MatrixObjectNew inputObj = (MatrixObjectNew) d;
-				inputObj.exportData();
+			if ( d.getDataType() == DataType.MATRIX ) {
+				m = (MatrixObjectNew) d;
+				inputmat.add(m);
+				//inputMatrices[ind] = (MatrixObjectNew) d;
+				if ( m.isDirty() ) 
+					m.exportData();
+			}
+		}
+		MatrixObjectNew[] inputMatrices = inputmat.toArray(new MatrixObjectNew[inputmat.size()]);
+		
+		// Obtain references to all output matrices
+		// MR jobs produces ONLY matrices, and no scalar can be produced
+		MatrixObjectNew[] outputMatrices = new MatrixObjectNew[inst.getOutputVars().length];
+		int ind = 0;
+		for(String oo: inst.getOutputVars()) {
+			Data d = pb.getVariable(oo);
+			if ( d.getDataType() == DataType.MATRIX ) {
+				outputMatrices[ind++] = (MatrixObjectNew)d;
+			}
+			else {
+				throw new DMLRuntimeException(inst.getJobType() + ": invalid datatype (" + d.getDataType() + ") for output variable " + oo);
 			}
 		}
 		
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
 		if (!inst.getJobType().areEmptyInputsAllowed()) {
-			for (String f : updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping())) {
+			for ( int i=0; i < inputMatrices.length; i++ ) {
 				try {
-					if (MapReduceTool.isHDFSFileEmpty(f)) {
-						throw new DMLRuntimeException("Can not operate on an empty file: " + f);
+					if (MapReduceTool.isHDFSFileEmpty(inputMatrices[i].getFileName())) {
+						throw new DMLRuntimeException("Can not operate on an empty file: " + inputMatrices[i].getFileName());
 					}
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
@@ -82,180 +95,80 @@ public class RunMRJobs {
 			}
 		}
 
+		// Spawn MapReduce Jobs
 		try {
-			String[] updatedInputLabels = null;
-			String[] updatedOutputLabels = null;
-			long[] updatedRows = null;
-			long[] updatedCols = null;
-			int[] updatedRowsPerBlock = null;
-			int[] updatedColsPerBlock = null;
+			// replace all placeholders in all instructions with appropriate values
+			String rrInst = updateLabels(inst.getIv_recordReaderInstructions(), pb.getVariables());
+			String mapInst = updateLabels(inst.getIv_instructionsInMapper(), pb.getVariables());
+			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(),pb.getVariables());
+			String aggInst = updateLabels(inst.getIv_aggInstructions(), pb.getVariables());
+			String otherInst = updateLabels(inst.getIv_otherInstructions(), pb.getVariables());
 			
-			/*
-			 * Update placeholder labels i.e., the ones of the form ##<label>##
-			 * Update rows and columns that are set in piggybacking by 
-			 *   looking at the metadata structure (_matrices) in program block 
-			 */
-			if ( inst.getIv_inputs() != null )
-				updatedInputLabels = updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping());
-			if ( inst.getIv_outputs() != null )
-				updatedOutputLabels = updateLabels(inst.getIv_outputs(), inst.getOutputLabelValueMapping());
-			if ( inst.getIv_rows() != null && updatedInputLabels != null )
-				updatedRows = updateRows(inst.getIv_rows(), updatedInputLabels, inst.getInputLabels(), pb);
-			if ( inst.getIv_cols() != null && updatedInputLabels != null )
-				updatedCols = updateCols(inst.getIv_cols(), updatedInputLabels, inst.getInputLabels(), pb);
-			if ( inst.getIv_num_rows_per_block() != null && updatedInputLabels != null )
-				updatedRowsPerBlock = updateRowsPerBlock(inst.getIv_num_rows_per_block(), updatedInputLabels, inst.getInputLabels(), pb);
-			if ( inst.getIv_num_cols_per_block() != null && updatedInputLabels != null )
-				updatedColsPerBlock = updateColsPerBlock(inst.getIv_num_cols_per_block(), updatedInputLabels, inst.getInputLabels(), pb);
+			switch(inst.getJobType()) {
 			
-			if (inst.getJobType() == JobType.GMR) {
-				//boolean blocked_rep = true;
-				
-				// If any input value class is Cell then the whole job should run in "Cell" mode
-				// Remaining blocked input is implicitly converted into cell format
-				//for ( InputInfo ii : inst.getIv_inputInfos()) {
-				//	if ( ii == InputInfo.TextCellInputInfo || ii == InputInfo.BinaryCellInputInfo ) {
-				//		blocked_rep = false;
-				//		break;
-				//	}
-				//}
-				
-				// TODO: statiko -- how to remove this check?
-				/*if ( blocked_rep == false ) {
-					// Check if any outputs are of type BinaryBlock!
-					// output info must not be blocked
-					for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
-						if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
-							inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
-						}
-					}
-				}*/
-				
-				if ( !inst.getIv_recordReaderInstructions().equals("") ) {
-					// if there are record reader instructions, we need to update MetaData
-					
-					// In the presence of recordReader instructions (valuepick/rangepick), the job must operate in cell mode
-					//blocked_rep = false;
-					
-					// output info must not be blocked
-					//for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
-					//	if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
-					//		inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
-					//	}
-					//}
-					
-					// get the index of the matrix whose metadata needs to be fetched
-					String[] ins = inst.getIv_recordReaderInstructions().split(Lops.INSTRUCTION_DELIMITOR);
-					
-					//if ( ins.length > 1 ) 
-					//	throw new DMLRuntimeException("There can not be more than one recordreader instructions");
-					
-					// look at the first instruction
-					String[] parts = ins[0].split(Lops.OPERAND_DELIMITOR);
-					
-					if ( parts[1].equalsIgnoreCase("valuepick") || parts[1].equalsIgnoreCase("rangepick")) {
-						String [] fields = parts[2].split(Lops.VALUETYPE_PREFIX);
-						int input_index = Integer.parseInt(fields[0]); 
-						
-						//String fname = inst.getIv_inputs()[input_index];
-						String varname = inst.getInputLabels().get(input_index);
-						MatrixObjectNew mobj = (MatrixObjectNew)pb.getVariable(varname);
-						inst.getIv_inputInfos()[input_index].metadata = mobj.getMetaData();
-					}
-					else 
-						throw new DMLRuntimeException("Recordreader instructions for opcode=" + parts[0] + " are not supported yet.");
-				}
-				
-				ret = GMR.runJob(updatedInputLabels, inst.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock,
-						updatedColsPerBlock, updateLabels(inst.getIv_recordReaderInstructions(), inst
-								.getInputLabelValueMapping()), updateLabels(inst.getIv_instructionsInMapper(), inst
-										.getInputLabelValueMapping()), inst.getIv_aggInstructions(), updateLabels(inst
-								.getIv_otherInstructions(), inst.getInputLabelValueMapping()),
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), inst.getDimsUnknownFilePrefix(), 
-						updatedOutputLabels, inst.getIv_outputInfos());
-			}
+			case GMR: 
+				ret = GMR.runJob(inst.getInputVars(), inputMatrices,
+						rrInst, mapInst, aggInst, otherInst,
+						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), 
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getDimsUnknownFilePrefix());
+				 break;
 
-			if (inst.getJobType() == JobType.CM_COV) {
-				ret = CMCOVMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst
-						.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
-						updateLabels(inst.getIv_instructionsInMapper(), inst
-								.getInputLabelValueMapping()), updateLabels(inst.getIv_shuffleInstructions(),inst.getInputLabelValueMapping()), 
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_outputs(), inst.getIv_outputInfos());
+			case RAND:
+				ret = RandMR.runJob(inst.getIv_randInstructions(), 
+						mapInst, aggInst, otherInst, 
+						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+			
+			case CM_COV:
+				ret = CMCOVMR.runJob(inst.getInputVars(), inputMatrices, 
+						mapInst, shuffleInst, 
+						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+			
+			case GROUPED_AGG:
+				ret = GroupedAggMR.runJob(inst.getInputVars(), inputMatrices, 
+						shuffleInst, otherInst, 
+						inst.getOutputVars(), outputMatrices, 
+						inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+			
+			case REBLOCK_TEXT:
+			case REBLOCK_BINARY:
+				ret = ReblockMR.runJob(inst.getInputVars(), inputMatrices,   
+						mapInst, shuffleInst, otherInst,
+						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), 
+						inst.getIv_numReducers(), inst.getIv_replication() );
+				break;
+
+			case MMCJ:
+				ret = MMCJMR.runJob(inst.getInputVars(), inputMatrices, 
+						mapInst, aggInst, shuffleInst,
+						inst.getOutputVars(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+
+			case MMRJ:
+				ret = MMRJMR.runJob(inst.getInputVars(), inputMatrices, 
+						mapInst, aggInst, shuffleInst, otherInst, 
+						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+
+			case SORT:
+				ret = SortMR.runJob(inst.getInputVars(), inputMatrices,  
+						mapInst, inst.getOutputVars(), outputMatrices,
+						inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+
+			case COMBINE:
+				ret = CombineMR.runJob(inst.getInputVars(), inputMatrices, 
+						shuffleInst, inst.getOutputVars(), outputMatrices,  
+						inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+			
+			default:
+				throw new DMLRuntimeException("Invalid jobtype: " + inst.getJobType());
 			}
 			
-			if (inst.getJobType() == JobType.GROUPED_AGG) {
-				/*// GroupedAgg job must always run in cell mode
-				// hence, no output info must be blocked
-				for ( int oi=0; oi < inst.getIv_outputs().length; oi++ ) {
-					if ( inst.getIv_outputInfos()[oi] == OutputInfo.BinaryBlockOutputInfo) {
-						inst.getIv_outputInfos()[oi] = OutputInfo.BinaryCellOutputInfo;
-					}
-				}*/
-				
-				ret = GroupedAggMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst
-						.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
-						updateLabels(inst.getIv_shuffleInstructions(),inst.getInputLabelValueMapping()), 
-						updateLabels(inst.getIv_otherInstructions(),inst.getInputLabelValueMapping()),
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_outputs(), inst.getIv_outputInfos());
-			}
-			
-			if (inst.getJobType() == JobType.REBLOCK_TEXT || inst.getJobType() == JobType.REBLOCK_BINARY) {
-				ret = ReblockMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst
-						.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
-						updateLabels(inst.getIv_instructionsInMapper(), inst
-								.getInputLabelValueMapping()), inst.getIv_shuffleInstructions(), updateLabels(inst
-								.getIv_otherInstructions(), inst.getInputLabelValueMapping()),
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), 
-						updateLabels(inst.getIv_outputs(), inst.getOutputLabelValueMapping()), inst.getIv_outputInfos());
-			}
-
-			if (inst.getJobType() == JobType.MMCJ) {
-				ret = MMCJMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
-						inst.getIv_inputInfos(), updatedRows, updatedCols, 
-						updatedRowsPerBlock, updatedColsPerBlock, updateLabels(inst.getIv_instructionsInMapper(), inst
-								.getInputLabelValueMapping()), inst.getIv_aggInstructions(), inst
-								.getIv_shuffleInstructions(), inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultDimsUnknown()[0], inst
-								.getIv_outputs()[0], inst.getIv_outputInfos()[0]);
-			}
-
-			if (inst.getJobType() == JobType.MMRJ) {
-				ret = MMRJMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()),
-						inst.getIv_inputInfos(), updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
-						updateLabels(inst.getIv_instructionsInMapper(), inst.getInputLabelValueMapping()), inst.getIv_aggInstructions(), 
-						inst.getIv_shuffleInstructions(), updateLabels(inst.getIv_otherInstructions(), inst.getInputLabelValueMapping()), 
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), 
-						updateLabels(inst.getIv_outputs(),inst.getOutputLabelValueMapping() ), inst.getIv_outputInfos());
-			}
-
-			if (inst.getJobType() == JobType.SORT) {
-				// TODO: statiko -- fix the flag for weights
-				boolean weightsflag = true;
-				if ( !inst.getIv_instructionsInMapper().equalsIgnoreCase("") )
-					weightsflag = false;
-				ret = SortMR.runJob(updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping())[0], inst.getIv_inputInfos()[0], 
-									updatedRows[0], updatedCols[0], updatedRowsPerBlock[0], updatedColsPerBlock[0], 
-									inst.getIv_instructionsInMapper(), inst.getIv_numReducers(), inst.getIv_replication(), (byte)0,
-									inst.getIv_outputs()[0], inst.getIv_outputInfos()[0], weightsflag );
-			}
-
-			if (inst.getJobType() == JobType.COMBINE) {
-				boolean blocked_rep = true;
-				
-				/*// If any input value class is Cell then the whole job should run in "Cell" mode
-				// Remaining blocked input is implicitly converted into cell format
-				for ( InputInfo ii : inst.getIv_inputInfos()) {
-					if ( ii == InputInfo.TextCellInputInfo || ii == InputInfo.BinaryCellInputInfo ) {
-						blocked_rep = false;
-					}
-				}*/
-				ret = CombineMR.runJob(blocked_rep, updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping()), inst.getIv_inputInfos(), 
-									updatedRows, updatedCols, updatedRowsPerBlock, updatedColsPerBlock, 
-									inst.getIv_shuffleInstructions(), inst.getIv_numReducers(), inst.getIv_replication(),  
-									inst.getIv_resultIndices(), updateLabels(inst.getIv_outputs(),inst.getOutputLabelValueMapping() ),inst.getIv_outputInfos() );
-
-			}
-			
-			if (inst.getJobType() == JobType.PARTITION) {
+			/*if (inst.getJobType() == JobType.PARTITION) {
 				boolean blocked_rep = true;
 
 				String input = updateLabels(inst.getIv_inputs(), inst.getInputLabelValueMapping())[0];	//the hdfs filepath! not the varbl name!
@@ -324,18 +237,8 @@ public class RunMRJobs {
 					}//end if on access paths
 				}//end if on row type
 			}//end partition stmt
+			*/
 			
-			if (inst.getJobType() == JobType.RAND) {
-
-				String[] randJobs = inst.getIv_randInstructions().split( Lops.INSTRUCTION_DELIMITOR );
-				ret = RandMR.runJob(randJobs, inst.getIv_num_rows_per_block(), inst.getIv_num_cols_per_block(),
-						updateLabels(inst.getIv_instructionsInMapper(), inst.getInputLabelValueMapping()), inst
-								.getIv_aggInstructions(), updateLabels(inst.getIv_otherInstructions(), inst
-								.getInputLabelValueMapping()), inst.getIv_numReducers(), inst.getIv_replication(), inst
-								.getIv_resultIndices(), inst.getIv_resultDimsUnknown(), inst.getDimsUnknownFilePrefix(),inst.getIv_outputs(), inst.getIv_outputInfos());
-
-			
-			}
 		} // end of try block
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
@@ -347,38 +250,40 @@ public class RunMRJobs {
 			 * to be done only in case of CellOutputInfo.
 			 */
 			try {
-				for (int i = 0; i < inst.getIv_outputs().length; i++) {
-					OutputInfo outinfo = inst.getIv_outputInfos()[i];
+				for (int i = 0; i < outputMatrices.length; i++) {
+					OutputInfo outinfo = ((MatrixFormatMetaData)outputMatrices[i].getMetaData()).getOutputInfo();
+					String fname = outputMatrices[i].getFileName();
 					if (outinfo == OutputInfo.TextCellOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo) {
-						String fname = inst.getIv_outputs()[i];
-							if (MapReduceTool.isHDFSFileEmpty(fname)) {
-								// createNewFile(Path f)
-								if (outinfo == OutputInfo.TextCellOutputInfo) {
-									FileSystem fs = FileSystem.get(new Configuration());
-									Path filepath = new Path(fname, "0-m-00000");
-									FSDataOutputStream writer = fs.create(filepath);
-									writer.writeBytes("1 1 0");
-									writer.sync();
-									writer.flush();
-									writer.close();
-								} else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
-									Configuration conf = new Configuration();
-									FileSystem fs = FileSystem.get(conf);
-									Path filepath = new Path(fname, "0-r-00000");
-									SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf, filepath,
-											MatrixIndexes.class, MatrixCell.class);
-									MatrixIndexes index = new MatrixIndexes(1, 1);
-									MatrixCell cell = new MatrixCell(0);
-									writer.append(index, cell);
-									writer.close();
-								}
+						if (MapReduceTool.isHDFSFileEmpty(fname)) {
+							// createNewFile(Path f)
+							if (outinfo == OutputInfo.TextCellOutputInfo) {
+								FileSystem fs = FileSystem
+										.get(new Configuration());
+								Path filepath = new Path(fname, "0-m-00000");
+								FSDataOutputStream writer = fs.create(filepath);
+								writer.writeBytes("1 1 0");
+								writer.sync();
+								writer.flush();
+								writer.close();
+							} else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
+								Configuration conf = new Configuration();
+								FileSystem fs = FileSystem.get(conf);
+								Path filepath = new Path(fname, "0-r-00000");
+								SequenceFile.Writer writer = new SequenceFile.Writer(
+										fs, conf, filepath,
+										MatrixIndexes.class, MatrixCell.class);
+								MatrixIndexes index = new MatrixIndexes(1, 1);
+								MatrixCell cell = new MatrixCell(0);
+								writer.append(index, cell);
+								writer.close();
 							}
+						}
 					}
 					
 					// write out metadata file
-					// TODO: we currently don't carry valueType information in MR instruction, 
-					// as we only support DOUBLE type, hard coded the value type information for now
-					MapReduceTool.writeMetaDataFile(inst.getIv_outputs()[i] + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
+					// Currently, valueType information in not stored in MR instruction, 
+					// since only DOUBLE matrices are supported ==> hard coded the value type information for now
+					MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 				}
 				return ret;
 			} catch (IOException e) {
@@ -390,266 +295,90 @@ public class RunMRJobs {
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
-	public static String updateLabels (String inst, LocalVariableMap labelValueMapping) {
-		Iterator<String> it = labelValueMapping.keySet().iterator();
-		String updateInst = new String(inst);
+	/**
+	 * Computes the replacement string for a given variable name placeholder string 
+	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix 
+	 * variables, and is the actual value (stored in symbol table) for scalar variables.
+	 * 
+	 * @param inst
+	 * @param varName
+	 * @param map
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) throws DMLRuntimeException {
+		Data val = map.get(varName);
+		if ( val != null ) {
+			String replacement = null;
+			if (val.getDataType() == DataType.MATRIX) {
+				replacement = ((MatrixObjectNew)val).getFileName();
+			}
 
-		while (it.hasNext()) {
-			String label = it.next();
-			Data val = labelValueMapping.get(label);
-
-			if ( val != null ) {
-				String replacement = null;
-				if (val.getDataType() == DataType.MATRIX) {
-					replacement = ((MatrixObjectNew)val).getFileName();
-				}
+			if (val.getDataType() == DataType.SCALAR)
+				replacement = "" + ((ScalarObject) val).getStringValue();
+			return replacement;
+		}
+		else {
+			throw new DMLRuntimeException("Variable ("+varName+") in Instruction ("+inst+") is not found in the variablemap.");
+		}
+	}
 	
-				if (val.getDataType() == DataType.SCALAR)
-					replacement = "" + ((ScalarObject) val).getStringValue();
-	
-				// System.out.println("Replacement string = " + replacement);
-				// System.out.println("Original string = " + updateInst + " label ="
-				// + label);
-				updateInst = updateInst.replaceAll(Lops.VARIABLE_NAME_PLACEHOLDER + label + Lops.VARIABLE_NAME_PLACEHOLDER, replacement);
-	
-				//System.out.println("New string = " + updateInst);
+	/** 
+	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single instruction.
+	 *  
+	 * @param inst
+	 * @param map
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static String updateInstLabels(String inst, LocalVariableMap map) throws DMLRuntimeException {
+		if ( inst.contains(Lops.VARIABLE_NAME_PLACEHOLDER) ) {
+			int skip = Lops.VARIABLE_NAME_PLACEHOLDER.toString().length();
+			while ( inst.contains(Lops.VARIABLE_NAME_PLACEHOLDER) ) {
+				int startLoc = inst.indexOf(Lops.VARIABLE_NAME_PLACEHOLDER)+skip;
+				String varName = inst.substring(startLoc, inst.indexOf(Lops.VARIABLE_NAME_PLACEHOLDER, startLoc));
+				String replacement = getVarNameReplacement(inst, varName, map);
+				inst = inst.replaceAll(Lops.VARIABLE_NAME_PLACEHOLDER + varName + Lops.VARIABLE_NAME_PLACEHOLDER, replacement);
 			}
 		}
+		return inst;
+	}
+	
+	/**
+	 * Takes a delimited string of instructions, and replaces ALL placeholder labels 
+	 * (such as ##mVar2## and ##Var5##) in ALL instructions.
+	 *  
+	 * @param instList
+	 * @param labelValueMapping
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
 
-		return updateInst;
+		if ( !instList.contains(Lops.VARIABLE_NAME_PLACEHOLDER) )
+			return instList;
+		
+		StringBuilder updateInstList = new StringBuilder();
+		String[] ilist = instList.split(Lops.INSTRUCTION_DELIMITOR); 
+		
+		for ( int i=0; i < ilist.length; i++ ) {
+			if ( i > 0 )
+				updateInstList.append(Lops.INSTRUCTION_DELIMITOR);
+			
+			updateInstList.append( updateInstLabels(ilist[i], labelValueMapping));
+		}
+		return updateInstList.toString();
 	}
 
-	private static String[] updateLabels(String[] inst, LocalVariableMap labelValueMapping) {
+	/*private static String[] updateLabels(String[] inst, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
 		String[] str_array = new String[inst.length];
 		for (int i = 0; i < inst.length; i++) {
-			str_array[i] = updateLabels(inst[i], labelValueMapping);
+			str_array[i] = updateInstLabels(inst[i], labelValueMapping);
 		}
-
 		return str_array;
-	}
+	}*/
 	
-	private static long[] updateRows(long[] rows, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
-		
-		long[] newrows = new long[rows.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < rows.length && inputVars.size() > 0; i++) {
-			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
-			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null || matchar.numRows == -1 ) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-			//	if ( rows[i] == -1 )
-					newrows[i] = matchar.numRows;
-			//	else {
-			//		if ( rows[i] != matchar.numRows ) 
-			//			throw new DMLRuntimeException("Mismatch in dimensions: " + rows[i] + " != " + matchar.numRows);
-			//		else
-			//			newrows[i] = matchar.numRows;
-			//	}
-			}
-		}
-		return newrows;
-	}
-
-	private static long[] updateCols(long[] cols, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
-
-		long[] newcols = new long[cols.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < cols.length&& inputVars.size() > 0; i++) {
-			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
-			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null || matchar.numColumns == -1 ) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-			//	if ( cols[i] == -1 )
-					newcols[i] = matchar.numColumns;
-			//	else {
-			//		if ( cols[i] != matchar.numColumns ) 
-			//			throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
-			//		else
-			//			newcols[i] = matchar.numColumns;
-			//	}
-			}
-		}
-		return newcols;
-	}
-	
-	private static int[] updateRowsPerBlock(int[] rpb, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
-		
-		int[] newrpb = new int[rpb.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < rpb.length&& inputVars.size() > 0; i++) {
-			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
-			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				//if ( rpb[i] == -1 )
-					newrpb[i] = matchar.numRowsPerBlock;
-				//else {
-				//	if ( rpb[i] != matchar.numRowsPerBlock ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + rpb[i] + " != " + matchar.numRowsPerBlock);
-				//	else
-				//		newrpb[i] = matchar.numRowsPerBlock;
-				//}
-			}
-		}
-		return newrpb;
-	}
-
-	private static int[] updateColsPerBlock(int[] cpb, String[] inputlabels, ArrayList<String> inputVars, ProgramBlock pb) throws DMLRuntimeException {
-		
-		int[] newcpb = new int[cpb.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < cpb.length&& inputVars.size() > 0; i++) {
-			matchar = ((MatrixDimensionsMetaData)pb.getMetaData(inputVars.get(i))).getMatrixCharacteristics();
-			//matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				//if ( cpb[i] == -1 )
-					newcpb[i] = matchar.numColumnsPerBlock;
-				//else {
-				//	if ( cpb[i] != matchar.numColumnsPerBlock ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + cpb[i] + " != " + matchar.numColumnsPerBlock);
-				//	else
-				//		newcpb[i] = matchar.numColumnsPerBlock;
-				//}
-			}
-		}
-		return newcpb;
-	}
-
-
-/*	private static long[] updateRows(long[] rows, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
-		
-		long[] newrows = new long[rows.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < rows.length; i++) {
-			matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null || matchar.numRows == -1 ) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				if ( rows[i] == -1 )
-					newrows[i] = matchar.numRows;
-				else {
-					if ( rows[i] != matchar.numRows ) 
-						throw new DMLRuntimeException("Mismatch in dimenstions: " + rows[i] + " != " + matchar.numRows);
-					else
-						newrows[i] = matchar.numRows;
-				}
-			}
-		}
-		return newrows;
-	}
-
-	private static long[] updateCols(long[] cols, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
-
-		long[] newcols = new long[cols.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < cols.length; i++) {
-			matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null || matchar.numColumns == -1 ) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				if ( cols[i] == -1 )
-					newcols[i] = matchar.numColumns;
-				else {
-					if ( cols[i] != matchar.numColumns ) 
-						throw new DMLRuntimeException("Mismatch in dimenstions: " + cols[i] + " != " + matchar.numColumns);
-					else
-						newcols[i] = matchar.numColumns;
-				}
-			}
-		}
-		return newcols;
-	}
-	
-	private static int[] updateRowsPerBlock(int[] rpb, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
-		
-		int[] newrpb = new int[rpb.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < rpb.length; i++) {
-			matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				//if ( rpb[i] == -1 )
-					newrpb[i] = matchar.numRowsPerBlock;
-				//else {
-				//	if ( rpb[i] != matchar.numRowsPerBlock ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + rpb[i] + " != " + matchar.numRowsPerBlock);
-				//	else
-				//		newrpb[i] = matchar.numRowsPerBlock;
-				//}
-			}
-		}
-		return newrpb;
-	}
-
-	private static int[] updateColsPerBlock(int[] cpb, String[] inputlabels, HashMap<String, MetaData> mdmap) throws DMLRuntimeException {
-		
-		int[] newcpb = new int[cpb.length];
-		
-		MatrixCharacteristics matchar;
-		for ( int i=0; i < cpb.length; i++) {
-			matchar = ((MatrixDimensionsMetaData) mdmap.get(inputlabels[i])).getMatrixCharacteristics(); 
-			
-			// matchar represents the metadata that is computed by runtime for the file inputlabels[i]
-			// it can not be NULL at this point
-			if ( matchar == null) { 
-				throw new DMLRuntimeException("Unexpeced error in populating the metadata for intermediate matrix: " + inputlabels[i]);
-			}
-			else {
-				//if ( cpb[i] == -1 )
-					newcpb[i] = matchar.numColumnsPerBlock;
-				//else {
-				//	if ( cpb[i] != matchar.numColumnsPerBlock ) 
-				//		throw new DMLRuntimeException("Mismatch in dimenstions: " + cpb[i] + " != " + matchar.numColumnsPerBlock);
-				//	else
-				//		newcpb[i] = matchar.numColumnsPerBlock;
-				//}
-			}
-		}
-		return newcpb;
-	}
-
-*/	/**
+	/**
 	 * Method to determine whether to execute a particular job in local-mode or 
 	 * cluster-mode. This decision is take based on the "jobType" 
 	 * (GMR, Reblock, etc.) as well as the input matrix dimensions, 

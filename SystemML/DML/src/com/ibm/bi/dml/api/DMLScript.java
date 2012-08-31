@@ -676,7 +676,7 @@ public class DMLScript {
 		{			
 			Statistics.stopRunTimer();
 	
-			if (DEBUG) 
+			//if (DEBUG) 
 				System.out.println(Statistics.display());
 			
 			if (LOG) {

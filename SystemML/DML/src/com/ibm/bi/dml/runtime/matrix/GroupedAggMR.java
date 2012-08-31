@@ -6,6 +6,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedInt;
@@ -18,6 +19,30 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class GroupedAggMR {
 
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String grpAggInstructions, String simpleReduceInstructions,  
+			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes,
+			String dimsUnknownFilePrefix, int numReducers, int replication) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, brlens, bclens,
+				grpAggInstructions, simpleReduceInstructions, 
+				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
+	}
+	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String grpAggInstructions, String simpleReduceInstructions/*only scalar or reorg instructions allowed*/, 
 			int numReducers, int replication, byte[] resultIndexes,	String dimsUnknownFilePrefix, String[] outputs, OutputInfo[] outputInfos) 
@@ -72,7 +97,6 @@ public class GroupedAggMR {
 		// Update resultDimsUnknown based on computed "stats"
 		for ( int i=0; i < resultIndexes.length; i++ )  
 			resultDimsUnknown[i] = (byte) 2;
-		//	MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, false);

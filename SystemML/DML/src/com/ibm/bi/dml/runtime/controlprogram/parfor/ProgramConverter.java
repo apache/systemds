@@ -1,15 +1,12 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-//import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -462,7 +459,9 @@ public class ProgramConverter
 			else if( oInst instanceof MRJobInstruction )
 			{
 				MRJobInstruction tmp = (MRJobInstruction)oInst;
-				MRJobInstruction tmpNew = new MRJobInstruction(tmp.getJobType());
+				inst = new MRJobInstruction(tmp, ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
+				
+				/*MRJobInstruction tmpNew = new MRJobInstruction(tmp.getJobType());
 				Field[] fields = cla.getDeclaredFields();
 				for( Field f : fields )
 				{
@@ -487,7 +486,7 @@ public class ProgramConverter
 				tmpNew.setIv_outputs(out);	
 				tmpNew.setRandInstructions(rand);
 				
-				inst = tmpNew;
+				inst = tmpNew;*/
 			}
 			else
 				throw new DMLUnsupportedOperationException("Unable to clone instruction of type "+cla.toString());

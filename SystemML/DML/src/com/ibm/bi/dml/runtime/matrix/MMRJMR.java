@@ -8,6 +8,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
@@ -40,11 +41,34 @@ public class MMRJMR {
 	
 	//TODO public static double SORT_IO_MEM = -1;
 	
+	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
+			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
+			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes, int numReducers, int replication
+			) 
+	throws Exception
+	{
+		String[] inputs = new String[inputMatrices.length];
+		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
+		long[] rlens = new long[inputMatrices.length];
+		long[] clens = new long[inputMatrices.length];
+		int[] brlens = new int[inputMatrices.length];
+		int[] bclens = new int[inputMatrices.length];
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(inputs, inputInfos, rlens, clens, 
+				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer,  
+				numReducers, replication, resultIndexes, outputs, outputInfos);
+	}
 	
 	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
-			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, 
+		int numReducers, int replication, byte[] resultIndexes,  
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -53,12 +77,12 @@ public class MMRJMR {
 		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
 				brlens, bclens, instructionsInMapper, 
 				aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, numReducers, 
-				replication, resultIndexes, resultDimsUnknown, outputs, outputInfos);
+				replication, resultIndexes, outputs, outputInfos);
 	}
 	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
-			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, 
+			int numReducers, int replication, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -116,8 +140,21 @@ public class MMRJMR {
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, aggInstructionsInReducer, 
 				aggBinInstrction, resultIndexes );
 		
+		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
+				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, resultIndexes);
+		
+		byte[] dimsUnknown = new byte[resultIndexes.length];
+		for ( int i=0; i < resultIndexes.length; i++ ) { 
+			if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
+				dimsUnknown[i] = (byte)1;
+			}
+			else {
+				dimsUnknown[i] = (byte) 0;
+			}
+		}
+		
 		//set up the multiple output files, and their format information
-		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, inBlockRepresentation);
+		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, dimsUnknown, outputs, outputInfos, inBlockRepresentation);
 		
 		// configure mapper
 		job.setMapperClass(MMRJMRMapper.class);
@@ -135,9 +172,6 @@ public class MMRJMR {
 		
 	//	if(aggInstructionsInReducer!=null && !aggInstructionsInReducer.isEmpty())
 	//		job.setCombinerClass(MMCJMRCombiner.class);
-		
-		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, resultIndexes);
 		
 		//configure reducer
 		job.setReducerClass(MMRJMRReducer.class);

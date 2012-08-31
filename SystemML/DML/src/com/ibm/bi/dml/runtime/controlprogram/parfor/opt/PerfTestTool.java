@@ -498,21 +498,14 @@ public class PerfTestTool
 			inLab.add("B");
 			outLab.add("C");
 			
-			mrinst.setMMRJInstructions(new String[]{"##A##","##B##"}, 
-									   new InputInfo[]{InputInfo.BinaryBlockInputInfo,InputInfo.BinaryBlockInputInfo}, 
-									   new long[]{-1,-1},
-									   new long[]{-1,-1},
-									   new int[]{DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize},
-									   new int[]{DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize},
+			mrinst.setMMRJInstructions(new String[]{"A","B"}, 
 									   "", 
 									   inst.toString(), 
 									   "", 
 									   "", 
-									   new String[]{"##C##"},
-									   new OutputInfo[]{OutputInfo.BinaryBlockOutputInfo},
+									   new String[]{"C"},
 									   new byte[]{2},
-									   new byte[]{0}, 
-									   10, 1, inLab,outLab );
+									   10, 1 );
 			
 		}
 		

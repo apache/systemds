@@ -19,6 +19,8 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -59,19 +61,30 @@ public class RandMR
 	 */
 	
 	
-	public static JobReturn runJob(long[] numRows, long[] numCols, int[] blockRowSize, int[] blockColSize,
-			double[] minValue, double[] maxValue, double[] sparsity, String[] pdf, int replication,
-			String[] inputs, String[] outputs, OutputInfo[] outputInfos,
-			String instructionsInMapper, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix)
+	public static JobReturn runJob(String randInstructions, String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
+			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes, String dimsUnknownFilePrefix, int numReducers, int replication) 
 	throws Exception
 	{
-		return runJob(instructionsInMapper.split(Lops.INSTRUCTION_DELIMITOR), blockRowSize, blockColSize, "", "", "", 0, replication, 
-				resultIndexes, resultDimsUnknown, dimsUnknownFilePrefix, outputs, outputInfos);
+		int numRandInstructions = randInstructions.split(Lops.INSTRUCTION_DELIMITOR).length;
+		int[] brlens = new int[numRandInstructions];
+		int[] bclens = new int[numRandInstructions];
+		
+		for(int i=0; i < numRandInstructions; i++)
+			brlens[i] = bclens[i] = DMLTranslator.DMLBlockSize;
+		
+		String[] outputs = new String[outputVars.length];
+		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
+		
+		//GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
+		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
+		
+		return runJob(randInstructions.split(Lops.INSTRUCTION_DELIMITOR), brlens, bclens, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
+				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
 	}
-	
+
 	public static JobReturn runJob(String[] randInstructions, int[] brlens, int[] bclens, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
-			int numReducers, int replication, byte[] resultIndexes, byte[] resultDimsUnknown, String dimsUnknownFilePrefix, 
+			int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -147,8 +160,6 @@ public class RandMR
 		randInsStr=randInsStr.substring(1);//remove the first ","
 		RunningJob runjob;
 		MatrixCharacteristics[] stats;
-		InputInfo[] infos;
-		
 		try{
 			//set up the input files and their format information
 			MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, true, brlens, bclens, false);
@@ -191,17 +202,15 @@ public class RandMR
 					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
 			
 			// Update resultDimsUnknown based on computed "stats"
+			byte[] resultDimsUnknown = new byte[resultIndexes.length]; 
 			for ( int i=0; i < resultIndexes.length; i++ ) { 
 				if ( stats[i].numRows == -1 || stats[i].numColumns == -1 ) {
-					if ( resultDimsUnknown[i] != (byte) 1 ) {
-						throw new Exception("Unexpected error while configuring GMR job.");
-					}
+					resultDimsUnknown[i] = (byte) 1;
 				}
 				else {
 					resultDimsUnknown[i] = (byte) 0;
 				}
 			}
-			MRJobConfiguration.updateResultDimsUnknown(job,resultDimsUnknown);
 			
 			//set up the multiple output files, and their format information
 			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, true);

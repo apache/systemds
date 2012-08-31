@@ -79,12 +79,12 @@ public class InstructionGraph {
 					s += "    " + idStr + " [label=\"" + inst.getGraphString() + "\", color=palegreen ]; \n";
 				else
 					s += "    " + idStr + " [label=\"" + inst.getGraphString() + "\", color=white ]; \n";
-				String[] outputs = mrInst.getIv_outputs();
+				String[] outputs = mrInst.getOutputVars();
 				for (String out : outputs) {
 					outputMap.put(out, idStr);
 				}
 
-				String[] inputs = mrInst.getIv_inputs();
+				String[] inputs = mrInst.getInputVars();
 				if (inputs != null) {
 					for (String in : inputs) {
 						if (in != null && in.contains("##")) {

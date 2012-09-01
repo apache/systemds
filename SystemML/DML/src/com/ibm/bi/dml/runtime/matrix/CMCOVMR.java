@@ -4,10 +4,11 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.CM_N_COVCell;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -19,29 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class CMCOVMR {
 	
-	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
-			String instructionsInMapper, String cmNcomInstructions, 
-			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes,
-			int numReducers, int replication) throws Exception {
-		String[] inputs = new String[inputMatrices.length];
-		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
-		long[] rlens = new long[inputMatrices.length];
-		long[] clens = new long[inputMatrices.length];
-		int[] brlens = new int[inputMatrices.length];
-		int[] bclens = new int[inputMatrices.length];
-		
-		String[] outputs = new String[outputVars.length];
-		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
-		
-		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
-		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
-		
-		return runJob(inputs, inputInfos, rlens, clens, brlens, bclens, 
-				instructionsInMapper, cmNcomInstructions,
-				numReducers, replication, resultIndexes, outputs, outputInfos);
-	}
-	
-	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
+	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String cmNcomInstructions, 
 			int numReducers, int replication, byte[] resultIndexes,	String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
@@ -107,6 +86,10 @@ public class CMCOVMR {
 		
 		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
 				instructionsInMapper, null, null, cmNcomInstructions, resultIndexes);
+		
+		// Print the complete instruction
+		if ( DMLScript.DEBUG )
+			inst.printCompelteMRJobInstruction(stats);
 		
 		
 		// By default, the job executes in "cluster" mode.

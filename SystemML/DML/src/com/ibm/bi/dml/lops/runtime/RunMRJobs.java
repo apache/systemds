@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -9,7 +8,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -48,38 +46,20 @@ public class RunMRJobs {
 	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
 		JobReturn ret = new JobReturn();
 
-		if ( DMLScript.DEBUG  )
-			System.out.println(inst.toString());
+		//if ( DMLScript.DEBUG  )
+		//	System.out.println(inst.toString());
 
-		// Obtain references to all input matrices. Also, export them to HDFS if they are dirty in the cache
-		// NOTE that there can be SCALAR inputs
-		ArrayList<MatrixObjectNew> inputmat = new ArrayList<MatrixObjectNew>();
-		MatrixObjectNew m = null;
-		for(String ii: inst.getInputVars() ) {
-			Data d = pb.getVariable(ii);
-			if ( d.getDataType() == DataType.MATRIX ) {
-				m = (MatrixObjectNew) d;
-				inputmat.add(m);
-				//inputMatrices[ind] = (MatrixObjectNew) d;
-				if ( m.isDirty() ) 
-					m.exportData();
-			}
+		// Obtain references to all input matrices 
+		MatrixObjectNew[] inputMatrices = inst.extractInputMatrices(pb);
+		
+		// export dirty matrices to HDFS
+		for(MatrixObjectNew m : inputMatrices) {
+			if ( m.isDirty() )
+				m.exportData();
 		}
-		MatrixObjectNew[] inputMatrices = inputmat.toArray(new MatrixObjectNew[inputmat.size()]);
 		
 		// Obtain references to all output matrices
-		// MR jobs produces ONLY matrices, and no scalar can be produced
-		MatrixObjectNew[] outputMatrices = new MatrixObjectNew[inst.getOutputVars().length];
-		int ind = 0;
-		for(String oo: inst.getOutputVars()) {
-			Data d = pb.getVariable(oo);
-			if ( d.getDataType() == DataType.MATRIX ) {
-				outputMatrices[ind++] = (MatrixObjectNew)d;
-			}
-			else {
-				throw new DMLRuntimeException(inst.getJobType() + ": invalid datatype (" + d.getDataType() + ") for output variable " + oo);
-			}
-		}
+		MatrixObjectNew[] outputMatrices = inst.extractOutputMatrices(pb);
 		
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
@@ -107,61 +87,79 @@ public class RunMRJobs {
 			switch(inst.getJobType()) {
 			
 			case GMR: 
-				ret = GMR.runJob(inst.getInputVars(), inputMatrices,
+				ret = GMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						rrInst, mapInst, aggInst, otherInst,
-						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), 
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getDimsUnknownFilePrefix());
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
+						inst.getOutputs(), inst.getOutputInfos() );
 				 break;
 
 			case RAND:
-				ret = RandMR.runJob(inst.getIv_randInstructions(), 
+				ret = RandMR.runJob(inst, inst.getIv_randInstructions().split(Lops.INSTRUCTION_DELIMITOR), 
+						inst.getBrlens(), inst.getBclens(), 
 						mapInst, aggInst, otherInst, 
-						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_numReducers(), inst.getIv_replication());
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
+						inst.getOutputs(), inst.getOutputInfos());
 				break;
 			
 			case CM_COV:
-				ret = CMCOVMR.runJob(inst.getInputVars(), inputMatrices, 
+				ret = CMCOVMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						mapInst, shuffleInst, 
-						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), 
+						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 			
 			case GROUPED_AGG:
-				ret = GroupedAggMR.runJob(inst.getInputVars(), inputMatrices, 
+				ret = GroupedAggMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						shuffleInst, otherInst, 
-						inst.getOutputVars(), outputMatrices, 
-						inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(), inst.getIv_numReducers(), inst.getIv_replication());
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),  
+						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 			
 			case REBLOCK_TEXT:
 			case REBLOCK_BINARY:
-				ret = ReblockMR.runJob(inst.getInputVars(), inputMatrices,   
+				ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						mapInst, shuffleInst, otherInst,
-						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), 
-						inst.getIv_numReducers(), inst.getIv_replication() );
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
+						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 
 			case MMCJ:
-				ret = MMCJMR.runJob(inst.getInputVars(), inputMatrices, 
+				ret = MMCJMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						mapInst, aggInst, shuffleInst,
-						inst.getOutputVars(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
+						inst.getIv_numReducers(), inst.getIv_replication(),    
+						inst.getOutputs()[0], inst.getOutputInfos()[0] );
 				break;
 
 			case MMRJ:
-				ret = MMRJMR.runJob(inst.getInputVars(), inputMatrices, 
-						mapInst, aggInst, shuffleInst, otherInst, 
-						inst.getOutputVars(), outputMatrices, inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+				ret = MMRJMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+						mapInst, aggInst, shuffleInst, otherInst,
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),    
+						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 
 			case SORT:
-				ret = SortMR.runJob(inst.getInputVars(), inputMatrices,  
-						mapInst, inst.getOutputVars(), outputMatrices,
-						inst.getIv_numReducers(), inst.getIv_replication());
+				boolean weightsflag = true;
+				if ( !mapInst.equalsIgnoreCase("") )
+					weightsflag = false;
+				ret = SortMR.runJob(inst, inst.getInputs()[0],  inst.getInputInfos()[0], 
+						inst.getRlens()[0], inst.getClens()[0], inst.getBrlens()[0], inst.getBclens()[0],
+						mapInst, 
+						inst.getIv_numReducers(), inst.getIv_replication(),    
+						inst.getOutputs()[0], inst.getOutputInfos()[0], weightsflag );
 				break;
 
 			case COMBINE:
-				ret = CombineMR.runJob(inst.getInputVars(), inputMatrices, 
-						shuffleInst, inst.getOutputVars(), outputMatrices,  
-						inst.getIv_resultIndices(), inst.getIv_numReducers(), inst.getIv_replication());
+				ret = CombineMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+						shuffleInst, 
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),    
+						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 			
 			default:

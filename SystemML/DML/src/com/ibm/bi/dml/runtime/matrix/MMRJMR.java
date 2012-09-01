@@ -5,10 +5,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
@@ -41,45 +42,7 @@ public class MMRJMR {
 	
 	//TODO public static double SORT_IO_MEM = -1;
 	
-	public static JobReturn runJob(String[] inputVars, MatrixObjectNew[] inputMatrices, 
-			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
-			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes, int numReducers, int replication
-			) 
-	throws Exception
-	{
-		String[] inputs = new String[inputMatrices.length];
-		InputInfo[] inputInfos = new InputInfo[inputMatrices.length];
-		long[] rlens = new long[inputMatrices.length];
-		long[] clens = new long[inputMatrices.length];
-		int[] brlens = new int[inputMatrices.length];
-		int[] bclens = new int[inputMatrices.length];
-		
-		String[] outputs = new String[outputVars.length];
-		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
-		
-		GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
-		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
-		
-		return runJob(inputs, inputInfos, rlens, clens, 
-				brlens, bclens, instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer,  
-				numReducers, replication, resultIndexes, outputs, outputInfos);
-	}
-	
-	public static JobReturn runJob(String[] inputs, InputInfo[] inputInfos, 
-			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
-			String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
-		int numReducers, int replication, byte[] resultIndexes,  
-			String[] outputs, OutputInfo[] outputInfos) 
-	throws Exception
-	{
-		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
-		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
-		return runJob(inBlockRepresentation, inputs, inputInfos, rlens, clens, 
-				brlens, bclens, instructionsInMapper, 
-				aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, numReducers, 
-				replication, resultIndexes, outputs, outputInfos);
-	}
-	public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, 
+	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
 			String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, 
@@ -94,6 +57,9 @@ public class MMRJMR {
 		if(numReducers<=0)
 			throw new Exception("MMRJ-MR has to have at least one reduce task!");
 		
+		// TODO: check w/ yuanyuan. This job always runs in blocked mode, and hence derivation is not necessary.
+		boolean inBlockRepresentation=MRJobConfiguration.deriveRepresentation(inputInfos);
+
 		//whether use block representation or cell representation
 		MRJobConfiguration.setMatrixValueClass(job, inBlockRepresentation);
 		
@@ -142,6 +108,10 @@ public class MMRJMR {
 		
 		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
 				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, resultIndexes);
+		
+		// Print the complete instruction
+		if ( DMLScript.DEBUG )
+			inst.printCompelteMRJobInstruction(stats);
 		
 		byte[] dimsUnknown = new byte[resultIndexes.length];
 		for ( int i=0; i < resultIndexes.length; i++ ) { 

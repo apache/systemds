@@ -2,12 +2,21 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -552,6 +561,240 @@ public class MRJobInstruction extends Instruction
 	@Override
 	public byte[] getInputIndexes() throws DMLRuntimeException {
 		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
+	}
+
+	/*
+	 * Following attributes are populated by pulling out information from Symbol Table.
+	 * This is done just before a job is submitted/spawned.
+	 */
+	private String[] inputs;
+	private InputInfo[] inputInfos;
+	private long[] rlens;
+	private long[] clens;
+	private int[] brlens;
+	private int[] bclens;
+	private String[] outputs;
+	private OutputInfo[] outputInfos;
+	
+	/*
+	 * These members store references to MatrixObjects corresponding to different 
+	 * MATRIX variables in inputVars and outputVars, respectively. Note that the 
+	 * references to SCALAR input variables are not stored in <code>inputMatrices</code>.
+	 * Every reference in <code>outputMatrices</code> is always points to MATRIX 
+	 * since MR jobs always produces matrices. 
+	 */
+	private MatrixObjectNew[] inputMatrices, outputMatrices;
+
+	// Indicates the data type of inputVars
+	private DataType[] inputDataTypes;
+
+	public String[] getInputs() {
+		return inputs;
+	}
+
+	public InputInfo[] getInputInfos() {
+		return inputInfos;
+	}
+
+	public long[] getRlens() {
+		return rlens;
+	}
+
+	public long[] getClens() {
+		return clens;
+	}
+
+	public int[] getBrlens() {
+		return brlens;
+	}
+
+	public int[] getBclens() {
+		return bclens;
+	}
+
+	public String[] getOutputs() {
+		return outputs;
+	}
+
+	public OutputInfo[] getOutputInfos() {
+		return outputInfos;
+	}
+
+	public MatrixObjectNew[] getInputMatrices() {
+		return inputMatrices;
+	}
+
+	/*public void setInputMatrices(MatrixObjectNew[] inputMatrices) {
+		this.inputMatrices = inputMatrices;
+		// fill-in the auxiliary data structures required in spawning MR job
+		populateInputs();
+	}*/
+	
+	/**
+	 * Extracts input variables with MATRIX data type, and stores references to
+	 * corresponding matrix objects in <code>inputMatrices</code>. Also, stores 
+	 * the data types in <code>inputDataTypes</code>.
+	 * 
+	 * @param pb
+	 */
+	public MatrixObjectNew[] extractInputMatrices(ProgramBlock pb) {
+		ArrayList<MatrixObjectNew> inputmat = new ArrayList<MatrixObjectNew>();
+		inputDataTypes = new DataType[inputVars.length];
+		for ( int i=0; i < inputVars.length; i++ ) {
+			Data d = pb.getVariable(inputVars[i]);
+			inputDataTypes[i] = d.getDataType();
+			if ( d.getDataType() == DataType.MATRIX ) {
+				inputmat.add((MatrixObjectNew) d);
+			}
+		}
+		inputMatrices = inputmat.toArray(new MatrixObjectNew[inputmat.size()]);
+		
+		// populate auxiliary data structures
+		populateInputs();
+		
+		return inputMatrices;
+	}
+
+	public MatrixObjectNew[] getOutputMatrices() {
+		return outputMatrices;
+	}
+
+	/*public void setOutputMatrices(MatrixObjectNew[] outputMatrices) {
+		this.outputMatrices = outputMatrices;
+		// fill-in the auxiliary data structures required in spawning MR job
+		populateOutputs();
+	}*/
+	
+	/**
+	 * Extracts MatrixObject references to output variables, all of which will be
+	 * of MATRIX data type, and stores them in <code>outputMatrices</code>. Also, 
+	 * populates auxiliary data structures.
+	 * 
+	 * @param pb
+	 */
+	public MatrixObjectNew[] extractOutputMatrices(ProgramBlock pb) throws DMLRuntimeException {
+		outputMatrices = new MatrixObjectNew[getOutputVars().length];
+		int ind = 0;
+		for(String oo: getOutputVars()) {
+			Data d = pb.getVariable(oo);
+			if ( d.getDataType() == DataType.MATRIX ) {
+				outputMatrices[ind++] = (MatrixObjectNew)d;
+			}
+			else {
+				throw new DMLRuntimeException(getJobType() + ": invalid datatype (" + d.getDataType() + ") for output variable " + oo);
+			}
+		}
+		
+		// populate auxiliary data structures
+		populateOutputs();
+		
+		return outputMatrices;
+	}
+
+	/**
+	 * Auxiliary data structures that store information required to spawn MR jobs.
+	 * These data structures are populated by pulling out information from symbol
+	 * table. More specifically, from information stored in <code>inputMatrices</code>
+	 * and <code>outputMatrices</code>.   
+	 */
+	private void populateInputs() {
+		
+		// Since inputVars can potentially contain scalar variables,
+		// auxiliary data structures of size <code>inputMatrices.length</code>
+		// are allocated instead of size <code>inputVars.length</code>
+		
+		// Allocate space
+		inputs = new String[inputMatrices.length];
+		inputInfos = new InputInfo[inputMatrices.length];
+		rlens = new long[inputMatrices.length];
+		clens = new long[inputMatrices.length];
+		brlens = new int[inputMatrices.length];
+		bclens = new int[inputMatrices.length];
+		
+		// populate information
+		for ( int i=0; i < inputMatrices.length; i++ ) {
+			inputs[i] = inputMatrices[i].getFileName();
+			MatrixCharacteristics mc = ((MatrixDimensionsMetaData) inputMatrices[i].getMetaData()).getMatrixCharacteristics();
+			rlens[i] = mc.get_rows();
+			clens[i] = mc.get_cols();
+			brlens[i] = mc.get_rows_per_block();
+			bclens[i] = mc.get_cols_per_block();
+			if ( inputMatrices[i].getMetaData() instanceof MatrixFormatMetaData ) {
+				inputInfos[i] = ((MatrixFormatMetaData) inputMatrices[i].getMetaData()).getInputInfo();
+			}
+			else if (inputMatrices[i].getMetaData() instanceof NumItemsByEachReducerMetaData ) {
+				inputInfos[i] = InputInfo.InputInfoForSortOutput;
+				inputInfos[i].metadata = inputMatrices[i].getMetaData();
+			}
+		}
+	}
+
+	/**
+	 * Pulls out information from symbol table for output variables (i.e., outputMatrices) 
+	 * and populates auxiliary data structutes that are used in setting up MR jobs.
+	 */
+	private void populateOutputs() {
+		// Note: (outputVars.length == outputMatrices.length) -> true 
+		
+		// Allocate space
+		outputs = new String[outputVars.length];
+		outputInfos = new OutputInfo[outputVars.length];
+		
+		// Populate information
+		for(int i=0; i < outputVars.length; i++) {
+			outputs[i] = outputMatrices[i].getFileName();
+			MatrixFormatMetaData md = (MatrixFormatMetaData) outputMatrices[i].getMetaData();
+			outputInfos[i] = md.getOutputInfo();
+		}
+	}
+	
+	public void printCompelteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {
+		System.out.println("jobtype" + jobType);
+		System.out.println("  Inputs:");
+		for(int i=0, mi=0; i < inputVars.length; i++ ) {
+			if(inputDataTypes[i] == DataType.SCALAR) {
+				System.out.println("    " + inputVars[i] + " - SCALAR input (replaced w/ value)");
+			}
+			else if ( inputDataTypes[i] == DataType.MATRIX ) {
+				System.out.println("    " + inputVars[i] + 
+						" - [" + inputs[mi] + 
+						"]  [" + rlens[mi] + ", " + clens[mi] + 
+						"]  nnz[" + inputMatrices[mi].getNnz() +
+						"]  block[" + brlens[mi] + ", " + bclens[mi] +
+						"]  [" + InputInfo.inputInfoToString(inputInfos[mi]) +  
+						"]");
+				mi++;
+			}
+			else 
+				System.out.println("    " + inputVars[i] + " - " + inputDataTypes[i]);
+		}
+		
+		System.out.println("  Instructions:");
+		if ( !iv_recordReaderInstructions.equals("")) 
+			System.out.println("    recReader inst - " + iv_recordReaderInstructions );
+		if ( !iv_randInstructions.equals("")) 
+			System.out.println("    rand inst - " + iv_randInstructions );
+		if ( !iv_instructionsInMapper.equals("")) 
+			System.out.println("    mapper inst - " + iv_instructionsInMapper );
+		if ( !iv_shuffleInstructions.equals("")) 
+			System.out.println("    shuffle inst - " + iv_shuffleInstructions );
+		if ( !iv_aggInstructions.equals("")) 
+			System.out.println("    agg inst - " + iv_aggInstructions );
+		if ( !iv_aggInstructions.equals("")) 
+			System.out.println("    other inst - " + iv_aggInstructions );
+
+		System.out.println("  Outputs:");
+		for(int i=0; i < outputVars.length; i++ ) {
+			System.out.println("    " + iv_resultIndices[i] + " : " + outputVars[i] + 
+					" - [" + outputs[i] + 
+					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols_per_block() + 
+					"]  nnz[" + outputMatrices[i].getNnz() +
+					"]  block[" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols_per_block() + 
+					"]  [" + OutputInfo.outputInfoToString(outputInfos[i]) +
+					"]");
+		}
+		System.out.println("  #Reducers - " + iv_numReducers);
+		System.out.println("  Replication - " + iv_replication);
 	}
 	
 }

@@ -182,14 +182,23 @@ public class MatrixObjectNew extends CacheableData
 	}
 
 	public long getNumColumns() 
-		throws DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		if(_metaData == null)
 			throw new DMLRuntimeException("No metadata available.");
 		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics ();
 		return mc.get_cols ();
 	}
-	
+
+	public long getNnz() 
+	throws DMLRuntimeException
+	{
+		if(_metaData == null)
+			throw new DMLRuntimeException("No metadata available.");
+		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics ();
+		return mc.nonZero;
+	}
+
 	/**
 	 * <code>true</code> if the in-memory or evicted matrix may be different from
 	 * the matrix located at {@link #_hdfsFileName}; <code>false</code> if the two

@@ -19,8 +19,7 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -61,28 +60,7 @@ public class RandMR
 	 */
 	
 	
-	public static JobReturn runJob(String randInstructions, String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
-			String[] outputVars, MatrixObjectNew[] outputMatrices, byte[] resultIndexes, String dimsUnknownFilePrefix, int numReducers, int replication) 
-	throws Exception
-	{
-		int numRandInstructions = randInstructions.split(Lops.INSTRUCTION_DELIMITOR).length;
-		int[] brlens = new int[numRandInstructions];
-		int[] bclens = new int[numRandInstructions];
-		
-		for(int i=0; i < numRandInstructions; i++)
-			brlens[i] = bclens[i] = DMLTranslator.DMLBlockSize;
-		
-		String[] outputs = new String[outputVars.length];
-		OutputInfo[] outputInfos = new OutputInfo[outputVars.length];
-		
-		//GMR.populateInputs(inputVars, inputMatrices, inputs, inputInfos, rlens, clens, brlens, bclens);
-		GMR.populateOutputs(outputVars, outputMatrices, outputs, outputInfos);
-		
-		return runJob(randInstructions.split(Lops.INSTRUCTION_DELIMITOR), brlens, bclens, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
-				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
-	}
-
-	public static JobReturn runJob(String[] randInstructions, int[] brlens, int[] bclens, 
+	public static JobReturn runJob(MRJobInstruction inst, String[] randInstructions, int[] brlens, int[] bclens, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
@@ -200,6 +178,10 @@ public class RandMR
 			
 			stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
 					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
+
+			// print the complete MRJob instruction
+			if (DMLScript.DEBUG)
+				inst.printCompelteMRJobInstruction(stats);
 			
 			// Update resultDimsUnknown based on computed "stats"
 			byte[] resultDimsUnknown = new byte[resultIndexes.length]; 

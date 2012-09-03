@@ -31,7 +31,13 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * - Select degree of parallelism for hierarchy of PB/inst					done
  * - Remove unnecessary nested parallelism (ParFOR[k=1]->FOR)				done
  * 
+ * Experimental
+ * - Select data partitioning, recompile, and indexed read                  ? (runtime support)
+ * - Choose data partitioning granularity
+ * 
+ * 
  * TODO to be implemented
+ * - result merge aware parallelization
  * - Select degree/distribution of parallelism for MR jobs (#mappers,#reducers)
  * - Choose configuration properties (sort.io, etc)
  * - Rewrite blocked matrix/file access (sharing-aware)

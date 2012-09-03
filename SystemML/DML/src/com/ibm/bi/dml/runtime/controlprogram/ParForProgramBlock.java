@@ -94,9 +94,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	public enum PDataPartitionFormat {
 		NONE,
 		ROW_WISE,
-		//ROW_BLOCK_WISE,
+		ROW_BLOCK_WISE,
 		COLUMN_WISE,
-		//COLUMN_BLOCK_WISE
+		COLUMN_BLOCK_WISE
 	}
 	
 	public enum PDataPartitioner {
@@ -127,6 +127,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial //TODO change back to parallel once we synchronized set for all matrix formats
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
+	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
 	public static final int     WRITE_REPLICATION_FACTOR    = 3;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	
@@ -147,9 +148,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected PExecMode        _execMode        = null;
 	protected POptMode         _optMode         = null;
 	
-	//specific parameters used for optimization
+	//specifics used for optimization
 	protected ParForStatementBlock _sb          = null;
 	protected int              _numIterations   = -1; 
+	
+	//specifics used for data partitioning
+	protected LocalVariableMap _variablesDPOriginal;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -216,6 +220,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( !OPTIMIZE )
 			_optMode = POptMode.NONE;
 			
+		if( !ALLOW_UNSCOPED_PARTITIONING )
+			_variablesDPOriginal = new LocalVariableMap();
+		
+		
 		//create IDs for all parworkers
 		if( _execMode == PExecMode.LOCAL )
 			setLocalParWorkerIDs();
@@ -359,12 +367,22 @@ public class ParForProgramBlock extends ForProgramBlock
 						{
 							Timing ltime = new Timing();//TODO remove for final version
 							ltime.start();
+							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
+								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
 							MatrixObjectNew moVarNew = dp.createPartitionedMatrix(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
 							System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
 						}
+					}
+					else if( ALLOW_UNSCOPED_PARTITIONING ) //note: vars partitioned and not recompiled can only happen in case of unscoped partitioning over multiple top-level parfors.
+					{
+						//only recompile if input matrix is already paritioned.
+						Timing ltime = new Timing();//TODO remove for final version
+						ltime.start();
+						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
+						System.out.println("Recompilation done in "+ltime.stop()+" ms");
 					}
 				}
 			}
@@ -422,6 +440,16 @@ public class ParForProgramBlock extends ForProgramBlock
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		_variables.put(iterVarName, iterVar);
 		
+		//ensure that subsequent program blocks only see partitioned data if allowed
+		if( !ALLOW_UNSCOPED_PARTITIONING )
+		{
+			//we can replace those variables, because partitioning only applied for read-only matrices
+			for( String var : _variablesDPOriginal.keySet() )
+			{
+				MatrixObjectNew mo = (MatrixObjectNew) _variablesDPOriginal.get( var );
+				_variables.put(var, mo);
+			}
+		}
 		
 		
 		///////

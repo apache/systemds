@@ -252,7 +252,8 @@ public class ProgramRecompiler
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatement is = (IfStatement) sb.getStatement(0);
 			
-			for( int i=0; i<ipb.getChildBlocksIfBody().size(); i++ )
+			int len = is.getIfBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
 				StatementBlock lsb = is.getIfBody().get(0);
@@ -261,7 +262,8 @@ public class ProgramRecompiler
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
 			{
-				for( int i=0; i<ipb.getChildBlocksElseBody().size(); i++ )
+				int len2 = is.getElseBody().size();
+				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
@@ -274,7 +276,8 @@ public class ProgramRecompiler
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
 			//process body
-			for( int i=0; i<wpb.getChildBlocks().size(); i++ )
+			int len = ws.getBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
@@ -287,7 +290,8 @@ public class ProgramRecompiler
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
 			//process body
-			for( int i=0; i<fpb.getChildBlocks().size(); i++ )
+			int len = fs.getBody().size(); //robustness for potentially added problem blocks
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);

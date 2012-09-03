@@ -19,7 +19,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 public abstract class DataPartitioner 
 {	
 	protected static final String NAME_SUFFIX = "_dp";
-	protected static final String STAGING_DIR = "/tmp/partitioning/";
+	protected static final String STAGING_DIR = "/tmp/partitioning/";	
+	protected static final int CELL_BUFFER_SIZE = 100000;
 	
 	protected PDataPartitionFormat _format = null;
 	
@@ -29,6 +30,20 @@ public abstract class DataPartitioner
 	}
 	
 	/**
+	 * see createPartitionedMatrix( MatrixObjectNew in, boolean force )
+	 * (with default not to force)
+	 * 
+	 * @param in
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixObjectNew createPartitionedMatrix( MatrixObjectNew in )
+		throws DMLRuntimeException
+	{
+		return createPartitionedMatrix(in, false);
+	}
+
+	/**
 	 * Creates a partitioned matrix object based on the given input matrix object, 
 	 * according to the specified split format. The input matrix can be in-memory
 	 * or still on HDFS and the partitioned output matrix is written to HDFS. The
@@ -36,12 +51,14 @@ public abstract class DataPartitioner
 	 * or reading 1 or multiple partitions based on given index ranges. 
 	 * 
 	 * @param in
+	 * @param force
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public abstract MatrixObjectNew createPartitionedMatrix( MatrixObjectNew in )
+	public abstract MatrixObjectNew createPartitionedMatrix( MatrixObjectNew in, boolean force )
 		throws DMLRuntimeException;
 
+	
 	/**
 	 * @throws ParseException 
 	 * 
@@ -64,7 +81,7 @@ public abstract class DataPartitioner
 		rDelete( fdir );
 	}
 	
-	private static void rDelete(File dir)
+	protected static void rDelete(File dir)
 	{
 		//recursively delete files if required
 		if( dir.isDirectory() )

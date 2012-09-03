@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
@@ -643,6 +644,7 @@ public class ProgramConverter
 				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
+				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
 				matrixMetaData = new String[7];
 				matrixMetaData[0] = String.valueOf( mc.get_rows() );
 				matrixMetaData[1] = String.valueOf( mc.get_cols() );
@@ -650,7 +652,7 @@ public class ProgramConverter
 				matrixMetaData[3] = String.valueOf( mc.get_cols_per_block() );
 				matrixMetaData[4] = InputInfo.inputInfoToString( md.getInputInfo() );
 				matrixMetaData[5] = OutputInfo.outputInfoToString( md.getOutputInfo() );
-				matrixMetaData[6] = String.valueOf( mo.isPartitioned() );
+				matrixMetaData[6] = String.valueOf( partFormat );
 				break;
 			default:
 				throw new DMLRuntimeException("Unable to serialize datatype "+datatype);
@@ -1736,13 +1738,13 @@ public class ProgramConverter
 				int bcols = Integer.parseInt( st.nextToken() );
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
-				boolean partitioned = Boolean.parseBoolean( st.nextToken() );
+				PDataPartitionFormat partFormat = PDataPartitionFormat.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
-				if( partitioned )
-					mo.setPartitioned();
+				if( partFormat!=PDataPartitionFormat.NONE )
+					mo.setPartitioned( partFormat );
 				dat = mo;
 				break;
 			}

@@ -17,6 +17,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -51,8 +52,15 @@ public class MatrixObjectNew extends CacheableData
 {
 	private CacheReference _cache = null;
 	private boolean _cleanupFlag = true; //indicates if obj unpinned
-	private boolean _partitioned = false; //indicates if obj partitioned
 	
+	//partitioning information
+	private boolean _partitioned = false; //indicates if obj partitioned
+	private PDataPartitionFormat _partitionFormat = null; //indicates how obj partitioned
+	
+	//partition cache (real cache, no eviction, because partitioned matrices read-only)
+	//NOTE: we could cache ALL read partitions, but in the interest of low footprint, cache only one block at a time
+	private SoftReference<MatrixBlock> _partitionCache = null; //cache for blocked partitions 
+	private String _partitionCacheName = null; //name of cache block
 	
 	/**
 	 * Container object that holds the actual data.
@@ -182,7 +190,7 @@ public class MatrixObjectNew extends CacheableData
 	}
 
 	public long getNumColumns() 
-	throws DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if(_metaData == null)
 			throw new DMLRuntimeException("No metadata available.");
@@ -268,7 +276,7 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
-	public synchronized MatrixBlock acquireRead ()
+	public synchronized MatrixBlock acquireRead()
 		throws CacheException
 	{
 		if( LDEBUG )
@@ -300,7 +308,7 @@ public class MatrixObjectNew extends CacheableData
 			}
 			catch (IOException e)
 			{
-				throw new CacheIOException (fName + " : Reading ("+_varName+") failed.", e);
+				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
 			}
 		}
 		acquire( false, true );
@@ -376,7 +384,7 @@ public class MatrixObjectNew extends CacheableData
 	 * @return the matrix data reference, which is the same as the argument
 	 * @throws CacheException 
 	 */
-	public synchronized MatrixBlock acquireModify (MatrixBlock newData)
+	public synchronized MatrixBlock acquireModify(MatrixBlock newData)
 		throws CacheException
 	{
 		if( LDEBUG )
@@ -417,23 +425,23 @@ public class MatrixObjectNew extends CacheableData
 	 * @throws CacheStatusException
 	 */
 	@Override
-	public synchronized void release () 
+	public synchronized void release() 
 		throws CacheException
 	{
 		if( LDEBUG )
 			System.out.println("release "+_varName);
 		
-		if (isModify ())
+		if ( isModify() )
 		{
 			_dirtyFlag = true;
-			refreshMetaData ();
+			refreshMetaData();
 		}
 		
-		super.release ();
+		super.release();
 		
 		if( isEvictable() )
 		{
-			//get object from cache
+			//create cache
 			if( _data != null )
 			{
 				createCache();
@@ -452,13 +460,13 @@ public class MatrixObjectNew extends CacheableData
 	 * 
 	 * @throws CacheStatusException
 	 */
-	public void clearData ( )  
+	public void clearData()  
 		throws CacheStatusException
 	{
 		clearData(false);
 	}
 	
-	public synchronized void clearData ( boolean delFileOnHDFS ) //TODO usage in variable cp instruction
+	public synchronized void clearData( boolean delFileOnHDFS ) //TODO usage in variable cp instruction
 		throws CacheStatusException
 	{
 		if( LDEBUG )
@@ -490,31 +498,8 @@ public class MatrixObjectNew extends CacheableData
 			setEmpty();
 		}
 		
-		//TODO delete from file; currently not necessary as we cleanup everything at the end of script execution 
+		//NOTE: delete from file not necessary since cleanup at end of script execution 
 	}
-
-	/**
-	 * NOTE: never used
-	 * 
-	 * Same as {@link #clearData()}, but in addition, sets the HDFS source file name
-	 * for the matrix.  The next {@link #acquireRead()} will read it from HDFS.  So,
-	 * this is a "lazy" import.
-	 * 
-	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
-	 * Out-Status: EMPTY.
-	 * 
-	 * @param filePath : the new HDFS path and file name
-	 * @throws CacheStatusException
-	 */
-	/*public void importData (String filePath) 
-		throws CacheStatusException
-	{
-		if (! isAvailableToModify ())
-			throw new CacheStatusException ("MatrixObject not available to modify.");
-		
-		_hdfsFileName = filePath;
-		clearData();
-	}*/
 
 	/**
 	 * Writes, or flushes, the matrix data to HDFS.
@@ -524,7 +509,7 @@ public class MatrixObjectNew extends CacheableData
 	 * 
 	 * @throws CacheException 
 	 */
-	public void exportData ()
+	public void exportData()
 		throws CacheException
 	{
 		exportData (_hdfsFileName, null);
@@ -537,6 +522,9 @@ public class MatrixObjectNew extends CacheableData
 	 * because they all write to the same file. Efficiency for loops and parallel threads
 	 * is achieved by checking if the in-memory matrix block is dirty.
 	 * 
+	 * NOTE: MB: we do not use dfs copy from local (evicted) to HDFS because this would ignore
+	 * the output format and most importantly would bypass reblocking during write (which effects the
+	 * potential degree of parallelism). However, we copy files on HDFS if certain criteria are given.  
 	 * 
 	 * @param fName
 	 * @param outputFormat
@@ -545,41 +533,74 @@ public class MatrixObjectNew extends CacheableData
 	public synchronized void exportData (String fName, String outputFormat)
 		throws CacheException
 	{
-		if( LDEBUG )
+		if( LDEBUG ) 
 			System.out.println("export data "+_varName+" "+fName);
 		
 		//prevent concurrent modifications
 		if (! isAvailableToRead ())
 			throw new CacheStatusException ("MatrixObject not available to read.");
+
+		if (DMLScript.DEBUG)
+			System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 				
-		//check status, 
+		//check status 
 		boolean pWrite = !fName.equals(_hdfsFileName); //persistent write flag
 
-		if( isDirty() || pWrite ) //use dirty for skipping parallel exports
+		//actual export
+		if(  isDirty()  ||                                  //use dirty for skipping parallel exports
+		    (pWrite && !isEqualOutputFormat(outputFormat)) ) 
 		{
-			// CASE 1: write matrix to fname 
-			// (at this point, obj should never be in state empty)
-
-			getCache();
-			acquire( false, true ); //incl. read matrix if evicted
+			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
+			// a) get the matrix		
+			if( isEmpty() )
+			{
+				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
+				try
+				{
+					MatrixBlock newData = readMatrixFromHDFS( _hdfsFileName );
+					if (newData != null)
+					{
+						newData.setEnvelope( this );
+						_data = newData;
+						_dirtyFlag = false;
+					}
+				}
+				catch (IOException e)
+				{
+					throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
+				}
+			}
+			getCache();	//get object from cache
+			acquire( false, true ); //incl. read matrix if evicted	
 			
+			// b) write the matrix 
 			try
 			{
-				if (DMLScript.DEBUG)
-					System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
-				
-				writeMetaData (fName, outputFormat);
-				writeMatrixToHDFS (fName, outputFormat);
+				writeMetaData( fName, outputFormat );
+				writeMatrixToHDFS( fName, outputFormat );
 				if ( !pWrite )
 					_dirtyFlag = false;
 			}
 			catch (Exception e)
 			{
-				throw new CacheIOException (fName + " : Export failed.", e);
+				throw new CacheIOException ("Export to " + fName + " failed.", e);
 			}
 			finally
 			{
 				release();
+			}
+		}
+		else if( pWrite ) // pwrite with same output format
+		{
+			//CASE 2: matrix already in same format but different file on hdfs (copy matrix to fname)
+			try
+			{
+				writeMetaData( fName, outputFormat );
+				MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
+			}
+			catch (Exception e)
+			{
+				throw new CacheIOException ("Export to " + fName + " failed.", e);
 			}
 		}
 		else if(DMLScript.DEBUG)  
@@ -587,74 +608,6 @@ public class MatrixObjectNew extends CacheableData
 			//CASE 3: data already in hdfs (do nothing, no need for export)
 			System.out.println(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
-		
-		
-		/* TODO replace implementation as soon as empty_state semantics (file existence, output format) are clarified 
-		//prevent concurrent modifications
-		if (! isAvailableToRead ())
-			throw new CacheStatusException ("MatrixObject not available to read.");
-				
-		//check status, 
-		boolean pWrite = !fName.equals(_hdfsFileName); //persistent write flag
-
-		if( isDirty() )
-		{
-			// CASE 1: write matrix to fname 
-			// (at this point, obj should never be in state empty)
-			
-			getCache();
-			acquire (false); //incl. read matrix if evicted
-			try
-			{
-				writeMetaData (fName);
-				writeMatrixToHDFS (fName, outputFormat);
-				if ( !pWrite )
-					_dirtyFlag = false;
-			}
-			catch (Exception e)
-			{
-				throw new CacheIOException (fName + " : Export failed.", e);
-			}
-			finally
-			{
-				release();
-			}
-		}
-		else //not dirty (same content as in _hdfsFileName or empty) 
-		{
-			if( pWrite )
-			{
-				//CASE 2: copy data from one hdfs location to another
-				//(for scalability this is done w/o trying to read if empty)
-				
-				//TODO: investigate if this case of empty MatrixObjectNew can happen at all.
-				if( isEmpty() ) //if not empty (and not dirty) the respective file should exist
-					System.out.println("Warning: input file for persistent write might not exist on hdfs or has a different output format.");
-	
-				getCache();
-				acquire (false);
-				try
-				{
-					writeMetaData (fName);
-					MapReduceTool.copyFileOnHDFS(_hdfsFileName, fName); //keep original data format
-					//TODO investigate data output format problem 
-				}
-				catch (Exception e)
-				{
-					throw new CacheIOException (fName + " : Export failed.", e);
-				}
-				finally
-				{
-					release();
-				}
-			}
-			else if(DMLScript.DEBUG) 
-			{
-				//CASE 3: data already in hdfs (do nothing, no need for export)
-				System.out.println("Skip export to hdfs since data already exists.");
-			}
-		}
-		*/
 	}
 
 	
@@ -669,9 +622,10 @@ public class MatrixObjectNew extends CacheableData
 	/**
 	 * 
 	 */
-	public void setPartitioned()
+	public void setPartitioned( PDataPartitionFormat format )
 	{
 		_partitioned = true;
+		_partitionFormat = format;
 	}
 	
 	/**
@@ -681,6 +635,11 @@ public class MatrixObjectNew extends CacheableData
 	public boolean isPartitioned()
 	{
 		return _partitioned;
+	}
+	
+	public PDataPartitionFormat getPartitionFormat()
+	{
+		return _partitionFormat;
 	}
 	
 	/**
@@ -701,15 +660,74 @@ public class MatrixObjectNew extends CacheableData
 		if ( !_partitioned )
 			throw new CacheStatusException ("MatrixObject not available to indexed read.");
 		
-		String fname = getFileName( pred );
 		MatrixBlock mb = null;
 		
 		try
 		{
-			//System.out.println("Reading partitioned matrix block "+fname);
-			mb = readMatrixFromHDFS( fname );
+			boolean blockwise = (_partitionFormat==PDataPartitionFormat.ROW_BLOCK_WISE || _partitionFormat==PDataPartitionFormat.COLUMN_BLOCK_WISE);
 			
-			//TODO MB> check if special treatment of non-existing partitions necessary (e.g., for very sparse datasets)
+			//preparations for block wise access
+			MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+			MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+			int brlen = mc.get_rows_per_block();
+			int bclen = mc.get_cols_per_block();
+			
+			//get filename depending on format
+			String fname = getFileName( pred, brlen, bclen );
+			
+			//probe cache
+			if( blockwise && _partitionCacheName != null && _partitionCacheName.equals(fname) )
+			{
+				mb = _partitionCache.get(); //try getting block from cache
+			}
+			
+			if( mb == null ) //block not in cache
+			{
+				//get rows and cols
+				long rows = -1;
+				long cols = -1;
+				switch( _partitionFormat )
+				{
+					case ROW_WISE:
+						rows = 1;
+						cols = mc.get_cols();
+						break;
+					case ROW_BLOCK_WISE: 
+						rows = brlen;
+						cols = mc.get_cols();
+						break;
+					case COLUMN_WISE:
+						rows = mc.get_rows();
+						cols = 1;
+						break;
+					case COLUMN_BLOCK_WISE: 
+						rows = mc.get_rows();
+						cols = bclen;
+						break;
+				}
+				
+				
+				//read the 
+				mb = readMatrixFromHDFS( fname, rows, cols );
+				mb.clearEnvelope();
+			}
+			
+			//post processing
+			if( blockwise )
+			{
+				//put block into cache
+				_partitionCacheName = fname;
+				_partitionCache = new SoftReference<MatrixBlock>(mb);
+				
+				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
+					mb = projectRow(mb, brlen, (int)pred.rowStart);
+				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
+					mb = projectColumn(mb, bclen, (int)pred.colStart);
+			}
+			
+			
+			//NOTE: currently no special treatment of non-existing partitions necessary 
+			//      because empty blocks are written anyway
 		}
 		catch(Exception ex)
 		{
@@ -726,22 +744,61 @@ public class MatrixObjectNew extends CacheableData
 	 * @return
 	 * @throws CacheStatusException 
 	 */
-	public String getFileName( IndexRange pred ) 
+	private String getFileName( IndexRange pred, int brlen, int bclen ) 
 		throws CacheStatusException
 	{
 		if ( !_partitioned )
 			throw new CacheStatusException ("MatrixObject not available to indexed read.");
 		
 		String fname = _hdfsFileName;
-		if( pred.colStart == pred.colEnd )
-			fname = fname + "/" + pred.colStart;
-		else if( pred.rowStart == pred.rowEnd )
-			fname = fname + "/" + pred.rowStart;
-		else
-			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+		switch( _partitionFormat )
+		{
+			case ROW_WISE:
+				fname = fname + "/" + pred.rowStart; 
+				break;
+			case ROW_BLOCK_WISE:
+				fname = fname + "/" + (pred.rowStart/brlen+1);
+				break;
+			case COLUMN_WISE:
+				fname = fname + "/" + pred.colStart;
+				break;
+			case COLUMN_BLOCK_WISE:
+				fname = fname + "/" + (pred.colStart/bclen+1);
+				break;
+			default:
+				throw new CacheStatusException ("MatrixObject not available to indexed read.");
+		}
 
 		return fname;
 	}	
+	
+	private MatrixBlock projectRow( MatrixBlock mb, int brlen, int rindex )
+	{
+		int brindex = rindex%brlen-1;
+		int clen = mb.getNumColumns();
+		
+		MatrixBlock tmp = new MatrixBlock( 1, clen, false );
+		tmp.spaceAllocForDenseUnsafe(1, clen);
+		for( int j=0; j<clen; j++ ) //see DataPartitioniner, mb always dense
+			tmp.setValueDenseUnsafe(0, j, mb.getValueDenseUnsafe(brindex, j));
+		tmp.recomputeNonZeros();
+		
+		return tmp;
+	}
+	
+	private MatrixBlock projectColumn( MatrixBlock mb, int bclen, int cindex )
+	{
+		int bcindex = cindex%bclen-1;
+		int rlen = mb.getNumRows();
+		
+		MatrixBlock tmp = new MatrixBlock( rlen, 1, false );
+		tmp.spaceAllocForDenseUnsafe(rlen, 1);
+		for( int i=0; i<rlen; i++ ) //see DataPartitioniner, mb always dense
+			tmp.setValueDenseUnsafe(i, 0, mb.getValueDenseUnsafe(i, bcindex));
+		tmp.recomputeNonZeros();
+		
+		return tmp;
+	}
 	
 
 	// *********************************************
@@ -939,7 +996,15 @@ public class MatrixObjectNew extends CacheableData
 		return newData;
 	}
 	
-	private MatrixBlock readMatrixFromHDFS (String filePathAndName)
+	private MatrixBlock readMatrixFromHDFS(String filePathAndName)
+		throws IOException
+	{
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		return readMatrixFromHDFS( filePathAndName, mc.get_rows(), mc.get_cols() );
+	}
+	
+	private MatrixBlock readMatrixFromHDFS(String filePathAndName, long rlen, long clen)
 		throws IOException
 	{
 		//System.out.println("read hdfs "+filePathAndName);
@@ -950,11 +1015,12 @@ public class MatrixObjectNew extends CacheableData
 			System.out.println ("    Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName);
 			begin = System.currentTimeMillis();
 		}
-
+	
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		double sparsity = ((double)mc.nonZero)/(mc.numRows*mc.numColumns); //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
-				                           mc.get_rows(), mc.get_cols(), mc.numRowsPerBlock, mc.get_cols_per_block());
+				                           rlen, clen, mc.numRowsPerBlock, mc.get_cols_per_block(), sparsity);
 		
 		if( newData == null )
 		{
@@ -962,7 +1028,7 @@ public class MatrixObjectNew extends CacheableData
 		}
 		
 		newData.clearEnvelope ();
-   		
+			
 		if (DMLScript.DEBUG) 
 		{
 			//System.out.println ("    Reading Completed: read ~" + newData.getObjectSizeInMemory() + " bytes, " + (System.currentTimeMillis()-begin) + " msec.");
@@ -974,8 +1040,6 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock readMatrixFromLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
-		//System.out.println("read local");
-		
 		DataInputStream in = new DataInputStream (new FileInputStream (filePathAndName));
 		MatrixBlock newData = new MatrixBlock ();
 		try {
@@ -1035,7 +1099,7 @@ public class MatrixObjectNew extends CacheableData
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
 					                                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-			DataConverter.writeMatrixToHDFS (_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+			DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
 
 			if (DMLScript.DEBUG) 
 			{
@@ -1047,6 +1111,7 @@ public class MatrixObjectNew extends CacheableData
 			System.out.println ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
 	}
+
 	
 	private synchronized void writeMatrixToLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
@@ -1077,6 +1142,31 @@ public class MatrixObjectNew extends CacheableData
                     : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo);
 		}
+	}
+	
+	private boolean isEqualOutputFormat( String outputFormat )
+	{
+		boolean ret = true;
+		
+		if( outputFormat != null )
+		{
+			try
+			{
+				MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+				OutputInfo oi1 = InputInfo.getMatchingOutputInfo( iimd.getInputInfo() );
+				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat );
+				if( oi1 != oi2 )
+				{
+					ret = false;
+				}
+			}
+			catch(Exception ex)
+			{
+				ret = false;
+			}
+		}
+		
+		return ret;
 	}
 	
 	@Override

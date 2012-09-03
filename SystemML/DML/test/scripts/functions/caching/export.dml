@@ -1,0 +1,2 @@
+V = read($1,rows=$2,cols=$3, format="text");
+write(V, $4, format=$5);       

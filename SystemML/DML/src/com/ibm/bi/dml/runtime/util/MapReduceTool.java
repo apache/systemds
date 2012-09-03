@@ -10,6 +10,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -23,6 +24,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+//import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -180,11 +182,14 @@ public class MapReduceTool {
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {
 		JobConf job = new JobConf();
-		Path originalpath = new Path(originalDir);
-		Path newpath = new Path(newDir);
-		if (FileSystem.get(job).exists(originalpath)) {
+		Path originalPath = new Path(originalDir);
+		Path newPath = new Path(newDir);
+		boolean deleteSource = false;
+		boolean overwrite = true;
+		
+		if (FileSystem.get(job).exists(originalPath)) {
 			FileSystem fs = FileSystem.get(job);
-			fs.rename(originalpath, newpath);
+			FileUtil.copy(fs, originalPath, fs, newPath, deleteSource, overwrite, job);
 		}
 	}
 
@@ -646,4 +651,43 @@ public class MapReduceTool {
 		assert(i>=0);
 		return Integer.parseInt(name.substring(i+5));
 	}
+	
+	/*
+	TODO incl full integration
+	
+	public static FileSystem getURIAwareFileSystem( String uriStr )
+		throws IOException
+	{
+		return getURIAwareFileSystem(uriStr, new Configuration());
+	}
+
+	public static FileSystem getURIAwareFileSystem(String uriStr, Configuration job) 
+		throws IOException
+	{
+		FileSystem fs = null;
+		
+		//URI parsing - general structure: [scheme:][//authority][path][?query][#fragment] 
+		try
+		{
+			URI uri = new URI( uriStr );
+			String scheme = uri.getScheme();
+			if( scheme != null && (scheme.equals("file") || scheme.equals("hdfs")) )
+			{
+				//create URI-aware filesystem
+				fs = FileSystem.get(uri, job);
+			}
+			else
+			{
+				//create default filesystem
+				fs = FileSystem.get(job);
+			}	
+		}
+		catch(Exception ex)
+		{
+			throw new IOException("Error creating URI-aware file system for "+uriStr);
+		}
+		
+		return fs;
+	}
+	*/
 }

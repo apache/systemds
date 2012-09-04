@@ -1,0 +1,10 @@
+#Tue Sep 04 11:45:18 PDT 2012
+project.name=RecodeGenApp
+langWare.tokenizerChoice=1
+srcTextAnalyticsPath=[W]/RecodeGenApp/textAnalytics/src
+general.provenance=true
+searchPath.dataPath=[W]/RecodeGenApp
+pagination.isEnabled=true
+tamTextAnalyticsPath=[W]/RecodeGenApp/textAnalytics/bin
+pagination.numFilesPerPage=50
+UseModularAQL=true

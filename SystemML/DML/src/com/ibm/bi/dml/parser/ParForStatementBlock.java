@@ -256,6 +256,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				throw new LanguageException( "PARFOR loop dependency analysis: " +
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
 						                     depVars.toString() +".\n " +
+						                    // "in lines"+this.+"\n" +
 						                     "Please, ensure independence of iterations." + ((LDEBUG)? "\nDEBUG Context: \n"+this.toString():"") );				
 			}
 			else
@@ -1222,6 +1223,10 @@ public class ParForStatementBlock extends ForStatementBlock
 		 */
 
 		LinearFunction out = null;
+		
+		if( ! (dat instanceof IndexedIdentifier ) ) //happens if matrix is now used as scalar
+			return new LinearFunction(0,0,dat.getName());
+			
 		IndexedIdentifier idat = (IndexedIdentifier) dat;
 		
 		if( USE_FN_CACHE )

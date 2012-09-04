@@ -42,11 +42,14 @@ public class IndexedIdentifier extends DataIdentifier {
 			String identifierName = ((DataIdentifier)_rowLowerBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-				else{
-					_rowLowerBound = new IntIdentifier((IntIdentifier)constValue);
-					isConst_rowLowerBound = true;
+				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1 )
+				{
+					if( ((IntIdentifier)constValue).getValue() < 1 )
+						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
+					else{
+						_rowLowerBound = new IntIdentifier((IntIdentifier)constValue);
+						isConst_rowLowerBound = true;
+					}
 				}
 			}	
 		}
@@ -55,11 +58,14 @@ public class IndexedIdentifier extends DataIdentifier {
 			String identifierName = ((DataIdentifier)_rowUpperBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-				else{
-					_rowUpperBound = new IntIdentifier((IntIdentifier)constValue);
-					isConst_rowUpperBound = true;
+				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1 )
+				{
+					if ( ((IntIdentifier)constValue).getValue() < 1 )
+						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
+					else{
+						_rowUpperBound = new IntIdentifier((IntIdentifier)constValue);
+						isConst_rowUpperBound = true;
+					}
 				}
 			}	
 		}
@@ -68,11 +74,14 @@ public class IndexedIdentifier extends DataIdentifier {
 			String identifierName = ((DataIdentifier)_colLowerBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-				else{
-					_colLowerBound = new IntIdentifier((IntIdentifier)constValue);
-					isConst_colLowerBound = true;
+				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1)
+				{
+					if ( ((IntIdentifier)constValue).getValue() < 1 )
+						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
+					else{
+						_colLowerBound = new IntIdentifier((IntIdentifier)constValue);
+						isConst_colLowerBound = true;
+					}
 				}
 			}	
 		}
@@ -81,11 +90,14 @@ public class IndexedIdentifier extends DataIdentifier {
 			String identifierName = ((DataIdentifier)_colUpperBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-				else{
-					_colUpperBound = new IntIdentifier((IntIdentifier)constValue);
-					isConst_colUpperBound = true;
+				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1)
+				{
+					if ( ((IntIdentifier)constValue).getValue() < 1 )
+						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
+					else{
+						_colUpperBound = new IntIdentifier((IntIdentifier)constValue);
+						isConst_colUpperBound = true;
+					}
 				}
 			}	
 		}

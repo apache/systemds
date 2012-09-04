@@ -96,7 +96,7 @@ public class RunMRJobs {
 
 			case RAND:
 				ret = RandMR.runJob(inst, inst.getIv_randInstructions().split(Lops.INSTRUCTION_DELIMITOR), 
-						inst.getBrlens(), inst.getBclens(), 
+						//inst.getBrlens(), inst.getBclens(), 
 						mapInst, aggInst, otherInst, 
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos());

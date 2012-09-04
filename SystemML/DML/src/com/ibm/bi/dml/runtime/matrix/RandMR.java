@@ -60,7 +60,7 @@ public class RandMR
 	 */
 	
 	
-	public static JobReturn runJob(MRJobInstruction inst, String[] randInstructions, int[] brlens, int[] bclens, 
+	public static JobReturn runJob(MRJobInstruction inst, String[] randInstructions, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
@@ -77,13 +77,12 @@ public class RandMR
 		for(byte b=0; b<realIndexes.length; b++)
 			realIndexes[b]=b;
 		
-		//set up the block size
-		MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
-		
 		String[] inputs=new String[randInstructions.length];
 		InputInfo[] inputInfos = new InputInfo[randInstructions.length];
 		long[] rlens=new long[randInstructions.length];
 		long[] clens=new long[randInstructions.length];
+		int[] brlens=new int[randInstructions.length];
+		int[] bclens=new int[randInstructions.length];
 		
 		FileSystem fs = FileSystem.get(job);
 		Random random=new Random();
@@ -115,6 +114,8 @@ public class RandMR
 				throw new RuntimeException("bad rand instruction: "+randInstructions[i]);
 			rlens[i]=ins.rows;
 			clens[i]=ins.cols;
+			brlens[i] = ins.rowsInBlock;
+			bclens[i] = ins.colsInBlock;
 			for(long r = 0; r < ins.rows; r += brlens[i])
 			{
 				long curBlockRowSize = Math.min(brlens[i], (ins.rows - r));
@@ -139,6 +140,9 @@ public class RandMR
 		RunningJob runjob;
 		MatrixCharacteristics[] stats;
 		try{
+			//set up the block size
+			MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
+			
 			//set up the input files and their format information
 			MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, true, brlens, bclens, false);
 			

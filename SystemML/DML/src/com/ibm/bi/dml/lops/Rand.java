@@ -86,6 +86,8 @@ public class Rand extends Lops
 		inst.append("Rand");
 		inst.append(OPERAND_DELIMITOR + "rows=" + this.getOutputParameters().num_rows);
 		inst.append(OPERAND_DELIMITOR + "cols=" + this.getOutputParameters().num_cols);
+		inst.append(OPERAND_DELIMITOR + "rowsInBlock=" + this.getOutputParameters().num_rows_in_block);
+		inst.append(OPERAND_DELIMITOR + "colsInBlock=" + this.getOutputParameters().num_cols_in_block);
 		inst.append(OPERAND_DELIMITOR + "min=" + minValue);
 		inst.append(OPERAND_DELIMITOR + "max=" + maxValue);
 		inst.append(OPERAND_DELIMITOR + "sparsity=" + sparsity);
@@ -106,6 +108,8 @@ public class Rand extends Lops
 		inst.append(OPERAND_DELIMITOR + outputIndex);
 		inst.append(OPERAND_DELIMITOR + "rows=" + this.getOutputParameters().num_rows);
 		inst.append(OPERAND_DELIMITOR + "cols=" + this.getOutputParameters().num_cols);
+		inst.append(OPERAND_DELIMITOR + "rowsInBlock=" + this.getOutputParameters().num_rows_in_block);
+		inst.append(OPERAND_DELIMITOR + "colsInBlock=" + this.getOutputParameters().num_cols_in_block);
 		inst.append(OPERAND_DELIMITOR + "min=" + minValue);
 		inst.append(OPERAND_DELIMITOR + "max=" + maxValue);
 		inst.append(OPERAND_DELIMITOR + "sparsity=" + sparsity);

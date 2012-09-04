@@ -15,6 +15,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 public class RandCPInstruction extends UnaryCPInstruction{
 	public long rows;
 	public long cols;
+	public int rowsInBlock;
+	public int colsInBlock;
 	public double minValue;
 	public double maxValue;
 	public double sparsity;
@@ -25,7 +27,8 @@ public class RandCPInstruction extends UnaryCPInstruction{
 							  CPOperand in, 
 							  CPOperand out, 
 							  long rows, 
-							  long cols, 
+							  long cols,
+							  int rpb, int cpb,
 							  double minValue, 
 							  double maxValue,
 							  double sparsity, 
@@ -35,6 +38,8 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		super(op, in, out, istr);
 		this.rows = rows;
 		this.cols = cols;
+		this.rowsInBlock = rpb;
+		this.colsInBlock = cpb;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
@@ -46,7 +51,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 	{
 		Operator op = null;
 		
-		// Example: CP:Rand:rows=10:cols=10:min=0.0:max=1.0:sparsity=1.0:seed=7:pdf=uniform:dir=scratch_space/_t0/:mVar0-MATRIX-DOUBLE
+		// Example: CP:Rand:rows=10:cols=10:rowsInBlock=1000:colsInBlock=1000:min=0.0:max=1.0:sparsity=1.0:seed=7:pdf=uniform:dir=scratch_space/_t0/:mVar0-MATRIX-DOUBLE
 		String[] s = InstructionUtils.getInstructionPartsWithValueType(str);
 		CPOperand in = null; // Rand instruction does not have any input matrices
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -54,13 +59,15 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		
 		long rows = Long.parseLong(s[1].substring(5));
 		long cols = Long.parseLong(s[2].substring(5));
-		double minValue = Double.parseDouble(s[3].substring(4));
-		double maxValue = Double.parseDouble(s[4].substring(4));
-		double sparsity = Double.parseDouble(s[5].substring(9));
-		long seed = Long.parseLong(s[6].substring(5));
-		String pdf = s[7].substring(4);
+		int rpb = Integer.parseInt(s[3].substring(12));
+		int cpb = Integer.parseInt(s[4].substring(12));
+		double minValue = Double.parseDouble(s[5].substring(4));
+		double maxValue = Double.parseDouble(s[6].substring(4));
+		double sparsity = Double.parseDouble(s[7].substring(9));
+		long seed = Long.parseLong(s[8].substring(5));
+		String pdf = s[9].substring(4);
 		
-		return new RandCPInstruction(op, in, out, rows, cols, minValue, maxValue, sparsity, seed, pdf, str);
+		return new RandCPInstruction(op, in, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, str);
 	}
 	
 	public void processInstruction (ProgramBlock pb)

@@ -133,7 +133,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null)
-					throw new LanguageException("function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
@@ -158,7 +158,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null)
-					throw new LanguageException("function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
@@ -187,7 +187,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null)
-					throw new LanguageException("function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return true;
@@ -328,7 +328,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				String prefix = new Integer(fblock.hashCode()).toString() + "_";
 				
 				if (fstmt.getBody().size() > 1)
-					throw new LanguageException("rewritable function can only have 1 statement block");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "rewritable function can only have 1 statement block");
 				StatementBlock sblock = fstmt.getBody().get(0);
 				
 				for (int i =0; i < fstmt.getInputParams().size(); i++){
@@ -348,12 +348,16 @@ public class StatementBlock extends LiveVariableAnalysis{
 					else {
 						// use default value for parameter
 						if (fstmt.getInputParams().get(i).getDefaultValue() == null)
-							throw new LanguageException("line " + currFormalParam.getDefinedLine() + ": default parameter for " + currFormalParam + " is undefined");
-						currCallParam = new DataIdentifier(fstmt.getInputParams().get(i).getDefaultValue(),fstmt.getInputParams().get(i).getDefinedLine(), fstmt.getInputParams().get(i).getDefinedCol());
+							throw new LanguageException(currFormalParam.printErrorLocation() + "default parameter for " + currFormalParam + " is undefined");
+						currCallParam = new DataIdentifier(fstmt.getInputParams().get(i).getDefaultValue());
+						currCallParam.setAllPositions( fstmt.getInputParams().get(i).getBeginLine(), 
+														fstmt.getInputParams().get(i).getBeginColumn(),
+														fstmt.getInputParams().get(i).getEndLine(),
+														fstmt.getInputParams().get(i).getEndColumn());
 					}
 					
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam);
+					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
 					newStatements.add(binding);
 				}
 				
@@ -376,14 +380,15 @@ public class StatementBlock extends LiveVariableAnalysis{
 					// get binding 
 					DataIdentifier newTarget = null;
 					if (current instanceof AssignmentStatement){
-						if (i > 0) throw new LanguageException("Assignment statement cannot return multiple values");
+						if (i > 0) throw new LanguageException(current.printErrorLocation() + "Assignment statement cannot return multiple values");
 						newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
 					}
 					else{
 						newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));
 					}
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource);
+					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
+					
 					newStatements.add(binding);
 				}
 								
@@ -422,7 +427,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				if (target instanceof IndexedIdentifier){
 					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 					if (targetAsSeen == null)
-						throw new LanguageException("ERROR: cannot assign value to indexed identifier " + target.toString() + " without initializing " + is.getIdentifier().getName());
+						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without initializing " + is.getIdentifier().getName());
 					target.setProperties(targetAsSeen);
 				}
 							
@@ -434,8 +439,11 @@ public class StatementBlock extends LiveVariableAnalysis{
 				
 				// validate variable being written by output statement exists
 				DataIdentifier target = (DataIdentifier)os.getIdentifier();
-				if (ids.getVariable(target.getName()) == null)
-					throwUndefinedVar ( target.getName(), os.toString() );
+				if (ids.getVariable(target.getName()) == null){
+					//throwUndefinedVar ( target.getName(), os );
+					throw new LanguageException(os.printErrorLocation() + "Undefined Variable (" + target.getName() + ") used in statement",
+							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				}
 				
 				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
 					boolean paramsOkay = true;
@@ -444,7 +452,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 							paramsOkay = false;
 					}
 					if (paramsOkay == false)
-						throw new LanguageException("Invalid parameters in write statement: " + os.toString());
+						throw new LanguageException(os.printErrorLocation() + "Invalid parameters in write statement: " + os.toString());
 				}
 					
 				Expression source = os.getSource();
@@ -478,7 +486,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 						DataIdentifier id = (DataIdentifier)bife.getFirstExpr();
 						DataIdentifier currVal = ids.getVariable(id.getName());
 						if (currVal == null){
-							throwUndefinedVar ( id.getName(), bife.toString() );
+							//throwUndefinedVar ( id.getName(), bife.toString() );
+							throw new LanguageException(bife.printErrorLocation() + "Undefined Variable (" + id.getName() + ") used in statement",
+									LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 						IntIdentifier intid = null;
 						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){
@@ -502,7 +512,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					// process the "target" being indexed
 					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 					if (targetAsSeen == null)
-						throw new LanguageException("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
 					target.setProperties(targetAsSeen);
 					
 					// process the expressions for the indexing
@@ -517,20 +527,22 @@ public class StatementBlock extends LiveVariableAnalysis{
 					
 					// validate that LHS indexed identifier is being assigned a matrix value
 					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
-						throw new LanguageException("ERROR: Indexed expression " + target.toString() + " can only be assigned matrix value");
+						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
 					}
 					
-					// validate that size of LHS index ranges is being assigned a matrix value
+					// validate that size of LHS index ranges is being assigned:
+					//	(a) a matrix value of same size as LHS
+					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
 					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
 					
-					if (targetSize._row >= 0 && source.getOutput().getDim1() >= 0 && targetSize._row != source.getOutput().getDim1()){
-						throw new LanguageException("ERROR: Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
+						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
 										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
 					
-					if (targetSize._col >= 0 && source.getOutput().getDim2() >= 0 && targetSize._col != source.getOutput().getDim2()){
-						throw new LanguageException("ERROR: Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+					if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
+						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
 										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
@@ -548,7 +560,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				// perform validation of source expression
 				Expression source = mas.getSource();
 				if (!(source instanceof FunctionCallIdentifier)){
-					throw new LanguageException("can only use user-defined functions with multi-assignment statement");
+					throw new LanguageException(source.printErrorLocation() + "can only use user-defined functions with multi-assignment statement");
 				}
 				else {
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
@@ -568,7 +580,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					else{
 						DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 						if (targetAsSeen == null)
-							throw new LanguageException("cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+							throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
 						target.setProperties(targetAsSeen);
 					}
 					
@@ -597,7 +609,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				
 			else if(current instanceof CVStatement || current instanceof ELStatement || 
 					current instanceof ForStatement || current instanceof IfStatement || current instanceof WhileStatement ){
-				throw new LanguageException("control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error");
+				throw new LanguageException(current.printErrorLocation() + "control statement (CVStatement, ELStatement, WhileStatement, IfStatement, ForStatement) should not be in genreric statement block.  Likely a parsing error");
 			}
 				
 			else if (current instanceof PrintStatement){
@@ -607,7 +619,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				
 				// check that variables referenced in print statement expression are scalars
 				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){
-					throw new LanguageException("print statement can only print scalars");
+					throw new LanguageException(current.printErrorLocation() + "print statement can only print scalars");
 				}
 			}
 			
@@ -617,7 +629,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 			
 			
 			else {
-				throw new LanguageException("cannot process statement of type " + current.getClass().getSimpleName());
+				throw new LanguageException(current.printErrorLocation() + "cannot process statement of type " + current.getClass().getSimpleName());
 			}
 			
 		} // end for (Statement current : _statements){
@@ -631,7 +643,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		 	
 	 		Expression formatTypeExpr = s.getExprParam(Statement.FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier))
-				throw new LanguageException("ERROR: input statement parameter " + Statement.FORMAT_TYPE 
+				throw new LanguageException(s.printErrorLocation() + "input statement parameter " + Statement.FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text", 
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	 		
@@ -640,7 +652,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				s._id.setFormatType(FormatType.BINARY);
 			} else if (ft.equalsIgnoreCase("text")){
 				s._id.setFormatType(FormatType.TEXT);
-			} else throw new LanguageException("ERROR: input statement parameter " + Statement.FORMAT_TYPE 
+			} else throw new LanguageException(s.printErrorLocation() + "input statement parameter " + Statement.FORMAT_TYPE 
 					+ " can only be a string with one of following values: binary, text", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		} else {
@@ -667,7 +679,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 			VariableSet updated = s.variablesUpdated();
 			
 			if (s instanceof WhileStatement || s instanceof IfStatement || s instanceof ForStatement){
-				throw new LanguageException("control statement (while / for / if) cannot be in generic statement block");
+				throw new LanguageException(s.printErrorLocation() + "control statement (while / for / if) cannot be in generic statement block");
 			}
 	
 			if (read != null){

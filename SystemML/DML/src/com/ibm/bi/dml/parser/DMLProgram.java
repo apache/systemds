@@ -73,19 +73,19 @@ public class DMLProgram {
 	public FunctionStatementBlock getFunctionStatementBlock(String namespaceKey, String functionName) throws LanguageException {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null)
-			throw new LanguageException("namespace " + namespaceKey + " is underfined");
+			throw new LanguageException("ERROR line 0, column 0 -- " + "namespace " + namespaceKey + " is underfined");
 	
 		// for the namespace DMLProgram, get the specified function (if exists) in its current namespace
 		FunctionStatementBlock retVal = namespaceProgram._functionBlocks.get(functionName);
 		if (retVal == null)
-			throw new LanguageException("function " + functionName + " is not defined in namespace " + namespaceKey);
+			throw new LanguageException("ERROR: line 0, column 0 -- " +  "function " + functionName + " is not defined in namespace " + namespaceKey);
 		return retVal;
 	}
 	
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) throws LanguageException{
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null)
-			throw new LanguageException("namespace " + namespaceKey + " is underfined");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "namespace " + namespaceKey + " is underfined");
 			
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;

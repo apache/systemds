@@ -4,11 +4,29 @@ import java.util.HashMap;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class ParameterizedBuiltinFunctionExpression extends Expression {
+public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 
 	private ParameterizedBuiltinFunctionOp _opcode;
 	private HashMap<String,Expression> _varParams;
 	
+	
+	
+	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, HashMap<String,Expression> varParams){
+	
+		// check if the function name is built-in function
+		//	 (assign built-in function op if function is built-in
+		Expression.ParameterizedBuiltinFunctionOp pbifop = null;	
+		if (functionName.equals("cumulativeProbability"))
+			pbifop = Expression.ParameterizedBuiltinFunctionOp.CDF;
+		else if (functionName.equals("groupedAggregate"))
+			pbifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;
+		else
+			return null;
+		
+		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(pbifop,varParams);
+		return retVal;
+	} // end method getBuiltinFunctionExpression
+			
 	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op, HashMap<String,Expression> varParams) {
 		_kind = Kind.ParameterizedBuiltinFunctionOp;
 		_opcode = op;
@@ -28,7 +46,14 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
 		}	
-		return new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams);
+		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(_opcode, newVarParams);
+	
+		retVal._beginLine 	= this._beginLine;
+		retVal._beginColumn = this._beginColumn;
+		retVal._endLine 	= this._endLine;
+		retVal._endColumn	= this._endColumn;
+	
+		return retVal;
 	}
 
 	public void setOpcode(ParameterizedBuiltinFunctionOp op) {
@@ -67,10 +92,6 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
 			getVarParam(s).validateExpression(ids, constVars);
-			
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
-			//	throw new LanguageException("Non-scalar data types are not supported for parameterized builtin functions.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-			}
 		}
 		
 		String outputName = getTempName();
@@ -85,7 +106,7 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 		case GROUPEDAGG:
 			
 			if (getVarParam("target")  == null || getVarParam("groups") == null)
-				throw new LanguageException("Must define both target and groups and both must have same dimensions");
+				throw new LanguageException(this.printErrorLocation() + "Must define both target and groups and both must have same dimensions");
 			
 			if (getVarParam("target") instanceof DataIdentifier && getVarParam("groups") instanceof DataIdentifier && (getVarParam("weights") == null || getVarParam("weights") instanceof DataIdentifier))
 			{
@@ -95,16 +116,19 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 				DataIdentifier weightsid = (DataIdentifier)getVarParam("weights");
 				
 			
-				if (targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2() )
-					throw new LanguageException("target and groups must have same dimensions");
-				
-				if (weightsid != null && (targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() ))
-					throw new LanguageException("target and weights must have same dimensions");
+				if (targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2() ){
+					throw new LanguageException(this.printErrorLocation() + "target and groups must have same dimensions -- " 
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
+				}
+				if (weightsid != null && (targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() )){
+					throw new LanguageException(this.printErrorLocation() + "target and weights must have same dimensions -- "
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols " );
+				}
 			}
 			
 			
 			if (getVarParam("fn") == null)
-					throw new LanguageException("must define function name (fname=<function name>) for groupedAggregate()");
+					throw new LanguageException(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");
 				 
 			
 			Expression functParam = getVarParam("fn");
@@ -120,14 +144,14 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 				if(fnameStr.equals("centralmoment")){
 					String orderStr = getVarParam("order") == null ? null : getVarParam("order").toString();
 					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4")))
-						throw new LanguageException("for centralmoment, must define order.  Order must be equal to 2,3, or 4");
+						throw new LanguageException(this.printErrorLocation() + "for centralmoment, must define order.  Order must be equal to 2,3, or 4");
 				}	
 				else if (fnameStr.equals("count") 
 						|| fnameStr.equals("sum") 
 						|| fnameStr.equals("mean")
 						|| fnameStr.equals("variance")){}
 				else
-					throw new LanguageException("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
+					throw new LanguageException(this.printErrorLocation() + "fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
 			}
 			
 			// Output is a matrix with unknown dims
@@ -148,7 +172,7 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 			
 			// check if quantile is of type SCALAR
 			if ( getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
-				throw new LanguageException("Quantile to cumulativeProbability() must be a scalar value.",
+				throw new LanguageException(this.printErrorLocation() + "Quantile to cumulativeProbability() must be a scalar value.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
@@ -160,7 +184,7 @@ public class ParameterizedBuiltinFunctionExpression extends Expression {
 			break;
 
 		default:
-			throw new LanguageException("Unsupported parameterized function "
+			throw new LanguageException(this.printErrorLocation() + "Unsupported parameterized function "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		}

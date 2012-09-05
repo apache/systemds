@@ -70,9 +70,4 @@ public abstract class LiveVariableAnalysis {
 			}
 		}
 	}
-
-	public static void throwUndefinedVar ( String varName, String statement ) throws LanguageException {
-		throw new LanguageException("Undefined Variable (" + varName + ") used in statement " + statement + ".",
-				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-	}
 }

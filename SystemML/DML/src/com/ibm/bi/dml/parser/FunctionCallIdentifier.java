@@ -9,6 +9,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 public class FunctionCallIdentifier extends DataIdentifier {
 
 	private ArrayList<Expression> _inputParamExpressions;
+	private HashMap<String,Expression> _namedInputParamExpressions;
 	private ArrayList<DataIdentifier> _outputs;
 	private FunctCallOp _opcode;	// stores whether internal or external
 	private String _namespace;		// namespace of the function being called (null if current namespace is to be used)
@@ -34,23 +35,48 @@ public class FunctionCallIdentifier extends DataIdentifier {
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		// rewrite each input expression
-	
 		ArrayList<Expression> newInputParamExpressions = new ArrayList<Expression>(); 
 		for (Expression expr : _inputParamExpressions){
 			Expression newExpr = expr.rewriteExpression(prefix);
 			newInputParamExpressions.add(newExpr);
 		}
 			
+		// rewrite each named input expression
+		HashMap<String,Expression> newNamedInputParamExpressions = new HashMap<String,Expression>(); 
+		for (String exprName : _namedInputParamExpressions.keySet()){
+			Expression expr = _namedInputParamExpressions.get(exprName);
+			Expression newExpr = expr.rewriteExpression(prefix);
+			newNamedInputParamExpressions.put(exprName,newExpr);
+		}
+		
+		
 		// rewrite each output expression
-		FunctionCallIdentifier fci = new FunctionCallIdentifier(newInputParamExpressions);
+		FunctionCallIdentifier fci = new FunctionCallIdentifier(newInputParamExpressions, newNamedInputParamExpressions);
+		
+		fci._beginLine 		= this._beginLine;
+		fci._beginColumn 	= this._beginColumn;
+		fci._endLine		= this._endLine;
+		fci._endColumn		= this._endColumn;
+			
 		fci._name = this._name;
 		fci._namespace = this._namespace;
 		fci._opcode = this._opcode;
+		fci._kind = Kind.FunctionCallOp;	 
 		return fci;
 	}
 	
-	public FunctionCallIdentifier(ArrayList<Expression> paramExpressions) {
+	public FunctionCallIdentifier(){}
+	
+	public FunctionCallIdentifier(ArrayList<Expression> paramExpressions, HashMap<String, Expression> namedParamExpresssions) {
+		
+		if (paramExpressions == null)
+			_inputParamExpressions = new ArrayList<Expression>();
 		_inputParamExpressions = paramExpressions;
+		
+		if (namedParamExpresssions == null)
+			_namedInputParamExpressions = new HashMap<String, Expression>();
+		_namedInputParamExpressions = namedParamExpresssions;
+		
 		_opcode = null;
 		_kind = Kind.FunctionCallOp;	 
 	}
@@ -63,6 +89,10 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		return _inputParamExpressions;
 	}
 	
+	public HashMap<String,Expression> getNamedParamExpressions(){
+		return _namedInputParamExpressions;
+	}
+	
 	/**
 	 * Validate parse tree : Process ExtBuiltinFunction Expression is an
 	 * assignment statement
@@ -73,12 +103,12 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		
 		// check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null)
-			throw new LanguageException("namespace " + _namespace + " is not defined ");
+			throw new LanguageException(this.printErrorLocation() + "namespace " + _namespace + " is not defined ");
 		
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 		if (fblock == null){
 			String printedNamespace = (_namespace == null) ? "current" : _namespace;
-			throw new LanguageException("function " + _name + " is undefined in namespace " + printedNamespace );
+			throw new LanguageException(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + printedNamespace );
 		}
 		// set opcode (whether internal or external function) -- based on whether FunctionStatement
 		// in FunctionStatementBlock is ExternalFunctionStatement or FunctionStatement
@@ -87,16 +117,29 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		else
 			_opcode = Expression.FunctCallOp.INTERNAL;
 		
+		// force all parameters to be either unnammed or named
+		if (_inputParamExpressions.size() > 0 && _namedInputParamExpressions.size() > 0)
+			throw new LanguageException(this.printErrorLocation() + " In DML, functions can only have named parameters " +
+						"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
+						_name + " has both parameter types.");
+		
 		// validate expressions for each passed parameter
-		for (Expression cur : _inputParamExpressions) {
-			cur.validateExpression(ids, constVars);
+		for (Expression curr : _inputParamExpressions) {
+			curr.validateExpression(ids, constVars);
 		}
 
+		// validate expressions for each named passed parameter
+		for (String key : _namedInputParamExpressions.keySet()){
+			Expression curr = _namedInputParamExpressions.get(key);
+			curr.validateExpression(ids, constVars);
+		}
+		
 		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 		
+		// TODO: DRB: FIX THIS
 		// check correctness of number of arguments and their types 
 		if (fstmt.getInputParams().size() < _inputParamExpressions.size()){ 
-			throw new LanguageException("function " + _name 
+			throw new LanguageException(this.printErrorLocation() + "function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
 					+ fstmt.getInputParams().size() + " but was called with " + _inputParamExpressions.size());
 		}
@@ -107,18 +150,17 @@ public class FunctionCallIdentifier extends DataIdentifier {
 			if (i >= _inputParamExpressions.size()){
 				// check a default value is provided for this variable
 				if (fstmt.getInputParams().get(i).getDefaultValue() == null)
-					throw new LanguageException("line " + fstmt.getInputParams().get(i).getDefinedLine() 
-							+ ": parameter " + fstmt.getInputParams().get(i) + " must have default value");
+					throw new LanguageException(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
 			}
 			
 			else {
 				Expression param = _inputParamExpressions.get(i);
 				boolean sameDataType = param._output.getDataType().equals(fstmt.getInputParams().get(i).getDataType());
 				if (!sameDataType)
-					throw new LanguageException("parameter " + param.toString() + " does not have correct dataType");
+					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 				boolean sameValueType = param._output.getValueType().equals(fstmt.getInputParams().get(i).getValueType());
 				if (!sameValueType)
-					throw new LanguageException("parameter " + param.toString() + " does not have correct valueType");
+					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
 			}
 		}
 	

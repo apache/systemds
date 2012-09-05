@@ -137,7 +137,7 @@ public class ImportStatement extends Statement{
 	} // end method
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("rewriting for inlining not supported for ImportStatement");
+		throw new LanguageException(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");
 	}
 		
 	public void initializeforwardLV(VariableSet activeIn){}

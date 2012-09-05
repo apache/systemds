@@ -24,6 +24,12 @@ public abstract class Identifier extends Expression{
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
+		
+		// copy position information
+		_beginLine 	 = i.getBeginLine();
+		_beginColumn = i.getBeginColumn();
+		_endLine 	 = i.getEndLine();
+		_endColumn 	 = i.getEndColumn();
 	}
 	
 	public Identifier(){
@@ -47,6 +53,14 @@ public abstract class Identifier extends Expression{
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
+		
+		_beginLine 	 = i.getBeginLine();
+		_beginColumn = i.getBeginColumn();
+		_endLine 	 = i.getEndLine();
+		_endColumn 	 = i.getEndColumn();
+		
+		
+		
 	}
 	
 	public void setDimensionValueProperties(Identifier i){
@@ -132,8 +146,11 @@ public abstract class Identifier extends Expression{
 			// set properties for Data identifer
 			String name = ((DataIdentifier)this.getOutput()).getName();
 			Identifier id = ids.get(name);
-			if ( id == null )
-				LiveVariableAnalysis.throwUndefinedVar(name, "");
+			if ( id == null ){
+				//LiveVariableAnalysis.throwUndefinedVar(name, null);
+				throw new LanguageException(this.printErrorLocation() + "Undefined Variable (" + name + ") used in statement",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
 			this.getOutput().setProperties(id);
 			
 			// validate IndexedIdentifier -- which is substype of DataIdentifer with index

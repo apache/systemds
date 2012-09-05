@@ -1,8 +1,5 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.HashMap;
-
-import com.ibm.bi.dml.parser.Expression.Kind;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
@@ -13,6 +10,7 @@ public class StringIdentifier extends ConstIdentifier {
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}
+	
 	public StringIdentifier(String val){
 		super();
 		 _val = val;

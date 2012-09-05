@@ -1,15 +1,17 @@
 package com.ibm.bi.dml.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class BuiltinFunctionExpression extends Expression {
+public class BuiltinFunctionExpression extends DataIdentifier {
 
 	private Expression _first;
 	private Expression _second;
 	private Expression _third;
 	private BuiltinFunctionOp _opcode;
+
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression first,
 			Expression second, Expression third) {
@@ -22,14 +24,18 @@ public class BuiltinFunctionExpression extends Expression {
 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 
-		Expression newFirst = (this._first == null) ? null : this._first
-				.rewriteExpression(prefix);
-		Expression newSecond = (this._second == null) ? null : this._second
-				.rewriteExpression(prefix);
-		Expression newThird = (this._third == null) ? null : this._third
-				.rewriteExpression(prefix);
-		return new BuiltinFunctionExpression(this._opcode, newFirst, newSecond,
-				newThird);
+		Expression newFirst = (this._first == null) ? null : this._first.rewriteExpression(prefix);
+		Expression newSecond = (this._second == null) ? null : this._second.rewriteExpression(prefix);
+		Expression newThird = (this._third == null) ? null : this._third.rewriteExpression(prefix);
+		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(this._opcode, newFirst, newSecond, newThird);
+	
+		retVal._beginLine 	= this._beginLine;
+		retVal._beginColumn = this._beginColumn;
+		retVal._endLine		= this._endLine;
+		retVal._endColumn	= this._endColumn;
+		
+		return retVal;
+	
 	}
 
 	public BuiltinFunctionOp getOpCode() {
@@ -77,6 +83,8 @@ public class BuiltinFunctionExpression extends Expression {
 		// checkIdentifierParams();
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
+		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
 		Identifier id = this.getFirstExpr().getOutput();
 		output.setProperties(this.getFirstExpr().getOutput());
 		this.setOutput(output);
@@ -161,7 +169,7 @@ public class BuiltinFunctionExpression extends Expression {
 			checkMatrixParam(_first);
 			if (( _first.getOutput().getDim1() != -1 && _first.getOutput().getDim1() !=1) || 
 				( _first.getOutput().getDim2() != -1 && _first.getOutput().getDim2() !=1)) {
-				throw new LanguageException(
+				throw new LanguageException(this.printErrorLocation() +
 						"dimension mismatch while casting matrix to scalar: dim1: " + 
 						_first.getOutput().getDim1() +  " dim2 " + _first.getOutput().getDim2(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -210,7 +218,7 @@ public class BuiltinFunctionExpression extends Expression {
 			
 			if (_third.getOutput().getDataType() != DataType.SCALAR || 
 				_third.getOutput().getValueType() != ValueType.STRING) {
-					throw new LanguageException(
+					throw new LanguageException(this.printErrorLocation() +
 							"Third argument in ppred() is not an operator ",
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -237,7 +245,7 @@ public class BuiltinFunctionExpression extends Expression {
 				output.setDimensions(dim, dim);
 			} else {
 				if (id.getDim1() != id.getDim2()) {
-					throw new LanguageException(
+					throw new LanguageException(this.printErrorLocation() +
 							"Invoking diag on matrix with dimensions ("
 									+ id.getDim1() + "," + id.getDim2()
 									+ ") in " + this.toString(),
@@ -427,7 +435,7 @@ public class BuiltinFunctionExpression extends Expression {
 
 			if ((_third == null && _second._output.getDataType() != DataType.SCALAR)
 					&& (_third != null && _third._output.getDataType() != DataType.SCALAR)) {
-				throw new LanguageException("Invalid parameters to "
+				throw new LanguageException(this.printErrorLocation() + "Invalid parameters to "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -478,7 +486,7 @@ public class BuiltinFunctionExpression extends Expression {
 				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 			} else
-				throw new LanguageException("Unsupported function "
+				throw new LanguageException(this.printErrorLocation() + "Unsupported function "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -521,7 +529,7 @@ public class BuiltinFunctionExpression extends Expression {
 			}
 			break;
 		default:
-			throw new LanguageException("Unknown math function "
+			throw new LanguageException(this.printErrorLocation() + "Unknown math function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
@@ -562,26 +570,26 @@ public class BuiltinFunctionExpression extends Expression {
 	private void checkNumParameters(int count)
 			throws LanguageException {
 		if (_first == null)
-			throw new LanguageException("Missing parameter for function "
+			throw new LanguageException(this.printErrorLocation()  + "Missing parameter for function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
             	
        	if (((count == 1) && (_second!= null || _third != null)) || 
         		((count == 2) && (_third != null))) 
-			    throw new LanguageException("Invalid number of parameters for function "
+			    throw new LanguageException(this.printErrorLocation() + "Invalid number of parameters for function "
 					  + this.getOpCode(),
 					  LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	
        	else if (((count == 2) && (_second == null)) || 
 		             ((count == 3) && (_second == null || _third == null)))
-			throw new LanguageException("Missing parameter for function "
+			throw new LanguageException(this.printErrorLocation()  + "Missing parameter for function "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
 	private void checkMatrixParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
-			throw new LanguageException(
+			throw new LanguageException(this.printErrorLocation() +
 					"Expecting matrix parameter for function "
 							+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
@@ -590,7 +598,7 @@ public class BuiltinFunctionExpression extends Expression {
 	
 	private void checkScalarParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.SCALAR) {
-			throw new LanguageException(
+			throw new LanguageException(this.printErrorLocation() +
 					"Expecting scalar parameter for function "
 							+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
@@ -612,7 +620,7 @@ public class BuiltinFunctionExpression extends Expression {
 		// throw an exception, when e's output is NOT a one-dimensional matrix 
 		// the check must be performed only when the dimensions are known at compilation time
 		if ( dimsKnown(e) && !is1DMatrix(e)) {
-			throw new LanguageException(
+			throw new LanguageException(this.printErrorLocation() +
 					"Expecting one-dimensional matrix parameter for function "
 							+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
@@ -630,7 +638,7 @@ public class BuiltinFunctionExpression extends Expression {
 			}
 			else if (expr1.getOutput().getDim1() != expr2.getOutput().getDim1() 
 				|| expr1.getOutput().getDim2() != expr2.getOutput().getDim2() ) {
-				throw new LanguageException(
+				throw new LanguageException(this.printErrorLocation() +
 						"Mismatch in matrix dimensions of parameters for function "
 								+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -641,11 +649,110 @@ public class BuiltinFunctionExpression extends Expression {
 
 	private void checkMatchingDimensionsQuantile() throws LanguageException {
 		if (_first.getOutput().getDim1() != _second.getOutput().getDim1()) {
-			throw new LanguageException("Mismatch in matrix dimensions for "
+			throw new LanguageException(this.printErrorLocation() + "Mismatch in matrix dimensions for "
 					+ this.getOpCode(),
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 
 		}
 	}
+
+	public static BuiltinFunctionExpression getBuiltinFunctionExpression(String functionName, ArrayList<Expression> exprs) {
+		
+		// check if the function name is built-in function
+		//	(assign built-in function op if function is built-in
+		Expression.BuiltinFunctionOp bifop = null;
+	
+		if (functionName.equals("cos"))
+			bifop = Expression.BuiltinFunctionOp.COS;
+		else if (functionName.equals("sin"))
+			bifop = Expression.BuiltinFunctionOp.SIN;
+		else if (functionName.equals("tan"))
+			bifop = Expression.BuiltinFunctionOp.TAN;
+		else if (functionName.equals("diag"))
+			bifop = Expression.BuiltinFunctionOp.DIAG;
+		else if (functionName.equals("exp"))
+			 bifop = Expression.BuiltinFunctionOp.EXP;
+		else if (functionName.equals("abs"))
+			bifop = Expression.BuiltinFunctionOp.ABS;
+		else if (functionName.equals("min"))
+			bifop = Expression.BuiltinFunctionOp.MIN;
+		else if (functionName.equals("max"))
+			 bifop = Expression.BuiltinFunctionOp.MAX;
+		else if (functionName.equals("pmin"))
+			 bifop = Expression.BuiltinFunctionOp.PMIN;
+		else if (functionName.equals("pmax"))
+			 bifop = Expression.BuiltinFunctionOp.PMAX;
+		else if (functionName.equals("ppred"))
+			bifop = Expression.BuiltinFunctionOp.PPRED;
+		else if (functionName.equals("log"))
+			bifop = Expression.BuiltinFunctionOp.LOG;
+		else if (functionName.equals("length"))
+			bifop = Expression.BuiltinFunctionOp.LENGTH;
+		else if (functionName.equals("ncol"))
+			 bifop = Expression.BuiltinFunctionOp.NCOL;
+		else if (functionName.equals("nrow"))
+			bifop = Expression.BuiltinFunctionOp.NROW;
+		else if (functionName.equals("sqrt"))
+			 bifop = Expression.BuiltinFunctionOp.SQRT;
+		else if (functionName.equals("sum"))
+			bifop = Expression.BuiltinFunctionOp.SUM;
+		else if (functionName.equals("mean"))
+			bifop = Expression.BuiltinFunctionOp.MEAN;
+		else if (functionName.equals("trace"))
+			bifop = Expression.BuiltinFunctionOp.TRACE;
+		else if (functionName.equals("t"))
+			 bifop = Expression.BuiltinFunctionOp.TRANS;
+		else if (functionName.equals("append"))
+			bifop = Expression.BuiltinFunctionOp.APPEND;
+		else if (functionName.equals("range"))
+			bifop = Expression.BuiltinFunctionOp.RANGE;
+		else if (functionName.equals("prod"))
+			bifop = Expression.BuiltinFunctionOp.PROD;
+		else if (functionName.equals("rowSums"))
+			bifop = Expression.BuiltinFunctionOp.ROWSUM;
+		else if (functionName.equals("colSums"))
+			bifop = Expression.BuiltinFunctionOp.COLSUM;
+		else if (functionName.equals("rowMins"))
+			bifop = Expression.BuiltinFunctionOp.ROWMIN;
+		else if (functionName.equals("colMins"))
+			bifop = Expression.BuiltinFunctionOp.COLMIN;
+		else if (functionName.equals("rowMaxs"))
+			bifop = Expression.BuiltinFunctionOp.ROWMAX;
+		else if (functionName.equals("rowIndexMax"))
+			bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;
+		else if (functionName.equals("colMaxs"))
+			bifop = Expression.BuiltinFunctionOp.COLMAX;
+		else if (functionName.equals("rowMeans"))
+			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
+		else if (functionName.equals("colMeans"))
+			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
+		else if (functionName.equals("castAsScalar"))
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
+		else if (functionName.equals("quantile"))
+			bifop= Expression.BuiltinFunctionOp.QUANTILE;
+		else if (functionName.equals("interQuantile"))
+			bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;
+	else if (functionName.equals("interQuartileMean"))
+			bifop= Expression.BuiltinFunctionOp.IQM;
+		else if (functionName.equals("ctable"))
+			bifop = Expression.BuiltinFunctionOp.CTABLE;
+		else if (functionName.equals("spearman"))
+			bifop = Expression.BuiltinFunctionOp.SPEARMAN;
+		else if (functionName.equals("round"))
+			bifop = Expression.BuiltinFunctionOp.ROUND;
+		else if (functionName.equals("centralMoment"))
+			 bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;
+		else if (functionName.equals("cov"))
+			bifop = Expression.BuiltinFunctionOp.COVARIANCE;
+		else
+			return null;
+		
+		Expression expr1 = exprs.size() >= 1 ? expr1 = exprs.get(0) : null;
+		Expression expr2 = exprs.size() >= 2 ? expr2 = exprs.get(1) : null;
+		Expression expr3 = exprs.size() >= 3 ? expr3 = exprs.get(2) : null;
+		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(bifop,expr1, expr2, expr3);
+	
+		return retVal;
+	} // end method getBuiltinFunctionExpression
 
 }

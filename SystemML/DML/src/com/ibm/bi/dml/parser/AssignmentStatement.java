@@ -20,15 +20,30 @@ public class AssignmentStatement extends Statement{
 		Expression newSource = _source.rewriteExpression(prefix);
 		
 		// create rewritten assignment statement (deep copy)
-		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource);
+		AssignmentStatement retVal = new AssignmentStatement(newTarget, newSource,this.getBeginLine(), 
+											this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 		return retVal;
 	}
-		
+	
 	public AssignmentStatement(DataIdentifier t, Expression s){
+
 		_targetList = new ArrayList<DataIdentifier>();
 		_targetList.add(t);
 		_source = s;
+	}
+	
+	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol){
+		
+		_targetList = new ArrayList<DataIdentifier>();
+		_targetList.add(t);
+		_source = s;
+	
+		_beginLine   = beginLine;
+		_beginColumn = beginCol;
+		_endLine     = endLine;
+		_endColumn   = endCol;
+		
 	}
 	
 	public DataIdentifier getTarget(){

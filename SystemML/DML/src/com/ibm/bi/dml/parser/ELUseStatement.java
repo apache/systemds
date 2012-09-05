@@ -1,12 +1,8 @@
 package com.ibm.bi.dml.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -20,7 +16,7 @@ public class ELUseStatement extends Statement {
 	private AGG _agg;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("should not call rewriteStatement for CVStatement");
+		throw new LanguageException("ERROR: line 0, column 0 -- " + "should not call rewriteStatement for CVStatement");
 	}
 	
 	public enum AGG {

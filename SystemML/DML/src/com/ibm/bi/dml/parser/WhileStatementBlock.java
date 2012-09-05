@@ -18,7 +18,7 @@ public class WhileStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
-			throw new LanguageException("WhileStatementBlock should have only 1 statement (while statement)");
+			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		
 		WhileStatement wstmt = (WhileStatement) _statements.get(0);
 		ConditionalPredicate predicate = wstmt.getConditionalPredicate();
@@ -48,7 +48,7 @@ public class WhileStatementBlock extends StatementBlock {
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
 		if (_statements.size() > 1)
-			throw new LanguageException("WhileStatementBlock should have only 1 statement (while statement)");
+			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		
 		
 		_read = new VariableSet();
@@ -128,7 +128,7 @@ public class WhileStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
-			throw new HopsException("there should be no HOPs associated with the WhileStatementBlock");
+			throw new HopsException(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 		}
 		
 		return _hops;
@@ -182,7 +182,7 @@ public class WhileStatementBlock extends StatementBlock {
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getDefinedLine() + " depends on while execution");
+			System.out.println(   "***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on while execution");
 		}
 		
 		// Cannot remove kill variables

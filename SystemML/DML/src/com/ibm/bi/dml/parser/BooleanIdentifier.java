@@ -1,13 +1,12 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.HashMap;
-
 import com.ibm.bi.dml.utils.LanguageException;
 
 
 public class BooleanIdentifier extends ConstIdentifier {
 
 	private boolean _val;
+	
 	
 	public BooleanIdentifier(boolean val){
 		super();
@@ -18,13 +17,6 @@ public class BooleanIdentifier extends ConstIdentifier {
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		return this;
 	}
-	
-	public BooleanIdentifier(BooleanIdentifier b){
-		super();
-		 _val = b.getValue();
-		_kind = Kind.Data;
-	}
-	
 	
 	public boolean getValue(){
 		return _val;

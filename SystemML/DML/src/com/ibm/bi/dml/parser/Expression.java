@@ -92,13 +92,9 @@ public abstract class Expression {
 	public Identifier getOutput() {
 		return _output;
 	}
-	/*
-	public void validateExpression(HashMap<String, DataIdentifier> ids) throws LanguageException{
-		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
-	};
-	*/
+	
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
-		throw new LanguageException("Should never be invoked in Baseclass 'Expression'");
+		throw new LanguageException("ERROR: line 0, column 0 -- " + "Should never be invoked in Baseclass 'Expression'");
 	};
 	
 	public static BinaryOp getBinaryOp(String val) {
@@ -194,7 +190,7 @@ public abstract class Expression {
 				return DataType.MATRIX;
 		}
 
-		throw new LanguageException("Invalid Datatypes for operation",
+		throw new LanguageException(id1.printErrorLocation() + "Invalid Datatypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
@@ -221,8 +217,39 @@ public abstract class Expression {
 				return ValueType.STRING;
 		}
 
-		throw new LanguageException("Invalid Valuetypes for operation",
+		throw new LanguageException(id1.printErrorLocation() + "Invalid Valuetypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
+	
+	///////////////////////////////////////////////////////////////////////////
+	// store position information for expressions
+	///////////////////////////////////////////////////////////////////////////
+	public int _beginLine, _beginColumn;
+	public int _endLine, _endColumn;
+	
+	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
+	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	
+	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+		_beginLine	 = blp; 
+		_beginColumn = bcp; 
+		_endLine 	 = elp;
+		_endColumn 	 = ecp;
+	}
+
+	public int getBeginLine()	{ return _beginLine;   }
+	public int getBeginColumn() { return _beginColumn; }
+	public int getEndLine() 	{ return _endLine;   }
+	public int getEndColumn()	{ return _endColumn; }
+	
+	public String printErrorLocation(){
+		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	public String printWarningLocation(){
+		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
 }

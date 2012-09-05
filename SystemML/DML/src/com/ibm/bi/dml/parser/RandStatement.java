@@ -25,6 +25,10 @@ public class RandStatement extends Statement
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
 		RandStatement newStatement = new RandStatement();
+		newStatement._beginLine		= this.getBeginLine();
+		newStatement._beginColumn	= this.getBeginColumn();
+		newStatement._endLine		= this.getEndLine();
+		newStatement._endColumn 	= this.getEndColumn();
 	
 		// rewrite data identifier for target (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
@@ -69,7 +73,8 @@ public class RandStatement extends Statement
 				found = true;
 		}
 		if (!found)
-			throw new ParseException("ERROR: unexpected parameter \"" + paramName +
+			// TODO: DRB FIX THIS
+			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
@@ -95,10 +100,11 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  In rand statement, can only assign rows a long " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 				else{
 					rowsExpr = new IntIdentifier((IntIdentifier)constValue);
+					rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					_exprParams.put(RAND_ROWS, rowsExpr);
 				}
 			}
@@ -113,10 +119,12 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException("ERROR:  In rand statement, can only assign cols a long " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 				else{
 					colsExpr = new IntIdentifier((IntIdentifier)constValue);
+					colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					_exprParams.put(RAND_COLS, colsExpr);
 				}
 			}
@@ -131,10 +139,11 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
-					throw new LanguageException("ERROR:  In rand statement, can only assign min a double " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign min a double " +
 							"value -- attempted to assign value: " + constValue.toString());
 				else {
 					minValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
+					minValueExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					_exprParams.put(RAND_MIN, rowsExpr);
 				}
 			}
@@ -149,10 +158,11 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
-					throw new LanguageException("ERROR:  In rand statement, can only assign max a double " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign max a double " +
 							"value -- attempted to assign value: " + constValue.toString());
 				else {
 					maxValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
+					maxValueExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					_exprParams.put(RAND_MAX, rowsExpr);
 				}
 			}
@@ -167,10 +177,11 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof IntIdentifier))
-					throw new LanguageException("ERROR:  In rand statement, can only assign seed a long " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign seed a long " +
 							"value -- attempted to assign value: " + constValue.toString());
 				else {
 					seedExpr = new IntIdentifier((IntIdentifier)constValue);
+					seedExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					_exprParams.put(RAND_SEED, rowsExpr);
 				}
 			}
@@ -185,11 +196,13 @@ public class RandStatement extends Statement
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				if (!(constValue instanceof StringIdentifier && (constValue.toString().equals(""))))
-					throw new LanguageException("ERROR:  In rand statement, can only assign pdf " +
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign pdf " +
 							"following one of following string values (capitalization-sensitive): uniform. " +
 							"Attempted to assign value: " + constValue.toString());
 				else {
 					pdfExpr = new IntIdentifier((IntIdentifier)constValue);	
+					pdfExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					_exprParams.put(RAND_PDF, rowsExpr);
 				}
 			}
@@ -215,7 +228,7 @@ public class RandStatement extends Statement
 		_id.computeDataType();
 		
 		if (_id instanceof IndexedIdentifier){
-			System.out.println("WARNING: Output for RandStatement may have incorrect size information");
+			System.out.println(this.printWarningLocation() + "Output for RandStatement may have incorrect size information");
 		}
 		
 	}

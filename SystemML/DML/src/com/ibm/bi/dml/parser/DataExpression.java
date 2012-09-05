@@ -19,6 +19,7 @@ public class DataExpression extends Expression {
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
 	
+	
 	public DataExpression(DataOp op, HashMap<String,Expression> varParams) {
 		_kind = Kind.DataOp;
 		_opcode = op;
@@ -36,7 +37,7 @@ public class DataExpression extends Expression {
 		_opcode = DataOp.INVALID;
 		_varParams = new HashMap<String,Expression>();
 	}
-
+	 
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<String,Expression>();
@@ -44,7 +45,13 @@ public class DataExpression extends Expression {
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
 		}	
-		return new DataExpression(_opcode, newVarParams);
+		DataExpression retVal = new DataExpression(_opcode, newVarParams);
+		retVal._beginLine 	= this._beginLine;
+		retVal._beginColumn = this._beginColumn;
+		retVal._endLine 	= this._endLine;
+		retVal._endColumn 	= this._endColumn;
+			
+		return retVal;
 	}
 
 	public void setOpCode(DataOp op) {
@@ -86,7 +93,7 @@ public class DataExpression extends Expression {
 			getVarParam(s).validateExpression(ids, currConstVars);
 			
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
-				throw new LanguageException("Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		
@@ -98,7 +105,7 @@ public class DataExpression extends Expression {
 			
 			
 			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier))
-				throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
+				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 			
 			
@@ -111,7 +118,7 @@ public class DataExpression extends Expression {
 						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.FORMAT_TYPE) != null )
-					throw new LanguageException("ERROR: Invalid parameters in read statement of a scalar: " +
+					throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
@@ -124,7 +131,7 @@ public class DataExpression extends Expression {
 			try {
 				fs = FileSystem.get(new Configuration());
 			} catch (Exception e){
-				throw new LanguageException(e);
+				throw new LanguageException(this.printErrorLocation() + "could not read the configuration file. See stack trace for details" + e);
 			}
 			Path pt = null;
 			String filename = null;
@@ -145,18 +152,19 @@ public class DataExpression extends Expression {
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value
 							StringIdentifier fileString = new StringIdentifier(filename);
+							fileString.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							removeVarParam(Statement.IO_FILENAME);
 							addVarParam(Statement.IO_FILENAME, fileString);
 							filename = filename + ".mtd";
 												
 						break;
 					default:
-						throw new LanguageException("Error: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
+						throw new LanguageException(this.printErrorLocation()  + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
 					}
 				}
 			}
 			else {
-				throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
 			
 			pt=new Path(filename);
@@ -174,24 +182,28 @@ public class DataExpression extends Expression {
 		        	BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
 		        	configObject = JSONObject.parse(br);
 		        } catch (Exception e){
-		        	throw new LanguageException(e);
+		        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString() + " " + e);
 		        }
+
 		        
 				for (Object key : configObject.keySet()){
 					
 					if (!InputStatement.isValidParamName(key.toString(),true))
-						throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
+						throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 						
 					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
 					if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
 							&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
-						throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+						throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
 								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
 					}
 					else {
 						// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
-						if (getVarParam(key.toString()) == null)
-							addVarParam(key.toString(), new StringIdentifier(configObject.get(key).toString()));
+						if (getVarParam(key.toString()) == null){
+							StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
+							strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(key.toString(), strId);
+						}
 					}
 				}
 	        }
@@ -211,7 +223,7 @@ public class DataExpression extends Expression {
 				_output.setDimensions(-1, -1);
 				
 				if ( getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null)
-					throw new LanguageException("ERROR: Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
 				if (getVarParam(Statement.READROWPARAM) instanceof ConstIdentifier && getVarParam(Statement.READCOLPARAM) instanceof ConstIdentifier)  {
 				
@@ -220,13 +232,13 @@ public class DataExpression extends Expression {
 					Long dim2 = (getVarParam(Statement.READCOLPARAM) == null) ? null : new Long(getVarParam(Statement.READCOLPARAM).toString());
 					
 					if ( dim1 <= 0 || dim2 <= 0 ) {
-						throw new LanguageException("Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						throw new LanguageException(this.printErrorLocation() + "Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
 						_output.setDimensions(dim1, dim2);
 					} else if ((dim1 != null) || (dim2 != null)) {
-						throw new LanguageException("Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
 				}
 				
@@ -240,7 +252,7 @@ public class DataExpression extends Expression {
 				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
 					format = 2;
 				} else {
-					throw new LanguageException("Invalid format in statement: " + this.toString());
+					throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 				}
 				
 				if (getVarParam(Statement.ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -251,7 +263,7 @@ public class DataExpression extends Expression {
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						_output.setBlockDimensions(rowBlockCount, columnBlockCount);
 					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
-						throw new LanguageException("Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						throw new LanguageException(this.printErrorLocation() + "Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					} else {
 						 _output.setBlockDimensions(-1, -1);
 					}
@@ -261,7 +273,7 @@ public class DataExpression extends Expression {
 				// and they must be 1000x1000 when format="binary"
 				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))
 						|| (format == 2 && (_output.getRowsInBlock() != DMLTranslator.DMLBlockSize || _output.getColumnsInBlock() != DMLTranslator.DMLBlockSize)))
-					throw new LanguageException("Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 			}
 			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
@@ -269,12 +281,12 @@ public class DataExpression extends Expression {
 			}
 			
 			else{		
-				throw new LanguageException("ERROR: Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// handle value type parameter
 			if (getVarParam(Statement.VALUETYPEPARAM) != null && !(getVarParam(Statement.VALUETYPEPARAM) instanceof StringIdentifier))
-				throw new LanguageException("ERROR: for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
+				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			
@@ -290,7 +302,7 @@ public class DataExpression extends Expression {
 				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
 					_output.setValueType(ValueType.BOOLEAN);
 				} else{
-					throw new LanguageException("Unknown Value Type " + valueTypeString
+					throw new LanguageException(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
 							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				}
@@ -313,12 +325,13 @@ public class DataExpression extends Expression {
 							// Since we have computed the value of filename, we update
 							// varParams with a const string value
 							StringIdentifier fileString = new StringIdentifier(filename);
+							fileString.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 							removeVarParam(Statement.IO_FILENAME);
 							addVarParam(Statement.IO_FILENAME, fileString);
 												
 							break;
 						default:
-							throw new LanguageException("ERROR: for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
+							throw new LanguageException(this.printErrorLocation() + "for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 					}
 				}
 			}
@@ -328,12 +341,12 @@ public class DataExpression extends Expression {
 			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				_output.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			else
-				throw new LanguageException("Invalid format in statement: " + this.toString());
+				throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 			
 			break;
 
 		default:
-			throw new LanguageException("Unsupported Data expression"
+			throw new LanguageException(this.printErrorLocation() + "Unsupported Data expression"
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -358,7 +371,7 @@ public class DataExpression extends Expression {
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
 		else {
-			throw new LanguageException("Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
+			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		// Now process the right node
 		if (expr.getRight()instanceof BinaryExpression 
@@ -377,7 +390,7 @@ public class DataExpression extends Expression {
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}
 		else {
-			throw new LanguageException("Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
+			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		return filename;
 			

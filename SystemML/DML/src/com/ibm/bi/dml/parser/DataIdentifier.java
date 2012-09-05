@@ -8,18 +8,18 @@ public class DataIdentifier extends Identifier {
 	protected String 	_valueTypeString;	
 	protected String 	_defaultValue;
 	
-	// Store information about where the data identifier has been defined in original DML script 
-	private int _definedLine;
-	private int _definedCol;
-	
-	
 	public DataIdentifier(DataIdentifier passed){
 		setProperties(passed);
 		_kind = Kind.Data;
 		_name = passed.getName();
 		_valueTypeString = passed.getValueType().toString();	
 		_defaultValue = passed.getDefaultValue();
-			
+		
+		// set location information
+		_beginLine 		= passed.getBeginLine();
+		_beginColumn	= passed.getBeginColumn();
+		_endLine		= passed.getEndLine();
+		_endColumn		= passed.getEndColumn();
 	}
 		
 	public Expression rewriteExpression(String prefix) throws LanguageException{
@@ -35,29 +35,23 @@ public class DataIdentifier extends Identifier {
 		_name = name;
 		_kind = Kind.Data;
 		_defaultValue = null;
-		_definedLine = -1;
-		_definedCol = -1;
+
 	}
-	
+	/*
 	public DataIdentifier(String name, int line, int col){
 		super();
 		_name = name;
 		_kind = Kind.Data;
-		_defaultValue = null;
-		
-		_definedLine = line;
-		_definedCol = col;
+		_defaultValue = null;	
 	}
-	
+	*/
 	public DataIdentifier(){
 		_name = null;
 		_kind = null;
 		_defaultValue = null;
 	}
 	
-	public int getDefinedLine(){ return _definedLine; }
-	public int getDefinedCol(){ return _definedCol; }
-	
+
 	public void setTypeInfo( String valueType, String dataType) throws ParseException{
 		
 		if (valueType.equalsIgnoreCase("int") || valueType.equalsIgnoreCase("integer"))
@@ -71,6 +65,7 @@ public class DataIdentifier extends Identifier {
 		else if (valueType.equalsIgnoreCase("object"))
 			this.setValueType(ValueType.OBJECT);
 		else {
+			// provide location for this exception in the parser
 			throw new ParseException("function parameter has unknown value type " + valueType);
 		}
 		
@@ -81,6 +76,7 @@ public class DataIdentifier extends Identifier {
 		else if (dataType.equalsIgnoreCase("MATRIX"))
 			this.setDataType(DataType.MATRIX);
 		else {
+			// provide location for this exception in the parser
 			throw new ParseException("function parameter has unknown data type " + valueType);
 		}
 		

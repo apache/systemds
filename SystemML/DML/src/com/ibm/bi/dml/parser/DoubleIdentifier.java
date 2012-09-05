@@ -1,14 +1,12 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.HashMap;
-
-import com.ibm.bi.dml.parser.Expression.Kind;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
 public class DoubleIdentifier extends ConstIdentifier {
 
 	private double _val;
+	
 	
 	public DoubleIdentifier(double val){
 		super();

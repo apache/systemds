@@ -41,24 +41,24 @@ public class ELUseStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
 		if (this.getNumStatements() > 1)
-			throw new LanguageException("Use Ensemble statement block can only have single statement");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "Use Ensemble statement block can only have single statement");
 		ELUseStatement eustmt = (ELUseStatement) this.getStatement(0);
 		
 		// check the ensemble is available
 		if (!ids.containsVariable(eustmt.getEnsembleName())){
-			throw new LanguageException("Ensemble " + eustmt.getEnsembleName() + " in Use Ensemble statement not available");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble " + eustmt.getEnsembleName() + " in Use Ensemble statement not available");
 		}
 		
 		// check the input datasets are available
 		for (String input : eustmt.getInputNames()){
 			if (!ids.containsVariable(input)){
-				throw new LanguageException("Use Ensemble statement input dataset " + input + " is not available ");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "Use Ensemble statement input dataset " + input + " is not available ");
 			}
 		}
 		
 		// check the test function is available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(eustmt.getFunctionParameters().getTestFunctionName()))
-			throw new LanguageException("use ensemble test function " + eustmt.getFunctionParameters().getTestFunctionName() + " is not available ");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "use ensemble test function " + eustmt.getFunctionParameters().getTestFunctionName() + " is not available ");
 							
 		
 		// check the test function parameters are available
@@ -66,7 +66,7 @@ public class ELUseStatementBlock extends StatementBlock {
 			
 			// check if the parameter already exists as variable
 			if (!ids.containsVariable(input)) 
-				throw new LanguageException("In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
 			
 		}
 		
@@ -83,7 +83,7 @@ public class ELUseStatementBlock extends StatementBlock {
 			if (ids.containsVariable(input)) found = true;
 			
 			if (found == false)
-				throw new LanguageException("In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
 			
 		}
 		

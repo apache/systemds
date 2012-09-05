@@ -41,19 +41,19 @@ public class CVStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
 		if (this.getNumStatements() > 1)
-			throw new LanguageException("CV statement block can only have single statement");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "CV statement block can only have single statement");
 		CVStatement cvs = (CVStatement) this.getStatement(0);
 		
 		// check the input datasets are available
 		for (String input : cvs.getInputNames()){
 			if (!ids.containsVariable(input)){
-				throw new LanguageException("CV statement input dataset " + input + " is not available ");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "CV statement input dataset " + input + " is not available ");
 			}
 		}	
 		
 		// check train function exists and train function inputs are available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(cvs.getFunctionParameters().getTrainFunctionName()))
-			throw new LanguageException("CV training function " + cvs.getFunctionParameters().getTrainFunctionName() + " is not available ");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "CV training function " + cvs.getFunctionParameters().getTrainFunctionName() + " is not available ");
 		
 		for (String input : cvs.getFunctionParameters().getTrainFunctionFormalParams()){
 			boolean found = false;
@@ -65,13 +65,13 @@ public class CVStatementBlock extends StatementBlock {
 			}
 			
 			if (found == false)
-				throw new LanguageException("In CV Statement, variable " + input + " is not available");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "In CV Statement, variable " + input + " is not available");
 		}
 		
 			
 		// check test function exists and test function inputs are available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(cvs.getFunctionParameters().getTestFunctionName()))
-			throw new LanguageException("CV test function " + cvs.getFunctionParameters().getTestFunctionName() + " is not available ");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "CV test function " + cvs.getFunctionParameters().getTestFunctionName() + " is not available ");
 							
 		for (String input : cvs.getFunctionParameters().getTestFunctionFormalParams()){
 			boolean found = false;
@@ -87,7 +87,7 @@ public class CVStatementBlock extends StatementBlock {
 			}
 			
 			if (found == false)
-				throw new LanguageException("In CV Statement, variable " + input + " is not available");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "In CV Statement, variable " + input + " is not available");
 		}
 			
 		// add error aggregate output to returned variables 

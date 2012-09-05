@@ -12,7 +12,7 @@ public class WhileStatement extends Statement{
 	private ArrayList<StatementBlock> _body;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("should not call rewriteStatement for WhileStatement");
+		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
 	}
 	
 	public WhileStatement(){
@@ -64,23 +64,23 @@ public class WhileStatement extends Statement{
 	}
 
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
-		throw new LanguageException("should never call initializeforwardLV for WhileStatement");
+		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
 	}
 	
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
-		throw new LanguageException("should never call initializeforwardLV for WhileStatement");
+		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for WhileStatement");
 		
 	}
 	
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println("WARNING: should not call variablesRead from WhileStatement ");
+		System.out.println(this.printWarningLocation() + "should not call variablesRead from WhileStatement ");
 		return new VariableSet();
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println("WARNING: should not call variablesRead from WhileStatement ");
+		System.out.println(this.printWarningLocation() + "should not call variablesRead from WhileStatement ");
 		return new VariableSet();
 	}
 }

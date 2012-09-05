@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -13,7 +12,7 @@ public class IfStatement extends Statement{
 	private ArrayList<StatementBlock> _elseBody;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("should not call rewriteStatement for IfStatement");
+		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for IfStatement");
 	}
 	
 	public IfStatement(){
@@ -62,12 +61,12 @@ public class IfStatement extends Statement{
 	}
 	
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
-		throw new LanguageException("should never call initializeforwardLV for IfStatement");
+		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
 		
 	}
 
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
-		throw new LanguageException("should never call initializeforwardLV for IfStatement");
+		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
 		
 	}
 
@@ -88,19 +87,19 @@ public class IfStatement extends Statement{
 	
 	public VariableSet variablesReadElseBody() {
 		
-		System.out.println("[W] should not call variablesReadElseBody from IfStatement ");
+		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesReadElseBody from IfStatement ");
 		return null;
 	}
 	
 	public  VariableSet variablesUpdatedIfBody() {
 		
-		System.out.println("[W] should not call variablesUpdatedIfBody from IfStatement ");
+		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesUpdatedIfBody from IfStatement ");
 		return null;
 	}
 	
 	public  VariableSet variablesUpdatedElseBody() {
 		
-		System.out.println("[W] should not call variablesUpdatedElseBody from IfStatement ");
+		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesUpdatedElseBody from IfStatement ");
 		return null;
 	}
 	
@@ -131,13 +130,13 @@ public class IfStatement extends Statement{
 
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println("[W] should not call variablesRead from IfStatement ");
+		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesRead from IfStatement ");
 		return null;
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println("[W] should not call variablesUpdated from IfStatement ");
+		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesUpdated from IfStatement ");
 		return null;
 	}
 }

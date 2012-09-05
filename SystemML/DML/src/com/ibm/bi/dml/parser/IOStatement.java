@@ -30,18 +30,19 @@ public abstract class IOStatement extends Statement{
 	
 	}
 	
-	public IOStatement(DataIdentifier t, DataOp op){
+	IOStatement(DataIdentifier t, DataOp op){
 		_id = t;
 		_paramsExpr = new DataExpression(op);
 	
 	}
+	
 	
 	public IOStatement (DataOp op){
 		_id  = null;
 		_paramsExpr = new DataExpression(op);
 		
 	}
-
+	 
 	public DataIdentifier getId(){
 		return _id;
 	}
@@ -61,14 +62,14 @@ public abstract class IOStatement extends Statement{
 	public void addExprParam(String name, Expression value, boolean fromMTDFile) throws ParseException
 	{
 		if (_paramsExpr.getVarParam(name) != null)
-			throw new ParseException("ERROR: attempted to add IOStatement parameter " + name + " more than once");
+			throw new ParseException(this.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once");
 		
 		// verify parameter names for InputStatement
 		if (this instanceof InputStatement && !InputStatement.isValidParamName(name, fromMTDFile))
-			throw new ParseException("ERROR: attempted to add invalid read statmement parameter " + name);
+			throw new ParseException(this.printErrorLocation() + "attempted to add invalid read statmement parameter " + name);
 		
 		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
-			throw new ParseException("ERROR: attempted to add invalid write statmement parameter: " + name);
+			throw new ParseException(this.printErrorLocation() + "attempted to add invalid write statmement parameter: " + name);
 		
 		_paramsExpr.addVarParam(name, value);
 	}
@@ -86,7 +87,7 @@ public abstract class IOStatement extends Statement{
 		// Identify the data type for input statement
 		
 		if (getExprParam(DATATYPEPARAM) != null && !(getExprParam(DATATYPEPARAM) instanceof StringIdentifier))
-			throw new LanguageException("ERROR: for InputStatement, parameter " + DATATYPEPARAM + " can only be a string. " +
+			throw new LanguageException(this.printErrorLocation() + "parameter " + DATATYPEPARAM + " can only be a string. " +
 					"Valid values are: " + MATRIX_DATA_TYPE +", " + SCALAR_DATA_TYPE);
 		
 		// disallow certain parameters while reading a scalar
@@ -97,7 +98,7 @@ public abstract class IOStatement extends Statement{
 					|| getExprParam(ROWBLOCKCOUNTPARAM) != null
 					|| getExprParam(COLUMNBLOCKCOUNTPARAM) != null
 					|| getExprParam(FORMAT_TYPE) != null )
-				throw new LanguageException("ERROR: Invalid parameters in read statement of a scalar: " +
+				throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 						toString() + ". Only " + VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		JSONObject configObject = null;	
@@ -129,12 +130,12 @@ public abstract class IOStatement extends Statement{
 			for (Object key : configObject.keySet()){
 				
 				if (!InputStatement.isValidParamName(key.toString(),true))
-					throw new LanguageException("ERROR: MTD file " + filename + " contains invalid parameter name: " + key);
+					throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 					
 				// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
 				if (getExprParam(key.toString()) != null && (getExprParam(key.toString()) instanceof ConstIdentifier) 
 						&& !getExprParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
-					throw new LanguageException("ERROR: parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+					throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
 							"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getExprParam(key.toString()));	
 				}
 				else {
@@ -146,9 +147,9 @@ public abstract class IOStatement extends Statement{
         }
         else {
         	if (!(getExprParam(IO_FILENAME) instanceof ConstIdentifier))
-        		System.out.println("INFO: non-constant expression used for filename -- no attempt to find MTD");
+        		System.out.println("INFO: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " -- non-constant expression used for filename -- no attempt to find MTD");
         	else
-        		System.out.println("INFO: could not find metadata file: " + pt);
+        		System.out.println("INFO: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " -- for read statement, could not find metadata file: " + pt);
         }
 		
         dataTypeString = (getExprParam(DATATYPEPARAM) == null) ? null : getExprParam(DATATYPEPARAM).toString();
@@ -161,12 +162,12 @@ public abstract class IOStatement extends Statement{
 			_id.setDataType(DataType.SCALAR);
 		}
 		else{		
-			throw new LanguageException("ERROR: Unknown Data Type " + dataTypeString + ". Valid  values: " + SCALAR_DATA_TYPE +", " + MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			throw new LanguageException(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + SCALAR_DATA_TYPE +", " + MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
 		// handle value type parameter
 		if (getExprParam(VALUETYPEPARAM) != null && !(getExprParam(VALUETYPEPARAM) instanceof StringIdentifier))
-			throw new LanguageException("ERROR: for InputStatement, parameter " + VALUETYPEPARAM + " can only be a string. " +
+			throw new LanguageException(this.printErrorLocation() + "for ReadStatement, parameter " + VALUETYPEPARAM + " can only be a string. " +
 					"Valid values are: " + DOUBLE_VALUE_TYPE +", " + INT_VALUE_TYPE + ", " + BOOLEAN_VALUE_TYPE + ", " + STRING_VALUE_TYPE,
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		
@@ -182,7 +183,7 @@ public abstract class IOStatement extends Statement{
 			} else if (valueTypeString.equalsIgnoreCase(BOOLEAN_VALUE_TYPE)) {
 				_id.setValueType(ValueType.BOOLEAN);
 			} else{
-				throw new LanguageException("Unknown Value Type " + valueTypeString
+				throw new LanguageException(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
 						+ ". Valid values are: " + DOUBLE_VALUE_TYPE +", " + INT_VALUE_TYPE + ", " + BOOLEAN_VALUE_TYPE + ", " + STRING_VALUE_TYPE,
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -198,7 +199,7 @@ public abstract class IOStatement extends Statement{
 			_id.setDimensions(-1, -1);
 			
 			if ( getExprParam(READROWPARAM) == null || getExprParam(READCOLPARAM) == null)
-				throw new LanguageException("ERROR: Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			
 			if (getExprParam(READROWPARAM) instanceof ConstIdentifier && getExprParam(READCOLPARAM) instanceof ConstIdentifier)  {
 			
@@ -210,12 +211,16 @@ public abstract class IOStatement extends Statement{
 				if (dim1 != null && dim2 != null){
 					_id.setDimensions(dim1, dim2);
 				} else if ((dim1 != null) || (dim2 != null)) {
-					throw new LanguageException("Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					if (dim1 == null)
+						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement -- row dim not specified, col dim: " + dim2, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					if (dim2 == null)
+						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement -- row dim: " + dim1  + ", col dim not specified", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
 				}	
 			}
 			
 			if(_id.getDim1() == -1 && _id.getDim2() == -1 && !missingdimension){
-				throw new LanguageException("Missing dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					throw new LanguageException(this.printErrorLocation() + "Missing dimension information in read statement"  , LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		
 			}
 				
 			
@@ -229,14 +234,14 @@ public abstract class IOStatement extends Statement{
 				if (getExprParam(ROWBLOCKCOUNTPARAM) != null && getExprParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier){
 					Long rowBlockCount = (getExprParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(ROWBLOCKCOUNTPARAM).toString());
 					if (rowBlockCount != null && rowBlockCount > 0)
-						throw new LanguageException("ERROR: Inconsistent row block value for text format data. " + 
+						throw new LanguageException(this.printErrorLocation() + "Inconsistent row block value for text format data. " + 
 								ROWBLOCKCOUNTPARAM + " must be 0 for format=text data.  Value was: " + rowBlockCount);		
 				}
 			
 				if (getExprParam(COLUMNBLOCKCOUNTPARAM) != null && getExprParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier){
 					Long colBlockCount = (getExprParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(COLUMNBLOCKCOUNTPARAM).toString());
 					if (colBlockCount != null && colBlockCount > 0)
-						throw new LanguageException("ERROR: Inconsistent column block value for text format data. " + 
+						throw new LanguageException(this.printErrorLocation() + "Inconsistent column block value for text format data. " + 
 								COLUMNBLOCKCOUNTPARAM + " must be 0 for format=text data.  Value was: " + colBlockCount);		
 				}
 			}
@@ -246,14 +251,14 @@ public abstract class IOStatement extends Statement{
 				if (getExprParam(ROWBLOCKCOUNTPARAM) != null && getExprParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier){
 					Long rowBlockCount = (getExprParam(ROWBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(ROWBLOCKCOUNTPARAM).toString());
 					if (rowBlockCount != null && rowBlockCount < 1)
-						throw new LanguageException("ERROR: Inconsistent row block value for binary format data. " + 
+						throw new LanguageException(this.printErrorLocation() + "Inconsistent row block value for binary format data. " + 
 								ROWBLOCKCOUNTPARAM + " must be >= 1 for format=text data.  Value was: " + rowBlockCount);		
 				}
 			
 				if (getExprParam(COLUMNBLOCKCOUNTPARAM) != null && getExprParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier){
 					Long colBlockCount = (getExprParam(COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long(getExprParam(COLUMNBLOCKCOUNTPARAM).toString());
 					if (colBlockCount != null && colBlockCount < 1)
-						throw new LanguageException("ERROR: Inconsistent column block value for text format data. " + 
+						throw new LanguageException(this.printErrorLocation() + "Inconsistent column block value for text format data. " + 
 								COLUMNBLOCKCOUNTPARAM + " must be >= 1 for format=binary data.  Value was: " + colBlockCount);		
 				}
 			}
@@ -268,7 +273,7 @@ public abstract class IOStatement extends Statement{
 				if ((rowBlockCount != null) && (columnBlockCount != null)) {
 					_id.setBlockDimensions(rowBlockCount, columnBlockCount);
 				} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
-					throw new LanguageException("Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					throw new LanguageException(this.printErrorLocation() + "Partial block dimension information in read statement, rows_in_block: " + rowBlockCount + ", cols_in_block: " + columnBlockCount, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				} else {
 					 _id.setBlockDimensions(-1, -1);
 				}
@@ -303,7 +308,7 @@ public abstract class IOStatement extends Statement{
 		 	
 	 		Expression formatTypeExpr = _paramsExpr.getVarParam(FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier))
-				throw new LanguageException("ERROR: input statement parameter " + FORMAT_TYPE 
+				throw new LanguageException(this.printErrorLocation() + "input statement parameter " + FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text", 
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	 		
@@ -312,7 +317,7 @@ public abstract class IOStatement extends Statement{
 				_id.setFormatType(FormatType.BINARY);
 			} else if (ft.equalsIgnoreCase("text")){
 				_id.setFormatType(FormatType.TEXT);
-			} else throw new LanguageException("ERROR: input statement parameter " + FORMAT_TYPE 
+			} else throw new LanguageException(this.printErrorLocation() +  "input statement parameter " + FORMAT_TYPE 
 					+ " can only be a string with one of following values: binary, text", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		} else {

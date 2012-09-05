@@ -84,7 +84,7 @@ public class DMLTranslator {
 				// add the input variables for the function to input variable list
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				if (fblock.getNumStatements() > 1){
-					throw new LanguageException("FunctionStatementBlock can only have 1 FunctionStatement");
+					throw new LanguageException("ERROR: line 0, column 0 -- " + "FunctionStatementBlock can only have 1 FunctionStatement");
 				}
 			
 				for (DataIdentifier currVar : fstmt.getInputParams()) {	

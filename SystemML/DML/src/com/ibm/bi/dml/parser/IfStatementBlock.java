@@ -293,7 +293,7 @@ public class IfStatementBlock extends StatementBlock {
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getDefinedLine() + " depends on if-else execution");
+			System.out.println(_warnSet.getVariable(varName).printWarningLocation() + "Initialization of " + varName + " depends on if-else execution");
 		}
 		
 		_liveIn = new VariableSet();

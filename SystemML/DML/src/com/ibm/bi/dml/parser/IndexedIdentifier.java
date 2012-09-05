@@ -23,8 +23,8 @@ public class IndexedIdentifier extends DataIdentifier {
    		_rowLowerEqualsUpper = passedRows;
    		_colLowerEqualsUpper = passedCols;
 	}
-		
 	
+		
 	public IndexPair calculateIndexedDimensions(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
 		
 		// stores the updated row / col dimension info
@@ -37,67 +37,123 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		///////////////////////////////////////////////////////////////////////
 		// perform constant propagation for index boundaries
-		//////////////////////////////////////////////////////////////////////
-		if (_rowLowerBound != null && _rowLowerBound instanceof DataIdentifier && !(_rowLowerBound instanceof IndexedIdentifier)) {
+		///////////////////////////////////////////////////////////////////////
+		
+	
+		if (_rowLowerBound instanceof ConstIdentifier && ( _rowLowerBound instanceof IntIdentifier || _rowLowerBound instanceof DoubleIdentifier )){
+			isConst_rowLowerBound = true;
+		}
+		else if (_rowLowerBound instanceof ConstIdentifier) {
+			throw new LanguageException(this.printErrorLocation() + "attempted to assign lower-bound row index for Indexed Identifier " + this.toString() + "the non-numeric value " + _rowLowerBound.toString());
+		}
+		
+		// perform constant propogation
+		else if (_rowLowerBound != null && _rowLowerBound instanceof DataIdentifier && !(_rowLowerBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_rowLowerBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1 )
-				{
-					if( ((IntIdentifier)constValue).getValue() < 1 )
-						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-					else{
+				
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
+					throw new LanguageException(this.printErrorLocation() + "attempted to assign indices for Indexed Identifier " + this.toString() + "the non-numeric value " + constValue.getOutput().toString());
+	
+				else{
+					if (constValue instanceof IntIdentifier){
 						_rowLowerBound = new IntIdentifier((IntIdentifier)constValue);
-						isConst_rowLowerBound = true;
+						_rowLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 					}
+					else{
+						_rowLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue);
+						_rowLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+					}
+					isConst_rowLowerBound = true;
 				}
 			}	
 		}
 		
-		if (_rowUpperBound != null && _rowUpperBound instanceof DataIdentifier && !(_rowUpperBound instanceof IndexedIdentifier)) {
+		if (_rowUpperBound instanceof ConstIdentifier && ( _rowUpperBound instanceof IntIdentifier || _rowUpperBound instanceof DoubleIdentifier )){
+			isConst_rowUpperBound = true;
+		}	
+		else if (_rowUpperBound instanceof ConstIdentifier){
+			throw new LanguageException(this.printErrorLocation() + "attempted to assign upper-bound row index for Indexed Identifier " + this.toString() + "the non-numeric value " + _rowUpperBound.toString());
+		}
+		
+		else if (_rowUpperBound != null && _rowUpperBound instanceof DataIdentifier && !(_rowUpperBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_rowUpperBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1 )
-				{
-					if ( ((IntIdentifier)constValue).getValue() < 1 )
-						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-					else{
+				
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
+					throw new LanguageException(this.printErrorLocation() + "attempted to assign indices for Indexed Identifier " + this.toString() + "the non-numeric value " + constValue.getOutput().toString());
+	
+				else{
+					if (constValue instanceof IntIdentifier){
 						_rowUpperBound = new IntIdentifier((IntIdentifier)constValue);
-						isConst_rowUpperBound = true;
+						_rowUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 					}
+					else {
+						_rowUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue);	
+						_rowUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+					}
+					isConst_rowUpperBound = true;
+					
 				}
 			}	
 		}
 		
-		if (_colLowerBound != null && _colLowerBound instanceof DataIdentifier && !(_colLowerBound instanceof IndexedIdentifier)) {
+		if (_colLowerBound instanceof ConstIdentifier && ( _colLowerBound instanceof IntIdentifier || _colLowerBound instanceof DoubleIdentifier )){
+			isConst_colLowerBound = true;
+		}	
+		else if (_colLowerBound instanceof ConstIdentifier){
+			throw new LanguageException(this.printErrorLocation() + "attempted to assign lower column index for " + this.toString() + "the non-numeric value " + _colLowerBound.toString());
+		}
+		
+		else if (_colLowerBound != null && _colLowerBound instanceof DataIdentifier && !(_colLowerBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_colLowerBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1)
-				{
-					if ( ((IntIdentifier)constValue).getValue() < 1 )
-						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-					else{
+				
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
+					throw new LanguageException(this.printErrorLocation() + "attempted to assign lower column index for " + this.toString() + " the non-numeric value " + constValue.getOutput().toString());
+	
+				else{
+					if (constValue instanceof IntIdentifier){
 						_colLowerBound = new IntIdentifier((IntIdentifier)constValue);
-						isConst_colLowerBound = true;
+						_colLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 					}
+					else {
+						_colLowerBound = new DoubleIdentifier((DoubleIdentifier)constValue);
+						_colLowerBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+					}
+					isConst_colLowerBound = true;
 				}
 			}	
 		}
 		
-		if (_colUpperBound != null && _colUpperBound instanceof DataIdentifier && !(_colUpperBound instanceof IndexedIdentifier)) {
+		if (_colUpperBound instanceof ConstIdentifier && ( _colUpperBound instanceof IntIdentifier || _colUpperBound instanceof DoubleIdentifier )){
+			isConst_colUpperBound = true;
+		}	
+		else if (_colUpperBound instanceof ConstIdentifier){
+			throw new LanguageException(this.printErrorLocation() + "attempted to assign upper-bound column index for Indexed Identifier " + this.toString() + "the non-numeric value " + _colUpperBound.toString());
+		}
+		
+		else if (_colUpperBound != null && _colUpperBound instanceof DataIdentifier && !(_colUpperBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_colUpperBound).getName();
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if ( constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() != -1)
-				{
-					if ( ((IntIdentifier)constValue).getValue() < 1 )
-						throw new LanguageException("ERROR:  IndexedIdentifier statement, can only assign indices a long value (>= 1) attempted to assign value: " + constValue.toString());
-					else{
+				
+				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
+					throw new LanguageException(this.printErrorLocation() + "attempted to assign indices for Indexed Identifier " + this.toString() + "the non-numeric value " + constValue.getOutput().toString());
+	
+				else{
+					if (constValue instanceof IntIdentifier){
 						_colUpperBound = new IntIdentifier((IntIdentifier)constValue);
-						isConst_colUpperBound = true;
+						_colUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
 					}
+					else {
+						_colUpperBound = new DoubleIdentifier((DoubleIdentifier)constValue);
+						_colUpperBound.setAllPositions(constValue.getBeginLine(), constValue.getBeginColumn(), constValue.getEndLine(), constValue.getEndColumn());
+					}
+					isConst_colUpperBound = true;
 				}
 			}	
 		}
@@ -114,15 +170,37 @@ public class IndexedIdentifier extends DataIdentifier {
 		else if (_rowLowerBound == null && _rowUpperBound == null){
 			updatedRowDim = this.getDim1(); 
 		}
+		
 		// CASE: (lower == null) && (upper == constant) --> updated row dim = (constant)
 		else if (_rowLowerBound == null && isConst_rowUpperBound) {
-			updatedRowDim = ((IntIdentifier)_rowUpperBound).getValue();
+			if (_rowUpperBound instanceof IntIdentifier)
+				updatedRowDim = ((IntIdentifier)_rowUpperBound).getValue();
+			else if (_rowUpperBound instanceof DoubleIdentifier)
+				updatedRowDim = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> rowCount - lower bound + 1
 		else if (isConst_rowLowerBound && _rowUpperBound == null && this.getDim1() > 0) {
 			long rowCount = this.getDim1();
-			updatedRowDim = rowCount - ((IntIdentifier)_rowLowerBound).getValue() + 1;
+			if (_rowLowerBound instanceof IntIdentifier)
+				updatedRowDim = rowCount - ((IntIdentifier)_rowLowerBound).getValue() + 1;
+			else if (_rowLowerBound instanceof DoubleIdentifier)
+				updatedRowDim = Math.round(rowCount - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+		}
+		// CASE: (lower == constant) && (upper == constant) --> upper bound - lower bound + 1
+		else if (isConst_rowLowerBound && isConst_rowUpperBound) {
+			if (_rowLowerBound instanceof IntIdentifier && _rowUpperBound instanceof IntIdentifier)
+				updatedRowDim = ((IntIdentifier)_rowUpperBound).getValue() - ((IntIdentifier)_rowLowerBound).getValue() + 1;
+			
+			else if (_rowLowerBound instanceof DoubleIdentifier && _rowUpperBound instanceof DoubleIdentifier)
+				updatedRowDim = Math.round( ((DoubleIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+			
+			else if (_rowLowerBound instanceof IntIdentifier && _rowUpperBound instanceof DoubleIdentifier)
+				updatedRowDim = Math.round( ((DoubleIdentifier)_rowUpperBound).getValue() - ((IntIdentifier)_rowLowerBound).getValue() + 1);
+			
+			else if (_rowLowerBound instanceof DoubleIdentifier && _rowUpperBound instanceof IntIdentifier)
+				updatedRowDim = Math.round( ((IntIdentifier)_rowUpperBound).getValue() - ((DoubleIdentifier)_rowLowerBound).getValue() + 1);
+			
 		}
 		
 		// CASE: row dimension is unknown --> assign -1
@@ -145,13 +223,35 @@ public class IndexedIdentifier extends DataIdentifier {
 		}
 		// CASE: (lower == null) && (upper == constant) --> updated col dim = (constant)
 		else if (_colLowerBound == null && isConst_colUpperBound) {
-			updatedColDim = ((IntIdentifier)_colUpperBound).getValue();
+			if (_colUpperBound instanceof IntIdentifier)
+				updatedColDim = ((IntIdentifier)_colUpperBound).getValue();
+			else if (_colUpperBound instanceof DoubleIdentifier)
+				updatedColDim = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> colCount - lower bound + 1
 		else if (isConst_colLowerBound && _colUpperBound == null && this.getDim2() > 0) {
 			long colCount = this.getDim2();
-			updatedColDim = colCount - ((IntIdentifier)_colLowerBound).getValue() + 1;
+			if (_colLowerBound instanceof IntIdentifier)
+				updatedColDim = colCount - ((IntIdentifier)_colLowerBound).getValue() + 1;
+			else if (_colLowerBound instanceof DoubleIdentifier)
+				updatedColDim = Math.round(colCount - ((IntIdentifier)_colLowerBound).getValue() + 1);
+		}
+		
+		// CASE: (lower == constant) && (upper == constant) --> upper bound - lower bound + 1
+		else if (isConst_colLowerBound && isConst_colUpperBound) {
+			if (_colLowerBound instanceof IntIdentifier && _colUpperBound instanceof IntIdentifier)
+				updatedColDim = ((IntIdentifier)_colUpperBound).getValue() - ((IntIdentifier)_colLowerBound).getValue() + 1;
+			
+			else if (_colLowerBound instanceof DoubleIdentifier && _colUpperBound instanceof DoubleIdentifier)
+				updatedColDim = Math.round( ((DoubleIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
+			
+			else if (_colLowerBound instanceof IntIdentifier && _colUpperBound instanceof DoubleIdentifier)
+				updatedColDim = Math.round( ((DoubleIdentifier)_colUpperBound).getValue() - ((IntIdentifier)_colLowerBound).getValue() + 1);
+			
+			else if (_colLowerBound instanceof DoubleIdentifier && _colUpperBound instanceof IntIdentifier)
+				updatedColDim = Math.round( ((IntIdentifier)_colUpperBound).getValue() - ((DoubleIdentifier)_colLowerBound).getValue() + 1);
+			
 		}
 		
 		// CASE: column dimension is unknown --> assign -1
@@ -177,6 +277,11 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
 		
+		newIndexedIdentifier._beginLine 	= this._beginLine;
+		newIndexedIdentifier._beginColumn 	= this._beginColumn;
+		newIndexedIdentifier._endLine 		= this._endLine;
+		newIndexedIdentifier._endColumn 	= this._endColumn;
+			
 		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);
 		
@@ -197,7 +302,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws ParseException {
 		if (passed.size() != 2)
-			throw new ParseException("[E] matrix indices must be specified for 2 dimensions -- currently specified indices for " + passed.size() + " dimensions ");
+			throw new ParseException() ; //"[E] matrix indices must be specified for 2 dimensions -- currently specified indices for " + passed.size() + " dimensions ");
 		
 		ArrayList<Expression> rowIndices = passed.get(0);
 		ArrayList<Expression> colIndices = passed.get(1);
@@ -214,7 +319,7 @@ public class IndexedIdentifier extends DataIdentifier {
 			_rowLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException("[E]  row indices are length " + rowIndices.size() + " -- should be either 1 or 2");
+			throw new ParseException(this.printErrorLocation() + "row indices are length " + rowIndices.size() + " -- should be either 1 or 2");
 		}
 		
 		// case: both upper and lower are defined
@@ -229,7 +334,7 @@ public class IndexedIdentifier extends DataIdentifier {
 			_colLowerEqualsUpper = true;
 		}
 		else {
-			throw new ParseException("[E] col indices are length " + + colIndices.size() + " -- should be either 1 or 2");
+			throw new ParseException(this.printErrorLocation() + "col indices are length " + + colIndices.size() + " -- should be either 1 or 2");
 		}
 		//System.out.println(this);
 	}

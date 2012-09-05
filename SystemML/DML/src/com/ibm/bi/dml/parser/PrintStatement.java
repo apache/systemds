@@ -11,7 +11,13 @@ public class PrintStatement extends Statement{
 	 
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		Expression newExpr = _expr.rewriteExpression(prefix);
-		return new PrintStatement(newExpr);
+		PrintStatement retVal = new PrintStatement(newExpr);
+		retVal._beginLine 	= 	this.getBeginLine();
+		retVal._beginColumn	=	this.getBeginColumn();
+		retVal._endLine		=	this.getEndLine();
+		retVal._endColumn   =	this.getEndColumn();
+		
+		return retVal;
 	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}

@@ -28,7 +28,7 @@ public class BooleanExpressionTest {
         ids.put("right", right);
         
         HashMap<String,ConstIdentifier> dummyConst = new HashMap<String,ConstIdentifier>();
-        BooleanExpression beToTest = new BooleanExpression(BooleanOp.LOGICALAND);
+        BooleanExpression beToTest = new BooleanExpression(BooleanOp.LOGICALAND, 0, 0, 0, 0);
         beToTest.setLeft(new DataIdentifier("left"));
         beToTest.setRight(new DataIdentifier("right"));
         beToTest.validateExpression(ids, dummyConst);

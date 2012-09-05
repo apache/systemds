@@ -80,6 +80,13 @@ public class DMLQLParser extends DMLQLParserBase{
 		commandArgs = ca;
 	}
 
+	private String printErrorLocation(int line, int col){		return "ERROR: line " + line + ", col " + col + " -- "; 
+	}
+
+	private String printWarningLocation(int line, int col){
+		return "WARNING: line " + line + ", col " + col + " -- "; 
+	}	  
+
  	private void setDmlPathSet(ArrayList<String> passed){
   		dmlPathSet = passed;
  	}
@@ -100,6 +107,7 @@ public class DMLQLParser extends DMLQLParserBase{
 		else
 			return "(" + t.toString() + " in line " + t.beginLine + ", column " + t.beginColumn + ")";
 	}
+	
 }  // end class DMLQLParser
 
 PARSER_END(DMLQLParser)
@@ -163,92 +171,48 @@ MORE : { "/*": IN_COMMENT }
 TOKEN :
 {
 	//////////////////////////////////////////////////////////////////////
-	// KEYWORDS
-	<IF  			: "if">
-	| <ELSE  		: "else">
-	| <WHILE  		: "while">
-	| <FUNCTION  	: "function">
-	| <EXTERNALFUNCTION : "externalFunction" >
-	| <IMPLEMENTED 		: "implemented" >
+	// RESERVED KEYWORDS -- core to DML, common to R language
+	<IF  		: "if">
+	| <ELSE  	: "else">
+	| <WHILE  	: "while">
 	| <FOR  	: "for">
-	| <PARFOR 	: "parfor">
-	| <IN  		: "in">
-	//|<NEXT  	: "next">
-	//|<BREAK  	: "break">
 	| <TRUE  	: "true">
 	| <FALSE  	: "false">
 	| <NULL  	: "null">
+	| <FUNCTION : "function">
+
+	// RESERVED KEYWORDS -- core to DML, not in R
+	| <RETURN 				: "return" >
+	| <EXTERNALFUNCTION 	: "externalFunction" >
+	| <IMPLEMENTED_IN 		: "implemented in" >
+	| <PARFOR 		: "parfor">
+	| <RAND     	: "Rand">
+	| <PRINT 		: "print">
+	| <READMATRIX 	: "read">
+	| <WRITEMATRIX 	: "write">
+
+	// RESERVED KEYWORDS -- required for meta-learning
+ 	| <BUILD_ENSEMBLE	: "build ensemble" >
+	| <USE_ENSEMBLE 	: "use ensemble" >
+	| <CROSSVAL 		: "crossval">
+
+	// RESERVED KEYWORDS -- required to support import / packages -- NOT common to R
+	| <IMPORT 		: "import"> 
+	| <DMLPATH 		: "dml-path">  
+	| <AS  			: "as">
+
+	// RESERVED KEYWORDS -- could be eliminated, may cause issue with lookahead
+	| <SEQ 		: "seq">  
+
+	
+	//|<NEXT  	: "next">
+	//|<BREAK  	: "break">
+
 	//| <INF  	: "Inf">
 	//| <NAN  	: "NaN">
 	//| <NA  	: "NA">
 
- 	| <SEQ 		: "seq">  
- 	| <AS  		: "as">
- 	| <RETURN 	: "return" >
- 	| <TRAIN 	: "train">
- 	| <TEST 	: "test">
- 	| <AGG  	: "aggregate">
- 	| <BUILD	: "build" >
- 	| <ON 		: "on" >
- 	| <USE 		: "use" >
-  
- 	//////////////////////////////////////////////////////////////////////
- 	// BUILT-IN FUNCTIONS
- 	| <COS  	: "cos">
- 	| <SIN  	: "sin">
- 	| <TAN  	: "tan">
- 	| <DIAG 	: "diag">
- 	| <EXP  	: "exp">
-	| <ABS  	: "abs">
-	| <MIN  	: "min">
-	| <MAX		: "max">
-	| <PMIN 	: "pmin">
-	| <PMAX 	: "pmax">
-	| <PPRED	: "ppred">	
-	| <LOG  	: "log">
-	| <LENGTH  	: "length">
-	| <NCOL  	: "ncol">
-	| <NROW  	: "nrow">
-	| <SQRT  	: "sqrt">
-	| <SUM      : "sum">
-	| <MEAN     : "mean">
-	| <TRANS  	: "t">
-	| <APPEND 	: "append">
-	| <RANGE  	: "range">
-	| <PROD  	: "prod">
-	| <ROWSUM  	: "rowSums">
-	| <COLSUM  	: "colSums">
-	| <ROWMIN  	: "rowMins">
-	| <COLMIN  	: "colMins">
-	| <ROWMAX  	: "rowMaxs">
-	| <ROWINDEXMAX : "rowIndexMax">
-	| <COLMAX  	: "colMaxs">
-	| <ROWMEAN  : "rowMeans">
-	| <COLMEAN  : "colMeans">
-	| <TRACE 	: "trace" >
-
-	| <READMATRIX 	: "read">
-	| <WRITEMATRIX 	: "write">
-	| <IMPORT 		: "import"> 
-	| <DMLPATH 		: "dml-path">  
-	| <PRINT 		: "print">
-	| <CROSSVAL 	: "crossval">
-	| <ENSEMBLE 	: "ensemble">
-	| <PARTITION 	: "partition">	
-	| <AVG   		: "avg" >
-	| <RAND     	: "Rand">
-	| <CAST_AS_SCALAR	: "castAsScalar" >
-	| <QUANTILE			: "quantile">
-	| <INTERQUANTILE	: "interQuantile">	
-	| <IQM				: "interQuartileMean">
-	| <CTABLE			: "ctable" >
-	| <SPEARMAN			: "spearman" >
-	| <ROUND			: "round" >
-	| <CENTRALMOMENT	: "centralMoment" >
-	| <COVARIANCE		: "cov" >
-	| <CDF				: "cumulativeProbability" >
-	| <GROUPEDAGG		: "groupedAggregate" >
-
+ 	
 	/////////////////////////////////////////////////////////
 	// Operators
 	| <PLUS  		: "+">
@@ -343,7 +307,7 @@ DMLProgram __inputInternal() :
 			| LOOKAHEAD(ImportStatement())				current = ImportStatement()
 			| LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
 			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-			| LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
+			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
 			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
 			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
 			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
@@ -353,9 +317,9 @@ DMLProgram __inputInternal() :
 			| LOOKAHEAD(ForStatement())					current = ForStatement()
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			//|  LOOKAHEAD(CVStatement())					current = CVStatement()
-			//| LOOKAHEAD(ELStatement())					current = ELStatement()
-			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			|  LOOKAHEAD(CVStatement())					current = CVStatement()
+			| LOOKAHEAD(ELStatement())					current = ELStatement()
+			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 		)
 		{
 			StatementBlock sb = null;
@@ -371,15 +335,18 @@ DMLProgram __inputInternal() :
 			else if (current instanceof IfStatement){
 				sb = new IfStatementBlock(); 
 			} 
-			// else if (current instanceof CVStatement) {
-			//  sb = new CVStatementBlock();
-			// }
-			// else if (current instanceof ELStatement) {
-			//  sb = new ELStatementBlock();
-			// }
-			// else if (current instanceof ELUseStatement) {
-			//  sb = new ELUseStatementBlock();
-			// }   
+			else if (current instanceof CVStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//sb = new CVStatementBlock();
+			}
+			else if (current instanceof ELStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+				//sb = new ELStatementBlock();
+			}
+			else if (current instanceof ELUseStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+				//sb = new ELUseStatementBlock();
+			}   
 			else if (current instanceof FunctionStatement) {
 				sb = new FunctionStatementBlock();
 			}
@@ -398,10 +365,8 @@ DMLProgram __inputInternal() :
 					try {
 						DMLProgram importedProg = null;
 						File moduleFile = new File(importStmt.getCompletePath());
-						System.out.println("INFO: importing module file: " + ((ImportStatement)current).getCompletePath());
-						
-						      
-						
+						System.out.println("INFO: line " + importStmt.getBeginLine() + ", column " + importStmt.getBeginColumn() + " -- importing module file: " + ((ImportStatement)current).getCompletePath());
+
 						//if (DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath()) == null){  
 						DMLQLParser parser = new DMLQLParser(moduleFile,null);
 						if (parser.alreadySeen)
@@ -426,7 +391,7 @@ DMLProgram __inputInternal() :
 								// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
 								for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
 									if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)
-										throw new ParseException("function " + fname + " already defined in namespace " + namespaceKey);
+										throw new ParseException(importStmt.printErrorLocation() + " function " + fname + " already defined in namespace " + namespaceKey);
 									else 
 	          							dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
 	        					}
@@ -440,7 +405,7 @@ DMLProgram __inputInternal() :
 							for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
 				
 				        		if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-									throw new ParseException("function " + fname + " is already defined in current namespace ");
+									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
 				
 								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
 								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
@@ -452,10 +417,10 @@ DMLProgram __inputInternal() :
 							for (String fname : importStmt.getImportVarList()) {
 				
 								if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-									throw new ParseException("function " + fname + " is already defined in current namespace ");
+									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
 				
 								if (!importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname))
-									throw new ParseException("function " + fname + " not defined in module path " + importStmt.getModulePath());
+									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " not defined in module path " + importStmt.getModulePath());
 				
 								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
 								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
@@ -468,7 +433,7 @@ DMLProgram __inputInternal() :
 				} // if (importStmt.verify(dmlPathSet))
     
     			else {
-     				throw new ParseException("failed to import  " + importStmt.toString());
+     				throw new ParseException(importStmt.printErrorLocation() + "failed to import  " + importStmt.toString());
     			}
 
     			// add import statement to DML program
@@ -483,7 +448,7 @@ DMLProgram __inputInternal() :
 
 					// check if the function is defined in the current namespace
 					if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName()))
-						throw new LanguageException("function " + first.getName() + " already defined in current namespace ");
+						throw new LanguageException(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
 
 					dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
 				} catch (LanguageException e) {
@@ -504,11 +469,15 @@ DMLProgram __inputInternal() :
 
 PathStatement PathStatement():
 {
+	// track start / end token positions
+	Token tStart = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
 	Token t1 = null;
 	PathStatement pstmt = new PathStatement();
 }
 {
-	<DMLPATH> t1 = <DBLQUOTE_STRING_LITERAL>
+	tStart = <DMLPATH> t1 = <DBLQUOTE_STRING_LITERAL>
 	{
 		String dequotedString = dequoteStr('\"',t1.image);
 		pstmt.addPackagePaths(dequotedString);
@@ -517,12 +486,23 @@ PathStatement PathStatement():
 	[<SEMICOLON>]
 
 	{
+		// track position for start token tStart, end token t1
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = t1.beginLine;
+		ecp = t1.beginColumn;
+		pstmt.setAllPositions(blp, bcp, elp, ecp);
+
 		return pstmt;
 	}
 }
 
 ImportStatement ImportStatement() :
 {
+	// track start / end token positions
+	Token tStart = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+
 	Token t1 = null, t2 = null, t3 = null, t4 = null;
 	ImportStatement importStmt = new ImportStatement();
 
@@ -531,7 +511,7 @@ ImportStatement ImportStatement() :
 	ArrayList<String> modulePathPieces = new ArrayList<String>();
 }
 {
-	<IMPORT> t1 = <ID> { int beginLine = t1.beginLine; int beginColumn = t1.beginColumn; modulePathPieces.add(t1.image);}
+	tStart = <IMPORT> t1 = <ID> { int beginLine = t1.beginLine; int beginColumn = t1.beginColumn;} { modulePathPieces.add(t1.image);}
 	(<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
  
 	[<LEFTPAREN>
@@ -542,6 +522,11 @@ ImportStatement ImportStatement() :
 	[<AS> t4 = <ID> {importStmt.setAlias(t4.image);}] [<SEMICOLON>]
 
 	{ 
+		// track position for start / end token tStart
+		blp = elp = tStart.beginLine;
+		bcp = ecp = tStart.beginColumn;
+		importStmt.setAllPositions(blp, bcp, elp, ecp);
+
 		importStmt.setModulePathAndName(modulePathPieces);
 		return importStmt;
 	}
@@ -551,8 +536,12 @@ FunctionStatement FunctionStatement() :
 {
 	Vector <DataIdentifier> functionInputs = new Vector<DataIdentifier>(), functionOutputs = new Vector<DataIdentifier>() ;
 	FunctionStatement fstmt = new FunctionStatement();
-	Token t;
+	Token t = null;
 	Statement current = null;
+
+	// track start / end token positions
+	Token tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	t = <ID> <ASSIGN> <FUNCTION> functionInputs = ReadTypedArgList()
@@ -573,9 +562,9 @@ FunctionStatement FunctionStatement() :
 			| LOOKAHEAD(ForStatement())					current = ForStatement()
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			// | LOOKAHEAD(CVStatement())					current = CVStatement()
-			// | LOOKAHEAD(ELStatement())					current = ELStatement()
-			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			| LOOKAHEAD(CVStatement())					current = CVStatement()
+			| LOOKAHEAD(ELStatement())					current = ELStatement()
+			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 		)
 
 		{
@@ -591,21 +580,24 @@ FunctionStatement FunctionStatement() :
 			}
 			else if (current instanceof IfStatement){
 				sb = new IfStatementBlock(); 
-			} 
-			//else if (current instanceof CVStatement) {
-			// sb = new CVStatementBlock() ;
-			//}
-			//else if (current instanceof ELStatement) {
-			// sb = new ELStatementBlock() ;
-			//}
-			//else if (current instanceof ELUseStatement) {
-			// sb = new ELUseStatementBlock() ;
-			//}
+			}
+			else if (current instanceof CVStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//sb = new CVStatementBlock();
+			}
+			else if (current instanceof ELStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+				//sb = new ELStatementBlock();
+			}
+			else if (current instanceof ELUseStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+				//sb = new ELUseStatementBlock();
+			}   
 			else if (current instanceof FunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + "Nested function definitions are not supported ");
 			}
 			else if (current instanceof ExternalFunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + "Nested function definitions are not supported ");
 			}	
 		   
 			else {
@@ -618,11 +610,19 @@ FunctionStatement FunctionStatement() :
  	{
   		fstmt.mergeStatementBlocks(); 
  	}
-	<RIGHTCURLYPAREN>
+	tEnd = <RIGHTCURLYPAREN>
 	{
 		fstmt._inputParams = functionInputs ;
 		fstmt._outputParams = functionOutputs ;
 		fstmt.setName(t.image);
+
+		// track position for start / end token tStart
+		blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		fstmt.setAllPositions(blp, bcp, elp, ecp);
+
 		return fstmt;
 	}
 }
@@ -631,20 +631,33 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 {
 	Vector <DataIdentifier> functionInputs = null, functionOutputs = null ;
 	ExternalFunctionStatement fstmt = new ExternalFunctionStatement();
-	Token t;
+	Token t = null;
 	Statement current = null;
 	HashMap<String,String> map = null;
+
+	// track start / end token positions
+	Token tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
 }
 {
 	t = <ID> <ASSIGN> <EXTERNALFUNCTION> functionInputs = ReadTypedArgList()
 	<RETURN> functionOutputs = ReadTypedArgList()
-	<IMPLEMENTED><IN> map = ReadGenericParamList()[<SEMICOLON>]
+	tEnd = <IMPLEMENTED_IN> map = ReadGenericParamList()[ tEnd = <SEMICOLON>]
  
 	{
 		fstmt.setOtherParams(map);
 		fstmt._inputParams = functionInputs ;
 		fstmt._outputParams = functionOutputs ;
 		fstmt.setName(t.image);
+
+		// track position for start / end token tStart
+		blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		fstmt.setAllPositions(blp, bcp, elp, ecp);
+
      	return fstmt;
   	}
 }
@@ -653,13 +666,18 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 HashMap <String,String > ReadGenericParamList() :
 {
 	HashMap<String,String > map = new HashMap<String,String >() ;
-	Token t1 = null, t2 = null ;
+	Token t1 = null, t2 = null;
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
-	BooleanIdentifier boolid = null;  
+	BooleanIdentifier boolid = null;
+
+	// track start / end token positions
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+		
 }
 {
-	<LEFTPAREN> t1 = <ID> <ASSIGN>
+	tStart = <LEFTPAREN> t1 = <ID> <ASSIGN>
 	(
 		LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
 		| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
@@ -679,8 +697,18 @@ HashMap <String,String > ReadGenericParamList() :
 			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put( t1.image, dequoteStr('\"',t2.image));}
 		)
 	)*
-	<RIGHTPAREN>
-	{return map ;}
+	tEnd = <RIGHTPAREN>
+	
+	{
+		// track position for start / end token tStart
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		//fstmt.setAllPositions(blp, bcp, elp, ecp);
+
+		return map ;
+	}
 }
 
 
@@ -698,8 +726,10 @@ Vector<DataIdentifier> ReadTypedArgList() :
 } 
 {
 	<LEFTPAREN> t1 =<ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>] d1 = Identifier() 
+
+	// For scalar inputs, support assigmnent of default value for function parameters 
 	(
-		<ASSIGN> intid = IntConstant() { d1.setDefaultValue(intid.toString());}
+		<ASSIGN> intid = IntConstant() 		  { d1.setDefaultValue(intid.toString());}
 				| doubleid = DoubleConstant() { d1.setDefaultValue(doubleid.toString()); }
       			| boolid = BooleanConstant()  { d1.setDefaultValue(boolid.toString()); }
       			| t3 = <SQL_STRING_LITERAL>   { d1.setDefaultValue(dequoteStr('\'',t3.image)); }
@@ -709,8 +739,8 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	{
 		if (t1.image.equalsIgnoreCase("matrix")){
 			if (t2 == null){
-			  
-     			throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
+				System.out.println(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);	  
+     			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
     		}
     		else {
      			dataType = "matrix";
@@ -726,8 +756,13 @@ Vector<DataIdentifier> ReadTypedArgList() :
 			valueType = t1.image;
         }
 
-     	d1.setTypeInfo(valueType, dataType);      
-       	params.add(d1);
+		try {		  	d1.setTypeInfo(valueType, dataType);      
+       		params.add(d1);
+       } catch (ParseException e) {
+			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " function parameter has unknown value type");
+       }
+         
+       
 	}
 
 	(
@@ -744,7 +779,8 @@ Vector<DataIdentifier> ReadTypedArgList() :
 		{
 			if (t1.image.equalsIgnoreCase("matrix")){
 				if (t2 == null){
-	     			throw new ParseException("Valuetype must be defined for Matrix datatype -- e.g., Matrix(Double) ");
+				  	System.out.println(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);
+	     			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
 	    		}
 	    		else {
 	     			dataType = "matrix";
@@ -784,42 +820,42 @@ ArrayList<String> ReadList() :
 ArrayList<ArrayList<Expression>> ReadIndexList() :
 {
 	ArrayList<ArrayList<Expression>> targetListList = new ArrayList<ArrayList<Expression>>();
-	ArrayList<Expression> targetList1 = null;
-	ArrayList<Expression> targetList2 = null;
-	Expression target1 = null;
-	Expression target2 = null;
+	ArrayList<Expression> targetList = null;
+	Expression target = null;
+
 }
 { 
 	<LEFTSQUARE>
 	(
 		LOOKAHEAD(ColonDelimitedExpression())
-     	targetList1 = ColonDelimitedExpression() {targetListList.add(targetList1);}
-     	| target1 = Expression() {targetList1 = new ArrayList<Expression>(); targetList1.add(target1); targetListList.add(targetList1); } 	
+     	targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+     	| target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
 	)?
 	{	  	// CASE: no indexing dimensions given
-		if (targetList1 == null){
-			targetList1 = new ArrayList<Expression>();
-			targetList1.add(null);
-			targetList1.add(null);
-			targetListList.add(targetList1);
-			targetList1 = null;
+		if (targetList == null){
+			targetList = new ArrayList<Expression>();
+			targetList.add(null);
+			targetList.add(null);
+			targetListList.add(targetList);
 		}
+		targetList = null;
 	}
     
 	(
 		<COMMA>
 		(
 			LOOKAHEAD( ColonDelimitedExpression())
-			targetList2 = ColonDelimitedExpression() {targetListList.add(targetList2);}
-			|	target2 = Expression() { targetList2 = new ArrayList<Expression>(); targetList2.add(target2); targetListList.add(targetList2);}
+			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
+			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
    		)?
-   		{			// CASE: no indexing dimesnions given
-			if (targetList2 == null)			{				targetList2 = new ArrayList<Expression>();
-				targetList2.add(null);
-				targetList2.add(null);
-				targetListList.add(targetList2);
-				targetList2 = null;
+   		{   	  				// CASE: no indexing dimesnions given
+			if (targetList == null)			{				targetList = new ArrayList<Expression>();
+				targetList.add(null);
+				targetList.add(null);
+				targetListList.add(targetList);
 			}
+			targetList = null;
+
    		}
   	)* 
   	<RIGHTSQUARE> 
@@ -832,12 +868,13 @@ ArrayList<Expression> ColonDelimitedExpression() :
 {
 	ArrayList<Expression> exprsList = new ArrayList<Expression>();
 	Expression left = null, right = null;
+	Token tStart = null;
 }
 {
- 	[left = Expression()] <COLON> [right = Expression()] 
+ 	[left = Expression()] tStart = <COLON> [right = Expression()] 
  	{
 		if (left == null && right == null)
-			throw new ParseException("ERROR: colon delimiter should not be specified when no indexing expressions used");
+			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + " colon delimiter cannot be specified when no indexing expressions used");
   		exprsList.add(left);
   		exprsList.add(right); 
   		return exprsList;
@@ -846,13 +883,24 @@ ArrayList<Expression> ColonDelimitedExpression() :
 
 MultiAssignmentStatement MultiAssignmentStatement() :
 {
-	Expression source;
+	Expression source = null;
 	ArrayList<ArrayList<Expression>> targetListList = null;
+	Token tStart =  null, tEnd = null;
+	int blp =0, bcp = 0, elp = 0, ecp = 0; 
 }
 {
-	targetListList = ReadIndexList() <ASSIGN> source = Expression() [<SEMICOLON>] 
+	targetListList = ReadIndexList() tStart = <ASSIGN> source = Expression() [<SEMICOLON>] 
 	{
-   		return new MultiAssignmentStatement(targetListList, source, 0);
+		MultiAssignmentStatement retVal =  new MultiAssignmentStatement(targetListList, source, 0);
+
+		// track position for statement
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = source.getEndLine();
+		ecp = source.getEndColumn();
+		retVal.setAllPositions(blp, bcp, elp, ecp);
+		
+   		return retVal;
 	}
 }
 
@@ -860,17 +908,26 @@ AssignmentStatement AssignmentStatement() :
 {
 	Expression source;
 	DataIdentifier target;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	target = Identifier()
 	{
 		if (target.getName().startsWith("$"))
-			throw new ParseException("cannot assign variable on left-hand side of assignment statement from command-line");
+			throw new ParseException(target.printErrorLocation() + " cannot use variable assigned from command-line " + target.getName() + " on left-hand side of assignment statement");
 		}
-
   		<ASSIGN> source = Expression() [<SEMICOLON>] 
 	{
-		return new AssignmentStatement(target, source);
+		AssignmentStatement retVal = new AssignmentStatement(target, source); 
+
+		// track position for statement
+		blp = target.getBeginLine();
+		bcp = target.getBeginColumn();
+		elp = source.getEndLine();
+		ecp = source.getEndColumn();
+		retVal.setAllPositions(blp, bcp, elp, ecp);
+
+		return retVal;
 	}
 }
 
@@ -880,9 +937,14 @@ IfStatement IfStatement() :
 	IfStatement is = new IfStatement();
 	Statement current = null;
 	ConditionalPredicate cp = null;
+
+	// track start / end token positions
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
 }
 {
-	<IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
+	tStart = <IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
  	<LEFTCURLYPAREN>
  	(
 		(
@@ -898,9 +960,9 @@ IfStatement IfStatement() :
 			| LOOKAHEAD(ForStatement())					current = ForStatement()
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			//| LOOKAHEAD(CVStatement())					current = CVStatement()
-			//| LOOKAHEAD(ELStatement())					current = ELStatement()
-			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			| LOOKAHEAD(CVStatement())					current = CVStatement()
+			| LOOKAHEAD(ELStatement())					current = ELStatement()
+			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 
 	   	)
 		{
@@ -918,20 +980,23 @@ IfStatement IfStatement() :
 				sb = new ForStatementBlock();
 			}
 			else if (current instanceof FunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " nested function definitions are not supported ");
 			}
 			else if (current instanceof ExternalFunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
-			//else if (current instanceof CVStatement) {
-			// 	sb = new CVStatementBlock() ;
-			//}
-			//else if (current instanceof ELStatement) {
-			// 	sb = new ELStatementBlock() ;
-			//}
-			//else if (current instanceof ELUseStatement) {
-			// 	sb = new ELUseStatementBlock() ;
-			//} 
+			else if (current instanceof CVStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//sb = new CVStatementBlock();
+			}
+			else if (current instanceof ELStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+				//sb = new ELStatementBlock();
+			}
+			else if (current instanceof ELUseStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+				//sb = new ELUseStatementBlock();
+			}   
 			else {
 				sb = new StatementBlock();
 			}
@@ -939,7 +1004,7 @@ IfStatement IfStatement() :
 			is.addStatementBlockIfBody(sb);
 		}
 	)*
- 	<RIGHTCURLYPAREN>
+ 	tEnd = <RIGHTCURLYPAREN>
 
  	{
 		is.mergeStatementBlocksIfBody();
@@ -962,9 +1027,9 @@ IfStatement IfStatement() :
 				| LOOKAHEAD(ForStatement())					current = ForStatement()
 				| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 				| LOOKAHEAD(IfStatement())					current = IfStatement()
-				//| LOOKAHEAD(CVStatement())					current = CVStatement()
-				//| LOOKAHEAD(ELStatement())					current = ELStatement()
-				//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+				| LOOKAHEAD(CVStatement())					current = CVStatement()
+				| LOOKAHEAD(ELStatement())					current = ELStatement()
+				| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
    
    			)
    			{
@@ -982,20 +1047,24 @@ IfStatement IfStatement() :
 			    	sb = new ForStatementBlock();
 			    }
 				else if (current instanceof FunctionStatement) {
-			    	throw new ParseException(" Nested function definitions are not supported ");
+			    	throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			  	}
 			  	else if (current instanceof ExternalFunctionStatement) {
-			  		throw new ParseException(" Nested function definitions are not supported ");
+			  		throw new ParseException(current.printErrorLocation()+ " Nested function definitions are not supported ");
 			  	}
-			    //else if (current instanceof CVStatement) {
-			    //	sb = new CVStatementBlock() ;
-			    //}
-			    //else if (current instanceof ELStatement) {
-			    //	sb = new ELStatementBlock() ;
-			    //}
-			    //else if (current instanceof ELUseStatement) {
-			    //	sb = new ELUseStatementBlock() ;
-			    //}
+			  	
+			    else if (current instanceof CVStatement) {
+					throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+					//sb = new CVStatementBlock();
+				}
+				else if (current instanceof ELStatement) {
+					throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+					//sb = new ELStatementBlock();
+				}
+				else if (current instanceof ELUseStatement) {
+					throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+					//sb = new ELUseStatementBlock();
+				}   
 			    else {
 			    	sb = new StatementBlock();
 			    }
@@ -1003,13 +1072,19 @@ IfStatement IfStatement() :
 			    is.addStatementBlockElseBody(sb);
 			}
    		)*
- 		<RIGHTCURLYPAREN>
-
+ 		tEnd = <RIGHTCURLYPAREN>
   		{
     		is.mergeStatementBlocksElseBody();
   		}
  	)?
  	{
+		// track position for statement
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		is.setAllPositions(blp, bcp, elp, ecp);
+
 		return is;
  	}
 }
@@ -1020,10 +1095,13 @@ ForStatement ForStatement() :
 	ForStatement fs = new ForStatement();
 	Statement current = null;
 	IterablePredicate ip = null;
+	
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
  
-	<FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
+	tStart = <FOR> ip = IterablePredicate() {fs.setPredicate(ip);}
 	<LEFTCURLYPAREN>
 	(
 		(
@@ -1039,9 +1117,9 @@ ForStatement ForStatement() :
    			| LOOKAHEAD(ForStatement())					current = ForStatement()
    			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
    			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			// | LOOKAHEAD(CVStatement())					current = CVStatement()
-			// | LOOKAHEAD(ELStatement())					current = ELStatement()
-			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			| LOOKAHEAD(CVStatement())					current = CVStatement()
+			| LOOKAHEAD(ELStatement())					current = ELStatement()
+			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
 		)
 		{
@@ -1059,20 +1137,24 @@ ForStatement ForStatement() :
 				sb = new ForStatementBlock();
 			}
 			else if (current instanceof FunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
 			else if (current instanceof ExternalFunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
-			//else if (current instanceof CVStatement) {
-			//	sb = new CVStatementBlock() ;
-			//}
-			//else if (current instanceof ELStatement) {
-			// 	sb = new ELStatementBlock() ;
-			//}
-			//else if (current instanceof ELUseStatement) {
-			// 	sb = new ELUseStatementBlock() ;
-			//}
+
+			else if (current instanceof CVStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//sb = new CVStatementBlock();
+			}
+			else if (current instanceof ELStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+				//sb = new ELStatementBlock();
+			}
+			else if (current instanceof ELUseStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+				//sb = new ELUseStatementBlock();
+			}   
 			else {
 				sb = new StatementBlock();
 			}
@@ -1080,10 +1162,18 @@ ForStatement ForStatement() :
 			fs.addStatementBlock(sb);
 		}
 	)*
-   	<RIGHTCURLYPAREN>
+   	tEnd = <RIGHTCURLYPAREN>
    
  	{
 		fs.mergeStatementBlocks();
+
+		// track position for statement
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		fs.setAllPositions(blp, bcp, elp, ecp);
+		
 		return fs;
  	}
 }
@@ -1094,10 +1184,12 @@ ParForStatement ParForStatement() :
 	ParForStatement fs = new ParForStatement();
 	Statement current = null;
 	IterablePredicate ip = null;
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
  
-	<PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
+	tStart = <PARFOR> ip = IterablePredicate() {fs.setPredicate(ip);}
 	<LEFTCURLYPAREN>
   	(
 		(
@@ -1113,9 +1205,9 @@ ParForStatement ParForStatement() :
 			| LOOKAHEAD(ForStatement())					current = ForStatement()
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			//| LOOKAHEAD(CVStatement())				current = CVStatement()
-			//| LOOKAHEAD(ELStatement())				current = ELStatement()
-			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			| LOOKAHEAD(CVStatement())					current = CVStatement()
+			| LOOKAHEAD(ELStatement())					current = ELStatement()
+			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
  		)
  		{
@@ -1133,20 +1225,25 @@ ParForStatement ParForStatement() :
 				sb = new ForStatementBlock();
 			}
 			else if (current instanceof FunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
 			else if (current instanceof ExternalFunctionStatement) {
-				throw new ParseException(" Nested function definitions are not supported ");
+				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
-			//else if (current instanceof CVStatement) {
-			// sb = new CVStatementBlock() ;
-			//}
-			//else if (current instanceof ELStatement) {
-			// sb = new ELStatementBlock() ;
-			//}
-			//else if (current instanceof ELUseStatement) {
-			// sb = new ELUseStatementBlock() ;
-			//}
+
+			else if (current instanceof CVStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//sb = new CVStatementBlock();
+			}
+			else if (current instanceof ELStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+				//sb = new ELStatementBlock();
+			}
+			else if (current instanceof ELUseStatement) {
+				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+				//sb = new ELUseStatementBlock();
+			}
+			
 			else {
 				sb = new StatementBlock();
 			}
@@ -1154,10 +1251,18 @@ ParForStatement ParForStatement() :
 			fs.addStatementBlock(sb);
 		}
 	)*
-  	<RIGHTCURLYPAREN>
+  	tEnd = <RIGHTCURLYPAREN>
    
  	{
   		fs.mergeStatementBlocks();
+
+		// track position for statement
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		fs.setAllPositions(blp, bcp, elp, ecp);
+
 		return fs;
  	}
 }
@@ -1168,9 +1273,11 @@ WhileStatement WhileStatement() :
 	WhileStatement ws = new WhileStatement();
 	Statement current = null;
 	ConditionalPredicate cp = null;
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	<WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
+	tStart = <WHILE> cp = ConditionalPredicate() {ws.setPredicate(cp);}
   	<LEFTCURLYPAREN>
   	(
 		(
@@ -1186,9 +1293,9 @@ WhileStatement WhileStatement() :
 			| LOOKAHEAD(ForStatement())					current = ForStatement()
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
- 			// | LOOKAHEAD(CVStatement())					current = CVStatement()
- 			// | LOOKAHEAD(ELStatement())					current = ELStatement()
- 			// | LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+ 			| LOOKAHEAD(CVStatement())					current = CVStatement()
+ 			| LOOKAHEAD(ELStatement())					current = ELStatement()
+ 			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
 		)
 		{
@@ -1206,20 +1313,20 @@ WhileStatement WhileStatement() :
 		   		sb = new ForStatementBlock();
 		  	}
 		 	else if (current instanceof FunctionStatement) {
-		    	throw new ParseException(" Nested function definitions are not supported ");
+		    	throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 		  	}
 		  	else if (current instanceof ExternalFunctionStatement) {
-		  		throw new ParseException(" Nested function definitions are not supported ");
+		  		throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 		  	}
-		  	//else if (current instanceof CVStatement) {
-		  	// sb = new CVStatementBlock() ;
-		  	//}
-		  	//else if (current instanceof ELStatement) {
-		  	// sb = new ELStatementBlock() ;
-		  	//}
-		  	//else if (current instanceof ELUseStatement) {
-		  	// sb = new ELUseStatementBlock() ;
-		  	//}
+		  	else if (current instanceof CVStatement) {
+		  	sb = new CVStatementBlock() ;
+		  	}
+		  	else if (current instanceof ELStatement) {
+		  	sb = new ELStatementBlock() ;
+		  	}
+		  	else if (current instanceof ELUseStatement) {
+		  	sb = new ELUseStatementBlock() ;
+		  	}
 		  	else {
 	   			sb = new StatementBlock();
 	  		}
@@ -1227,14 +1334,22 @@ WhileStatement WhileStatement() :
 	  		ws.addStatementBlock(sb);
 		}
 	)*
-  	<RIGHTCURLYPAREN>
+  	tEnd = <RIGHTCURLYPAREN>
    
  {
 	ws.mergeStatementBlocks();
+
+	// track position for statement
+	blp = tStart.beginLine;
+	bcp = tStart.beginColumn;
+	elp = tEnd.beginLine;
+	ecp = tEnd.beginColumn;
+	ws.setAllPositions(blp, bcp, elp, ecp);
+
 	return ws;
  }
 }
- 
+
 IterablePredicate IterablePredicate() :
 {
 	 DataIdentifier iterVar = null;
@@ -1242,21 +1357,32 @@ IterablePredicate IterablePredicate() :
 	 FunctionCallIdentifier fci = null;
 	 Token paramName = null, paramVal = null;
 	 HashMap<String,String> parforParamValues = new HashMap<String,String>();
-	 ArrayList<Expression> exprParams = new ArrayList<Expression>(); 
+	 ArrayList<Expression> exprParams = new ArrayList<Expression>();
+
+	 Token tStart = null, tEnd = null, tSeq = null, tIn = null;
+	 int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	<LEFTPAREN>
- 	iterVar = Identifier() <IN> (  exprParams = ColonDelimitedExpression() | (<SEQ> fci = FunctionCall()) )
+	tStart = <LEFTPAREN>
+
+ 	iterVar = Identifier() tIn = <ID> (  exprParams = ColonDelimitedExpression() | (tSeq = <SEQ> fci = FunctionCall()) )
    	(<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
 	{
+
+		if (tIn != null && !tIn.image.equals("in"))
+			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\""); 
+
    		if (fci == null && exprParams == null)
-  			throw new ParseException("iterable predicate in for loop must specify parameters"); 
+  			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
   
 		if (fci != null) {
     		ArrayList<Expression> seqExprs = fci.getParamExpressions();
 
-    		if (seqExprs.size() <  2 || seqExprs.size() > 3)
-    			throw new ParseException("for seq, must specify both from and to value and cannot specify more than 3 args to seq");
+    		if (seqExprs.size() <  2)
+    			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
+
+    		if (seqExprs.size() > 3)
+    			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
     
     		else {
      			fromExpr = seqExprs.get(0);
@@ -1274,21 +1400,40 @@ IterablePredicate IterablePredicate() :
     	// if (params.size() > 2)
   	}
   
- 	<RIGHTPAREN>
+ 	tEnd = <RIGHTPAREN>
  	{
- 		return new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
+ 		IterablePredicate retVal = new IterablePredicate(iterVar, fromExpr, toExpr, incrementExpr, parforParamValues);
+
+		// track position for statement
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		retVal.setAllPositions(blp, bcp, elp, ecp);
+		
+		return retVal;
 	}
 }
 
 
 ConditionalPredicate ConditionalPredicate() :  
 {
-	Expression expr;
+	Expression expr = null;
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	<LEFTPAREN> expr = BooleanOrExpression() <RIGHTPAREN>
+	tStart = <LEFTPAREN> expr = BooleanOrExpression() tEnd = <RIGHTPAREN>
 	{
-		return new ConditionalPredicate(expr);
+		ConditionalPredicate retVal = new ConditionalPredicate(expr);
+
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		retVal.setAllPositions(blp, bcp, elp, ecp);
+
+		return retVal;
 	}
 }
 
@@ -1308,6 +1453,7 @@ Expression Expression() :
 Expression BooleanOrExpression() :  
 {
 	Expression expr = null;
+	Token t = null;
 }
 {
 	expr = BooleanAndExpression() 
@@ -1315,7 +1461,7 @@ Expression BooleanOrExpression() :
 		{
 			Expression left = null, right = null;
 		  	Expression.BooleanOp bop = null;
-		  	Token t = null;
+		  	
 		}
 		(
 			t = <CONDITIONALOR> | t = <LOGICALOR>
@@ -1326,7 +1472,7 @@ Expression BooleanOrExpression() :
      	right = BooleanAndExpression() 
      	{
         	left = expr;
-			BooleanExpression exprb = new BooleanExpression(bop);
+			BooleanExpression exprb = new BooleanExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn );
 			exprb.setLeft(left);
 			exprb.setRight(right);
 			expr = exprb;
@@ -1341,6 +1487,7 @@ Expression BooleanOrExpression() :
 Expression BooleanAndExpression() : 
 {
 	Expression expr = null;
+	Token t = null;
 }
 {
 	expr = BooleanNotExpression() 
@@ -1348,7 +1495,7 @@ Expression BooleanAndExpression() :
     	{
    			Expression left = null, right = null;
    			Expression.BooleanOp bop = null;
-   			Token t = null;
+   			
    		}
     
      	(t = <CONDITIONALAND> | t = <LOGICALAND>) 
@@ -1356,51 +1503,56 @@ Expression BooleanAndExpression() :
      	right = BooleanNotExpression() 
       	{
 			left = expr;
-       		BooleanExpression exprb = new BooleanExpression(bop);
+       		BooleanExpression exprb = new BooleanExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
        		exprb.setLeft(left);
        		exprb.setRight(right);
        		expr = exprb;
       	}
     )*
-	{
+	{	
 		return expr;
 	}
 }
 
 
 Expression BooleanNotExpression() : 
-{ Expression expr = null; Token t = null;}
 {
- 
- [ t = <NOT> ] expr = RelationalExpression() 
+	Expression expr = null; Token t = null;
+}
+{
+	[ t = <NOT> ] expr = RelationalExpression() 
      
-    { if (t == null)
-     return expr;
+    {
+      	if (t == null)
+     		return expr;
      
-      Expression.BooleanOp bop = Expression.getBooleanOp(t.image); 
-   Expression left = expr;
-   BooleanExpression notexpr = new BooleanExpression(bop);
-   notexpr.setLeft(left);
-   return notexpr;
-  }
+   		Expression.BooleanOp bop = Expression.getBooleanOp(t.image); 
+   		Expression left = expr;
+   		BooleanExpression notexpr = new BooleanExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
+   		notexpr.setLeft(left);
+   		return notexpr;
+  	}
 }
 
 
 Expression RelationalExpression() :
 {
 	Expression expr = null;
+	Token t = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
 }
 {
 	expr = PlusMinusExpression() 
 	(
-    	{Expression left, right; Expression.RelationalOp bop = null; Token t;}
+    	{Expression left = null, right = null; Expression.RelationalOp bop = null;}
    		(t=<LESSEQUAL> | t=<LESS> | t=<GREATEREQUAL> | t=<GREATER> | t=<EQUAL> | t=<NOTEQUAL>) 
    		{bop = Expression.getRelationalOp(t.image); }
 
      	right =  PlusMinusExpression() 
        	{
         	left = expr;
-			RelationalExpression exprb = new RelationalExpression(bop);
+			RelationalExpression exprb = new RelationalExpression(bop, t.beginLine, t.beginColumn,t.beginLine, t.beginColumn);
        		exprb.setLeft(left);
       	 	exprb.setRight(right);
        		expr = exprb;
@@ -1415,22 +1567,23 @@ Expression RelationalExpression() :
 Expression PlusMinusExpression() : 
 {
 	Expression expr = null;
+	Token t = null;
 }
 {
 	expr = MultDivExpression() 
  	(
-   		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+   		{Expression left, right; Expression.BinaryOp bop = null;}
     	(t = <PLUS> | t = <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
    		right = MultDivExpression() 
     	{
      		left = expr;
-    		BinaryExpression exprb = new BinaryExpression(bop);
+    		BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
     		exprb.setLeft(left);
     		exprb.setRight(right);
     		expr = exprb;
    		}
 	)*
- 	{
+ 	{ 
 		return expr;
 	}
 }
@@ -1439,16 +1592,18 @@ Expression PlusMinusExpression() :
 Expression MultDivExpression() : 
 {
 	Expression expr = null;
+	Token t = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	expr = MatrixMultExpression() 
  	(
-   		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+   		{Expression left, right; Expression.BinaryOp bop = null;}
    		(t = <MULT> | t = <DIV>)  {bop = Expression.getBinaryOp(t.image); }
    		right = MatrixMultExpression() 
    		{
 		    left = expr;
-		    BinaryExpression exprb = new BinaryExpression(bop);
+		    BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
 		    exprb.setLeft(left);
 		    exprb.setRight(right);
 		    expr = exprb;
@@ -1463,16 +1618,18 @@ Expression MultDivExpression() :
 Expression MatrixMultExpression() : 
 {
 	Expression expr = null;
+	Token t = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	expr = UnaryExpression() 
  	(
- 		{Expression left, right; Expression.BinaryOp bop = null; Token t;}
+ 		{Expression left, right; Expression.BinaryOp bop = null; }
   		t = <MATRIXMULT>  {bop = Expression.getBinaryOp(t.image); }
  	 	right =  UnaryExpression() 
  		{
 			left = expr;
-			BinaryExpression exprb = new BinaryExpression(bop);
+			BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
 			exprb.setLeft(left);
 			exprb.setRight(right);
 			expr = exprb;
@@ -1487,17 +1644,19 @@ Expression MatrixMultExpression() :
 Expression UnaryExpression() : 
 {
 	Expression expr = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token t = null;
 }
 {
 	(
 	  	LOOKAHEAD(3) expr = PowerExpression() |
 	  	(
-   			{Token t; Expression right = null; BinaryOp bop = null;}
+   			{Expression right = null; BinaryOp bop = null;}
    			(t = <PLUS> | t =  <MINUS>)  {bop = Expression.getBinaryOp(t.image); }
    			right = PowerExpression() 
 
      		{
-				BinaryExpression exprb = new BinaryExpression(bop);
+				BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
      			IntIdentifier id = new IntIdentifier(0);
 				id.setDimensions(0,0);
 				id.computeDataType();
@@ -1517,6 +1676,8 @@ Expression UnaryExpression() :
 Expression PowerExpression() : 
 {
 	Expression expr = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token t = null;
 }
 {
 	expr = PrimaryExpression() 
@@ -1524,14 +1685,13 @@ Expression PowerExpression() :
    		{
    			Expression left = null, right = null;
    			Expression.BinaryOp bop = null;
-   			Token t;
    		}
     	t = <POWER>  {bop = Expression.getBinaryOp(t.image); }
 
    		right = PowerExpression() 
     	{
      		left = expr;
-			BinaryExpression exprb = new BinaryExpression(bop);
+			BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
     		exprb.setLeft(left);
     		exprb.setRight(right);
     		expr = exprb;
@@ -1550,14 +1710,13 @@ Expression PrimaryExpression() :
 {
 	( LOOKAHEAD(2) expr = IdentifierOrConstant()
   		| <LEFTPAREN> expr = Expression() <RIGHTPAREN>
-     	| LOOKAHEAD(2) expr = BuiltInFunction()
-     	| LOOKAHEAD(2) expr = ParameterizedBuiltInFunction()
+     //	| LOOKAHEAD(2) expr = ParameterizedBuiltInFunction()
    	)
 	{
+		// position info for expression already set
 		return expr;
 	} 
 }
-
 
 Identifier IdentifierOrConstant() :
 {
@@ -1570,12 +1729,12 @@ Identifier IdentifierOrConstant() :
 		t1 = <DOLLAR_ID>
 		{
 	
-		///////// BEGIN handle variable param ///////////////
+			///////// BEGIN handle variable param ///////////////
 		
 			String argVal = commandArgs.get(t1.image);
 
 			if (argVal == null)
-				throw new ParseException("ERROR: value for " + t1.image + " is undefined ");
+				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
 								
 			try {
 			  	// try to assign to long value
@@ -1624,6 +1783,11 @@ Identifier IdentifierOrConstant() :
 
 	)
 	{ 
+		// only set positions for command-line parameters (which are not initialized)
+		if (t1 != null) {
+			id.setAllPositions(t1.beginLine, t1.beginColumn, t1.beginLine, t1.beginColumn);
+		}
+		
 		return id; 
 	}
 }
@@ -1642,7 +1806,8 @@ ConstIdentifier Constant() :
       | id = BooleanConstant()
       | id = StringConstant()
     )
- 	{ 
+ 	{
+ 	  	// position for id already set
   		return id; 
  	}
 }
@@ -1653,6 +1818,7 @@ IntIdentifier IntConstant() :
 	Token t = null;
 	Boolean minus = false;
 	IntIdentifier id = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	(<MINUS > {minus = true;})?
@@ -1671,7 +1837,12 @@ IntIdentifier IntConstant() :
       		id.setValueType(ValueType.INT);
   		}
  	)
- 	{ 
+ 	{
+ 	  	blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = t.beginLine;
+		ecp = t.beginColumn;
+		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
 }
@@ -1679,9 +1850,10 @@ IntIdentifier IntConstant() :
 
 DoubleIdentifier DoubleConstant() :
 {
-Token t;
-Boolean minus = false;
-DoubleIdentifier id = null;
+	Token t;
+	Boolean minus = false;
+	DoubleIdentifier id = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
 	(<MINUS > {minus = true;})?
@@ -1700,6 +1872,11 @@ DoubleIdentifier id = null;
   		}
  	)
  	{ 
+		blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = t.beginLine;
+		ecp = t.beginColumn;
+		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
 }
@@ -1709,6 +1886,7 @@ BooleanIdentifier BooleanConstant() :
 {
 	Token t;
 	BooleanIdentifier id = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
     (
@@ -1720,7 +1898,12 @@ BooleanIdentifier BooleanConstant() :
 			id.setValueType(ValueType.BOOLEAN);
   		}
  	)
- 	{ 
+ 	{
+ 	  	blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = t.beginLine;
+		ecp = t.beginColumn;
+		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
 }
@@ -1730,6 +1913,7 @@ StringIdentifier StringConstant() :
 {
 	Token t = null;
 	StringIdentifier id = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
     (
@@ -1742,10 +1926,14 @@ StringIdentifier StringConstant() :
   		}
  	)
  	{ 
+		blp = t.beginLine;
+		bcp = t.beginColumn;
+		elp = t.beginLine;
+		ecp = t.beginColumn;
+		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
 }
-
 
 DataIdentifier Identifier() :
 {
@@ -1754,23 +1942,53 @@ DataIdentifier Identifier() :
 	DataIdentifier id = null;
 	FunctionCallIdentifier functCall = null;
 	ArrayList<ArrayList<Expression>> exprListList = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	[LOOKAHEAD(4)tNamespace = <ID> <COLON><COLON>] t = <ID> (LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList() )?
+	[LOOKAHEAD(4)tNamespace = <ID>{ blp=tNamespace.beginLine; bcp=tNamespace.beginColumn; elp =tNamespace.endLine; ecp = tNamespace.endColumn;} <COLON><COLON>]
+			t = <ID> { if (tNamespace == null ) { blp=t.beginLine; bcp=t.beginColumn;} elp= t.endLine; ecp =t.endColumn; }
+			(LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList())?
+
   	{
-		id = new DataIdentifier(t.image, t.beginLine, t.beginColumn);
+		id = new DataIdentifier(t.image);
   
 		if (functCall != null) {
+
+			// CASE: no namespace handle built-in functions
+			if ( tNamespace == null )			{				// verify passed function name is a (non-parameterized) built-in function.
+				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(t.image, functCall.getParamExpressions());
+				if (bife != null){					bife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+					return bife;
+				}
+				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(t.image, functCall.getNamedParamExpressions());
+				if (pbife != null){					pbife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+					return pbife;
+				}
+			}
+
+			// handle UDF function call
 			String namespaceName = (tNamespace == null) ? DMLProgram.DEFAULT_NAMESPACE : tNamespace.image;
 		    functCall.setFunctionNamespace(namespaceName);
 		    functCall.setFunctionName(t.image);
+
+			// set position information
+			functCall.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
 		   	return functCall;
 		}
 		else if (exprListList != null){
 			IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
-			iid.setIndices(exprListList);			
+			try {				iid.setIndices(exprListList);
+			} catch (ParseException e) {				throw new ParseException(printErrorLocation(blp,bcp) + "matrix indices must be specified for 2 dimensions -- currently specified indices for " + exprListList.size() + " dimensions ");
+			}
+			
+			// set position information
+			iid.setAllPositions(blp, bcp, elp, ecp);
+						
 		   	return iid;
 		} else{
+
+			// set position information
+			id.setAllPositions(blp, bcp, elp, ecp);
 			return id;
 		}
  	}
@@ -1782,28 +2000,72 @@ FunctionCallIdentifier FunctionCall():
 	Expression expr = null;
 	FunctionCallIdentifier functCall = null;
 	ArrayList<Expression> exprs = new ArrayList<Expression>();
+	HashMap<String, Expression> namedExprs = new HashMap<String,Expression>(); 
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token tStart = null, tEnd = null, t1 = null;
 }
 {
-	<LEFTPAREN> (expr = Expression()) { exprs.add(expr); }
-			(<COMMA> (expr = Expression()) { exprs.add(expr); } )*
-	<RIGHTPAREN>  
+	tStart = <LEFTPAREN>
+		(
+		  	(LOOKAHEAD(2) t1 = <ID> <ASSIGN>)? expr = Expression()
+			{
+				if (t1 != null){
+					namedExprs.put(t1.image, expr);
+				}	
+				else {				   exprs.add(expr);
+				}
+				t1 = null;
+			}
+		)
+
+
+		(
+			<COMMA> (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression()
+			{
+				if (t1 != null){
+					namedExprs.put(t1.image, expr);
+				}	
+				else {
+				   exprs.add(expr);
+				}
+				t1 = null;
+			}
+		)*
+	tEnd = <RIGHTPAREN>  
 	{
-		functCall = new FunctionCallIdentifier(exprs);
+		functCall = new FunctionCallIdentifier(exprs, namedExprs);
+
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		functCall.setAllPositions(blp, bcp, elp, ecp);
+		
 		return functCall;
 	}     
 }
 
 
+/**
 // parsing rule for parameterized builtins  
 Expression ParameterizedBuiltInFunction():
 {
 	Expression.ParameterizedBuiltinFunctionOp bifop = null;
 	ParameterizedBuiltinFunctionExpression pbfe = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token tStart = null, tEnd = null;
 }
 {
 	(
-		<CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
-		| < GROUPEDAGG > {bifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;}
+		tStart = <ID>
+		{			
+		}
+
+//	| <CDF				: "cumulativeProbability" >
+//	| <GROUPEDAGG		: "groupedAggregate" >
+		
+		//tStart = <CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
+		//|  tStart = <GROUPEDAGG> {}
  	)
  
  	pbfe = readParameterizedBuiltInParameters()
@@ -1811,11 +2073,50 @@ Expression ParameterizedBuiltInFunction():
 
  	{
 		pbfe.setOpcode (bifop);
+
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = pbfe.getEndLine();
+		ecp = pbfe.getEndColumn();
+		pbfe.setAllPositions(blp, bcp, elp, ecp);
+		
    		return pbfe;
  	} 
 }
 
+HashMap<String,Expression> readParameterizedBuiltInParameters() :
+{
+	HashMap<String,Expression> retVal = new HashMap<String,Expression>();
+	Token t1 = null;
+	Expression t2 = null;
+	
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+}
+{
+	tStart = <LEFTPAREN>
+	t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
+	(
+		< COMMA >
+		(
+			t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
+		)
+	)*
+ 	tEnd = <RIGHTPAREN>
+	{
 
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		pbfe.setAllPositions(blp, bcp, elp, ecp);
+		
+		return pbfe;
+	}
+}
+***/
+
+/**
 // Process the comma separated parameter list of parameterized builtins
 // Allowed format: function( expression [, name=vexpr]* )
 //   WHERE vexpr is an expression that refers to the "value" for the parameter "name"
@@ -1824,13 +2125,16 @@ ParameterizedBuiltinFunctionExpression readParameterizedBuiltInParameters() :
 	ParameterizedBuiltinFunctionExpression pbfe = new ParameterizedBuiltinFunctionExpression();
 	Token t1 = null;
 	Expression t2 = null;
-	String unnamed = "unnamed";
-	int unnamedParamCount = 0;
+	//String unnamed = "unnamed";
+	//int unnamedParamCount = 0;
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
+
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	<LEFTPAREN>
+	tStart = <LEFTPAREN>
 	t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
 	(
 		< COMMA >
@@ -1838,85 +2142,33 @@ ParameterizedBuiltinFunctionExpression readParameterizedBuiltInParameters() :
 			t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
 		)
 	)*
- 	<RIGHTPAREN>
+ 	tEnd = <RIGHTPAREN>
 	{
+
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		pbfe.setAllPositions(blp, bcp, elp, ecp);
+		
 		return pbfe;
 	}
 }
+***/
 
-
-Expression BuiltInFunction():
-{
-	Expression expr = null;
-	ArrayList<Expression> exprs = new ArrayList<Expression>();
-	Expression.BuiltinFunctionOp bifop = null;
-	Token t = null;
-}
-{
-	 ( <COS> { bifop = Expression.BuiltinFunctionOp.COS;}
-		 | <SIN> { bifop = Expression.BuiltinFunctionOp.SIN;}
-		 | <TAN> { bifop = Expression.BuiltinFunctionOp.TAN;}
-		 | <DIAG> { bifop = Expression.BuiltinFunctionOp.DIAG;}
-		 | <EXP> { bifop = Expression.BuiltinFunctionOp.EXP;}
-		 | <ABS> { bifop = Expression.BuiltinFunctionOp.ABS;}
-		 | <MIN> { bifop = Expression.BuiltinFunctionOp.MIN;}
-		 | <MAX> { bifop = Expression.BuiltinFunctionOp.MAX;}
-		 | <PMIN> { bifop = Expression.BuiltinFunctionOp.PMIN;}
-		 | <PMAX> { bifop = Expression.BuiltinFunctionOp.PMAX;}
-		 | <PPRED> { bifop = Expression.BuiltinFunctionOp.PPRED;} 
-		 | <LOG> { bifop = Expression.BuiltinFunctionOp.LOG;}
-		 | <LENGTH> { bifop = Expression.BuiltinFunctionOp.LENGTH;}
-		 | <NCOL> { bifop = Expression.BuiltinFunctionOp.NCOL;}
-		 | <NROW> { bifop = Expression.BuiltinFunctionOp.NROW;}
-		 | <SQRT> { bifop = Expression.BuiltinFunctionOp.SQRT;}
-		 | <SUM> { bifop = Expression.BuiltinFunctionOp.SUM;}
-		 | <MEAN> { bifop = Expression.BuiltinFunctionOp.MEAN;}
-		 | <TRACE> { bifop = Expression.BuiltinFunctionOp.TRACE;}
-		 | <TRANS> { bifop = Expression.BuiltinFunctionOp.TRANS;}
-		 | <APPEND> { bifop = Expression.BuiltinFunctionOp.APPEND;}
-		 | <RANGE> { bifop = Expression.BuiltinFunctionOp.RANGE;}
-		 | <PROD> { bifop = Expression.BuiltinFunctionOp.PROD;}
-		 | <ROWSUM> { bifop = Expression.BuiltinFunctionOp.ROWSUM;}
-		 | <COLSUM> { bifop = Expression.BuiltinFunctionOp.COLSUM;}
-		 | <ROWMIN> { bifop = Expression.BuiltinFunctionOp.ROWMIN;}
-		 | <COLMIN> { bifop = Expression.BuiltinFunctionOp.COLMIN;}
-		 | <ROWMAX> { bifop = Expression.BuiltinFunctionOp.ROWMAX;}
-		 | <ROWINDEXMAX> { bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;}
-		 | <COLMAX> { bifop = Expression.BuiltinFunctionOp.COLMAX;}
-		 | <ROWMEAN> { bifop = Expression.BuiltinFunctionOp.ROWMEAN;}
-		 | <COLMEAN> { bifop = Expression.BuiltinFunctionOp.COLMEAN;}
-		 | <CAST_AS_SCALAR> { bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;}
-		 | <QUANTILE> {bifop= Expression.BuiltinFunctionOp.QUANTILE;}
-		 | <INTERQUANTILE> {bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;}
-		 | <IQM> {bifop= Expression.BuiltinFunctionOp.IQM;}
-		 | <CTABLE> { bifop = Expression.BuiltinFunctionOp.CTABLE;}
-		 | <SPEARMAN> { bifop = Expression.BuiltinFunctionOp.SPEARMAN;}
-		 | <ROUND> { bifop = Expression.BuiltinFunctionOp.ROUND;}
-		 | <CENTRALMOMENT> { bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;}
-		 | <COVARIANCE> { bifop = Expression.BuiltinFunctionOp.COVARIANCE;}
- 	)
-
- 	<LEFTPAREN> (expr = Expression()) { exprs.add(expr); } ( < COMMA > (expr = Expression()) { exprs.add(expr); } )*  <RIGHTPAREN>  
- 	{
-		Expression expr1 = exprs.size() >= 1 ? expr1 = exprs.get(0) : null;
-   		Expression expr2 = exprs.size() >= 2 ? expr2 = exprs.get(1) : null;
-   		Expression expr3 = exprs.size() >= 3 ? expr3 = exprs.get(2) : null;
-   		return new BuiltinFunctionExpression(bifop,expr1, expr2, expr3);
- 	}     
-}
-
- 
 InputStatement InputStatement() :
 {
 	DataIdentifier id = null;
 	InputStatement is = new InputStatement(Expression.DataOp.READ);
 	Expression t2 = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token tEnd = null;
 }
 {
 	id = Identifier()
 	{
 		if (id.getName().startsWith("$"))
-			throw new ParseException("command-line parameters (e.g. $1) do not support assignment");
+			throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
   		}
 		<ASSIGN> <READMATRIX> <LEFTPAREN>
 		t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
@@ -1927,11 +2179,18 @@ InputStatement InputStatement() :
 			(				{Token t1 = null;}				t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}
 			)
 		)*
-		<RIGHTPAREN> [<SEMICOLON>]
+		tEnd = <RIGHTPAREN> [<SEMICOLON>]
 	{
  		is.setIdentifier(id);
  		id.setDimensions(is);
  		id.computeDataType();
+	
+		blp = id.getBeginLine();
+		bcp = id.getBeginColumn();
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		is.setAllPositions(blp, bcp, elp, ecp);
+ 		
  		return is;
 	}
 }
@@ -1942,10 +2201,13 @@ OutputStatement OutputStatement() :
 	DataIdentifier fn = null;
 	Token t1 = null;
 	Expression t2 = null;
-	OutputStatement os = null; 	
+	OutputStatement os = null;
+
+	Token tStart = null, tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	<WRITEMATRIX> <LEFTPAREN>
+	tStart = <WRITEMATRIX> <LEFTPAREN>
 		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
     	t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
      	(
@@ -1957,8 +2219,13 @@ OutputStatement OutputStatement() :
 				}
 			)
 		)*
-		<RIGHTPAREN>  [<SEMICOLON>]
+		tEnd = <RIGHTPAREN>  [<SEMICOLON>]
 	{
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		os.setAllPositions(blp, bcp, elp, ecp);
 		return os;
 	}
 }
@@ -1967,11 +2234,21 @@ OutputStatement OutputStatement() :
 PrintStatement PrintStatement() :
 {
 	Expression source;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token tStart = null, tEnd = null;
 }
 {
-	<PRINT> <LEFTPAREN> source = Expression()  <RIGHTPAREN>  [<SEMICOLON>]
-	{
-		return new PrintStatement(source);
+	tStart = <PRINT> <LEFTPAREN> source = Expression()  tEnd = <RIGHTPAREN>  [<SEMICOLON>]
+	{	
+		PrintStatement retVal = new PrintStatement(source);
+
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		retVal.setAllPositions(blp, bcp, elp, ecp);
+
+		return retVal;
 	}
 }
 
@@ -1989,6 +2266,10 @@ RandStatement RandStatement() :
 	DataIdentifier id = null;
 	Token t1 = null;
 	Expression t2 = null;
+	
+	Token tEnd = null;
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	
 }
 {
 	id = Identifier() <ASSIGN> <RAND> <LEFTPAREN>
@@ -1996,23 +2277,24 @@ RandStatement RandStatement() :
 		rs = new RandStatement(id);
 	}
 	(
-		( t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); }
-		( <COMMA> (t1 = <ID> | t1 = <MIN> | t1 = <MAX>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); })*
+		( t1 = <ID> ) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); }
+		( <COMMA> (t1 = <ID>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); })*
 	)
-	<RIGHTPAREN> [<SEMICOLON>]
+	tEnd = <RIGHTPAREN> [<SEMICOLON>]
 	{
+		blp = id.getBeginLine();
+		bcp = id.getBeginColumn();
+		elp = tEnd.beginLine;
+		ecp = tEnd.beginColumn;
+		rs.setAllPositions(blp, bcp, elp, ecp);
 		return rs;
 	}
 }
 
 
-
-/**
-
-
 ELStatement ELStatement() :
 {
-  Token t = null;
+  Token t = null, tOn = null, tPartition = null, tTrain = null, tTest = null;
   String eNameStr = null; 
   CVStatement.AGG agg = null ;
 
@@ -2028,10 +2310,10 @@ ELStatement ELStatement() :
 
 }
 {
- <BUILD><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
- <PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
- <TRAIN> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  [<AS> trainFunctionOutputs = ReadList()]
-    [<TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()]
+ <BUILD_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+ tPartition = <ID> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
+ tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  [<AS> trainFunctionOutputs = ReadList()]
+ [LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   [<AS> testFunctionOutputs  = ReadList()]]
 
  {
 
@@ -2045,9 +2327,11 @@ ELStatement ELStatement() :
  }
 }
 
+
 ELUseStatement ELUseStatement() :
 {
-  Token t = null, aggfunc = null;
+  Token t = null, aggfunc = null, tOn = null, tTest = null, tAgg = null;
+  
   String eNameStr = null;
   HashMap<String,String> partitionParams = null;
   String trainFunctionName = null, testFunctionName = null ;
@@ -2059,9 +2343,9 @@ ELUseStatement ELUseStatement() :
  
 }
 {
- <USE><ENSEMBLE> t = <ID> { eNameStr = t.image; } <ON> dataList = ReadList()
-    <TEST>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()  <AS> testFunctionOutputs  = ReadList()
- <AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
+ <USE_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+    tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList() <AS> testFunctionOutputs  = ReadList()
+ 	tAgg  = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
 
  {
 
@@ -2083,7 +2367,6 @@ ELUseStatement ELUseStatement() :
 }
 
 
-
 CVStatement CVStatement() :
 {
   Token t;
@@ -2099,14 +2382,14 @@ CVStatement CVStatement() :
 
   HashMap<String,String> partitionParams ;
 
-  Token aggfunc = null;
+  Token aggfunc = null,  tPartition = null, tAs_1 = null, tTrain = null, tAs_2 = null, tTest = null, tAs_3 = null, tAgg = null, tAs_4 = null;
 }
 {
  <CROSSVAL> inputs = ReadList()
- <PARTITION> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
- <TRAIN> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  <AS> trainFunctionOutputs = ReadList()
- <TEST>  t = <ID> { testFunctionName  = t.image; } testFunctionParams = ReadList()  <AS> testFunctionOutputs   = ReadList()
- <AGG> (aggfunc = <SUM> | aggfunc = <AVG>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
+ tPartition =<ID> partitionParams = ReadGenericParamList() 	tAs_1 = <AS> partitionOutputs = ReadList()
+ tTrain = <ID> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  tAs_2 = <AS> trainFunctionOutputs = ReadList()
+ tTest  = <ID>  t = <ID> { testFunctionName  = t.image; } testFunctionParams = ReadList()   tAs_3 = <AS> testFunctionOutputs   = ReadList()
+ tAgg = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() tAs_4 = <AS> errorAggFunctionOutputs = ReadList()
  {
    if("sum".equals(aggfunc.image))
     agg = CVStatement.AGG.sum ;
@@ -2120,11 +2403,3 @@ CVStatement CVStatement() :
     return new CVStatement(inputs, partitionParams, params) ;
  }
 }
-
-**/
-
-
-
-
-
-

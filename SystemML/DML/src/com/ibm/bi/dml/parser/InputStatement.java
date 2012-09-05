@@ -48,7 +48,11 @@ public class InputStatement extends IOStatement{
 	public Statement rewriteStatement(String prefix) throws LanguageException {
 		
 		InputStatement newStatement = new InputStatement();
-		
+		newStatement._beginLine 	= this.getBeginLine();
+		newStatement._beginColumn 	= this.getBeginColumn();
+		newStatement._endLine 		= this.getEndLine();
+		newStatement._endColumn     = this.getEndColumn();
+			
 		// rewrite target variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
 	
@@ -61,6 +65,7 @@ public class InputStatement extends IOStatement{
 		}	
 
 		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams);
+		newParamerizedExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 			

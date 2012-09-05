@@ -51,7 +51,7 @@ public class RelationalExpressionTest {
     
     @Test
     public void testVariablesRead() {
-        RelationalExpression beToTest = new RelationalExpression(RelationalOp.EQUAL);
+        RelationalExpression beToTest = new RelationalExpression(RelationalOp.EQUAL,0,0,0,0);
         DataIdentifier left = new DataIdentifier("left");
         DataIdentifier right = new DataIdentifier("right");
         beToTest.setLeft(left);

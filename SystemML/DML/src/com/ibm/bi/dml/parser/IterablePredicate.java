@@ -13,7 +13,8 @@ public class IterablePredicate extends Expression
 	private Expression _toExpr;
 	private Expression _incrementExpr;
 	private HashMap<String,String> _parforParams;
-		
+	
+	
 	public IterablePredicate(DataIdentifier iterVar, Expression fromExpr, Expression toExpr, Expression incrementExpr, HashMap<String,String> parForParamValues)
 	{
 		_iterVar = iterVar;
@@ -73,7 +74,7 @@ public class IterablePredicate extends Expression
 	public Expression rewriteExpression(String prefix) throws LanguageException {
 		//DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
 		//return new IterablePredicate(newIterVar, _from, _to, _increment);
-		throw new LanguageException("rewriteExpression not supported for IterablePredicate");
+		throw new LanguageException(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
 		
 	}
 
@@ -86,7 +87,7 @@ public class IterablePredicate extends Expression
 		if (ids.containsKey(_iterVar.getName())){
 			DataIdentifier otherDI = ids.get(_iterVar.getName());
 			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT ){
-				throw new LanguageException("iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer");
+				throw new LanguageException(this.printErrorLocation() + "iterable predicate in for loop '" + _iterVar.getName() + "' must be a scalar integer");
 			}	
 		}
 		
@@ -106,7 +107,7 @@ public class IterablePredicate extends Expression
 			if (ids.containsKey( var )){
 				DataIdentifier otherDI = ids.get( var );
 				if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType()!=ValueType.INT ){
-					throw new LanguageException("iterable predicate in for loop '" + var + "' must be a scalar integer");
+					throw new LanguageException(this.printErrorLocation() + "iterable predicate in for loop '" + var + "' must be a scalar integer");
 				}	
 			}
 			

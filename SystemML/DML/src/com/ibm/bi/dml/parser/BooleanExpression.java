@@ -13,6 +13,21 @@ public class BooleanExpression extends Expression{
 	public BooleanExpression(BooleanOp bop){
 		_kind = Kind.BooleanOp;
 		_opcode = bop;
+		
+		_beginLine		= 0;
+		_beginColumn	= 0;
+		_endLine		= 0;
+		_endColumn		= 0;
+	}
+	
+	public BooleanExpression(BooleanOp bop, int beginLine, int beginColumn, int endLine, int endColumn){
+		_kind = Kind.BooleanOp;
+		_opcode = bop;
+		
+		_beginLine		= beginLine;
+		_beginColumn	= beginColumn;
+		_endLine		= endLine;
+		_endColumn		= endColumn;
 	}
 	
 	public BooleanOp getOpCode(){
@@ -21,10 +36,22 @@ public class BooleanExpression extends Expression{
 	
 	public void setLeft(Expression l){
 		_left = l;
+		
+		// update script location information --> left expression is BEFORE in script
+		if (_left != null){
+			this._beginLine   = _left.getBeginLine();
+			this._beginColumn = _left.getBeginColumn();
+		}
 	}
 	
 	public void setRight(Expression r){
 		_right = r;
+		
+		// update script location information --> right expression is AFTER in script
+		if (_right != null){
+			this._beginLine = _right.getEndLine();
+			this._beginColumn = _right.getEndColumn();
+		}
 	}
 	
 	public Expression getLeft(){
@@ -38,7 +65,7 @@ public class BooleanExpression extends Expression{
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		
 		
-		BooleanExpression newExpr = new BooleanExpression(this._opcode);
+		BooleanExpression newExpr = new BooleanExpression(this._opcode, this._beginLine, this._beginColumn, this._endLine, this._endColumn);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -56,11 +83,13 @@ public class BooleanExpression extends Expression{
 			
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
+		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
 		output.setBooleanProperties();
 		this.setOutput(output);
 		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) ||
 				(_opcode == Expression.BooleanOp.CONDITIONALOR)) {
-			throw new LanguageException("Unsupported boolean operation " + _opcode.toString(),
+			throw new LanguageException(this.printErrorLocation() + "Unsupported boolean operation " + _opcode.toString(),
 					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}		

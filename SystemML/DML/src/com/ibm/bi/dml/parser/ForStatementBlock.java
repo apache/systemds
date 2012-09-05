@@ -27,7 +27,7 @@ public class ForStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
-			throw new LanguageException("ForStatementBlock should have only 1 statement (for statement)");
+			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		
 		ForStatement fs = (ForStatement) _statements.get(0);
 		fs.setBody(StatementBlock.mergeFunctionCalls(fs.getBody(), dmlProg));
@@ -60,7 +60,7 @@ public class ForStatementBlock extends StatementBlock {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1)
-			throw new LanguageException("ForStatementBlock should have only 1 statement (for statement)");
+			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		
 		
 		_read = new VariableSet();
@@ -206,7 +206,7 @@ public class ForStatementBlock extends StatementBlock {
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
 			if( !ip.getIterVar().getName().equals( varName)  )
-				System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getDefinedLine() + " depends on for execution");
+				System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on for execution");
 		}
 		
 		// Cannot remove kill variables

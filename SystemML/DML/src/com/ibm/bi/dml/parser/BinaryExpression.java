@@ -15,6 +15,11 @@ public class BinaryExpression extends Expression {
 		
 		
 		BinaryExpression newExpr = new BinaryExpression(this._opcode);
+		newExpr._beginLine 		 = this._beginLine; 
+		newExpr._beginColumn	 = this._beginColumn;
+		newExpr._endLine		 = this._endLine;
+		newExpr._endColumn 		 = this._endColumn;	
+		
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
@@ -23,7 +28,23 @@ public class BinaryExpression extends Expression {
 	public BinaryExpression(BinaryOp bop) {
 		_kind = Kind.BinaryOp;
 		_opcode = bop;
+		
+		_beginLine 	 = 0;
+		_beginColumn = 0;
+		_endLine	 = 0;
+		_endColumn 	 = 0;
 	}
+	
+	public BinaryExpression(BinaryOp bop, int beginLine, int beginColumn, int endLine, int endColumn) {
+		_kind = Kind.BinaryOp;
+		_opcode = bop;
+		
+		_beginLine 	 = beginLine;
+		_beginColumn = beginColumn;
+		_endLine	 = endLine;
+		_endColumn 	 = endColumn;
+	}
+	
 
 	public BinaryOp getOpCode() {
 		return _opcode;
@@ -31,10 +52,23 @@ public class BinaryExpression extends Expression {
 
 	public void setLeft(Expression l) {
 		_left = l;
+		
+		// update script location information --> left expression is BEFORE in script
+		if (_left != null){
+			this._beginLine   = _left.getBeginLine();
+			this._beginColumn = _left.getBeginColumn();
+		}
+		
 	}
 
 	public void setRight(Expression r) {
 		_right = r;
+		
+		// update script location information --> right expression is AFTER in script
+		if (_right != null){
+			this._beginLine = _right.getEndLine();
+			this._beginColumn = _right.getEndColumn();
+		}
 	}
 
 	public Expression getLeft() {
@@ -59,8 +93,9 @@ public class BinaryExpression extends Expression {
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setDataType(computeDataType(this.getLeft(), this.getRight(),
-				true));
+		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+		output.setDataType(computeDataType(this.getLeft(), this.getRight(), true));
 
 		ValueType resultVT = computeValueType(this.getLeft(), this.getRight(),
 				true);
@@ -85,7 +120,7 @@ public class BinaryExpression extends Expression {
 					&& this.getRight().getOutput().getDim1() != -1
 					&& this.getLeft().getOutput().getDim2() != this.getRight()
 							.getOutput().getDim1()) {
-				throw new LanguageException(
+				throw new LanguageException(this.printErrorLocation() +
 						"invalid dimensions for matrix multiplication",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -95,7 +130,7 @@ public class BinaryExpression extends Expression {
 
 		if (this.getOpCode() == Expression.BinaryOp.POW) {
 			if (this.getRight().getOutput().getDataType() != DataType.SCALAR) {
-				throw new LanguageException(
+				throw new LanguageException(this.printErrorLocation() +
 						"Second operand to ^ should be a scalar in "
 								+ this.toString(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);

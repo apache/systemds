@@ -25,12 +25,7 @@ public class OutputStatement extends IOStatement{
 	public OutputStatement(DataIdentifier t, DataOp op){
 		super(t, op);
 	}
-	
-	public OutputStatement(DataOp op){
-		super (op);
-	}
-
-	
+		
 	// rewrites statement to support function inlining (create deep copy)
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		
@@ -51,6 +46,7 @@ public class OutputStatement extends IOStatement{
 			newExprParams.put(key, newExpr);
 		}
 		DataExpression newParamerizedExpr = new DataExpression(op, newExprParams);
+		newParamerizedExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}

@@ -50,7 +50,7 @@ public class ELStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
 		if (this.getNumStatements() > 1)
-			throw new LanguageException("Ensemble statement block can only have single statement");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble statement block can only have single statement");
 		ELStatement estmt = (ELStatement) this.getStatement(0);
 		
 		// add ensemble to available variables set
@@ -59,12 +59,12 @@ public class ELStatementBlock extends StatementBlock {
 		// check the input datasets are available
 		for (String input : estmt.getInputNames()){
 			if (!ids.containsVariable(input))
-				throw new LanguageException("Ensemble statement input dataset " + input + " is not available ");
+				throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble statement input dataset " + input + " is not available ");
 		}
 		
 		// check the training function is available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(estmt.getFunctionParameters().getTrainFunctionName()))
-			throw new LanguageException("Ensemble training function " + estmt.getFunctionParameters().getTrainFunctionName() + " is not available ");
+			throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble training function " + estmt.getFunctionParameters().getTrainFunctionName() + " is not available ");
 		
 		// check training function inputs are available
 		for (String input : estmt.getFunctionParameters().getTrainFunctionFormalParams()){

@@ -735,7 +735,7 @@ public class DMLScript {
 			//cleanup scratch space (everything for current uuid) 
 			//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 			MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE)+
-					                               Lops.FILE_SEPARATOR+Lops.PROCESS_PREFIX+getUUID()  );
+					                               Lops.FILE_SEPARATOR+Lops.PROCESS_PREFIX+DMLScript.getUUID()  );
 			//cleanup working dirs (hadoop, cache)
 			MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) //TODO: check if this is required at all
 		                                           Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );

@@ -46,7 +46,7 @@ outputDir  = singleton (cfgFile -> transform $.outputDir);
 localDir   = singleton (cfgFile -> transform $.localDir);
 
 dta        = inputDir + "/" + datafile;
-dta_drv    = outputDir + "/" + datafile + ".drv";
+dta_drv    = outputDir + "/" + datafile + ".dotv";
 dta_rcd    = outputDir+"/rcd/"+datafile+".rcd";
 
 mta        = localDir + "/" + datafile + "_metadata.json";

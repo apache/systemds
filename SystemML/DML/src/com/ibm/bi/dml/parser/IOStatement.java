@@ -1,9 +1,6 @@
 package com.ibm.bi.dml.parser;
 
-import java.io.IOException;
-
 import com.ibm.bi.dml.parser.Expression.DataOp;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 public abstract class IOStatement extends Statement{

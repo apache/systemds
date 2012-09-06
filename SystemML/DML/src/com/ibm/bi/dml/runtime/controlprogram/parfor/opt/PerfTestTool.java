@@ -61,7 +61,6 @@ import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.sun.xml.internal.txw2.output.IndentingXMLStreamWriter;
 
 /**
  * DML Instructions Performance Test Tool: 
@@ -450,33 +449,13 @@ public class PerfTestTool
 		///////
 		// MR instructions
 		registerInstruction( "jobtypeMMRJ", createMRJobInstruction(JobType.MMRJ,
-							                    MRInstructionParser.parseSingleInstruction("MR°rmm°0·MATRIX·DOUBLE°1·MATRIX·DOUBLE°2·MATRIX·DOUBLE ")),
+							                    MRInstructionParser.parseSingleInstruction("MR"+Lops.OPERAND_DELIMITOR+
+							                    		                                   "rmm"+Lops.OPERAND_DELIMITOR+
+							                    		                                   "0"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+
+							                    		                                   "1"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+
+							                    		                                   "2"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE ")),
 							 _MRConf, false, IOSchema.BINARY_UNARY ); 		
-		
-		/*
-		"jobtypeMMRJ" +
-		"inputs ,##A##,##B##" +
-		"input info , BinaryBlockInputInfo, BinaryBlockInputInfo " +
-		"recReader inst  " +
-		"rand inst  " +
-		"mapper inst  " +
-		"shuffle inst MR°rmm°0·MATRIX·DOUBLE°1·MATRIX·DOUBLE°2·MATRIX·DOUBLE " +
-		"agg inst  " +
-		"other inst  " +
-		"outputs  ,scratch_space//_t0/temp6 " +
-		"output info , BinaryBlockOutputInfo " +
-		"result indices ,2 " +
-		"num reducers 10 " +
-		"replication 1 " +
-		"result dims unknown ,0 " +
-		"num rows ,-1,-1 " +
-		"num cols ,-1,-1 " +
-		"rows per block ,1000,1000 " +
-		"cols per block ,1000,1000 " +
-		"input labels [A, B]" +
-		"outputs labels [C]"		
-		*/
-		
+
 		
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/
 		
@@ -1649,7 +1628,8 @@ public class PerfTestTool
 		//create document
 		XMLOutputFactory xof = XMLOutputFactory.newInstance();
 		XMLStreamWriter xsw = xof.createXMLStreamWriter( fos );
-		xsw = new IndentingXMLStreamWriter( xsw ); //remove this line if no indenting required
+		//TODO use an alternative way for intentation
+		//xsw = new IndentingXMLStreamWriter( xsw ); //remove this line if no indenting required
 		
 		//write document content
 		xsw.writeStartDocument();

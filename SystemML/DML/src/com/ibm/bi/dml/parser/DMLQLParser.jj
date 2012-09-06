@@ -2054,11 +2054,7 @@ InputStatement InputStatement() :
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 	Token tEnd = null;
 }
-{
-	try {	  id = Identifier()
-	}
-
-
+{	  id = Identifier()
 	
 	{
 		if (id.getName().startsWith("$"))

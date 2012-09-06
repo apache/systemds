@@ -18,7 +18,7 @@ public class IfStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1)
-			throw new LanguageException("IfStatementBlock should only have 1 statement (IfStatement)");
+			throw new LanguageException(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
 		
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
 		
@@ -77,7 +77,7 @@ public class IfStatementBlock extends StatementBlock {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1)
-			throw new LanguageException("IfStatementBlock should have only 1 statement (if statement)");
+			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		
 		_read = new VariableSet();
 		_gen = new VariableSet();
@@ -210,7 +210,7 @@ public class IfStatementBlock extends StatementBlock {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1)
-			throw new LanguageException("IfStatementBlock should have only 1 statement (if statement)");
+			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		
 		VariableSet currentLiveOutIf = new VariableSet();
 		currentLiveOutIf.addVariables(loPassed);
@@ -267,7 +267,7 @@ public class IfStatementBlock extends StatementBlock {
 		predVars.addVariables(((IfStatement)_statements.get(0)).getConditionalPredicate().variablesUpdated());
 		
 	 	VariableSet candidateLO = new VariableSet();
-	 	candidateLO.addVariables(_gen);
+	 	//candidateLO.addVariables(_gen);
 	 	candidateLO.addVariables(loPassed);
 	 	
 	 	VariableSet origLiveOut = new VariableSet();

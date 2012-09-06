@@ -80,9 +80,9 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
-		//TODO: memory fix
-		// if result is a vector (1D matrix), then use "dense" format 
-		if ( m1.getNumRows() == 1 || m2.getNumColumns() == 1)
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if ( m2.getNumColumns() == 1)
 			return false;
 		double n=m1.getNumRows();
 		double k=m1.getNumColumns();
@@ -94,15 +94,15 @@ public class MatrixBlockDSM extends MatrixValue{
 		return ( 1-Math.pow(1-pq, k) < SPARCITY_TURN_POINT );
 	}
 	
-	private boolean isVector() {
+	/*private boolean isVector() {
 		return (this.getNumRows() == 1 || this.getNumColumns() == 1);
-	}
+	}*/
 	
 	private static boolean checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
-		//TODO: memory fix
-		// if result is a vector (1D matrix), then use "dense" format 
-		if ( m1.isVector() )
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide 
+		if ( m1.getNumColumns()==1 )
 			return false;
 		
 		double n=m1.getNumRows();
@@ -117,7 +117,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private static boolean checkRealSparcity(MatrixBlockDSM m)
 	{
-		return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(m.getNumColumns()==1)
+			return false;
+		else
+			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
 	}
 	
 	public MatrixBlockDSM()
@@ -317,9 +322,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void examSparsity() throws DMLRuntimeException
 	{
 		double sp = ((double)nonZeros/rlen)/clen;
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
 		if(sparse)
 		{
-			if(sp>SPARCITY_TURN_POINT) {
+			if(sp>SPARCITY_TURN_POINT || clen==1) {
 				//System.out.println("Calling sparseToDense(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				sparseToDense();
 			}
@@ -496,6 +503,57 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		return map;
 	}
+	
+	public static class IJV
+	{
+		int i=-1;
+		int j=-1;
+		double v=0;
+		public IJV(int i, int j, double v)
+		{
+			set(i, j, v);
+		}
+		public void set(int i, int j, double v)
+		{
+			this.i=i;
+			this.j=j;
+			this.v=v;
+		}
+	}
+	
+	public static class SparseCellIterator implements Iterator<IJV>
+	{
+		private int rlen;
+		private int clen;
+		protected SparseRow[] sparseRows=null;
+		
+		public SparseCellIterator(int nrows, int ncols, SparseRow[] mtx)
+		{
+			rlen=nrows;
+			clen=ncols;
+			sparseRows=mtx;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public IJV next() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void remove() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
 	
 	public int getNonZeros()
 	{
@@ -1686,7 +1744,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private boolean checkSparcityOnSlide(int selectRlen, int selectClen, int finalRlen, int finalClen)
 	{
-		return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(finalClen==1)
+			return false;
+		else
+			return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
 	}
 	
 	/**
@@ -1896,6 +1959,10 @@ public class MatrixBlockDSM extends MatrixValue{
 		if(estimatedSps< SPARCITY_TURN_POINT)
 			sps=true;
 		else sps=false;
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(clen==1)
+			sps=false;
 			
 		if(result==null)
 			result=new MatrixBlockDSM(rlen, clen, sps);
@@ -3712,6 +3779,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	public MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, double min, double max, long seed)
 	{
 		sparse = (sparsity < SPARCITY_TURN_POINT);
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(cols==1)
+			sparse=false;
 		this.reset(rows, cols, sparse);
 		
 		if ( min == 0.0 && max == 0.0 ) {
@@ -3771,6 +3842,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	public MatrixBlockDSM getNormalRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
 		sparse = (sparsity < SPARCITY_TURN_POINT);
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(cols==1)
+			sparse=false;
 		this.reset(rows, cols, sparse);
 
 		double val;

@@ -137,9 +137,9 @@ public class DataConverter
 
 		//System.out.println("DataConverter: read matrix from HDFS ("+dir+").");
 		
-		// TODO: fix memory problem, and remove forced dense afterwards
-		// force dense representation for 1D matrices (vectors)
-		if ( rlen == 1 || clen == 1 )
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if ( clen == 1 )
 			sparse = false;
 		
 		//prepare result matrix block

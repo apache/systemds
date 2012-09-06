@@ -339,7 +339,9 @@ public class MatrixObject extends Data {
 		Random random=new Random();
 		_data = new MatrixBlock();
 		
-		if(sparsity > MatrixBlock.SPARCITY_TURN_POINT)
+		//handle vectors specially
+		//if result is a column vector, use dense format, otherwise use the normal process to decide
+		if(sparsity > MatrixBlock.SPARCITY_TURN_POINT || cols==1)
 			_data.reset((int)rows, (int)cols, false);
 		else
 			_data.reset((int)rows, (int)cols, true);

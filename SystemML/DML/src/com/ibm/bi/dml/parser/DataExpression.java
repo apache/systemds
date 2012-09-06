@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -126,14 +127,6 @@ public class DataExpression extends Expression {
 			JSONObject configObject = null;	
 
 			// read the configuration file
-			boolean exists = false;
-			FileSystem fs = null;
-			try {
-				fs = FileSystem.get(new Configuration());
-			} catch (Exception e){
-				throw new LanguageException(this.printErrorLocation() + "could not read the configuration file. See stack trace for details" + e);
-			}
-			Path pt = null;
 			String filename = null;
 			
 			if (getVarParam(Statement.IO_FILENAME) instanceof ConstIdentifier){
@@ -167,26 +160,14 @@ public class DataExpression extends Expression {
 				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
 			
-			pt=new Path(filename);
-			try {
-				if (fs.exists(pt)){
-					exists = true;
-				}
-			} catch (Exception e){
-				exists = false;
-			}
-	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
-	        if (exists){
-	        		
-		        try {
-		        	BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
-		        	configObject = JSONObject.parse(br);
-		        } catch (Exception e){
-		        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString() + " " + e);
-		        }
-
+	
+			configObject = readMetadataFile(filename);
 		        
-				for (Object key : configObject.keySet()){
+		    		    
+	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
+	        if (configObject != null){
+	        		    
+	        	for (Object key : configObject.keySet()){
 					
 					if (!InputStatement.isValidParamName(key.toString(),true))
 						throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
@@ -208,7 +189,7 @@ public class DataExpression extends Expression {
 				}
 	        }
 	        else {
-	        	System.out.println("INFO: could not find metadata file: " + pt);
+	        	System.out.println("INFO: could not find metadata file: " + new Path(filename));
 	        }
 			
 	        
@@ -425,4 +406,58 @@ public class DataExpression extends Expression {
 		return result;
 	}
 
-}
+	
+	public JSONObject readMetadataFile(String filename) throws LanguageException {
+	
+		JSONObject retVal = null;
+		boolean exists = false;
+		FileSystem fs = null;
+		
+		try {
+			fs = FileSystem.get(new Configuration());
+		} catch (Exception e){
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file. See stack trace for details" + e);
+		}
+		
+		Path pt = new Path(filename);
+		try {
+			if (fs.exists(pt)){
+				exists = true;
+			}
+		} catch (Exception e){
+			exists = false;
+		}
+	
+		try {
+			// CASE: filename is a directory -- process as a directory
+			if (exists && fs.getFileStatus(pt).isDir()){
+			
+				// read directory contents
+				retVal = new JSONObject();
+				FileStatus[] stats = fs.listStatus(pt);
+				for(FileStatus stat : stats){
+					Path childPath = stat.getPath(); // gives directory name
+					if (childPath.getName().startsWith("part")){
+						BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(childPath)));
+						JSONObject childObj = JSONObject.parse(br);
+						
+						for (Object key : childObj.keySet()){
+							retVal.put(key, childObj.get(key));
+						}
+					}
+				} 
+			}
+			// CASE: filename points to a file
+			else if (exists){
+				BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+				retVal =  JSONObject.parse(br);
+			}
+			
+			return retVal;
+			
+		} catch (Exception e){
+        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString() + " " + e);
+        }
+	}
+	
+} // end class

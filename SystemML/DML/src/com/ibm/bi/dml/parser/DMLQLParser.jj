@@ -2046,116 +2046,6 @@ FunctionCallIdentifier FunctionCall():
 }
 
 
-/**
-// parsing rule for parameterized builtins  
-Expression ParameterizedBuiltInFunction():
-{
-	Expression.ParameterizedBuiltinFunctionOp bifop = null;
-	ParameterizedBuiltinFunctionExpression pbfe = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	Token tStart = null, tEnd = null;
-}
-{
-	(
-		tStart = <ID>
-		{			
-		}
-
-//	| <CDF				: "cumulativeProbability" >
-//	| <GROUPEDAGG		: "groupedAggregate" >
-		
-		//tStart = <CDF> { bifop = Expression.ParameterizedBuiltinFunctionOp.CDF;}
-		//|  tStart = <GROUPEDAGG> {}
- 	)
- 
- 	pbfe = readParameterizedBuiltInParameters()
- 	[LOOKAHEAD(2)<SEMICOLON >] 
-
- 	{
-		pbfe.setOpcode (bifop);
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = pbfe.getEndLine();
-		ecp = pbfe.getEndColumn();
-		pbfe.setAllPositions(blp, bcp, elp, ecp);
-		
-   		return pbfe;
- 	} 
-}
-
-HashMap<String,Expression> readParameterizedBuiltInParameters() :
-{
-	HashMap<String,Expression> retVal = new HashMap<String,Expression>();
-	Token t1 = null;
-	Expression t2 = null;
-	
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
-	tStart = <LEFTPAREN>
-	t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
-	(
-		< COMMA >
-		(
-			t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
-		)
-	)*
- 	tEnd = <RIGHTPAREN>
-	{
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		pbfe.setAllPositions(blp, bcp, elp, ecp);
-		
-		return pbfe;
-	}
-}
-***/
-
-/**
-// Process the comma separated parameter list of parameterized builtins
-// Allowed format: function( expression [, name=vexpr]* )
-//   WHERE vexpr is an expression that refers to the "value" for the parameter "name"
-ParameterizedBuiltinFunctionExpression readParameterizedBuiltInParameters() :
-{
-	ParameterizedBuiltinFunctionExpression pbfe = new ParameterizedBuiltinFunctionExpression();
-	Token t1 = null;
-	Expression t2 = null;
-	//String unnamed = "unnamed";
-	//int unnamedParamCount = 0;
-	IntIdentifier intid = null;
-	DoubleIdentifier doubleid = null;
-
-	Token tStart = null, tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
-	tStart = <LEFTPAREN>
-	t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
-	(
-		< COMMA >
-		(
-			t1 = <ID> <ASSIGN> t2 = Expression() {pbfe.addVarParam(t1.image, t2);}
-		)
-	)*
- 	tEnd = <RIGHTPAREN>
-	{
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		pbfe.setAllPositions(blp, bcp, elp, ecp);
-		
-		return pbfe;
-	}
-}
-***/
-
 InputStatement InputStatement() :
 {
 	DataIdentifier id = null;
@@ -2165,7 +2055,11 @@ InputStatement InputStatement() :
 	Token tEnd = null;
 }
 {
-	id = Identifier()
+	try {	  id = Identifier()
+	}
+
+
+	
 	{
 		if (id.getName().startsWith("$"))
 			throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");

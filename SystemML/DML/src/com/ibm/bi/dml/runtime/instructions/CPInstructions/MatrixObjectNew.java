@@ -222,7 +222,7 @@ public class MatrixObjectNew extends CacheableData
 		StringBuilder str = new StringBuilder();
 		str.append("MatrixObjectNew: ");
 		str.append(_hdfsFileName + ", ");
-		System.out.println(_hdfsFileName);
+		//System.out.println(_hdfsFileName);
 		if ( _metaData instanceof NumItemsByEachReducerMetaData ) {
 			str.append("NumItemsByEachReducerMetaData");
 		} 
@@ -457,17 +457,16 @@ public class MatrixObjectNew extends CacheableData
 	 * 
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
 	 * Out-Status: EMPTY.
-	 * 
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
 	public void clearData()  
-		throws CacheStatusException
+		throws CacheException
 	{
 		clearData(false);
 	}
 	
 	public synchronized void clearData( boolean delFileOnHDFS ) //TODO usage in variable cp instruction
-		throws CacheStatusException
+		throws CacheException
 	{
 		if( LDEBUG )
 			System.out.println("clear data "+_varName);
@@ -478,6 +477,27 @@ public class MatrixObjectNew extends CacheableData
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
 		
+		if ( !delFileOnHDFS ) {
+			// HDFS file should be retailed after clearData(), 
+			// therefore data must be exported if dirty flag is set
+			if ( isDirty() )
+				exportData();
+		}
+		else {
+			// delete file on HDFS
+			try {
+			String fpath = getFileName();
+				if ( fpath != null ) {
+					MapReduceTool.deleteFileIfExistOnHDFS( fpath );
+					//removeMetaData(); // delete in-memory metadata 
+					MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
+				}
+			} catch (IOException e) {
+				throw new CacheException(e);
+			}
+		}
+		
+		// clear the in-memory data
 		if (_data != null) //e.g., in case of evicted matrix
 		{
 			_data.clearEnvelope ();

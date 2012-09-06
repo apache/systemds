@@ -2707,30 +2707,6 @@ public class DMLTranslator {
 			} 
 			break;
 
-		case SPEARMAN:
-			if ( expr3 != null ) {
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.SPEARMAN, expr, expr2, expr3);
-			}
-			else {				
-				// example DML statement: s = spearman(A,B)
-				// here, weight is interpreted as 1.0
-				Hops weightHop = new LiteralOp(Double.toString(1.0), 1.0);
-				// set dimensions
-				weightHop.set_dim1(0);
-				weightHop.set_dim2(0);
-				weightHop.setNnz(-1);
-				weightHop.set_rows_in_block(0);
-				weightHop.set_cols_in_block(0);
-				
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.SPEARMAN, expr, expr2, weightHop);
-				/*
-				RandOp rand = new RandOp(target, 1.0, 1.0, 1.0, "uniform");
-				setIdentifierParams(rand, expr); // Rand lop should have same dimensions as the input hop
-				currBuiltinOp = new TertiaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.SPEARMAN, expr, expr2, rand);
-				*/
-			}
-			break;
-
 		case ROUND:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp1.ROUND, expr);
 			break;

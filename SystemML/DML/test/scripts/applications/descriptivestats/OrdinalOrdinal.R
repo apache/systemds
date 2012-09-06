@@ -11,5 +11,7 @@ B = readMM(paste(args[1], "B.mtx", sep=""))
 
 spearman = cor(A[,1],B[,1], method="spearman");
 
+#paste("R value", spearman);
+
 write(spearman, paste(args[2], "Spearman", sep=""));
 

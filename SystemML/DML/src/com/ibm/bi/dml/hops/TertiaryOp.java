@@ -369,83 +369,8 @@ public class TertiaryOp extends Hops {
 	
 					set_lops(reblock);
 				}
-			} else if (op == OpOp3.SPEARMAN) {
-				Group group1, group2, group3, group4;
-
-				group1 = group2 = group3 = group4 = null;
-
-				group1 = new Group(
-						getInput().get(0).constructLops(),
-						Group.OperationTypes.Sort, DataType.MATRIX,
-						get_valueType());
-				group1.getOutputParameters().setDimensions(
-						getInput().get(0).get_dim1(),
-						getInput().get(0).get_dim2(),
-						getInput().get(0).get_rows_in_block(),
-						getInput().get(0).get_cols_in_block(), 
-						getInput().get(0).getNnz());
-
-				group2 = new Group(
-						getInput().get(1).constructLops(),
-						Group.OperationTypes.Sort, DataType.MATRIX,
-						get_valueType());
-				group2.getOutputParameters().setDimensions(
-						getInput().get(1).get_dim1(),
-						getInput().get(1).get_dim2(),
-						getInput().get(1).get_rows_in_block(),
-						getInput().get(1).get_cols_in_block(), 
-						getInput().get(1).getNnz());
-
-				Tertiary tertiary = null;
-				if (getInput().get(2).get_dataType() == DataType.MATRIX) {
-					group3 = new Group(
-							getInput().get(2).constructLops(),
-							Group.OperationTypes.Sort, DataType.MATRIX,
-							get_valueType());
-					group3.getOutputParameters().setDimensions(
-							getInput().get(2).get_dim1(),
-							getInput().get(2).get_dim2(),
-							getInput().get(2).get_rows_in_block(),
-							getInput().get(2).get_cols_in_block(),
-							getInput().get(2).getNnz());
-
-					tertiary = new Tertiary(
-							group1, group2, group3,
-							Tertiary.OperationTypes.CTABLE_TRANSFORM,
-							DataType.MATRIX, get_valueType());
-				} else if (getInput().get(2).get_dataType() == DataType.SCALAR) {
-					tertiary = new Tertiary(
-							group1,
-							group2,
-							getInput().get(2).constructLops(),
-							Tertiary.OperationTypes.CTABLE_TRANSFORM_SCALAR_WEIGHT,
-							DataType.MATRIX, get_valueType());
-				}
-				tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-
-				group4 = new Group(
-						tertiary, Group.OperationTypes.Sort, get_dataType(),
-						get_valueType());
-				group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-
-				Aggregate agg1 = new Aggregate(
-						group4, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX,
-						get_valueType(), ExecType.MR);
-				agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-
-				// kahamSum is used for aggreagtion but inputs do not have
-				// correction values
-				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
-
-				UnaryCP unary1 = new UnaryCP(
-						agg1, UnaryCP.OperationTypes.SPEARMANHELPER,
-						get_dataType(), get_valueType());
-				unary1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-
-				set_lops(unary1);
-
-			} else {
+			} 
+			else {
 				throw new HopsException("Incorrect TertiaryOp (" + op
 						+ ") while constructing LOPs!");
 			}

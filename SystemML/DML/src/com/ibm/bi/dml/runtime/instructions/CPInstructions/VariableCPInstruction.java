@@ -17,7 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.CacheStatusException;
+import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -43,7 +43,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 */
 	
 	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemIQM, IQSize, SpearmanHelper, Write, Read, SetFileName
+		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
 	}
 	
 	VariableOperationCode opcode;
@@ -86,9 +86,6 @@ public class VariableCPInstruction extends CPInstruction {
 		else if ( str.equalsIgnoreCase("iqsize") ) 
 			return VariableOperationCode.IQSize;
 		
-		else if ( str.equalsIgnoreCase("spearmanhelper") ) 
-			return VariableOperationCode.SpearmanHelper;
-		
 		else if ( str.equalsIgnoreCase("write") ) 
 			return VariableOperationCode.Write;
 		
@@ -101,56 +98,7 @@ public class VariableCPInstruction extends CPInstruction {
 		else
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
-	
-/*	private static String toString ( VariableOperationCode code ) {
-		switch(code) {
-		case CreateVariable:
-			return "createvar";
 		
-		case AssignVariable:
-			return "assignvar";
-			
-		case RemoveVariable: 
-			return "rmvar";
-			
-		case RenameVariable:
-			return "mvvar";
-			
-		case RemoveVariableAndFile:
-			return "rmfilevar";
-			
-		case AssignVariableWithFirstValue:
-			return "assignvarwithfile";
-			
-		case ValuePick:
-			return "valuepick";
-		
-		case InMemValuePick:
-			return "inmem-valuepick";
-		
-		case InMemIQM:
-			return "inmem-iqm";
-		
-		case IQSize:
-			return "iqsize";
-			
-		case SpearmanHelper:
-			return "spearmanhelper";
-		
-		case Read:
-			return "read";
-		
-		case Write:
-			return "write";
-			
-		case SetFileName:
-			return "setfilename";
-		
-		default:
-			return null;
-		}
-	}
-*/	
 	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, int _arity, String istr )
 	{
 		super(null);
@@ -308,11 +256,6 @@ public class VariableCPInstruction extends CPInstruction {
 			out = new CPOperand(parts[2]);
 			break;
 			
-		case SpearmanHelper:
-			in1 = new CPOperand(parts[1]); // first operand is a filename => string value type 
-			out = new CPOperand(parts[2]); // output variable name
-			break;
-			
 		case Write:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
@@ -373,7 +316,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RemoveVariable:
 			//remove matrix object from cache
-			clearCachedMatrixObject(pb, input1);
+			clearCachedMatrixObject(pb, input1, true);
 			
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
@@ -388,34 +331,12 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case RemoveVariableAndFile:
-			//remove matrix object from cache
-			clearCachedMatrixObject( pb, input1 );
-			
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
-			if ( del == true ) {
-				//TODO MB: potentially move whole block into clearCachedMatrix
-				// delete the file on disk
+			//remove matrix object from cache
+			clearCachedMatrixObject( pb, input1, del );
 
-				try {
-					MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable( input1.get_name());
-					if( mo != null && mo.isCleanupEnabled() )
-					{
-						String fpath = mo.getFileName();
-						if ( fpath != null ) {
-							//System.out.println("VarCP: deleting "+fpath);
-							MapReduceTool.deleteFileIfExistOnHDFS( fpath );
-							// delete metadata associated with the file
-							pb.removeMetaData(input1.get_name());
-							MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
-						}
-					}
-				}
-				catch ( IOException e ) {
-					throw new DMLRuntimeException(e);
-				}
-			}
 			// remove the variable from the HashMap (_variables) in ProgramBlock.
 			pb.removeVariable( input1.get_name() );
 			break;
@@ -504,30 +425,6 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			break;
 			
-		case SpearmanHelper:
-			// get otherMetadata associated with the matrix
-			//MatrixObject mobj = pb.getMatrixVariable(input1.get_name());
-			MatrixObjectNew mobj = (MatrixObjectNew)pb.getVariable(input1.get_name());
-			String sh_fname = mobj.getFileName();
-			MetaData sh_md = mobj.getMetaData();
-			
-			InputInfo ii = ((MatrixFormatMetaData)sh_md).getInputInfo();
-			MatrixCharacteristics mc = ((MatrixFormatMetaData)sh_md).getMatrixCharacteristics();
-			
-			try {
-				double[][] ctable = MapReduceTool.readMatrixFromHDFS(sh_fname, ii, mc.numRows, mc.numColumns, mc.numRowsPerBlock, mc.numColumnsPerBlock);
-				
-				double sp = spearmanHelperFunction(ctable, (int)mc.numRows, (int)mc.numColumns);
-				
-				ScalarObject result = (ScalarObject) new DoubleObject(sp);
-				pb.setVariable(output.get_name(), result);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			break;
-		
 		case Read:
 			ScalarObject res = null;
 			try {
@@ -607,95 +504,21 @@ public class VariableCPInstruction extends CPInstruction {
 		default:
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}
-	}
-
-	/*
-	 * This is a helper function to compute Spearman correlation between two ordinal variables.
-	 * It takes the contingency table constructed between ordinal variables as the input.
-	 */
-	private double spearmanHelperFunction(double [][]ctable, int rows, int cols) {
-		
-		double [] rowSums = new double[rows];
-		double [] colSums = new double[cols];
-		double [] rowScores = new double[rows];
-		double [] colScores = new double[cols];
-		double totalWeight = 0.0;
-		
-		for ( int i=0; i < rows; i++ ) {
-			rowSums[i] = rowScores[i] = 0.0;
-		}
-		for ( int j=0; j < cols; j++ ) {
-			colSums[j] = colScores[j] = 0;
-		}
-		
-		for ( int i=0; i < rows; i++ ) {
-			for ( int j=0; j < cols; j++ ) {
-				rowSums[i] += ctable[i][j];
-				colSums[j] += ctable[i][j];
-				totalWeight += ctable[i][j]; 
-			}
-		}
-		
-		double prefix_sum=0.0;
-		for ( int i=0; i < rows; i++ ) {
-			rowScores[i] = prefix_sum + (rowSums[i]+1)/2;
-			prefix_sum += rowSums[i];
-		}
-		
-		prefix_sum=0.0;
-		for ( int j=0; j < cols; j++ ) {
-			colScores[j] = prefix_sum + (colSums[j]+1)/2;
-			prefix_sum += colSums[j];
-		}
-		
-		double Rx = 0.0, Ry = 0.0;
-		for ( int i=0; i < rows; i++ ) {
-			Rx += rowSums[i]*rowScores[i];
-		}
-		for ( int j=0; j < cols; j++ ) {
-			Ry += colSums[j]*colScores[j];
-		}
-		Rx = Rx/(double)totalWeight;
-		Ry = Ry/(double)totalWeight;
-		
-		double VRx=0.0, VRy=0.0;
-		for ( int i=0; i < rows; i++ ) {
-			VRx += rowSums[i] * ((rowScores[i]-Rx)*(rowScores[i]-Rx));
-		}
-		VRx = VRx/(double)(totalWeight-1);
-		
-		for ( int j=0; j < cols; j++ ) {
-			VRy += colSums[j] * ((colScores[j]-Ry)*(colScores[j]-Ry));
-		}
-		VRy = VRy/(double)(totalWeight-1);
-		
-		double CRxRy = 0.0;
-		for ( int i=0; i < rows; i++ ) {
-			for ( int j=0; j < cols; j++ ) {
-				CRxRy = ctable[i][j] * (rowScores[i]-Rx) * (colScores[j]-Ry);
-			}
-		}
-		CRxRy = CRxRy / (double)(totalWeight-1);
-		
-		double spearman = CRxRy/(Math.sqrt(VRx) * Math.sqrt(VRy));
-		
-		return spearman;
-	}
-	
+	}	
 
 	/**
 	 * 
 	 * @param pb
 	 * @param op
-	 * @throws CacheStatusException
+	 * @throws CacheException 
 	 */
-	public void clearCachedMatrixObject( ProgramBlock pb, CPOperand op ) 
-		throws CacheStatusException 
+	public void clearCachedMatrixObject( ProgramBlock pb, CPOperand op, boolean delFileOnHDFS ) 
+		throws CacheException 
 	{
 		String varName = op.get_name();
 		Data dat = pb.getVariable(varName);
 		if ( dat instanceof MatrixObjectNew )
-			((MatrixObjectNew)dat).clearData();			
+			((MatrixObjectNew)dat).clearData(delFileOnHDFS);
 	}
 	
 	

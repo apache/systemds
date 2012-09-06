@@ -112,7 +112,6 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "attachfiletovar"  , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "valuepick"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "iqsize"      , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "spearmanhelper", CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "read"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "write" 		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);

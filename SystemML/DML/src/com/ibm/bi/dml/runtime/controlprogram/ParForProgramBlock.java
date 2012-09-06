@@ -53,7 +53,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -700,10 +699,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * Cleanup result variables of parallel workers after result merge.
 	 * @param in 
 	 * @param out 
-	 * @throws CacheStatusException 
+	 * @throws CacheException 
 	 */
 	private void cleanWorkerResultVariables(MatrixObjectNew out, MatrixObjectNew[] in) 
-		throws CacheStatusException
+		throws CacheException
 	{
 		for( MatrixObjectNew tmp : in )
 		{

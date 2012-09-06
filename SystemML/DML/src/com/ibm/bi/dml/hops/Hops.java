@@ -683,7 +683,7 @@ abstract public class Hops {
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, SPEARMAN, CENTRALMOMENT, COVARIANCE, INVALID
+		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, INVALID 
 	};
 	public enum AggOp {
 		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX
@@ -928,7 +928,6 @@ abstract public class Hops {
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
 		HopsOpOp3String.put(OpOp3.INTERQUANTILE, "interquantile");
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
-		HopsOpOp3String.put(OpOp3.SPEARMAN, "spearman");
 		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "centraMoment");
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 	}

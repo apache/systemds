@@ -295,28 +295,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setValueType(ValueType.DOUBLE);
 			break;
 
-		case SPEARMAN:
-			if (_third != null) {
-			   checkNumParameters(3);
-			}
-			else {
-			   checkNumParameters(2);
-			}
-			checkMatrixParam(_first);
-			checkMatrixParam(_second);
-			checkMatchingDimensions(_first,_second);
-			if (_third != null) {
-				checkMatrixParam(_third);
-			    checkMatchingDimensions(_first, _third);
-			}
-
-			// the output is a scalar
-			output.setDimensions(0, 0);
-			output.setBlockDimensions(0, 0);
-			output.setDataType(DataType.SCALAR);
-			output.setValueType(ValueType.DOUBLE);
-			break;
-
 		case ROUND:
 			checkNumParameters(1);
 			checkMatrixParam(_first);
@@ -736,8 +714,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			bifop= Expression.BuiltinFunctionOp.IQM;
 		else if (functionName.equals("ctable"))
 			bifop = Expression.BuiltinFunctionOp.CTABLE;
-		else if (functionName.equals("spearman"))
-			bifop = Expression.BuiltinFunctionOp.SPEARMAN;
 		else if (functionName.equals("round"))
 			bifop = Expression.BuiltinFunctionOp.ROUND;
 		else if (functionName.equals("centralMoment"))

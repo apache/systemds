@@ -1058,7 +1058,7 @@ public class Dag<N extends Lops> {
 			inst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar"
 					+ Lops.OPERAND_DELIMITOR + label + Lops.VALUETYPE_PREFIX
 					+ Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR
-					+ "true" + Lops.VALUETYPE_PREFIX
+					+ "false" + Lops.VALUETYPE_PREFIX
 					+ Expression.ValueType.BOOLEAN));
 		}
 	}

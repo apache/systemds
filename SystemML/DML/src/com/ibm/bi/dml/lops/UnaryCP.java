@@ -14,7 +14,7 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class UnaryCP extends Lops {
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, NROW, NCOL, LENGTH, ROUND, SPEARMANHELPER, PRINT2, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -116,11 +116,6 @@ public class UnaryCP extends Lops {
 			break;
 		case LENGTH:
 			opString += "length";
-			vtype = ValueType.STRING;
-			break;
-
-		case SPEARMANHELPER:
-			opString += "spearmanhelper";
 			vtype = ValueType.STRING;
 			break;
 

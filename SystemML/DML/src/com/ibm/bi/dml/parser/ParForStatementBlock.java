@@ -745,7 +745,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		Collection<DataIdentifier> ret = new ArrayList<DataIdentifier>();
 		
-		if( e instanceof DataIdentifier && !(e instanceof FunctionCallIdentifier) )
+		if( e instanceof DataIdentifier && 
+			!(e instanceof FunctionCallIdentifier || e instanceof BuiltinFunctionExpression || e instanceof ParameterizedBuiltinFunctionExpression) )
 		{
 			ret.add( (DataIdentifier)e );
 		}

@@ -506,9 +506,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static class IJV
 	{
-		int i=-1;
-		int j=-1;
-		double v=0;
+		public int i=-1;
+		public int j=-1;
+		public double v=0;
+		public IJV()
+		{}
 		public IJV(int i, int j, double v)
 		{
 			set(i, j, v);
@@ -519,41 +521,82 @@ public class MatrixBlockDSM extends MatrixValue{
 			this.j=j;
 			this.v=v;
 		}
+		public String toString()
+		{
+			return "("+i+", "+j+"): "+v;
+		}
 	}
 	
 	public static class SparseCellIterator implements Iterator<IJV>
 	{
-		private int rlen;
-		private int clen;
-		protected SparseRow[] sparseRows=null;
+		private int rlen=0;
+		private SparseRow[] sparseRows=null;
+		private int curRow=-1;
+		private int curColIndex=-1;
+		private int[] colIndexes=null;
+		private double[] values=null;
+		private boolean nothingLeft=false;
+		private IJV retijv=new IJV();
 		
-		public SparseCellIterator(int nrows, int ncols, SparseRow[] mtx)
+		private void findNextNonZeroRow() {
+			while(curRow<Math.min(rlen, sparseRows.length) && (sparseRows[curRow]==null || sparseRows[curRow].size()==0))
+				curRow++;
+			if(curRow>=Math.min(rlen, sparseRows.length))
+				nothingLeft=true;
+			else
+			{
+				curColIndex=0;
+				colIndexes=sparseRows[curRow].getIndexContainer();
+				values=sparseRows[curRow].getValueContainer();
+			}
+		}
+		
+		public SparseCellIterator(int nrows, SparseRow[] mtx)
 		{
 			rlen=nrows;
-			clen=ncols;
 			sparseRows=mtx;
+			curRow=0;
+			
+			if(sparseRows==null)
+				nothingLeft=true;
+			else
+				findNextNonZeroRow();
 		}
 		
 		@Override
 		public boolean hasNext() {
-			// TODO Auto-generated method stub
-			return false;
+			if(nothingLeft)
+				return false;
+			else
+				return true;
 		}
 
 		@Override
 		public IJV next() {
-			// TODO Auto-generated method stub
-			return null;
+			retijv.set(curRow, colIndexes[curColIndex], values[curColIndex]);
+			curColIndex++;
+			if(curColIndex>=sparseRows[curRow].size())
+			{
+				curRow++;
+				findNextNonZeroRow();
+			}
+			return retijv;
 		}
 
 		@Override
 		public void remove() {
-			// TODO Auto-generated method stub
+			throw new RuntimeException("SparseCellIterator.remove should not be called!");
 			
 		}
 		
 	}
 	
+	public SparseCellIterator getSparseCellIterator()
+	{
+		if(!sparse)
+			throw new RuntimeException("getSparseCellInterator should not be called for dense format");
+		return new SparseCellIterator(rlen, sparseRows);
+	}
 	
 	public int getNonZeros()
 	{
@@ -4417,10 +4460,23 @@ public class MatrixBlockDSM extends MatrixValue{
 			System.out.println("----------------\n\n"+r);
 	}
 	
+	public static void testGetSparseCellInterator()
+	{
+		int rows=50;
+		int cols=10;
+		double sparsity=0.05;
+		MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
+		System.out.println(m);
+		SparseCellIterator iter=m.getSparseCellIterator();
+		while(iter.hasNext())
+			System.out.println(iter.next());
+	}
+	
 	public static void  main(String[] args) throws Exception
 	{
 		
-		testUnsafeSetNGet(10, 10);
+		testGetSparseCellInterator();
+		//testUnsafeSetNGet(10, 10);
 		
 	//	int rows=10, cols=10, runs=10;
 		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};

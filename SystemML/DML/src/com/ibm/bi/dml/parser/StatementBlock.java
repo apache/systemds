@@ -133,7 +133,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null)
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
@@ -158,7 +158,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null)
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
@@ -187,7 +187,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null)
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined");
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 			
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return true;
@@ -324,6 +324,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 					
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+				if (fblock == null)
+					throw new LanguageException(fcall.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
+				
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				String prefix = new Integer(fblock.hashCode()).toString() + "_";
 				
@@ -574,6 +577,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 					DataIdentifier target = targetList.get(j);
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
 					FunctionStatement fstmt = (FunctionStatement)_dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+					if (fstmt == null)
+						throw new LanguageException(fci.printErrorLocation() + " function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					
 					if (!(target instanceof IndexedIdentifier)){
 						target.setProperties(fstmt.getOutputParams().get(j));
 					}

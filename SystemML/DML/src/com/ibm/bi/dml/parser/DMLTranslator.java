@@ -78,6 +78,7 @@ public class DMLTranslator {
 			// for each function defined in the namespace
 			for (String fname :  dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+			
 				HashMap<String, ConstIdentifier> constVars = new HashMap<String, ConstIdentifier>();
 				VariableSet vs = new VariableSet();
 			
@@ -1729,6 +1730,9 @@ public class DMLTranslator {
 
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+					if (fstmt == null)
+						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					
 					StringBuilder inst = new StringBuilder();
 
 					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");

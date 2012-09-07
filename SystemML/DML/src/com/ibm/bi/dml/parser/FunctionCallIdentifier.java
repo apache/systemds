@@ -107,8 +107,7 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 		if (fblock == null){
-			String printedNamespace = (_namespace == null) ? "current" : _namespace;
-			throw new LanguageException(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + printedNamespace );
+			throw new LanguageException(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + _namespace );
 		}
 		// set opcode (whether internal or external function) -- based on whether FunctionStatement
 		// in FunctionStatementBlock is ExternalFunctionStatement or FunctionStatement

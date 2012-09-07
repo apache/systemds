@@ -56,6 +56,8 @@ public class RandOpTest {
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "1"
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "rows=" + NUM_ROWS
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "cols=" + NUM_COLS
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "rowsInBlock=" + NUM_ROWS_IN_BLOCK
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "colsInBlock=" + NUM_COLS_IN_BLOCK
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "min=" + MIN_VALUE
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "max=" + MAX_VALUE
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "sparsity=" + SPARSITY

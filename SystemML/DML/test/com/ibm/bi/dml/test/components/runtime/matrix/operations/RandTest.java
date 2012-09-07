@@ -33,6 +33,8 @@ public class RandTest {
         	instruction.append(Instruction.OPERAND_DELIM + 1);
         	instruction.append(Instruction.OPERAND_DELIM + "rows=10");
         	instruction.append(Instruction.OPERAND_DELIM + "cols=11");
+        	instruction.append(Instruction.OPERAND_DELIM + "rowsInBlock=2");
+        	instruction.append(Instruction.OPERAND_DELIM + "colsInBlock=2");
         	instruction.append(Instruction.OPERAND_DELIM + "min=0.0");
         	instruction.append(Instruction.OPERAND_DELIM + "max=1.0");
         	instruction.append(Instruction.OPERAND_DELIM + "sparsity=0.5");
@@ -40,9 +42,13 @@ public class RandTest {
         	instruction.append(Instruction.OPERAND_DELIM + "pdf=uniform");
         	instruction.append(Instruction.OPERAND_DELIM + "dir=scratch_space/_t0/");
         	RandInstruction instType = (RandInstruction)RandInstruction.parseInstruction(instruction.toString());
+        	
+        	
             //assertEquals(Rand.SupportedOperation.RAND, instType.operation);
             assertEquals(10, instType.rows);
             assertEquals(11, instType.cols);
+            assertEquals(2, instType.rowsInBlock);
+            assertEquals(2, instType.colsInBlock);
             assertEquals(0, instType.input);
             assertEquals(1, instType.output);
             assertEquals(0.0, instType.minValue, 0);

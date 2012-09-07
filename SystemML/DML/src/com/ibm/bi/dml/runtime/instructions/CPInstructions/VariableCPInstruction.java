@@ -316,7 +316,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RemoveVariable:
 			//remove matrix object from cache
-			clearCachedMatrixObject(pb, input1, true);
+			clearCachedMatrixObject(pb, pb.getVariable(input1.get_name()));
 			
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
@@ -334,8 +334,29 @@ public class VariableCPInstruction extends CPInstruction {
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
+			MatrixObjectNew m = (MatrixObjectNew) pb.getVariable(input1.get_name());
+			if ( !del ) {
+				// HDFS file should be retailed after clearData(), 
+				// therefore data must be exported if dirty flag is set
+				if ( m.isDirty() )
+					m.exportData();
+			}
+			else {
+				// delete file on HDFS
+				try {
+				String fpath = m.getFileName();
+					if ( fpath != null ) {
+						MapReduceTool.deleteFileIfExistOnHDFS( fpath );
+						//removeMetaData(); // delete in-memory metadata 
+						MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
+					}
+				} catch (IOException e) {
+					throw new CacheException(e);
+				}
+			}
+			
 			//remove matrix object from cache
-			clearCachedMatrixObject( pb, input1, del );
+			clearCachedMatrixObject( pb, m);
 
 			// remove the variable from the HashMap (_variables) in ProgramBlock.
 			pb.removeVariable( input1.get_name() );
@@ -512,13 +533,12 @@ public class VariableCPInstruction extends CPInstruction {
 	 * @param op
 	 * @throws CacheException 
 	 */
-	public void clearCachedMatrixObject( ProgramBlock pb, CPOperand op, boolean delFileOnHDFS ) 
+	public void clearCachedMatrixObject( ProgramBlock pb, Data d) 
 		throws CacheException 
 	{
-		String varName = op.get_name();
-		Data dat = pb.getVariable(varName);
-		if ( dat instanceof MatrixObjectNew )
-			((MatrixObjectNew)dat).clearData(delFileOnHDFS);
+		if ( d instanceof MatrixObjectNew ) {
+			((MatrixObjectNew)d).clearData();
+		}
 	}
 	
 	

@@ -459,13 +459,7 @@ public class MatrixObjectNew extends CacheableData
 	 * Out-Status: EMPTY.
 	 * @throws CacheException 
 	 */
-	public void clearData()  
-		throws CacheException
-	{
-		clearData(false);
-	}
-	
-	public synchronized void clearData( boolean delFileOnHDFS ) //TODO usage in variable cp instruction
+	public synchronized void clearData() 
 		throws CacheException
 	{
 		if( LDEBUG )
@@ -476,26 +470,6 @@ public class MatrixObjectNew extends CacheableData
 		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
-		
-		if ( !delFileOnHDFS ) {
-			// HDFS file should be retailed after clearData(), 
-			// therefore data must be exported if dirty flag is set
-			if ( isDirty() )
-				exportData();
-		}
-		else {
-			// delete file on HDFS
-			try {
-			String fpath = getFileName();
-				if ( fpath != null ) {
-					MapReduceTool.deleteFileIfExistOnHDFS( fpath );
-					//removeMetaData(); // delete in-memory metadata 
-					MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
-				}
-			} catch (IOException e) {
-				throw new CacheException(e);
-			}
-		}
 		
 		// clear the in-memory data
 		if (_data != null) //e.g., in case of evicted matrix

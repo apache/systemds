@@ -84,7 +84,14 @@ Input_recodeMap_PARAM      = \"$OUT_DIR/data.map.json\";
 inputFormat = Input_inputFormat_PARAM;
 
 // input data delimiter, for example "," for comma delimited files (CSV)
-inputDelimiter = Input_inputDelimiter_PARAM;
+inputDelimiter = if (Input_inputDelimiter_PARAM != "")
+(
+   Input_inputDelimiter_PARAM
+)
+else
+(
+   ","
+);
 
 // DFS Path + filename for delimited or JSON text input data file
 input = Input_input_PARAM;
@@ -106,13 +113,17 @@ setOptions( { conf: { "mapred.reduce.tasks.speculative.execution" : false } });
 setOptions( { conf: { "mapred.child.java.opts" : "-Xmx2000M" } });
 
 // pin metadata in memory
-metadataMem := if (ls(inputMetadata) == [])
+metadataMem := if (inputMetadata != "") (if (ls(inputMetadata) == [])
 (
    []
 )
 else
 (
    read(jsonText(inputMetadata))
+))
+else
+(
+  []
 );
 
 jsonLines = fn(location)

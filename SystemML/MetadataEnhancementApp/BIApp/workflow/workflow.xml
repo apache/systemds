@@ -8,9 +8,9 @@
             <script>jaql/run_MetadataEnhance.jaql</script>
             <eval>
 				Input_inputFormat_PARAM='${inputFormat}';
-				Input_inputDelimiter_PARAM='${inputDelimiter}';
+				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
 				Input_input_PARAM='${input}';
-				Input_inputMetadata_PARAM='${inputMetadata}';
+				Input_inputMetadata_PARAM='${wf:conf("inputMetadata")}';
 				Input_outputMetadata_PARAM='${outputMetadata}';
 				Input_recodeMap_PARAM='${recodeMap}';
     	    </eval>

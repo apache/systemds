@@ -16,6 +16,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -192,17 +193,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		lastblockrlens=new int[representativeMatrixes.size()];
 		lastblockclens=new int[representativeMatrixes.size()];
 		//calculate upper boundaries for key value pairs
-		if(valueClass.equals(MatrixCell.class))
-		{
-			for(int i=0; i<representativeMatrixes.size(); i++)
-			{
-				rbounds[i]=rlens[i];
-				cbounds[i]=clens[i];
-				lastblockrlens[i]=1;
-				lastblockclens[i]=1;
-			//	System.out.println("get bound for "+representativeMatrixes.get(i)+": "+rbounds[i]+", "+cbounds[i]);
-			}
-		}else
+		if(valueClass.equals(MatrixBlock.class))
 		{
 			for(int i=0; i<representativeMatrixes.size(); i++)
 			{
@@ -221,8 +212,18 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 				// DRB: the row indexes need to be fixed 
 				rbounds[i] = rlens[i];*/
 			}
+		}else
+		{
+			for(int i=0; i<representativeMatrixes.size(); i++)
+			{
+				rbounds[i]=rlens[i];
+				cbounds[i]=clens[i];
+				lastblockrlens[i]=1;
+				lastblockclens[i]=1;
+			//	System.out.println("get bound for "+representativeMatrixes.get(i)+": "+rbounds[i]+", "+cbounds[i]);
+			}
 		}
-		
+				
 		//collect unary instructions for each representative matrix
 		HashSet<Byte> set=new HashSet<Byte>();
 		for(int i=0; i<representativeMatrixes.size(); i++)

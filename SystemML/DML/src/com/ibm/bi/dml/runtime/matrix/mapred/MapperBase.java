@@ -46,6 +46,10 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	protected long[] rbounds=null;
 	protected long[] cbounds=null;
 	
+	//boundary block sizes
+	protected int[] lastblockrlens=null;
+	protected int[] lastblockclens=null;
+	
 	//rand instructions that need to be performed in mapper
 	protected Vector<RandInstruction> rand_instructions=new Vector<RandInstruction>();
 	
@@ -91,7 +95,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 				
 			//	System.out.println("after converter: "+indexes+" -- "+value);
 				
-				checkValidIndex(indexes, i);
+				checkValidity(indexes, value, i);
 				
 				//put the input in the cache
 				cachedValues.reset();
@@ -107,13 +111,22 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	protected abstract void specialOperationsForActualMap(int index,
 			OutputCollector<Writable, Writable> out, Reporter reporter)throws IOException;
 
-	protected void checkValidIndex(MatrixIndexes indexes, int rep) throws IOException
+	protected void checkValidity(MatrixIndexes indexes, MatrixValue value, int rep) throws IOException
 	{
 		if(indexes.getRowIndex()<=0 || indexes.getColumnIndex()<=0 
 		|| indexes.getRowIndex()>rbounds[rep] || indexes.getColumnIndex()>cbounds[rep]){
 			
-			//System.out.println("key: "+indexes+" is out of range: [1, "+rbounds[rep]+"] and [1, "+cbounds[rep]+"]!");
 			throw new IOException("key: "+indexes+" is out of range: [1, "+rbounds[rep]+"] and [1, "+cbounds[rep]+"]!");
+		}
+		
+		if(indexes.getRowIndex()==rbounds[rep] && value.getNumRows()>lastblockrlens[rep])
+		{
+			throw new IOException("boundary block with "+value.getNumRows()+" rows exceeds the size "+lastblockrlens[rep]);
+		}
+		
+		if(indexes.getColumnIndex()==cbounds[rep] && value.getNumColumns()>lastblockclens[rep])
+		{
+			throw new IOException("boundary block with "+value.getNumColumns()+" columns exceeds the size "+lastblockclens[rep]);
 		}
 	}
 	public void configure(JobConf job)
@@ -175,6 +188,9 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		
 		rbounds=new long[representativeMatrixes.size()];
 		cbounds=new long[representativeMatrixes.size()];
+		
+		lastblockrlens=new int[representativeMatrixes.size()];
+		lastblockclens=new int[representativeMatrixes.size()];
 		//calculate upper boundaries for key value pairs
 		if(valueClass.equals(MatrixCell.class))
 		{
@@ -182,6 +198,8 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			{
 				rbounds[i]=rlens[i];
 				cbounds[i]=clens[i];
+				lastblockrlens[i]=1;
+				lastblockclens[i]=1;
 			//	System.out.println("get bound for "+representativeMatrixes.get(i)+": "+rbounds[i]+", "+cbounds[i]);
 			}
 		}else
@@ -191,8 +209,17 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 				rbounds[i]=(long)Math.ceil((double)rlens[i]/(double)brlens[i]);
 				cbounds[i]=(long)Math.ceil((double)clens[i]/(double)bclens[i]);
 	
+				lastblockrlens[i]=(int) (rlens[i]%brlens[i]);
+				lastblockclens[i]=(int) (clens[i]%bclens[i]);
+				if(lastblockrlens[i]==0)
+					lastblockrlens[i]=brlens[i];
+				if(lastblockclens[i]==0)
+					lastblockclens[i]=bclens[i];
+				
+				/*
+				 * what is this for????
 				// DRB: the row indexes need to be fixed 
-				rbounds[i] = rlens[i];
+				rbounds[i] = rlens[i];*/
 			}
 		}
 		

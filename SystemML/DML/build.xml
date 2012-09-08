@@ -153,7 +153,6 @@
 			<exclude name="dml/runtime/test/**" />
 			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
-			<zipfileset includes="**/*.class" src="${hadoop.local.path}/lib/commons-math-2.2.jar"/> <!-- This will be removed once we use BI 2.0 cluster --> 
 			<!-- TZ: To include any other jar, we need code scan and legal approval -->
 			<manifest>
 				<attribute name="Class-Path" value="./" />

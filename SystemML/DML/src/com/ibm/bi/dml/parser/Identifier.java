@@ -53,14 +53,7 @@ public abstract class Identifier extends Expression{
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
-		
-		_beginLine 	 = i.getBeginLine();
-		_beginColumn = i.getBeginColumn();
-		_endLine 	 = i.getEndLine();
-		_endColumn 	 = i.getEndColumn();
-		
-		
-		
+			
 	}
 	
 	public void setDimensionValueProperties(Identifier i){

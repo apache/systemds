@@ -151,13 +151,21 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		changeTmpOutput( _runID );
 		
 		// export input variables to HDFS (see RunMRJobs)
-		ArrayList<DataIdentifier> inputParams = getInputParams();
-		for(DataIdentifier di : inputParams ) {			
-			Data d = getVariable(di.getName());
-			if ( d.getDataType() == DataType.MATRIX ) {
-				MatrixObjectNew inputObj = (MatrixObjectNew) d;
-				inputObj.exportData();
+		ArrayList<DataIdentifier> inputParams = null;
+		
+		try {
+			inputParams = getInputParams();
+			for(DataIdentifier di : inputParams ) {			
+				Data d = getVariable(di.getName());
+				if ( d.getDataType() == DataType.MATRIX ) {
+					MatrixObjectNew inputObj = (MatrixObjectNew) d;
+					inputObj.exportData();
+				}
 			}
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error exporting input variables to HDFS");
 		}
 		
 		// convert block to cell
@@ -169,7 +177,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				this.execute(tempInst,ec);
 			} catch (Exception e) {
 				e.printStackTrace();
-				throw new PackageRuntimeException("Error executing "
+				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error executing "
 						+ tempInst.toString());
 			}
 		}
@@ -185,7 +193,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 							this._prog.getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
 
-					throw new PackageRuntimeException(
+					throw new PackageRuntimeException(this.printBlockErrorLocation() + 
 							"Failed to execute instruction "
 									+ _inst.get(i).toString());
 				}
@@ -202,7 +210,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				this.execute(tempInst, ec);
 			} catch (Exception e) {
 				e.printStackTrace();
-				throw new PackageRuntimeException("Failed to execute instruction "
+				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Failed to execute instruction "
 						+ cell2BlockInst.toString());
 			}
 		}

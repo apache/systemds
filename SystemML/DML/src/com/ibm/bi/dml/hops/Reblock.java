@@ -83,12 +83,14 @@ public class Reblock extends Hops {
 					reblock.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 		
+					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					set_lops(reblock);
 				}
 				else 
-					throw new HopsException("Invalid ExecType (" + et + ") for Reblock.");
+					throw new HopsException(this.printErrorLocation() + "In Reblock Hop, Invalid ExecType (" + et + ") for Reblock. \n");
 			} catch ( Exception e ) {
-				throw new HopsException(e);
+				throw new HopsException(this.printErrorLocation() + "In Reblock Hop, error constructing Lops -- \n" + e);
 			}
 		}
 		return get_lops();
@@ -112,7 +114,7 @@ public class Reblock extends Hops {
 	@Override
 	public SQLLops constructSQLLOPs() throws HopsException {
 		if(this.getInput().size() != 1)
-			throw new HopsException("Reblock needs one input");
+			throw new HopsException(this.printErrorLocation() + "Reblock needs one input");
 		
 		GENERATES flag = determineGeneratesFlag();
 		
@@ -137,10 +139,10 @@ public class Reblock extends Hops {
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			throw new HopsException("REBLOCKing is an invalid operation when execution mode = SINGLE_NODE");
+			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
 		
 		if( _etype != null & _etype != ExecType.MR ) 			
-			throw new HopsException("REBLOCKing is an invalid operation when execution mode = SINGLE_NODE");
+			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
 		
 		// Reblock operation always gets executed in MR. 
 		// It may not be meaningful to perform it in CP.

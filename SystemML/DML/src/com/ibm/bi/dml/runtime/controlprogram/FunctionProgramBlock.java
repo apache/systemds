@@ -39,6 +39,7 @@ public class FunctionProgramBlock extends ProgramBlock {
 		_inputParams = new ArrayList<DataIdentifier>();
 		for (DataIdentifier id : inputParams){
 			_inputParams.add(new DataIdentifier(id));
+			
 		}
 		_outputParams = new ArrayList<DataIdentifier>();
 		for (DataIdentifier id : outputParams){

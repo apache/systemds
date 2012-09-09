@@ -105,7 +105,7 @@ public class GroupedAggregate extends Lops {
 		inst += "groupedagg";
 		
 		if ( _inputParams.get("target") == null || _inputParams.get("groups") == null || _inputParams.get("fn") == null ) 
-			throw new LopsException("Invalid parameters to groupedAggregate -- \"target\", \"groups\", \"fn\" must be provided");
+			throw new LopsException(this.printErrorLocation() + "Invalid parameters to groupedAggregate -- \"target\", \"groups\", \"fn\" must be provided");
 		
 		String targetVar = _inputParams.get("target").getOutputParameters().getLabel();
 		String groupsVar = _inputParams.get("groups").getOutputParameters().getLabel();

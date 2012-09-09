@@ -57,8 +57,8 @@ public abstract class Statement {
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for statements
 	///////////////////////////////////////////////////////////////////////////
-	protected static int _beginLine, _beginColumn;
-	protected static int _endLine,	 _endColumn;
+	public int _beginLine = 0, _beginColumn = 0;
+	public int _endLine = 0,	 _endColumn = 0;
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }

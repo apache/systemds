@@ -124,16 +124,16 @@ public class PickByCount extends Lops {
 			//opString = "rangepick";
 			opString = (inMemoryInput ? "inmem-rangepick" : "rangepick");
 			if ( this.getInputs().get(1).get_dataType() != DataType.SCALAR  )
-				throw new LopsException("Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
+				throw new LopsException(this.printErrorLocation() + "In PickByCount Lop, Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
 		}
 		else if ( operation == OperationTypes.IQM ) {
 			if ( !inMemoryInput ) {
-				throw new LopsException("Pick.IQM in can only execute in Control Program on in-memory matrices.");
+				throw new LopsException(this.printErrorLocation() + "Pick.IQM in can only execute in Control Program on in-memory matrices.");
 			}
 			opString = "inmem-iqm";
 		}
 		else
-			throw new LopsException("Invalid operation specified for PickByCount: " + operation);
+			throw new LopsException(this.printErrorLocation() + "Invalid operation specified for PickByCount: " + operation);
 		
 		inst += opString + OPERAND_DELIMITOR
 					+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR

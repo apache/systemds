@@ -45,6 +45,7 @@ public class CrossvalOp extends Hops {
 		if(get_lops() == null) {
 			Lops pLop = getInput().get(0).constructLops() ;
 			CrossvalLop cvlop = new CrossvalLop(pLop, _params) ;
+			cvlop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(cvlop) ;
 		}
 		return get_lops() ;

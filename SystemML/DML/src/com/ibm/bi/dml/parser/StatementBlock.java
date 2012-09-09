@@ -58,6 +58,15 @@ public class StatementBlock extends LiveVariableAnalysis{
 	
 	public void addStatement(Statement s){
 		_statements.add(s);
+		
+		if (_statements.size() == 1){
+			this._beginLine 	= s.getBeginLine(); 
+			this._beginColumn 	= s.getBeginColumn();
+		}
+		
+		this._endLine 		= s.getEndLine();
+		this._endColumn		= s.getEndColumn();
+		
 	}
 	
 	/**
@@ -65,12 +74,28 @@ public class StatementBlock extends LiveVariableAnalysis{
 	 */
 	public void replaceStatement(int index, Statement passedStmt){
 		this._statements.set(index, passedStmt);
+		
+		if (index == 0){
+			this._beginLine 	= passedStmt.getBeginLine(); 
+			this._beginColumn 	= passedStmt.getBeginColumn();
+		}
+		
+		else if (index == this._statements.size() -1){
+			this._endLine 		= passedStmt.getEndLine();
+			this._endColumn		= passedStmt.getEndColumn();	
+		}
 	}
 	
 	public void addStatementBlock(StatementBlock s){
 		for (int i = 0; i < s.getNumStatements(); i++){
 			_statements.add(s.getStatement(i));
 		}
+		
+		this._beginLine 	= _statements.get(0).getBeginLine(); 
+		this._beginColumn 	= _statements.get(0).getBeginColumn();
+		
+		this._endLine 		= _statements.get(_statements.size() - 1).getEndLine();
+		this._endColumn		= _statements.get(_statements.size() - 1).getEndColumn();
 	}
 	
 	public int getNumStatements(){
@@ -537,7 +562,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					//	(a) a matrix value of same size as LHS
 					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
 					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
-					
+							
 					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
 						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
 										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
@@ -769,6 +794,41 @@ public class StatementBlock extends LiveVariableAnalysis{
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		return liveInReturn;
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+	// store position information for statement blocks
+	///////////////////////////////////////////////////////////////////////////
+	public int _beginLine = 0, _beginColumn = 0;
+	public int _endLine = 0, _endColumn = 0;
+	
+	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
+	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	
+	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+		_beginLine	 = blp; 
+		_beginColumn = bcp; 
+		_endLine 	 = elp;
+		_endColumn 	 = ecp;
+	}
+
+	public int getBeginLine()	{ return _beginLine;   }
+	public int getBeginColumn() { return _beginColumn; }
+	public int getEndLine() 	{ return _endLine;   }
+	public int getEndColumn()	{ return _endColumn; }
+	
+	public String printErrorLocation(){
+		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
+	public String printWarningLocation(){
+		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
 }  // end class

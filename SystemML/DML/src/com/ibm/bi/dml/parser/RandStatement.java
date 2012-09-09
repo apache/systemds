@@ -73,7 +73,6 @@ public class RandStatement extends Statement
 				found = true;
 		}
 		if (!found)
-			// TODO: DRB FIX THIS
 			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
@@ -84,7 +83,6 @@ public class RandStatement extends Statement
 		_exprParams.put(paramName,paramValue);
 		
 	}
-	
 	
 	// performs basic constant propagation by replacing DataIdentifier with ConstIdentifier 
 	// perform "best-effort" validation of exprParams.  If exprParam is a ConstIdentifier expression
@@ -289,4 +287,26 @@ public class RandStatement extends Statement
         sb.append(" );");
         return sb.toString();
     }
+
+    @Override
+    public void setAllPositions(int blp, int bcp, int elp, int ecp){
+		_beginLine	 = blp; 
+		_beginColumn = bcp; 
+		_endLine 	 = elp;
+		_endColumn 	 = ecp;
+		
+		for (String key : _exprParams.keySet()){
+			Expression expr = _exprParams.get(key);
+			if (expr.getBeginLine() == 0)
+				expr._beginLine = _beginLine;
+			if (expr.getBeginColumn() == 0)
+				expr._beginColumn = _beginColumn;
+			if (expr.getEndLine() == 0)
+				expr._endLine = _endLine;
+			if (expr.getEndColumn() == 0)
+				expr._endColumn = _endColumn;
+			_exprParams.put(key, expr);
+		}
+	}
+
 }

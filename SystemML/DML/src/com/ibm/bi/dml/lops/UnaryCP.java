@@ -120,7 +120,7 @@ public class UnaryCP extends Lops {
 			break;
 
 		default:
-			throw new LopsException(
+			throw new LopsException(this.printErrorLocation() + 
 					"Instruction not defined for UnaryScalar opration: "
 							+ operation);
 		}

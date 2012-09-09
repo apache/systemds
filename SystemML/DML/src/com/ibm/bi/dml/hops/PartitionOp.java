@@ -48,6 +48,7 @@ public class PartitionOp extends Hops {
 					getInput().get(0).get_rows_in_block(), 
 					getInput().get(0).get_cols_in_block(),
 					getInput().get(0).getNnz()) ;
+			pLop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(pLop) ;
 		}
 		return get_lops() ;

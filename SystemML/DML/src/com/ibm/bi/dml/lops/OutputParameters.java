@@ -56,7 +56,7 @@ public class OutputParameters {
 			blocked_representation = true;
 		}
 		else {
-			throw new HopsException("Invalid values for blocking dimensions: [" + num_rows_in_block + "," + num_cols_in_block +"].");
+			throw new HopsException("In OutputParameters Lop, Invalid values for blocking dimensions: [" + num_rows_in_block + "," + num_cols_in_block +"].");
 		}
 	}
 

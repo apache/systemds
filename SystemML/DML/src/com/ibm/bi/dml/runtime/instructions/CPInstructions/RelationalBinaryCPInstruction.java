@@ -50,7 +50,7 @@ public class RelationalBinaryCPInstruction extends BinaryCPInstruction {
 										  + in2.get_name()
 										  + " must produce a matrix, which "
 										  + out.get_name()
-										  + "is not");
+										  + " is not");
 		
 		Operator operator = 
 			(dt1 != dt2) ?

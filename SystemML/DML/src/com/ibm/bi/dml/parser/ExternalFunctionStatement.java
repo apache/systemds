@@ -141,13 +141,13 @@ public class ExternalFunctionStatement extends FunctionStatement{
 	
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesRead from ExternalFunctionStatement ");
+		System.out.println(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
 		return new VariableSet();
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " --  should not call variablesRead from ExternalFunctionStatement ");
+		System.out.println(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
 		return new VariableSet();
 	}
 }

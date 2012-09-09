@@ -74,12 +74,13 @@ public class LiteralOp extends Hops {
 						get_valueType(), false);
 				break;
 			default:
-				throw new HopsException(
-						"unexpected value type constructing lops.\n");
+				throw new HopsException(this.printErrorLocation() + 
+						"unexpected value type constructing lops for LiteralOp.\n");
 
 			}
 
 			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(l);
 		}
 
@@ -103,7 +104,7 @@ public class LiteralOp extends Hops {
 				System.out.println("  Value: " + value_long + "\n");
 				break;
 			default:
-				throw new HopsException(
+				throw new HopsException(this.printErrorLocation() +
 						"unexpected value type printing LiteralOp.\n");
 			}
 

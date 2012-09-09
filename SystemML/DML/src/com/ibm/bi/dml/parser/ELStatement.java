@@ -29,7 +29,7 @@ public class ELStatement extends Statement {
 	}
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("ERROR: line 0, column 0 -- " + "should not call rewriteStatement for ELStatement");
+		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for ELStatement");
 	}
 	
 	@Override

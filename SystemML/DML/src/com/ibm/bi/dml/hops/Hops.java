@@ -166,6 +166,7 @@ abstract public class Hops {
 				
 					// insert reblock after the hop
 					Reblock r = new Reblock(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
+					r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					r.set_visited(Hops.VISIT_STATUS.DONE);
 				
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
@@ -190,6 +191,7 @@ abstract public class Hops {
 					} else {
 
 						Reblock r = new Reblock(this);
+						r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						r.set_visited(Hops.VISIT_STATUS.DONE);
 					}
 
@@ -207,7 +209,7 @@ abstract public class Hops {
 					}
 
 				} else {
-					throw new HopsException("unexpected non-scalar Data HOP in reblock.\n");
+					throw new HopsException(this.printErrorLocation() + "unexpected non-scalar Data HOP in reblock.\n");
 				}
 			}
 		} else {
@@ -415,7 +417,7 @@ abstract public class Hops {
 		for ( int i=0; i < operators.size(); i++ ) {
 			op = operators.get(i);
 			if ( op.getInput().size() != 2 || (i != 0 && op.getParent().size() > 1 ) ) {
-				throw new HopsException("Unexpected error while applying optimization on matrix-mult chain.");
+				throw new HopsException(this.printErrorLocation() + "Unexpected error while applying optimization on matrix-mult chain. \n");
 			}
 			input1 = op.getInput().get(0);
 			input2 = op.getInput().get(1);
@@ -452,20 +454,20 @@ abstract public class Hops {
 			if (i == 0) {
 				dimArray[i] = chain.get(i).get_dim1();
 				if (dimArray[i] <= 0) {
-					throw new HopsException(
+					throw new HopsException(this.printErrorLocation() + 
 							"Hops::optimizeMMChain() : Invalid Matrix Dimension: "
 									+ dimArray[i]);
 				}
 			} else {
 				if (chain.get(i - 1).get_dim2() != chain.get(i)
 						.get_dim1()) {
-					throw new HopsException(
+					throw new HopsException(this.printErrorLocation() +
 							"Hops::optimizeMMChain() : Matrix Dimension Mismatch");
 				}
 			}
 			dimArray[i + 1] = chain.get(i).get_dim2();
 			if (dimArray[i + 1] <= 0) {
-				throw new HopsException(
+				throw new HopsException(this.printErrorLocation() + 
 						"Hops::optimizeMMChain() : Invalid Matrix Dimension: "
 								+ dimArray[i + 1]);
 			}
@@ -547,7 +549,7 @@ abstract public class Hops {
 			} else {
 				tempList = mmChain.get(i).getInput();
 				if (tempList.size() != 2) {
-					throw new HopsException("Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
+					throw new HopsException(this.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
 				}
 
 				// add current operator to mmOperators, and its input nodes to mmChain
@@ -593,6 +595,7 @@ abstract public class Hops {
 	public void printMe() throws HopsException {
 		System.out.print(_kind + " " + getHopID() + "\n");
 		System.out.print("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
+		System.out.print(" Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
 		System.out.print("  Parent: ");
 		for (Hops h : getParent()) {
 			System.out.print(h.hashCode() + "; ");
@@ -1038,4 +1041,36 @@ abstract public class Hops {
 			gen = GENERATES.DML;
 		return gen;
 	}
-}
+	
+	///////////////////////////////////////////////////////////////////////////
+	// store position information for Hops
+	///////////////////////////////////////////////////////////////////////////
+	public int _beginLine, _beginColumn;
+	public int _endLine, _endColumn;
+	
+	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
+	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	
+	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+		_beginLine	 = blp; 
+		_beginColumn = bcp; 
+		_endLine 	 = elp;
+		_endColumn 	 = ecp;
+	}
+
+	public int getBeginLine()	{ return _beginLine;   }
+	public int getBeginColumn() { return _beginColumn; }
+	public int getEndLine() 	{ return _endLine;   }
+	public int getEndColumn()	{ return _endColumn; }
+	
+	public String printErrorLocation(){
+		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	public String printWarningLocation(){
+		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+} // end class

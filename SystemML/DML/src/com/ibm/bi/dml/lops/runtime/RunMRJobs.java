@@ -67,10 +67,10 @@ public class RunMRJobs {
 			for ( int i=0; i < inputMatrices.length; i++ ) {
 				try {
 					if (MapReduceTool.isHDFSFileEmpty(inputMatrices[i].getFileName())) {
-						throw new DMLRuntimeException("Can not operate on an empty file: " + inputMatrices[i].getFileName());
+						throw new DMLRuntimeException(pb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
 					}
 				} catch (IOException e) {
-					throw new DMLRuntimeException(e);
+					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " + e);
 				}
 			}
 		}
@@ -239,7 +239,7 @@ public class RunMRJobs {
 			
 		} // end of try block
 		catch (Exception e) {
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException(pb.printBlockErrorLocation() + e);
 		}
 
 		if (ret.checkReturnStatus()) {

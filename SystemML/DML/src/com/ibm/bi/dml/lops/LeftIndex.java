@@ -48,7 +48,7 @@ public class LeftIndex extends Lops {
 		boolean definesMRJob = false;
 		
 		if ( et == ExecType.MR ) {
-			throw new LopsException("LeftIndexing lop is undefined for MR runtime");
+			throw new LopsException(this.printErrorLocation() + "LeftIndexing lop is undefined for MR runtime");
 		} 
 		else {
 			lps.addCompatibility(JobType.INVALID);

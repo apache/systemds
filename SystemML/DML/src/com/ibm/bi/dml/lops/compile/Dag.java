@@ -351,7 +351,7 @@ public class Dag<N extends Lops> {
 						}
 					}
 					else {
-						throw new LopsException("No matching JobType is found for a the lop type: " + node.getType());
+						throw new LopsException(node.printErrorLocation() + "No matching JobType is found for a the lop type: " + node.getType() + " \n");
 					}
 				}
 				
@@ -371,7 +371,7 @@ public class Dag<N extends Lops> {
 						addChildren(node, arr.get(gmr_index), execNodes);
 						int to = arr.get(gmr_index).size();
 						if (!isCompatible(arr.get(gmr_index),JobType.GMR, from, to)) {
-							throw new LopsException("Error during compatibility check");
+							throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
 						}
 					}
 				}
@@ -383,7 +383,7 @@ public class Dag<N extends Lops> {
 					int to = arr.get(index).size();
 					// check if all added nodes are compatible with current job
 					if (!isCompatible(arr.get(index), jt, from, to)) {
-						throw new LopsException(
+						throw new LopsException( 
 								"Unexpected error in addNodeByType.");
 					}
 				}
@@ -523,7 +523,7 @@ public class Dag<N extends Lops> {
 		else if (ret == MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT)
 			return true;
 		else
-			throw new RuntimeException("Should not happen.");
+			throw new RuntimeException("Should not happen. \n");
 	}
 	
 	
@@ -549,9 +549,9 @@ public class Dag<N extends Lops> {
 						String inst_string = n.getInstructions();
 						inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
 					} catch (DMLUnsupportedOperationException e) {
-						throw new LopsException(e);
+						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n" + e);
 					} catch (DMLRuntimeException e) {
-						throw new LopsException(e);
+						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n" + e);
 					}
 				}
 			}
@@ -947,7 +947,7 @@ public class Dag<N extends Lops> {
 			    if(DEBUG)
 			    {
 			      //System.err.println("Queued nodes should be 0");
-			      throw new LopsException("Queued nodes should not be 0 at this point");
+			      throw new LopsException("Queued nodes should not be 0 at this point \n");
 			    }
 			  }
 			  
@@ -1214,7 +1214,7 @@ public class Dag<N extends Lops> {
 								node.getOutputParameters().getLabel());
 					}
 					else {
-						throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in CP yet!");
+						throw new LopsException(node.printErrorLocation() + "Node with " + node.getInputs().size() + " inputs is not supported in CP yet! \n");
 					}
 				}
 				
@@ -1226,7 +1226,7 @@ public class Dag<N extends Lops> {
 							.parseSingleInstruction(inst_string));
 				} catch (Exception e) {
 					e.printStackTrace();
-					throw new LopsException("Problem generating simple inst - "
+					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
 							+ inst_string);
 				}
 
@@ -1895,7 +1895,7 @@ public class Dag<N extends Lops> {
 			return node.getOutputParameters().getFormat();
 		} else {
 			if (node.getInputs().size() > 1)
-				throw new LopsException("Should only have one child!");
+				throw new LopsException(node.printErrorLocation() + "Should only have one child! \n");
 			/*
 			 * Return the format of the child node (i.e., input lop) No need of
 			 * recursion here.. because 1) Reblock lop's input can either be
@@ -2059,7 +2059,7 @@ public class Dag<N extends Lops> {
 				try {
 					oparams.setDimensions(oparams.getNum_rows(), oparams.getNum_cols(), -1, -1, oparams.getNnz());
 				} catch(HopsException e) {
-					throw new LopsException(e);
+					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag -- \n " + e);
 				}
 			}
 		} else {

@@ -243,7 +243,7 @@ public class IfStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException{
 	
 		if (_hops != null && _hops.size() > 0){
-			throw new HopsException("error there should be no HOPs in IfStatementBlock");
+			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 		}
 			
 		return _hops;

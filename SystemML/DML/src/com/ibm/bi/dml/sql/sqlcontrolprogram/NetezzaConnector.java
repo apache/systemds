@@ -168,7 +168,7 @@ public class NetezzaConnector {
             	//TODO Check meta and change res to +/-Infinity or NaN accordingly
             }
             else
-            	throw new SQLException("No result set was returned");
+            	throw new SQLException("ERROR: No result set was returned");
             
         } finally {
             try {
@@ -196,7 +196,7 @@ public class NetezzaConnector {
             	res = rs.getBoolean(1);
             }
             else
-            	throw new SQLException("No result set was returned");
+            	throw new SQLException("ERROR: No result set was returned");
             
         }  finally {
             try {
@@ -225,7 +225,7 @@ public class NetezzaConnector {
             	res = rs.getInt(1);
             }
             else
-            	throw new SQLException("No result set was returned");
+            	throw new SQLException("ERROR: No result set was returned");
             
         } finally {
             try {
@@ -561,7 +561,7 @@ public class NetezzaConnector {
     private void checkConnected() throws SQLException
     {
     	if(!connected)
-    		throw new SQLException("There is no connection to the database");
+    		throw new SQLException("ERROR: There is no connection to the database");
     }
     
 	public String getServer() {

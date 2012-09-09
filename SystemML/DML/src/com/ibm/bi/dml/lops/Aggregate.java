@@ -108,7 +108,7 @@ public class Aggregate extends Lops
 		case KahanTrace: 
 			return "ak+"; 
 		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Aggregate operation: " + operation);
+			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Aggregate operation: " + operation);
 		}
 	}
 	

@@ -35,7 +35,7 @@ public class PartitionLop extends Lops {
 	@Override
 	public String getInstructions(int inputIndex, int outputIndex) throws LopsException 
 	{
-		throw new LopsException("Should never be invoked for partition lop");
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked for partition lop");
 
 	}
 
@@ -43,7 +43,7 @@ public class PartitionLop extends Lops {
 	public String getInstructions(int inputIndex1, int inputIndex2,
 			int outputIndex) throws LopsException 
 	{
-		throw new LopsException("Should never be invoked for partition lop");
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked for partition lop");
 	}
 
 	@Override

@@ -204,7 +204,6 @@ TOKEN :
 	// RESERVED KEYWORDS -- could be eliminated, may cause issue with lookahead
 	| <SEQ 		: "seq">  
 
-	
 	//|<NEXT  	: "next">
 	//|<BREAK  	: "break">
 
@@ -354,7 +353,7 @@ DMLProgram __inputInternal() :
 				sb = new StatementBlock();
 			}
 			sb.addStatement(current);
-
+			
 			// handle import statements
 			if (current instanceof ImportStatement) {
 
@@ -391,7 +390,7 @@ DMLProgram __inputInternal() :
 								// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
 								for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
 									if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)
-										throw new ParseException(importStmt.printErrorLocation() + " function " + fname + " already defined in namespace " + namespaceKey);
+										throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
 									else 
 	          							dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
 	        					}
@@ -433,7 +432,7 @@ DMLProgram __inputInternal() :
 				} // if (importStmt.verify(dmlPathSet))
     
     			else {
-     				throw new ParseException(importStmt.printErrorLocation() + "failed to import  " + importStmt.toString());
+     				throw new ParseException(importStmt.printErrorLocation() + "failed to import " + importStmt.toString());
     			}
 
     			// add import statement to DML program
@@ -489,8 +488,8 @@ PathStatement PathStatement():
 		// track position for start token tStart, end token t1
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;
-		elp = t1.beginLine;
-		ecp = t1.beginColumn;
+		elp = t1.endLine;
+		ecp = t1.endColumn;
 		pstmt.setAllPositions(blp, bcp, elp, ecp);
 
 		return pstmt;
@@ -511,7 +510,7 @@ ImportStatement ImportStatement() :
 	ArrayList<String> modulePathPieces = new ArrayList<String>();
 }
 {
-	tStart = <IMPORT> t1 = <ID> { int beginLine = t1.beginLine; int beginColumn = t1.beginColumn;} { modulePathPieces.add(t1.image);}
+	tStart = <IMPORT> t1 = <ID> { modulePathPieces.add(t1.image);}
 	(<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
  
 	[<LEFTPAREN>
@@ -523,8 +522,23 @@ ImportStatement ImportStatement() :
 
 	{ 
 		// track position for start / end token tStart
-		blp = elp = tStart.beginLine;
-		bcp = ecp = tStart.beginColumn;
+		blp = tStart.beginLine;
+		bcp = tStart.beginColumn;
+
+		if (t4 != null){			elp = t4.endLine;
+			ecp = t4.endColumn;
+		}
+		else if (t3 != null){			elp = t3.endLine;
+			ecp = t3.endColumn;
+		}
+		else if (t2 != null){
+			elp = t2.endLine;
+			ecp = t2.endColumn;
+		}
+		else {			elp = t1.endLine;
+			ecp = t1.endColumn;
+		}
+
 		importStmt.setAllPositions(blp, bcp, elp, ecp);
 
 		importStmt.setModulePathAndName(modulePathPieces);
@@ -611,17 +625,14 @@ FunctionStatement FunctionStatement() :
   		fstmt.mergeStatementBlocks(); 
  	}
 	tEnd = <RIGHTCURLYPAREN>
+	
 	{
 		fstmt._inputParams = functionInputs ;
 		fstmt._outputParams = functionOutputs ;
 		fstmt.setName(t.image);
 
 		// track position for start / end token tStart
-		blp = t.beginLine;
-		bcp = t.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		fstmt.setAllPositions(blp, bcp, elp, ecp);
+		fstmt.setAllPositions(t.beginLine, t.beginColumn, tEnd.beginLine, tEnd.beginColumn);
 
 		return fstmt;
 	}
@@ -760,9 +771,7 @@ Vector<DataIdentifier> ReadTypedArgList() :
        		params.add(d1);
        } catch (ParseException e) {
 			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " function parameter has unknown value type");
-       }
-         
-       
+       }
 	}
 
 	(
@@ -1710,7 +1719,6 @@ Expression PrimaryExpression() :
 {
 	( LOOKAHEAD(2) expr = IdentifierOrConstant()
   		| <LEFTPAREN> expr = Expression() <RIGHTPAREN>
-     //	| LOOKAHEAD(2) expr = ParameterizedBuiltInFunction()
    	)
 	{
 		// position info for expression already set
@@ -1840,8 +1848,8 @@ IntIdentifier IntConstant() :
  	{
  	  	blp = t.beginLine;
 		bcp = t.beginColumn;
-		elp = t.beginLine;
-		ecp = t.beginColumn;
+		elp = t.endLine;
+		ecp = t.endColumn;
 		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
@@ -1874,8 +1882,8 @@ DoubleIdentifier DoubleConstant() :
  	{ 
 		blp = t.beginLine;
 		bcp = t.beginColumn;
-		elp = t.beginLine;
-		ecp = t.beginColumn;
+		elp = t.endLine;
+		ecp = t.endColumn;
 		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
@@ -1901,8 +1909,8 @@ BooleanIdentifier BooleanConstant() :
  	{
  	  	blp = t.beginLine;
 		bcp = t.beginColumn;
-		elp = t.beginLine;
-		ecp = t.beginColumn;
+		elp = t.endLine;
+		ecp = t.endColumn;
 		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
@@ -1928,8 +1936,8 @@ StringIdentifier StringConstant() :
  	{ 
 		blp = t.beginLine;
 		bcp = t.beginColumn;
-		elp = t.beginLine;
-		ecp = t.beginColumn;
+		elp = t.endLine;
+		ecp = t.endColumn;
 		id.setAllPositions(blp, bcp, elp, ecp);
  		return id; 
  	}
@@ -1982,7 +1990,7 @@ DataIdentifier Identifier() :
 			}
 			
 			// set position information
-			iid.setAllPositions(blp, bcp, elp, ecp);
+			iid.setAllPositions(blp, bcp, exprListList);
 						
 		   	return iid;
 		} else{
@@ -2184,112 +2192,130 @@ RandStatement RandStatement() :
 
 ELStatement ELStatement() :
 {
-  Token t = null, tOn = null, tPartition = null, tTrain = null, tTest = null;
-  String eNameStr = null; 
-  CVStatement.AGG agg = null ;
+	Token t = null, tOn = null, tPartition = null, tTrain = null, tTest = null;
+	Token tAs_1 = null, tAs_2 = null, tAs_3 = null;
+	String eNameStr = null; 
+	CVStatement.AGG agg = null ;
 
-  HashMap<String,String> partitionParams = null;
+	HashMap<String,String> partitionParams = null;
+	ArrayList<String> dataList = new ArrayList<String>();
+	String trainFunctionName = null, testFunctionName = null ;
 
-  ArrayList<String> dataList = new ArrayList<String>();
-  String trainFunctionName = null, testFunctionName = null ;
-  
-  ArrayList<String> partitionOutputs = new ArrayList<String>(), trainFunctionParams = new ArrayList<String>(),
-     trainFunctionOutputs = new ArrayList<String>(), testFunctionParams = new ArrayList<String>(),
-     testFunctionOutputs = new ArrayList<String>(), errorAggFunctionParams = new ArrayList<String>(),
-     errorAggFunctionOutputs = new ArrayList<String>();
+  	ArrayList<String> partitionOutputs = new ArrayList<String>(), trainFunctionParams = new ArrayList<String>(),
+		trainFunctionOutputs = new ArrayList<String>(), testFunctionParams = new ArrayList<String>(),
+		testFunctionOutputs = new ArrayList<String>(), errorAggFunctionParams = new ArrayList<String>(),
+		errorAggFunctionOutputs = new ArrayList<String>();
 
 }
 {
- <BUILD_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
- tPartition = <ID> partitionParams = ReadGenericParamList() <AS> partitionOutputs = ReadList()
- tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  [<AS> trainFunctionOutputs = ReadList()]
- [LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   [<AS> testFunctionOutputs  = ReadList()]]
+	<BUILD_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+ 	tPartition = <ID> partitionParams = ReadGenericParamList() 												  tAs_1	= <ID> partitionOutputs = ReadList()
+	tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  			  tAs_2 = <ID> trainFunctionOutputs = ReadList()
+	[LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   tAs_3 = <ID> testFunctionOutputs  = ReadList()]
 
- {
+ 	{
+		// verify that "as" tokens have correct value
+		if (!"on".equals(tOn)) throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for build ensemble -- should be \"build ensemble <name> on (data list)\"");
+		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for build ensemble -- should be \"(partition params) as (partition outputs)\"");
+		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+		if (tAs_3 != null &&  !"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+	
+		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+				testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+				partitionOutputs, 
+				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
 
-   MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-       trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-       testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-       partitionOutputs, 
-       agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-    return new ELStatement(eNameStr, dataList, partitionParams, params) ;
- }
+		return new ELStatement(eNameStr, dataList, partitionParams, params) ;
+	}
 }
 
 
 ELUseStatement ELUseStatement() :
 {
-  Token t = null, aggfunc = null, tOn = null, tTest = null, tAgg = null;
-  
-  String eNameStr = null;
-  HashMap<String,String> partitionParams = null;
-  String trainFunctionName = null, testFunctionName = null ;
+	Token t = null, aggfunc = null, tOn = null, tTest = null, tAgg = null;
+	Token tAs_1 = null, tAs_2 = null;
+  	String eNameStr = null;
+ 	HashMap<String,String> partitionParams = null;
+  	String trainFunctionName = null, testFunctionName = null ;
 
-  ArrayList<String> dataList = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
+	ArrayList<String> dataList = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
     trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
     testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
     errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
  
 }
 {
- <USE_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
-    tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList() <AS> testFunctionOutputs  = ReadList()
- 	tAgg  = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() <AS> errorAggFunctionOutputs = ReadList()
+	<USE_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+    tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList() tAs_1 = <ID> testFunctionOutputs     = ReadList()
+ 	tAgg  = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() 						  tAs_2 = <ID> errorAggFunctionOutputs = ReadList()
 
- {
+	{
+		CVStatement.AGG agg = null ;
+		if("sum".equals(aggfunc.image))
+			agg = CVStatement.AGG.sum ;
+		else if("avg".equals(aggfunc.image))
+			agg = CVStatement.AGG.avg ;
 
-    CVStatement.AGG agg = null ;
-     if("sum".equals(aggfunc.image))
-     agg = CVStatement.AGG.sum ;
-   else if("avg".equals(aggfunc.image))
-     agg = CVStatement.AGG.avg ;
+		// verify that "as" tokens have correct value
+		if (!"on".equals(tOn))   throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for use ensemble -- should be \"use ensemble <name> on (data list)\"");
+		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for use ensemble -- should be \"(test params) as (test outputs)\"");
+		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for use ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+	
+		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+     	  		testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+       			partitionOutputs, 
+       			agg, errorAggFunctionParams, errorAggFunctionOutputs); 
 
-   MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-       trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-       testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-       partitionOutputs, 
-       agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-   return new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
- }
+		return new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
+ 	}
 
 }
 
 
 CVStatement CVStatement() :
 {
-  Token t;
+	Token t;
+	String trainFunctionName = null, testFunctionName = null ;
+	ArrayList<String> inputs = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
+	trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
+	testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
+	errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
 
-  String trainFunctionName = null, testFunctionName = null ;
+	CVStatement.AGG agg = null ;
+	HashMap<String,String> partitionParams ;
 
-  ArrayList<String> inputs = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
-   trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
-   testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
-   errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
-
-  CVStatement.AGG agg = null ;
-
-  HashMap<String,String> partitionParams ;
-
-  Token aggfunc = null,  tPartition = null, tAs_1 = null, tTrain = null, tAs_2 = null, tTest = null, tAs_3 = null, tAgg = null, tAs_4 = null;
+	Token 	aggfunc = null;
+	Token	tPartition = null, tAs_1 = null;
+	Token	tTrain = null, tAs_2 = null;
+	Token   tTest = null,  tAs_3 = null;
+	Token	tAgg = null,   tAs_4 = null;
 }
 {
- <CROSSVAL> inputs = ReadList()
- tPartition =<ID> partitionParams = ReadGenericParamList() 	tAs_1 = <AS> partitionOutputs = ReadList()
- tTrain = <ID> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  tAs_2 = <AS> trainFunctionOutputs = ReadList()
- tTest  = <ID>  t = <ID> { testFunctionName  = t.image; } testFunctionParams = ReadList()   tAs_3 = <AS> testFunctionOutputs   = ReadList()
- tAgg = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() tAs_4 = <AS> errorAggFunctionOutputs = ReadList()
- {
-   if("sum".equals(aggfunc.image))
-    agg = CVStatement.AGG.sum ;
-   else if("avg".equals(aggfunc.image))
-    agg = CVStatement.AGG.avg ;
+	<CROSSVAL> inputs = ReadList()
+ 	tPartition = <ID> partitionParams = ReadGenericParamList() 									  tAs_1 = <ID> partitionOutputs = ReadList()
+ 	tTrain     = <ID> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  tAs_2 = <ID> trainFunctionOutputs = ReadList()
+ 	tTest  = <ID>  t = <ID> { testFunctionName  = t.image; }    testFunctionParams  = ReadList()  tAs_3 = <ID> testFunctionOutputs  = ReadList()
+ 	tAgg   = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() 							  tAs_4 = <ID> errorAggFunctionOutputs = ReadList()
 
-   MetaLearningFunctionParameters params = new MetaLearningFunctionParameters (trainFunctionName, trainFunctionParams, trainFunctionOutputs,
-                testFunctionName,  testFunctionParams,  testFunctionOutputs,
-                   partitionOutputs, agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+ 	{
+		if("sum".equals(aggfunc.image))
+    		agg = CVStatement.AGG.sum;
+   		else if("avg".equals(aggfunc.image))
+    		agg = CVStatement.AGG.avg;
 
-    return new CVStatement(inputs, partitionParams, params) ;
- }
+		// verify that "as" tokens have correct value
+		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for crossval -- should be \"(partition params) as (partition outputs)\"");
+		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for crossval -- should be \"(train params) as (train outputs)\"");
+		if (!"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for crossval -- should be \"(test params) as (test outputs)\"");
+		if (!"as".equals(tAs_4)) throw new ParseException(printErrorLocation(tAs_4.beginLine, tAs_4.beginColumn) + "incorrect syntax for crossval -- should be \"(error agg params) as (error agg outputs)\"");
+			MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+				trainFunctionName, trainFunctionParams, trainFunctionOutputs,
+				testFunctionName,  testFunctionParams,  testFunctionOutputs,
+				partitionOutputs,
+				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+
+		return new CVStatement(inputs, partitionParams, params) ;
+ 	}
 }

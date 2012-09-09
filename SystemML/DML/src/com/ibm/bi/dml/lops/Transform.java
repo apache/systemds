@@ -97,7 +97,7 @@ public class Transform extends Lops
 			return "rdiagV2M";
 		
 		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Transform operation " + operation);
+			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				
 		}
 	}
@@ -128,8 +128,9 @@ public class Transform extends Lops
 				return (Transform)lop;
 			}
 		}
-		
-		return new Transform(input1, op, dt, vt);
+		Transform retVal = new Transform(input1, op, dt, vt);
+		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		return retVal;
 	}
 
 	public static Transform constructTransformLop(Lops input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
@@ -139,8 +140,9 @@ public class Transform extends Lops
 				return (Transform)lop;
 			}
 		}
-		
-		return new Transform(input1, op, dt, vt, et);
+		Transform retVal = new  Transform(input1, op, dt, vt, et);
+		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		return retVal; 
 	}
 
  

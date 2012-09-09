@@ -144,7 +144,7 @@ public class ForProgramBlock extends ProgramBlock
 		IntObject incr = executePredicateInstructions( 3, _incrementInstructions, ec );
 		
 		if ( incr.getIntValue() <= 0 ) //would produce infinite loop
-			throw new DMLRuntimeException("Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 				
 		// initialize iter var to form value
 		IntObject iterVar = new IntObject(iterVarName, from.getIntValue() );
@@ -216,9 +216,13 @@ public class ForProgramBlock extends ProgramBlock
 					
 					if(!isSQL)
 						tmp = (IntObject) getScalarInput(retName, ValueType.INT);
-					else
-						tmp = (IntObject) ec.getVariable(retName, ValueType.INT);
-					
+					else {
+						try {
+							tmp = (IntObject) ec.getVariable(retName, ValueType.INT);
+						} catch (Exception e) {
+							throw new DMLRuntimeException(this.printBlockErrorLocation() + "error" + e);
+						}
+					}
 					// Execute all other instructions in the predicate (variableCPInstruction, etc.)
 					for (Instruction si : instructions ) {
 						if ( !(si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable))
@@ -229,13 +233,18 @@ public class ForProgramBlock extends ProgramBlock
 		}
 		catch(Exception ex)
 		{
-			throw new DMLRuntimeException(ex);
+			String predNameStr = null;
+			if 		(pos == 1) predNameStr = "from";
+			else if (pos == 2) predNameStr = "to";
+			else if (pos == 3) predNameStr = "increment";
+			
+			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate -- " + ex);
 		}
 		
 		//final check of resulting int object
 		if ( tmp == null )
 		{
-			throw new DMLRuntimeException("Failed to evaluate the FOR predicate.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the FOR predicate.");
 		}
 		else
 		{

@@ -75,10 +75,18 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	{
 		_runID = _idSeq.getNextID();
 		
+		ExternalFunctionInvocationInstruction inst = null;
+		
 		// execute package function
-		for( Instruction inst : _inst ) 
+		for (int i=0; i < _inst.size(); i++) 
 		{
-			executeInstruction( (ExternalFunctionInvocationInstruction) inst );
+			try {
+				inst = (ExternalFunctionInvocationInstruction)_inst.get(i);
+				executeInstruction( inst );
+			}
+			catch (Exception e){
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString() );
+			}
 		}
 		
 	}
@@ -97,7 +105,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		String configFile = inst.getConfigFile();
 
 		if (className == null)
-			throw new PackageRuntimeException("Class name can't be null");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
 
 		// create instance of package function.
 		Object o;
@@ -108,11 +116,11 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		} 
 		catch (Exception e) 
 		{
-			throw new PackageRuntimeException("Error generating package function object " + e.toString() );
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " + e.toString() );
 		}
 
 		if (!(o instanceof PackageFunction))
-			throw new PackageRuntimeException("Class is not of type PackageFunction");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class is not of type PackageFunction");
 
 		PackageFunction func = (PackageFunction) o;
 
@@ -144,7 +152,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
-			throw new PackageRuntimeException(ExternalFunctionStatement.CLASS_NAME + " not provided!");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());

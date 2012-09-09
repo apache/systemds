@@ -73,6 +73,30 @@ public class DataExpression extends Expression {
 
 	public void addVarParam(String name, Expression value){
 		_varParams.put(name, value);
+		
+		// if required, initialize values
+		if (_beginLine == 0) 	_beginLine 	 = value.getBeginLine();
+		if (_beginColumn == 0) 	_beginColumn = value.getBeginColumn();
+		if (_endLine == 0) 		_endLine 	 = value.getEndLine();
+		if (_endColumn == 0) 	_endColumn 	 = value.getEndColumn();
+		
+		// update values	
+		if (_beginLine > value.getBeginLine()){
+			_beginLine = value.getBeginLine();
+			_beginColumn = value.getBeginColumn();
+		}
+		else if (_beginLine == value.getBeginLine() &&_beginColumn > value.getBeginColumn()){
+			_beginColumn = value.getBeginColumn();
+		}
+
+		if (_endLine < value.getEndLine()){
+			_endLine = value.getEndLine();
+			_endColumn = value.getEndColumn();
+		}
+		else if (_endLine == value.getEndLine() && _endColumn < value.getEndColumn()){
+			_endColumn = value.getEndColumn();
+		}
+		
 	}
 	
 	public void removeVarParam(String name) {

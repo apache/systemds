@@ -205,6 +205,9 @@ public class DataOp extends Hops {
 
 			l.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 					get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
 			set_lops(l);
 		}
 
@@ -331,7 +334,7 @@ public class DataOp extends Hops {
 			else
 			{
 				if(this.getInput().size() < 1)
-					throw new HopsException("A write needs at least one input");
+					throw new HopsException(this.printErrorLocation() + "In DataOp Hop, A write needs at least one input \n");
 
 				String name = this.getFileName();
 				

@@ -75,11 +75,15 @@ public class LeftIndexingOp  extends Hops {
 					reindex.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
 					
+					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					Group group1 = new Group(
 							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
 					group1.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					//the left matrix is zeroed out
 					ZeroOut zeroout = new ZeroOut(
@@ -87,6 +91,8 @@ public class LeftIndexingOp  extends Hops {
 							left, right, getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
 							get_dataType(), get_valueType(), et);
 	
+					zeroout.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					zeroout.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
 					Group group2 = new Group(
@@ -95,8 +101,12 @@ public class LeftIndexingOp  extends Hops {
 					group2.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
 					
+					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hops.OpOp2.PLUS),
 							get_dataType(), get_valueType(), et);
+					
+					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					binary.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -109,10 +119,11 @@ public class LeftIndexingOp  extends Hops {
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
 							get_dataType(), get_valueType(), et);
 					left.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					left.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(left);
 				}
 			} catch (Exception e) {
-				throw new HopsException(e);
+				throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops -- " + e);
 			}
 
 		}
@@ -138,7 +149,7 @@ public class LeftIndexingOp  extends Hops {
 	}
 
 	public SQLLops constructSQLLOPs() throws HopsException {
-		throw new HopsException("LeftIndexingOp.constructSQLLOPs shoule not be called");
+		throw new HopsException(this.printErrorLocation() + "constructSQLLOPs should not be called for LeftIndexingOp \n");
 	}
 	
 	@Override

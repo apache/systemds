@@ -141,7 +141,7 @@ public class ForStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
-			throw new HopsException("there should be no HOPs associated with the ForStatementBlock");
+			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 		}
 		
 		return _hops;

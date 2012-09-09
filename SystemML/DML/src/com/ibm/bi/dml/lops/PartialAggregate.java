@@ -93,7 +93,7 @@ public class PartialAggregate extends Lops {
 		else if ( loc.equals("LASTTWOCOLUMNS") )
 			return CorrectionLocationType.LASTTWOCOLUMNS;
 		else 
-			throw new LopsException("Unrecognized correction location: " + loc);
+			throw new LopsException("In PartialAggregate Lop, Unrecognized correction location: " + loc);
 	}
 	/**
 	 * This method computes the location of "correction" terms in the output
@@ -131,8 +131,8 @@ public class PartialAggregate extends Lops {
 				loc = CorrectionLocationType.LASTCOLUMN;
 				break;
 			default:
-				throw new LopsException(
-						"getCorrectionLocaion():: Unknown aggregarte direction - "
+				throw new LopsException(this.printErrorLocation() + 
+						"in PartialAggregate Lop,  getCorrectionLocation() Unknown aggregarte direction - "
 								+ direction);
 			}
 			break;
@@ -151,7 +151,7 @@ public class PartialAggregate extends Lops {
 				loc = CorrectionLocationType.LASTTWOCOLUMNS;
 				break;
 			default:
-				throw new LopsException(
+				throw new LopsException( this.printErrorLocation() + 
 						"getCorrectionLocaion():: Unknown aggregarte direction - "
 								+ direction);
 			}
@@ -177,9 +177,9 @@ public class PartialAggregate extends Lops {
 		else if (direction == DirectionTypes.RowCol)
 			outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock, -1);
 		else
-			throw new LopsException("Unknown aggregate direction " + direction);
+			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, Unknown aggregate direction " + direction);
 		} catch (HopsException e) {
-			throw new LopsException(e);
+			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, error setting dimensions based on direction -- " + e);
 		}
 	}
 
@@ -266,7 +266,7 @@ public class PartialAggregate extends Lops {
 				&& direction == DirectionTypes.Col) {
 			return "rdiagM2V";
 		} else {
-			throw new UnsupportedOperationException(
+			throw new UnsupportedOperationException(this.printErrorLocation() +
 					"Instruction is not defined for PartialAggregate operation "
 							+ operation);
 		}

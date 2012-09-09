@@ -55,11 +55,16 @@ public class IndexingOp extends Hops {
 	
 					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 							get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					Group group1 = new Group(
 							reindex, Group.OperationTypes.Sort, DataType.MATRIX,
 							get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					Aggregate agg1 = new Aggregate(
 							group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
@@ -67,6 +72,8 @@ public class IndexingOp extends Hops {
 					agg1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 	
+					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					set_lops(agg1);
 				}
 				else {
@@ -76,10 +83,11 @@ public class IndexingOp extends Hops {
 							get_dataType(), get_valueType(), et);
 					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 							get_rows_in_block(), get_cols_in_block(), getNnz());
+					reindex.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(reindex);
 				}
 			} catch (Exception e) {
-				throw new HopsException(e);
+				throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops -- " + e);
 			}
 
 		}
@@ -105,7 +113,7 @@ public class IndexingOp extends Hops {
 	}
 
 	public SQLLops constructSQLLOPs() throws HopsException {
-		throw new HopsException("IndexingOp.constructSQLLOPs shoule not be called");
+		throw new HopsException(this.printErrorLocation() + "constructSQLLOPs should not be called for IndexingOp Hop \n");
 	}
 	
 	@Override

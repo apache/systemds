@@ -141,7 +141,7 @@ public class Tertiary extends Lops
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			// third input must be a scalar, and hence input_index3 == -1
 			if ( input_index3 != -1 ) {
-				throw new LopsException("Unexpected input while computing the instructions for op: " + operation);
+				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
 			}
 			
 			// parse the third input (scalar)
@@ -166,7 +166,7 @@ public class Tertiary extends Lops
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
 			if ( input_index2 != -1 || input_index3 != -1)
-				throw new LopsException("Unexpected input while computing the instructions for op: " + operation);
+				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
 			
 			// parse the scalar inputs (2nd and 3rd inputs)
 			String scalar2=null;
@@ -194,7 +194,7 @@ public class Tertiary extends Lops
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
 			if ( input_index2 != -1 )
-				throw new LopsException("Unexpected input while computing the instructions for op: " + operation);
+				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
 			// parse the scalar inputs (2nd and 3rd inputs)
 			String scalarInput2=null;
 			if(this.getInputs().get(1).getExecLocation() == ExecLocation.Data && 
@@ -211,7 +211,7 @@ public class Tertiary extends Lops
 			break;
 			
 		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Tertiary operation: " + operation);
+			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Tertiary operation: " + operation);
 		}
 		
 		return inst;

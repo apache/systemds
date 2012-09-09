@@ -66,6 +66,9 @@ public class AggBinaryOp extends Hops {
 					BinaryCP bcp = new BinaryCP(getInput().get(0).constructLops(), 
 							getInput().get(1).constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
 					bcp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					bcp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					set_lops(bcp);
 				}
 				else if ( et == ExecType.MR ) {
@@ -82,15 +85,21 @@ public class AggBinaryOp extends Hops {
 						mmcj.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
+						mmcj.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
 						Group grp = new Group(
 								mmcj, Group.OperationTypes.Sort, get_dataType(), get_valueType());
 						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
 						
+						grp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
 						Aggregate agg1 = new Aggregate(
 								grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 								get_rows_in_block(), get_cols_in_block(), getNnz());
+						
+						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
 						// aggregation uses kahanSum but the inputs do not have correction values
 						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
@@ -101,14 +110,18 @@ public class AggBinaryOp extends Hops {
 						MMRJ rmm = new MMRJ(
 								getInput().get(0).constructLops(), getInput().get(1)
 								.constructLops(), get_dataType(), get_valueType());
+						
 						rmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 								get_rows_in_block(), get_cols_in_block(), getNnz());
+						
+						rmm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
 						set_lops(rmm);
 					}
 				}
 			} 
 			else  {
-				throw new HopsException("Invalid operation aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
+				throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
 			}
 		}
 		return get_lops();
@@ -221,7 +234,7 @@ public class AggBinaryOp extends Hops {
 		if(this.get_sqllops() == null)
 		{
 			if(this.getInput().size() != 2)
-				throw new HopsException("The binary aggregation hop must have two inputs");
+				throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, The binary aggregation hop must have two inputs");
 			
 			//Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();
@@ -287,11 +300,11 @@ public class AggBinaryOp extends Hops {
 	private SQLSelectStatement getSQLSelect(Hops hop1, Hops hop2) throws HopsException
 	{
 		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
-			throw new HopsException("Aggregates only work for two matrices");
+			throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, Aggregates only work for two matrices");
 		
 		boolean isvalid = Hops.isSupported(this.innerOp);
 		if(!isvalid)
-			throw new HopsException("This operation is not supported");
+			throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, This operation is not supported for SQL Select");
 		
 		boolean isfunc = Hops.isFunction(this.innerOp);
 		
@@ -354,7 +367,7 @@ public class AggBinaryOp extends Hops {
 	private String getSQLSelectCode(Hops hop1, Hops hop2) throws HopsException
 	{
 		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
-			throw new HopsException("Aggregates only work for two matrices");
+			throw new HopsException(this.printErrorLocation() + "in AggBinary Hop, error in getSQLSelectCode() -- Aggregates only work for two matrices");
 		
 		//min, max, log, quantile, interquantile and iqm cannot be done that way
 		boolean isvalid = Hops.isSupported(this.innerOp);
@@ -409,7 +422,7 @@ public class AggBinaryOp extends Hops {
 			}
 			return sql;
 		}
-		throw new HopsException("This operation is not supported");
+		throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, error in getSQLSelectCode() -- This operation is not supported");
 	}
 	
 	private SQLLops getPart1SQLLop(String operation, String op1, String op2, long size, SQLLops input1, SQLLops input2)

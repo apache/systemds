@@ -150,8 +150,15 @@ public class IfProgramBlock extends ProgramBlock {
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
 
-		BooleanObject predResult = executePredicate(ec); 
-
+		BooleanObject predResult = null;
+		
+		try {
+			predResult = executePredicate(ec); 
+		}
+		catch (Exception e){
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement predicate. See stack trace for details.");
+		}
+			
 		if(predResult.getBooleanValue()){
 			
 			// for each program block

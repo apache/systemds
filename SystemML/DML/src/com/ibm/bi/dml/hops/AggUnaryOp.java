@@ -55,6 +55,7 @@ public class AggUnaryOp extends Hops {
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(agg1);
 					if (get_dataType() == DataType.SCALAR) {
 						agg1.getOutputParameters().setDimensions(1, 1, 
@@ -66,6 +67,9 @@ public class AggUnaryOp extends Hops {
 							getInput().get(0).constructLops(), HopsAgg2Lops
 									.get(_op), HopsDirection2Lops.get(_direction),
 							DataType.MATRIX, get_valueType());
+					
+					transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					transform1.setDimensionsBasedOnDirection(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block());
 	
@@ -75,12 +79,16 @@ public class AggUnaryOp extends Hops {
 					group1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(),get_rows_in_block(), get_cols_in_block(), getNnz());
 	
+					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					Aggregate agg1 = new Aggregate(
 							group1, HopsAgg2Lops.get(_op), DataType.MATRIX,
 							get_valueType(), et);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 					agg1.setupCorrectionLocation(transform1.getCorrectionLocaion());
+					
+					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					set_lops(agg1);
 	
@@ -101,12 +109,13 @@ public class AggUnaryOp extends Hops {
 								agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 								get_dataType(), get_valueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						set_lops(unary1);
 	
 					}
 				}
 			} catch (Exception e) {
-				throw new HopsException(e);
+				throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops --" + e);
 			}
 
 		}
@@ -140,7 +149,7 @@ public class AggUnaryOp extends Hops {
 		if(this.get_sqllops() == null)
 		{
 			if(this.getInput().size() != 1)
-				throw new HopsException("The aggregate unary hop must have one input");
+				throw new HopsException(this.printErrorLocation() + "The aggregate unary hop must have one input");
 			
 			//Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();

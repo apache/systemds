@@ -122,8 +122,15 @@ public class WhileProgramBlock extends ProgramBlock {
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
 
-		BooleanObject predResult = executePredicate(ec); 
-
+		BooleanObject predResult = null;
+		
+		try {
+			predResult = executePredicate(ec); 
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate. See stack trace for details.");
+		}
+		
 		while(predResult.getBooleanValue()){
 				
 			// for each program block

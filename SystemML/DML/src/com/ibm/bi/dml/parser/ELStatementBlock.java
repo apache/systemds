@@ -50,7 +50,7 @@ public class ELStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
 		if (this.getNumStatements() > 1)
-			throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble statement block can only have single statement");
+			throw new LanguageException(this.printBlockErrorLocation() + "Ensemble statement block can only have single statement");
 		ELStatement estmt = (ELStatement) this.getStatement(0);
 		
 		// add ensemble to available variables set
@@ -59,12 +59,12 @@ public class ELStatementBlock extends StatementBlock {
 		// check the input datasets are available
 		for (String input : estmt.getInputNames()){
 			if (!ids.containsVariable(input))
-				throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble statement input dataset " + input + " is not available ");
+				throw new LanguageException(this.printBlockErrorLocation() + "Ensemble statement input dataset " + input + " is not available ");
 		}
 		
 		// check the training function is available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(estmt.getFunctionParameters().getTrainFunctionName()))
-			throw new LanguageException("ERROR: line 0, column 0 -- " + "Ensemble training function " + estmt.getFunctionParameters().getTrainFunctionName() + " is not available ");
+			throw new LanguageException(this.printBlockErrorLocation() + "Ensemble training function " + estmt.getFunctionParameters().getTrainFunctionName() + " is not available ");
 		
 		// check training function inputs are available
 		for (String input : estmt.getFunctionParameters().getTrainFunctionFormalParams()){
@@ -80,7 +80,7 @@ public class ELStatementBlock extends StatementBlock {
 			}
 			
 			if (found == false)
-				throw new LanguageException("In Build Ensemble statement, variable " + input + " is not available but required by train function");
+				throw new LanguageException(estmt.printErrorLocation() + "In Build Ensemble statement, variable " + input + " is not available but required by train function");
 			
 		}
 		
@@ -89,7 +89,7 @@ public class ELStatementBlock extends StatementBlock {
 			
 			// validate test function has been specified
 			if (!dmlProg.getFunctionStatementBlocks(null).containsKey(estmt.getFunctionParameters().getTestFunctionName())){
-				throw new LanguageException("Ensemble test function " + estmt.getFunctionParameters().getTestFunctionName() + " is not available ");
+				throw new LanguageException(estmt.printErrorLocation() + "Ensemble test function " + estmt.getFunctionParameters().getTestFunctionName() + " is not available ");
 			}
 			
 			// validate test function parameters available 
@@ -108,7 +108,7 @@ public class ELStatementBlock extends StatementBlock {
 				}
 				
 				if (found == false)
-					throw new LanguageException("In Build Ensemble statement, variable " + input + " is not available but required by train function");
+					throw new LanguageException(estmt.printErrorLocation() + "In Build Ensemble statement, variable " + input + " is not available but required by train function");
 					
 			}
 			
@@ -129,6 +129,7 @@ public class ELStatementBlock extends StatementBlock {
 			DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), 
 				DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(),
 				var.getRowsInBlock(), var.getColumnsInBlock());
+			read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 			read.set_rows_in_block(var.getRowsInBlock()) ;
 			read.set_cols_in_block(var.getColumnsInBlock()) ;
 		

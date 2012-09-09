@@ -16,7 +16,7 @@ public class ELUseStatement extends Statement {
 	private AGG _agg;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		throw new LanguageException("ERROR: line 0, column 0 -- " + "should not call rewriteStatement for CVStatement");
+		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 	}
 	
 	public enum AGG {

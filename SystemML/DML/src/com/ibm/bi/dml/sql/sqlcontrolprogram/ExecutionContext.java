@@ -117,7 +117,7 @@ public class ExecutionContext {
 					StringObject stringObj = new StringObject(name);
 					return stringObj;
 				default:
-					throw new DMLRuntimeException("Unknown variable: " + name + ", or unknown value type: " + vt);
+					throw new DMLRuntimeException("ERROR: Unknown variable: " + name + ", or unknown value type: " + vt);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

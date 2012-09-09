@@ -21,7 +21,7 @@ public class DataIdentifier extends Identifier {
 		_endLine		= passed.getEndLine();
 		_endColumn		= passed.getEndColumn();
 	}
-		
+	
 	public Expression rewriteExpression(String prefix) throws LanguageException{
 		DataIdentifier newId = new DataIdentifier(this);
 		String newIdName = prefix + this._name;
@@ -66,7 +66,7 @@ public class DataIdentifier extends Identifier {
 			this.setValueType(ValueType.OBJECT);
 		else {
 			// provide location for this exception in the parser
-			throw new ParseException("function parameter has unknown value type " + valueType);
+			throw new ParseException(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
 		}
 		
 		if (dataType.equalsIgnoreCase("object"))
@@ -77,7 +77,7 @@ public class DataIdentifier extends Identifier {
 			this.setDataType(DataType.MATRIX);
 		else {
 			// provide location for this exception in the parser
-			throw new ParseException("function parameter has unknown data type " + valueType);
+			throw new ParseException(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
 		}
 		
 	}

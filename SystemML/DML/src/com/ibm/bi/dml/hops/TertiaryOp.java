@@ -87,10 +87,13 @@ public class TertiaryOp extends Hops {
 							get_valueType(), et);
 					cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
 					
+					cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
 							get_valueType());
 					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(unary1);
 				} else {
 					//System.out.println("CM Tertiary executing in CP...");
@@ -100,6 +103,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(2).constructLops(),
 							get_dataType(), get_valueType(), et);
 					cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+					cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(cm);
 				}
 
@@ -126,10 +130,14 @@ public class TertiaryOp extends Hops {
 							combine, DataType.MATRIX, get_valueType(), et);
 	
 					cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
+					
+					cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					UnaryCP unary1 = new UnaryCP(
 							cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 							get_dataType(), get_valueType());
 					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(unary1);
 				}
 				else {
@@ -140,6 +148,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(2).constructLops(), 
 							get_dataType(), get_valueType(), et);
 					cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+					cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(cov);
 				}
 
@@ -170,6 +179,8 @@ public class TertiaryOp extends Hops {
 							(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 	
+					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					combine.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
 							getInput().get(0).get_dim2(), 
@@ -238,6 +249,7 @@ public class TertiaryOp extends Hops {
 							tertiaryOp,
 							get_dataType(), get_valueType(), et);
 					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
 						set_lops(tertiary);
 					}
@@ -249,10 +261,12 @@ public class TertiaryOp extends Hops {
 									get_cols_in_block(), get_dataType(),
 									get_valueType());
 						} catch (Exception e) {
-							throw new HopsException(e);
+							throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop -- " + e);
 						}
 						reblock.getOutputParameters().setDimensions(-1, -1,  
 								get_rows_in_block(), get_cols_in_block(), -1);
+						
+						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 						set_lops(reblock);
 					}
@@ -267,6 +281,8 @@ public class TertiaryOp extends Hops {
 							get_valueType());
 					group1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					
+					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					Tertiary tertiary = null;
 					// create "group" lops for MATRIX inputs
@@ -280,6 +296,8 @@ public class TertiaryOp extends Hops {
 						group2.getOutputParameters().setDimensions(get_dim1(),
 								get_dim2(), get_rows_in_block(),
 								get_cols_in_block(), getNnz());
+						group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
 						group3 = new Group(
 								getInput().get(2).constructLops(),
 								Group.OperationTypes.Sort, get_dataType(),
@@ -287,11 +305,13 @@ public class TertiaryOp extends Hops {
 						group3.getOutputParameters().setDimensions(get_dim1(),
 								get_dim2(), get_rows_in_block(),
 								get_cols_in_block(), getNnz());
-	
+						group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
 						tertiary = new Tertiary(
 								group1, group2, group3,
 								tertiaryOp,
-								get_dataType(), get_valueType(), et);
+								get_dataType(), get_valueType(), et);	
+						
 						break;
 	
 					case CTABLE_TRANSFORM_SCALAR_WEIGHT:
@@ -303,6 +323,7 @@ public class TertiaryOp extends Hops {
 						group2.getOutputParameters().setDimensions(get_dim1(),
 								get_dim2(), get_rows_in_block(),
 								get_cols_in_block(), getNnz());
+						group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						tertiary = new Tertiary(
 								group1,
 								group2,
@@ -327,6 +348,7 @@ public class TertiaryOp extends Hops {
 						group3.getOutputParameters().setDimensions(get_dim1(),
 								get_dim2(), get_rows_in_block(),
 								get_cols_in_block(), getNnz());
+						group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						tertiary = new Tertiary(
 								group1,
 								getInput().get(1).constructLops(),
@@ -338,17 +360,21 @@ public class TertiaryOp extends Hops {
 	
 					// output dimensions are not known at compilation time
 					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-	
+					tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					group4 = new Group(
 							tertiary, Group.OperationTypes.Sort, get_dataType(),
 							get_valueType());
 					group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					Aggregate agg1 = new Aggregate(
 							group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
 							get_valueType(), ExecType.MR);
 					agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 	
+					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					// kahamSum is used for aggreagtion but inputs do not have
 					// correction values
 					agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
@@ -362,20 +388,22 @@ public class TertiaryOp extends Hops {
 								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
-						throw new HopsException(e);
+						throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop -- \n" + e);
 					}
 					reblock.getOutputParameters().setDimensions(-1, -1, 
 							get_rows_in_block(), get_cols_in_block(), -1);
 	
+					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					
 					set_lops(reblock);
 				}
 			} 
 			else {
-				throw new HopsException("Incorrect TertiaryOp (" + op
-						+ ") while constructing LOPs!");
+				throw new HopsException(this.printErrorLocation() + "Incorrect TertiaryOp (" + op
+						+ ") while constructing Lops \n");
 			}
 			} catch(LopsException e) {
-				throw new HopsException(e);
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop -- \n" + e);
 			}
 		}
 		return get_lops();
@@ -404,7 +432,7 @@ public class TertiaryOp extends Hops {
 	public SQLLops constructSQLLOPs() throws HopsException {
 		if (this.op == OpOp3.CTABLE) {
 			if (this.getInput().size() != 3)
-				throw new HopsException("A tertiary hop must have three inputs");
+				throw new HopsException("A tertiary Hop must have three inputs \n");
 
 			GENERATES gen = determineGeneratesFlag();
 

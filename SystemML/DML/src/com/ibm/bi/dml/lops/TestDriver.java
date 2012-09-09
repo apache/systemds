@@ -88,6 +88,7 @@ public class TestDriver {
 
 		Binary binary = new Binary(group1, group2, Binary.OperationTypes.ADD,
 				DataType.MATRIX, ValueType.DOUBLE);
+			
 		Data data3 = new Data("scripts/C", Data.OperationTypes.WRITE, binary,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
 

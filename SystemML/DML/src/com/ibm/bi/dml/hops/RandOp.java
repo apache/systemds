@@ -89,6 +89,8 @@ public class RandOp extends Hops
 			rnd.getOutputParameters().setDimensions(
 					get_dim1(), get_dim2(),
 					get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			rnd.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(rnd);
 		}
 		

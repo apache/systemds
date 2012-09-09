@@ -103,60 +103,78 @@ public class ProgramBlock {
 			
 			if (currInst instanceof MRJobInstruction) 
 			{
-				if ( DMLScript.DEBUG ) 
+				
+				try {
+					if ( DMLScript.DEBUG ) 
+						printSymbolTable();
+					
+					long begin = System.currentTimeMillis();
+					MRJobInstruction currMRInst = (MRJobInstruction) currInst;
+					
+					JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
+					
+					if ( currMRInst.getJobType() == JobType.SORT ) {
+						if ( jb.getMetaData().length > 0 ) {
+							/* Populate returned stats into symbol table of matrices */
+							for ( int index=0; index < jb.getMetaData().length; index++) {
+								String varname = currMRInst.getOutputVars()[index];
+								_variables.get(varname).setMetaData(jb.getMetaData()[index]); // updateMatrixCharacteristics(mc);
+							}
+						}
+					}
+					else {
+						if ( jb.getMetaData().length > 0 ) {
+							/* Populate returned stats into symbol table of matrices */
+							for ( int index=0; index < jb.getMetaData().length; index++) {
+								String varname = currMRInst.getOutputVars()[index];
+								MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
+								_variables.get(varname).updateMatrixCharacteristics(mc);
+							}
+						}
+					}
+					if ( DMLScript.DEBUG )
+						System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (System.currentTimeMillis()-begin));
+					
+					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
+				}
+				catch (Exception e){
+					System.out.println("****************************** VARIABLES ********************************************");
 					printSymbolTable();
-				
-				long begin = System.currentTimeMillis();
-				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
-				
-				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
-				
-				if ( currMRInst.getJobType() == JobType.SORT ) {
-					if ( jb.getMetaData().length > 0 ) {
-						/* Populate returned stats into symbol table of matrices */
-						for ( int index=0; index < jb.getMetaData().length; index++) {
-							String varname = currMRInst.getOutputVars()[index];
-							_variables.get(varname).setMetaData(jb.getMetaData()[index]); // updateMatrixCharacteristics(mc);
-						}
-					}
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (an MRJobInstruction). inst: " + currInst.toString() );
 				}
-				else {
-					if ( jb.getMetaData().length > 0 ) {
-						/* Populate returned stats into symbol table of matrices */
-						for ( int index=0; index < jb.getMetaData().length; index++) {
-							String varname = currMRInst.getOutputVars()[index];
-							MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
-							_variables.get(varname).updateMatrixCharacteristics(mc);
-						}
-					}
-				}
-				if ( DMLScript.DEBUG )
-					System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (System.currentTimeMillis()-begin));
-				
-				Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 			} 
+			
+			
 			else if (currInst instanceof CPInstruction) 
 			{
-				if( currInst.requiresLabelUpdate() ) //update labels only if required
-				{
-					String currInstStr = currInst.toString();
-					String updInst = RunMRJobs.updateLabels(currInstStr, _variables);
+				try {
+					if( currInst.requiresLabelUpdate() ) //update labels only if required
+					{
+						String currInstStr = currInst.toString();
+						String updInst = RunMRJobs.updateLabels(currInstStr, _variables);
+						if ( DMLScript.DEBUG )
+							System.out.println("Processing CPInstruction: " + updInst);
+						
+						CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
+						si.processInstruction(this);
+						
+						//note: no exchange of updated instruction as labels might change in the general case
+					}
+					else 
+					{
+						if ( DMLScript.DEBUG )
+							System.out.println("Processing CPInstruction: " + currInst.toString());
+						((CPInstruction) currInst).processInstruction(this); 
+					}
 					if ( DMLScript.DEBUG )
-						System.out.println("Processing CPInstruction: " + updInst);
-					
-					CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
-					si.processInstruction(this);
-					
-					//note: no exchange of updated instruction as labels might change in the general case
+						System.out.println("    memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "].");
+				
 				}
-				else 
-				{
-					if ( DMLScript.DEBUG )
-						System.out.println("Processing CPInstruction: " + currInst.toString());
-					((CPInstruction) currInst).processInstruction(this); 
+				catch (Exception e){
+					System.out.println("****************************** VARIABLES ********************************************");
+					printSymbolTable();
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a CPInstruction). inst: " + currInst.toString() );
 				}
-				if ( DMLScript.DEBUG )
-					System.out.println("    memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "].");
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{
@@ -165,7 +183,12 @@ public class ProgramBlock {
 				}
 				catch(Exception e)
 				{
-					e.printStackTrace();
+					//e.printStackTrace();
+					
+					System.out.println("****************************** VARIABLES ********************************************");
+					printSymbolTable();
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a SQLInstruction). inst: " + currInst.toString() );
+				
 				}
 			}
 			/*
@@ -184,7 +207,7 @@ public class ProgramBlock {
 			MatrixObjectNew mobj = (MatrixObjectNew) this.getVariable(varName);
 			return mobj.acquireRead();
 		} catch (CacheException e) {
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
 		}
 	}
 	
@@ -192,7 +215,7 @@ public class ProgramBlock {
 		try {
 			((MatrixObjectNew)this.getVariable(varName)).release();
 		} catch (CacheException e) {
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
 		}
 	}
 	
@@ -221,7 +244,7 @@ public class ProgramBlock {
 					StringObject stringObj = new StringObject(name);
 					return stringObj;
 				default:
-					throw new DMLRuntimeException("Unknown variable: " + name + ", or unknown value type: " + vt);
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Unknown variable: " + name + ", or unknown value type: " + vt);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -258,7 +281,7 @@ public class ProgramBlock {
 	        this.setVariable (varName, sores);
 		
 		} catch ( CacheException e ) {
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
 		}
 	}
 
@@ -292,5 +315,40 @@ public class ProgramBlock {
 		for (Instruction i : this._inst) {
 			i.printMe();
 		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////
+	// store position information for program blocks
+	///////////////////////////////////////////////////////////////////////////
+	public int _beginLine, _beginColumn;
+	public int _endLine, _endColumn;
+	
+	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
+	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	
+	public void setAllPositions(int blp, int bcp, int elp, int ecp){
+		_beginLine	 = blp; 
+		_beginColumn = bcp; 
+		_endLine 	 = elp;
+		_endColumn 	 = ecp;
+	}
+
+	public int getBeginLine()	{ return _beginLine;   }
+	public int getBeginColumn() { return _beginColumn; }
+	public int getEndLine() 	{ return _endLine;   }
+	public int getEndColumn()	{ return _endColumn; }
+	
+	public String printErrorLocation(){
+		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in program block generated from statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
+	public String printWarningLocation(){
+		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 }

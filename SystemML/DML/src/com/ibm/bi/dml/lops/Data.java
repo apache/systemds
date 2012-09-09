@@ -267,7 +267,7 @@ public class Data extends Lops
 			else if ( operation == OperationTypes.WRITE)
 				str += "write";
 			else
-				throw new LopsException("Unknown operation: " + operation);
+				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 			
 			str += OPERAND_DELIMITOR + 
 					input1 +  
@@ -301,7 +301,7 @@ public class Data extends Lops
 			}
 			return str;
 		}
-		throw new LopsException("Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
+		throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
 	}
 	
 	/**
@@ -333,7 +333,7 @@ public class Data extends Lops
 			return inst;
 		}
 		else {
-			throw new LopsException("Unexpected data type " + get_dataType());
+			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unexpected data type " + get_dataType());
 		}
 	}
 }

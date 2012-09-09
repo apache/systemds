@@ -122,7 +122,7 @@ public class Binary extends Lops
 			return "max";
 			
 		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + operation);
+			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Binary operation: " + operation);
 		}
 	}
 	

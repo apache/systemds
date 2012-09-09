@@ -714,6 +714,7 @@ public class DMLScript {
 		}
 		catch(DMLException ex)
 		{
+			System.out.println(ex.toString());
 			throw ex;
 		}
 		finally //ensure cleanup/shutdown

@@ -27,7 +27,7 @@ public class CoVariance extends Lops {
 		else {
 			definesMRJob = false;
 			if ( input2 == null ) {
-				throw new LopsException("Invalid inputs to covariance lop.");
+				throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
 			}
 			this.addInput(input2);
 			input2.addOutput(this);

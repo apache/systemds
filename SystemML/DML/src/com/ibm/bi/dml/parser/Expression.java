@@ -94,7 +94,7 @@ public abstract class Expression {
 	}
 	
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
-		throw new LanguageException("ERROR: line 0, column 0 -- " + "Should never be invoked in Baseclass 'Expression'");
+		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
 	};
 	
 	public static BinaryOp getBinaryOp(String val) {

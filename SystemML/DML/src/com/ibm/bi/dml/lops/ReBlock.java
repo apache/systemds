@@ -79,7 +79,7 @@ public class ReBlock extends Lops
 		{
 			// Reblock lop should always have a single child
 			if(node.getInputs().size() > 1)
-				throw new LopsException("Should only have one child!");
+				throw new LopsException(this.printErrorLocation() + "Should only have one child! \n");
 			
 			/*
 			 * Return the format of the child node (i.e., input lop)

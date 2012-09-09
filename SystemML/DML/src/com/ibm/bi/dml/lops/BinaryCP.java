@@ -138,7 +138,7 @@ public class BinaryCP extends Lops
 			break;
 			
 		default:
-			throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + operation);
+			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for BinaryScalar operator: " + operation);
 		}
 		
 		String inst = opString + OPERAND_DELIMITOR + 

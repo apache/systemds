@@ -79,9 +79,14 @@ public class ParameterizedBuiltinOp extends Hops {
 				// simply pass the hashmap of parameters to the lop
 
 				// set the lop for the function call
-				set_lops(new ParameterizedBuiltin(inputlops,
+				
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 						HopsParameterizedBuiltinLops.get(_op), get_dataType(),
-						get_valueType()));
+						get_valueType());
+				
+				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				set_lops(pbilop);
 
 				// set the dimesnions for the lop for the output
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
@@ -158,6 +163,7 @@ public class ParameterizedBuiltinOp extends Hops {
 							get_dataType(), get_valueType());
 					// output dimensions are unknown at compilation time
 					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					//set_lops(grp_agg);
 					
@@ -168,10 +174,12 @@ public class ParameterizedBuiltinOp extends Hops {
 								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
-						throw new HopsException(e);
+						throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp -- \n" + e);
 					}
 					reblock.getOutputParameters().setDimensions(-1, -1, 
 							get_rows_in_block(), get_cols_in_block(), -1);
+					
+					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 					set_lops(reblock);
 				}
@@ -180,6 +188,7 @@ public class ParameterizedBuiltinOp extends Hops {
 							get_dataType(), get_valueType(), et);
 					// output dimensions are unknown at compilation time
 					grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					// introduce a reblock lop only if it is NOT single_node execution
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
@@ -193,10 +202,12 @@ public class ParameterizedBuiltinOp extends Hops {
 									get_cols_in_block(), get_dataType(),
 									get_valueType());
 						} catch (Exception e) {
-							throw new HopsException(e);
+							throw new HopsException(this.printErrorLocation() + "In ParameterizedBuiltinOp, error creating Reblock Lop -- \n " + e);
 						}
 						reblock.getOutputParameters().setDimensions(-1, -1, 
 								get_rows_in_block(), get_cols_in_block(), -1);
+						
+						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
 						set_lops(reblock);
 					}

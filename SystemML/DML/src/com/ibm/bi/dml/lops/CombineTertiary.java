@@ -95,6 +95,7 @@ public class CombineTertiary extends Lops {
 		}
 
 		CombineTertiary comn = new CombineTertiary(op, input1, input2, input3, dt, vt);
+		comn.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
 		return comn;
 	}
 

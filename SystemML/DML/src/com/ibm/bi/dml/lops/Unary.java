@@ -200,7 +200,7 @@ public class Unary extends Lops {
 			return "min";
 		
 		default:
-			throw new LopsException(
+			throw new LopsException(this.printErrorLocation() + 
 					"Instruction not defined for Unary operation: " + operation);
 		}
 	}
@@ -216,7 +216,7 @@ public class Unary extends Lops {
 			return inst;
 
 		} else {
-			throw new LopsException("Invalid number of operands ("
+			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
 					+ this.getInputs().size() + ") for an Unary opration: "
 					+ operation);
 		}
@@ -286,7 +286,7 @@ public class Unary extends Lops {
 				return getInstructions(""+inputIndex2, valueString, ""+outputIndex);
 			}
 		} else {
-			throw new LopsException("Invalid number of operands ("
+			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
 					+ this.getInputs().size() + ") for an Unary opration: "
 					+ operation);
 		}

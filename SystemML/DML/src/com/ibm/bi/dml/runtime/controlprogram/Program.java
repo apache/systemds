@@ -106,7 +106,13 @@ public class Program {
 			ProgramBlock pb = _programBlocks.get(i);
 			pb.setVariables(_programVariables);
 			
-			pb.execute(ec);
+			try {
+				pb.execute(ec);
+			}
+			catch(Exception e){
+				throw new DMLRuntimeException(pb.printBlockErrorLocation() + e);
+			}
+			
 			_programVariables = pb.getVariables();
 		}
 	}

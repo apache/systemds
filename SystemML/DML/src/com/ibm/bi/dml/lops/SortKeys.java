@@ -101,7 +101,9 @@ public class SortKeys extends Lops
 			}
 		}
 		
-		return new SortKeys(input1, op, dt, vt, et);
+		SortKeys retVal = new SortKeys(input1, op, dt, vt, et);
+		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		return retVal;
 	}
 
 	// This method is invoked ONLY for the case of Weighted SortKeys executing in CP
@@ -119,7 +121,9 @@ public class SortKeys extends Lops
 			}
 		}
 		
-		return new SortKeys(input1, input2, op, dt, vt, et);
+		SortKeys retVal = new SortKeys(input1, input2, op, dt, vt, et);
+		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
+		return retVal;
 	}
 
 

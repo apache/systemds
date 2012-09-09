@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>RecodeGenApp</name>
+	<name>GenerateRecodeMapApp</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,8 +16,13 @@
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>com.ibm.biginsights.textanalytics.nature.AQLBuilder</name>
+			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>full,incremental,</triggers>
 			<arguments>
+				<dictionary>
+					<key>LaunchConfigHandle</key>
+					<value>&lt;project&gt;/.externalToolBuilders/com.ibm.biginsights.textanalytics.nature.AQLBuilder (1).launch</value>
+				</dictionary>
 			</arguments>
 		</buildCommand>
 		<buildCommand>

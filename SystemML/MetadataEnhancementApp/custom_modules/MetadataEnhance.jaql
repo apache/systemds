@@ -62,23 +62,16 @@ genMetadata = fn (inputData)
               }
       -> group by d = $.attributeName 
             into { attributeName: d
-                  ,attributeCount: sum($[*].num)
-                  ,attributeDistinctCount: count($[*].num) 
+                  ,attributeCount: sum($[*].num) 
                  }
       -> group 
-            into (cC = inputData->count(), cA = count($),
+            into (cA = count($),
    	       $ -> transform each a {a.*, 
-                                         caseCount: cC,
-                                         countAttributes: cA
+                                        countAttributes: cA
                                         }
                  ) 
       -> expand $
          // set attribute kind based on some heuristics
-      -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
-                       {${*-}, attributeKind: "scale", attributeType: "string"} 
-   		else                      
-                       {${*-}, attributeKind: "nominal", attributeType: "string"}
-      -> sort by [$.attributeName] 
       -> enumerate()
       -> transform {"attributeColumnId":$[0] + 1, $[1].*}
 );
@@ -97,44 +90,12 @@ join orig in metadataMem, preserve new in kindHeuristic
    into {
       new.attributeName,
       "attributeColumnId":(if (isnull(orig.attributeColumnId)) new.attributeColumnId else orig.attributeColumnId),
-      "attributeKind":(if (isnull(orig.attributeKind)) new.attributeKind else orig.attributeKind),
-      "attributeType":(if (isnull(orig.attributeType)) new.attributeType else orig.attributeType),
-      "attributeDistinctCount": (if (isnull(orig.attributeDistinctCount)) new.attributeDistinctCount else orig.attributeDistinctCount)
+      "attributeKind":(if (isnull(orig.attributeKind)) "N/A" else orig.attributeKind),
+      "attributeType":(if (isnull(orig.attributeType)) "N/A" else orig.attributeType),
+      "attributeDistinctCount": (if (isnull(orig.attributeDistinctCount)) "N/A" else orig.attributeDistinctCount)
    }
    -> sort by [$.attributeColumnId]
    -> write(jsonText(outputMetadata))
 
 );
 
-
-//--------------------------------------------------------------------------------
-// Recode Maps
-//--------------------------------------------------------------------------------
-
-jsonLines = fn(location)
-    lines ( location,
-        inoptions = { converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"},
-        outoptions = { converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"});
-
-genRcdMap = fn (inputData, attrs, outFile) (
-
-   keep = (attrs -> filter $.attributeKind != "scale")[*].attributeName,
-   inputData
-   -> expand (fields($))
-   -> filter $[0] in keep
-   -> group by d = $ into d
-   -> group by aN = $[0] as dVals into (
-         x = dVals[*][1] -> filter not isnull $,	      
-         attrKind = singleton(attrs -> filter $.attributeName == aN).attributeKind,
-         if (attrKind != "ordinal") (
-               x 
-             ) else (
-               x -> sort by [$ desc]
-             )
-             -> enumerate()
-             -> transform {attributeName: aN, recodeId: $[0] + 1, catValue: $[1]} 
-      )
-   -> expand
-   -> write(jsonLines(outFile))
-
-);

@@ -11,8 +11,6 @@
 				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
 				Input_input_PARAM='${input}';
 				Input_inputMetadata_PARAM='${wf:conf("inputMetadata")}';
-				Input_outputMetadata_PARAM='${outputMetadata}';
-				Input_recodeMap_PARAM='${recodeMap}';
     	    </eval>
         </jaql>
         <ok to="end"/>

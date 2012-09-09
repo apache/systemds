@@ -1,0 +1,13 @@
+<application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <name>GenerateRecodeMap</name>
+    <description>This application generates a JSON format recode map file from the user provided input data file. The recode map file name will be the same as the input data file, with suffix "map.json". The application also updates the corresponding metadata file, based on data file name, with suffix "meta.json".</description>
+    <deploy_properties/>
+    <properties>
+        <property defaultValue="/user/biadmin/data/inputdata.json" description="Input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
+    </properties>
+    <assets>
+        <asset id="GenerateRecodeMap" type="WORKFLOW"/>
+    </assets>
+    <imagePath>analysis_L.png</imagePath>
+    <categories>Analytics</categories>
+</application-template>

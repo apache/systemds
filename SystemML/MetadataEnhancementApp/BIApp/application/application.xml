@@ -1,14 +1,12 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>Metadata Enhancement</name>
-    <description>This application applies a heuristic to determine attribute kind (scale/nominal/ordinal) when attributeKind is null and generates recode maps for categorical (nominal or ordinal) attributes. Also, if the input data is in delimited format, this app will generate a copy in JSON text records format. The path and name of the copy will be the same as the input data file plus the suffix ".json".</description>
+    <description>This application generates a JSON format meta data file from the user provided input data file. If the user also provides an initial meta data file, it will be merged into the output metadata file, which is based on the input data file name, with suffix "meta.json".  Also, if the input data is a CSV file in delimited format, this app will generate a copy in JSON text records format. The path and name of the copy will be the same as the input data file plus the suffix ".json".</description>
     <deploy_properties/>
     <properties>
         <property defaultValue="JSON Text Records" description="Input file format" isInputPath="false" isOutputPath="false" isRequired="true" label="Input File Format" name="inputFormat" paramtype="LIST" uitype="textfield" validValues="CSV, JSON Text Records"/>
         <property defaultValue="," description="Delimiter" isInputPath="false" isOutputPath="false" isRequired="false" label="Delimiter (Default value is &quot;,&quot;)" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/inputdata.json" description="Input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/init.meta.json" description="Input metadata file in JSON format" isInputPath="false" isOutputPath="false" isRequired="false" label="Input metadata file" name="inputMetadata" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="/user/biadmin/data/data.meta.json" description="Output metadata file in JSON format" isInputPath="false" isOutputPath="false" isRequired="true" label="Output metadata file" name="outputMetadata" paramtype="FILEPATH" uitype="textfield"/>
-        <property defaultValue="/user/biadmin/data/data.map.json" description="Recode map file" isInputPath="false" isOutputPath="false" isRequired="true" label="Recode map" name="recodeMap" paramtype="FILEPATH" uitype="textfield"/>
     </properties>
     <assets>
         <asset id="Metadata Enhancement" type="WORKFLOW"/>

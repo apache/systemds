@@ -1,0 +1,84 @@
+
+//--------------------------------------------------------------------------------
+// Recode Maps
+//--------------------------------------------------------------------------------
+
+jsonLines = fn(location)
+    lines ( location,
+        inoptions = { converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"},
+        outoptions = { converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"});
+        
+//
+// Generate metadata json file
+// We do some pre-aggregation to avoid Java Heap size problem for distinct()
+// in group by.
+//
+
+genMetadata = fn (inputData)
+(
+   inputData
+      -> expand (fields($))
+      -> group by d = $ 
+            into { attributeName: d[0] 
+                  ,num: count($) 
+              }
+      -> group by d = $.attributeName 
+            into { attributeName: d
+                  ,attributeCount: sum($[*].num)
+                  ,attributeDistinctCount: count($[*].num) 
+                 }
+      -> group 
+            into (cC = inputData->count(), 
+   	       $ -> transform each a {a.*, 
+                                     caseCount: cC
+                                 }
+                 ) 
+      -> expand $
+         // set attribute kind based on some heuristics
+      -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
+                       {${*-}, attributeKind: "scale", attributeType: "string"} 
+   		else                      
+                       {${*-}, attributeKind: "nominal", attributeType: "string"}
+);
+
+
+genRcdMap = fn (inputData, inputMeta, attrs, outFile) (
+
+
+   kindHeuristic = genMetadata (inputData),
+
+   newMeta = 
+      join orig in attrs, preserve new in kindHeuristic 
+      where orig.attributeName == new.attributeName
+      into {
+         new.attributeName,
+         "attributeColumnId": orig.attributeColumnId,
+         "attributeKind":(if ((orig.attributeKind == "N/A") or (isnull(orig.attributeKind))) new.attributeKind else orig.attributeKind),
+         "attributeType":(if ((orig.attributeType == "N/A") or (isnull(orig.attributeType))) new.attributeType else orig.attributeType),
+         "attributeDistinctCount": (if ((orig.attributeDistinctCount == "N/A") or (isnull(orig.attributeDistinctCount))) new.attributeDistinctCount else orig.attributeDistinctCount)
+      }
+      -> sort by [$.attributeColumnId],
+      
+   newMeta   
+      -> write(jsonText(inputMeta)),
+      
+   keep = (newMeta -> filter $.attributeKind != "scale")[*].attributeName,
+   inputData
+   -> expand (fields($))
+   -> filter $[0] in keep
+   -> group by d = $ into d
+   -> group by aN = $[0] as dVals into (
+         x = dVals[*][1] -> filter not isnull $,	      
+         attrKind = singleton(newMeta -> filter $.attributeName == aN).attributeKind,
+         if (attrKind != "ordinal") (
+               x 
+             ) else (
+               x -> sort by [$ desc]
+             )
+             -> enumerate()
+             -> transform {attributeName: aN, recodeId: $[0] + 1, catValue: $[1]} 
+      )
+   -> expand
+   -> write(jsonLines(outFile))
+
+);

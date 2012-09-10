@@ -85,7 +85,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 				executeInstruction( inst );
 			}
 			catch (Exception e){
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString() );
+				System.out.println(e.toString());
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString());
 			}
 		}
 		
@@ -201,4 +202,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		return _baseDir + DEFAULT_FILENAME + _defaultSeq.getNextID();
 	}	
 
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in external function program block (for CP) generated from external function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
 }

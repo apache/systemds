@@ -192,7 +192,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 							.get(i),
 							this._prog.getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
-
+					e.printStackTrace();
 					throw new PackageRuntimeException(this.printBlockErrorLocation() + 
 							"Failed to execute instruction "
 									+ _inst.get(i).toString());
@@ -278,7 +278,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
-			throw new PackageRuntimeException(ExternalFunctionStatement.CLASS_NAME + " not provided!");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());
@@ -385,7 +385,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		  		try {
 					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));
 				} catch (Exception e) {
-					throw new PackageRuntimeException(e);
+					throw new PackageRuntimeException(this.printBlockErrorLocation(), e);
 				}
 			}
 	
@@ -403,7 +403,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				try {
 					c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
 				} catch (Exception e) {
-					throw new PackageRuntimeException(e);
+					throw new PackageRuntimeException(this.printBlockErrorLocation() + "error generating instructions", e);
 				}
 			}
 			
@@ -546,7 +546,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		String configFile = inst.getConfigFile();
 
 		if (className == null)
-			throw new PackageRuntimeException("Class name can't be null");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
 
 		// create instance of package function.
 
@@ -554,12 +554,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		try {
 			o = Class.forName(className).newInstance();
 		} catch (Exception e) {
-			throw new PackageRuntimeException(
+			throw new PackageRuntimeException(this.printBlockErrorLocation() +
 					"Error generating package function object " + e.toString());
 		}
 
 		if (!(o instanceof PackageFunction))
-			throw new PackageRuntimeException(
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + 
 					"Class is not of type PackageFunction");
 
 		PackageFunction func = (PackageFunction) o;
@@ -960,5 +960,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	public HashMap<String,String> getOtherParams()
 	{
 		return _otherParams;
+	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in external function program block generated from external function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 }

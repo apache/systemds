@@ -323,7 +323,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		IntObject incr = executePredicateInstructions( 3, _incrementInstructions, ec );
 		
 		if ( incr.getIntValue() <= 0 ) //would produce infinite loop
-			throw new DMLRuntimeException("Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 		
 		///////
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
@@ -1225,4 +1225,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return sb.toString();   		
 	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
 }

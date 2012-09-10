@@ -76,7 +76,7 @@ public class ProgramBlock {
 		_variables.remove(name);
 	}
 	
-	private void printSymbolTable() {
+	protected void printSymbolTable() {
 		// print _variables map
 		System.out.println ("____________________________________");
 		System.out.println ("___ Variables ____");
@@ -138,8 +138,7 @@ public class ProgramBlock {
 					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 				}
 				catch (Exception e){
-					System.out.println("****************************** VARIABLES ********************************************");
-					printSymbolTable();
+					e.printStackTrace();
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (an MRJobInstruction). inst: " + currInst.toString() );
 				}
 			} 
@@ -171,8 +170,7 @@ public class ProgramBlock {
 				
 				}
 				catch (Exception e){
-					System.out.println("****************************** VARIABLES ********************************************");
-					printSymbolTable();
+					e.printStackTrace();
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a CPInstruction). inst: " + currInst.toString() );
 				}
 			} 
@@ -183,12 +181,8 @@ public class ProgramBlock {
 				}
 				catch(Exception e)
 				{
-					//e.printStackTrace();
-					
-					System.out.println("****************************** VARIABLES ********************************************");
-					printSymbolTable();
+					e.printStackTrace();
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a SQLInstruction). inst: " + currInst.toString() );
-				
 				}
 			}
 			/*

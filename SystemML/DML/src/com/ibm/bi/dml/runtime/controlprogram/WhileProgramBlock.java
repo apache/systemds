@@ -4,6 +4,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -116,7 +117,7 @@ public class WhileProgramBlock extends ProgramBlock {
 		}
 		
 		if ( result == null )
-			throw new DMLRuntimeException("Failed to evaluate the WHILE predicate.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.");
 		return result;
 	}
 	
@@ -128,7 +129,15 @@ public class WhileProgramBlock extends ProgramBlock {
 			predResult = executePredicate(ec); 
 		}
 		catch(Exception e){
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate. See stack trace for details.");
+			System.out.println(e.toString());
+			
+			if (DMLScript.DEBUG){
+				System.out.println();
+				System.out.println("****************************** WHILE PREDICATE VARIABLES ********************************************");
+				printSymbolTable();
+			}
+			
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate ");
 		}
 		
 		while(predResult.getBooleanValue()){
@@ -137,12 +146,34 @@ public class WhileProgramBlock extends ProgramBlock {
 			for (int i=0; i < this._childBlocks.size(); i++){
 				ProgramBlock pb = this._childBlocks.get(i);
 				pb.setVariables(_variables);
-				pb.execute(ec);
+				
+				try {
+					pb.execute(ec);
+				}
+				catch(Exception e){
+					System.out.println(e.toString());
+					
+					if (DMLScript.DEBUG){
+						System.out.println();
+						System.out.println("****************************** WHILE PROGRAM BLOCK VARIABLES ********************************************");
+						printSymbolTable();
+					}
+					
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block");
+				}
+				
 				_variables = pb._variables;
 			}
 			predResult = executePredicate(ec);
 		}
-		execute(_exitInstructions, ec);
+		
+		try {
+			execute(_exitInstructions, ec);
+		}
+		catch(Exception e){
+			System.out.println(e.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing exit instructions ");
+		}
 		
 	}
 	
@@ -153,5 +184,9 @@ public class WhileProgramBlock extends ProgramBlock {
 	public void setChildBlocks(ArrayList<ProgramBlock> childs) 
 	{
 		_childBlocks = childs;
+	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in while program block generated from while statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 }

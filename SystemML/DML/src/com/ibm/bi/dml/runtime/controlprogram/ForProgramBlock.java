@@ -162,8 +162,15 @@ public class ForProgramBlock extends ProgramBlock
 			for (ProgramBlock pb : this._childBlocks)
 			{	
 				pb.setVariables(_variables);
-				pb.execute(ec);
-
+				
+				try {
+					pb.execute(ec);
+				}
+				catch (Exception e){
+					System.out.println(e.toString());
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block");
+				}
+				
 				_variables = pb._variables;
 			}
 			
@@ -174,8 +181,13 @@ public class ForProgramBlock extends ProgramBlock
 			//increment of iterVar (changes  in loop body get discarded)
 			iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
 		}
-		
-		execute(_exitInstructions, ec);	
+		try {
+			execute(_exitInstructions, ec);	
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating for program block exit instructions");
+		}
 	}
 
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
@@ -238,7 +250,8 @@ public class ForProgramBlock extends ProgramBlock
 			else if (pos == 2) predNameStr = "to";
 			else if (pos == 3) predNameStr = "increment";
 			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate -- " + ex);
+			System.out.println(ex.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate");
 		}
 		
 		//final check of resulting int object
@@ -255,5 +268,9 @@ public class ForProgramBlock extends ProgramBlock
 		}
 		
 		return ret;
+	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in function program block generated from function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 }

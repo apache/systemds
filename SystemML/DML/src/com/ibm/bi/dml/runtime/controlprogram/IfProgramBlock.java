@@ -1,4 +1,3 @@
-// DOUG VERSION
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
@@ -144,7 +143,7 @@ public class IfProgramBlock extends ProgramBlock {
 		}
 		
 		if ( result == null )
-			throw new DMLRuntimeException("Failed to evaluate the IF predicate.");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.");
 		return result;
 	}
 	
@@ -156,7 +155,8 @@ public class IfProgramBlock extends ProgramBlock {
 			predResult = executePredicate(ec); 
 		}
 		catch (Exception e){
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement predicate. See stack trace for details.");
+			System.out.println(e.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if predicate");
 		}
 			
 		if(predResult.getBooleanValue()){
@@ -165,7 +165,15 @@ public class IfProgramBlock extends ProgramBlock {
 			for (ProgramBlock pb : this._childBlocksIfBody){
 				
 				pb.setVariables(_variables);
-				pb.execute(ec);
+				
+				try {
+					pb.execute(ec);
+				}
+				catch(Exception e){
+					System.out.println(e.toString());
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statmement body ");
+				}
+				
 				_variables = pb._variables;
 			}
 		}
@@ -175,12 +183,28 @@ public class IfProgramBlock extends ProgramBlock {
 			for (ProgramBlock pb : this._childBlocksElseBody){
 				
 				pb.setVariables(_variables);
-				pb.execute(ec);
+				
+				try {
+					pb.execute(ec);
+				}
+				catch (Exception e){
+					System.out.println(e.toString());
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statmement body ");
+				}
 				_variables = pb._variables;
 			}
 		}
-		
-		execute(_exitInstructions, ec);
-		
+		try { 
+			execute(_exitInstructions, ec);
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating exit instructions ");
+		}
 	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in if program block generated from if statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
 }

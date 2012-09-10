@@ -140,8 +140,15 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// execute the function block
 		fpb.setVariables(functionVariables);
 	
-		fpb.execute(null);
-		
+		try {
+			fpb.execute(null);
+		}
+		catch (Exception e){
+			System.out.println(e.toString());
+			String fname = this._namespace + "::" + this._functionName;
+			throw new DMLRuntimeException("error executing function " + fname);
+		}
+			
 		LocalVariableMap returnedVariables = fpb.getVariables(); 
 		
 		// add the updated binding for each return variable to the program block variables

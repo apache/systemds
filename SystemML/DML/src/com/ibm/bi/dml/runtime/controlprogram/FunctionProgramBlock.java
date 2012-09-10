@@ -63,7 +63,15 @@ public class FunctionProgramBlock extends ProgramBlock {
 		for (int i=0; i < this._childBlocks.size(); i++){
 			ProgramBlock pb = this._childBlocks.get(i);
 			pb.setVariables(_variables);
-			pb.execute(ec);
+			
+			try {
+				pb.execute(ec);
+			}
+			catch (Exception e){
+				System.out.println(e.toString());
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function body");
+			}
+			
 			_variables = pb._variables;
 		}
 	}
@@ -71,4 +79,9 @@ public class FunctionProgramBlock extends ProgramBlock {
 	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
 	}
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in function program block generated from function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
 }

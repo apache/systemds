@@ -339,6 +339,15 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
+	public void cleanUp()
+	{
+		if(sparse && denseBlock!=null)
+			denseBlock=null;
+		else if(!sparse && sparseRows!=null)
+			sparseRows=null;
+			
+	}
+	
 	private void copySparseToSparse(MatrixBlockDSM that)
 	{
 		this.nonZeros=that.nonZeros;

@@ -191,6 +191,22 @@
 	
 	<!-- Target for SystemML applications -->
 	<target name="apps" depends="jar">
+		<ant antfile="../MetadataEnhancementApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../FilterProjectApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../GenerateRecodeMapApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../RecodeApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
 		<ant antfile="../LinearRegressionApp/build/build.xml" 
              target="buildAppZipFile" 
 			 inheritAll="false">
@@ -199,6 +215,14 @@
              target="buildAppZipFile" 
 		     inheritAll="false">
 		</ant>
+		<ant antfile="../LinearLogisticRegressionApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../LinearLogisticRegressionScoreApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
 		<ant antfile="../MultiClassSVMApp/build/build.xml" 
 		     target="buildAppZipFile" 
 			 inheritAll="false">
@@ -211,6 +235,34 @@
 			     target="buildAppZipFile" 
 			     inheritAll="false">
 		</ant>
+		<ant antfile="../GNMFApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../UnivariateStatsApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../UnivariateDecodeApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../BivariateStatsApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../BivariateDecodeApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../PivotApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
+		<ant antfile="../UnPivotApp/build/build.xml" 
+             target="buildAppZipFile" 
+			 inheritAll="false">
+   		</ant>
 	</target>
 		
 	<!-- Target for Nov. 2012 release -->
@@ -223,11 +275,24 @@
 			 destfile="${release.2012_Nov}/${build.configjartgz}" 
 			 compression="gzip"/>
         <mkdir dir="${release.2012_Nov}/Apps" />
+        <copy file="../MetadataEnhancementApp/build/MetadataEnhancementApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../FilterProjectApp/build/FilterProjectApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../GenerateRecodeMapApp/build/GenerateRecodeMapApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../RecodeApp/build/RecodeApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
         <copy file="../LinearRegressionApp/build/LinearRegressionApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../LinearRegressionScoreApp/build/LinearRegressionScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../LinearLogisticRegressionApp/build/LinearLogisticRegressionApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../LinearLogisticRegressionScoreApp/build/LinearLogisticRegressionScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../MultiClassSVMApp/build/MultiClassSVMApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../MultiClassSVMScoreApp/build/MultiClassSVMScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../FrequentSequenceMinerApp/build/FrequentSequenceMinerApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../GNMFApp/build/GNMFApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../UnivariateStatsApp/build/UnivariateStatsApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../UnivariateDecodeApp/build/UnivariateDecodeApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../BivariateStatsApp/build/BivariateStatsApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../BivariateDecodeApp/build/BivariateDecodeApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../PivotApp/build/PivotApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<copy file="../UnPivotApp/build/UnPivotApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 	</target>
 	
 	<target name="auto">

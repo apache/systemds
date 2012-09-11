@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -1034,13 +1036,16 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock readMatrixFromLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
-		DataInputStream in = new DataInputStream (new FileInputStream (filePathAndName));
+		FileInputStream fis = new FileInputStream( filePathAndName );
+		BufferedInputStream bis = new BufferedInputStream( fis );
+		DataInputStream in = new DataInputStream( bis );
+
 		MatrixBlock newData = new MatrixBlock ();
 		try {
-			newData.readFields (in);
+			newData.readFields(in);
 		}
 		finally{
-			in.close ();
+			in.close();
 		}
    		newData.clearEnvelope ();
    		
@@ -1111,8 +1116,11 @@ public class MatrixObjectNew extends CacheableData
 		throws FileNotFoundException, IOException
 	{
 		//System.out.println("write matrix local");
+
+		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		BufferedOutputStream bos = new BufferedOutputStream( fos );
+		DataOutputStream out = new DataOutputStream( bos );
 		
-		DataOutputStream out = new DataOutputStream (new FileOutputStream (filePathAndName));
 		try {
 			_data.write (out);
 		}

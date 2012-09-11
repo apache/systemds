@@ -6,11 +6,11 @@ dummy2 = Rand(rows=1,cols=10,min=1.0,max=1.0);
 
 parfor( i in 1:20 )
 {                 
-   A[1:10,i]=dummy1*i;
-   A[11:20,i]=dummy1*i;
+   A[:10,i]=dummy1*i;
+   A[11:,i]=dummy1*i;
    
-   B[i,1:10]=dummy2*i;
-   B[i,11:20]=dummy2*i;
+   B[i,:10]=dummy2*i;
+   B[i,11:]=dummy2*i;
 }
 
 #print(C);

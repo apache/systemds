@@ -100,7 +100,7 @@ parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 if ( k1 == 3 ) {
                     # ordinal-ordinal
                     print("[" + i + "," + j + "] ordinal-ordinal");
-                    sp = spearman(A1,A2);
+                    #sp = spearman(A1,A2);
                     #FIXME basestats[6,pairID] = dummy*sp;
                 }
             }

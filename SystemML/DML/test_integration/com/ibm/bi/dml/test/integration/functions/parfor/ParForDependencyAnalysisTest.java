@@ -19,13 +19,13 @@ import com.ibm.bi.dml.utils.LanguageException;
  *    1: no, 2: dep, 3: no, 4: no, 5: dep, 6: no, 7: no, 8: dep, 9: dep, 10: no   
  * * matrix 1D tests - expected results
  *    11: no, 12: no, 13: no, 14:dep, 15: no, 16: dep, 17: dep, 18: no, 19: no (DEP, hard), 20: no, 
- *    21: dep, 22: no, 23: no, 24: no, 25: no, 26:no, 29: no (previously ERR)
+ *    21: dep, 22: no, 23: no, 24: no, 25: no, 26:no, 26b:dep, 26c: no, 26c2: no,  29: no
  * * nested control structures
  *    27:dep                                                                    
  * * nested parallelism and nested for/parfor
- *    28: no, 28b: no, 28c: no, 28d: dep
+ *    28: no, 28b: no, 28c: no, 28d: dep, 28e: no
  * * range indexing
- *    30: no, 31: no, 32: dep, 32b: dep, 32c: dep (TODO: no, dep is false positive), 32d: dep, 32e:dep
+ *    30: no, 31: no, 31b: no, 32: dep, 32b: dep, 32c: dep (no, dep is false positive), 32d: dep, 32e:dep
  * * set indexing
  *    33: dep, 34: dep, 35: no
  * * multiple matrix references per statement
@@ -117,6 +117,18 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis26() { runTest("parfor26.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis26b() { runTest("parfor26b.dml", true); }
+
+	@Test
+	public void testDependencyAnalysis26c() { runTest("parfor26c.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis26c2() { runTest("parfor26c2.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis26d() { runTest("parfor26d.dml", true); }
 	
 	@Test
 	public void testDependencyAnalysis27() { runTest("parfor27.dml", true); }
@@ -134,6 +146,12 @@ public class ParForDependencyAnalysisTest
 	public void testDependencyAnalysis28d() { runTest("parfor28d.dml", true); }
 
 	@Test
+	public void testDependencyAnalysis28e() { runTest("parfor28e.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis28f() { runTest("parfor28f.dml", false); }
+	
+	@Test
 	public void testDependencyAnalysis29() { runTest("parfor29.dml", false); } 
 	
 	@Test
@@ -142,6 +160,9 @@ public class ParForDependencyAnalysisTest
 	@Test
 	public void testDependencyAnalysis31() { runTest("parfor31.dml", false); } 
 	
+	@Test
+	public void testDependencyAnalysis31b() { runTest("parfor31b.dml", false); } 
+		
 	@Test
 	public void testDependencyAnalysis32() { runTest("parfor32.dml", true); }
 

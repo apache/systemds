@@ -1,0 +1,9 @@
+A = Rand(rows=10,cols=10,min=0,max=0);
+
+parfor( i in 2:10 )
+{ 
+   B = A[1,i-1];
+   A[1,i] = B*i; 
+}
+
+#print(A);

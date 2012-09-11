@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -23,6 +24,7 @@ import com.ibm.bi.dml.utils.LanguageException;
 /**
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate
  * for checking/setting optional parfor parameters and running the loop dependency analysis.
+ * 
  * 
  * NOTE: related test suite: dml.test.components.parser.ParForDependencyAnalysisTest 
  * 
@@ -38,6 +40,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	public static final String TASK_PARTITIONER = "taskpartitioner"; //task partitioner 
 	public static final String TASK_SIZE        = "tasksize";    //number of tasks 
 	public static final String DATA_PARTITIONER = "datapartitioner"; //task partitioner 
+	public static final String RESULT_MERGE     = "resultmerge"; //task partitioner 
 	public static final String EXEC_MODE        = "mode";        //runtime execution mode	
 	public static final String OPT_MODE         = "opt";        //runtime execution mode	
 	
@@ -74,7 +77,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames.add( PAR ); 
 		_paramNames.add( TASK_PARTITIONER ); 
 		_paramNames.add( TASK_SIZE ); 
-		_paramNames.add( DATA_PARTITIONER ); 
+		_paramNames.add( DATA_PARTITIONER );
+		_paramNames.add( RESULT_MERGE );
 		_paramNames.add( EXEC_MODE ); 
 		_paramNames.add( OPT_MODE ); 
 		
@@ -85,6 +89,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( TASK_PARTITIONER,  String.valueOf(PTaskPartitioner.FIXED) );
 		_paramDefaults.put( TASK_SIZE,         "1" );
 		_paramDefaults.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.NONE) );
+		_paramDefaults.put( RESULT_MERGE,      String.valueOf(PResultMerge.LOCAL_AUTOMATIC) );
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
 		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.NONE) );
 		
@@ -219,7 +224,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				
 				//assume no dependency
 				sCount = 0; 				
-				boolean[] dep = new boolean[]{false,false,false}; //ouput, data, anti
+				boolean[] dep = new boolean[]{false,false,false}; //output, data, anti
 				rCheckCandidates(c, cdt, pfs.getBody(), sCount, dep);
 				
 
@@ -410,7 +415,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
 			for( Statement s : sb._statements ) // foreach statement in statement block
 			{
-				if( s instanceof ForStatement ) //includes for and partfor
+				if( s instanceof ForStatement ) //includes for and parfor
 				{
 					rDeterminePartitioningCandidates(var,((ForStatement)s).getBody(), C);
 				}
@@ -802,7 +807,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		throws LanguageException
 	{
 		// catch all known for/ parfor bounds 
-		// (all unkown bounds are assumed to be +-infinty)
+		// (all unknown bounds are assumed to be +-infinity)
 		
 		for( StatementBlock sb : sbs )
 			for( Statement s : sb._statements )
@@ -848,10 +853,13 @@ public class ParForStatementBlock extends ForStatementBlock
 						_bounds._increment.put(ip.getIterVar()._name, incr);
 					}	
 					
-					//recursive invocation
-					ArrayList<StatementBlock> tmp = fs.getBody();
-					if( tmp != null )
-						rDetermineBounds(tmp, lFlag);
+					//recursive invocation (but not for nested parfors due to constant check)
+					if( !lFlag )
+					{
+						ArrayList<StatementBlock> tmp = fs.getBody();
+						if( tmp != null )
+							rDetermineBounds(tmp, lFlag);
+					}
 				}
 				else if( s instanceof ForStatement ) 
 				{
@@ -1008,6 +1016,52 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( LDEBUG )
 			System.out.println("PARFOR: GCD result: "+ret);
 
+		if( !CONSERVATIVE_CHECK && ret ) //only if not already no dependency
+		{
+			//NOTE: cases both and none negligible already covered (constant check, general case) 
+			boolean ignoreRow = isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+			boolean ignoreCol = isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
+	
+			LinearFunction f1p = null, f2p = null;
+			if( ignoreRow )
+			{
+				f1p = getColLinearFunction(dat1);
+				f2p = getColLinearFunction(dat2);
+			}
+			if( ignoreCol )
+			{
+				f1p = getRowLinearFunction(dat1);
+				f2p = getRowLinearFunction(dat2);
+			}
+			
+			if( LDEBUG )
+			{
+				System.out.println("PARFOR: f1p: "+f1p.toString());
+				System.out.println("PARFOR: f2p: "+f2p.toString());
+			}
+			
+			if( f1p!=null && f2p!=null )
+			{
+				forceConsistency(f1p, f2p);
+				
+				long lgcd2 = f1p._b[0];
+				for( int i=1; i<f1p._b.length; i++ )
+					lgcd2 = determineGCD( lgcd2, f1p._b[i] );
+				for( int i=0; i<f2p._b.length; i++ )
+					lgcd2 = determineGCD( lgcd2, f2p._b[i] );
+				
+				if( (Math.abs(f1p._a-f2p._a) % lgcd2) != 0 ) //if GCD divides the intercepts
+				{
+					//no integer solution exists -> no dependency
+					ret = false;
+				}	
+				
+				if( LDEBUG )
+					System.out.println("PARFOR: GCD result: "+ret);
+			}
+		}
+		
+		
 		///////
 		//Step 3: run Banerjee Test		
 		///////
@@ -1152,14 +1206,14 @@ public class ParForStatementBlock extends ForStatementBlock
 			System.out.println("PARFOR: (f1==f2) = "+ret);
 		}
 		
-		//additional check we cols/rows could be ignored
+		//additional check if cols/rows could be ignored
 		if( !CONSERVATIVE_CHECK && !ret ) //only if not already equal
 		{
-			//NOTE: cases both and none ignorable already converd (constant check, general case) 
+			//NOTE: cases both and none negligible already covered (constant check, general case) 
 			boolean ignoreRow = isRowIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
 			boolean ignoreCol = isColumnIgnorable((IndexedIdentifier)dat1, (IndexedIdentifier)dat2);
 	
-			LinearFunction f1p=null, f2p=null;
+			LinearFunction f1p = null, f2p = null;
 			if( ignoreRow )
 			{
 				f1p = getColLinearFunction(dat1);
@@ -1178,8 +1232,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				
 				if( LDEBUG )
 				{
-					System.out.println("PARFOR: f1p: "+f1.toString());
-					System.out.println("PARFOR: f2p: "+f2.toString());
+					System.out.println("PARFOR: f1p: "+f1p.toString());
+					System.out.println("PARFOR: f2p: "+f2p.toString());
 					System.out.println("PARFOR: (f1p==f2p) = "+ret);
 				}
 			}

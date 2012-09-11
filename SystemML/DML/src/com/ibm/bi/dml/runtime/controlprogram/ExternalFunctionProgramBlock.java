@@ -711,7 +711,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	protected MatrixObjectNew createOutputMatrixObject( Matrix m ) 
 		throws CacheException 
 	{
-		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), 0, 0);
+		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
 		return new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
 	}

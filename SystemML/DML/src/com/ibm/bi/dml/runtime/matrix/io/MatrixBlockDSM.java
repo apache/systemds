@@ -159,10 +159,13 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		
 		int ind = 0;
+		double lvalue = -1;
 		for(int i=0; i < r; i++) {
 			for(int j=0; j < c; j++) {
-				denseBlock[ind++] = arr[i][j];
-				nonZeros++;
+				lvalue = arr[i][j];
+				denseBlock[ind++] = lvalue;
+				if( lvalue!=0 )
+					nonZeros++;
 			}
 		}
 		maxrow = r;
@@ -491,12 +494,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return denseBlock;
 	}
 	
-	//TODO: this function is used in many places, but may not be the right api to expose sparse cells.
-	//TODO: MB: maybe, we should provide a simple open, next close interface for this in order to reduce the number of
-	//          additional required memory 
-	//      public MBState open(); //MBState is empty class and we use a subclass for internal state management of concurrent iterators.
-	//      public Pair<CellIndex,Double> getNext(MBState); //returns null if EOF, thus we could use a simple while loop from outside, mem requirement would be one pair at a time.
-	//      public void close(MBState); 
+	@Deprecated
 	public HashMap<CellIndex, Double> getSparseMap()
 	{
 		if(!sparse || sparseRows==null)

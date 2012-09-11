@@ -53,7 +53,7 @@ public abstract class CacheableData extends Data
 	public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
     public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
 	
-    public static final String cacheEvictionLocalFilePath = "/tmp/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; 
+    public static final String cacheEvictionLocalFilePath = "/tmp/systemml/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; 
     public static String cacheEvictionLocalFilePrefix = "cache";
     public static final String cacheEvictionLocalFileExtension = ".dat";
     public static final String cacheEvictionHDFSFilePath = Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; //prefix dir is set during runtime

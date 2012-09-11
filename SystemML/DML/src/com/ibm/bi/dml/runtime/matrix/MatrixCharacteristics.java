@@ -87,6 +87,11 @@ public class MatrixCharacteristics{
 	public int get_cols_per_block() {
 		return numColumnsPerBlock;
 	}
+	
+	public long getNonZeros() {
+		return nonZero;
+	}
+	
 	public String toString()
 	{
 		return "["+numRows+" x "+numColumns+", nnz="+nonZero

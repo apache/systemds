@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TextToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedCellToSortInputConverter;
 import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.*;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -90,7 +91,17 @@ public class MRJobConfiguration {
 	//matrix indexes to be outputted to reducer
 	private static final String OUTPUT_INDEXES_IN_MAPPER_CONFIG="output.indexes.in.mapper";
 	
+	//parfor serialized program
 	private static final String PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG="programblocks.in.mapper";
+	
+	//partitioning input info
+	private static final String PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG="partitioning.input.matrix.num.row";
+	private static final String PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG="partitioning.input.matrix.num.column";
+	private static final String PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
+	private static final String PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG="partitioning.input.block.num.column";
+	private static final String PARTITIONING_INPUT_INFO_CONFIG="partitioning.input.inputinfo";
+	private static final String PARTITIONING_INPUT_FORMAT_CONFIG="partitioning.input.format";
+	
 	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
@@ -446,11 +457,59 @@ public class MRJobConfiguration {
 		return instructions;
 	}
 	
+	//parfor configurations
+	public static void setProgramBlocksInMapper(JobConf job, String sProgramBlocks) 
+	{
+		job.set(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG, sProgramBlocks);
+	}
+	
 	public static String getProgramBlocksInMapper(JobConf job) 
 	{
 		String str = job.get(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG);
 		return str;
 	}
+	
+	//partitioning configurations
+	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, PDataPartitionFormat dpf )
+	{
+		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
+		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
+		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
+		job.set(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG, String.valueOf(bclen));
+		job.set(PARTITIONING_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
+		job.set(PARTITIONING_INPUT_FORMAT_CONFIG, dpf.toString());
+	}
+	
+	public static long getPartitioningNumRows( JobConf job )
+	{
+		return Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG));
+	}
+	
+	public static long getPartitioningNumCols( JobConf job )
+	{
+		return Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG));
+	}
+	
+	public static int getPartitioningBlockNumRows( JobConf job )
+	{
+		return Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG));
+	}
+	
+	public static int getPartitioningBlockNumCols( JobConf job )
+	{
+		return Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG));
+	}
+	
+	public static InputInfo getPartitioningInputInfo( JobConf job )
+	{
+		return InputInfo.stringToInputInfo(job.get(PARTITIONING_INPUT_INFO_CONFIG));
+	}
+	
+	public static PDataPartitionFormat getPartitioningFormat( JobConf job )
+	{
+		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_INPUT_FORMAT_CONFIG));
+	}
+	
 	
 	public static byte[] getOutputIndexesInMapper(JobConf job)
 	{
@@ -517,11 +576,6 @@ public class MRJobConfiguration {
 	public static void setInstructionsInMapper(JobConf job, String instructionsInMapper)
 	{
 		job.set(INSTRUCTIONS_IN_MAPPER_CONFIG, instructionsInMapper);
-	}
-	
-	public static void setProgramBlocksInMapper(JobConf job, String sProgramBlocks) 
-	{
-		job.set(PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG, sProgramBlocks);
 	}
 	
 	public static void setAggregateInstructions(JobConf job, String aggInstructionsInReducer)

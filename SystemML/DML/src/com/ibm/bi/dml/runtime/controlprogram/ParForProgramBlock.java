@@ -22,7 +22,8 @@ import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocalSplit;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
@@ -30,6 +31,9 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.RemoteParForMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoring;
@@ -64,9 +68,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * TODO Datapartitioning for textcell and binary cell
- * 
- *  
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
  * TODO: deferred dependency checking during runtime (for unknown matrix dimensionality)
@@ -103,6 +104,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		LOCAL,      // local file based partition split on master node
 		REMOTE_MR   // remote partition split using a reblock MR job 
   	}
+
+	public enum PResultMerge {
+		LOCAL_MEM,  // in-core (in-memory) result merge (output and one input at a time)
+		LOCAL_FILE, // out-of-core result merge (file format dependent)
+		LOCAL_AUTOMATIC //decides between MEM and FILE based on the size of the output matrix 
+	}
 	
 	//optimizer
 	public enum POptMode{
@@ -111,6 +118,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
 		FULL_DP    //full cost-based optimization algorithm (global optimum, affects all instructions)				
 	}
+	
 
 		
 	// internal parameters
@@ -143,7 +151,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected int              _numThreads      = -1;
 	protected PTaskPartitioner _taskPartitioner = null; 
 	protected int              _taskSize        = -1;
-	protected PDataPartitioner _dataPartitioner = null; 
+	protected PDataPartitioner _dataPartitioner = null;
+	protected PResultMerge     _resultMerge     = null;
 	protected PExecMode        _execMode        = null;
 	protected POptMode         _optMode         = null;
 	
@@ -206,6 +215,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			_taskPartitioner = PTaskPartitioner.valueOf( _params.get(ParForStatementBlock.TASK_PARTITIONER).toUpperCase() );
 			_taskSize        = Integer.parseInt( _params.get(ParForStatementBlock.TASK_SIZE) );
 			_dataPartitioner = PDataPartitioner.valueOf( _params.get(ParForStatementBlock.DATA_PARTITIONER).toUpperCase() );
+			_resultMerge     = PResultMerge.valueOf( _params.get(ParForStatementBlock.RESULT_MERGE).toUpperCase() );
 			_execMode        = PExecMode.valueOf( _params.get(ParForStatementBlock.EXEC_MODE).toUpperCase() );
 			_optMode         = POptMode.valueOf( _params.get(ParForStatementBlock.OPT_MODE).toUpperCase());		
 		}
@@ -369,7 +379,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
-							MatrixObjectNew moVarNew = dp.createPartitionedMatrix(moVar);
+							MatrixObjectNew moVarNew = dp.createPartitionedMatrixObject(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
 							System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
@@ -969,16 +979,42 @@ public class ParForProgramBlock extends ForProgramBlock
 		switch( dataPartitioner )
 		{
 			case LOCAL:
-				dp = new DataPartitionerLocalSplit(dpf);
+				dp = new DataPartitionerLocal(dpf);
 				break;
 			case REMOTE_MR:
-				throw new DMLRuntimeException("Not implemented yet.");
-				//break;
+				dp = new DataPartitionerRemoteMR( dpf, _ID, _numThreads, 
+						                          WRITE_REPLICATION_FACTOR, 
+						                          MAX_RETRYS_ON_ERROR, 
+						                          ALLOW_REUSE_MR_JVMS );
+				break;
 			default:
 				throw new DMLRuntimeException("Undefined data partitioner: '" +dataPartitioner.toString()+"'.");
 		}
 		
 		return dp;
+	}
+	
+	private ResultMerge createResultMerge( PResultMerge prm, MatrixObjectNew out, MatrixObjectNew[] in, String fname ) 
+		throws DMLRuntimeException 
+	{
+		ResultMerge rm = null;
+		
+		switch( prm )
+		{
+			case LOCAL_MEM:
+				rm = new ResultMergeLocalMemory( out, in, fname );
+				break;
+			case LOCAL_FILE:
+				rm = new ResultMergeLocalFile( out, in, fname );
+				break;
+			case LOCAL_AUTOMATIC:
+				rm = new ResultMergeLocalAutomatic( out, in, fname );
+				break;
+			default:
+				throw new DMLRuntimeException("Undefined result merge: '" +prm.toString()+"'.");
+		}
+		
+		return rm;
 	}
 	
 	/**
@@ -1079,13 +1115,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			MatrixObjectNew out = (MatrixObjectNew) getVariable(varname);
 			MatrixObjectNew[] in = new MatrixObjectNew[ results.length ];
 			for( int i=0; i< results.length; i++ )
-				in[i] = (MatrixObjectNew) results[i].get( varname ); 
-			
+				in[i] = (MatrixObjectNew) results[i].get( varname ); 			
 			String fname = constructResultMergeFileName();
-			ResultMerge rm = new ResultMerge( out, in, fname, _numThreads );
+			ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
 			MatrixObjectNew outNew = null;
 			if( USE_PARALLEL_RESULT_MERGE )
-				outNew = rm.executeParallelMerge();
+				outNew = rm.executeParallelMerge( _numThreads );
 			else
 				outNew = rm.executeSerialMerge(); 			
 			_variables.put( varname, outNew);

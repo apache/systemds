@@ -43,7 +43,8 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -747,7 +748,8 @@ public class DMLScript {
 			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
                     							   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
 			CacheableData.cleanupCacheDir();
-			DataPartitioner.cleanupWorkingDirectory();
+			DataPartitionerLocal.cleanupWorkingDirectory();
+			ResultMergeLocalFile.cleanupWorkingDirectory();
 		}
 	} // end executeHadoop
 

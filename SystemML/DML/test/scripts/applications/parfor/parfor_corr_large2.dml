@@ -1,0 +1,31 @@
+V = read($1,rows=$2,cols=$3);
+m = $2;
+n = $3;
+W = m;
+
+R = Rand(rows=n,cols=n,min=0,max=0); 
+dummy = Rand(rows=1, cols=1, min=1, max=1);
+
+parfor( i in 1:8, par=2, mode=LOCAL, datapartitioner=LOCAL )
+{
+   X = V[,i];                 
+   m2X = centralMoment(X,2);
+   sigmaX = sqrt(m2X * (W/(W-1.0)) );
+      
+   parfor( j in (i+1):(i+9), par=2, mode=REMOTE_MR )  
+   {  
+      Y = V[,j];
+
+      #corr computation    
+      m2Y = centralMoment(Y,2);
+      sigmaY = sqrt(m2Y * (W/(W-1.0)) );      
+      covXY = cov(X,Y);      
+      rXY = covXY / (sigmaX*sigmaY); 
+      
+      print("R[("+i+","+j+")]="+rXY); #test robustness of ProgramConverter
+      R[i,j] = dummy * rXY; 
+      
+   }
+}   
+
+write(R, $4);     

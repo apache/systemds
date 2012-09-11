@@ -1,8 +1,6 @@
 package com.ibm.bi.dml.meta;
 //<Arun>
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
@@ -11,7 +9,8 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 
 
 public class HoldoutBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
@@ -42,22 +41,20 @@ public class HoldoutBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
 		BlockHashMapMapOutputKey key = new BlockHashMapMapOutputKey();
 		BlockHashMapMapOutputValue value = new BlockHashMapMapOutputValue();
 		boolean issparse = thisblock.isInSparseFormat();
-		if((issparse == true) && (thisblock.getSparseMap() != null)) {
-			Iterator<Entry<CellIndex, Double>> iter = thisblock.getSparseMap().entrySet().iterator();
+		if( issparse ) {
+			SparseCellIterator iter = thisblock.getSparseCellIterator();
 			while(iter.hasNext()) {
-				Entry<CellIndex, Double> e = iter.next();
-				if(e.getValue() == 0)
-					continue;
-				value.cellvalue = e.getValue();
-				value.locator = (pp.isColumn == false) ? e.getKey().column : e.getKey().row;
+				IJV e = iter.next();
+				value.cellvalue = e.v;
+				value.locator = (pp.isColumn == false) ? e.j : e.i;
 				int numtimes = (pp.toReplicate == false) ? 1 : pp.numIterations;
 				for(int i = 0; i < numtimes ; i++) {
 					//long entry = (pp.isColumn == false) ? thehashmap.get( (blky * rpb + e.getKey().row))[i] :  
 					//												thehashmap.get( (blkx * cpb + e.getKey().column))[i];
 					//long entry = (pp.isColumn == false) ? thehashmap.get((blky * rpb + e.getKey().row),i) :  
 					//	thehashmap.get((blkx * cpb + e.getKey().column),i);
-					long entry = (pp.isColumn == false) ? thehashmap.get((blky * rpb + e.getKey().row),i).get(0) :  
-						(thehashmap.get((blkx * cpb + e.getKey().column),i)).get(0);	//retvals is a vector, but with single entry
+					long entry = (pp.isColumn == false) ? thehashmap.get((blky * rpb + e.i),i).get(0) :  
+						(thehashmap.get((blkx * cpb + e.j),i)).get(0);	//retvals is a vector, but with single entry
 					if(entry > 0) {		//the entry is the row index in the test output matrix of fold; ignore for el
 						if(pp.isEL == true)
 							continue;

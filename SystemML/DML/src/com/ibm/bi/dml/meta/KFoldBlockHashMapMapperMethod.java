@@ -1,8 +1,6 @@
 package com.ibm.bi.dml.meta;
 //<Arun>
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
@@ -11,7 +9,8 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 
 
 public class KFoldBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
@@ -40,18 +39,16 @@ public class KFoldBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
 		key.blkx = blkx;	//the x index is preserved
 		BlockHashMapMapOutputValue value = new BlockHashMapMapOutputValue();
 		boolean issparse = thisblock.isInSparseFormat();
-		if((issparse == true) && (thisblock.getSparseMap() != null)) {
-			Iterator<Entry<CellIndex, Double>> iter = thisblock.getSparseMap().entrySet().iterator();
+		if( issparse ) {
+			SparseCellIterator iter = thisblock.getSparseCellIterator();
 			while(iter.hasNext()) {
-				Entry<CellIndex, Double> e = iter.next();
-				if(e.getValue() == 0)
-					continue;
-				value.cellvalue = e.getValue();
-				value.locator = e.getKey().column;
+				IJV e = iter.next();
+				value.cellvalue = e.v;
+				value.locator = e.j;
 				if(pp.toReplicate) {
 					for(int i = 0; i < pp.numFolds ; i++) {
 						//long entry = thehashmap.get(blky * rpb + e.getKey().row, i);
-						long entry = thehashmap.get(blky * rpb + e.getKey().row, i).get(0);	//retvals is a single entry vector
+						long entry = thehashmap.get(blky * rpb + e.i, i).get(0);	//retvals is a single entry vector
 						if(entry > 0) {		//the entry is the row index in the test output matrix of fold
 							entry--;	//since we started from 1
 							key.foldid = 2*i;
@@ -68,7 +65,7 @@ public class KFoldBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
 				}
 				else {	//no replication, output only k test fold entries!
 					for(int i = 0; i < pp.numFolds ; i++) {
-						long entry = thehashmap.get(blky * rpb + e.getKey().row, i).get(0);
+						long entry = thehashmap.get(blky * rpb + e.i, i).get(0);
 						if(entry > 0) {		//the entry is the row index in the test output matrix of fold
 							value.auxdata = (int) (entry % rpb);	//TODO: could this give wrong results?
 							//key.blky = (long) Math.floor(entry / rpb);		//TODO: this may give wrong result!!

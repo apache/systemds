@@ -1,13 +1,8 @@
 package com.ibm.bi.dml.meta;
 //<Arun>
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
-import java.util.Map.Entry;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
@@ -15,7 +10,8 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 
 
 public class BootstrapBlockHashMapMapperMethod extends BlockHashMapMapperMethod {
@@ -63,16 +59,14 @@ public class BootstrapBlockHashMapMapperMethod extends BlockHashMapMapperMethod 
 		BlockHashMapMapOutputKey key = new BlockHashMapMapOutputKey();
 		key.blkx = blkx;					//the futblk x index is preserved
 		boolean issparse = thisblock.isInSparseFormat();
-		if((issparse == true) && (thisblock.getSparseMap() != null)) {
-			Iterator<Entry<CellIndex, Double>> citer = thisblock.getSparseMap().entrySet().iterator();
+		if( issparse ) {
+			SparseCellIterator citer = thisblock.getSparseCellIterator();
 			while(citer.hasNext()) {
-				Entry<CellIndex, Double> e = citer.next();
-				if(e.getValue() == 0)
-					continue;
+				IJV e = citer.next();
 				BlockHashMapMapOutputValue value = new BlockHashMapMapOutputValue(); 
-				value.cellvalue = e.getValue();
-				value.locator = e.getKey().column;	//the subcolid within fut blk will be the same!
-				long absolprevrowid = blky*rpb+e.getKey().row;
+				value.cellvalue = e.v;
+				value.locator = e.j;	//the subcolid within fut blk will be the same!
+				long absolprevrowid = blky*rpb+e.i;
 				for(int f=0; f<numtimes; f++) { //iterate thro all fut rowids in a fold for this prevrowid, and repeat for all folds
 					//Iterator fiter = invselmaps.get(absolprevrowid).get(f).iterator();					
 					Iterator fiter = thehashmap.get(absolprevrowid, f).iterator();	//this gives us a vector of longs (futrowdids) 

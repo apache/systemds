@@ -34,6 +34,8 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 
@@ -69,6 +71,8 @@ public class DataConverter
 		Path path = new Path(dir);
 		FileOutputFormat.setOutputPath(job, path);
 
+		//System.out.println("write matrix (sparse="+mat.isInSparseFormat()+") to HDFS: "+dir);
+		
 		//NOTE: MB creating the sparse map was slower than iterating over the array, however, this might change with an iterator interface
 		// for sparsity=0.1 iterating over the whole block was 2x faster
 		try
@@ -135,7 +139,7 @@ public class DataConverter
 	{	
 		boolean sparse = expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT;
 
-		//System.out.println("DataConverter: read matrix from HDFS ("+dir+").");
+		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+dir);
 		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
@@ -183,6 +187,8 @@ public class DataConverter
 		{
 			throw new IOException(e);
 		}
+
+		//System.out.println("read matrix (after exec sparse="+ret.isInSparseFormat()+") from HDFS: "+dir);
 		
 		return ret;
 	}
@@ -220,23 +226,21 @@ public class DataConverter
 		{
 			if( sparse ) //SPARSE
 			{			   
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{
-						double lvalue = src.getValueSparseUnsafe(i, j);
-						if( lvalue != 0 ) //for nnz
-						{
-							StringBuilder sb = new StringBuilder();
-							sb.append(i+1);
-							sb.append(" ");
-							sb.append(j+1);
-							sb.append(" ");
-							sb.append(lvalue);
-							sb.append("\n");
-							br.write( sb.toString() ); //same as append
-							entriesWritten = true;
-						}
-					}
+				SparseCellIterator iter = src.getSparseCellIterator();
+				while( iter.hasNext() )
+				{
+					IJV cell = iter.next();
+
+					StringBuilder sb = new StringBuilder();
+					sb.append(cell.i+1);
+					sb.append(" ");
+					sb.append(cell.j+1);
+					sb.append(" ");
+					sb.append(cell.v);
+					sb.append("\n");
+					br.write( sb.toString() ); //same as append
+					entriesWritten = true;					
+				}
 			}
 			else //DENSE
 			{
@@ -307,18 +311,15 @@ public class DataConverter
 		{
 			if( sparse ) //SPARSE
 			{
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{
-						double lvalue  = src.getValueSparseUnsafe(i, j); 
-						if( lvalue != 0 ) //for nnz
-						{
-							indexes.setIndexes(i+1, j+1);
-							cell.setValue(lvalue);
-							writer.append(indexes, cell);
-							entriesWritten = true;
-						}
-					}
+				SparseCellIterator iter = src.getSparseCellIterator();
+				while( iter.hasNext() )
+				{
+					IJV lcell = iter.next();
+					indexes.setIndexes(lcell.i+1, lcell.j+1);
+					cell.setValue(lcell.v);
+					writer.append(indexes, cell);
+					entriesWritten = true;
+				}
 			}
 			else //DENSE
 			{
@@ -367,7 +368,7 @@ public class DataConverter
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		
 		//reblock and write		
-		MatrixBlock fullBlock = new MatrixBlock(brlen, bclen, false);	
+		MatrixBlock fullBlock = new MatrixBlock(brlen, bclen, false);	//TODO check for sparsity
 		fullBlock.spaceAllocForDenseUnsafe(brlen, bclen);
 		MatrixBlock block = null;
 		
@@ -406,11 +407,12 @@ public class DataConverter
 					//NOTE: set all values (incl nnz) due to block reuse
 					if(sparse) //DENSE<-SPARSE
 					{
-						for(int i = 0; i < maxRow; i++)
+						//NOTE: cannot use sparse iterator since only subset required
+						for(int i = 0; i < maxRow; i++) 
 							for(int j = 0; j < maxCol; j++)
 							{
 								double value = src.getValueSparseUnsafe( row_offset + i, col_offset + j);
-								block.setValueDenseUnsafe(i, j, value); 
+								block.setValueDenseUnsafe(i, j, value);
 							}
 					}
 					else //DENSE<-DENSE
@@ -716,23 +718,21 @@ public class DataConverter
 					{					
 						if( sparse ) //SPARSE<-SPARSE
 						{
-							for( int i=0; i<rows; i++ )
-								for( int j=0; j<cols; j++ )
-								{
-								    double lvalue = value.getValueSparseUnsafe(i, j);  //input value
-									if( lvalue != 0  ) 					//for all nnz
-										dest.setValue(row_offset+i, col_offset+j, lvalue );	
-								}
+							SparseCellIterator iter = value.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV cell = iter.next();
+								dest.setValue(row_offset+cell.i, col_offset+cell.j, cell.v);
+							}
 						}
 						else //DENSE<-SPARSE
 						{
-							for( int i=0; i<rows; i++ )
-								for( int j=0; j<cols; j++ )
-								{
-								    double lvalue = value.getValueSparseUnsafe(i, j);  //input value
-									if( lvalue != 0  ) 					//for all nnz
-										dest.setValueDenseUnsafe(row_offset+i, col_offset+j, lvalue );	
-								}
+							SparseCellIterator iter = value.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV cell = iter.next();
+								dest.setValueDenseUnsafe(row_offset+cell.i, col_offset+cell.j, cell.v);
+							}
 						}
 						
 					}
@@ -789,9 +789,12 @@ public class DataConverter
 		
 		if( mb.isInSparseFormat() )
 		{
-			for( int i=0; i<rows; i++ )
-				for( int j=0; j<cols; j++ )
-					ret[i][j] = mb.getValueSparseUnsafe(i, j);
+			SparseCellIterator iter = mb.getSparseCellIterator();
+			while( iter.hasNext() )
+			{
+				IJV cell = iter.next();
+				ret[cell.i][cell.j] = cell.v;
+			}
 		}
 		else
 		{
@@ -805,6 +808,8 @@ public class DataConverter
 	
 	/**
 	 * Creates a dense Matrix Block and copies the given double matrix into it.
+	 * 
+	 * TODO convert and check for sparsity
 	 * 
 	 * @param data
 	 * @return

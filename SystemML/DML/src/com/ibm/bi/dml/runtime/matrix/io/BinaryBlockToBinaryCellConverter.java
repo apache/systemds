@@ -1,9 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.io;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -11,7 +9,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class BinaryBlockToBinaryCellConverter implements 
 Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>{
 
-	private Iterator sparseInterator=null;
+	private SparseCellIterator sparseIterator=null;
 	private double[] denseArray=null;
 	private int denseArraySize=0;
 	private int nextInDenseArray=-1;
@@ -28,7 +26,7 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>{
 	
 	private void reset()
 	{
-		sparseInterator=null;
+		sparseIterator=null;
 		denseArray=null;
 		denseArraySize=0;
 		nextInDenseArray=-1;
@@ -45,9 +43,7 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>{
 		thisBlockWidth=v1.getNumColumns();
 		if(sparse)
 		{
-			if(v1.getSparseMap()==null)
-				return;
-			sparseInterator=v1.getSparseMap().entrySet().iterator();
+			sparseIterator=v1.getSparseCellIterator();
 		}
 		else
 		{
@@ -64,10 +60,10 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>{
 	public boolean hasNext() {
 		if(sparse)
 		{
-			if(sparseInterator==null)
+			if(sparseIterator==null)
 				hasValue=false;
 			else
-				hasValue=sparseInterator.hasNext();
+				hasValue=sparseIterator.hasNext();
 		}else
 		{
 			if(denseArray==null)
@@ -90,14 +86,14 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>{
 		double v;
 		if(sparse)
 		{
-			if(sparseInterator==null)
+			if(sparseIterator==null)
 				return null;
 			else
 			{
-				Entry<CellIndex, Double> e=(Entry<CellIndex, Double>) sparseInterator.next();
-				i=e.getKey().row + startIndexes.getRowIndex();
-				j=e.getKey().column + startIndexes.getColumnIndex();
-				v=e.getValue();
+				IJV cell = sparseIterator.next();
+				i = cell.i + startIndexes.getRowIndex();
+				j = cell.j + startIndexes.getColumnIndex();
+				v = cell.v;
 			}
 				
 		}else

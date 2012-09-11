@@ -1,9 +1,6 @@
 package com.ibm.bi.dml.meta;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -17,7 +14,8 @@ import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 
@@ -51,27 +49,26 @@ implements Mapper<Writable, Writable, LongWritable, BlockJoinMapOutputValue> {
 			int nk = (pp.isColumn == true) ? ncols : nrows;
 			int nother = (pp.isColumn == false) ? ncols : nrows;
 			boolean issparse = thisblock.isInSparseFormat();
-			if((issparse == true) && (thisblock.getSparseMap() != null)) {
-				Iterator<Entry<CellIndex, Double>> iter = thisblock.getSparseMap().entrySet().iterator();
+			if( issparse ) 
+			{
+				SparseCellIterator iter = thisblock.getSparseCellIterator();
 				while(iter.hasNext()) {
-					Entry<CellIndex, Double> e = iter.next();
-					if(e.getValue() == 0)
-						continue;
+					IJV e = iter.next();
 					BlockJoinMapOutputValue value = new BlockJoinMapOutputValue();
 					if(pp.isColumn == false) {
-						value.cellvalue = e.getValue();
+						value.cellvalue = e.v;
 						//value.locator = e.getKey().column;
-						LongWritable outkey = new LongWritable(blky * rpb + e.getKey().row);	//absol rowid
+						LongWritable outkey = new LongWritable(blky * rpb + e.i);	//absol rowid
 						value.val2 = 0;	//matx
-						value.val1 = blkx * cpb + e.getKey().column;	//absol colid
+						value.val1 = blkx * cpb + e.j;	//absol colid
 						out.collect(outkey, value);	//one output key-val pair for each absol rowid
 					}
 					else {	//subcols
-						value.cellvalue = e.getValue();
+						value.cellvalue = e.v;
 						//value.locator = e.getKey().row;
-						LongWritable outkey = new LongWritable(blkx * cpb + e.getKey().column);	//absol colid
+						LongWritable outkey = new LongWritable(blkx * cpb + e.j);	//absol colid
 						value.val2 = 0;	//matx
-						value.val1 = blky * rpb + e.getKey().row;	//absol rowid
+						value.val1 = blky * rpb + e.i;	//absol rowid
 						out.collect(outkey, value);	//one output key-val pair for each absol colid
 					}
 				}

@@ -34,6 +34,8 @@ import org.apache.hadoop.io.SequenceFile;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.MatrixIndex;
@@ -1636,12 +1638,14 @@ public class TestUtils {
 					}
 
 					if (value.isInSparseFormat()) {
-						HashMap<CellIndex, Double> valuesInBlock = value.getSparseMap();
-						for (CellIndex index : valuesInBlock.keySet()) {
-							valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + index.row),
-									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + index.column)), valuesInBlock
-									.get(index));
+						SparseCellIterator iter = value.getSparseCellIterator();
+						while( iter.hasNext() )
+						{
+							IJV cell = iter.next();
+							valueMap.put(new MatrixIndex((int) ((indexes.getRowIndex() - 1) * rowsInBlock + cell.i),
+									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.j)), cell.v);
 						}
+						
 					} else {
 						double[] valuesInBlock = value.getDenseArray();
 						for (int i = 0; i < value.getNumRows(); i++) {

@@ -2,78 +2,69 @@
 addClassPath("lib/metaDataParse.jar");
 eval = javaudf("com.ibm.systemML.dataTransformation.metaDataParse");
 
+jsonLines = fn(location)
+    lines ( location,
+        inoptions = { converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"},
+        outoptions = { converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"});
 
 // --------------------------------------------------------------------------------
 // Read the input data in delimited format
 // --------------------------------------------------------------------------------
 
-inputData = fn(input, metadataMem, inputDelimiter) (
+getInput = fn(input, metadataMem, inputDelimiter) (
 
-if (metadataMem == [])
-(
-   inputArray = if (isnull(inputDelimiter))
-		  (
-			read (del(location=input) )
-		  )
-		  else
-		  (
-			read (del(location=input, delimiter=inputDelimiter) )
-		  ),
-   numCols = inputArray[0] -> count(),
-   attributeNames = range(1, numCols) -> transform serialize($),
-   inputArray -> transform arrayToRecord(attributeNames, $)
-)
-else
-(
-   schemaString = metadataMem
-      -> transform $.attributeName + ":" + $.attributeType
-      -> strJoin(","),
-
-   // schema of the input
-   inputSchema = "schema {" + schemaString + "}",
-
+  inputArray =
    if (isnull(inputDelimiter))
-		  (
-			read (del(location=input, 
-				schema = eval(inputSchema) ) )
-		  )
-		  else
-		  (
-			read (del(location=input, delimiter=inputDelimiter,
-				schema = eval(inputSchema) ) )
-		  )
-)
+   (
+	read (del(location=input)) 
+   )
+   else
+   (
+	read (del(location=input, delimiter=inputDelimiter))
+   ),
+
+  numCols = inputArray[0] -> count(),
+    
+  if (metadataMem == [])
+  (
+   
+     attributeNames = range(1, numCols) -> transform serialize($),
+   
+     inputArray 
+         -> transform arrayToRecord(attributeNames, $)
+         -> write(jsonLines(input + ".json")),
+   
+     attributeNames
+         -> enumerate()
+         -> transform {"attributeColumnId": $[0]+1, "attributeName": $[1]}
+  )
+  else
+  (
+     attributeNames = metadataMem 
+         -> transform $.attributeName,
+
+     inputArray 
+         -> transform arrayToRecord(attributeNames, $)
+         -> write(jsonLines(input + ".json")),
+     
+     attributeNames
+         -> enumerate()
+         -> transform {"attributeColumnId": $[0]+1, "attributeName": $[1]} 
+  )
 );
 
 
 //
-// Generate metadata json file
-// We do some pre-aggregation to avoid Java Heap size problem for distinct()
-// in group by.
+// Generate json file column id
 //
 
-genMetadata = fn (inputData)
+genJsonColumnId = fn (inputData)
 (
-   inputData
-      -> expand (fields($))
-      -> group by d = $ 
-            into { attributeName: d[0] 
-                  ,num: count($) 
-              }
-      -> group by d = $.attributeName 
-            into { attributeName: d
-                  ,attributeCount: sum($[*].num) 
-                 }
-      -> group 
-            into (cA = count($),
-   	       $ -> transform each a {a.*, 
-                                        countAttributes: cA
-                                        }
-                 ) 
-      -> expand $
-         // set attribute kind based on some heuristics
+   inputData 
+      -> top 1 
+      -> expand(names($))
       -> enumerate()
-      -> transform {"attributeColumnId":$[0] + 1, $[1].*}
+      -> transform {"attributeColumnId":$[0] + 1, "attributeName":$[1]}
 );
 
 
@@ -81,11 +72,9 @@ genMetadata = fn (inputData)
 // Insert a heuristically derived value for any missing (null) attributeKind fields
 // --------------------------------------------------------------------------------
 
-metaEnhance = fn(inputData, metadataMem, outputMetadata) (
+metaEnhance = fn(columnId, metadataMem, outputMetadata) (
 
-kindHeuristic = genMetadata (inputData),
-
-join orig in metadataMem, preserve new in kindHeuristic 
+join orig in metadataMem, preserve new in columnId 
    where orig.attributeName == new.attributeName
    into {
       new.attributeName,

@@ -7,9 +7,8 @@
             <jaql-path>custom_modules</jaql-path>
             <script>jaql/run_MetadataEnhance.jaql</script>
             <eval>
-				Input_inputFormat_PARAM='${inputFormat}';
-				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
 				Input_input_PARAM='${input}';
+				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
 				Input_inputMetadata_PARAM='${wf:conf("inputMetadata")}';
     	    </eval>
         </jaql>

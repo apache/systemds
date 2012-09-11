@@ -394,7 +394,6 @@ public class AggBinaryOp extends Hops {
 			if(this.outerOp == AggOp.PROD)
 			{
 				// This is only a temporary solution.
-				// Based on http://www.infosoft.biz/PDF/Product_Function_extends_SQL.pdf
 				// Idea is that ln(x1 * x2 * ... * xn) = ln(x1) + ln(x2) + ... + ln(xn)
 				// So that x1 * x2 * ... * xn = exp( ln(x1) + ln(x2) + ... + ln(xn) )
 				// Which is EXP(SUM(LN(v)))

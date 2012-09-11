@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.matrix.io.WeightedCellToSortInputConverter;
 import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.*;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -918,7 +919,7 @@ public class MRJobConfiguration {
 		job.setOutputFormat(NullOutputFormat.class);
 		
 		// configure temp output
-		Path tempOutputPath = new Path(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE)));
+		Path tempOutputPath = new Path(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE), Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE)));
 		FileOutputFormat.setOutputPath(job, tempOutputPath);
 		MapReduceTool.deleteFileIfExistOnHDFS(tempOutputPath, job);
 		

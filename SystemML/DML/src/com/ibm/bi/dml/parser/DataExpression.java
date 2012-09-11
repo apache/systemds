@@ -440,7 +440,8 @@ public class DataExpression extends Expression {
 		try {
 			fs = FileSystem.get(new Configuration());
 		} catch (Exception e){
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file. See stack trace for details" + e);
+			e.printStackTrace();
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
 		}
 		
 		Path pt = new Path(filename);
@@ -480,7 +481,7 @@ public class DataExpression extends Expression {
 			return retVal;
 			
 		} catch (Exception e){
-        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString() + " " + e);
+        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString());
         }
 	}
 	

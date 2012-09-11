@@ -2147,7 +2147,8 @@ public class DMLTranslator {
 					rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(target.getName()));
 					rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 				} catch (HopsException e) {
-					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString() + " -- " + e);
+					e.printStackTrace();
+					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
 				}
 			}
 		}
@@ -2167,7 +2168,8 @@ public class DMLTranslator {
 				try {
 					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(target.getName()));
 				} catch (HopsException e) {
-					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString() + " -- " + e);
+					e.printStackTrace();
+					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
 				}
 			}
 		}
@@ -2210,8 +2212,8 @@ public class DMLTranslator {
 			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
 		else
 		{
-			if ( source.getDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(Long.toString(source.getDim1()), source.getDim1());
+			if ( source.getOrigDim1() != -1 ) 
+				rowUpperHops = new LiteralOp(Long.toString(source.getOrigDim1()), source.getOrigDim1());
 			else
 			{
 				try {
@@ -2219,7 +2221,8 @@ public class DMLTranslator {
 					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(source.getName()));
 					rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 				} catch (HopsException e) {
-					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString() + " -- " + e);
+					e.printStackTrace();
+					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString());
 				}
 			}
 		}
@@ -2232,14 +2235,15 @@ public class DMLTranslator {
 			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
 		else
 		{
-			if ( source.getDim2() != -1 ) 
-				colUpperHops = new LiteralOp(Long.toString(source.getDim2()), source.getDim2());
+			if ( source.getOrigDim2() != -1 ) 
+				colUpperHops = new LiteralOp(Long.toString(source.getOrigDim2()), source.getOrigDim2());
 			else
 			{
 				try {
 					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(source.getName()));
 				} catch (HopsException e) {
-					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString() + " -- " + e);
+					e.printStackTrace();
+					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString());
 				}
 			}
 		}

@@ -211,7 +211,7 @@ public class RandStatement extends Statement
 		
 	public void setIdentifierProperties() throws LanguageException
 	{
-		long rowsLong = -1, colsLong = -1;
+		long rowsLong = -1L, colsLong = -1L;
 		
 		
 		if (_exprParams.get(RAND_ROWS) instanceof IntIdentifier)
@@ -223,6 +223,9 @@ public class RandStatement extends Statement
 		_id.setFormatType(FormatType.BINARY);
 		_id.setValueType(ValueType.DOUBLE);
 		_id.setDimensions(rowsLong, colsLong);
+		if (_id instanceof IndexedIdentifier){
+			((IndexedIdentifier) _id).setOriginalDimensions(_id.getDim1(), _id.getDim2());
+		}
 		_id.computeDataType();
 		
 		if (_id instanceof IndexedIdentifier){

@@ -14,14 +14,24 @@ public class IndexedIdentifier extends DataIdentifier {
 	// stores whether row / col indices have same value (thus selecting either (1 X n) row-vector OR (n X 1) col-vector)
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
 	
+	// for IndexedIdentifier, dim1 and dim2 will ultimately be the dimensions of the indexed region and NOT the dims of what is being indexed
+	// E.g., for A[1:10,1:10], where A = Rand (rows = 20, cols = 20), dim1 = 10, dim2 = 10, origDim1 = 20, origDim2 = 20
+	
+	// stores the dimensions of Identifier prior to indexing 
+	private long _origDim1, _origDim2;
+	
 	public IndexedIdentifier(String name, boolean passedRows, boolean passedCols){
 		super(name);
 		_rowLowerBound = null; 
    		_rowUpperBound = null; 
    		_colLowerBound = null; 
    		_colUpperBound = null;
+   		
    		_rowLowerEqualsUpper = passedRows;
    		_colLowerEqualsUpper = passedCols;
+   		
+   		_origDim1 = -1L;
+   		_origDim2 = -1L;
 	}
 	
 		
@@ -72,19 +82,19 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// check 1 < indexed row lower-bound < rows in IndexedIdentifier 
 		// (assuming row dims available for upper bound)
+		Long rowLB_1 = -1L;
 		if (isConst_rowLowerBound) {
 				
-			Long rowLB = -1L;
 			if (_rowLowerBound instanceof IntIdentifier) 
-				rowLB = ((IntIdentifier)_rowLowerBound).getValue();
+				rowLB_1 = ((IntIdentifier)_rowLowerBound).getValue();
 			else
-				rowLB = Math.round(((DoubleIdentifier)_rowLowerBound).getValue());
+				rowLB_1 = Math.round(((DoubleIdentifier)_rowLowerBound).getValue());
 			
-			if (rowLB < 1)
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds. Must be >= 1");
+			if (rowLB_1 < 1)
+				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1 + " is out of bounds. Must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowLB > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getDim1() > 0)  && (rowLB_1 > this.getDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1 + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
 		}
 		
 		
@@ -120,27 +130,33 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// check 1 < indexed row upper-bound < rows in IndexedIdentifier 
 		// (assuming row dims available for upper bound)
+		Long rowUB_2 = -1L;
 		if (isConst_rowUpperBound) {
 				
-			Long rowLB = -1L;
 			if (_rowUpperBound instanceof IntIdentifier) 
-				rowLB = ((IntIdentifier)_rowUpperBound).getValue();
+				rowUB_2 = ((IntIdentifier)_rowUpperBound).getValue();
 			else
-				rowLB = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
+				rowUB_2 = Math.round(((DoubleIdentifier)_rowUpperBound).getValue());
 			
-			if (rowLB < 1)
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds. Must be >= 1");
+			if (rowUB_2 < 1)
+				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_2 + " is out of bounds. Must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowLB > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getDim1() > 0)  && (rowUB_2 > this.getDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_2 + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
+		
+			if (isConst_rowLowerBound && rowUB_2 < rowLB_1)
+				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_2 + " is greater than lower-bound row index " + rowLB_1);
+		
 		}
+	
+		
 		
 		
 		if (_colLowerBound instanceof ConstIdentifier && ( _colLowerBound instanceof IntIdentifier || _colLowerBound instanceof DoubleIdentifier )){
 			isConst_colLowerBound = true;
 		}	
 		else if (_colLowerBound instanceof ConstIdentifier){
-			throw new LanguageException(this.printErrorLocation() + "attempted to assign lower column index for " + this.toString() + "the non-numeric value " + _colLowerBound.toString());
+			throw new LanguageException(this.printErrorLocation() + "attempted to assign lower-bound column index for " + this.toString() + "the non-numeric value " + _colLowerBound.toString());
 		}
 		
 		else if (_colLowerBound != null && _colLowerBound instanceof DataIdentifier && !(_colLowerBound instanceof IndexedIdentifier)) {
@@ -149,7 +165,7 @@ public class IndexedIdentifier extends DataIdentifier {
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
-					throw new LanguageException(this.printErrorLocation() + "attempted to assign lower column index for " + this.toString() + " the non-numeric value " + constValue.getOutput().toString());
+					throw new LanguageException(this.printErrorLocation() + "attempted to assign lower-bound column index for " + this.toString() + " the non-numeric value " + constValue.getOutput().toString());
 	
 				else{
 					if (constValue instanceof IntIdentifier){
@@ -167,19 +183,19 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// check 1 < indexed col lower-bound < rows in IndexedIdentifier 
 		// (assuming row dims available for upper bound)
+		Long colLB_3 = -1L;
 		if (isConst_colLowerBound) {
 				
-			Long rowLB = -1L;
 			if (_colLowerBound instanceof IntIdentifier) 
-				rowLB = ((IntIdentifier)_colLowerBound).getValue();
+				colLB_3 = ((IntIdentifier)_colLowerBound).getValue();
 			else
-				rowLB = Math.round(((DoubleIdentifier)_colLowerBound).getValue());
+				colLB_3 = Math.round(((DoubleIdentifier)_colLowerBound).getValue());
 			
-			if (rowLB < 1)
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds. Must be >= 1");
+			if (colLB_3 < 1)
+				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_3 + " is out of bounds. Must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowLB > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getDim1() > 0)  && (colLB_3 > this.getDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_3 + " is out of bounds.  Columns in " + this.getName() + ": " + this.getDim2());
 		}
 		
 		
@@ -214,19 +230,23 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// check 1 < indexed col lower-bound < rows in IndexedIdentifier 
 		// (assuming row dims available for upper bound)
+		Long colUB_4 = -1L;
 		if (isConst_colUpperBound) {
 				
-			Long rowLB = -1L;
 			if (_colUpperBound instanceof IntIdentifier) 
-				rowLB = ((IntIdentifier)_colUpperBound).getValue();
+				colUB_4 = ((IntIdentifier)_colUpperBound).getValue();
 			else
-				rowLB = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
+				colUB_4 = Math.round(((DoubleIdentifier)_colUpperBound).getValue());
 			
-			if (rowLB < 1)
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds. Must be >= 1");
+			if (colUB_4 < 1)
+				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_4 + " is out of bounds. Must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowLB > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB + " is out of bounds.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getDim1() > 0)  && (colUB_4 > this.getDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_4 + " is out of bounds.  Columns in " + this.getName() + ": " + this.getDim2());
+		
+			if (isConst_colLowerBound && colUB_4 < colLB_3)
+				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_4 + " is greater than lower-bound column index " + colLB_3);
+			
 		}
 		
 		///////////////////////////////////////////////////////////////////////
@@ -340,8 +360,21 @@ public class IndexedIdentifier extends DataIdentifier {
 		IndexPair updatedIndices = calculateIndexedDimensions(currConstVars);
 		long updatedRowDim = updatedIndices._row;
 		long updatedColDim = updatedIndices._col;
+		
+		// set the "original" dimensions (dimension values of object being indexed
+		this.setOriginalDimensions(this.getDim1(), this.getDim2());
+		
+		// set the updated dimensions
 		this.setDimensions(updatedRowDim, updatedColDim);
 	}
+	
+	public void setOriginalDimensions(long passedDim1, long passedDim2){
+		this._origDim1 = passedDim1;
+		this._origDim2 = passedDim2;
+	}
+	
+	public long getOrigDim1() { return this._origDim1; }
+	public long getOrigDim2() { return this._origDim2; }
 	
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException {
@@ -355,6 +388,7 @@ public class IndexedIdentifier extends DataIdentifier {
 			
 		// set dimensionality information and other Identifier specific properties for new IndexedIdentifier
 		newIndexedIdentifier.setProperties(this);
+		newIndexedIdentifier.setOriginalDimensions(this._origDim1, this._origDim2);
 		
 		// set remaining properties (specific to DataIdentifier)
 		newIndexedIdentifier._kind = Kind.Data;

@@ -1,9 +1,10 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>GenerateRecodeMap</name>
-    <description>This application generates a JSON format recode map file from the user provided input data file. The recode map file name will be the same as the input data file, with suffix "map.json". The application also updates the corresponding metadata file, based on data file name, with suffix "meta.json".</description>
+    <description>This application updates the metadata file from the user provided input data file. By default, if there is any categorical attribute in the input data file, the application will generate a recode map file, whose file name will be the same as the input data file, with suffix "map.json". ".</description>
     <deploy_properties/>
     <properties>
         <property defaultValue="/user/biadmin/data/inputdata.json" description="Input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="Yes" description="Whether the application should generate a recode map for categorical (nominal or ordinal) attributes? If the data is already recoded, then choose &quot;No&quot;. Otherwise, by choosing &quot;Yes&quot;, the application will generate a recode map for all categorical attributes in the data file. The user then should use Recode app to generate a recoded data file. " isInputPath="false" isOutputPath="false" isRequired="true" label="Generate recode map for nominal attributes?" name="recode" paramtype="LIST" uitype="textfield" validValues="Yes, No"/>
     </properties>
     <assets>
         <asset id="GenerateRecodeMap" type="WORKFLOW"/>

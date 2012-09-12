@@ -1,14 +1,15 @@
-<workflow-app name="GenerateRecodeMap" xmlns="uri:oozie:workflow:0.1">
+<workflow-app name="GenerateMetadata" xmlns="uri:oozie:workflow:0.1">
     <start to="action1"/>
     <action name="action1">
         <jaql xmlns="uri:oozie:jaql-action:0.1">
             <job-tracker>${jobTracker}</job-tracker>
             <name-node>${nameNode}</name-node>
             <jaql-path>custom_modules</jaql-path>
-            <script>jaql/run_GenerateRecodeMap.jaql</script>
+            <script>jaql/run_GenerateMetadata.jaql</script>
             <eval>
 				Input_input_PARAM='${input}';
-				Input_toRecode_PARAM='${recode}';
+				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
+				Input_inputMetadata_PARAM='${wf:conf("inputMetadata")}';
     	    </eval>
         </jaql>
         <ok to="end"/>

@@ -14,8 +14,9 @@ jsonLines = fn(location)
 // in group by.
 //
 
-genMetadata = fn (inputData)
+updateMetaData = fn (inputData, inputMetaData)
 (
+   kindHeuristic =
    inputData
       -> expand (fields($))
       -> group by d = $ 
@@ -38,17 +39,10 @@ genMetadata = fn (inputData)
       -> transform if ($.attributeDistinctCount > 0.10 * $.caseCount)
                        {${*-}, attributeKind: "scale", attributeType: "string"} 
    		else                      
-                       {${*-}, attributeKind: "nominal", attributeType: "string"}
-);
-
-
-genRcdMap = fn (inputData, inputMeta, attrs, outFile) (
-
-
-   kindHeuristic = genMetadata (inputData),
-
-   newMeta = 
-      join orig in attrs, preserve new in kindHeuristic 
+                       {${*-}, attributeKind: "nominal", attributeType: "string"},
+     
+     
+     join orig in inputMetaData, preserve new in kindHeuristic 
       where orig.attributeName == new.attributeName
       into {
          new.attributeName,
@@ -57,11 +51,14 @@ genRcdMap = fn (inputData, inputMeta, attrs, outFile) (
          "attributeType":(if ((orig.attributeType == "N/A") or (isnull(orig.attributeType))) new.attributeType else orig.attributeType),
          "attributeDistinctCount": (if ((orig.attributeDistinctCount == "N/A") or (isnull(orig.attributeDistinctCount))) new.attributeDistinctCount else orig.attributeDistinctCount)
       }
-      -> sort by [$.attributeColumnId],
-      
-   newMeta   
-      -> write(jsonText(inputMeta)),
-      
+      -> sort by [$.attributeColumnId]  	             
+    
+);
+
+
+genRcdMap = fn (inputData, newMeta, outFile) (
+
+
    keep = (newMeta -> filter $.attributeKind != "scale")[*].attributeName,
    inputData
    -> expand (fields($))

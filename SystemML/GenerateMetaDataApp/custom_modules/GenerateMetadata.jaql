@@ -72,7 +72,7 @@ genJsonColumnId = fn (inputData)
 // Insert a heuristically derived value for any missing (null) attributeKind fields
 // --------------------------------------------------------------------------------
 
-metaEnhance = fn(columnId, metadataMem, outputMetadata) (
+genMeta = fn(columnId, metadataMem, outputMetadata) (
 
 join orig in metadataMem, preserve new in columnId 
    where orig.attributeName == new.attributeName

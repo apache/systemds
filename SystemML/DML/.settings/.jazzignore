@@ -18,4 +18,5 @@
 core.ignore.recursive= 
 
 core.ignore= \
+	{org.eclipse.jdt.core.prefs} \
 	{sf.eclipse.javacc.prefs} 

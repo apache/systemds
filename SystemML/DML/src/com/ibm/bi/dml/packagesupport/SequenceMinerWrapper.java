@@ -35,7 +35,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 
 	final long entries_in_memory = 1000000;
 	final long data_block_size = 1000000;
-	final long sequence_block_size = 10000;
+	final long sequence_block_size = 100000;
 	final int numPhysicalFiles = 10;
 	final long in_memory_scratch_size = 1000000;
 	final long max_projection_size = 10000000;

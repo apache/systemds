@@ -8,6 +8,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -150,6 +151,10 @@ public class MMCJMR {
 		
 		LOG.info("aggregator buffer size: "+partialAggCacheSize);
 		
+		//set unique working dir
+		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 
+		
+		
 		RunningJob runjob=JobClient.runJob(job);
 		
 		/* Process different counters */
@@ -263,6 +268,7 @@ public class MMCJMR {
 		
 		//configure reducer
 		job.setReducerClass(MMCJMRReducerWithAggregator.class);
+		
 		
 		return stats;
 	}

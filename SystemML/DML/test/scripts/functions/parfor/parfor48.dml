@@ -1,0 +1,10 @@
+A = Rand(rows=10, cols=10, min=0.0, max=1.0, sparsity=1.0)
+
+parfor(i in 1:nrow(A)){
+	parfor(j in 1:ncol(A)){
+		print("i="+i+", j="+j);
+	}
+}
+   
+
+

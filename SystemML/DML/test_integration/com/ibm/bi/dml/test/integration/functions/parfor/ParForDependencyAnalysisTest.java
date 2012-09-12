@@ -34,6 +34,9 @@ import com.ibm.bi.dml.utils.LanguageException;
  *    44: dep   
  * * application testcases
  *    45: no, 46: no, 47 no   
+ *    
+ * * general parfor validate (e.g., expressions)
+ *    48: no, 48b: err, 48c: no   
  */
 public class ParForDependencyAnalysisTest 
 {
@@ -223,7 +226,15 @@ public class ParForDependencyAnalysisTest
 
 	@Test
 	public void testDependencyAnalysis47() { runTest("parfor47.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis48() { runTest("parfor48.dml", false); }
+
+	@Test
+	public void testDependencyAnalysis48b() { runTest("parfor48b.dml", true); }
 	
+	@Test
+	public void testDependencyAnalysis48c() { runTest("parfor48c.dml", false); }
 	
 	
 	private void runTest( String scriptFilename, boolean expectedException )

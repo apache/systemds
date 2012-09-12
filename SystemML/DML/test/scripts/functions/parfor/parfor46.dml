@@ -10,7 +10,7 @@ parfor(i in 1:numC )
 	A[i,] = A[i,]/sum(A[i,]);
   C[i,1] = A[i,1];
 	
-  for (j in 2:numFeatures) 
+  for (j in 2:numF) 
   {
 		 C[i,j] = C[i,j-1] + A[i,j];
   }

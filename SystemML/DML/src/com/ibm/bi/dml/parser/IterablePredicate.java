@@ -82,7 +82,6 @@ public class IterablePredicate extends Expression
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException 
 	{		
 		//1) VALIDATE ITERATION VARIABLE (index)
-		
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
 		if (ids.containsKey(_iterVar.getName())){
 			DataIdentifier otherDI = ids.get(_iterVar.getName());
@@ -98,27 +97,16 @@ public class IterablePredicate extends Expression
 		ids.put(_iterVar.getName(), _iterVar);
 		
 		
-		//2) VALIDATE READ VARIABLES in (from, to, increment)
+		//2) VALIDATE FOR PREDICATE in (from, to, increment)		
+		//recursively validate the individual expression
+		_fromExpr.validateExpression(ids, constVars);
+		_toExpr.validateExpression(ids, constVars);
+		_incrementExpr.validateExpression(ids, constVars);
 		
-		VariableSet reads = variablesRead();
-		for( String var : reads.getVariableNames() )
-		{
-			// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
-			if (ids.containsKey( var )){
-				DataIdentifier otherDI = ids.get( var );
-				if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType()!=ValueType.INT ){
-					throw new LanguageException(this.printErrorLocation() + "iterable predicate in for loop '" + var + "' must be a scalar integer");
-				}	
-			}
-			
-			// set the values for DataIdentifer iterable variable
-			DataIdentifier varDI = reads.getVariable(var);
-			varDI.setIntProperties();
-				
-			// add the iterVar to the variable set
-			ids.put( var, varDI );
-		}
-		
+		//check for scalar expression output
+		checkNumericScalarOutput( _fromExpr );
+		checkNumericScalarOutput( _toExpr );
+		checkNumericScalarOutput( _incrementExpr );
 	}
 		
 	public DataIdentifier getIterVar() {
@@ -177,5 +165,20 @@ public class IterablePredicate extends Expression
 		return ret;
 	}
 
+	private void checkNumericScalarOutput( Expression expr )
+		throws LanguageException
+	{
+		if( expr == null || expr.getOutput() == null )
+			return;
+		
+		Identifier ident = expr.getOutput();
+		if( ident.getDataType() == DataType.MATRIX || ident.getDataType() == DataType.OBJECT ||
+			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BOOLEAN || 
+					                                    ident.getValueType() == ValueType.STRING || 
+					                                    ident.getValueType() == ValueType.OBJECT)) )
+		{
+			throw new LanguageException(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
+		}
+	}
 
 } // end class

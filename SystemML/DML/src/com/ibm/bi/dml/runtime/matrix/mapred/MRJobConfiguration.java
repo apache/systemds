@@ -21,6 +21,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.meta.PartitionParams;
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AddDummyWeightConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
@@ -919,7 +920,7 @@ public class MRJobConfiguration {
 		job.setOutputFormat(NullOutputFormat.class);
 		
 		// configure temp output
-		Path tempOutputPath = new Path(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE), Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE)));
+		Path tempOutputPath = new Path( constructTempOutputFilename() );
 		FileOutputFormat.setOutputPath(job, tempOutputPath);
 		MapReduceTool.deleteFileIfExistOnHDFS(tempOutputPath, job);
 		
@@ -1268,6 +1269,21 @@ public class MRJobConfiguration {
 			}	
 		}
 		return true;
+	}
+	
+	private static String constructTempOutputFilename() 
+		throws ParseException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
+		//TODO MB: clarify if we could replace this with sequence IDs in order to guarantee that conflicts cannot occur 
+		
+		return sb.toString(); 
 	}
 }
 

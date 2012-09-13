@@ -216,12 +216,11 @@ public class Matrix extends FIO {
 	{
 		_rows = mb.getNumRows();
 		_cols = mb.getNumColumns();
-		
+		long nnz = mb.getNonZeros();
 		int rblen = DMLTranslator.DMLBlockSize;
 		int cblen = DMLTranslator.DMLBlockSize;
 		
-		
-		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen);
+		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen, nnz);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
 		try 
 		{

@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
+import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -190,7 +191,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		for (CellIndex index : map.keySet()) {
 			double d  = map.get(index).doubleValue();
 			if ( d > 0 ) {
-				this.setValue(index.row-1, index.column-1, d);
+				this.quickSetValue(index.row-1, index.column-1, d);
 				//nonZeros++;
 			}
 		}
@@ -251,7 +252,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			for(int j=0; j<clen; j++)
 			{
-				System.out.print(getValue(i, j)+"\t");
+				System.out.print(quickGetValue(i, j)+"\t");
 			}
 			System.out.println();
 		}
@@ -704,8 +705,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++)
 			{
-				v=op.executeScalar(getValue(r, c));
-				setValue(r, c, v);
+				v=op.executeScalar(quickGetValue(r, c));
+				quickSetValue(r, c, v);
 			}	
 	}
 	
@@ -716,8 +717,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++)
 			{
-				v=op.fn.execute(getValue(r, c));
-				setValue(r, c, v);
+				v=op.fn.execute(quickGetValue(r, c));
+				quickSetValue(r, c, v);
 			}	
 	}
 	
@@ -801,7 +802,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++)
 			{
-				v=op.fn.execute(this.getValue(r, c), that.getValue(r, c));
+				v=op.fn.execute(this.quickGetValue(r, c), that.quickGetValue(r, c));
 				result.appendValue(r, c, v);
 			}
 		//double en = System.nanoTime();
@@ -979,8 +980,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					thisvalue=this.getValue(r, c);
-					thatvalue=that.getValue(r, c);
+					thisvalue=this.quickGetValue(r, c);
+					thatvalue=that.quickGetValue(r, c);
 					if(thisvalue==0 && thatvalue==0)
 						continue;
 					resultvalue=op.fn.execute(thisvalue, thatvalue);
@@ -1027,12 +1028,12 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					buffer._correction=cor.getValue(0, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c), 
-							newWithCor.getValue(r+1, c));
-					setValue(r, c, buffer._sum);
-					cor.setValue(0, c, buffer._correction);
+					buffer._sum=this.quickGetValue(r, c);
+					buffer._correction=cor.quickGetValue(0, c);
+					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
+							newWithCor.quickGetValue(r+1, c));
+					quickSetValue(r, c, buffer._sum);
+					cor.quickSetValue(0, c, buffer._correction);
 				}
 			
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
@@ -1040,25 +1041,25 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
 					for(int r=0; r<rlen; r++){
-						double currMaxValue = cor.getValue(r, 0);
-						long newMaxIndex = (long)newWithCor.getValue(r, 0);
-						double newMaxValue = newWithCor.getValue(r, 1);
+						double currMaxValue = cor.quickGetValue(r, 0);
+						long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
+						double newMaxValue = newWithCor.quickGetValue(r, 1);
 						double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						    
 						if(update == 1){
-							setValue(r, 0, newMaxIndex);
-							cor.setValue(r, 0, newMaxValue);
+							quickSetValue(r, 0, newMaxIndex);
+							cor.quickSetValue(r, 0, newMaxValue);
 						}
 					}
 				}else{
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen; c++)
 						{
-							buffer._sum=this.getValue(r, c);
-							buffer._correction=cor.getValue(r, 0);;
-							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c), newWithCor.getValue(r, c+1));
-							setValue(r, c, buffer._sum);
-							cor.setValue(r, 0, buffer._correction);
+							buffer._sum=this.quickGetValue(r, c);
+							buffer._correction=cor.quickGetValue(r, 0);;
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
+							quickSetValue(r, c, buffer._sum);
+							cor.quickSetValue(r, 0, buffer._correction);
 						}
 				}
 		}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
@@ -1067,11 +1068,11 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					buffer._correction=cor.getValue(r, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c));
-					setValue(r, c, buffer._sum);
-					cor.setValue(r, c, buffer._correction);
+					buffer._sum=this.quickGetValue(r, c);
+					buffer._correction=cor.quickGetValue(r, c);
+					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
+					quickSetValue(r, c, buffer._sum);
+					cor.quickSetValue(r, c, buffer._correction);
 				}
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
@@ -1079,17 +1080,17 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					n=cor.getValue(0, c);
-					buffer._correction=cor.getValue(1, c);
-					mu2=newWithCor.getValue(r, c);
-					n2=newWithCor.getValue(r+1, c);
+					buffer._sum=this.quickGetValue(r, c);
+					n=cor.quickGetValue(0, c);
+					buffer._correction=cor.quickGetValue(1, c);
+					mu2=newWithCor.quickGetValue(r, c);
+					n2=newWithCor.quickGetValue(r+1, c);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					setValue(r, c, buffer._sum);
-					cor.setValue(0, c, n);
-					cor.setValue(1, c, buffer._correction);
+					quickSetValue(r, c, buffer._sum);
+					cor.quickSetValue(0, c, n);
+					cor.quickSetValue(1, c, buffer._correction);
 				}
 			
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
@@ -1098,17 +1099,17 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					n=cor.getValue(r, 0);
-					buffer._correction=cor.getValue(r, 1);
-					mu2=newWithCor.getValue(r, c);
-					n2=newWithCor.getValue(r, c+1);
+					buffer._sum=this.quickGetValue(r, c);
+					n=cor.quickGetValue(r, 0);
+					buffer._correction=cor.quickGetValue(r, 1);
+					mu2=newWithCor.quickGetValue(r, c);
+					n2=newWithCor.quickGetValue(r, c+1);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					setValue(r, c, buffer._sum);
-					cor.setValue(r, 0, n);
-					cor.setValue(r, 1, buffer._correction);
+					quickSetValue(r, c, buffer._sum);
+					cor.quickSetValue(r, 0, n);
+					cor.quickSetValue(r, 1, buffer._correction);
 				}
 		}
 		else
@@ -1128,12 +1129,12 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen-1; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					buffer._correction=this.getValue(r+1, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c), 
-							newWithCor.getValue(r+1, c));
-					setValue(r, c, buffer._sum);
-					setValue(r+1, c, buffer._correction);
+					buffer._sum=this.quickGetValue(r, c);
+					buffer._correction=this.quickGetValue(r+1, c);
+					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
+							newWithCor.quickGetValue(r+1, c));
+					quickSetValue(r, c, buffer._sum);
+					quickSetValue(r+1, c, buffer._correction);
 				}
 			
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
@@ -1141,25 +1142,25 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
 				for(int r = 0; r < rlen; r++){
-					double currMaxValue = getValue(r, 1);
-					long newMaxIndex = (long)newWithCor.getValue(r, 0);
-					double newMaxValue = newWithCor.getValue(r, 1);
+					double currMaxValue = quickGetValue(r, 1);
+					long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
+					double newMaxValue = newWithCor.quickGetValue(r, 1);
 					double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 					
 					if(update == 1){
-					    setValue(r, 0, newMaxIndex);
-					    setValue(r, 1, newMaxValue);
+						quickSetValue(r, 0, newMaxIndex);
+						quickSetValue(r, 1, newMaxValue);
 					}
 				}
 			}else{
 				for(int r=0; r<rlen; r++)
 					for(int c=0; c<clen-1; c++)
 					{
-						buffer._sum=this.getValue(r, c);
-						buffer._correction=this.getValue(r, c+1);
-						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c), newWithCor.getValue(r, c+1));
-						setValue(r, c, buffer._sum);
-						setValue(r, c+1, buffer._correction);
+						buffer._sum=this.quickGetValue(r, c);
+						buffer._correction=this.quickGetValue(r, c+1);
+						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
+						quickSetValue(r, c, buffer._sum);
+						quickSetValue(r, c+1, buffer._correction);
 					}
 			}
 		}/*else if(aggOp.correctionLocation==0)
@@ -1178,17 +1179,17 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen-2; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					n=this.getValue(r+1, c);
-					buffer._correction=this.getValue(r+2, c);
-					mu2=newWithCor.getValue(r, c);
-					n2=newWithCor.getValue(r+1, c);
+					buffer._sum=this.quickGetValue(r, c);
+					n=this.quickGetValue(r+1, c);
+					buffer._correction=this.quickGetValue(r+2, c);
+					mu2=newWithCor.quickGetValue(r, c);
+					n2=newWithCor.quickGetValue(r+1, c);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					setValue(r, c, buffer._sum);
-					setValue(r+1, c, n);
-					setValue(r+2, c, buffer._correction);
+					quickSetValue(r, c, buffer._sum);
+					quickSetValue(r+1, c, n);
+					quickSetValue(r+2, c, buffer._correction);
 				}
 			
 		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
@@ -1197,17 +1198,17 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen-2; c++)
 				{
-					buffer._sum=this.getValue(r, c);
-					n=this.getValue(r, c+1);
-					buffer._correction=this.getValue(r, c+2);
-					mu2=newWithCor.getValue(r, c);
-					n2=newWithCor.getValue(r, c+1);
+					buffer._sum=this.quickGetValue(r, c);
+					n=this.quickGetValue(r, c+1);
+					buffer._correction=this.quickGetValue(r, c+2);
+					mu2=newWithCor.quickGetValue(r, c);
+					n2=newWithCor.quickGetValue(r, c+1);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					setValue(r, c, buffer._sum);
-					setValue(r, c+1, n);
-					setValue(r, c+2, buffer._correction);
+					quickSetValue(r, c, buffer._sum);
+					quickSetValue(r, c+1, n);
+					quickSetValue(r, c+2, buffer._correction);
 				}
 		}
 		else
@@ -1347,6 +1348,38 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 	}
 	
+	public void quickSetValue(int r, int c, double v) {
+		if(sparse)
+		{
+			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
+				return;
+			adjustSparseRows(r);
+			if(sparseRows[r]==null)
+				sparseRows[r]=new SparseRow();
+			
+			if(sparseRows[r].set(c, v))
+				nonZeros++;
+			
+		}else
+		{
+			if(denseBlock==null && v==0.0)
+				return;		
+			int limit=rlen*clen;
+			if(denseBlock==null || denseBlock.length<limit)
+			{
+				denseBlock=new double[limit];
+				//Arrays.fill(denseBlock, 0, limit, 0);
+			}
+			
+			int index=r*clen+c;
+			if(denseBlock[index]==0)
+				nonZeros++;
+			denseBlock[index]=v;
+			if(v==0)
+				nonZeros--;
+		}
+	}
+	
 	
 	/*
 	 * append value is only used when values are appended at the end of each row for the sparse representation
@@ -1356,7 +1389,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(v==0) return;
 		if(!sparse) 
-			setValue(r, c, v);
+			quickSetValue(r, c, v);
 		else
 		{
 			adjustSparseRows(r);
@@ -1385,7 +1418,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			int[] cols=values.getIndexContainer();
 			double[] vals=values.getValueContainer();
 			for(int i=0; i<values.size(); i++)
-				setValue(r, cols[i], vals[i]);
+				quickSetValue(r, cols[i], vals[i]);
 		}
 	}
 	
@@ -1399,6 +1432,20 @@ public class MatrixBlockDSM extends MatrixValue{
 		if(r>rlen || c > clen)
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 		
+		if(sparse)
+		{
+			if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
+				return 0;
+			return sparseRows[r].get(c);
+		}else
+		{
+			if(denseBlock==null)
+				return 0;
+			return denseBlock[r*clen+c]; 
+		}
+	}
+	
+	public double quickGetValue(int r, int c) {
 		if(sparse)
 		{
 			if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
@@ -1615,7 +1662,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		out.writeBoolean(false);
 		for(int i=0; i<rlen; i++)
 			for(int j=0; j<clen; j++)
-				out.writeDouble(getValue(i, j));
+				out.writeDouble(quickGetValue(i, j));
 	}
 	
 	private void writeDenseToSparse(DataOutput out) throws IOException {
@@ -1657,11 +1704,13 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 
 	@Override
-	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
+	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret,
 			int startRow, int startColumn, int length)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
-		checkType(result);
+		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(MaxIndex.getMaxIndexFnObject())))
+			throw new DMLRuntimeException("the current reorgOperations cannot support "
+					+op.fn.getClass()+", needs to examine whether appendValue is applicable!");
+		MatrixBlockDSM result=checkType(ret);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
@@ -1688,7 +1737,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						tempCellIndex.set(r, cols[i]);
 						op.fn.execute(tempCellIndex, temp);
-						result.setValue(temp.row, temp.column, values[i]);
+						result.appendValue(temp.row, temp.column, values[i]);
 					}
 				}
 			}
@@ -1704,7 +1753,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					c=i%clen;
 					temp.set(r, c);
 					op.fn.execute(temp, temp);
-					result.setValue(temp.row, temp.column, denseBlock[i]);
+					result.appendValue(temp.row, temp.column, denseBlock[i]);
 				}
 			}
 		}
@@ -1713,11 +1762,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	//TODO MB: remove row, col, len because not used (after MatrixObject is removed)
-	public MatrixValue appendOperations(ReorgOperator op, MatrixValue result, 
+	public MatrixValue appendOperations(ReorgOperator op, MatrixValue ret, 
 										int startRow, int startColumn, int length) 	
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		checkType(result);
+		MatrixBlockDSM result=checkType(ret);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
 		if(reducedDim)
@@ -1744,7 +1793,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						tempCellIndex.set(r, cols[i]);
 						op.fn.execute(tempCellIndex, temp);
-						result.setValue(temp.row, temp.column, values[i]);
+						result.appendValue(temp.row, temp.column, values[i]);
 					}
 				}
 			}
@@ -1760,7 +1809,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					c=i%clen;
 					temp.set(r, c);
 					op.fn.execute(temp, temp);
-					result.setValue(temp.row, temp.column, denseBlock[i]);
+					result.appendValue(temp.row, temp.column, denseBlock[i]);
 				}
 			}
 		}
@@ -1811,8 +1860,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	 *   2) result[rowLower:rowUpper, colLower:colUpper] = rhsMatrix;
 	 *  
 	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixValue leftIndexingOperations(MatrixValue rhsMatrix, long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue result) throws DMLRuntimeException {
+	public MatrixValue leftIndexingOperations(MatrixValue rhsMatrix, long rowLower, long rowUpper, 
+			long colLower, long colUpper, MatrixValue ret) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		// Check the validity of bounds
 		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
@@ -1828,7 +1879,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					"do not match the shape of the matrix specified by indices [" +
 					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
 		}
-		
+		MatrixBlockDSM result=checkType(ret);
 		if(result==null)
 			result=new MatrixBlockDSM(this);
 		else {
@@ -1840,8 +1891,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		double d = 0;
 		for ( int i=0, res_i=(int)rowLower-1; i < rhsMatrix.getNumRows(); i++, res_i++ ) {
 			for ( int j=0, res_j=(int)colLower-1; j < rhsMatrix.getNumColumns(); j++, res_j++ ) {
-				d = rhsMatrix.getValue(i,j);
-				result.setValue(res_i, res_j, d);
+				d = ((MatrixBlockDSM) rhsMatrix).quickGetValue(i,j);
+				result.quickSetValue(res_i, res_j, d);
 			}
 		}
 		
@@ -1852,8 +1903,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
 	 * Extracted submatrix is returned as "result".
 	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixValue slideOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue result) throws DMLRuntimeException {
+	public MatrixValue slideOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue ret) 
+	throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		// Check the validity of bounds
 		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
@@ -1871,6 +1924,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
 		boolean result_sparsity = this.sparse;
+		MatrixBlockDSM result=checkType(ret);
 		if(result==null)
 			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity);
 		else
@@ -1899,7 +1953,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				int i = rl*clen;
 				for(int r = rl; r <= Math.min(ru,getNumRows()); r++) {
 					for(int c = cl; c <= Math.min(cu, getNumColumns()); c++) {
-						result.setValue(r-rl, c-cl, denseBlock[i+c]);
+						result.quickSetValue(r-rl, c-cl, denseBlock[i+c]);
 					}
 					i+=clen;
 				}
@@ -1978,9 +2032,9 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					int c=(int) range.colStart;
 					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						topleft.setValue(r+normalBlockRowFactor-rowCut, c+normalBlockColFactor-colCut, denseBlock[i+c]);
+						topleft.appendValue(r+normalBlockRowFactor-rowCut, c+normalBlockColFactor-colCut, denseBlock[i+c]);
 					for(; c<=range.colEnd; c++)
-						topright.setValue(r+normalBlockRowFactor-rowCut, c-colCut, denseBlock[i+c]);
+						topright.appendValue(r+normalBlockRowFactor-rowCut, c-colCut, denseBlock[i+c]);
 					i+=clen;
 				}
 				
@@ -1988,9 +2042,9 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					int c=(int) range.colStart;
 					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						bottomleft.setValue(r-rowCut, c+normalBlockColFactor-colCut, denseBlock[i+c]);
+						bottomleft.appendValue(r-rowCut, c+normalBlockColFactor-colCut, denseBlock[i+c]);
 					for(; c<=range.colEnd; c++)
-						bottomright.setValue(r-rowCut, c-colCut, denseBlock[i+c]);
+						bottomright.appendValue(r-rowCut, c-colCut, denseBlock[i+c]);
 					i+=clen;
 				}
 			}
@@ -2216,13 +2270,13 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(long i=start; i<=end; i++)
 			{
 				buffer=(KahanObject) op.aggOp.increOp.fn.execute(buffer, 
-						getValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
+						quickGetValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
 			}
-			result.setValue(0, 0, buffer._sum);
+			result.quickSetValue(0, 0, buffer._sum);
 			if(op.aggOp.correctionLocation==CorrectionLocationType.LASTROW)//extra row
-				result.setValue(1, 0, buffer._correction);
+				result.quickSetValue(1, 0, buffer._correction);
 			else if(op.aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
-				result.setValue(0, 1, buffer._correction);
+				result.quickSetValue(0, 1, buffer._correction);
 			else
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);
 		}else
@@ -2231,9 +2285,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(long i=start; i<=end; i++)
 			{
 				newv+=op.aggOp.increOp.fn.execute(newv,
-						getValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
+						quickGetValue(UtilFunctions.cellInBlockCalculation(i, blockingFactorRow), UtilFunctions.cellInBlockCalculation(i, blockingFactorCol)));
 			}
-			result.setValue(0, 0, newv);
+			result.quickSetValue(0, 0, newv);
 		}
 	}
 		
@@ -2257,7 +2311,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			int cellRow=UtilFunctions.cellInBlockCalculation(i, blockingFactorRow);
 			int cellCol=UtilFunctions.cellInBlockCalculation(i, blockingFactorCol);
-			result.setValue(cellRow, 0, getValue(cellRow, cellCol));
+			result.appendValue(cellRow, 0, quickGetValue(cellRow, cellCol));
 		}
 	}
 	
@@ -2276,11 +2330,11 @@ public class MatrixBlockDSM extends MatrixValue{
 				else
 					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 				
-				buffer._sum=result.getValue(row, column);
-				buffer._correction=result.getValue(corRow, corCol);
+				buffer._sum=result.quickGetValue(row, column);
+				buffer._correction=result.quickGetValue(corRow, corCol);
 				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newvalue);
-				result.setValue(row, column, buffer._sum);
-				result.setValue(corRow, corCol, buffer._correction);
+				result.quickSetValue(row, column, buffer._sum);
+				result.quickSetValue(corRow, corCol, buffer._correction);
 			}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 			{
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
@@ -2300,20 +2354,20 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 				else
 					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
-				buffer._sum=result.getValue(row, column);
-				buffer._correction=result.getValue(corRow, corCol);
-				double count=result.getValue(countRow, countCol)+1.0;
+				buffer._sum=result.quickGetValue(row, column);
+				buffer._correction=result.quickGetValue(corRow, corCol);
+				double count=result.quickGetValue(countRow, countCol)+1.0;
 				double toadd=(newvalue-buffer._sum)/count;
 				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-				result.setValue(row, column, buffer._sum);
-				result.setValue(corRow, corCol, buffer._correction);
-				result.setValue(countRow, countCol, count);
+				result.quickSetValue(row, column, buffer._sum);
+				result.quickSetValue(corRow, corCol, buffer._correction);
+				result.quickSetValue(countRow, countCol, count);
 			}
 			
 		}else
 		{
-			newvalue=aggOp.increOp.fn.execute(result.getValue(row, column), newvalue);
-			result.setValue(row, column, newvalue);
+			newvalue=aggOp.increOp.fn.execute(result.quickGetValue(row, column), newvalue);
+			result.quickSetValue(row, column, newvalue);
 		}
 	}
 	
@@ -2379,17 +2433,17 @@ public class MatrixBlockDSM extends MatrixValue{
 				   && op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN
 				   && op.aggOp.increOp.fn instanceof Builtin 
 				   && ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
-					double currMaxValue = result.getValue(i, 1);
+					double currMaxValue = result.quickGetValue(i, 1);
 					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), maxcolumn, j);
-					double newMaxValue = getValue(i, j);
+					double newMaxValue = quickGetValue(i, j);
 					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						    
 					if(update == 1){
-						result.setValue(i, 0, newMaxIndex);
-						result.setValue(i, 1, newMaxValue);
+						result.quickSetValue(i, 0, newMaxIndex);
+						result.quickSetValue(i, 1, newMaxValue);
 					}
 				}else
-					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, getValue(i,j), buffer);
+					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, quickGetValue(i,j), buffer);
 			}
 	}
 	
@@ -2501,7 +2555,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows!=null)
 			{
 				for(int r=0; r < this.getNumRows(); r++) {
-					op.fn.execute(cmobj, this.getValue(r,0), weights.getValue(r,0));
+					op.fn.execute(cmobj, this.quickGetValue(r,0), weights.quickGetValue(r,0));
 				}
 /*				
 			int zerocount = 0, zerorows=0, nzrows=0;
@@ -2534,7 +2588,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				for(int i=0; i<limit; i++) {
 					r=i/clen;
 					c=i%clen;
-					op.fn.execute(cmobj, denseBlock[i], weights.getValue(r,c) );
+					op.fn.execute(cmobj, denseBlock[i], weights.quickGetValue(r,c) );
 				}
 			}
 		}
@@ -2557,7 +2611,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows!=null)
 			{
 				for(int r=0; r < this.getNumRows(); r++ ) {
-					op.fn.execute(covobj, this.getValue(r,0), that.getValue(r,0), 1.0);
+					op.fn.execute(covobj, this.quickGetValue(r,0), that.quickGetValue(r,0), 1.0);
 				}
 			}
 		}
@@ -2569,7 +2623,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					op.fn.execute(covobj, denseBlock[i], that.getValue(r,c), 1.0);
+					op.fn.execute(covobj, denseBlock[i], that.quickGetValue(r,c), 1.0);
 				}
 			}
 		}
@@ -2597,7 +2651,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows!=null)
 			{
 				for(int r=0; r < this.getNumRows(); r++ ) {
-					op.fn.execute(covobj, this.getValue(r,0), that.getValue(r,0), weights.getValue(r,0));
+					op.fn.execute(covobj, this.quickGetValue(r,0), that.quickGetValue(r,0), weights.quickGetValue(r,0));
 				}
 			}
 		}
@@ -2609,7 +2663,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					op.fn.execute(covobj, denseBlock[i], that.getValue(r,c), weights.getValue(r,c));
+					op.fn.execute(covobj, denseBlock[i], that.quickGetValue(r,c), weights.quickGetValue(r,c));
 				}
 			}
 		}
@@ -2638,8 +2692,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		double d, w, zero_wt=0;
 		if ( wtflag ) {
 			for ( int r=0, ind=1; r < getNumRows(); r++ ) {
-				d = getValue(r,0);
-				w = wts.getValue(r,0);
+				d = quickGetValue(r,0);
+				w = wts.quickGetValue(r,0);
 				if ( d != 0 ) {
 					tdw[ind][0] = d;
 					tdw[ind][1] = w;
@@ -2709,7 +2763,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	private double sumWeightForQuantile() throws DMLRuntimeException {
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ )
-			sum_wt += getValue(i, 1);
+			sum_wt += quickGetValue(i, 1);
 		if ( (int)sum_wt != sum_wt ) {
 			throw new DMLRuntimeException("Unexpected error while computing quantile -- weights must be integers.");
 		}
@@ -2740,14 +2794,14 @@ public class MatrixBlockDSM extends MatrixValue{
 		// If it has a non-zero weight i.e., input data has zero values
 		// then "index" must start from 0, otherwise we skip the first row 
 		// and start with the next value in the data, which is in the 1st row.
-		if ( getValue(0,1) > 0 ) 
+		if ( quickGetValue(0,1) > 0 ) 
 			index = 0;
 		else
 			index = 1;
 		
 		// keep scanning the weights, until we hit the required position <code>fromPos</code>
 		while ( count < fromPos ) {
-			count += getValue(index,1);
+			count += quickGetValue(index,1);
 			++index;
 		}
 		
@@ -2755,12 +2809,12 @@ public class MatrixBlockDSM extends MatrixValue{
 		double val;
 		int wt, selectedCount;
 		
-		runningSum = (count-fromPos) * getValue(index-1, 0);
+		runningSum = (count-fromPos) * quickGetValue(index-1, 0);
 		selectedCount = (count-fromPos);
 		
 		while(count <= toPos ) {
-			val = getValue(index,0);
-			wt = (int) getValue(index,1);
+			val = quickGetValue(index,0);
+			wt = (int) quickGetValue(index,1);
 			
 			runningSum += (val * Math.min(wt, selectRange-selectedCount));
 			selectedCount += Math.min(wt, selectRange-selectedCount);
@@ -2773,7 +2827,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		return runningSum/selectedCount;
 	}
 	
-	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue output) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue ret) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException {
 	
 		MatrixBlockDSM qs=checkType(quantiles);
 		
@@ -2781,7 +2836,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			throw new DMLRuntimeException("Multiple quantiles can only be computed on a 1D matrix");
 		}
 		
-		checkType(output);
+		MatrixBlockDSM output = checkType(ret);
 
 		if(output==null)
 			output=new MatrixBlockDSM(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
@@ -2789,7 +2844,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			output.reset(qs.rlen, qs.clen, false);
 		
 		for ( int i=0; i < qs.rlen; i++ ) {
-			output.setValue(i, 0, this.pickValue(qs.getValue(i,0)) );
+			output.quickSetValue(i, 0, this.pickValue(qs.quickGetValue(i,0)) );
 		}
 		
 		return output;
@@ -2803,10 +2858,10 @@ public class MatrixBlockDSM extends MatrixValue{
 		int t = 0, i=-1;
 		do {
 			i++;
-			t += getValue(i,1);
+			t += quickGetValue(i,1);
 		} while(t<pos && i < getNumRows());
 		
-		return getValue(i,0);
+		return quickGetValue(i,0);
 	}
 	
 	
@@ -3029,11 +3084,11 @@ public class MatrixBlockDSM extends MatrixValue{
 				int j=cols[p];
 				for(int i=0; i<m1.rlen; i++)
 				{
-					double old=result.getValue(i, j);
-					double aik=m1.getValue(i, k);
+					double old=result.quickGetValue(i, j);
+					double aik=m1.quickGetValue(i, k);
 					double addValue=op.binaryFn.execute(aik, values[p]);
 					double newvalue=op.aggOp.increOp.fn.execute(old, addValue);
-					result.setValue(i, j, newvalue);
+					result.quickSetValue(i, j, newvalue);
 				}
 			}
 		}
@@ -3059,7 +3114,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				for(int p=0; p<m1.sparseRows[i].size(); p++)
 				{
 					int k=cols[p];
-					double addValue=op.binaryFn.execute(values[p], m2.getValue(k, j));
+					double addValue=op.binaryFn.execute(values[p], m2.quickGetValue(k, j));
 					aij=op.aggOp.increOp.fn.execute(aij, addValue);
 				}
 				result.appendValue(i, j, aij);
@@ -3108,9 +3163,9 @@ public class MatrixBlockDSM extends MatrixValue{
 						cache.put(j, op.aggOp.increOp.fn.execute(old, addValue));
 					}else
 					{
-						double old=result.getValue(i, j);
+						double old=result.quickGetValue(i, j);
 						double newvalue=op.aggOp.increOp.fn.execute(old, addValue);
-						result.setValue(i, j, newvalue);
+						result.quickSetValue(i, j, newvalue);
 					}	
 				}
 			}
@@ -3209,8 +3264,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				double aggValue=op.aggOp.initialValue;
 				for(int k=0; k<m1.clen; k++)
 				{
-					double aik=m1.getValue(i, k);
-					double bkj=m2.getValue(k, j);
+					double aik=m1.quickGetValue(i, k);
+					double bkj=m2.quickGetValue(k, j);
 					double addValue=op.binaryFn.execute(aik, bkj);
 					aggValue=op.aggOp.increOp.fn.execute(aggValue, addValue);
 				}
@@ -3249,8 +3304,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						// cIndex = i * m1.rlen + j
 						// bIndex = l * m1.rlen + j
-						v = op.aggOp.increOp.fn.execute(result.getValue(i, j), op.binaryFn.execute(temp, b[bIndex]));
-						result.setValue(i, j, v);
+						v = op.aggOp.increOp.fn.execute(result.quickGetValue(i, j), op.binaryFn.execute(temp, b[bIndex]));
+						result.quickSetValue(i, j, v);
 						cIndex++;
 						bIndex++;
 					}
@@ -3261,8 +3316,11 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
-	public MatrixValue groupedAggOperations(MatrixValue target, MatrixValue weights, MatrixValue result, Operator op) throws DMLRuntimeException {
+	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, Operator op) 
+	throws DMLRuntimeException, DMLUnsupportedOperationException {
 		// this <- groups
+		MatrixBlockDSM target=checkType(tgt);
+		MatrixBlockDSM weights=checkType(wghts);
 		
 		if (this.getNumColumns() != 1 || target.getNumColumns() != 1 || (weights!=null && weights.getNumColumns()!=1) )
 			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices.");
@@ -3297,6 +3355,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			throw new DMLRuntimeException("Invalid value (" + max + ") encountered in \"groups\" while computing groupedAggregate.");
 		int numGroups = (int) max;
 	
+		MatrixBlockDSM result=checkType(ret);
+		
 		// Allocate memory to hold the result
 		boolean result_sparsity = false; // it is likely that resulting matrix is dense
 		if(result==null)
@@ -3315,10 +3375,10 @@ public class MatrixBlockDSM extends MatrixValue{
 				cmValues[i] = new CM_COV_Object();
 			
 			for ( int i=0; i < this.getNumRows(); i++ ) {
-				g = (int) this.getValue(i, 0);
-				d = target.getValue(i,0);
+				g = (int) this.quickGetValue(i, 0);
+				d = target.quickGetValue(i,0);
 				if ( weights != null )
-					w = weights.getValue(i,0);
+					w = weights.quickGetValue(i,0);
 				// cmValues is 0-indexed, whereas range of values for g = [1,numGroups]
 				cmFn.execute(cmValues[g-1], d, w); 
 			}
@@ -3326,7 +3386,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			// extract the required value from each CM_COV_Object
 			for ( int i=0; i < numGroups; i++ )
 				// result is 0-indexed, so is cmValues
-				result.setValue(i, 0, cmValues[i].getRequiredResult(op));
+				result.quickSetValue(i, 0, cmValues[i].getRequiredResult(op));
 		}
 		else if(op instanceof AggregateOperator) {
 			AggregateOperator aggop=(AggregateOperator) op;
@@ -3338,10 +3398,10 @@ public class MatrixBlockDSM extends MatrixValue{
 					buffer[i] = new KahanObject(aggop.initialValue, 0);
 				
 				for ( int i=0; i < this.getNumRows(); i++ ) {
-					g = (int) this.getValue(i, 0);
-					d = target.getValue(i,0);
+					g = (int) this.quickGetValue(i, 0);
+					d = target.quickGetValue(i,0);
 					if ( weights != null )
-						w = weights.getValue(i,0);
+						w = weights.quickGetValue(i,0);
 					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
 					aggop.increOp.fn.execute(buffer[g-1], d*w);
 				}
@@ -3349,21 +3409,21 @@ public class MatrixBlockDSM extends MatrixValue{
 				// extract the required value from each KahanObject
 				for ( int i=0; i < numGroups; i++ )
 					// result is 0-indexed, so is buffer
-					result.setValue(i, 0, buffer[i]._sum);
+					result.quickSetValue(i, 0, buffer[i]._sum);
 			}
 			else {
 				for ( int i=0; i < numGroups; i++ )
-					result.setValue(i, 0, aggop.initialValue);
+					result.quickSetValue(i, 0, aggop.initialValue);
 				
 				double v;
 				for ( int i=0; i < this.getNumRows(); i++ ) {
-					g = (int) this.getValue(i, 0);
-					d = target.getValue(i,0);
+					g = (int) this.quickGetValue(i, 0);
+					d = target.quickGetValue(i,0);
 					if ( weights != null )
-						w = weights.getValue(i, 0);
+						w = weights.quickGetValue(i, 0);
 					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
 					v = aggop.increOp.fn.execute(result.getValue(g-1,1), d*w);
-					result.setValue(g-1, 0, v);
+					result.quickSetValue(g-1, 0, v);
 				}
 			}
 			
@@ -3404,7 +3464,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						// output (v1,v2,w)
 						v1 = values[i];
-						w = that2.getValue(r, cols[i]);
+						w = that2.quickGetValue(r, cols[i]);
 						updateCtable(v1, v2, w, ctableResult);
 					}
 				}
@@ -3419,8 +3479,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					v1 = this.getValue(r, c);
-					w = that2.getValue(r, c);
+					v1 = this.quickGetValue(r, c);
+					w = that2.quickGetValue(r, c);
 					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
@@ -3473,7 +3533,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					v1 = this.getValue(r, c);
+					v1 = this.quickGetValue(r, c);
 					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
@@ -3513,7 +3573,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						// output (v1,v2,w)
 						v1 = values[i];
-						v2 = that.getValue(r, cols[i]);
+						v2 = that.quickGetValue(r, cols[i]);
 						updateCtable(v1, v2, w, ctableResult);
 					}
 				}
@@ -3528,8 +3588,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					v1 = this.getValue(r, c);
-					v2 = that.getValue(r, c);
+					v1 = this.quickGetValue(r, c);
+					v2 = that.quickGetValue(r, c);
 					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
@@ -3566,8 +3626,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					{
 						// output (v1,v2,w)
 						v1 = values[i];
-						v2 = that.getValue(r, cols[i]);
-						w = that2.getValue(r, cols[i]);
+						v2 = that.quickGetValue(r, cols[i]);
+						w = that2.quickGetValue(r, cols[i]);
 						updateCtable(v1, v2, w, ctableResult);
 					}
 				}
@@ -3582,9 +3642,9 @@ public class MatrixBlockDSM extends MatrixValue{
 				{
 					r=i/clen;
 					c=i%clen;
-					v1 = this.getValue(r, c);
-					v2 = that.getValue(r, c);
-					w = that2.getValue(r, c);
+					v1 = this.quickGetValue(r, c);
+					v2 = that.quickGetValue(r, c);
+					w = that2.quickGetValue(r, c);
 					updateCtable(v1, v2, w, ctableResult);
 				}
 			}
@@ -3682,8 +3742,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++)
 			{
-				v=op.fn.execute(this.getValue(r, c), that.getValue(r, c));
-				setValue(r, c, v);
+				v=op.fn.execute(this.quickGetValue(r, c), that.quickGetValue(r, c));
+				quickSetValue(r, c, v);
 			}
 	}
 	
@@ -3775,10 +3835,10 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					thisvalue=this.getValue(r, c);
-					thatvalue=that.getValue(r, c);
+					thisvalue=this.quickGetValue(r, c);
+					thatvalue=that.quickGetValue(r, c);
 					resultvalue=op.fn.execute(thisvalue, thatvalue);
-					this.setValue(r, c, resultvalue);
+					this.quickSetValue(r, c, resultvalue);
 				}	
 		}
 	}
@@ -4214,9 +4274,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		boolean ret=true;
 		for(int i=0; i<m1.getNumRows(); i++)
 			for(int j=0; j<m1.getNumColumns(); j++)
-				if(Math.abs(m1.getValue(i, j)-m2.getValue(i, j))>0.0000000001)
+				if(Math.abs(m1.quickGetValue(i, j)-m2.quickGetValue(i, j))>0.0000000001)
 				{
-					System.out.println(m1.getValue(i, j)+" vs "+m2.getValue(i, j)+":"+ (Math.abs(m1.getValue(i, j)-m2.getValue(i, j))));
+					System.out.println(m1.quickGetValue(i, j)+" vs "+m2.quickGetValue(i, j)+":"+ (Math.abs(m1.quickGetValue(i, j)-m2.quickGetValue(i, j))));
 					ret=false;
 				}
 		return ret;
@@ -4227,9 +4287,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		boolean ret=true;
 		for(int i=0; i<m1.getNumRows(); i++)
 			for(int j=0; j<m1.getNumColumns(); j++)
-				if(Math.abs(m1.getValue(i, j)-m2.getValue(i, j))>0.0000000001)
+				if(Math.abs(m1.getValue(i, j)-m2.quickGetValue(i, j))>0.0000000001)
 				{
-					System.out.println(m1.getValue(i, j)+" vs "+m2.getValue(i, j)+":"+ (Math.abs(m1.getValue(i, j)-m2.getValue(i, j))));
+					System.out.println(m1.getValue(i, j)+" vs "+m2.getValue(i, j)+":"+ (Math.abs(m1.getValue(i, j)-m2.quickGetValue(i, j))));
 					ret=false;
 				}
 		return ret;

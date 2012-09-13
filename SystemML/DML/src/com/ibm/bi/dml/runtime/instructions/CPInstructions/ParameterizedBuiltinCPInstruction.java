@@ -86,7 +86,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 	
 	@Override 
-	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException {
+	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;

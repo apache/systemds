@@ -1,4 +1,4 @@
-<project name="MetadataEnhancementApp" default="buildAppZipFile">
+<project name="GenerateMetadataApp" default="buildAppZipFile">
 
 	<!-- Root of the workspace -->
 	<property name="workspace.root" location="../.." />
@@ -10,7 +10,7 @@
 	<property name="config.dir" location="${project.root}/config" />
 	
 	<!-- final zip file -->
-	<property name="zip.file" location="${build.dir}/MetadataEnhancementApp.zip" />
+	<property name="zip.file" location="${build.dir}/GenerateMetadataApp.zip" />
 
 	<!-- custom modules folder, jaql folder, staging folder -->
 	<property name="custom_modules.dir" location="${project.root}/custom_modules" />

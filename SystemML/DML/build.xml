@@ -214,7 +214,7 @@
 	
 	<!-- Target for SystemML applications -->
 	<target name="apps" depends="jar">
-		<ant antfile="../MetadataEnhancementApp/build/build.xml" 
+		<ant antfile="../GenerateMetadataApp/build/build.xml" 
              target="buildAppZipFile" 
 			 inheritAll="false">
    		</ant>
@@ -222,7 +222,7 @@
              target="buildAppZipFile" 
 			 inheritAll="false">
    		</ant>
-		<ant antfile="../GenerateRecodeMapApp/build/build.xml" 
+		<ant antfile="../EnhanceMetadataApp/build/build.xml" 
              target="buildAppZipFile" 
 			 inheritAll="false">
    		</ant>
@@ -298,9 +298,9 @@
 			 destfile="${release.2012_Nov}/${build.configjartgz}" 
 			 compression="gzip"/>
         <mkdir dir="${release.2012_Nov}/Apps" />
-        <copy file="../MetadataEnhancementApp/build/MetadataEnhancementApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../GenerateMetadataApp/build/GenerateMetadataApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../FilterProjectApp/build/FilterProjectApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
-        <copy file="../GenerateRecodeMapApp/build/GenerateRecodeMapApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+        <copy file="../EnhanceMetadataApp/build/EnhanceMetadataApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../RecodeApp/build/RecodeApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
         <copy file="../LinearRegressionApp/build/LinearRegressionApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../LinearRegressionScoreApp/build/LinearRegressionScoreApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>

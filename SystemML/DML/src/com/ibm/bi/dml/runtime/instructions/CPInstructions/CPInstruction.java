@@ -15,8 +15,11 @@ public class CPInstruction extends Instruction {
 	
 	Operator optr;
 	
-	public CPInstruction(Operator op) {
+	public CPInstruction() {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
+	}
+	public CPInstruction(Operator op) {
+		this();
 		optr = op;
 	}
 	

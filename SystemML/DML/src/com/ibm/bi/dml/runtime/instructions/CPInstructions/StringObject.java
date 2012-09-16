@@ -34,6 +34,10 @@ public class StringObject extends ScalarObject {
 		return _value;
 	}
 
+	public String toString() { 
+		return getStringValue();
+	}
+
 	public boolean getBooleanValue(){
 		throw new UnsupportedOperationException();
 	}

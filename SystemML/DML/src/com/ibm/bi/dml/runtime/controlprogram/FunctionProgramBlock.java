@@ -62,6 +62,8 @@ public class FunctionProgramBlock extends ProgramBlock {
 		// for each program block
 		for (int i=0; i < this._childBlocks.size(); i++){
 			ProgramBlock pb = this._childBlocks.get(i);
+			// TODO: check with Doug
+			pb._variables = new LocalVariableMap();
 			pb.setVariables(_variables);
 			
 			try {

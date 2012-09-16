@@ -39,6 +39,10 @@ public class IntObject extends ScalarObject  {
 		return Integer.toString(_value);
 	}
 
+	public String toString() { 
+		return getStringValue();
+	}
+
 	@Override
 	public String getDebugName() {
 		// TODO Auto-generated method stub

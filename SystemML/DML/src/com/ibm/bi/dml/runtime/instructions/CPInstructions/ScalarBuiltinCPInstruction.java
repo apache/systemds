@@ -28,23 +28,29 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 		SimpleOperator dop = (SimpleOperator) optr;
 			
 		if ( opcode.equalsIgnoreCase("print") ) {
+			String outString = "";
 			switch (input1.get_valueType()) {
 			case INT:
-				System.out.println("" + so.getIntValue());
+				outString += so.getIntValue();
 				break;
 			case DOUBLE:
-				System.out.println("" + so.getDoubleValue());
+				outString += so.getDoubleValue();
 				break;
 			case BOOLEAN:
-				System.out.println("" + so.getBooleanValue());
-			break;
+				outString += so.getBooleanValue();
+				break;
 			case STRING:
-				System.out.println("" + so.getStringValue());
+				outString += so.getStringValue();
 				break;
 			}
+			System.out.println(outString);
+			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
+			sores = new StringObject(outString);
 		}
 		else if (opcode.equalsIgnoreCase("print2")) {
 			System.out.println(so.getStringValue());
+			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
+			sores = new StringObject(so.getStringValue());
 		}
 		else {
 			/*
@@ -55,8 +61,6 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 			sores = (ScalarObject) new DoubleObject(rval);
 		}
 		
-		//prithvi TODO: we input a null into the symbol table
-		//if builtin is print/print2?? is that ok?
 		pb.setScalarOutput(output.get_name(), sores);
 	}
 }

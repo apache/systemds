@@ -88,10 +88,6 @@ public class MatrixCharacteristics{
 		return numColumnsPerBlock;
 	}
 	
-	public long getNonZeros() {
-		return nonZero;
-	}
-	
 	public String toString()
 	{
 		return "["+numRows+" x "+numColumns+", nnz="+nonZero
@@ -112,6 +108,10 @@ public class MatrixCharacteristics{
 	
 	public void setNonZeros(long nnz) {
 		nonZero = nnz;
+	}
+	
+	public long getNonZeros() {
+		return nonZero;
 	}
 	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 

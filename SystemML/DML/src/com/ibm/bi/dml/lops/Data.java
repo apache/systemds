@@ -310,26 +310,34 @@ public class Data extends Lops
 	 * @throws LopsException 
 	 */
 	public String getInstructions() throws LopsException {
-		String inst = "CP" + OPERAND_DELIMITOR + "createvar";
-		OutputParameters oparams = getOutputParameters();
 		if ( get_dataType() == DataType.MATRIX ) {
+			
+			if ( isTransient() )
+				throw new LopsException("getInstructions() should not be called for transient nodes.");
+			
+			OutputParameters oparams = getOutputParameters();
+			String fmt = "";
+			// TODO: following logic should change once we LOPs encode key-value-class information.
+			if ( oparams.getFormat() == Format.TEXT )
+				fmt = "textcell";
+			else {
+				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
+					fmt = "binaryblock";
+				else
+					fmt = "binarycell";
+			}
+			
+			String inst = "CP" + OPERAND_DELIMITOR + "createvar";
 			inst +=  OPERAND_DELIMITOR 
-					+ oparams.getLabel() + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR 
-					+ oparams.getFile_name() + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.STRING + OPERAND_DELIMITOR
+					+ oparams.getLabel() + OPERAND_DELIMITOR 
+					+ oparams.getFile_name() + OPERAND_DELIMITOR
+					+ false + OPERAND_DELIMITOR  // only persistent reads come here!
+					+ fmt + OPERAND_DELIMITOR
 			        + oparams.getNum_rows() + OPERAND_DELIMITOR
 			        + oparams.getNum_cols() + OPERAND_DELIMITOR
 			        + oparams.get_rows_in_block() + OPERAND_DELIMITOR
 			        + oparams.get_cols_in_block() + OPERAND_DELIMITOR
-	        		+ oparams.getNnz() + OPERAND_DELIMITOR; 
-			// TODO: following logic should change once we LOPs encode key-value-class information.
-			if ( oparams.getFormat() == Format.TEXT )
-				inst += "textcell";
-			else {
-				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
-					inst += "binaryblock";
-				else
-					inst += "binarycell";
-			}
+	        		+ oparams.getNnz(); 
 			return inst;
 		}
 		else {

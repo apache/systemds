@@ -91,11 +91,28 @@ public class ProgramBlock {
 */		System.out.println("____________________________________");
 	}
 	
+	/*private boolean checkCacheStatus() throws DMLRuntimeException {
+		Data d = null;
+		String s= null;
+		for(String key : _variables.keySet() ) {
+			d = _variables.get(key);
+			if ( d.getDataType() == DataType.MATRIX ) {
+				s = ((MatrixObjectNew)d).getStatusAsString();
+				if ( s.equalsIgnoreCase("READ") || s.equalsIgnoreCase("MODIFY") ) {
+					printSymbolTable();
+					throw new DMLRuntimeException("--> unexpected cache status (" + s+ ") for variable " + key);
+				}
+			}
+		}
+		return true;
+	}*/
+	
 	protected void execute(ArrayList<Instruction> inst, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		if ( DMLScript.DEBUG ) {
 			printSymbolTable();
 		}
-
+		long st=0, duration=0;
+		
 		for (int i = 0; i < inst.size(); i++) 
 		{
 			//indexed access required due to dynamic add
@@ -107,8 +124,7 @@ public class ProgramBlock {
 				try {
 					if ( DMLScript.DEBUG ) 
 						printSymbolTable();
-					
-					long begin = System.currentTimeMillis();
+					st = System.currentTimeMillis();
 					MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 					
 					JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
@@ -132,8 +148,11 @@ public class ProgramBlock {
 							}
 						}
 					}
-					if ( DMLScript.DEBUG )
-						System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (System.currentTimeMillis()-begin));
+					if ( DMLScript.DEBUG ) {
+						duration = System.currentTimeMillis()-st;
+						//instTimer.addTime(currMRInst.getID(), duration);
+						System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (duration));
+					}
 					
 					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 				}
@@ -147,12 +166,14 @@ public class ProgramBlock {
 			else if (currInst instanceof CPInstruction) 
 			{
 				try {
+					st = System.currentTimeMillis();
+					
 					if( currInst.requiresLabelUpdate() ) //update labels only if required
 					{
 						String currInstStr = currInst.toString();
 						String updInst = RunMRJobs.updateLabels(currInstStr, _variables);
 						if ( DMLScript.DEBUG )
-							System.out.println("Processing CPInstruction: " + updInst);
+							System.out.println("-- Processing CPInstruction: " + updInst);
 						
 						CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
 						si.processInstruction(this);
@@ -162,12 +183,15 @@ public class ProgramBlock {
 					else 
 					{
 						if ( DMLScript.DEBUG )
-							System.out.println("Processing CPInstruction: " + currInst.toString());
+							System.out.println("-- Processing CPInstruction: " + currInst.toString());
 						((CPInstruction) currInst).processInstruction(this); 
 					}
-					if ( DMLScript.DEBUG )
+					if (DMLScript.DEBUG) {
+						duration = System.currentTimeMillis()-st;
+						//instTimer.addTime(currInst.getID(), duration);
+						System.out.println("  " + currInst.toString() + ":  " + (duration));
 						System.out.println("    memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "].");
-				
+					}
 				}
 				catch (Exception e){
 					e.printStackTrace();
@@ -194,6 +218,8 @@ public class ProgramBlock {
 				((SQLPrintInstruction)currInst).execute(ec);
 				*/
 		}
+		
+		//checkCacheStatus();
 	}
 	
 	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {

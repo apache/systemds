@@ -787,7 +787,7 @@ public class MRJobInstruction extends Instruction
 		for(int i=0; i < outputVars.length; i++ ) {
 			System.out.println("    " + iv_resultIndices[i] + " : " + outputVars[i] + 
 					" - [" + outputs[i] + 
-					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols_per_block() + 
+					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols() + 
 					"]  nnz[" + outputMatrices[i].getNnz() +
 					"]  block[" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols_per_block() + 
 					"]  [" + OutputInfo.outputInfoToString(outputInfos[i]) +

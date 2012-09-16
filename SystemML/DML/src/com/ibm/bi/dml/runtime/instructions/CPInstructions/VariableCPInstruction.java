@@ -2,13 +2,14 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
 
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -31,8 +32,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 *	    assign value of y to x (both types should match)
 	 *	2) rmvar x
 	 *	    remove variable x
-	 *	3) mvvar x y
-	 *	    rename x as y (same as assignvar followed by rmvar, types are not required)
+	 *	3) cpvar x y
+	 *	    copy x to y (same as assignvar followed by rmvar, types are not required)
 	 *	4) rmfilevar x:type b:type
 	 *	    remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
 	 *	5) assignvarwithfile FN x
@@ -42,8 +43,12 @@ public class VariableCPInstruction extends CPInstruction {
 	 *     createvar x FP [dimensions] [formatinfo]
 	 */
 	
+	protected static IDSequence _uniqueVarID;
+	static {
+		_uniqueVarID  = new IDSequence(true); 
+	}
 	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, RenameVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
+		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
 	}
 	
 	VariableOperationCode opcode;
@@ -65,8 +70,8 @@ public class VariableCPInstruction extends CPInstruction {
 		else if ( str.equalsIgnoreCase("rmvar") ) 
 			return VariableOperationCode.RemoveVariable;
 		
-		else if ( str.equalsIgnoreCase("mvvar"))
-			return VariableOperationCode.RenameVariable;
+		else if ( str.equalsIgnoreCase("cpvar"))
+			return VariableOperationCode.CopyVariable;
 		
 		else if ( str.equalsIgnoreCase("rmfilevar") ) 
 			return VariableOperationCode.RemoveVariableAndFile;
@@ -99,53 +104,24 @@ public class VariableCPInstruction extends CPInstruction {
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
 		
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, int _arity, String istr )
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String istr )
 	{
-		super(null);
-		cptype = CPINSTRUCTION_TYPE.Variable;
-		opcode = op;
-		input1 = in1;
-		input2 = in2;
-		arity = _arity;
-		instString = istr;
-	}
-
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand out, int _arity, String istr )
-	{
-		super(null);
-		cptype = CPINSTRUCTION_TYPE.Variable;
-		opcode = op;
-		input1 = in1;
-		input2 = in2;
-		output = out;
-		arity = _arity;
-		instString = istr;
-	}
-
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, String istr )
-	{
-		super(null);
+		super();
 		cptype = CPINSTRUCTION_TYPE.Variable;
 		opcode = op;
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
-		output = null;
-		arity = 3;
+		output = out;
+		arity = _arity;
 		instString = istr;
 	}
 
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, MetaData md, int _arity, String istr )
+	// This version of the constructor is used only in case of CreateVariable
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, String istr)
 	{
-		super(null);
-		cptype = CPINSTRUCTION_TYPE.Variable;
-		opcode = op;
-		input1 = in1;
-		input2 = in2;
-		output = null;
+		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
 		metadata = md;
-		arity = _arity;
-		instString = istr;
 	}
 
 	private static int getArity(VariableOperationCode op) {
@@ -171,7 +147,7 @@ public class VariableCPInstruction extends CPInstruction {
 		int _arity = -1;
 		
 		if ( voc == VariableOperationCode.CreateVariable ){
-			if ( parts.length != 3 && parts.length != 4 && parts.length != 8 && parts.length != 9 )
+			if ( parts.length != 5 && parts.length != 10 )
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 		}
 		else {
@@ -184,16 +160,43 @@ public class VariableCPInstruction extends CPInstruction {
 		switch (voc) {
 		
 		case CreateVariable:
-			in1 = new CPOperand(parts[1]);
-			in2 = new CPOperand(parts[2]);
-			if ( parts.length > 3 ) {
+			// variable name (only supports Matrices, and only w/ double value type)
+			in1 = new CPOperand(parts[1], ValueType.DOUBLE, DataType.MATRIX);
+			// file name
+			in2 = new CPOperand(parts[2], ValueType.STRING, DataType.SCALAR);
+			// file name override flag
+			in3 = new CPOperand(parts[3], ValueType.BOOLEAN, DataType.SCALAR);
+			
+			// format 
+			String fmt = parts[4];
+			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
+			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
+			
+			MatrixCharacteristics mc = new MatrixCharacteristics();
+			if ( parts.length == 5 ) {
+				// do nothing
+				;
+			}
+			else if ( parts.length == 10 ) {
+				// matrix characteristics
+				mc.setDimension(Long.parseLong(parts[5]), Long.parseLong(parts[6]));
+				mc.setBlockSize(Integer.parseInt(parts[7]), Integer.parseInt(parts[8]));
+				mc.setNonZeros(Long.parseLong(parts[9]));
+			}
+			else {
+				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
+			MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
+			return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, str);
+			
+			/*if ( parts.length > 3 ) {
 				MatrixCharacteristics mc = new MatrixCharacteristics();
 				if ( parts.length == 4 ) {
 					// the last operand is the OutputInfo
 					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[3]);
 					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, iimd, parts.length, str);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, iimd);
 				}
 				mc.setDimension(Long.parseLong(parts[3]), Long.parseLong(parts[4]));
 				mc.setBlockSize(Integer.parseInt(parts[5]), Integer.parseInt(parts[6]));
@@ -203,14 +206,14 @@ public class VariableCPInstruction extends CPInstruction {
 					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[8]);
 					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, iimd, parts.length, str);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, iimd);
 				}
 				else {
 					MatrixDimensionsMetaData mdmd = new MatrixDimensionsMetaData(mc);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, mdmd, parts.length, str);
+					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, mdmd);
 				}
 			}
-			break;
+			break;*/
 			
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -221,10 +224,9 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case RemoveVariable:
 			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.SCALAR);
-			in2 = null;
 			break;
 			
-		case RenameVariable:
+		case CopyVariable:
 			// Value types are not given here
 			in1 = new CPOperand(parts[1], ValueType.UNKNOWN, DataType.UNKNOWN);
 			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -240,7 +242,7 @@ public class VariableCPInstruction extends CPInstruction {
 			
 		case AssignVariableWithFirstValue:
 			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
-			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
+			out = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
 			break;
 			
 		case ValuePick:
@@ -260,7 +262,7 @@ public class VariableCPInstruction extends CPInstruction {
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			in3 = new CPOperand(parts[3]);
-			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
+			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
 			
 		case Read:
 			in1 = new CPOperand(parts[1]);
@@ -272,11 +274,37 @@ public class VariableCPInstruction extends CPInstruction {
 			in1 = new CPOperand(parts[1]); // variable name
 			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN); // file name
 			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN); // option: remote or local
-			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
+			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
 		}
-		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, out, _arity, str);
+		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str);
 	}
 
+	//private int getRefCount(ProgramBlock pb, String var, boolean breakIfMultipleRefs) {
+	private int getRefCount(ProgramBlock pb, Data d, boolean breakIfMultipleRefs) {
+		
+		//Data d = pb.getVariable(var);
+		
+		if ( d == null )
+			return 0;
+		
+		int refCount = 0;
+		//int hash = d.hashCode();
+		for( String key : pb.getVariables().keySet() ) {
+			//System.out.println("    probing for " + key + ": " + pb.getVariable(key));
+			//if ( pb.getVariable(key).hashCode() == hash ) {
+			if ( pb.getVariable(key).equals(d) ) {
+				refCount++;
+				
+				//if ( !key.equalsIgnoreCase(var) && !instString.contains("rmvar"))
+				//	System.err.println("   " + instString + " .. var " + var + ", key " + key);
+				// early exit if specified by "breakIfMultipleRefs"
+				if ( breakIfMultipleRefs && refCount > 1)
+					return refCount;
+			}
+		}
+		return refCount;
+	}
+	
 	@Override
 	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
@@ -284,16 +312,17 @@ public class VariableCPInstruction extends CPInstruction {
 		case CreateVariable:
 			
 			if ( input1.get_dataType() == DataType.MATRIX ) {
-				/*
-				 * Following if condition is used for debugging, and to easily
-				 * switch between OLD MatrixObject and NEW MatrixObject classes.
-				 * Once MatrixObjectNew is completely tested, it can be removed. 
-				 */
-				
 				//create new variable for symbol table and cache
-				//(existing objects already cleared on 'rm vars')
-
-				MatrixObjectNew mobj = new MatrixObjectNew(input1.get_valueType(), input2.get_name());
+				//(existing objects gets cleared through rmvar instructions)
+				String fname = input2.get_name();
+				
+				// check if unique filename needs to be generated
+				boolean overrideFileName = ((BooleanObject) pb.getScalarInput(input3.get_name(), input3.get_valueType())).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
+				if ( overrideFileName ) {
+					fname = fname + "_" + _uniqueVarID.getNextID();
+				}
+				
+				MatrixObjectNew mobj = new MatrixObjectNew(input1.get_valueType(), fname );
 				mobj.setVarName(input1.get_name());
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
@@ -315,19 +344,57 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case RemoveVariable:
-			//remove matrix object from cache
-			clearCachedMatrixObject(pb, pb.getVariable(input1.get_name()));
 			
+			Data input1_data = pb.getVariable(input1.get_name());
+			
+			// check if any other variable refers to the same Data object
+			int refCount = getRefCount(pb, input1_data, true);
+			if ( refCount == 1 ) {
+				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
+				
+				if ( input1_data instanceof MatrixObjectNew ) {
+					// clean in-memory object
+					clearCachedMatrixObject(pb, input1_data);
+					
+					if ( ((MatrixObjectNew) input1_data).isFileExists() )
+						// clean data on hdfs, if exists
+						cleanDataOnHDFS(pb, input1_data);
+				}
+			}
+			else if ( refCount == 0 ) 
+				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
+			/*else {
+				if ( DMLScript.DEBUG )
+					System.out.println("  " + this.toString() + " -- skipping cleanup as refCount > 1");
+			}*/
+
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());
+
 			break;
 			
-		case RenameVariable:
-			Data dd = pb.getVariable(input1.get_name());		
-			//(existing objects already cleared on 'rm vars')
+		case CopyVariable:
+			// example instruction: cpvar <srcVar> <destVar>
 			
+			Data dd = pb.getVariable(input1.get_name());		
+			
+			// check if <destVar> has any existing references
+			int destRefCount = getRefCount(pb, pb.getVariable(input2.get_name()), false);
+			
+			if ( destRefCount == 1 ) {
+				// input2.get_name() currently refers to a Data object.
+				// make sure to call clearData(), if it is a matrix object 
+				
+				//System.out.println("  " + this.instString + " ... clearing input2");
+				clearCachedMatrixObject(pb, pb.getVariable(input2.get_name()) );
+			
+			} /*else if ( destRefCount > 1) {
+				System.err.println("  --- " + this.instString + " ... refCount for input2 > 1");
+			}*/
+			
+			// do the actual copy!
 			pb.setVariable(input2.get_name(), dd);
-			//pb.removeVariable(input1.get_name()); 
+			
 			break;
 			
 		case RemoveVariableAndFile:
@@ -342,21 +409,20 @@ public class VariableCPInstruction extends CPInstruction {
 					m.exportData();
 			}
 			else {
-				// delete file on HDFS
-				try {
-				String fpath = m.getFileName();
-					if ( fpath != null ) {
-						MapReduceTool.deleteFileIfExistOnHDFS( fpath );
-						//removeMetaData(); // delete in-memory metadata 
-						MapReduceTool.deleteFileIfExistOnHDFS( fpath + ".mtd" ); // delete the metadata file on hdfs
-					}
-				} catch (IOException e) {
-					throw new CacheException(e);
-				}
+				throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
+				//cleanDataOnHDFS(pb, input1.get_name());
 			}
 			
-			//remove matrix object from cache
-			clearCachedMatrixObject( pb, m);
+			// check if in-memory object can be cleaned up
+			int refCnt = getRefCount(pb, pb.getVariable(input1.get_name()), true);
+			if ( refCnt== 1 ) {
+				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
+				
+				//remove matrix object from cache
+				clearCachedMatrixObject( pb, m);
+			}
+			else if ( refCnt == 0 ) 
+				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
 
 			// remove the variable from the HashMap (_variables) in ProgramBlock.
 			pb.removeVariable( input1.get_name() );
@@ -367,7 +433,7 @@ public class VariableCPInstruction extends CPInstruction {
 			double value = mBlock.getValue(0,0);
 			//double value = MapReduceTool.readFirstNumberFromHDFSMatrix(mobj.getFileName());
 			pb.releaseMatrixInput(input1.get_name());
-			pb.setScalarOutput(input2.get_name(), new DoubleObject(value));
+			pb.setScalarOutput(output.get_name(), new DoubleObject(value));
 			break;
 			
 		case ValuePick:
@@ -541,5 +607,91 @@ public class VariableCPInstruction extends CPInstruction {
 		}
 	}
 	
+	private void cleanDataOnHDFS(ProgramBlock pb, Data d) 
+			throws DMLRuntimeException {
+		if (d instanceof MatrixObjectNew ) {
+			MatrixObjectNew m = (MatrixObjectNew) d;
+			try {
+				String fpath = m.getFileName();
+				if (fpath != null) {
+					MapReduceTool.deleteFileIfExistOnHDFS(fpath);
+					// removeMetaData(); // delete in-memory metadata
+					MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
+				}
+			} catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+	
+	public static Instruction prepareRemoveInstruction(String varName) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		// (example
+		// "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append("rmvar");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(varName);
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}
+	
+	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		// (example
+		// "CP+Lops.OPERAND_DELIMITOR+cpvar+Lops.OPERAND_DELIMITOR+mVar7+Lops.OPERAND_DELIMITOR+mVar8")
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append("cpvar");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(srcVar);
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(destVar);
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}
+	
+	private static String getBasicCreateVarString(String varName, String fileName, boolean fNameOverride, String format) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append("createvar");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(varName); 
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(fileName);
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(fNameOverride);
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(format);
+		return sb.toString();
+	}
+	
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, format));
+	}
+	
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		StringBuffer sb = new StringBuffer();
+		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
+		
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(mc.get_rows());
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(mc.get_cols());
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(mc.get_rows_per_block());
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(mc.get_cols_per_block());
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(mc.getNonZeros());
+		
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}
 	
 }

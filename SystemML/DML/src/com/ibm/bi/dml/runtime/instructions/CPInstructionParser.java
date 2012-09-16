@@ -105,7 +105,7 @@ public class CPInstructionParser extends InstructionParser {
 
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "mvvar"    	, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "cpvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "assignvarwithfile", CPINSTRUCTION_TYPE.Variable);
@@ -115,7 +115,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "read"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "write" 		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "setfilename" , CPINSTRUCTION_TYPE.Variable);
+		//String2CPInstructionType.put( "setfilename" , CPINSTRUCTION_TYPE.Variable);
 
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);

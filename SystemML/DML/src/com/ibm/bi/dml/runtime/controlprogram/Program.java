@@ -72,6 +72,8 @@ public class Program {
 		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
 		if (retVal == null)
 			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);
+		// TODO: check with Doug
+		retVal._variables = new LocalVariableMap();
 		return retVal;
 	}
 	

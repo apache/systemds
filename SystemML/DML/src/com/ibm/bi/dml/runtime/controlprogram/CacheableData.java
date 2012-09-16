@@ -431,7 +431,7 @@ public abstract class CacheableData extends Data
 	 *         <code>false</code> otherwise.
 	 * @throws CacheIOException 
 	 */
-	public synchronized boolean attemptEviction (MatrixBlock mb) 
+	public boolean attemptEviction (MatrixBlock mb) 
 		throws CacheException
 	{
 		boolean ret = false;
@@ -440,10 +440,18 @@ public abstract class CacheableData extends Data
 		{			
 			if( isEvictable() )//proceed with eviction request
 			{
-				evictBlobFromMemory( mb );
-				_cacheStatus.setEvicted();
-				ret = true;
+				synchronized(this) {
+					if ( isEvictable() ) {
+						evictBlobFromMemory( mb );
+						_cacheStatus.setEvicted();
+						ret = true;
+					}
+				}
 			}
+			// in case eviction is rejected, clear the references to data to simplify GC 
+			mb.clearDataReferences();
+			mb.clearEnvelope();
+			
 		}
 		else if ( LDEBUG )  
 		{

@@ -174,7 +174,7 @@ public class DMLProgram {
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<Instruction>();
-			ArrayList<Instruction> pInst = pred_dag.getJobs(debug,config);
+			ArrayList<Instruction> pInst = pred_dag.getJobs(null, debug,config);
 			for (Instruction i : pInst ) {
 				pred_instruct.add(i);
 			}
@@ -214,8 +214,7 @@ public class DMLProgram {
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
-			
+			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
@@ -229,7 +228,7 @@ public class DMLProgram {
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<Instruction>();
-			ArrayList<Instruction> pInst = pred_dag.getJobs(debug,config);
+			ArrayList<Instruction> pInst = pred_dag.getJobs(null, debug,config);
 			for (Instruction i : pInst ) {
 				pred_instruct.add(i);
 			}
@@ -274,7 +273,7 @@ public class DMLProgram {
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
@@ -298,9 +297,9 @@ public class DMLProgram {
 				fsb.getIncrementLops().addToDag(incrementDag);		
 				
 			// create instructions for loop predicates			
-			ArrayList<Instruction> fromInstructions = fromDag.getJobs(debug,config);
-			ArrayList<Instruction> toInstructions = toDag.getJobs(debug,config);
-			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(debug,config);		
+			ArrayList<Instruction> fromInstructions = fromDag.getJobs(null, debug,config);
+			ArrayList<Instruction> toInstructions = toDag.getJobs(null, debug,config);
+			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(null, debug,config);		
 
 			// create for program block
 			String sbName = null;
@@ -347,7 +346,7 @@ public class DMLProgram {
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
@@ -447,7 +446,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(debug,config);
+				instruct = dag.getJobs(sb, debug,config);
 				for (Instruction i : instruct) {
 					cvpb.addInstruction(i);
 				}
@@ -480,7 +479,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(debug,config);
+				instruct = dag.getJobs(sb, debug,config);
 				for (Instruction i : instruct) {
 					epb.addInstruction(i);
 				}
@@ -513,7 +512,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(debug,config);
+				instruct = dag.getJobs(sb, debug,config);
 				for (Instruction i : instruct) {
 					eupb.addInstruction(i);
 				}
@@ -536,6 +535,12 @@ public class DMLProgram {
 			// DAGs for Lops
 			dag = new Dag<Lops>();
 
+			// TODO: check with Doug
+			// add instruction for a function call
+			if (sb.getFunctionCallInst() != null){
+				rtpb.addInstruction(sb.getFunctionCallInst());
+			}
+
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (sb.get_lops() != null && sb.get_lops().size() > 0){
 			
@@ -543,21 +548,22 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(debug,config);
+				instruct = dag.getJobs(sb, debug,config);
 				for (Instruction i : instruct) {
 					rtpb.addInstruction(i);
 				}
 			}
 			
+			/*// TODO: check with Doug
 			// add instruction for a function call
 			if (sb.getFunctionCallInst() != null){
 				rtpb.addInstruction(sb.getFunctionCallInst());
-			}
+			}*/
 			
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());

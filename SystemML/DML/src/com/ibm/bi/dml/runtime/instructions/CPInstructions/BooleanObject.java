@@ -35,6 +35,10 @@ public class BooleanObject extends ScalarObject  {
 	public String getStringValue(){
 		return Boolean.toString(_value);
 	}
+	
+	public String toString() { 
+		return getStringValue();
+	}
 
 	@Override
 	public long getLongValue() {

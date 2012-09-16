@@ -70,9 +70,18 @@ public class MatrixObjectNew extends CacheableData
 	private MatrixBlock _data = null;
 
 	/**
-	 * The name of HDFS file by which the data is backed up.
+	 * The name of HDFS file in which the data is backed up.
 	 */
 	private String _hdfsFileName = null; // file name and path
+	
+	/** 
+	 * Flag that indicates whether or not hdfs file exists.
+	 * It is used for improving the performance of "rmvar" instruction.
+	 * When it has value <code>false</code>, one can skip invocations to
+	 * utility functions such as MapReduceTool.deleteFileIfExistOnHDFS(),
+	 * which can be potentially expensive.
+	 */
+	private boolean _hdfsFileExists = false; 
 	
 	/**
 	 * <code>true</code> if the in-memory or evicted matrix may be different from
@@ -167,6 +176,14 @@ public class MatrixObjectNew extends CacheableData
 		mc.setNonZeros( _data.getNonZeros() );		
 	}
 
+	public boolean isFileExists() {
+		return _hdfsFileExists;
+	}
+	
+	public void setFileExists(boolean flag) {
+		_hdfsFileExists = false;
+	}
+	
 	public String getFileName ()
 	{
 		return _hdfsFileName;
@@ -282,7 +299,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		if( LDEBUG )
-			System.out.println("acquire read "+_varName);
+			System.out.println("    acquire read "+_varName);
 		
 		if (! isAvailableToRead ())
 			throw new CacheStatusException ("MatrixObject not available to read.");
@@ -390,7 +407,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		if( LDEBUG )
-			System.out.println("acquire modify newdata "+_varName);
+			System.out.println("    acquire modify newdata "+_varName);
 		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
@@ -431,7 +448,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		if( LDEBUG )
-			System.out.println("release "+_varName);
+			System.out.println("    release "+_varName);
 		
 		if ( isModify() )
 		{
@@ -465,7 +482,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		if( LDEBUG )
-			System.out.println("clear data "+_varName);
+			System.out.println("    clear data "+_varName);
 		
 		if( !_cleanupFlag ) //if cleanup not enabled, do nothing
 			return;
@@ -474,21 +491,28 @@ public class MatrixObjectNew extends CacheableData
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
 		
 		// clear the in-memory data
-		if (_data != null) //e.g., in case of evicted matrix
+		if (_data != null) //e.g., in case if a matrix block already exists, which need to get replaced
 		{
 			_data.clearEnvelope ();
+			_data.clearDataReferences();
 		}
 			
 		if( _cache!=null )
 		{
 			MatrixBlock tmp = _cache.get();
-			if( tmp!=null )
+			if( tmp!=null ) {
 				tmp.clearEnvelope();
-			clearCache();
+				tmp.clearDataReferences();
+				tmp = null;
+			}
+			freeCache();
 		}
 		
 		if (! isEmpty())
 		{
+			// FIXME: note to MB about clearDataRefs()
+			//if ( _data != null)
+			//	_data.clearDataReferences();
 			_data = null;
 			_dirtyFlag = false;
 			setEmpty();
@@ -509,6 +533,7 @@ public class MatrixObjectNew extends CacheableData
 		throws CacheException
 	{
 		exportData (_hdfsFileName, null);
+		_hdfsFileExists = true;
 	}
 	
 	/**
@@ -539,8 +564,14 @@ public class MatrixObjectNew extends CacheableData
 		if (DMLScript.DEBUG)
 			System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 				
-		//check status 
-		boolean pWrite = !fName.equals(_hdfsFileName); //persistent write flag
+		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
+		if ( fName.equals(_hdfsFileName) ) {
+			_hdfsFileExists = true;
+			pWrite = false; // i.e., export is called from "write" instruction
+		}
+		else {
+			pWrite = true;
+		}
 
 		//actual export
 		if(  isDirty()  ||                                  //use dirty for skipping parallel exports
@@ -847,7 +878,7 @@ public class MatrixObjectNew extends CacheableData
 		//clear data and cache
 		_data.clearEnvelope ();
 		_data = null;
-		clearCache();
+		freeCache();
 		
 		if (DMLScript.DEBUG) 
 		{
@@ -1208,6 +1239,18 @@ public class MatrixObjectNew extends CacheableData
 		}
 	}
 	
+	/**
+	 * Similar to clearCache(), this method destroys/clears cache references.
+	 * It also cleans up the references to underlying data in MatrixBlock (sparseRows/denseBlock)
+	 */
+	private void freeCache() {
+		if ( _cache != null ) {
+			_cache.freeRecoveryObject();
+			_cache.clear();
+			_cache = null;
+		}
+	}
+	
 	private void clearCache()
 	{
 		if( _cache != null )
@@ -1251,6 +1294,10 @@ public class MatrixObjectNew extends CacheableData
 			_imb = o.createShallowCopy();
 		}
 		
+		public MatrixBlock getRecoveryObject() {
+			return _imb;
+		}
+		
 		/**
 		 * Guarantees to return the cached matrix block, if not cleared/evicted before.
 		 * If the matrixblock is already collected by the garbage collector, but eviction
@@ -1271,6 +1318,13 @@ public class MatrixObjectNew extends CacheableData
 			return ret;
 		}
 
+		/**
+		 * This method cleans up references to underlying data (sparseRows/denseBlock)
+		 */
+		public void freeRecoveryObject() {
+			_imb.clearDataReferences();
+		}
+		
 		@Override
 		public void clear() 
 		{
@@ -1278,6 +1332,8 @@ public class MatrixObjectNew extends CacheableData
 			super.clear();
 			
 			//clear recovery object
+			// FIXME: can we clear DataRefs() here??
+			//_imb.clearDataReferences();
 			_imb.clearEnvelope();
 			_imb = null;
 		}	

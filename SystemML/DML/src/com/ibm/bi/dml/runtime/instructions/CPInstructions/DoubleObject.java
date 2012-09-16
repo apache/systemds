@@ -37,6 +37,10 @@ public class DoubleObject extends ScalarObject {
 		return Double.toString(_value);
 	}
 
+	public String toString() { 
+		return getStringValue();
+	}
+
 	public boolean getBooleanValue(){
 		throw new UnsupportedOperationException();
 	}

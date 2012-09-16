@@ -26,10 +26,10 @@ public class ReblockInstruction extends UnaryMRInstructionBase {
 		byte input, output;
 		String[] s=str.split(Instruction.OPERAND_DELIM);
 		
-		String[] in1f = s[2].split(Instruction.VALUETYPE_PREFIX);
+		String[] in1f = s[2].split(Instruction.DATATYPE_PREFIX);
 		input=Byte.parseByte(in1f[0]);
 		
-		String[] outf = s[3].split(Instruction.VALUETYPE_PREFIX);
+		String[] outf = s[3].split(Instruction.DATATYPE_PREFIX);
 		output=Byte.parseByte(outf[0]);
 		
 		int brlen=Integer.parseInt(s[4]);

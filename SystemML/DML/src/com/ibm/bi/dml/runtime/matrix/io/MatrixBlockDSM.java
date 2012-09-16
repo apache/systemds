@@ -2995,7 +2995,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		nonZeros = 0;
 	}
 	
-	private static void aggBinDenseSparse_2(MatrixBlockDSM m1, MatrixBlockDSM m2,
+	/*private static void aggBinDenseSparse_2(MatrixBlockDSM m1, MatrixBlockDSM m2,
 			MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException 
 	{
 		if(m2.sparseRows==null)
@@ -3063,7 +3063,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			System.out.println("denseSparse:\t" + m1Time + "\t" + mmultTime + "\t" + resultTime + "\t" + nnzTime + "\t" + totalTime);
 		}
 		
-	}
+	}*/
 	
 	/*
 	 * to perform aggregateBinary when the first matrix is dense and the second is sparse

@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -46,8 +47,8 @@ public class RunMRJobs {
 	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
 		JobReturn ret = new JobReturn();
 
-		//if ( DMLScript.DEBUG  )
-		//	System.out.println(inst.toString());
+		if ( DMLScript.DEBUG  )
+			System.out.println(inst.toString());
 
 		// Obtain references to all input matrices 
 		MatrixObjectNew[] inputMatrices = inst.extractInputMatrices(pb);
@@ -277,6 +278,7 @@ public class RunMRJobs {
 							}
 						}
 					}
+					outputMatrices[i].setFileExists(true);
 					
 					// write out metadata file
 					// Currently, valueType information in not stored in MR instruction, 

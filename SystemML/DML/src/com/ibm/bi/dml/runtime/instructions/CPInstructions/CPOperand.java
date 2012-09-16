@@ -22,7 +22,7 @@ public class CPOperand {
 		_dataType = DataType.UNKNOWN;
 	}
 	
-	CPOperand(String name, ValueType vt, DataType dt ) {
+	public CPOperand(String name, ValueType vt, DataType dt ) {
 		_name = name;
 		_valueType = vt;
 		_dataType = dt;

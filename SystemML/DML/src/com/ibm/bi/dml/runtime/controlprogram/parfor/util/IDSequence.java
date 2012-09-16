@@ -7,10 +7,17 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
 public class IDSequence 
 {
 	private long _current = -1;
+	private boolean wrapAround = false;
 	
 	public IDSequence()
 	{
 		reset();
+	}
+	
+	public IDSequence(boolean wrapAround)
+	{
+		reset();
+		this.wrapAround = wrapAround;
 	}
 	
 	/**
@@ -22,8 +29,12 @@ public class IDSequence
 	{
 		_current++;
 		
-		if( _current == Long.MAX_VALUE )
-			throw new RuntimeException("WARNING: IDSequence will produced numeric overflow.");
+		if( _current == Long.MAX_VALUE ) {
+			if (wrapAround)
+				reset();
+			else
+				throw new RuntimeException("WARNING: IDSequence will produced numeric overflow.");
+		}
 		
 		return _current;
 	}

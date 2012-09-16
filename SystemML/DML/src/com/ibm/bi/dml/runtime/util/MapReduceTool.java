@@ -122,15 +122,6 @@ public class MapReduceTool {
 		if (FileSystem.get(job).exists(outpath)) {
 			//System.err.println("Deleting " + outpath + " ... ");
 			FileSystem.get(job).delete(outpath, true);
-			//if ( ! FileSystem.get(job).delete(outpath, true) )
-				//System.err.println("delete failed: " + outpath );
-/*			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-*/			//System.out.println("deleted..");
 		}
 	}
 

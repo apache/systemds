@@ -78,14 +78,23 @@ public class MatrixBlock extends MatrixBlockDSM
 		{
 			if( envelope != null )
 				envelope.attemptEviction( this );
+			// NOTE: finalize() is called ONLY once on an object. 
+			// At this point, the data is either written to disk (through proper eviction) 
+			// or eviction is rejected (data references are set to null) & GC will reclaim underlying data in the next pass or through other MatrixBlocks (recovery/original)  
 		} 
 		catch (CacheException e)
 		{
-			e.printStackTrace();
+			//e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 		
 	}
 
+	public void clearDataReferences() {
+		sparseRows = null;
+		denseBlock = null;
+	}
+	
 	public MatrixBlock createShallowCopy() 
 	{
 		MatrixBlock mb = new MatrixBlock( getNumRows(), getNumColumns(), isInSparseFormat());

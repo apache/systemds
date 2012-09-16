@@ -16,6 +16,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lops;
@@ -30,13 +32,15 @@ import com.ibm.bi.dml.lops.Lops.Type;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression;
+import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
@@ -138,6 +142,12 @@ public class Dag<N extends Lops> {
 		total_reducers = jConf.getInt("mapred.reduce.tasks", DMLConfig.DEFAULT_NUM_REDUCERS);
 	}
 
+	public ArrayList<Instruction> getJobs(boolean debug, DMLConfig config)
+	throws LopsException, IOException, DMLRuntimeException,
+	DMLUnsupportedOperationException {
+		return getJobs(null, debug, config);
+	}
+	
 	/**
 	 * Method to compile a dag generically
 	 * 
@@ -147,7 +157,7 @@ public class Dag<N extends Lops> {
 	 * @throws DMLRuntimeException
 	 */
 
-	public ArrayList<Instruction> getJobs(boolean debug, DMLConfig config)
+	public ArrayList<Instruction> getJobs(StatementBlock sb, boolean debug, DMLConfig config)
 			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
@@ -188,7 +198,7 @@ public class Dag<N extends Lops> {
 		doTopologicalSort_strict_order(node_v);
 
 		// do greedy grouping of operations
-		ArrayList<Instruction> inst = doGreedyGrouping(node_v);
+		ArrayList<Instruction> inst = doGreedyGrouping(sb, node_v);
 
 		return inst;
 
@@ -228,19 +238,34 @@ public class Dag<N extends Lops> {
 		for (int i = 0; i < nodeV.size(); i++) {
 			N node = nodeV.get(i);
 
-			if (node.getExecLocation() == ExecLocation.Data
+			/*if (node.getExecLocation() == ExecLocation.Data
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.WRITE
-					&& labelNodeMapping.containsKey(node.getOutputParameters()
-							.getLabel())) {
+					&& labelNodeMapping.containsKey(node.getOutputParameters().getLabel())) {
 				labelNodeMapping.remove(node.getOutputParameters().getLabel());
+			}*/
+			if (node.getExecLocation() == ExecLocation.Data
+					&& ((Data) node).isTransient()
+					&& ((Data) node).getOperationType() == OperationTypes.WRITE ) {
+				if (node.getInputs().get(0).getExecLocation() == ExecLocation.Data) {
+					// this transient write is NOT a result of actual computation, but is simple copy.
+					// in such a case, preserve the input variable so that appropriate copy instruction (cpvar or GMR) is generated
+					// therefore, remove the input label from labelNodeMapping
+					labelNodeMapping.remove(node.getInputs().get(0).getOutputParameters().getLabel());
+				}
+				else {
+					if(labelNodeMapping.containsKey(node.getOutputParameters().getLabel())) 
+						// corresponding transient read exists (i.e., the variable is updated)
+						// in such a case, generate rmvar instruction so that OLD data gets delete
+						labelNodeMapping.remove(node.getOutputParameters().getLabel());
+				}
 			}
 		}
 
 		// generate RM instructions
 
 		Iterator<String> it = labelNodeMapping.keySet().iterator();
-
+		Instruction rm_inst = null;
 		while (it.hasNext()) {
 			String label = it.next();
 			N node = labelNodeMapping.get(label);
@@ -252,24 +277,162 @@ public class Dag<N extends Lops> {
 				// Lops.OPERAND_DELIMITOR + label));
 
 			} else {
+				/*rm_inst = CPInstructionParser.parseSingleInstruction("CP"
+						+ Lops.OPERAND_DELIMITOR + "rmfilevar"
+						+ Lops.OPERAND_DELIMITOR + label
+						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN
+						+ Lops.OPERAND_DELIMITOR + "true"
+						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.BOOLEAN);*/
+				rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
+				
 				if (DEBUG)
-					System.out.println("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR
-							+ label + Lops.VALUETYPE_PREFIX
-							+ Expression.ValueType.UNKNOWN
-							+ Lops.OPERAND_DELIMITOR + "true"
-							+ Lops.VALUETYPE_PREFIX
-							+ Expression.ValueType.BOOLEAN);
-				inst.add(CPInstructionParser
-								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar"
-										+ Lops.OPERAND_DELIMITOR + label
-										+ Lops.VALUETYPE_PREFIX
-										+ Expression.ValueType.UNKNOWN
-										+ Lops.OPERAND_DELIMITOR + "true"
-										+ Lops.VALUETYPE_PREFIX
-										+ Expression.ValueType.BOOLEAN));
+					System.out.println(rm_inst.toString());
+				inst.add(rm_inst);
+				
 			}
 		}
 
+	}
+
+	private void deleteUpdatedTransientReadVariables(StatementBlock sb, Vector<N> nodeV,
+			ArrayList<Instruction> inst) throws DMLRuntimeException,
+			DMLUnsupportedOperationException {
+
+		if ( sb == null ) 
+			return;
+		
+		if (DEBUG)
+			System.out.println("In delete updated variables");
+
+		/*Set<String> in = sb.liveIn().getVariables().keySet();
+		Set<String> out = sb.liveOut().getVariables().keySet();
+		Set<String> updated = sb.variablesUpdated().getVariables().keySet();
+		
+		Set<String> intersection = in;
+		intersection.retainAll(out);
+		intersection.retainAll(updated);
+		
+		for (String var : intersection) {
+			if(DEBUG)
+				System.out.println(inst.toString());
+			inst.add(createCleanupInstruction(var));
+		}*/
+
+		HashMap<String, N> labelNodeMapping = new HashMap<String, N>();
+		HashSet<String> updatedLabels = new HashSet<String>();
+		
+		// first capture all transient read variables
+		for (int i = 0; i < nodeV.size(); i++) {
+			N node = nodeV.get(i);
+
+			if (node.getExecLocation() == ExecLocation.Data
+					&& ((Data) node).isTransient()
+					&& ((Data) node).getOperationType() == OperationTypes.READ
+					&& ((Data) node).get_dataType() == DataType.MATRIX) {
+				labelNodeMapping.put(node.getOutputParameters().getLabel(),
+						node);
+			}
+		}
+
+		// capture updated transient write variables
+		for (int i = 0; i < nodeV.size(); i++) {
+			N node = nodeV.get(i);
+
+			if (node.getExecLocation() == ExecLocation.Data
+					&& ((Data) node).isTransient()
+					&& ((Data) node).getOperationType() == OperationTypes.WRITE
+					&& ((Data) node).get_dataType() == DataType.MATRIX
+					&& labelNodeMapping.containsKey(node.getOutputParameters().getLabel()) // check to make sure corresponding (i.e., with the same label/name) transient read is present
+					&& !labelNodeMapping.containsValue(node.getInputs().get(0)) // check to avoid cases where transient read feeds into a transient write 
+				) {
+				updatedLabels.add(node.getOutputParameters().getLabel());
+			}
+		}
+		
+		// generate RM instructions
+		Iterator<String> it = updatedLabels.iterator();
+		Instruction rm_inst = null;
+		while (it.hasNext()) {
+			String label = it.next();
+
+			/*rm_inst = CPInstructionParser.parseSingleInstruction("CP"
+					+ Lops.OPERAND_DELIMITOR + "rmfilevar"
+					+ Lops.OPERAND_DELIMITOR + label + Lops.VALUETYPE_PREFIX
+					+ Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR
+					+ "true" + Lops.VALUETYPE_PREFIX
+					+ Expression.ValueType.BOOLEAN);*/
+			rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
+			
+			if (DEBUG)
+				System.out.println(rm_inst.toString());
+			inst.add(rm_inst);
+		}
+
+	}
+	  
+	/*private Instruction createCleanupInstruction(String varName)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		// (example
+		// "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
+		StringBuffer sb = new StringBuffer();
+		sb.append("CP");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append("rmvar");
+		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(varName);
+		String str = sb.toString();
+		Instruction inst = CPInstructionParser.parseSingleInstruction(str);
+
+		return inst;
+	}*/
+
+	private void generateRemoveInstructions(StatementBlock sb,
+			ArrayList<Instruction> deleteInst)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		
+		if ( sb == null ) 
+			return;
+		
+		if (DEBUG) {
+			System.out.println("In generateRemoveInstructions()");
+		}
+
+		Instruction inst = null;
+		// RULE 1: if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+		// (currently required for specific cases of external functions)
+		for (String varName : sb.liveIn().getVariableNames()) {
+			if (!sb.liveOut().containsVariable(varName)) {
+				// DataType dt = in.getVariable(varName).getDataType();
+				// if( !(dt==DataType.MATRIX || dt==DataType.UNKNOWN) )
+				// continue; //skip rm instructions for non-matrix objects
+
+				inst = VariableCPInstruction.prepareRemoveInstruction(varName);
+				deleteInst.add(inst);
+
+				if (DMLScript.DEBUG)
+					System.out.println("  Adding " + inst.toString());
+			}
+		}
+
+		// RULE 2: if in KILL and not in IN and not in OUT, then there should be an rmvar or rmfilevar inst
+		// (currently required for specific cases of nested loops)
+		// i.e., local variables which are created within the block, and used entirely within the block 
+		/*for (String varName : sb.getKill().getVariableNames()) {
+			if ((!sb.liveIn().containsVariable(varName))
+					&& (!sb.liveOut().containsVariable(varName))) {
+				// DataType dt =
+				// sb.getKill().getVariable(varName).getDataType();
+				// if( !(dt==DataType.MATRIX || dt==DataType.UNKNOWN) )
+				// continue; //skip rm instructions for non-matrix objects
+
+				inst = createCleanupInstruction(varName);
+				deleteInst.add(inst);
+
+				if (DMLScript.DEBUG)
+					System.out.println("Adding instruction (r2) "
+							+ inst.toString());
+			}
+		}*/
 	}
 
 	/**
@@ -539,7 +702,7 @@ public class Dag<N extends Lops> {
 		for(N n : nodes_v) {
 			/*
 			 * ONLY persistent reads must be considered. For transient reads, previous program block 
-			 * would have already created appropriate entires in the symbol table. 
+			 * would have already created appropriate entries in the symbol table. 
 			 * Therefore, no explicit createvar instruction is required.
 			 */
 			if (n.getExecLocation() == ExecLocation.Data
@@ -558,14 +721,41 @@ public class Dag<N extends Lops> {
 		}
 	}
 	
+	private String getOutputFormat(Data node) { 
+		if(node.getFileFormatType() == FileFormatTypes.TEXT)
+			return "textcell";
+		else if ( node.getOutputParameters().isBlocked_representation() )
+			return "binaryblock";
+		else
+			return "binarycell";
+	}
+	
+	/**
+	 * Determine whether to send <code>node</code> to MR or to process it in the control program.
+	 * It is sent to MR in the following cases:
+	 * 
+	 * 1) if input lop gets processed in MR then <code>node</code> can be piggybacked
+	 * 
+	 * 2) if input is Data lop (must be READ, obviously) with different format. 
+	 *    If the format is same then a simple copy instruction will be generated by control program.
+	 * 
+	 * @param node
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
 	private boolean sendWriteLopToMR(N node) {
-		if( node.getInputs().get(0).getExecType() == ExecType.MR 
-				|| (node.getInputs().get(0).getExecLocation() == ExecLocation.Data 
-						&& node.getInputs().get(0).get_dataType() == DataType.MATRIX) )
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			return false;
+		N in = (N) node.getInputs().get(0);
+		if( in.getExecType() == ExecType.MR 
+				|| (in.getExecLocation() == ExecLocation.Data 
+						&& in.get_dataType() == DataType.MATRIX) 
+						&& !getOutputFormat((Data)node).equalsIgnoreCase( getOutputFormat((Data)in) ))
 			return true;
 		else
 			return false;
 	}
+	
 	/**
 	 * Method to group a vector of sorted lops.
 	 * 
@@ -575,7 +765,8 @@ public class Dag<N extends Lops> {
 	 * @throws DMLRuntimeException
 	 */
 
-	private ArrayList<Instruction> doGreedyGrouping(Vector<N> node_v)
+	@SuppressWarnings("unchecked")
+	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, Vector<N> node_v)
 			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException
 
@@ -595,20 +786,21 @@ public class Dag<N extends Lops> {
 		// list of instructions
 		ArrayList<Instruction> inst = new ArrayList<Instruction>();
 
-		ArrayList<Instruction> preWriteDeleteInst = new ArrayList<Instruction>();
-		ArrayList<Instruction> deleteInst = new ArrayList<Instruction>();
+		//ArrayList<Instruction> preWriteDeleteInst = new ArrayList<Instruction>();
 		ArrayList<Instruction> writeInst = new ArrayList<Instruction>();
+		ArrayList<Instruction> deleteInst = new ArrayList<Instruction>();
+		ArrayList<Instruction> endOfBlockInst = new ArrayList<Instruction>();
 
 		// delete transient variables that are no longer needed
-		deleteUnwantedTransientReadVariables(node_v, deleteInst);
+		//deleteUnwantedTransientReadVariables(node_v, deleteInst);
 
 		// remove files for transient reads that are updated.
-		deleteUpdatedTransientReadVariables(node_v, preWriteDeleteInst);
-
-		// compute the value of expressions in input/output statement
-		//computeValuesForIOExpression(node_v);
+		deleteUpdatedTransientReadVariables(sb, node_v, deleteInst);
 		
+		generateRemoveInstructions(sb, endOfBlockInst);
+
 		generateInstructionsForInputVariables(node_v, inst);
+		
 		
 		boolean done = false;
 		String indent = "    ";
@@ -771,8 +963,8 @@ public class Dag<N extends Lops> {
 
 					finishedNodes.add(node);
 
-					Data.OperationTypes op = ((Data) node).getOperationType(); 
-					if ( op == OperationTypes.READ ) {
+					Data dnode = (Data) node;
+					if ( dnode.getOperationType() == OperationTypes.READ ) {
 						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
 						if ( node.get_dataType() == DataType.SCALAR 
 								//TODO: LEO check the following condition is still needed
@@ -783,15 +975,25 @@ public class Dag<N extends Lops> {
 							// note: no need to add it to any job vector
 						}
 					}
-					else if (op == OperationTypes.WRITE) {
-						execNodes.add(node);
-						/* WRITE lop must go into a mapreduce job if 
-						 * a) its input executes in MR; or
-						 * b) its input is a Matrix Data READ 
-						 * 
-						 */
-						if ( sendWriteLopToMR(node) ) {
-							addNodeByJobType(node, jobNodes, execNodes, false);
+					else if (dnode.getOperationType() == OperationTypes.WRITE) {
+						// Skip the transient write <code>node</code> if the input is a 
+						// transient read with the same variable name. i.e., a dummy copy. 
+						// Hence, <code>node</code> can be avoided.
+						// TODO: this case should ideally be handled in the language layer 
+						//       prior to the construction of Hops Dag 
+						if ( dnode.isTransient() 
+								&& dnode.getInputs().get(0).getExecLocation() == ExecLocation.Data 
+								&& ((Data)dnode.getInputs().get(0)).isTransient() 
+								&& dnode.getOutputParameters().getLabel().compareTo(
+										dnode.getInputs().get(0).getOutputParameters().getLabel()) == 0 ) {
+							// do nothing, <code>node</code> must not processed any further.
+							;
+						}
+						else {
+							execNodes.add(node);
+							if ( sendWriteLopToMR(node) ) {
+								addNodeByJobType(node, jobNodes, execNodes, false);
+							}
 						}
 					}
 					continue;
@@ -964,12 +1166,11 @@ public class Dag<N extends Lops> {
 									+ execNodes.size());
 
 				// first process scalar instructions
-				generateControlProgramJobs(execNodes, inst, writeInst,
-						deleteInst);
+				generateControlProgramJobs(execNodes, inst, writeInst, deleteInst);
 
 				// next generate MR instructions
 				if (execNodes.size() > 0)
-					generateMRJobs(execNodes, inst, writeInst, deleteInst,
+					generateMRJobs(execNodes, inst, deleteInst,
 							jobNodes);
 
 				handleSingleOutputJobs(execNodes, jobNodes, finishedNodes);
@@ -980,9 +1181,10 @@ public class Dag<N extends Lops> {
 
 		// add write and delete inst at the very end.
 
-		inst.addAll(preWriteDeleteInst);
+		//inst.addAll(preWriteDeleteInst);
 		inst.addAll(writeInst);
 		inst.addAll(deleteInst);
+		inst.addAll(endOfBlockInst);
 
 		return inst;
 
@@ -1005,65 +1207,8 @@ public class Dag<N extends Lops> {
 	  return true;
   }
 
-  private void deleteUpdatedTransientReadVariables(Vector<N> nodeV,
-			ArrayList<Instruction> inst) throws DMLRuntimeException,
-			DMLUnsupportedOperationException {
-
-		HashMap<String, N> labelNodeMapping = new HashMap<String, N>();
-		HashSet<String> updatedLabels = new HashSet<String>();
-		
-    if(DEBUG)
-      System.out.println("In delete updated variables");
-
-		// first capture all transient read variables
-		for (int i = 0; i < nodeV.size(); i++) {
-			N node = nodeV.get(i);
-
-			if (node.getExecLocation() == ExecLocation.Data
-					&& ((Data) node).isTransient()
-					&& ((Data) node).getOperationType() == OperationTypes.READ
-					&& ((Data) node).get_dataType() == DataType.MATRIX) {
-				labelNodeMapping.put(node.getOutputParameters().getLabel(),
-						node);
-			}
-		}
-
-		// capture updated transient write variables
-		for (int i = 0; i < nodeV.size(); i++) {
-			N node = nodeV.get(i);
-
-			if (node.getExecLocation() == ExecLocation.Data
-					&& ((Data) node).isTransient()
-					&& ((Data) node).getOperationType() == OperationTypes.WRITE
-					&& ((Data) node).get_dataType() == DataType.MATRIX
-					&& labelNodeMapping.containsKey(node.getOutputParameters()
-							.getLabel())
-					&& !labelNodeMapping.containsValue(node.getInputs().get(0))) {
-				updatedLabels.add(node.getOutputParameters().getLabel());
-			}
-		}
-
-		// generate RM instructions
-
-		Iterator<String> it = updatedLabels.iterator();
-
-		while (it.hasNext()) {
-			String label = it.next();
-
-			if (DEBUG)
-				System.out.println("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR + label
-						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN
-						+ Lops.OPERAND_DELIMITOR + "true"
-						+ Lops.VALUETYPE_PREFIX + Expression.ValueType.BOOLEAN);
-			inst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rmfilevar"
-					+ Lops.OPERAND_DELIMITOR + label + Lops.VALUETYPE_PREFIX
-					+ Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR
-					+ "false" + Lops.VALUETYPE_PREFIX
-					+ Expression.ValueType.BOOLEAN));
-		}
-	}
-  
-	String prepareVariableInstruction(String opcode, String varName, DataType dt, ValueType vt, String fileName, OutputParameters oparams, OutputInfo oinfo) {
+	
+	/*String prepareVariableInstruction(String opcode, String varName, DataType dt, ValueType vt, String fileName, OutputParameters oparams, OutputInfo oinfo) {
   		StringBuilder inst = new StringBuilder();
   		
 		inst.append("CP" + Lops.OPERAND_DELIMITOR + opcode);
@@ -1084,7 +1229,7 @@ public class Dag<N extends Lops> {
 	String prepareVariableInstruction(String opcode, N node) throws LopsException {
 		OutputParameters oparams = node.getOutputParameters();
   		return prepareVariableInstruction(opcode, oparams.getLabel(), node.get_dataType(), node.get_valueType(), oparams.getFile_name(), oparams, getOutputInfo(node, false));
-  	}
+  	}*/
 
 	/**
 	 * Method to generate instructions that are executed in Control Program. At
@@ -1093,7 +1238,6 @@ public class Dag<N extends Lops> {
 	 * 
 	 * @param execNodes
 	 * @param inst
-	 * @param writeInst
 	 * @param deleteInst
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
@@ -1102,8 +1246,7 @@ public class Dag<N extends Lops> {
 
 	@SuppressWarnings("unchecked")
 	private void generateControlProgramJobs(Vector<N> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst,
-			ArrayList<Instruction> deleteInst) throws LopsException,
+			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException,
 			DMLUnsupportedOperationException, DMLRuntimeException {
 
 		// nodes to be deleted from execnodes
@@ -1152,8 +1295,13 @@ public class Dag<N extends Lops> {
 						}
 					}
 					
-					if ( !hasTransientWriteParent )
+					if ( !hasTransientWriteParent ) {
 						deleteInst.addAll(out.getLastInstructions());
+					} 
+					else {
+						var_deletions.add(node.getOutputParameters().getLabel());
+						//System.out.println("    --> skipping " + out.getLastInstructions() + " while processing node " + node.getID());
+					}
 				}
 
 				String inst_string = "";
@@ -1275,10 +1423,7 @@ public class Dag<N extends Lops> {
 								node.getOutputParameters().getFile_name());
 						inst.add(CPInstructionParser.parseSingleInstruction(io_inst));
 						
-						deleteInst.add(CPInstructionParser.parseSingleInstruction(
-								"CP" + Lops.OPERAND_DELIMITOR 
-								+ "rmvar" + Lops.OPERAND_DELIMITOR
-								+ node.getLevel()));
+						deleteInst.add(VariableCPInstruction.prepareRemoveInstruction(node.getOutputParameters().getLabel()));
 					}
 					else {
 						throw new LopsException("Matrix READs are not handled in CP yet!");
@@ -1287,6 +1432,13 @@ public class Dag<N extends Lops> {
 					continue;
 				}
 			}
+		}
+		
+		for ( String var : var_deletions ) {
+			Instruction rmInst = VariableCPInstruction.prepareRemoveInstruction(var);
+			if(DEBUG)
+				System.out.println("  Adding var_deletions: " + rmInst.toString());
+			deleteInst.add(rmInst);
 		}
 
 		// delete all marked nodes
@@ -1777,7 +1929,6 @@ public class Dag<N extends Lops> {
 	 * 
 	 * @param execNodes
 	 * @param inst
-	 * @param writeInst
 	 * @param deleteinst
 	 * @param jobNodes
 	 * @throws LopsException
@@ -1786,7 +1937,7 @@ public class Dag<N extends Lops> {
 	 */
 
 	public void generateMRJobs(Vector<N> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst,
+			ArrayList<Instruction> inst,
 			ArrayList<Instruction> deleteinst, ArrayList<Vector<N>> jobNodes)
 			throws LopsException, DMLUnsupportedOperationException,
 			DMLRuntimeException
@@ -2134,12 +2285,12 @@ public class Dag<N extends Lops> {
 			if ( node.get_dataType() == DataType.SCALAR ) {
 				oparams.setLabel("Var"+ var_index++);
 				out.setVarName(oparams.getLabel());
-				out.addLastInstruction(
-						CPInstructionParser.parseSingleInstruction(
+				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
+/*						CPInstructionParser.parseSingleInstruction(
 								"CP" + Lops.OPERAND_DELIMITOR 
 								+ "rmvar" + Lops.OPERAND_DELIMITOR
 								+ oparams.getLabel() ) );
-			}
+*/			}
 			else {
 				// generate temporary filename and a variable name to hold the output produced by "rootNode"
 				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
@@ -2149,14 +2300,25 @@ public class Dag<N extends Lops> {
 				
 				
 				// generate an instruction that creates a symbol table entry for the new variable
-				String createInst = prepareVariableInstruction("createvar", node);
-				out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+				//String createInst = prepareVariableInstruction("createvar", node);
+				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+				int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
+				int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+											oparams.getLabel(), 
+											oparams.getFile_name(), 
+											true, 
+											OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
+											new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+										);
+				out.addPreInstruction(createvarInst);
 				
 				// temp file as well as the variable has to be deleted at the end
-				out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+				/*out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
 						"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
 						+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
-						+ "true" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+						+ "true" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));*/
+				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
 	
 				// finally, add the generated filename and variable name to the list of outputs 
 				out.setFileName(oparams.getFile_name());
@@ -2207,15 +2369,20 @@ public class Dag<N extends Lops> {
 						 * TO:
 						 *     tVarH -> temp21tVarH
 						 */
-						// rename the temp variable to constant variable (e.g., mvvar mVar1 tVarH)
-						out.addLastInstruction(CPInstructionParser
-								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"
+						// rename the temp variable to constant variable (e.g., cpvar mVar1 tVarH)
+						
+						/*out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "cpvar"
 										+ Lops.OPERAND_DELIMITOR
 										+ inputVarName
 										+ Lops.OPERAND_DELIMITOR
-										+ constVarName));
+										+ constVarName));*/
+						out.addLastInstruction(VariableCPInstruction.prepareCopyInstruction(inputVarName, constVarName));
 						
-						// remove the old copy of transient file (rm temp21tVarH)
+						//if ( node.getInputs().get(0).getExecLocation() != ExecLocation.Data )
+						//	out.addLastInstruction(createCleanupInstruction(inputVarName));
+						
+						/*// remove the old copy of transient file (rm temp21tVarH)
 						out.addLastInstruction(CPInstructionParser
 								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rm"
 										+ Lops.OPERAND_DELIMITOR
@@ -2238,7 +2405,7 @@ public class Dag<N extends Lops> {
 										+ Lops.OPERAND_DELIMITOR
 										+ constFileName
 										+ Lops.OPERAND_DELIMITOR
-										+ "remote"));
+										+ "remote"));*/
 						out.setFileName(constFileName);
 					}
 					else {
@@ -2266,8 +2433,20 @@ public class Dag<N extends Lops> {
 								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
 								   					    "temp" + job_id++;
 						
-						String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
-						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
+						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+						
+						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
+						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+													tempVarName, 
+													tempFileName, 
+													true, 
+													OutputInfo.outputInfoToString(out.getOutInfo()), 
+													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+												);
+						out.addPreInstruction(createvarInst);
+
 						
 						String constVarName = oparams.getLabel();
 						String constFileName = tempFileName + constVarName;
@@ -2292,15 +2471,17 @@ public class Dag<N extends Lops> {
 						 *     tVarA -> temp21tVarA
 						 */
 						
-						// rename the temp variable to constant variable (e.g., mvvar tVarAtemp tVarA)
-						out.addLastInstruction(CPInstructionParser
-								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "mvvar"
+						// rename the temp variable to constant variable (e.g., cpvar tVarAtemp tVarA)
+						/*out.addLastInstruction(CPInstructionParser
+								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "cpvar"
 										+ Lops.OPERAND_DELIMITOR
 										+ tempVarName
 										+ Lops.OPERAND_DELIMITOR
-										+ constVarName));
+										+ constVarName));*/
+						out.addLastInstruction(VariableCPInstruction.prepareCopyInstruction(tempVarName, constVarName));
+						out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(tempVarName));
 						
-						// remove the old copy of transient file (rm temp21tVarA)
+						/*// remove the old copy of transient file (rm temp21tVarA)
 						out.addLastInstruction(CPInstructionParser
 								.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "rm"
 										+ Lops.OPERAND_DELIMITOR
@@ -2323,7 +2504,7 @@ public class Dag<N extends Lops> {
 										+ Lops.OPERAND_DELIMITOR
 										+ constFileName
 										+ Lops.OPERAND_DELIMITOR
-										+ "remote"));
+										+ "remote"));*/
 						
 						// finally, add the temporary filename and variable name to the list of outputs 
 						out.setFileName(tempFileName);
@@ -2336,9 +2517,20 @@ public class Dag<N extends Lops> {
 						// create a variable to hold the result produced by this "rootNode"
 						oparams.setLabel("pVar" + var_index++ );
 						
-						String createInst = prepareVariableInstruction("createvar", node);
-						out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-							
+						//String createInst = prepareVariableInstruction("createvar", node);
+						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
+
+						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
+						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+													oparams.getLabel(), 
+													oparams.getFile_name(), 
+													false, 
+													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
+													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+												);
+						out.addPreInstruction(createvarInst);
+
 						// remove the variable
 						out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
 								"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 

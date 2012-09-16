@@ -26,8 +26,6 @@ import com.ibm.bi.dml.utils.LanguageException;
  * for checking/setting optional parfor parameters and running the loop dependency analysis.
  * 
  * 
- * NOTE: related test suite: dml.test.components.parser.ParForDependencyAnalysisTest 
- * 
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
@@ -91,7 +89,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.NONE) );
 		_paramDefaults.put( RESULT_MERGE,      String.valueOf(PResultMerge.LOCAL_AUTOMATIC) );
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
-		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.NONE) );
+		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.NONE) ); //TODO change to RULEBASED whenever new Hops optimizer available
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();
@@ -189,9 +187,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 * 
 		 * RESTRICTIONS:
 		 * - array subscripts of non-local variables must be linear functions of the form 
-		 *   a0+ a1*i + ... + a2*j, where i and j are for or parfor indexes 
-		 *   (This implies that no local or non-local variables can be used in subscripts of 
-		 *    non-local variables. However, for local variables arbitrary expressions are possible).
+		 *   a0+ a1*i + ... + a2*j, where i and j are for or parfor indexes.
 		 * - for and parfor increments must be integer values 
 		 * - only static (integer lower, upper bounds) range indexing
 		 * - only input variables considered as potential candidates for checking 

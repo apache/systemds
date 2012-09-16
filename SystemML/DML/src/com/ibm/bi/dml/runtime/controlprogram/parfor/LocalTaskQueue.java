@@ -18,7 +18,7 @@ import com.ibm.bi.dml.api.DMLScript;
  */
 public class LocalTaskQueue 
 {
-	public static final int  MAX_SIZE      = 1000000; //main memory constraint
+	public static final int  MAX_SIZE      = 10000; //main memory constraint
 	public static final Task NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
 	
 	private LinkedList<Task> _data        = null;

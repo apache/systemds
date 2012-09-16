@@ -334,13 +334,13 @@ public class DataPartitionerLocal extends DataPartitioner
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
-		int rows = mb.getNumRows();
-		int cols = mb.getNumColumns();
+		long rows = mb.getNumRows();
+		long cols = mb.getNumColumns();
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			MatrixBlock tmp = new MatrixBlock( 1, cols, false ); 
-			tmp.spaceAllocForDenseUnsafe(1, cols);
+			MatrixBlock tmp = new MatrixBlock( 1, (int)cols, false ); 
+			tmp.spaceAllocForDenseUnsafe(1, (int)cols);
 			
 			for( int i=0; i<rows; i++ )
 			{
@@ -375,8 +375,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
 		{
 			//create object for reuse
-			MatrixBlock tmp = new MatrixBlock( rows, 1, false ); 
-			tmp.spaceAllocForDenseUnsafe(rows, 1);
+			MatrixBlock tmp = new MatrixBlock( (int)rows, 1, false ); 
+			tmp.spaceAllocForDenseUnsafe((int)rows, 1);
 						
 			for( int i=0; i<cols; i++ )
 			{

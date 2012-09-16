@@ -68,6 +68,20 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
+ * TODO Rulebased optimizer
+ * TODO runtime integration of rulebased optimizer
+ * TODO parser integration of rulebased optimizer
+ * TODO testcases rulebased optimizer
+ *       - bivariate stats CP, MR (called small, large combined with few, many)
+ *       - correlation CP, MR
+ *       - folds creation CP, MR
+ * TODO test rulebased optimizer on cluster       
+ * 
+ * NEW PERFORMANCE IMPROVEMENTS (probably not for BI 2.0 release)
+ * TODO: parallel local data partitioning
+ * TODO: parallel local file-based result merge
+ * TODO: parallel remote MR result merge
+ * 
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
  * TODO: deferred dependency checking during runtime (for unknown matrix dimensionality)
@@ -114,6 +128,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	//optimizer
 	public enum POptMode{
 		NONE,       //no optimization, use defaults and specified parameters
+		RULEBASED, //TODO
 		HEURISTIC, //some simple cost-based rewritings (affects only parfor PB)
 		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
 		FULL_DP    //full cost-based optimization algorithm (global optimum, affects all instructions)				
@@ -1237,7 +1252,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return sb.toString();   
 	}
-	
+
+	/**
+	 * 
+	 * @return
+	 */
 	private String constructResultMergeFileName()
 	{
 		String scratchSpaceLoc = null;

@@ -9,7 +9,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -78,7 +77,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		    FileOutputFormat.setOutputPath(job, pathNew);
 		    
 		    //create named outputs, set output format, and set the output key, value schema
-		    LinkedList<Long> outputFiles = new LinkedList<Long>();
+		    LinkedList<Long> outputFiles = new LinkedList<Long>(); //TODO potential memory bottleneck
 		    switch( _format )
 		    {
 			    case ROW_WISE:
@@ -99,7 +98,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			    	break;
 		    }
 		    
-		    for( Long out : outputFiles )
+		    for( Long out : outputFiles ) 
 		    {
 		    	MultipleOutputs.addNamedOutput(job, String.valueOf(out), oi.outputFormatClass, oi.outputKeyClass, oi.outputValueClass);
 		    }
@@ -141,7 +140,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			/////
 			// execute the MR job			
-			RunningJob runjob = JobClient.runJob(job);
+			JobClient.runJob(job);
 
 			
 			//postprocessing (required because MultipleOutputs creates concatenated filenames)

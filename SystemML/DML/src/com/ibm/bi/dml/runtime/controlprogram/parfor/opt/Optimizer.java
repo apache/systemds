@@ -54,6 +54,16 @@ public abstract class Optimizer
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;
 	
+	public enum PlanInputType {
+		ABSTRACT_PLAN,
+		RUNTIME_PLAN
+	}
+	
+	public enum CostModelType {
+		STATIC_MEM_METRIC,
+		RUNTIME_METRICS
+	}
+	
 	protected Optimizer()
 	{
 		_numTotalPlans     = 0;
@@ -67,8 +77,21 @@ public abstract class Optimizer
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan) 
+	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException;	
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public abstract PlanInputType getPlanInputType();
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public abstract CostModelType getCostModelType();
+	
 	
 	///////
 	//methods for evaluating the overall properties and costing  
@@ -90,6 +113,9 @@ public abstract class Optimizer
 	{
 		return _numEvaluatedPlans;
 	}
+	
+	
+	
 	
 	
 	///////
@@ -120,7 +146,7 @@ public abstract class Optimizer
 		//determine if alternatives should be generated
 		if( n.isLeaf() ) //hop
 		{
-			Hops hop = OptTreeConverter.getHLObjectMapping().getMappedHop(n.getID());
+			Hops hop = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			if( hop.allowsAllExecTypes() )
 				genAlternatives = true;
 		}

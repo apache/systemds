@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
+
 /**
  * Represents a complete plan of a top-level parfor. This includes the internal
  * representation of the actual current plan as well as additional meta information 
@@ -13,17 +15,21 @@ public class OptTree
 	private double  _cm;  //max constraint memory consumption
 	
 	//actual tree
-	private OptNode _root;
+	private PlanInputType _type = null;
+	private OptNode       _root = null;
 	
-	//internal node metadata repository
-	//private HashMap<Integer, Integer> _kcp;
-	//private HashMap<Integer, Integer> _kmr;
 	
 	public OptTree( int ck, double cm, OptNode node )
+	{
+		this( ck, cm, PlanInputType.RUNTIME_PLAN, node );
+	}
+	
+	public OptTree( int ck, double cm, PlanInputType type, OptNode node )
 	{
 		_ck = ck;
 		_cm = cm;
 		
+		_type = type;
 		_root = node;
 	}
 	
@@ -38,6 +44,16 @@ public class OptTree
 	public double getCM()
 	{
 		return _cm;
+	}
+	
+	public PlanInputType getPlanInputType()
+	{
+		return _type;
+	}
+	
+	public void setPlanInputType( PlanInputType type )
+	{
+		_type = type;
 	}
 	
 	public OptNode getRoot()
@@ -60,13 +76,16 @@ public class OptTree
 	public String explain( boolean withDetails )
 	{
 		StringBuilder sb = new StringBuilder();
-		
-		sb.append(" OPT TREE (size=");
+		sb.append("\n");
+		sb.append("----------------------------\n");
+		sb.append(" EXPLAIN OPT TREE (type=");
+		sb.append(_type);
+		sb.append(", size=");
 		sb.append(_root.size());
 		sb.append(")\n");
-		sb.append("---------------------\n");
+		sb.append("----------------------------\n");
 		sb.append(_root.explain(1, withDetails));
-		sb.append("---------------------\n");
+		sb.append("----------------------------\n");
 		
 		return sb.toString();
 	}

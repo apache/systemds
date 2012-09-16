@@ -106,7 +106,4 @@ public class OptNodeStatistics
 	{
 		_df = df;
 	}
-	
-	
-	
 }

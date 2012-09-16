@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter.HLObjectMapping;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
@@ -48,15 +47,15 @@ public class ProgramRecompiler
 		try
 		{
 			//get parent program and statement block
-			HLObjectMapping map = OptTreeConverter.getHLObjectMapping();
+			OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
 			long pid = map.getMappedParentID(n.getID());
-			Object[] o = OptTreeConverter.getHLObjectMapping().getMappedProg(pid);
+			Object[] o = map.getMappedProg(pid);
 			StatementBlock sbOld = (StatementBlock) o[0];
 			ProgramBlock pbOld = (ProgramBlock) o[1];
 			
 			//get changed node and set type appropriately
 			Hops hop = (Hops) map.getMappedHop(n.getID());
-			hop.setExecType(n.getExecType().toLopsExecType()); 
+			hop.setForcedExecType(n.getExecType().toLopsExecType()); 
 			hop.set_lops(null); //to enable fresh construction
 		
 			//get all hops of statement and construct new instructions
@@ -126,7 +125,7 @@ public class ProgramRecompiler
 			if( n.getNodeType() == NodeType.HOP )
 			{
 				//get parent program and statement block
-				HLObjectMapping map = OptTreeConverter.getHLObjectMapping();
+				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
 				long pid = map.getMappedParentID(n.getID());
 				Object[] o = map.getMappedProg(pid);
 				StatementBlock sbOld = (StatementBlock) o[0];
@@ -135,11 +134,7 @@ public class ProgramRecompiler
 				
 				//get changed node and set type appropriately
 				Hops hop = (Hops) map.getMappedHop(n.getID());
-				oldtype = hop.getExecType();
-				System.out.println(hop.get_name());
-				System.out.println(oldtype);
-				System.out.println(n.getExecType());
-				hop.setExecType(n.getExecType().toLopsExecType()); 
+				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
 				hop.set_lops(null); //to enable fresh construction
 			
 				//get all hops of statement and construct new instructions
@@ -158,13 +153,13 @@ public class ProgramRecompiler
 				pbNew.setInstructions(newInst);
 				
 				//reset type global repository
-				hop.setExecType(oldtype);
+				hop.setForcedExecType(oldtype);
 				
 			}
 			else if( n.getNodeType() == NodeType.PARFOR )
 			{	
 				//no recompilation required
-				HLObjectMapping map = OptTreeConverter.getHLObjectMapping();
+				OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
 				ParForProgramBlock pb = (ParForProgramBlock)map.getMappedProg(n.getID())[1];
 				pbNew = ProgramConverter.createShallowCopyParForProgramBlock(pb, pb.getProgram());
 				((ParForProgramBlock)pbNew).setExecMode(n.getExecType().toParForExecMode());
@@ -192,7 +187,7 @@ public class ProgramRecompiler
 	public static void exchangeProgram(long hlNodeID, ProgramBlock pbNew) 
 		throws DMLRuntimeException 
 	{
-		HLObjectMapping map = OptTreeConverter.getHLObjectMapping();
+		OptTreePlanMappingAbstract map = OptTreeConverter.getAbstractPlanMapping();
 		OptNode node = map.getOptNode(hlNodeID);
 		
 		if( node.getNodeType() == NodeType.HOP )
@@ -345,7 +340,7 @@ public class ProgramRecompiler
 			String inMatrix = hop.getInput().get(0).get_name();
 			if( inMatrix.equals(var) )
 			{
-				hop.setExecType(LopProperties.ExecType.CP);
+				hop.setForcedExecType(LopProperties.ExecType.CP);
 				hop.set_lops(null); //for fresh reconstruction
 				ret = true;
 			}

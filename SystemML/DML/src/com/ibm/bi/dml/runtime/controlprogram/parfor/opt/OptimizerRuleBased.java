@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -21,13 +22,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
- * Heuristic ParFor Optimizer (time: O(n)):
+ * Rule-Based ParFor Optimizer (time: O(n)):
  * 
- * This optimizer applies a set of heuristic rewrites to a given hierarchy of programblocks and
- * instructions, where the root is a parfor program block. All rewrites are only applied
- * to parfor program blocks, while all other program blocks and instructions remain unchanged. The
- * rewrites are cost-based decisions in order to guarantee main memory and parallelization constraints 
- * and in order to account rules of thumb with regards to execution strategy and degree of parallelism. 
+ * TODO different max mem computation if MR local job runner
  * 
  * 
  * TODO guarantee memory constraints
@@ -37,11 +34,10 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * TODO taskpartitioner: in general range, yes but binary
  *  
  */
-public class OptimizerHeuristic extends Optimizer
+public class OptimizerRuleBased extends Optimizer
 {
 	public static final double EXEC_TIME_THRESHOLD = 120000; //in ms
-	public static final double PAR_MEM_FACTOR      = 0.8; //% of jvm mem
-	public static final double PAR_K_FACTOR        = 2.0; //3.0
+	public static final double PAR_K_FACTOR        = 1.0; //3.0 TODO unify with optimization wrapper
 	public static final double PAR_K_MR_FACTOR     = 2.0; //3.0;
 
 	//problem and infrastructure properties
@@ -56,20 +52,20 @@ public class OptimizerHeuristic extends Optimizer
 	//constraints
 	@SuppressWarnings("unused")
 	private int    _ck  = -1; //general par constraint 
-	private double _cmx = -1; //general memory constraint
-	
-	
+	private double _cm1 = -1; //general memory constraint
+	private double _cm2 = -1; //global memory constraint
 
 	@Override
 	public CostModelType getCostModelType() 
 	{
-		return CostModelType.RUNTIME_METRICS;
+		return CostModelType.STATIC_MEM_METRIC;
 	}
+
 
 	@Override
 	public PlanInputType getPlanInputType() 
 	{
-		return PlanInputType.RUNTIME_PLAN;
+		return PlanInputType.ABSTRACT_PLAN;
 	}
 	
 	
@@ -81,8 +77,7 @@ public class OptimizerHeuristic extends Optimizer
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		System.out.println("--- HEURISTIC OPTIMIZER -------");
-		
+		System.out.println("--- RULEBASED OPTIMIZER -------");
 		
 		OptNode pn = plan.getRoot();
 		
@@ -94,15 +89,18 @@ public class OptimizerHeuristic extends Optimizer
 		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
 		_rkmax = (int) Math.ceil( PAR_K_MR_FACTOR * _rk ); 
 		_ck    = plan.getCK(); 
-		_cmx   = PAR_MEM_FACTOR * InfrastructureAnalyzer.getCmMax(); 
+		_cm1   = Hops.getMemBudget(true);
+		_cm2   = Hops.getMemBudget(false);
+		
+		System.out.println("RULEBASED OPTIMIZER: optimizing for max_mem="+InfrastructureAnalyzer.getLocalMaxMemory()+"(max_mem'="+_cm1+")" );
 		
 		// intial cost estimation
 		pn.setSerialParFor(); //for basic mem consumption
-		double T = est.getEstimate(TestMeasure.EXEC_TIME, pn);  
+		double T = 1000; //FIXME CostEstimator.getEstimate(TestMeasure.EXEC_TIME, pn);  
 		double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn);
-		System.out.println("HEURISTIC OPTIMIZER: exec time estimate = "+T+" ms");
-		System.out.println("HEURISTIC OPTIMIZER: mem estimate = "+M+" bytes");
-		
+		//System.out.println("HEURISTIC OPTIMIZER: exec time estimate = "+T+" ms");
+		//System.out.println("HEURISTIC OPTIMIZER: mem estimate = "+M+" bytes");
+
 		// rewrite 1: execution strategy
 		rewriteSetExecutionStategy( pn, T, M );
 
@@ -147,7 +145,7 @@ public class OptimizerHeuristic extends Optimizer
 		if(    n.isCPOnly()          //all instruction can be be executed in CP
  			&& T > EXEC_TIME_THRESHOLD        //total exec time is large enough to compensate latency
 			&& _Nmax>=_lkmax && _N >= _rnk //problem large enough to exploit full parallelism  
-			&& M <= _cmx                     ) //cp inst fit into mem per node
+			&& M <= _cm1                     ) //cp inst fit into mem per node
 		{
 			n.setExecType( ExecType.MR ); //remote parfor
 		}
@@ -159,7 +157,7 @@ public class OptimizerHeuristic extends Optimizer
 		//actual modification
 		long id = n.getID();
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		                             .getRuntimePlanMapping().getMappedObject(id);
+		                             .getAbstractPlanMapping().getMappedProg(id)[1];
 		pfpb.setExecMode( (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR );	
 	}
 
@@ -174,14 +172,14 @@ public class OptimizerHeuristic extends Optimizer
 				{
 					long id = sub.getID();
 					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					                             .getRuntimePlanMapping().getMappedObject(id);
+                                                .getAbstractPlanMapping().getMappedProg(id)[1];
 					
 					//create for pb as replacement
 					Program prog = pfpb.getProgram();
 					ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
 					
 					//replace parfor with for, and update objectmapping
-					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, true);
+					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
 					
 					//update node
 					sub.setNodeType(NodeType.FOR);
@@ -208,7 +206,7 @@ public class OptimizerHeuristic extends Optimizer
 		//modify rtprog
 		long id = n.getID();
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		                            .getRuntimePlanMapping().getMappedObject(id);
+                                    .getAbstractPlanMapping().getMappedProg(id)[1];
 		ArrayList<ProgramBlock> tmpPBOld = pfpb.getChildBlocks();
 		
 		//create new program block structure and modify parameters (from, to, incr, types,)
@@ -222,7 +220,7 @@ public class OptimizerHeuristic extends Optimizer
 		HashMap<String,String> params = pfpb.getParForParams();
 		HashMap<String,String> params2 = (HashMap<String,String>)params.clone();	
 		ParForProgramBlock pfpb2 = new ParForProgramBlock(pfpb.getProgram(),iterVars2, params2);
-		OptTreeConverter.getRuntimePlanMapping().putMapping(pfpb2, nest);
+		OptTreeConverter.getAbstractPlanMapping().putProgMapping(null, pfpb2, nest);
 		
 		ArrayList<ProgramBlock> tmpPBNew = new ArrayList<ProgramBlock>();
 		tmpPBNew.add(pfpb2);
@@ -250,10 +248,10 @@ public class OptimizerHeuristic extends Optimizer
 	{
 		long id = n.getID();
 		int kMax = (n.getExecType()==ExecType.CP) ? _lkmax : _rkmax;
-		kMax = Math.min(kMax, (int)Math.floor(_cmx/M));//ensure mem constraints 
+		kMax = Math.min(kMax, (int)Math.floor(_cm1/M));//ensure mem constraints 
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        						  .getRuntimePlanMapping().getMappedObject(id);
+                                    .getAbstractPlanMapping().getMappedProg(id)[1];
 		
 		if( nested ) // remote,local
 		{
@@ -262,7 +260,7 @@ public class OptimizerHeuristic extends Optimizer
 			
 			OptNode n2 = n.getChilds().get(0);
 			ParForProgramBlock pfpb2 = (ParForProgramBlock) OptTreeConverter
-			                            .getRuntimePlanMapping().getMappedObject(n2.getID());
+                                            .getAbstractPlanMapping().getMappedProg(n2.getID())[1];
 			
 			int k2 = Math.min((int)Math.ceil(((double)_N)/_rnk), (int)Math.ceil(((double)kMax)/_rnk));
 			pfpb2.setDegreeOfParallelism(k2);  
@@ -296,7 +294,7 @@ public class OptimizerHeuristic extends Optimizer
 					long id = c.getID();
 					c.setK(tmpK);
 					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					  							.getRuntimePlanMapping().getMappedObject(id);
+                                                  .getAbstractPlanMapping().getMappedProg(id)[1];
 					pfpb.setDegreeOfParallelism(tmpK);
 					assignRemainingParallelism(c,(int)Math.ceil(((double)(par-tmpK+1))/tmpK));
 				}
@@ -314,11 +312,10 @@ public class OptimizerHeuristic extends Optimizer
 		
 		// modify rtprog
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        							.getRuntimePlanMapping().getMappedObject(id);
+                                     .getAbstractPlanMapping().getMappedProg(id)[1];
 		pfpb.setTaskPartitioner(partitioner);
 		
 		// modify plan
 		n.addParam(ParamType.PARTITIONER, partitioner.toString());
 	}
-
 }

@@ -1,13 +1,12 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
@@ -25,8 +24,8 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -44,22 +43,43 @@ import com.ibm.bi.dml.utils.HopsException;
  * Converter for creating an internal plan representation for a given runtime program
  * and to modify/create the runtime program according to the optimized plan.
  * 
- * 
+ * NOTE: currently only one abstract and one runtime plan at a time.
+ * This implies that only one parfor optimization can happen at a time.
  */
 public class OptTreeConverter 
-{	
-	//current single plan (hl, rt, stats)
-	private static HLObjectMapping  _hlObjMap;
-	private static RTObjectMapping  _rtObjMap;
-	
+{		
+	//internal state
+	private static OptTreePlanMappingAbstract _hlMap = null; 
+	private static OptTreePlanMappingRuntime  _rtMap = null;	
 	private static OptNode _tmpParent   = null;
 	private static OptNode _tmpChildOld = null;
 	private static OptNode _tmpChildNew = null;
 	
 	static
 	{
-		_hlObjMap = new HLObjectMapping();
-		_rtObjMap = new RTObjectMapping();
+		_hlMap = new OptTreePlanMappingAbstract();
+		_rtMap = new OptTreePlanMappingRuntime();
+	}
+	
+	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException
+	{	
+		OptNode root = null;
+		switch( type )
+		{
+			case ABSTRACT_PLAN:
+				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true);	
+				break;
+			case RUNTIME_PLAN:
+				root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );
+				break;
+			default:
+				throw new DMLRuntimeException("Optimizer plan input type "+type+" not supported.");
+		}
+		
+		OptTree tree = new OptTree(ck, cm, type, root);
+		
+		return tree;
 	}
 	
 	/**
@@ -121,7 +141,7 @@ public class OptTreeConverter
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			node = new OptNode( NodeType.IF );
 			if(storeObjs)
-				_rtObjMap.putMapping(ipb, node);
+				_rtMap.putMapping(ipb, node);
 			node.setExecType(ExecType.CP);
 			//process if condition
 			OptNode ifn = new OptNode(NodeType.GENERIC);
@@ -143,7 +163,7 @@ public class OptTreeConverter
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			node = new OptNode( NodeType.WHILE );
 			if(storeObjs)
-				_rtObjMap.putMapping(wpb, node);
+				_rtMap.putMapping(wpb, node);
 			node.setExecType(ExecType.CP);
 			//process predicate instruction
 			node.addChilds( createOptNodes( wpb.getPredicate(), vars,storeObjs ) );
@@ -157,9 +177,10 @@ public class OptTreeConverter
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			node = new OptNode( NodeType.FOR );
 			if(storeObjs)
-				_rtObjMap.putMapping(fpb, node);
+				_rtMap.putMapping(fpb, node);
 			node.setExecType(ExecType.CP);
 			
+			//TODO use constant value if known
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
 			node.addChilds( createOptNodes( fpb.getFromInstructions(), vars,storeObjs ) );
@@ -175,11 +196,11 @@ public class OptTreeConverter
 			ParForProgramBlock fpb = (ParForProgramBlock) pb;			
 			node = new OptNode( NodeType.PARFOR );
 			if(storeObjs)
-				_rtObjMap.putMapping(fpb, node);
+				_rtMap.putMapping(fpb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
 			int N = fpb.getNumIterations();
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
-															  String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
+															  String.valueOf(CostEstimatorRuntime.FACTOR_NUM_ITERATIONS));
 			
 			switch(fpb.getExecMode())
 			{
@@ -208,7 +229,7 @@ public class OptTreeConverter
 		{
 			node = new OptNode(NodeType.GENERIC);
 			if(storeObjs)
-				_rtObjMap.putMapping(pb, node);
+				_rtMap.putMapping(pb, node);
 			node.addChilds( createOptNodes(pb.getInstructions(), vars, storeObjs) );
 			node.setExecType(ExecType.CP);
 		}
@@ -250,7 +271,7 @@ public class OptTreeConverter
 		String instStr = inst.toString();
 		String opstr = instStr.split(Instruction.OPERAND_DELIM)[1];
 		if(storeObjs)
-			_rtObjMap.putMapping(inst, node);
+			_rtMap.putMapping(inst, node);
 		node.addParam(ParamType.OPSTRING,opstr);
 		
 		//exec type
@@ -302,12 +323,13 @@ public class OptTreeConverter
 			IfStatement is = (IfStatement) sb.getStatement(0);
 			
 			node = new OptNode( NodeType.IF );
-			_hlObjMap.putProgMapping(sb, pb, node);
+			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
 			//process if condition
 			OptNode ifn = new OptNode(NodeType.GENERIC);
 			node.addChild( ifn );
-			for( int i=0; i<ipb.getChildBlocksIfBody().size(); i++ )
+			int len = is.getIfBody().size();
+			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
 				StatementBlock lsb = is.getIfBody().get(0);
@@ -318,7 +340,8 @@ public class OptTreeConverter
 			{
 				OptNode efn = new OptNode(NodeType.GENERIC);
 				node.addChild( efn );
-				for( int i=0; i<ipb.getChildBlocksElseBody().size(); i++ )
+				int len2 = is.getElseBody().size();
+				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
@@ -332,10 +355,11 @@ public class OptTreeConverter
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
 			
 			node = new OptNode( NodeType.WHILE );
-			_hlObjMap.putProgMapping(sb, pb, node);
+			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
 			//process body
-			for( int i=0; i<wpb.getChildBlocks().size(); i++ )
+			int len = ws.getBody().size();
+			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
@@ -349,7 +373,7 @@ public class OptTreeConverter
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
 			
 			node = new OptNode( NodeType.FOR );
-			_hlObjMap.putProgMapping(sb, pb, node);
+			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
 			
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
@@ -359,7 +383,8 @@ public class OptTreeConverter
 			node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars ) );
 			
 			//process body
-			for( int i=0; i<fpb.getChildBlocks().size(); i++ )
+			int len = fs.getBody().size();
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
@@ -372,7 +397,7 @@ public class OptTreeConverter
 			ParForStatementBlock fsb = (ParForStatementBlock)sb;
 			ParForStatement fs = (ParForStatement) fsb.getStatement(0);
 			node = new OptNode( NodeType.PARFOR );
-			_hlObjMap.putProgMapping(sb, pb, node);
+			_hlMap.putProgMapping(sb, pb, node);
 			node.setK( fpb.getDegreeOfParallelism() );
 			int N = fpb.getNumIterations();
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
@@ -396,7 +421,8 @@ public class OptTreeConverter
 			}
 			
 			//process body
-			for( int i=0; i<fpb.getChildBlocks().size(); i++ )
+			int len = fs.getBody().size();
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
@@ -408,7 +434,7 @@ public class OptTreeConverter
 		else //last level program block
 		{
 			node = new OptNode(NodeType.GENERIC);
-			_hlObjMap.putProgMapping(sb, pb, node);
+			_hlMap.putProgMapping(sb, pb, node);
 			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars) );
 			node.setExecType(ExecType.CP);
 		}
@@ -452,8 +478,10 @@ public class OptTreeConverter
 		{
 			OptNode node = new OptNode(NodeType.HOP);
 			String opstr = hop.getOpString();
-			_hlObjMap.putHopMapping(hop, node);
 			node.addParam(ParamType.OPSTRING,opstr);
+			LopProperties.ExecType et = hop.getExecType();
+			node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
+			_hlMap.putHopMapping(hop, node);
 			ret.add(node);
 		}
 		
@@ -578,10 +606,14 @@ public class OptTreeConverter
 	 * @param pbNew
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew) 
+	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
 		throws DMLUnsupportedOperationException
 	{
-		ProgramBlock pbParent = (ProgramBlock)_rtObjMap.getMappedObject( parent.getID() );
+		ProgramBlock pbParent = null;
+		if( rtMap )
+			pbParent = (ProgramBlock)_rtMap.getMappedObject( parent.getID() );
+		else
+			pbParent = (ProgramBlock)_hlMap.getMappedProg( parent.getID() )[1];
 		
 		if( pbParent instanceof IfProgramBlock )
 		{
@@ -603,8 +635,12 @@ public class OptTreeConverter
 			throw new DMLUnsupportedOperationException("Optimizer doesn't support "+pbParent.getClass().getName());
 		
 		//update repository
-		_rtObjMap.replaceMapping(pbNew, n);	
+		if( rtMap )
+			_rtMap.replaceMapping(pbNew, n);
+		else
+			_hlMap.replaceMapping(pbNew, n);
 	}
+	
 	/**
 	 * 
 	 * @param pbs
@@ -618,61 +654,26 @@ public class OptTreeConverter
 			if( pbs.get(i) == pbOld )
 				pbs.set(i, pbNew);
 	}
-	
-	/**
-	 * 
-	 * @param pb
-	 * @param tree
-	 * @param parforOnly
-	 */
-	public static void changeProgramBlock(ParForProgramBlock pb, OptTree tree, boolean parforOnly) 
-	{
-		/*
-		if( parforOnly )
-		{
-			//changes only in top;level parfor
-			OptNode parfor1 = tree.getRoot();
-			OptNode parfor2 = null;
-				
-			PExecMode mode1 = (parfor1.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
-			int k1 = 0;
-			
-			// we need a better more generic version here.
-		}
-		else
-		{
-			// recursive invocation and parameter change
-		}
-		
-		// if heuristic parforonly
 
-		// internal use for create rtprograms
-		// use interface to hops - lops generation
 
-		// change the parameters of subprogramblocks  as well
-		 
-	*/
-	}
-		
-	/**
-	 * 
-	 * @return
-	 */
-	public static RTObjectMapping getRTObjectMapping()
-	{
-		return _rtObjMap;
-	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public static HLObjectMapping getHLObjectMapping()
-	{
-		return _hlObjMap;
-	}
+	///////////////////////////////
+	//                           //
+	// internal state management //
+	//                           //
+	///////////////////////////////
 	
 
+	public static OptTreePlanMappingAbstract getAbstractPlanMapping()
+	{
+		return _hlMap;
+	}
+	
+	public static OptTreePlanMappingRuntime getRuntimePlanMapping()
+	{
+		return _rtMap;
+	}
+	
 	/**
 	 * 
 	 * @param pRoot
@@ -684,11 +685,11 @@ public class OptTreeConverter
 	public static OptNode exchangeTemporary(OptNode pRoot, long hlNodeID, OptNode newRtNode) 
 		throws DMLRuntimeException 
 	{
-		OptNode hlNode = _hlObjMap.getOptNode(hlNodeID);
+		OptNode hlNode = _hlMap.getOptNode(hlNodeID);
 		if( hlNode.getNodeType() == NodeType.PARFOR )
 		{
-			ParForProgramBlock pb = (ParForProgramBlock) _hlObjMap.getMappedProg(hlNodeID)[1];
-			OptNode rtNode = _rtObjMap.getOptNode(pb);
+			ParForProgramBlock pb = (ParForProgramBlock) _hlMap.getMappedProg(hlNodeID)[1];
+			OptNode rtNode = _rtMap.getOptNode(pb);
 			
 			//copy node internals (because it might be root node)
 			_tmpChildOld = rtNode.createShallowClone();
@@ -696,11 +697,11 @@ public class OptTreeConverter
 		}
 		else if (hlNode.getNodeType() == NodeType.HOP)
 		{
-			long pid1 = _hlObjMap.getMappedParentID(hlNode.getID()); //pbID
-			ProgramBlock pb = (ProgramBlock) _hlObjMap.getMappedProg(pid1)[1];
-			OptNode rtNode1 = _rtObjMap.getOptNode(pb);
-			long pid2 = _rtObjMap.getMappedParentID(rtNode1.getID());
-			OptNode rtNode2 = _rtObjMap.getOptNode(pid2);
+			long pid1 = _hlMap.getMappedParentID(hlNode.getID()); //pbID
+			ProgramBlock pb = (ProgramBlock) _hlMap.getMappedProg(pid1)[1];
+			OptNode rtNode1 = _rtMap.getOptNode(pb);
+			long pid2 = _rtMap.getMappedParentID(rtNode1.getID());
+			OptNode rtNode2 = _rtMap.getOptNode(pid2);
 			
 			System.out.println("exchanging "+rtNode1.getNodeType()+" "+rtNode1.getID());
 			_tmpParent = rtNode2;
@@ -724,12 +725,12 @@ public class OptTreeConverter
 	public static void revertTemporaryChange( long hlNodeID ) 
 		throws DMLRuntimeException 
 	{
-		OptNode node = _hlObjMap.getOptNode(hlNodeID);
+		OptNode node = _hlMap.getOptNode(hlNodeID);
 		
 		if( node.getNodeType() == NodeType.PARFOR )
 		{
-			ParForProgramBlock pb = (ParForProgramBlock) _hlObjMap.getMappedProg(hlNodeID)[1];
-			OptNode rtNode = _rtObjMap.getOptNode(pb);
+			ParForProgramBlock pb = (ParForProgramBlock) _hlMap.getMappedProg(hlNodeID)[1];
+			OptNode rtNode = _rtMap.getOptNode(pb);
 			rtNode.setExecType(_tmpChildOld.getExecType()); 	
 		}
 		else if( node.getNodeType() == NodeType.HOP )
@@ -758,11 +759,11 @@ public class OptTreeConverter
 	public static OptNode exchangePermanently(OptNode pRoot, long hlNodeID, OptNode newRtNode) 
 		throws DMLRuntimeException 
 	{
-		OptNode hlNode = _hlObjMap.getOptNode(hlNodeID);
+		OptNode hlNode = _hlMap.getOptNode(hlNodeID);
 		if( hlNode.getNodeType() == NodeType.PARFOR )
 		{
-			ParForProgramBlock pb = (ParForProgramBlock) _hlObjMap.getMappedProg(hlNodeID)[1];
-			OptNode rtNode = _rtObjMap.getOptNode(pb);
+			ParForProgramBlock pb = (ParForProgramBlock) _hlMap.getMappedProg(hlNodeID)[1];
+			OptNode rtNode = _rtMap.getOptNode(pb);
 			
 			//copy node internals (because it might be root node)
 			//(no need for update mapping)
@@ -770,18 +771,18 @@ public class OptTreeConverter
 		}
 		else if (hlNode.getNodeType() == NodeType.HOP)
 		{
-			long pid1 = _hlObjMap.getMappedParentID(hlNode.getID()); //pbID
-			ProgramBlock pb = (ProgramBlock) _hlObjMap.getMappedProg(pid1)[1];
-			OptNode rtNode1 = _rtObjMap.getOptNode(pb);
-			long pid2 = _rtObjMap.getMappedParentID(rtNode1.getID());
-			OptNode rtNode2 = _rtObjMap.getOptNode(pid2);
+			long pid1 = _hlMap.getMappedParentID(hlNode.getID()); //pbID
+			ProgramBlock pb = (ProgramBlock) _hlMap.getMappedProg(pid1)[1];
+			OptNode rtNode1 = _rtMap.getOptNode(pb);
+			long pid2 = _rtMap.getMappedParentID(rtNode1.getID());
+			OptNode rtNode2 = _rtMap.getOptNode(pid2);
 			
 			System.out.println("exchanging "+rtNode1.getNodeType()+" "+rtNode1.getID());
 			System.out.println(rtNode2.exchangeChild(rtNode1, newRtNode));
 			
 			//finally update mapping (all internal repositories)
 			newRtNode.setID(rtNode1.getID());
-			_rtObjMap.replaceMapping(pb, newRtNode);
+			_rtMap.replaceMapping(pb, newRtNode);
 		}
 		else
 		{
@@ -792,194 +793,16 @@ public class OptTreeConverter
 	}
 
 
-	/**
-	 * 
-	 */
-	public static void clear() 
+	public static void clear()
 	{
-		if( _hlObjMap != null )
-			_hlObjMap.clear();
-		
-		if( _rtObjMap != null )
-			_rtObjMap.clear();
+		if( _hlMap != null )
+			_hlMap.clear();
+		if( _rtMap != null )
+			_rtMap.clear();
 		
 		_tmpParent = null;
 		_tmpChildOld = null;
 		_tmpChildNew = null;
 	}
 
-	/**
-	 * Helper class for mapping nodes of the internal plan representation to statement blocks and 
-	 * hops / function call statements of a given DML program.
-	 *
-	 */
-	public static class HLObjectMapping
-	{
-		//internal repository for mapping rtprogs and optnodes
-		private IDSequence _idSeq;
-		private HashMap<Long, Object> _id_hlprog;
-		private HashMap<Long, Object> _id_rtprog;
-		private HashMap<Long, OptNode> _id_optnode;
-	
-		public HLObjectMapping( )
-		{
-			_idSeq = new IDSequence();
-			_id_hlprog = new HashMap<Long, Object>();
-			_id_rtprog = new HashMap<Long, Object>();
-			_id_optnode = new HashMap<Long, OptNode>();
-		}
-		
-		public long putHopMapping( Hops hops, OptNode n )
-		{
-			long id = _idSeq.getNextID();
-			
-			_id_hlprog.put(id, hops);
-			_id_rtprog.put(id, null);
-			_id_optnode.put(id, n);	
-			
-			n.setID(id);
-			
-			return id;
-		}
-		
-		public long putProgMapping( StatementBlock sb, ProgramBlock pb, OptNode n )
-		{
-			long id = _idSeq.getNextID();
-			
-			_id_hlprog.put(id, sb);
-			_id_rtprog.put(id, pb);
-			_id_optnode.put(id, n);
-			n.setID(id);
-			
-			return id;
-		}
-		
-		/*public void replaceMapping( StatementBlock sb, OptNode n )
-		{
-			long id = n.getID();
-			_id_rtprog.put(id, sb);
-			_id_optnode.put(id, n);
-		}*/
-		
-		public OptNode getOptNode( long id )
-		{
-			return _id_optnode.get(id);
-		}
-		
-		public Hops getMappedHop( long id )
-		{
-			return (Hops)_id_hlprog.get( id );
-		}
-		
-		public Object[] getMappedProg( long id )
-		{
-			Object[] ret = new Object[2];
-			ret[0] = (StatementBlock)_id_hlprog.get( id );
-			ret[1] = (ProgramBlock)_id_rtprog.get( id );
-			
-			return ret;
-		}
-		
-		public long getMappedParentID( long id )
-		{
-			for( OptNode p : _id_optnode.values() )
-				if( p.getChilds() != null )
-					for( OptNode c2 : p.getChilds() )
-						if( id == c2.getID() )
-							return p.getID();
-			return -1;
-		}
-		
-		public void clear()
-		{
-			_id_hlprog.clear();
-			_id_rtprog.clear();
-			_id_optnode.clear();
-		}
-	}
-	
-	/**
-	 * Helper class for mapping nodes of the internal plan representation to program blocks and 
-	 * instructions of a given runtime program.
-	 *
-	 */
-	public static class RTObjectMapping
-	{
-		//TODO shared super class for both mapping classes or central repository
-		
-		//internal repository for mapping rtprogs and optnodes
-		private IDSequence _idSeq;
-		private HashMap<Long, Object> _id_rtprog;
-		private HashMap<Long, OptNode> _id_optnode;
-	
-		public RTObjectMapping( )
-		{
-			_idSeq = new IDSequence();
-			_id_rtprog = new HashMap<Long, Object>();
-			_id_optnode = new HashMap<Long, OptNode>();
-		}
-		
-		public long putMapping( Instruction inst, OptNode n )
-		{
-			long id = _idSeq.getNextID();
-			
-			_id_rtprog.put(id, inst);
-			_id_optnode.put(id, n);			
-			n.setID(id);
-			
-			return id;
-		}
-		
-		public long putMapping( ProgramBlock pb, OptNode n )
-		{
-			long id = _idSeq.getNextID();
-			
-			_id_rtprog.put(id, pb);
-			_id_optnode.put(id, n);
-			n.setID(id);
-			
-			return id;
-		}
-		
-		public void replaceMapping( ProgramBlock pb, OptNode n )
-		{
-			long id = n.getID();
-			_id_rtprog.put(id, pb);
-			_id_optnode.put(id, n);
-		}
-		
-		public Object getMappedObject( long id )
-		{
-			return _id_rtprog.get( id );
-		}
-		
-		public long getMappedParentID( long id )
-		{
-			for( OptNode p : _id_optnode.values() )
-				if( p.getChilds() != null )
-					for( OptNode c2 : p.getChilds() )
-						if( id == c2.getID() )
-							return p.getID();
-			return -1;
-		}
-		
-		public OptNode getOptNode( long id )
-		{
-			return _id_optnode.get(id);
-		}
-		
-		public OptNode getOptNode( Object prog )
-		{
-			for( Entry<Long,Object> e : _id_rtprog.entrySet() )
-				if( e.getValue() == prog )
-					return _id_optnode.get(e.getKey());
-			return null;
-		}
-		
-		public void clear()
-		{
-			_id_rtprog.clear();
-			_id_optnode.clear();
-		}
-	}
 }

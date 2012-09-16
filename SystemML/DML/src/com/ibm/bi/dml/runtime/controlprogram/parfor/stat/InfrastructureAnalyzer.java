@@ -131,6 +131,15 @@ public class InfrastructureAnalyzer
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public static long getGlobalMaxMemory()
+	{
+		return Math.min( getLocalMaxMemory(), getRemoteMaxMemory() );
+	}
+	
+	/**
 	 * Gets the maximum memory requirement [in bytes] of a given hadoop job.
 	 * 
 	 * @param conf

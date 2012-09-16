@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -21,6 +23,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
@@ -44,8 +47,17 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class OptimizationWrapper 
 {
+	private static final boolean LDEBUG = DMLScript.DEBUG || true;
+	
+	//internal parameters
+	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
+	private static final int     PAR_FACTOR_INFRASTRUCTURE = 1;
+	
 	/**
+	 * Called once per DML script (during program compile time) 
+	 * in order to optimize all top-level parfor program blocks.
 	 * 
+	 * NOTE: currently note used at all.
 	 * 
 	 * @param prog
 	 * @param rtprog
@@ -56,6 +68,14 @@ public class OptimizationWrapper
 	public static void optimize(DMLProgram prog, Program rtprog) 
 		throws DMLRuntimeException, LanguageException, DMLUnsupportedOperationException 
 	{
+		Timing time = null;
+		if( LDEBUG )
+		{
+			System.out.println("ParFOR Opt: Running optimize all on DML program "+DMLScript.getUUID());
+			time = new Timing();
+			time.start();
+		}
+		
 		//init internal structures 
 		HashMap<Long, ParForStatementBlock> sbs = new HashMap<Long, ParForStatementBlock>();
 		HashMap<Long, ParForProgramBlock> pbs = new HashMap<Long, ParForProgramBlock>();	
@@ -74,10 +94,16 @@ public class OptimizationWrapper
 			POptMode type = pb.getOptimizationMode(); //known to be >0
 			optimize( type, sb, pb );
 		}		
+		
+		if( LDEBUG )
+			System.out.println("ParFOR Opt: Finished optimization for DML program "+DMLScript.getUUID()+" in "+time.stop()+"ms.");
 	}
 
 	/**
+	 * Called once per top-level parfor (during runtime, on parfor execute)
+	 * in order to optimize the specific parfor program block.
 	 * 
+	 * NOTE: this is the default way to invoke parfor optimizers.
 	 * 
 	 * @param type
 	 * @param sb
@@ -88,22 +114,30 @@ public class OptimizationWrapper
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		Timing time = new Timing();
-		time.start();
-		
-		System.out.println("ParFOR: run optimizer for ParFOR("+pb.getID()+")");
-		
+		Timing time = null;		
+		if( LDEBUG )
+		{
+			System.out.println("ParFOR Opt: Running optimization for ParFOR("+pb.getID()+")");
+			time = new Timing();
+			time.start();
+		}
 		
 		//set max contraints if not specified
-		int ck = 2 * Math.max( InfrastructureAnalyzer.getCkMaxCP(),
-							   InfrastructureAnalyzer.getCkMaxMR() );
-		double cm = InfrastructureAnalyzer.getCmMax();
+		int ck = Math.max( InfrastructureAnalyzer.getCkMaxCP(),
+						   InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE;
+		double cm = InfrastructureAnalyzer.getCmMax() * Hops.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
 		optimize( type, ck, cm, sb, pb );
 		
-		
-		System.out.println("INFO: PARFOR("+pb.getID()+"): optimization finished in "+time.stop()+"ms.");
+		if( LDEBUG )
+		{
+			double timeVal = time.stop();
+			
+			System.out.println("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
+			if( ParForProgramBlock.MONITOR )
+				StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
+		}
 	}
 	
 	
@@ -118,37 +152,65 @@ public class OptimizationWrapper
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws  
 	 */
-	private static void optimize( POptMode type, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb ) 
+	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		Timing time = null;
-		if( ParForProgramBlock.MONITOR )
+		if( LDEBUG )
 		{
 			time = new Timing();
 			time.start();
 		}
 		
+		//create specified optimizer
+		Optimizer opt = createOptimizer( otype );
+		CostModelType cmtype = opt.getCostModelType();
+		if( LDEBUG )
+			System.out.println("ParFOR Opt: Created optimizer ("+otype+","+opt.getPlanInputType()+","+opt.getCostModelType()+") in "+time.stop()+"ms.");
+		
+		if( cmtype == CostModelType.RUNTIME_METRICS  //TODO remove check when perftesttool supported
+			&& !ALLOW_RUNTIME_COSTMODEL )
+		{
+			throw new DMLRuntimeException("ParFOR Optimizer "+otype+" requires cost model "+cmtype+" that is not suported yet.");
+		}
+		
 		//create opt tree
-		OptTree tree = OptTreeConverter.createOptTree(ck, cm, pb); 
-		//if( DMLScript.DEBUG )
-			System.out.println(tree.explain(false));
+		OptTree tree = null;
+		try
+		{
+			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb); 
+			if( LDEBUG )
+			{
+				System.out.println("ParFOR Opt: Created plan in "+time.stop()+"ms.");
+				System.out.println(tree.explain(false));
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to create opt tree.", ex);
+		}
+		
+		//create cost estimator
+		CostEstimator est = createCostEstimator( cmtype );
+		if( LDEBUG )
+			System.out.println("ParFOR Opt: Created cost estimator ("+cmtype+") in "+time.stop()+"ms.");
 		
 		
-		//optimize
-		Optimizer opt = createOptimizer( type );
-		opt.optimize( sb, pb, tree );
-		//if( DMLScript.DEBUG )
+		//core optimize
+		opt.optimize( sb, pb, tree, est );
+		if( LDEBUG )
+		{
+			System.out.println("ParFOR Opt: Optimized plan in "+time.stop()+"ms.");
 			System.out.println(tree.explain(false));
+		}
 		
 		//cleanup phase
 		OptTreeConverter.clear();
 		
+		//monitor stats
 		if( ParForProgramBlock.MONITOR )
 		{
-			System.out.println("Optimization finished in "+time.stop()+" ms."); 
-			
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, time.stop());
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, type.ordinal());
+			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, otype.ordinal());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMTPLANS, opt.getNumTotalPlans());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMEPLANS, opt.getNumEvaluatedPlans());
 		}
@@ -262,15 +324,17 @@ public class OptimizationWrapper
 		switch( otype )
 		{
 			case FULL_DP:
-				//TODO: implement dynamic programming optimizer
-//				opt = new OptimizerDPEnum();
-//				break;
+				opt = new OptimizerDPEnum();
+				break;
 			case GREEDY:
 				opt = new OptimizerGreedyEnum();
 				break;
 			case HEURISTIC:
 				opt = new OptimizerHeuristic();
 				break;
+			case RULEBASED:
+				opt = new OptimizerRuleBased();
+				break;	
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}
@@ -278,4 +342,29 @@ public class OptimizationWrapper
 		return opt;
 	}
 
+	/**
+	 * 
+	 * @param cmtype
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static CostEstimator createCostEstimator( CostModelType cmtype ) 
+		throws DMLRuntimeException
+	{
+		CostEstimator est = null;
+		
+		switch( cmtype )
+		{
+			case STATIC_MEM_METRIC:
+				est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
+				break;
+			case RUNTIME_METRICS:
+				est = new CostEstimatorRuntime();
+				break;
+			default:
+				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");
+		}
+		
+		return est;
+	}
 }

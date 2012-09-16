@@ -317,7 +317,7 @@ public class OptNode
 		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<level; i++ )
 			sb.append("--");	
-		if( _ntype == NodeType.INST )
+		if( _ntype == NodeType.INST || _ntype == NodeType.HOP )
 			sb.append(_params.get(ParamType.OPSTRING));
 		else
 			sb.append(_ntype);

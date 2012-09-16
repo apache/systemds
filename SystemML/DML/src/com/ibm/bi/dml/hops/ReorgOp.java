@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Append;
 import com.ibm.bi.dml.lops.Group;
@@ -230,18 +228,17 @@ public class ReorgOp extends Hops {
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			return ExecType.MR;
-	
-		if( _etype != null ) 			
-			return _etype;
 		
+		checkAndSetForcedPlatform();
+	
+		if( _etypeForced != null ) 			
+			_etype = _etypeForced;
 		// Choose CP, if the input dimensions are below threshold or if the input is a vector
-		if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			return ExecType.CP;
+		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			_etype = ExecType.CP;
 		else 
-			return ExecType.MR;
+			_etype = ExecType.MR;
+		
+		return _etype;
 	}
 }

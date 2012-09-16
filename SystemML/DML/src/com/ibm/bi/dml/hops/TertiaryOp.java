@@ -597,21 +597,20 @@ public class TertiaryOp extends Hops {
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			return ExecType.MR;
 		
-		if( _etype != null ) 			
-			return _etype;
+		checkAndSetForcedPlatform();
 		
-		if ( (getInput().get(0).areDimsBelowThreshold() 
+		if( _etypeForced != null ) 			
+			_etype = _etypeForced;
+		else if ( (getInput().get(0).areDimsBelowThreshold() 
 				&& getInput().get(1).areDimsBelowThreshold()
 				&& getInput().get(2).areDimsBelowThreshold()) 
 				//|| (getInput().get(0).isVector() && getInput().get(1).isVector() && getInput().get(1).isVector() )
 			)
-			return ExecType.CP;
+			_etype = ExecType.CP;
 		else
-			return ExecType.MR;
+			_etype = ExecType.MR;
+		
+		return _etype;
 	}
 }

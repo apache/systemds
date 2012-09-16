@@ -141,12 +141,13 @@ public class Reblock extends Hops {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
 		
-		if( _etype != null & _etype != ExecType.MR ) 			
+		if( _etypeForced != null & _etypeForced != ExecType.MR ) 			
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");
 		
 		// Reblock operation always gets executed in MR. 
 		// It may not be meaningful to perform it in CP.
-		return ExecType.MR;
+		_etype = ExecType.MR;
+		return _etype;
 	}
 
 }

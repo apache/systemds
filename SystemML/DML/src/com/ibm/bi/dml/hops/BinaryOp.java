@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
@@ -1014,34 +1012,46 @@ public class BinaryOp extends Hops {
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			return ExecType.MR;
+		checkAndSetForcedPlatform();
 		
-		if( _etype != null ) 			
-			return _etype;
-		
-		DataType dt1 = getInput().get(0).get_dataType();
-		DataType dt2 = getInput().get(1).get_dataType();
-		if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
-			// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
-			// OR if both are vectors
-			if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
-					|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
-				return ExecType.CP;
-		}
-		else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
-			if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-				return ExecType.CP;
-		}
-		else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
-			if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
-				return ExecType.CP;
-		}
+		if( _etypeForced != null ) 			
+			_etype = _etypeForced;
 		else
-			return ExecType.CP;
+		{
+			_etype = null;
+			DataType dt1 = getInput().get(0).get_dataType();
+			DataType dt2 = getInput().get(1).get_dataType();
+			if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
+				// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
+				// OR if both are vectors
+				if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+						|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
+				{
+					_etype = ExecType.CP;
+				}
+			}
+			else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
+				if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+				{
+					_etype = ExecType.CP;
+				}
+			}
+			else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
+				if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
+				{
+					_etype = ExecType.CP;
+				}
+			}
+			else
+			{
+				_etype = ExecType.CP;
+			}
+			
+			//if no CP condition applied
+			if( _etype == null )
+				_etype = ExecType.MR;
+		}
 		
-		return ExecType.MR;
+		return _etype;
 	}
 }

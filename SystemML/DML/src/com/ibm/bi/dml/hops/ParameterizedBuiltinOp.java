@@ -243,21 +243,18 @@ public class ParameterizedBuiltinOp extends Hops {
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			return ExecType.MR;
+		
+		checkAndSetForcedPlatform();
 
-		if( _etype != null ) 			
-			return _etype;
-				
-		if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
+		if( _etypeForced != null ) 			
+			_etype = _etypeForced;	
+		else if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
 			if ( this.getInput().get(0).areDimsBelowThreshold() )
-				return ExecType.CP;
+				_etype = ExecType.CP;
 			else
-				return ExecType.MR;
+				_etype = ExecType.MR;
 		}
 		
-		return null;
+		return _etype;
 	}
 }

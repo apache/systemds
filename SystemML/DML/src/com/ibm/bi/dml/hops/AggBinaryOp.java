@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.Group;
@@ -167,21 +165,25 @@ public class AggBinaryOp extends Hops {
 	@Override
 	protected ExecType optFindExecType() {
 		
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return ExecType.CP;
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			return ExecType.MR;
+		checkAndSetForcedPlatform();
 
-		if( _etype != null ) 			
-			return _etype;
-		
+		if( _etypeForced != null ) 			
+		{
+			_etype = _etypeForced;
+		}
 		// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
 		// OR if it is vector-vector inner product
-		if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
-				|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
-			return ExecType.CP;
+		else if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+					|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
+		{
+			_etype = ExecType.CP;
+		}
 		else
-			return ExecType.MR;
+		{
+			_etype = ExecType.MR;
+		}
+		
+		return _etype;
 	}
 	
 	/*

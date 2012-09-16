@@ -10,6 +10,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
@@ -18,6 +19,9 @@ import com.ibm.bi.dml.utils.LopsException;
 
 abstract public class Hops {
 
+	public static final double MEM_UTIL_FACTOR = 0.7d;
+	
+	
 	public static boolean BREAKONSCALARS = false;
 	public static boolean SPLITLARGEMATRIXMULT = true;
 	public static long CPThreshold = 2000;
@@ -52,8 +56,9 @@ abstract public class Hops {
 	private Lops _lops = null;
 	private SQLLops _sqllops = null;
 
-	protected ExecType _etype = null;
-
+	protected ExecType _etype = null; //currently used exec type
+	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
+	protected double _memEstimate = -1;
 	
 	private static int getNextHopID() {
 		return ++UniqueHopID;
@@ -68,12 +73,76 @@ abstract public class Hops {
 		return _etype;
 	}
 	
-	public void setExecType(ExecType etype)
+	/**
+	 * 
+	 * @return
+	 */
+	public ExecType getForcedExecType()
 	{
-		_etype = etype;
+		return _etypeForced;
 	}
 	
+	/**
+	 * 
+	 * @param etype
+	 */
+	public void setForcedExecType(ExecType etype)
+	{
+		_etypeForced = etype;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
 	public abstract boolean allowsAllExecTypes();
+	
+	/**
+	 * 
+	 */
+	public void checkAndSetForcedPlatform()
+	{
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			_etypeForced = ExecType.CP;
+		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
+			_etypeForced = ExecType.MR;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public double getMemEstimate()
+	{
+		return _memEstimate;
+	}
+	
+	/**
+	 * Returns memory estimate in bytes
+	 * 
+	 * @param mem
+	 */
+	public void setMemEstimate( double mem )
+	{
+		_memEstimate = mem;
+	}
+	
+	/**
+	 * Returns memory budget (according to util factor) in bytes
+	 * 
+	 * @param localOnly specifies if only budget of current JVM or also MR JVMs 
+	 * @return
+	 */
+	public static double getMemBudget( boolean localOnly )
+	{
+		double ret = -1;		
+		if( localOnly )
+			ret = InfrastructureAnalyzer.getLocalMaxMemory();
+		else
+			ret = InfrastructureAnalyzer.getGlobalMaxMemory();
+		
+		return ret * MEM_UTIL_FACTOR;
+	}
 	
 	public ArrayList<Hops> getParent() {
 		return _parent;

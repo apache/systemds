@@ -3458,6 +3458,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
+					if ( sparseRows[r] == null )
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
@@ -3513,6 +3515,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
+					if ( sparseRows[r] == null )
+						continue;
 					//int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
@@ -3567,6 +3571,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
+					if ( sparseRows[r] == null )
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
@@ -3620,6 +3626,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
 				{
+					if ( sparseRows[r] == null )
+						continue;
 					int[] cols=sparseRows[r].getIndexContainer();
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)

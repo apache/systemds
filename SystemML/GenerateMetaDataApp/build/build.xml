@@ -10,6 +10,7 @@
 	<property name="config.dir" location="${project.root}/config" />
 	
 	<!-- final zip file -->
+	
 	<property name="zip.file" location="${build.dir}/GenerateMetadataApp.zip" />
 
 	<!-- custom modules folder, jaql folder, staging folder -->

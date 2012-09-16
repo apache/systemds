@@ -10,6 +10,7 @@
 				Input_input_PARAM='${input}';
 				Input_inputDelimiter_PARAM='${wf:conf("inputDelimiter")}';
 				Input_inputMetadata_PARAM='${wf:conf("inputMetadata")}';
+				Output_output_PARAM='${output}';
     	    </eval>
         </jaql>
         <ok to="end"/>

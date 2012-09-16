@@ -1,11 +1,18 @@
 <application-template xmlns="http://biginsights.ibm.com/application" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>Generate Metadata</name>
-    <description>This application generates a JSON format meta data file from the user provided input data file. If the user also provides an initial meta data file, it will be merged into the output metadata file, which is based on the input data file name, with suffix "meta.json".  Also, if the input data is a CSV file in delimited format, this application will generate a copy in JSON text records format. The path and name of the copy will be the same as the input data file plus the suffix ".json".</description>
+    <description>&lt;p&gt;This application generates a JSON format meta data file from the user provided input data file (Two data formats supported: CSV or JSON. Determined by the suffix of the input file name, either "csv" or "json"). If the user also provides an initial meta data file, it will be merged into the output metadata file. &lt;/p&gt;&#13;
+&#13;
+&lt;p&gt;The user also needs to specify the file path and name for output data file. If the input data is a CSV file in delimited format, this application will generate a copy in JSON text records format. If the input data is in JSON format, a copy of the input data file will be made, unless the user specify the same file path and name for the output data file as the input data file. &lt;/p&gt;&#13;
+&#13;
+&lt;p&gt;The output metadata file will have the same name as the output data file, with suffix "meta.json".&lt;/p&gt;&#13;
+&#13;
+&lt;p&gt;After using this app, the user can either use Filter / Project app to manipulate the data or use Enhance Metadata app to generate the complete metadata information for the data file. &lt;/p&gt;</description>
     <deploy_properties/>
     <properties>
-        <property defaultValue="/user/biadmin/data/inputdata.json" description="Input data file" isInputPath="false" isOutputPath="false" isRequired="true" label="Input file" name="input" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/inputdata.json" description="Input data file" isDataset="false" isInputPath="true" isOutputPath="false" isRequired="true" label="Input data file" name="input" paramtype="FILEPATH" uitype="textfield"/>
         <property defaultValue="," description="Delimiter for CSV format input data file" isInputPath="false" isOutputPath="false" isRequired="false" label="Delimiter (Default value is &quot;,&quot;)" name="inputDelimiter" paramtype="STRING" uitype="textfield"/>
         <property defaultValue="/user/biadmin/data/init.meta.json" description="Input metadata file in JSON format" isInputPath="false" isOutputPath="false" isRequired="false" label="Input metadata file" name="inputMetadata" paramtype="FILEPATH" uitype="textfield"/>
+        <property defaultValue="/user/biadmin/data/outputdata.json" description="Output data file" isDataset="false" isInputPath="false" isOutputPath="true" isRequired="true" label="Output data file" name="output" paramtype="FILEPATH" uitype="textfield"/>
     </properties>
     <assets>
         <asset id="Generate Metadata" type="WORKFLOW"/>

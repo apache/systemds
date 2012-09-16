@@ -9,80 +9,124 @@ jsonLines = fn(location)
 
 // --------------------------------------------------------------------------------
 // Read the input data in delimited format
+// This is the case when the user provides a CSV format input file
 // --------------------------------------------------------------------------------
 
-getInput = fn(input, metadataMem, inputDelimiter) (
-
-  
-    
+getInput = fn(input, metadataMem) (
+   
   if (metadataMem == [])
   (
-   
-     inputArray = if (isnull(inputDelimiter))
-     (
-	    read (del(location=input)) 
-     )
-     else
-     (
-	    read (del(location=input, delimiter=inputDelimiter))
-     ),
+     // Can we just read the first line of the file? 
+     inputLine = read(lines(input)),
+     inputFields = strSplit(inputLine[1], ", *"),
+     
+	 numCols = inputFields -> count(),
+	 
+	 //If CSV file does not have column names, we need to generate it
+	 //TODO: if the CSV file has column names, we need to read the first line of the file
+	 names = range(1, numCols) 
+	               -> transform strcat("C",serialize($)) 
+	               -> enumerate() 
+	               -> transform {"attributeColumnId": $[0]+1, "attributeName": $[1]},
+	
 
-     numCols = inputArray[0] -> count(),
-     attributeNames = range(1, numCols) -> transform strcat("C",serialize($)),
-   
-     inputArray 
-         -> transform arrayToRecord(attributeNames, $)
-         -> write(jsonLines(input + ".json")),
-   
-     attributeNames
-         -> enumerate()
-         -> transform {"attributeColumnId": $[0]+1, "attributeName": $[1]}
+
+	 // We determine the kind of each attribute by using a regular expression test
+     doubleReg = regex ("^[-]?([0-9]*[.][0-9]+)$"),
+     longReg = regex ("^[-]?([0]|[1-9][0-9]*)$"),
+     
+	 types = inputFields -> transform if (regex_test (longReg, $)) 
+	                            { attributeType: "long" } 
+	                            else if (regex_test (doubleReg, $))
+	                            { attributeType: "double" }
+	                            else 
+	                            { attributeType: "string" }
+                   -> transform values($)
+                   -> expand 
+                   -> enumerate() 
+                   -> transform {"attributeColumnId": $[0]+1, "attributeType": $[1]},
+     
+     // Now we create an array of metaAttributes that has column ID, name, and type              
+     join names, types where names.attributeColumnId == types.attributeColumnId 
+                      into {names.attributeColumnId, names.attributeName, types.attributeType} 
+                      -> sort by [$.attributeColumnId]
+
+  	 
   )
   else
   (
-     schemaString = metadataMem
-      -> transform $.attributeName + ":" + $.attributeType
-      -> strJoin(","),
+     // If a user provides a metadata file, it should at least offer attribute name and attribute type
+     // for each column. We will compute the other attributes later.
+     // TODO: if a user provided metadata file does not have attributeType/attributeName information
+     
+     metadataMem -> transform {$.attributeName, $.attributeType} 
+     -> enumerate() 
+     -> transform {"attributeColumnId": $[0]+1, $[1]}
+     -> sort by [$.attributeColumnId]
+  )
+);
 
+writeCSVToJson = fn(input, inputDelimiter, metaAttributes, output)
+(
+    schemaString = metaAttributes 
+                   -> transform { "text": strcat($.attributeName,":",$.attributeType)} 
+                   -> transform values($) 
+                   -> expand 
+                   -> strJoin(","),
+    
      // schema of the input
      inputSchema = "schema {" + schemaString + "}",
      
      inputArray = if (isnull(inputDelimiter))
-	 (
-		read (del(location=input, 
+     (
+	    read (del(location=input, 
 	    		schema = eval(inputSchema) ) )
-	 )
-	 else
-	 (
-		read (del(location=input, delimiter=inputDelimiter,
+     )
+     else
+     (
+	    read (del(location=input, delimiter=inputDelimiter,
 				schema = eval(inputSchema) ) )
-	 )
-    
-     attributeNames = metadataMem 
-         -> transform $.attributeName,
-
-     inputArray 
-         -> transform arrayToRecord(attributeNames, $)
-         -> write(jsonLines(input + ".json")),
+     ),
      
-     attributeNames
-         -> enumerate()
-         -> transform {"attributeColumnId": $[0]+1, "attributeName": $[1]} 
-  )
+     inputArray 
+         -> write(jsonLines(output))
 );
-
 
 //
 // Generate json file column id
 //
 
-genJsonColumnId = fn (inputData)
+genJsonColumnMeta = fn (inputData, metadataMem)
 (
-   inputData 
-      -> top 1 
-      -> expand(names($))
-      -> enumerate()
-      -> transform {"attributeColumnId":$[0] + 1, "attributeName":$[1]}
+   if (metadataMem == [])
+   (
+      
+      // We determine the kind of each attribute by using a regular expression test
+      doubleReg = regex ("^[-]?([0-9]*[.][0-9]+)$"),
+      longReg = regex ("^[-]?([0]|[1-9][0-9]*)$"),
+   
+      inputData
+      -> top 1 -> transform pairwise (names($), values($)) -> expand -> enumerate() 
+	  -> transform { "attributeColumnId": $[0]+1, "attributeName":index($[1],0),
+	                 "attributeType": (if (regex_test (longReg, serialize(index($[1],1))))
+                     "long"
+                     else if (regex_test (doubleReg,serialize(index($[1],1))))
+	                 "double" 
+	                 else 
+	                 "string")}
+				    -> sort by [$.attributeColumnId]
+	)
+	else
+	(
+	   // If a user provides a metadata file, it should at least offer attribute name and attribute type
+       // for each column. We will compute the other attributes later.
+       // TODO: if a user provided metadata file does not have attributeType/attributeName information
+	   metadataMem -> transform {$.attributeName, $.attributeType} 
+           -> enumerate() 
+           -> transform {"attributeColumnId": $[0]+1, $[1]}
+           -> sort by [$.attributeColumnId]
+	)
+   
 );
 
 
@@ -98,8 +142,9 @@ join orig in metadataMem, preserve new in columnId
       new.attributeName,
       "attributeColumnId":(if (isnull(orig.attributeColumnId)) new.attributeColumnId else orig.attributeColumnId),
       "attributeKind":(if (isnull(orig.attributeKind)) "N/A" else orig.attributeKind),
-      "attributeType":(if (isnull(orig.attributeType)) "N/A" else orig.attributeType),
-      "attributeDistinctCount": (if (isnull(orig.attributeDistinctCount)) "N/A" else orig.attributeDistinctCount)
+      "attributeType":(if (isnull(orig.attributeType)) new.attributeType else orig.attributeType),
+      //At this point, we do not calculate what's the total distinct count of values.
+      "attributeDistinctCount": ("N/A")
    }
    -> sort by [$.attributeColumnId]
    -> write(jsonText(outputMetadata))

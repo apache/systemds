@@ -18,8 +18,8 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 
 	private final static double eps = 1e-9;
 	private final static int rows = 10000;
-	private final static int ncatA = 10; // # of categories in A
-	private final static int ncatB = 8; // # of categories in B
+	private final static int ncatA = 100; // # of categories in A
+	private final static int ncatB = 75; // # of categories in B
 	private int maxW = 100;    // maximum weight
 	
 	@Override
@@ -40,16 +40,12 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
-		dmlArgs = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml",
-	               "-args", OO_HOME + INPUT_DIR + "A", 
+		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".dml";
+		programArgs = new String[]{"-args", OO_HOME + INPUT_DIR + "A", 
 	                        Integer.toString(rows),
 	                        OO_HOME + INPUT_DIR + "B", 
 	                        OO_HOME + OUTPUT_DIR + "Spearman"};
-		dmlArgsDebug = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL + ".dml", "-d", 
-	               "-args", OO_HOME + INPUT_DIR + "A", 
-	                        Integer.toString(rows),
-	                        OO_HOME + INPUT_DIR + "B", 
-	                        OO_HOME + OUTPUT_DIR + "Spearman"};
+		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".R";
 		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL + ".R" + " " + 
 		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
 
@@ -97,26 +93,22 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase {
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
-		dmlArgs = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".dml",
-	               "-args", OO_HOME + INPUT_DIR + "A", 
+		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".dml";
+		programArgs = new String[]{"-args", OO_HOME + INPUT_DIR + "A", 
 	                        Integer.toString(rows),
 	                        OO_HOME + INPUT_DIR + "B", 
 	                        OO_HOME + INPUT_DIR + "WM", 
 	                        OO_HOME + OUTPUT_DIR + "Spearman"};
-		dmlArgsDebug = new String[]{"-f", OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".dml", "-d", 
-	               "-args", OO_HOME + INPUT_DIR + "A", 
-	                        Integer.toString(rows),
-	                        OO_HOME + INPUT_DIR + "B", 
-	                        OO_HOME + INPUT_DIR + "WM", 
-	                        OO_HOME + OUTPUT_DIR + "Spearman"};
+
+		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R" + " " + 
 		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 10); // System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, 20); // System.currentTimeMillis()+1);
-        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, 30); // System.currentTimeMillis());
+        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
+        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis());
+        double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
         round(A);
         round(B);
         round(WM);

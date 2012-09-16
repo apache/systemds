@@ -59,21 +59,16 @@ public class GNMFTest extends AutomatedTestBase {
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String GNMF_HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", GNMF_HOME + TEST_GNMF + ".dml",
-				               "-args", GNMF_HOME + INPUT_DIR + "v", 
-				                        GNMF_HOME + INPUT_DIR + "w", 
-				                        GNMF_HOME + INPUT_DIR + "h", 
-				                        Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
-				                        GNMF_HOME + OUTPUT_DIR + "w", 
-				                        GNMF_HOME + OUTPUT_DIR + "h"};
-		dmlArgsDebug = new String[]{"-f", GNMF_HOME + TEST_GNMF + ".dml", "-d",
-	                                "-args", GNMF_HOME + INPUT_DIR + "v", 
-	                                         GNMF_HOME + INPUT_DIR + "w", 
-	                                         GNMF_HOME + INPUT_DIR + "h", 
-	                                         Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
-	                                         GNMF_HOME + OUTPUT_DIR + "w", 
-	                                         GNMF_HOME + OUTPUT_DIR + "h"};
-		rCmd = "Rscript" + " " + GNMF_HOME + TEST_GNMF + ".R" + " " + 
+		fullDMLScriptName = GNMF_HOME + TEST_GNMF + ".dml";
+		programArgs = new String[]{"-args", GNMF_HOME + INPUT_DIR + "v", 
+                							GNMF_HOME + INPUT_DIR + "w", 
+                							GNMF_HOME + INPUT_DIR + "h", 
+                							Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
+                							GNMF_HOME + OUTPUT_DIR + "w", 
+                							GNMF_HOME + OUTPUT_DIR + "h"};
+		
+		fullRScriptName = GNMF_HOME + TEST_GNMF + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       GNMF_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + GNMF_HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

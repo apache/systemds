@@ -32,14 +32,10 @@ public class kMeansTest extends AutomatedTestBase {
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String KMEANS_HOME = baseDirectory;
-		dmlArgs = new String[]{"-f", KMEANS_HOME + TEST_KMEANS + ".dml",
-				               "-args",  KMEANS_HOME + INPUT_DIR + "M" , 
+		fullDMLScriptName = KMEANS_HOME + TEST_KMEANS + ".dml";
+		programArgs = new String[]{"-args",  KMEANS_HOME + INPUT_DIR + "M" , 
 				                        Integer.toString(rows), Integer.toString(cols), 
 				                         KMEANS_HOME + OUTPUT_DIR + "kcenters" };
-		dmlArgsDebug = new String[]{"-f", KMEANS_HOME + TEST_KMEANS + ".dml", "-d", 
-	                                "-args",  KMEANS_HOME + INPUT_DIR + "M" , 
-	                                         Integer.toString(rows), Integer.toString(cols), 
-	                                          KMEANS_HOME + OUTPUT_DIR + "kcenters" };
 		
 		double[][] M = getRandomMatrix(rows, cols, -1, 1, 0.05, 10);
 		

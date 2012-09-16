@@ -1,3 +1,9 @@
+# JUnit test class: dml.test.integration.descriptivestats.UnivariateStatsTest.java
+# command line invocation assuming $S_HOME is set to the home of the R script
+# Rscript $S_HOME/WeightedScaleTest.R $S_HOME/in/ $S_HOME/expected/
+args <- commandArgs(TRUE)
+options(digits=22)
+
 options(repos="http://cran.stat.ucla.edu/") 
 is.installed <- function(mypkg) is.element(mypkg, installed.packages()[,1])
 
@@ -27,10 +33,9 @@ library("Matrix")
 #parseCommandArgs()
 ######################
 
-Temp = readMM(file="$$indir$$vector.mtx")
-P = readMM(file="$$indir$$prob.mtx")
-W = readMM(file="$$indir$$weight.mtx")
-Helper=matrix(1, 2, 1)
+Temp = readMM(paste(args[1], "vector.mtx", sep=""))
+W = readMM(paste(args[1], "weight.mtx", sep=""))
+P = readMM(paste(args[1], "prob.mtx", sep=""))
 
 W = round(W)
 
@@ -101,39 +106,22 @@ iqm=mean(T)
 out_minus = t(as.numeric(Temp < mu-5*std_dev)*Temp) 
 out_plus = t(as.numeric(Temp > mu+5*std_dev)*Temp)
 
-meanHelper=mu*Helper
-stdHelper=std_dev*Helper
-SEHelper=SE*Helper
-varHelper=var*Helper
-cvHelper=cv*Helper
-harHelper=har_mu*Helper
-geomHelper=geom_mu*Helper
-minHelper=mn*Helper
-maxHelper=mx*Helper
-rngHelper=rng*Helper
-g1Helper=g1*Helper
-se_g1Helper=se_g1*Helper
-g2Helper=g2*Helper
-se_g2Helper=se_g2*Helper
-medianHelper1 = md * Helper
-iqmHelper = iqm * Helper
-
-writeMM(as(t(meanHelper),"CsparseMatrix"), "$$Routdir$$mean_weight", format="text");
-writeMM(as(t(stdHelper),"CsparseMatrix"), "$$Routdir$$std_weight", format="text");
-writeMM(as(t(SEHelper),"CsparseMatrix"), "$$Routdir$$se_weight", format="text");
-writeMM(as(t(varHelper),"CsparseMatrix"), "$$Routdir$$var_weight", format="text");
-writeMM(as(t(cvHelper),"CsparseMatrix"), "$$Routdir$$cv_weight", format="text");
-writeMM(as(t(harHelper),"CsparseMatrix"), "$$Routdir$$har_weight", format="text");
-writeMM(as(t(geomHelper),"CsparseMatrix"), "$$Routdir$$geom_weight", format="text");
-writeMM(as(t(minHelper),"CsparseMatrix"), "$$Routdir$$min_weight", format="text");
-writeMM(as(t(maxHelper),"CsparseMatrix"), "$$Routdir$$max_weight", format="text");
-writeMM(as(t(rngHelper),"CsparseMatrix"), "$$Routdir$$rng_weight", format="text");
-writeMM(as(t(g1Helper),"CsparseMatrix"), "$$Routdir$$g1_weight", format="text");
-writeMM(as(t(se_g1Helper),"CsparseMatrix"), "$$Routdir$$se_g1_weight", format="text");
-writeMM(as(t(g2Helper),"CsparseMatrix"), "$$Routdir$$g2_weight", format="text");
-writeMM(as(t(se_g2Helper),"CsparseMatrix"), "$$Routdir$$se_g2_weight", format="text");
-writeMM(as(t(out_minus),"CsparseMatrix"), "$$Routdir$$out_minus_weight", format="text");
-writeMM(as(t(out_plus),"CsparseMatrix"), "$$Routdir$$out_plus_weight", format="text");
-writeMM(as(t(medianHelper1),"CsparseMatrix"), "$$Routdir$$median_weight", format="text");
-writeMM(as(t(Q),"CsparseMatrix"), "$$Routdir$$quantile_weight", format="text");
-writeMM(as(t(iqmHelper),"CsparseMatrix"), "$$Routdir$$iqm_weight", format="text");
+write(mu, paste(args[2], "mean", sep=""));
+write(std_dev, paste(args[2], "std", sep=""));
+write(SE, paste(args[2], "se", sep=""));
+write(var, paste(args[2], "var", sep=""));
+write(cv, paste(args[2], "cv", sep=""));
+# write(har_mu),paste(args[2], "har", sep=""));
+# write(geom_mu, paste(args[2], "geom", sep=""));
+write(mn, paste(args[2], "min", sep=""));
+write(mx, paste(args[2], "max", sep=""));
+write(rng, paste(args[2], "rng", sep=""));
+write(g1, paste(args[2], "g1", sep=""));
+write(se_g1, paste(args[2], "se_g1", sep=""));
+write(g2, paste(args[2], "g2", sep=""));
+write(se_g2, paste(args[2], "se_g2", sep=""));
+write(md, paste(args[2], "median", sep=""));
+write(iqm, paste(args[2], "iqm", sep=""));
+writeMM(as(t(out_minus),"CsparseMatrix"), paste(args[2], "out_minus", sep=""), format="text");
+writeMM(as(t(out_plus),"CsparseMatrix"), paste(args[2], "out_plus", sep=""), format="text");
+writeMM(as(t(Q),"CsparseMatrix"), paste(args[2], "quantile", sep=""), format="text");

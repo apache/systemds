@@ -47,25 +47,18 @@ public class RightIndexingTest  extends AutomatedTestBase{
         config.addVariable("colend", colend);
         
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String C_HOME = SCRIPT_DIR + TEST_DIR;	
-		dmlArgs = new String[]{"-f", C_HOME + "RightIndexingTest" + ".dml",
-	               "-args",  C_HOME + INPUT_DIR + "A" , 
+		String RI_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = RI_HOME + "RightIndexingTest" + ".dml";
+		programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
 	               			Long.toString(rows), Long.toString(cols),
 	                        Long.toString(rowstart), Long.toString(rowend),
 	                        Long.toString(colstart), Long.toString(colend),
-	                         C_HOME + OUTPUT_DIR + "B" , 
-	                         C_HOME + OUTPUT_DIR + "C" , 
-	                         C_HOME + OUTPUT_DIR + "D" };
-		dmlArgsDebug = new String[]{"-f", C_HOME + "RightIndexingTest" + ".dml", "-d",
-				 "-args",  C_HOME + INPUT_DIR + "A" , 
-		        			Long.toString(rows), Long.toString(cols),
-			                 Long.toString(rowstart), Long.toString(rowend),
-			                 Long.toString(colstart), Long.toString(colend),
-			                  C_HOME + OUTPUT_DIR + "B" , 
-			                  C_HOME + OUTPUT_DIR + "C" , 
-			                  C_HOME + OUTPUT_DIR + "D" };
-		rCmd = "Rscript" + " " + C_HOME + "RightIndexingTest" + ".R" + " " + 
-		       C_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + C_HOME + EXPECTED_DIR;
+	                         RI_HOME + OUTPUT_DIR + "B" , 
+	                         RI_HOME + OUTPUT_DIR + "C" , 
+	                         RI_HOME + OUTPUT_DIR + "D" };
+		fullRScriptName = RI_HOME + "RightIndexingTest" + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
+		       RI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + RI_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 		double sparsity=rand.nextDouble();

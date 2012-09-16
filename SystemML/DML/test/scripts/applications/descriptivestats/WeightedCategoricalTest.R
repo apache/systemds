@@ -1,3 +1,9 @@
+# JUnit test class: dml.test.integration.descriptivestats.UnivariateStatsTest.java
+# command line invocation assuming $C_HOME is set to the home of the R script
+# Rscript $C_HOME/Categorical.R $C_HOME/in/ $C_HOME/expected/
+args <- commandArgs(TRUE)
+options(digits=22)
+
 #library("batch")
 library("Matrix")
 # Usage: R --vanilla -args Xfile X < DescriptiveStatistics.R
@@ -5,9 +11,8 @@ library("Matrix")
 #parseCommandArgs()
 ######################
 
-V = readMM(file="$$indir$$vector.mtx")
-W = readMM(file="$$indir$$weight.mtx")
-Helper=matrix(1, 2, 1)
+V = readMM(paste(args[1], "vector.mtx", sep=""))
+W = readMM(paste(args[1], "weight.mtx", sep=""))
 
 tab = table(rep(V[,1],W[,1]))
 cat = t(as.numeric(names(tab)))
@@ -30,9 +35,8 @@ C= (Nc > 0)
 mx = max(Nc)
 Mode = (Nc == mx)
 
-RHelper=R*Helper
-writeMM(as(t(Nc),"CsparseMatrix"), "$$Routdir$$Nc_weight", format="text");
-writeMM(as(t(RHelper),"CsparseMatrix"), "$$Routdir$$R_weight", format="text");
-writeMM(as(t(Pc),"CsparseMatrix"), "$$Routdir$$Pc_weight", format="text");
-writeMM(as(t(C),"CsparseMatrix"), "$$Routdir$$C_weight", format="text");
-writeMM(as(t(Mode),"CsparseMatrix"), "$$Routdir$$Mode_weight", format="text");
+writeMM(as(t(Nc),"CsparseMatrix"), paste(args[2], "Nc", sep=""), format="text");
+write(R, paste(args[2], "R", sep=""));
+writeMM(as(t(Pc),"CsparseMatrix"), paste(args[2], "Pc", sep=""), format="text");
+writeMM(as(t(C),"CsparseMatrix"), paste(args[2], "C", sep=""), format="text");
+writeMM(as(t(Mode),"CsparseMatrix"), paste(args[2], "Mode", sep=""), format="text");

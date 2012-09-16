@@ -111,18 +111,13 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", HOME + TEST_NAME +scriptNum + ".dml",
-				               "-args", HOME + INPUT_DIR + "V" , 
+		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
+		programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
 				                        Integer.toString(rows),
 				                        Integer.toString(cols),
 				                        HOME + OUTPUT_DIR + "R" };
-		dmlArgsDebug = new String[]{"-f", HOME + TEST_NAME + scriptNum + ".dml", "-d",
-					               "-args", HOME + INPUT_DIR + "V" , 
-						                   Integer.toString(rows),
-						                   Integer.toString(cols),
-						                   HOME + OUTPUT_DIR + "R" };
-		
-		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".R" + " " + 
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

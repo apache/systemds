@@ -32,16 +32,11 @@ public class SequenceMiner extends AutomatedTestBase {
 
 		/* This is for running the junit test by constructing the arguments directly */
 		String SEQMINER_HOME = baseDirectory;
-		dmlArgs = new String[]{"-f", SEQMINER_HOME + TEST_SEQMINER + ".dml",
-				               "-args",  SEQMINER_HOME + INPUT_DIR + "M" , 
+		fullDMLScriptName = SEQMINER_HOME + TEST_SEQMINER + ".dml";
+		programArgs = new String[]{"-args",  SEQMINER_HOME + INPUT_DIR + "M" , 
 				                        Integer.toString(rows), Integer.toString(cols), 
 				                         SEQMINER_HOME + OUTPUT_DIR + "fseq" ,
 				                         SEQMINER_HOME + OUTPUT_DIR + "sup" };
-		dmlArgsDebug = new String[]{"-f", SEQMINER_HOME + TEST_SEQMINER + ".dml", "-d", 
-				                    "-args",  SEQMINER_HOME + INPUT_DIR + "M" , 
-                                             Integer.toString(rows), Integer.toString(cols), 
-                                              SEQMINER_HOME + OUTPUT_DIR + "fseq" ,
-                                              SEQMINER_HOME + OUTPUT_DIR + "sup" };
 		
 		double[][] M = {{1, 2, 3, 4, -1, 2, 3, 4, 5, -1}, 
 				{1, 2, 3, 4, -1, 2, 3, 4, 5, -1}, 

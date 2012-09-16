@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -45,8 +46,13 @@ public abstract class AutomatedTestBase {
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
+	
+	protected static final RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	protected static final boolean DEBUG = false;
+	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
+	
+	protected String fullDMLScriptName, fullRScriptName;
 	
 	protected static String baseDirectory;
 	protected HashMap<String, TestConfiguration> availableTestConfigurations;
@@ -55,8 +61,9 @@ public abstract class AutomatedTestBase {
 	protected HashMap<String, String> testVariables; /* variables and their values */
 
 	/* For testing in the new way */
-	protected String[] dmlArgs;            /* args to DMLScript.main */
-	protected String[] dmlArgsDebug;       /* args to DMLScript.main with -d option */
+	//protected String[] dmlArgs;            /* program-independent arguments to SystemML (e.g., debug, execution mode) */
+	//protected String[] dmlArgsDebug;       /* args to DMLScript.main with -d option */
+	protected String[] programArgs;        /* program-specific arguments, which are passed to SystemML via -args option */
 	protected String rCmd;                 /* Rscript foo.R arg1, arg2 ...          */
 	
 	protected String selectedTest;
@@ -732,27 +739,58 @@ public abstract class AutomatedTestBase {
 		
 		//cleanup scratch folder (prevent side effect between tests)
 		cleanupScratchSpace();
+		
+		ArrayList<String> args = new ArrayList<String>();
+		// setup arguments to SystemML
+		
+		args.add("-f");
+		if ( newWay == true )
+			args.add(fullDMLScriptName);
+		else
+			args.add(executionFile);
+		// program-independent parameters
+		if(DEBUG)
+			args.add("-d");
+		if(VISUALIZE)
+			args.add("-v");
+		args.add("-exec");
+		if(rtplatform == RUNTIME_PLATFORM.HADOOP)
+			args.add("hadoop");
+		else if (rtplatform == RUNTIME_PLATFORM.HYBRID)
+			args.add("hybrid");
+		else if (rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
+			args.add("singlenode");
+		else if (rtplatform == RUNTIME_PLATFORM.NZ)
+			args.add("nz");
+		else {
+			System.err.println("Unknown runtime platform: " + rtplatform);
+			System.exit(1);
+		}
 			
+		// program-specific parameters
+		if ( newWay == true ) {
+			for (int i=0; i < programArgs.length; i++)
+				args.add(programArgs[i]);
+		}
+		
+
 		if (DEBUG) {
 			if ( newWay == false )
 				TestUtils.printDMLScript(executionFile);
 			else 
-				TestUtils.printDMLScript(dmlArgsDebug[1]);
+				TestUtils.printDMLScript(fullDMLScriptName);
 		}
 		
 		try {
-				if (newWay == false) {
-					if (DEBUG)
-						DMLScript.main(new String[] { "-f" ,executionFile, "-d" });
-					else
-						DMLScript.main(new String[] { "-f", executionFile });
-				}
-				else {
-					if (DEBUG)
-						DMLScript.main(dmlArgsDebug);
-					else
-						DMLScript.main(dmlArgs);
-				}
+			if (newWay == false) {
+				DMLScript.main(args.toArray(new String[args.size()]));
+			}
+			else {
+				//if (DEBUG)
+				//	DMLScript.main(dmlArgsDebug);
+				//else
+					DMLScript.main(args.toArray(new String[args.size()]));
+			}
 		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())

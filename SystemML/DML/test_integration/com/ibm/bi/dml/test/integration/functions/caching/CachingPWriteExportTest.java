@@ -57,18 +57,12 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", HOME + TEST_NAME + ".dml",
-				               "-args", HOME + INPUT_DIR + "V" , 
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
 				                        Integer.toString(rows),
 				                        Integer.toString(cols),
 				                        HOME + OUTPUT_DIR + "V",
 				                        outputFormat };
-		dmlArgsDebug = new String[]{"-f", HOME + TEST_NAME + ".dml", "-d",
-					               "-args", HOME + INPUT_DIR + "V" , 
-						                   Integer.toString(rows),
-						                   Integer.toString(cols),
-						                   HOME + OUTPUT_DIR + "V",
-						                   outputFormat };
 		
 		loadTestConfiguration(config);
 

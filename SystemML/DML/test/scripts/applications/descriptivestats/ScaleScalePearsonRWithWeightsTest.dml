@@ -1,12 +1,17 @@
-$$readhelper$$
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script ScaleScale.dml?
+# Assume $SS_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume X and Y are scale variables and both have 100000 rows
+# hadoop jar SystemML.jar -f $SS_HOME/ScaleScale.dml -args "$INPUT_DIR/X" 100000 "$INPUT_DIR/Y" "$INPUT_DIR/WM" "$OUPUT_DIR/PearsonR"
 
 #X <- scale variable
 #Y <- scale variable
 #WM <- weights
 
-X = read("$$indir$$X", rows=$$rows$$, cols=1, format="text");
-Y = read("$$indir$$Y", rows=$$rows$$, cols=1, format="text");
-WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+X = read($1, rows=$2, cols=1, format="text");
+Y = read($3, rows=$2, cols=1, format="text");
+WM = read($4, rows=$2, cols=1, format="text");
 
 W = sum(WM);
 
@@ -22,5 +27,4 @@ sigmaY = sqrt(m2Y * (W/(W-1.0)) );
 # Pearson's R
 R = covXY / (sigmaX*sigmaY);
 
-PearsonRHelper = R * Helper;
-write(PearsonRHelper, "$$outdir$$outPearsonR", format="text");
+write(R, $5);

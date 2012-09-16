@@ -1,7 +1,12 @@
-$$readhelper$$
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script Categorical.dml?
+# Assume C_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for vector
+# hadoop jar SystemML.jar -f $C_HOME/Categorical.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/W" "$OUTPUT_DIR/Nc" "$OUPUT_DIR/R" "$OUTPUT_DIR/Pc" "$OUTPUT_DIR/C" "$OUTPUT_DIR/Mode"
 
-V = read("$$indir$$vector", rows=$$rows1$$, cols=1, format="text")
-W = read("$$indir$$weight", rows=$$rows1$$, cols=1, format="text")
+V = read($1, rows=$2, cols=1, format="text")
+W = read($3, rows=$2, cols=1, format="text")
 
 # a set of number of values specify the number of cases of each categorical
 Nc = ctable(V, 1, W);
@@ -22,9 +27,9 @@ C = ppred(Nc, 0, ">")
 mx = max(Nc)
 Mode =  ppred(Nc, mx, "==")
 
-RHelper=R*Helper
-write(Nc, "$$outdir$$Nc_weight", format="text")
-write(RHelper, "$$outdir$$R_weight", format="text")
-write(Pc, "$$outdir$$Pc_weight", format="text")
-write(C, "$$outdir$$C_weight", format="text")
-write(Mode, "$$outdir$$Mode_weight", format="text")
+write(Nc, $4, format="text")
+write(R, $5)
+write(Pc, $6, format="text")
+write(C, $7, format="text")
+write(Mode, $8, format="text")
+

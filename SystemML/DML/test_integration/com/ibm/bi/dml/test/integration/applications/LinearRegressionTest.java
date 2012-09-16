@@ -54,20 +54,15 @@ public class LinearRegressionTest extends AutomatedTestBase
         
         /* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String LR_HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml",
-				               "-args", LR_HOME + INPUT_DIR + "v", 
+		fullDMLScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".dml";
+		programArgs = new String[]{"-args", LR_HOME + INPUT_DIR + "v", 
 				                        Integer.toString(rows), Integer.toString(cols),
 				                        LR_HOME + INPUT_DIR + "y", 
 				                        Double.toString(Math.pow(10,-8)), 
 				                        LR_HOME + OUTPUT_DIR + "w"};
-		dmlArgsDebug = new String[]{"-f", LR_HOME + TEST_LINEAR_REGRESSION + ".dml", "-d",
-	                                "-args", LR_HOME + INPUT_DIR + "v", 
-	                                         Integer.toString(rows), Integer.toString(cols),
-	                                         LR_HOME + INPUT_DIR + "y", 
-	                                         Double.toString(Math.pow(10,-8)), 
-	                                         LR_HOME + OUTPUT_DIR + "w" };
 		
-		rCmd = "Rscript" + " " + LR_HOME + TEST_LINEAR_REGRESSION + ".R" + " " + 
+		fullRScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       LR_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + LR_HOME + EXPECTED_DIR;
       
         loadTestConfiguration(TEST_LINEAR_REGRESSION);

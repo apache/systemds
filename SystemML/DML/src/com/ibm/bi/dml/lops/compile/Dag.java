@@ -36,6 +36,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -69,8 +70,14 @@ public class Dag<N extends Lops> {
 
 	ArrayList<N> nodes;
 
-	static int job_id = 0;
-	static int var_index = 0;
+	//static int job_id = 0;
+	//static int var_index = 0;
+	
+	static IDSequence job_id, var_index;
+	static {
+		job_id = new IDSequence();
+		var_index = new IDSequence();
+	}
 
 	static final int CHILD_BREAKS_ALIGNMENT = 2;
 	static final int CHILD_DOES_NOT_BREAK_ALIGNMENT = 1;
@@ -1418,7 +1425,7 @@ public class Dag<N extends Lops> {
 				else {
 					// generate a temp label to hold the value that is read from HDFS
 					if ( node.get_dataType() == DataType.SCALAR ) {
-						node.getOutputParameters().setLabel("Var" + var_index++);
+						node.getOutputParameters().setLabel("Var" + var_index.getNextID());
 						String io_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
 								node.getOutputParameters().getFile_name());
 						inst.add(CPInstructionParser.parseSingleInstruction(io_inst));
@@ -2283,7 +2290,7 @@ public class Dag<N extends Lops> {
 		if (node.getExecLocation() != ExecLocation.Data) {
 			
 			if ( node.get_dataType() == DataType.SCALAR ) {
-				oparams.setLabel("Var"+ var_index++);
+				oparams.setLabel("Var"+ var_index.getNextID());
 				out.setVarName(oparams.getLabel());
 				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
 /*						CPInstructionParser.parseSingleInstruction(
@@ -2295,8 +2302,8 @@ public class Dag<N extends Lops> {
 				// generate temporary filename and a variable name to hold the output produced by "rootNode"
 				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 						   					   Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR + 
-											   "temp" + job_id++);
-				oparams.setLabel("mVar" + var_index++ );
+											   "temp" + job_id.getNextID());
+				oparams.setLabel("mVar" + var_index.getNextID() );
 				
 				
 				// generate an instruction that creates a symbol table entry for the new variable
@@ -2431,7 +2438,7 @@ public class Dag<N extends Lops> {
 						String tempVarName = oparams.getLabel() + "temp";
 						String tempFileName = scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
-								   					    "temp" + job_id++;
+								   					    "temp" + job_id.getNextID();
 						
 						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
@@ -2515,7 +2522,7 @@ public class Dag<N extends Lops> {
 				else {
 					if(et == ExecType.MR) {
 						// create a variable to hold the result produced by this "rootNode"
-						oparams.setLabel("pVar" + var_index++ );
+						oparams.setLabel("pVar" + var_index.getNextID() );
 						
 						//String createInst = prepareVariableInstruction("createvar", node);
 						//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));

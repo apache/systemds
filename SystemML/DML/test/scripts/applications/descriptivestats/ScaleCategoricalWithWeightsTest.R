@@ -1,14 +1,18 @@
-#library("batch")
+# JUnit test class: dml.test.integration.descriptivestats.BivariateScaleCategoricalTest.java
+# command line invocation assuming $SC_HOME is set to the home of the R script
+# Rscript $SC_HOME/ScaleCategorical.R $SC_HOME/in/ $SC_HOME/expected/
+
+args <- commandArgs(TRUE)
+options(digits=22)
+
 library("Matrix")
 # Usage: R --vanilla -args Xfile X < ScaleCategoricalTest.R
 
 #parseCommandArgs()
 ######################
-
-Atemp = readMM(file="$$indir$$A.mtx");
-Ytemp = readMM(file="$$indir$$Y.mtx");
-WM = readMM(file="$$indir$$WM.mtx");
-Helper=matrix(1, 2, 1)
+Atemp = readMM(paste(args[1], "A.mtx", sep=""));
+Ytemp = readMM(paste(args[1], "Y.mtx", sep=""));
+WM = readMM(paste(args[1], "WM.mtx", sep=""));
 
 Yv=rep(Ytemp[,1],WM[,1])
 Av=rep(Atemp[,1],WM[,1])
@@ -17,17 +21,17 @@ W = sum(WM);
 my = sum(Yv)/W;
 varY = var(Yv);
 
-CFreq = as.matrix(table(Av)); 
+CFreqs = as.matrix(table(Av)); 
 CMeans = as.matrix(aggregate(Yv, by=list(Av), "mean")$x);
 CVars = as.matrix(aggregate(Yv, by=list(Av), "var")$x);
 
 # number of categories
-R = nrow(CFreq);
+R = nrow(CFreqs);
 
-Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ));
+Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
 
-anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
-anova_den = sum( (CFreq-1)*CVars )/(W-R);
+anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreqs-1)*CVars )/(W-R);
 ANOVAF = anova_num/anova_den;
 
 print(W, digits=15);
@@ -37,28 +41,17 @@ print(anova_den, digits=15);
 
 #######################
 
-EtaHelper = Eta * Helper;
-writeMM(as(t(EtaHelper),"CsparseMatrix"), "$$Routdir$$outEta", format="text");
-print(EtaHelper, digits=15);
+write(Eta, paste(args[2], "Eta", sep=""));
 
-AnovaFHelper = ANOVAF * Helper;
-writeMM(as(t(AnovaFHelper),"CsparseMatrix"), "$$Routdir$$outAnovaF", format="text");
-print(AnovaFHelper, digits=15);
+write(ANOVAF, paste(args[2], "AnovaF", sep=""));
 
-VarYHelper = varY * Helper;
-writeMM(as(t(VarYHelper),"CsparseMatrix"), "$$Routdir$$outVarY", format="text");
-print(VarYHelper, digits=15);
+write(varY, paste(args[2], "VarY", sep=""));
 
-MeanYHelper = my * Helper;
-writeMM(as(t(MeanYHelper),"CsparseMatrix"), "$$Routdir$$outMeanY", format="text");
-print(MeanYHelper, digits=15);
+write(my, paste(args[2], "MeanY", sep=""));
 
-writeMM(as(CVars,"CsparseMatrix"), "$$Routdir$$outCatVars", format="text");
-writeMM(as(CFreq,"CsparseMatrix"), "$$Routdir$$outCatFreqs", format="text");
-writeMM(as(CMeans,"CsparseMatrix"), "$$Routdir$$outCatMeans", format="text");
+writeMM(as(CVars,"CsparseMatrix"), paste(args[2], "CVars", sep=""), format="text");
+writeMM(as(CFreqs,"CsparseMatrix"), paste(args[2], "CFreqs", sep=""), format="text");
+writeMM(as(CMeans,"CsparseMatrix"), paste(args[2], "CMeans", sep=""), format="text");
 
-print(CVars, digits=15);
-print(CFreq, digits=15);
-print(CMeans, digits=15);
 
 

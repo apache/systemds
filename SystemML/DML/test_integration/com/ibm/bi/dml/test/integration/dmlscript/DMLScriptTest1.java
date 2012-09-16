@@ -48,8 +48,9 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		dmlArgs = new String[]{"-f", baseDirectory + "DMLScriptTest.dml", 
-	               "-args", HOME + INPUT_DIR + "a" ,
+		fullDMLScriptName = baseDirectory + "DMLScriptTest.dml";
+		
+		programArgs = new String[]{"-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
 	                        "text",
@@ -62,7 +63,15 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 
 		runTest(true, false, null, -1);
 
-		dmlArgs = new String[]{"-f", baseDirectory + "DMLScriptTest.dml", "-d",
+		programArgs = new String[]{"-d", "-args", HOME + INPUT_DIR + "a" ,
+	                        Integer.toString(rows),
+	                        Integer.toString(cols),
+	                        "text",
+	                        HOME + OUTPUT_DIR + "a"};
+		runTest(true, false, null, -1);
+		
+		
+		programArgs = new String[]{"-d", "-exec", "hybrid",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -70,15 +79,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 	                        HOME + OUTPUT_DIR + "a"};
 		runTest(true, false, null, -1);
 		
-		dmlArgs = new String[]{"-f", baseDirectory + "DMLScriptTest.dml", "-d", "-exec", "hybrid",
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
-		runTest(true, false, null, -1);
-		
-		dmlArgs = new String[]{"-f", baseDirectory + "DMLScriptTest.dml", "-d", "-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
+		programArgs = new String[]{"-d", "-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -101,7 +102,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
 		
-		dmlArgs = new String[]{"-s", s, 
+		programArgs = new String[]{"-s", s, 
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -115,7 +116,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 
 		runTest(true, false, null, -1);
 		
-		dmlArgs = new String[]{"-s", s, "-d",
+		programArgs = new String[]{"-s", s, "-d",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -123,7 +124,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 	                        HOME + OUTPUT_DIR + "a"};
 		runTest(true, false, null, -1);
 		
-		dmlArgs = new String[]{"-s", s, "-config=" + baseDirectory + "SystemML-config.xml", "-exec", "hybrid", "-d",
+		programArgs = new String[]{"-s", s, "-config=" + baseDirectory + "SystemML-config.xml", "-exec", "hybrid", "-d",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),

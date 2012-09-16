@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -124,6 +125,10 @@ public class ProgramBlock {
 				try {
 					if ( DMLScript.DEBUG ) 
 						printSymbolTable();
+					
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
+						throw new DMLRuntimeException("MapReduce jobs can not be executed when execution mode = singlenode");
+					
 					st = System.currentTimeMillis();
 					MRJobInstruction currMRInst = (MRJobInstruction) currInst;
 					

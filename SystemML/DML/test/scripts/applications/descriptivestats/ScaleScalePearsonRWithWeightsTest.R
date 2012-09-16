@@ -1,4 +1,9 @@
-#library("batch")
+# JUnit test class: dml.test.integration.descriptivestats.CategoricalCategoricalTest.java
+# command line invocation assuming $SS_HOME is set to the home of the R script
+# Rscript $SS_HOME/ScaleScalePearsonRWithWeightsTest.R $SS_HOME/in/ $SS_HOME/expected/
+args <- commandArgs(TRUE)
+options(digits=22)
+
 library("Matrix")
 library("boot")
 # Usage: R --vanilla -args Xfile X < ScaleScaleTest.R
@@ -6,10 +11,9 @@ library("boot")
 #parseCommandArgs()
 ######################
 
-X = readMM(file="$$indir$$X.mtx")
-Y = readMM(file="$$indir$$Y.mtx")
-WM = readMM(file="$$indir$$WM.mtx")
-Helper=matrix(1, 2, 1)
+X = readMM(paste(args[1], "X.mtx", sep=""))
+Y = readMM(paste(args[1], "Y.mtx", sep=""))
+WM = readMM(paste(args[1],"WM.mtx", sep=""))
 
 # create a matrix from X and Y vectors
 mat = cbind(X[,1], Y[,1]);
@@ -17,5 +21,4 @@ mat = cbind(X[,1], Y[,1]);
 # corr is a function in "boot" package
 R = corr(mat, WM[,1]);
 
-RHelper = R * Helper;
-writeMM(as(t(RHelper),"CsparseMatrix"), "$$Routdir$$outPearsonR", format="text");
+write(R, paste(args[2], "PearsonR", sep=""));

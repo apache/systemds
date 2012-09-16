@@ -1,13 +1,17 @@
-$$readhelper$$
-
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script CategoricalCategorical.dml?
+# Assume CC_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for both A and B
+# hadoop jar SystemML.jar -f $CC_HOME/CategoricalCategoricalWithWeightsTest.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$INPUT_DIR/WM" "$OUPUT_DIR/PValue" "$OUTPUT_DIR/CramersV"
 
 # A <- nominal 
 # B <- nominal 
 # WM <- weights
 
-A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
-B = read("$$indir$$B", rows=$$rows$$, cols=1, format="text");
-WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+A = read($1, rows=$2, cols=1, format="text");
+B = read($3, rows=$2, cols=1, format="text");
+WM = read($4, rows=$2, cols=1, format="text");
 
 # Contingency Table
 F = ctable(A,B,WM);
@@ -30,9 +34,6 @@ C = ncol(F);
 q = min(R,C);
 cramers_v = sqrt(chi_squared/(W*(q-1)));
 
-PValueHelper = pValue * Helper;
-write(PValueHelper, "$$outdir$$outPValue", format="text");
-
-CramersVHelper = cramers_v * Helper;
-write(CramersVHelper, "$$outdir$$outCramersV", format="text");
+write(pValue, $5);
+write(cramers_v, $6);
 

@@ -1,43 +1,44 @@
-$$readhelper$$
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script ScaleCategorical.dml?
+# Assume SC_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for A and Y, A is categorical variable and Y is scale variable
+# hadoop jar SystemML.jar -f $SC_HOME/ScaleCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/Y" "$INPUT_DIR/WM" 
+#         "$OUPUT_DIR/VarY" "$OUTPUT_DIR/MeanY" "$OUTPUT_DIR/CFreqs" "$OUTPUT_DIR/CMeans" "$OUTPUT_DIR/CVars" 
+#         "$OUTPUT_DIR/Eta", "$OUTPUT_DIR/AnovaF"
 
 #A <- nominal variable
 #Y <- scale variable
 #WM <- weights
 
-A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
-Y = read("$$indir$$Y", rows=$$rows$$, cols=1, format="text");
-WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+A = read($1, rows=$2, cols=1, format="text");
+Y = read($3, rows=$2, cols=1, format="text");
+WM = read($4, rows=$2, cols=1, format="text");
 
 W = sum(WM);
 my = sum(Y*WM)/W
 varY = centralMoment(Y,WM,2) * W/(W-1.0)
 
-CFreq = groupedAggregate(target=WM, groups=A, fn="sum");
+CFreqs = groupedAggregate(target=WM, groups=A, fn="sum");
 CMeans = groupedAggregate(target=Y, groups=A, weights=WM, fn="mean");
 CVars = groupedAggregate(target=Y, groups=A, weights=WM, fn="variance");
 
 # number of categories
-R = nrow(CFreq);
+R = nrow(CFreqs);
 
-Eta = sqrt(1 - ( sum((CFreq-1)*CVars) / ((W-1)*varY) ));
+Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
 
-anova_num = sum( (CFreq*(CMeans-my)^2) )/(R-1);
-anova_den = sum( (CFreq-1)*CVars )/(W-R);
+anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreqs-1)*CVars )/(W-R);
 ANOVAF = anova_num/anova_den;
 
 # output required statistics
-varYHelper = varY * Helper;
-write(varYHelper, "$$outdir$$outVarY", format="text");
+write(varY, $5);
+write(my, $6);
 
-myHelper = my * Helper;
-write(myHelper, "$$outdir$$outMeanY", format="text");
+write(CFreqs, $7, format="text");
+write(CMeans, $8, format="text");
+write(CVars, $9, format="text");
 
-write(CFreq, "$$outdir$$outCatFreqs", format="text");
-write(CMeans, "$$outdir$$outCatMeans", format="text");
-write(CVars, "$$outdir$$outCatVars", format="text");
-
-EtaHelper = Eta * Helper;
-write(EtaHelper, "$$outdir$$outEta", format="text");
-
-AnovaFHelper = ANOVAF * Helper;
-write(AnovaFHelper, "$$outdir$$outAnovaF", format="text");
+write(Eta, $10);
+write(ANOVAF, $11);

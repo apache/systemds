@@ -1,8 +1,18 @@
-$$readhelper$$
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this dml script Scale.dml?
+# Assume S_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for V and rows = 5 for P
+# hadoop jar SystemML.jar -f $S_HOME/Scale.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/weight "$INPUT_DIR/prob 5
+# "$OUTPUT_DIR/mean" "$OUTPUT_DIR/std" "$OUTPUT_DIR/se" "$OUTPUT_DIR/var" "$OUTPUT_DIR/cv"
+# "$OUTPUT_DIR/min" "$OUTPUT_DIR/max" "$OUTPUT_DIR/rng" 
+# "$OUTPUT_DIR/g1" "$OUTPUT_DIR/se_g1" "$OUTPUT_DIR/g2" "$OUTPUT_DIR/se_g2" 
+# "$OUTPUT_DIR/median" "$OUTPUT_DIR/iqm"
+# "OUTPUT_DIR/out_minus" "$OUTPUT_DIR/out_plus" "$OUTPUT_DIR/quantile" 
 
-V = read("$$indir$$vector", rows=$$rows1$$, cols=1, format="text")
-W = read("$$indir$$weight", rows=$$rows1$$, cols=1, format="text")
-P = read("$$indir$$prob", rows=$$rows2$$, cols=1, format="text")
+V = read($1, rows=$2, cols=1, format="text")
+W = read($3, rows=$2, cols=1, format="text")
+P = read($4, rows=$5, cols=1, format="text")
 
 W = round(W)
 
@@ -75,39 +85,20 @@ Q = quantile(V, W, P)
 # inter-quartile mean
 iqm = interQuartileMean(V, W)
 
-meanHelper=mu*Helper
-stdHelper=std_dev*Helper
-SEHelper=SE*Helper
-varHelper=var*Helper
-cvHelper=cv*Helper
-#harHelper=har_mu*Helper
-#geomHelper=geom_mu*Helper
-minHelper=mn*Helper
-maxHelper=mx*Helper
-rngHelper=rng*Helper
-g1Helper=g1*Helper
-se_g1Helper=se_g1*Helper
-g2Helper=g2*Helper
-se_g2Helper=se_g2*Helper
-medianHelper1 = md * Helper
-iqmHelper = iqm * Helper
-
-write(meanHelper, "$$outdir$$mean_weight", format="text");
-write(stdHelper, "$$outdir$$std_weight", format="text");
-write(SEHelper, "$$outdir$$se_weight", format="text");
-write(varHelper, "$$outdir$$var_weight", format="text");
-write(cvHelper, "$$outdir$$cv_weight", format="text");
-#write(harHelper, "$$outdir$$har_weight", format="text");
-#write(geomHelper, "$$outdir$$geom_weight", format="text");
-write(minHelper, "$$outdir$$min_weight", format="text");
-write(maxHelper, "$$outdir$$max_weight", format="text");
-write(rngHelper, "$$outdir$$rng_weight", format="text");
-write(g1Helper, "$$outdir$$g1_weight", format="text");
-write(se_g1Helper, "$$outdir$$se_g1_weight", format="text");
-write(g2Helper, "$$outdir$$g2_weight", format="text");
-write(se_g2Helper, "$$outdir$$se_g2_weight", format="text");
-write(out_minus, "$$outdir$$out_minus_weight", format="text");
-write(out_plus, "$$outdir$$out_plus_weight", format="text");
-write(medianHelper1, "$$outdir$$median_weight", format="text");
-write(Q, "$$outdir$$quantile_weight", format="text");
-write(iqmHelper, "$$outdir$$iqm_weight", format="text");
+write(mu, $6);
+write(std_dev, $7);
+write(SE, $8);
+write(var, $9);
+write(cv, $10);
+write(mn, $11);
+write(mx, $12);
+write(rng, $13);
+write(g1, $14);
+write(se_g1, $15);
+write(g2, $16);
+write(se_g2, $17);
+write(md, $18);
+write(iqm, $19);
+write(out_minus, $20, format="text");
+write(out_plus, $21, format="text");
+write(Q, $22, format="text");

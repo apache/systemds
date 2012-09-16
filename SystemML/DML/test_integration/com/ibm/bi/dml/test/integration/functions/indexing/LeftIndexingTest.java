@@ -46,38 +46,24 @@ public class LeftIndexingTest extends AutomatedTestBase{
         config.addVariable("colend", colend);
         
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String C_HOME = SCRIPT_DIR + TEST_DIR;	
-		dmlArgs = new String[]{"-f", C_HOME + "LeftIndexingTest" + ".dml",
-	               "-args",  C_HOME + INPUT_DIR + "A" , 
+		String LI_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = LI_HOME + "LeftIndexingTest" + ".dml";
+		programArgs = new String[]{"-args",  LI_HOME + INPUT_DIR + "A" , 
 	               			Long.toString(rows), Long.toString(cols),
 	                        Long.toString(rowstart), Long.toString(rowend),
 	                        Long.toString(colstart), Long.toString(colend),
-	                        C_HOME + OUTPUT_DIR + "AB" , 
-	                         C_HOME + OUTPUT_DIR + "AC" , 
-	                         C_HOME + OUTPUT_DIR + "AD",
-	                         C_HOME + INPUT_DIR + "B" , 
-	                         C_HOME + INPUT_DIR + "C" , 
-	                         C_HOME + INPUT_DIR + "D",
+	                        LI_HOME + OUTPUT_DIR + "AB" , 
+	                         LI_HOME + OUTPUT_DIR + "AC" , 
+	                         LI_HOME + OUTPUT_DIR + "AD",
+	                         LI_HOME + INPUT_DIR + "B" , 
+	                         LI_HOME + INPUT_DIR + "C" , 
+	                         LI_HOME + INPUT_DIR + "D",
 	                         Long.toString(rowend-rowstart+1), 
 	                         Long.toString(colend-colstart+1),
 		                     Long.toString(cols-colstart+1)};
-		dmlArgsDebug = new String[]{"-f", C_HOME + "LeftIndexingTest" + ".dml", "-d", "-v",
-				 "-args",  C_HOME + INPUT_DIR + "A" , 
-		        			Long.toString(rows), Long.toString(cols),
-			                 Long.toString(rowstart), Long.toString(rowend),
-			                 Long.toString(colstart), Long.toString(colend),
-			                 C_HOME + OUTPUT_DIR + "AB" , 
-	                         C_HOME + OUTPUT_DIR + "AC" , 
-	                         C_HOME + OUTPUT_DIR + "AD",
-			                  C_HOME + INPUT_DIR + "B" , 
-			                  C_HOME + INPUT_DIR + "C" , 
-			                  C_HOME + INPUT_DIR + "D",
-			                  Long.toString(rowend-rowstart+1), 
-	                         Long.toString(colend-colstart+1),
-		                     Long.toString(cols-colstart+1)
-		                     };
-		rCmd = "Rscript" + " " + C_HOME + "LeftIndexingTest" + ".R" + " " + 
-		       C_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + C_HOME + EXPECTED_DIR;
+		fullRScriptName = LI_HOME + "LeftIndexingTest" + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
+		       LI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + LI_HOME + EXPECTED_DIR;
 
 		loadTestConfiguration(config);
 		double sparsity=rand.nextDouble();

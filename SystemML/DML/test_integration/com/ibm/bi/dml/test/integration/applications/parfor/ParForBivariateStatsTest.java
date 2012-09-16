@@ -108,8 +108,8 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", HOME + TEST_NAME +scriptNum + ".dml", //"-exec", "singlenode",
-				               "-args", HOME + INPUT_DIR + "D" ,
+		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
+		programArgs = new String[]{"-args", HOME + INPUT_DIR + "D" ,
 				                        HOME + INPUT_DIR + "S1" ,
 				                        HOME + INPUT_DIR + "S2" ,
 				                        HOME + INPUT_DIR + "K1" ,
@@ -121,20 +121,8 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 				                        Integer.toString(cols2*cols2),
 				                        Integer.toString((int)maxVal)
 				                         };
-		dmlArgsDebug = new String[]{"-f", HOME + TEST_NAME + scriptNum + ".dml", "-d",
-					               "-args", HOME + INPUT_DIR + "D" ,
-					                        HOME + INPUT_DIR + "S1" ,
-					                        HOME + INPUT_DIR + "S2" ,
-					                        HOME + INPUT_DIR + "K1" ,
-					                        HOME + INPUT_DIR + "K2" ,
-					                        HOME + OUTPUT_DIR + "bivarstats",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        Integer.toString(cols2),
-					                        Integer.toString(cols2*cols2),
-					                        Integer.toString((int)maxVal) };
-				
-		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".R" + " " + 
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

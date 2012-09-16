@@ -25,56 +25,11 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_SCALE, 
-				new TestConfiguration(TEST_DIR, TEST_SCALE_SCALE, 
-						new String[] { "PearsonR"+".scalar" }));
-		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(TEST_DIR, "ScaleScalePearsonRWithWeightsTest", new String[] { "outPearsonR" }));
-	}
-	
-	@Deprecated
-	double computePearsonR(double [][]x, double [][]y, double [][]w, int rows) {
-		double xsum=0.0, ysum=0.0, wsum=0.0;
-		
-		boolean weights = (w != null);
-		
-		for (int i=0; i < rows; i++) {
-			if ( weights ) {
-				xsum += (x[i][0]*w[i][0]);
-				ysum += (y[i][0]*w[i][0]);
-				wsum += w[i][0];
-			}
-			else {
-				xsum += x[i][0];
-				ysum += y[i][0];
-				wsum++;
-			}
-		}
-		
-		double xbar = xsum/wsum;
-		double ybar = ysum/wsum;
-		
-		double xdiff=0.0, ydiff=0.0, xydiff=0.0;
-		
-		for ( int i=0; i < rows; i++ ) {
-			if ( weights ) {
-				xdiff += Math.pow(x[i][0]-xbar, 2)*w[i][0];
-				ydiff += Math.pow(y[i][0]-ybar, 2)*w[i][0];
-				xydiff += (x[i][0]-xbar)*(y[i][0]-ybar)*w[i][0];
-			}
-			else {
-				xdiff += Math.pow(x[i][0]-xbar, 2);
-				ydiff += Math.pow(y[i][0]-ybar, 2);
-				xydiff += (x[i][0]-xbar)*(y[i][0]-ybar);
-			}
-		}
-		
-		double sigmax = Math.sqrt(xdiff/(wsum-1));
-		double sigmay = Math.sqrt(ydiff/(wsum-1));
-		double covxy = xydiff/(wsum-1);
-		
-		double R = covxy / (sigmax * sigmay);
-		
-		return R;
+		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_DIR,
+				TEST_SCALE_SCALE, new String[] { "PearsonR" + ".scalar" }));
+		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(
+				TEST_DIR, "ScaleScalePearsonRWithWeightsTest",
+				new String[] { "PearsonR" + ".scalar" }));
 	}
 	
 	@Test
@@ -86,16 +41,12 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String SS_HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml",
-				               "-args",  SS_HOME + INPUT_DIR + "X" , 
+		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE + ".dml";
+		programArgs = new String[]{"-args",  SS_HOME + INPUT_DIR + "X" , 
 				                        Integer.toString(rows),
 				                         SS_HOME + INPUT_DIR + "Y" , 
 				                         SS_HOME + OUTPUT_DIR + "PearsonR" };
-		dmlArgsDebug = new String[]{"-f", SS_HOME + TEST_SCALE_SCALE + ".dml", "-d",
-	               "-args",  SS_HOME + INPUT_DIR + "X" , 
-	                        Integer.toString(rows),
-	                         SS_HOME + INPUT_DIR + "Y" , 
-	                         SS_HOME + OUTPUT_DIR + "PearsonR" };
+		fullRScriptName = SS_HOME + TEST_SCALE_SCALE + ".R";
 		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE + ".R" + " " + 
 		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
 		
@@ -147,6 +98,18 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		
 		config.addVariable("rows", rows);
 
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String SS_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".dml";
+		programArgs = new String[]{"-args",  SS_HOME + INPUT_DIR + "X" , 
+				                        Integer.toString(rows),
+				                         SS_HOME + INPUT_DIR + "Y" , 
+				                         SS_HOME + INPUT_DIR + "WM" , 
+				                         SS_HOME + OUTPUT_DIR + "PearsonR" };
+		fullRScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R";
+		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R" + " " + 
+		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
+
 		loadTestConfiguration(config);
 
 		//long seed = System.currentTimeMillis();
@@ -161,12 +124,6 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		writeInputMatrix("WM", WM, true);
         createHelperMatrix();
 		
-		/*
-        double PearsonR = 0.0;
-		PearsonR = computePearsonR(X,Y, WM, rows);
-        writeExpectedHelperMatrix("outPearsonR", PearsonR);
-		*/
-        
 		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
@@ -174,14 +131,24 @@ public class BivariateScaleScaleTest extends AutomatedTestBase {
 		 * Cov etc - 2 jobs
 		 * Final output write - 1 job
 		 */
-		int expectedNumberOfJobs = 6;
-		runTest(exceptionExpected, null, expectedNumberOfJobs);
-		runRScript();
+		//int expectedNumberOfJobs = 6;
+		runTest(true, exceptionExpected, null, -1);
+		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
 

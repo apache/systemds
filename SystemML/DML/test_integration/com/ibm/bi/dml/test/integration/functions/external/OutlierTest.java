@@ -32,12 +32,8 @@ public class OutlierTest extends AutomatedTestBase {
 
 		/* This is for running the junit test by constructing the arguments directly */
 		String OUTLIER_HOME = baseDirectory;
-		dmlArgs = new String[]{"-f", OUTLIER_HOME + TEST_OUTLIER + ".dml",
-				"-args",  OUTLIER_HOME + INPUT_DIR + "M" , 
-				Integer.toString(rows), Integer.toString(cols), 
-				 OUTLIER_HOME + OUTPUT_DIR + "o" };
-		dmlArgsDebug = new String[]{"-f", OUTLIER_HOME + TEST_OUTLIER + ".dml", "-d", 
-				"-args",  OUTLIER_HOME + INPUT_DIR + "M" , 
+		fullDMLScriptName = OUTLIER_HOME + TEST_OUTLIER + ".dml";
+		programArgs = new String[]{"-args",  OUTLIER_HOME + INPUT_DIR + "M" , 
 				Integer.toString(rows), Integer.toString(cols), 
 				 OUTLIER_HOME + OUTPUT_DIR + "o" };
 

@@ -37,19 +37,14 @@ public class HITSTest extends AutomatedTestBase {
 
 		/* This is for running the junit test by constructing the arguments directly */
 		String HITS_HOME = SCRIPT_DIR + TEST_DIR;
-		dmlArgs = new String[]{"-f", HITS_HOME + TEST_HITS + ".dml",
-				               "-args",  HITS_HOME + INPUT_DIR + "G" ,
+		fullDMLScriptName = HITS_HOME + TEST_HITS + ".dml";
+		programArgs = new String[]{"-args",  HITS_HOME + INPUT_DIR + "G" ,
 				                        Integer.toString(maxiter), Integer.toString(rows), Integer.toString(cols),
 				                        Double.toString(Math.pow(10, -6)),
 				                         HITS_HOME + OUTPUT_DIR + "hubs" , 
 				                         HITS_HOME + OUTPUT_DIR + "authorities" };
-		dmlArgsDebug = new String[]{"-f", HITS_HOME + TEST_HITS + ".dml", "-d",
-							   "-args",  HITS_HOME + INPUT_DIR + "G" , 
-                                        Integer.toString(maxiter), Integer.toString(rows), Integer.toString(cols),
-                                        Double.toString(Math.pow(10, -6)),
-                                         HITS_HOME + OUTPUT_DIR + "hubs" , 
-                                         HITS_HOME + OUTPUT_DIR + "authorities" };
-		rCmd = "Rscript" + " " + HITS_HOME + TEST_HITS + ".R" + " " + 
+		fullRScriptName = HITS_HOME + TEST_HITS + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HITS_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + Double.toString(Math.pow(10, -6))+ " " + HITS_HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

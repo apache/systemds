@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="com/ibm/bi/dml/api/JaqlUdf.java|dml/packagesupport/EigenWrapper.java" kind="src" path="src"/>
+	<classpathentry excluding="com/ibm/bi/dml/api/JaqlUdf.java|dml/packagesupport/EigenWrapper.java|com/ibm/bi/dml/packagesupport/LinearSolverWrapperCP.java|com/ibm/bi/dml/packagesupport/EigenWrapper.java" kind="src" path="src"/>
 	<classpathentry excluding="scripts/" kind="src" path="test"/>
 	<classpathentry excluding="com/ibm/bi/dml/test/integration/functions/external/EigenTest.java" kind="src" path="test_integration"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>

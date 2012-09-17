@@ -85,7 +85,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				if ( dat.getDataType() == DataType.MATRIX ) {
 					MatrixObjectNew inputObj = (MatrixObjectNew) dat;
 					//System.out.println("exporting "+inputObj.getFileName());
-					inputObj.exportData(); //TODO maybe once in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
+					inputObj.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
 				}
 				
 				//pass output vars (scalars by value, matrix by ref) to result
@@ -151,9 +151,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
-				//init local cache manager TODO
-				//if( !CacheableData.isCachingActive() ) 
-				//	throw new RuntimeException("Caching not active."); 
+				//init local cache manager 
+				if( !CacheableData.isCachingActive() ) 
+					CacheableData.initCaching(); //incl activation
 				
 				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
 				{

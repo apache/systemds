@@ -16,14 +16,14 @@ public class RandN {
 	boolean flag = false; // we use pair.N1 if flag=false, and pair.N2 otherwise
 	
 	public RandN(long s) {
-		init(s, new Random(s));
+		init(new Random(s));
 	}
 	
-	public RandN(long s, Random random) {
-		init(s, random);
+	public RandN(Random random) {
+		init(random);
 	}
 	
-	private void init(long s, Random random) {
+	private void init(Random random) {
 		//seed = s;
 		r = random;
 		pair = new RandNPair();

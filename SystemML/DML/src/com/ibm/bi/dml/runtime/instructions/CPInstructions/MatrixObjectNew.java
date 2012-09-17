@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
 import com.ibm.bi.dml.utils.CacheStatusException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -567,10 +569,10 @@ public class MatrixObjectNew extends CacheableData
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {
 			_hdfsFileExists = true;
-			pWrite = false; // i.e., export is called from "write" instruction
+			pWrite = false;
 		}
 		else {
-			pWrite = true;
+			pWrite = true;  // i.e., export is called from "write" instruction
 		}
 
 		//actual export
@@ -1129,7 +1131,15 @@ public class MatrixObjectNew extends CacheableData
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
 					                                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-			DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+			
+			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
+					(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			}
+			else {
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+			}
 
 			if (DMLScript.DEBUG) 
 			{
@@ -1170,9 +1180,16 @@ public class MatrixObjectNew extends CacheableData
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
+			
 			// Write the matrix to HDFS in requested format			
 			OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
                     : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+			
+			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
+					(mc.get_rows_per_block() != DMLConfig.DEFAULT_BLOCK_SIZE || mc.get_cols_per_block() != DMLConfig.DEFAULT_BLOCK_SIZE) ) {
+				mc = new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLConfig.DEFAULT_BLOCK_SIZE, DMLConfig.DEFAULT_BLOCK_SIZE, mc.getNonZeros());
+			}
 			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo);
 		}
 	}

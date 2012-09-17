@@ -3909,8 +3909,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 
 		double val;
-		Random random=new Random(System.currentTimeMillis()); // for checking sparsity
 		Random ru = new Random(seed); // for actual values
+		Random random=new Random(ru.nextLong()); // for checking sparsity
 		double range = max - min;
 
 		if ( sparse ) {
@@ -3967,11 +3967,12 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.reset(rows, cols, sparse);
 
 		double val;
-		Random random=new Random(System.currentTimeMillis());
+		Random ru = new Random(seed); // for generating actual values, // uniform generator, used internally within RandNPair 
+		Random random=new Random(ru.nextLong()); // for checking the sparsity
 		
 		if ( sparse ) {
 			// sparse representation
-			RandN rn = new RandN(seed);
+			RandN rn = new RandN(ru);
 			this.sparseRows=new SparseRow[rows];
 			for(int i=0; i<rows; i++) {
 				this.sparseRows[i]=new SparseRow();	
@@ -3989,7 +3990,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if ( sparsity == 1.0 ) {
 				// special handling for the case sparsity=1.0, for better efficiency
 				
-				Random ru = new Random(seed); // uniform generator, used internally within RandNPair 
+				//Random ru = new Random(seed); // uniform generator, used internally within RandNPair 
 				RandNPair pair = new RandNPair();
 				int index = 0;
 				while ( index < rows*cols ) {

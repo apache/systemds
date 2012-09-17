@@ -196,7 +196,7 @@ public abstract class CacheableData extends Data
 	/**
 	 * Creates the DML-script-specific caching working dir.
 	 */
-	public synchronized static void createCacheDir()
+	public synchronized static void initCaching()
 	{
 		//get directory name
 		String dir = null;
@@ -220,7 +220,9 @@ public abstract class CacheableData extends Data
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				new File(dir).mkdirs();
+				File fdir = new File(dir);
+				if( !fdir.exists() )
+					fdir.mkdirs();
 				break;
 			case HDFS:
 				//do nothing (create on the fly)

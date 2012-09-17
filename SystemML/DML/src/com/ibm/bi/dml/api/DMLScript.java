@@ -71,7 +71,7 @@ public class DMLScript {
 	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
 	// We should assume the default value is HYBRID
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
-	public static final String _uuid = IDHandler.createDistributedUniqueID(); 
+	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
 	private String _dmlScriptString;
 	// stores name of the OPTIONAL config file
@@ -707,8 +707,7 @@ public class DMLScript {
 		Statistics.startRunTimer();		
 		try 
 		{   
-			//init caching
-			CacheableData.createCacheDir();
+			initHadoopExecution();
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute (new LocalVariableMap (), null);  
@@ -734,25 +733,50 @@ public class DMLScript {
 			if(rtprog.getDAGQueue() != null)
 		  	    rtprog.getDAGQueue().forceShutDown();
 			
-			//cleanup scratch space (everything for current uuid) 
-			//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
-			MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE)+
-					                               Lops.FILE_SEPARATOR+Lops.PROCESS_PREFIX+DMLScript.getUUID()  );
-			//cleanup working dirs (hadoop, cache)
-			MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) //TODO: check if this is required at all
-		                                           Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
-			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
-                                                   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
-			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
-                                                   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
-			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
-                    							   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()  );
-			CacheableData.cleanupCacheDir();
-			DataPartitionerLocal.cleanupWorkingDirectory();
-			ResultMergeLocalFile.cleanupWorkingDirectory();
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution( config );
 		}
 	} // end executeHadoop
 
+	/**
+	 * 
+	 */
+	private static void initHadoopExecution()
+	{
+		//init caching (incl set active)
+		CacheableData.initCaching();
+		
+		//reset statistics (required if multiple scripts executed in one JVM)
+		Statistics.setNoOfExecutedMRJobs( 0 );
+	}
+	
+	private static void cleanupHadoopExecution( DMLConfig config ) 
+		throws IOException, ParseException
+	{
+		//create dml-script-specific suffix
+		StringBuilder sb = new StringBuilder();
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		String dirSuffix = sb.toString();
+		
+		//cleanup scratch space (everything for current uuid) 
+		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
+		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
+		//cleanup working dirs (hadoop, cache)
+		MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
+			                                   dirSuffix  );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+				                               dirSuffix  );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+                                               dirSuffix );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+											   dirSuffix  );
+		CacheableData.cleanupCacheDir();
+		DataPartitionerLocal.cleanupWorkingDirectory();
+		ResultMergeLocalFile.cleanupWorkingDirectory();
+	}
+	
 	
 	/**
 	 * executeNetezza: handles execution on Netezza runtime
@@ -947,12 +971,17 @@ public class DMLScript {
 		return _uuid;
 	}
 
-	/* TODO MB: decide if master UUID should be used for all nodes
-	 * if yes, this is required.
+	
+	/**
+	 * Used to set master UUID on all nodes (in parfor remote_mr, where DMLScript passed) 
+	 * in order to simplify cleanup of scratch_space and local working dirs.
+	 * 
+	 * @param uuid
+	 */
 	public static void setUUID(String uuid) 
 	{
 		_uuid = uuid;
 	}
-	*/
+	
 	
 }  ///~ end class

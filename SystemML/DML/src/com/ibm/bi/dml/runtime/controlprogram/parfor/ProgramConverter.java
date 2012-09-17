@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -528,13 +529,10 @@ public class ProgramConverter
 		sb.append( PARFORBODY_BEGIN );
 		sb.append( NEWLINE );
 		
-		/* TODO MB: decide if master UUID should be used for all nodes
-		 * if yes, this is required.
 		//handle DMLScript UUID
 		sb.append( DMLScript.getUUID() );
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );		
-		*/
 		
 		//handle DML config
 		sb.append( ConfigurationManager.getConfig().serializeDMLConfig() );
@@ -1120,11 +1118,9 @@ public class ProgramConverter
 		tmpin = tmpin.substring(PARFORBODY_BEGIN.length(),tmpin.length()-PARFORBODY_END.length()); //remove start/end
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(tmpin, COMPONENTS_DELIM);
 		
-		/* TODO MB: decide if master UUID should be used for all nodes
-		 * if yes, this is required.
 		//handle DMLScript UUID (NOTE: set directly in DMLScript)
+		//(master UUID is used for all nodes (in order to simply cleanup))
 		DMLScript.setUUID( st.nextToken() );
-		*/
 		
 		//handle DML config (NOTE: set directly in ConfigurationManager)
 		String confStr = st.nextToken();

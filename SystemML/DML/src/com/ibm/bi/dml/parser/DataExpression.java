@@ -221,7 +221,12 @@ public class DataExpression extends Expression {
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
 				
+				// set data type
 		        _output.setDataType(DataType.MATRIX);
+		        
+		        // set number non-zeros
+		        long nnz = new Long(this.getVarParam("nnz").toString());
+		        _output.setNnz(nnz);
 				
 		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
@@ -279,10 +284,13 @@ public class DataExpression extends Expression {
 				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))
 						|| (format == 2 && (_output.getRowsInBlock() != DMLTranslator.DMLBlockSize || _output.getColumnsInBlock() != DMLTranslator.DMLBlockSize)))
 					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+			
+			
 			}
 			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
 				_output.setDataType(DataType.SCALAR);
+				_output.setNnz(-1L);
 			}
 			
 			else{		

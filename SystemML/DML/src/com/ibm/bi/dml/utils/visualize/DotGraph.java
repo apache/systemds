@@ -25,7 +25,7 @@ public class DotGraph {
 	void visualize(String content, String title, int x, int y, String basePath, boolean draw_graph) {
 		String osname = System.getProperty("os.name"); 
 		if (osname.contains("Windows")) {
-			printGraphString(content, title);
+			//printGraphString(content, title);
 			if ( draw_graph ) {
 				Graph graph = GrappaSupport.filterGraph(content, basePath);
 				DAGFrame dagFrame = new DAGFrame(graph, title, x, y);
@@ -34,7 +34,7 @@ public class DotGraph {
 		}
 		else {
 			System.out.println("Warning: Can not visualize the graph on current OS (" + osname + "). Displaying the graph in text format.");
-			printGraphString(content, title);
+			//printGraphString(content, title);
 		}
 	}
 

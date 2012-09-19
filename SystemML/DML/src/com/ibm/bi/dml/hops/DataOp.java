@@ -416,20 +416,36 @@ public class DataOp extends Hops {
 	@Override
 	public double computeMemEstimate() {
 		
-		if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
-			if ( getNnz() > 0 ) {
-				_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
-			}
-			else {
-				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEFAULT_SPARSITY);
+		if ( get_dataType() == DataType.SCALAR ) {
+			switch(this.get_valueType()) {
+			case INT:
+				_outputMemEstimate = OptimizerUtils.INT_SIZE; break;
+			case DOUBLE:
+				_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE; break;
+			case BOOLEAN:
+				_outputMemEstimate = OptimizerUtils.BOOLEAN_SIZE; break;
+			case STRING: 
+				// by default, it estimates the size of string[100]
+				_outputMemEstimate = 100 * OptimizerUtils.CHAR_SIZE; break;
+			case OBJECT:
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE; break;
 			}
 		}
 		else {
-			// memory estimate is not required for "write" nodes
-			// as a placeholder, we simply use input's estimate
-			_outputMemEstimate = 0;
+			if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
+				if ( getNnz() > 0 ) {
+					_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+				}
+				else {
+					_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEF_SPARSITY);
+				}
+			}
+			else {
+				// memory estimate is not required for "write" nodes
+				// as a placeholder, we simply use input's estimate
+				_outputMemEstimate = 0;
+			}
 		}
-		
 		_memEstimate = getInputOutputSize();
 		
 		return _memEstimate;

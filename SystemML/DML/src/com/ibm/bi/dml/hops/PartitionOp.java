@@ -20,7 +20,6 @@ public class PartitionOp extends Hops {
 		input.getParent().add(this) ;
 		
 		this.pp = pp ;
-		computeMemEstimate();
 	}
 
 	@Override

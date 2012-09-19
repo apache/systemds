@@ -32,6 +32,8 @@ import org.nimble.control.PMLDriver;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -45,6 +47,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -641,10 +644,20 @@ public class DMLScript {
 	 */
 	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, BufferedWriter out) throws ParseException, IOException, DMLException{
 		
+		if (DEBUG) {
+			System.out.println("********************** OPTIMIZER *******************");
+			System.out.println("Type = " + OptimizerUtils.getOptType());
+			System.out.println("Mode = " + OptimizerUtils.getOptMode());
+			System.out.println("Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB");
+			System.out.println("Memory Budget = " + ((double)Hops.getMemBudget(true)/1024/1024) + " MB");
+			System.out.println("Defaults: mem util " + OptimizerUtils.MEM_UTIL_FACTOR + ", sparsity " + OptimizerUtils.DEF_SPARSITY + ", def mem " +  + OptimizerUtils.DEF_MEM_FACTOR );
+		}
+		
 		/////////////////////// construct the lops ///////////////////////////////////
 		dmlt.constructLops(prog);
 
 		if (DEBUG) {
+			System.out.println("***************************************************");
 			System.out.println("********************** LOPS DAG *******************");
 			dmlt.printLops(prog);
 			dmlt.resetLopsDAGVisitStatus(prog);

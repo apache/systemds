@@ -267,7 +267,7 @@ public class AggUnaryOp extends Hops {
 			if (dimsKnown()) {
 				Hops input = getInput().get(0);
 				double inputSparsity = input.getSparsity();
-				double outputSparsity = OptimizerUtils.DEFAULT_SPARSITY;
+				double outputSparsity = OptimizerUtils.DEF_SPARSITY;
 				
 				if ( _direction == Direction.Col )
 					outputSparsity = inputSparsity * input.get_dim2();

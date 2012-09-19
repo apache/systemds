@@ -1279,6 +1279,17 @@ public class DMLTranslator {
 			}
 		}
 		
+		// Verify: Sanity Check
+		boolean checkFlag = true;
+		if (hopsDAG != null && hopsDAG.size() > 0) {
+			for (Hops h : hopsDAG) {
+				checkFlag = checkFlag && h.checkEstimates();
+			}
+		}
+		if ( checkFlag == false) {
+			throw new HopsException("Memory estimate for one or more Hops is not computed!!");
+		}
+		
 		if (current instanceof FunctionStatementBlock) {
 			
 			FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);

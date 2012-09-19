@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.hops;
 
+import java.text.DecimalFormat;
+
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
@@ -19,7 +21,7 @@ public class OptimizerUtils {
 	 *
 	 */
 	public enum OptimizationType { STATIC, MEMORY_BASED };
-	private static OptimizationType _optType = OptimizationType.STATIC;
+	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
 	public static OptimizationType getOptType() {
 		return _optType;
 	}
@@ -42,30 +44,19 @@ public class OptimizerUtils {
 	}
 	
 	/**
-	 * Constants used in estimating the memory footprint for hops
+	 * Optimization Constants
 	 */
 	
 	// Utilization factor used in deciding whether an operation to be scheduled on CP or MR. 
 	public static final double MEM_UTIL_FACTOR = 0.7d;
-	
-	// Used in determining the size of default memory estimates -- applicable only for AGGRESSIVE optimization. 
-	public static final double DEF_MEM_FACTOR = 0.25d; 
-
-	// size of native scalars
-	public static final long DOUBLE_SIZE = 8;
-	public static final long INT_SIZE = 4;
-	public static final long CHAR_SIZE = 1;
-	public static final long BOOLEAN_SIZE = 1;
-
-	// used when result sparsity can not be estimated, as per uniform distribution of non-zeros
-	public static final double DEFAULT_SPARSITY = 0.1d;
 	
 	/*
 	 * Default memory size, which is used the actual estimate can not be computed 
 	 * -- for example, when input/output dimensions are unknown. In case of ROBUST,
 	 * the default is set to a large value so that operations are scheduled on MR.  
 	 */
-	public static double DEFAULT_SIZE = -1d;
+	public static double DEFAULT_SIZE;
+	public static final double DEF_MEM_FACTOR = 0.25d; 
 	static {
 		if ( _optMode == OptimizationMode.ROBUST ) 
 			DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
@@ -73,8 +64,15 @@ public class OptimizerUtils {
 			DEFAULT_SIZE = DEF_MEM_FACTOR * InfrastructureAnalyzer.getLocalMaxMemory();
 	}
 
-	// used to indicate the memory estimate is not computed
-	public static final long INVALID_SIZE = -2;
+	// used when result sparsity can not be estimated, as per uniform distribution of non-zeros
+	public static final double DEF_SPARSITY = 0.1d;
+	
+	// size of native scalars
+	public static final long DOUBLE_SIZE = 8;
+	public static final long INT_SIZE = 4;
+	public static final long CHAR_SIZE = 1;
+	public static final long BOOLEAN_SIZE = 1;
+	public static final double INVALID_SIZE = -1d; // used to indicate the memory estimate is not computed
 
 	/**
 	 * Estimates the footprint (in bytes) for an in-memory representation of a
@@ -179,5 +177,12 @@ public class OptimizerUtils {
 		}
 		
 		return 1.0; // default is worst-case estimate for robustness
+	}
+	
+	static DecimalFormat df = new DecimalFormat("#.##");
+	public static String toMB(double inB) {
+		if ( inB < 0 )
+			return "-";
+		return String.valueOf( df.format((inB/(1024*1024))) ) + "";
 	}
 }

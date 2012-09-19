@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -139,10 +140,15 @@ abstract public class Hops {
 	 */
 	public double getMemEstimate()
 	{
-		if ( ! isMemEstimated() ) {
+		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( ! isMemEstimated() ) {
 				computeMemEstimate();
+			}
+			return _memEstimate;
 		}
-		return _memEstimate;
+		else {
+			return OptimizerUtils.INVALID_SIZE;
+		}
 	}
 	
 	/**
@@ -167,26 +173,35 @@ abstract public class Hops {
 	 */
 	public abstract double computeMemEstimate();
 
+	
+	/**
+	 * This function is used only for sanity check.
+	 * Returns true if estimates for all the hops in the DAG rooted at the current 
+	 * hop are computed. Returns false if any of the hops have INVALID estimate.
+	 * 
+	 * @return
+	 */
+	public boolean checkEstimates() {
+		boolean childStatus = true;
+		for (Hops h : this.getInput())
+			childStatus = childStatus && h.checkEstimates();
+		return childStatus && (_memEstimate != OptimizerUtils.INVALID_SIZE);
+	}
+	
 	/**
 	 * Recursively computes memory estimates for all the Hops in the DAG rooted at the 
 	 * current hop pointed by <code>this</code>.
 	 * 
 	 */
 	public void refreshMemEstimates() {
+		if (get_visited() == VISIT_STATUS.DONE)
+			return;
 		for (Hops h : this.getInput())
 			h.refreshMemEstimates();
 		this.computeMemEstimate();
+		this.set_visited(VISIT_STATUS.DONE);
 	}
 
-	/** 
-	 * Recompute the memory estimates.
-	 *  
-	 * @return compute estimate
-	 */
-	public double refreshMemEstimate() {
-		return computeMemEstimate();
-	}
-	
 	/**
 	 * This method determines the execution type (CP, MR) based ONLY on the 
 	 * estimated memory footprint required for this operation, which includes 
@@ -201,15 +216,18 @@ abstract public class Hops {
 	 */
 	protected ExecType findExecTypeByMemEstimate() {
 		ExecType et = null;
+		char c = ' ';
 		if ( getMemEstimate() < getMemBudget(true) ) {
 			et = ExecType.CP;
 		}
 		else {
 			et = ExecType.MR;
+			c = '*';
 		}
 		
-		if (DMLScript.DEBUG) {
-			System.out.println("  " + getHopID() + " MemEst (" + getOutputSize() + ", " + getMemEstimate() + ") " + et);
+		if (true) { //DMLScript.DEBUG) {
+			System.out.printf("  %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
+			//System.out.println("  " + getHopID() + " " + getOpString() + " (" + OptimizerUtils.toMB(_outputMemEstimate) + ", " + OptimizerUtils.toMB(_memEstimate) + ")  " + et);
 		}
 		
 		return et;
@@ -280,7 +298,7 @@ abstract public class Hops {
 		if (dimsKnown() && _nnz > 0)
 			return (double)_nnz/(double)(_dim1*_dim2);
 		else 
-			return OptimizerUtils.DEFAULT_SPARSITY;
+			return OptimizerUtils.DEF_SPARSITY;
 	}
 	
 	public Kind getKind() {
@@ -344,6 +362,7 @@ abstract public class Hops {
 					// insert reblock after the hop
 					Reblock r = new Reblock(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					r.computeMemEstimate();
 					r.set_visited(Hops.VISIT_STATUS.DONE);
 				
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
@@ -369,6 +388,7 @@ abstract public class Hops {
 
 						Reblock r = new Reblock(this);
 						r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						r.computeMemEstimate();
 						r.set_visited(Hops.VISIT_STATUS.DONE);
 					}
 
@@ -772,7 +792,7 @@ abstract public class Hops {
 	public void printMe() throws HopsException {
 		System.out.print(_kind + " " + getHopID() + "\n");
 		System.out.print("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
-		System.out.print(" Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
+		//System.out.print(" Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
 		System.out.print("  Parent: ");
 		for (Hops h : getParent()) {
 			System.out.print(h.hashCode() + "; ");
@@ -783,15 +803,14 @@ abstract public class Hops {
 			System.out.print(h.getHopID() + "; ");
 		}
 		;
-		//if (get_dim1() != -1)
-			System.out.print("\n  Dim1: " + get_dim1());
-		//if (get_dim2() != -1)
-			System.out.print(" Dim2: " + get_dim2());
+		System.out.println("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz " + _nnz);
+		/*System.out.print("\n  Dim1: " + get_dim1());
+		System.out.print(" Dim2: " + get_dim2());
 		System.out.print("\n nnz: " + getNnz());
 		System.out.print(" RowsInBlock: " + get_rows_in_block());
 		System.out.print(" ColsInBlock: " + get_cols_in_block());
-		System.out.print("\n");
-		System.out.println("  MemEstimate = " + _outputMemEstimate + " " + _memEstimate );
+		System.out.print("\n");*/
+		System.out.println("  MemEstimate = Out " + (_outputMemEstimate/1024/1024) + " MB, In&Out " + (_memEstimate/1024/1024) + " MB" );
 	}
 
 	public long get_dim1() {

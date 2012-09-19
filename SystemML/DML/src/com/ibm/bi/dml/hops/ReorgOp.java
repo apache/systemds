@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Append;
 import com.ibm.bi.dml.lops.Group;
@@ -37,8 +38,6 @@ public class ReorgOp extends Hops {
 		op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
-		computeMemEstimate();
-
 	}
 
 	public ReorgOp(String l, DataType dt, ValueType vt, ReorgOp o, Hops inp1, Hops inp2) {
@@ -49,8 +48,6 @@ public class ReorgOp extends Hops {
 		getInput().add(1, inp2);
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
-		computeMemEstimate();
-
 	}
 	
 	public void printMe() throws HopsException {
@@ -282,6 +279,9 @@ public class ReorgOp extends Hops {
 	
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		// Choose CP, if the input dimensions are below threshold or if the input is a vector
 		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
 			_etype = ExecType.CP;

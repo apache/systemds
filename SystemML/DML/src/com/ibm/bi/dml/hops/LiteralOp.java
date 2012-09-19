@@ -25,25 +25,21 @@ public class LiteralOp extends Hops {
 	public LiteralOp(String l, double value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.DOUBLE);
 		this.value_double = value;
-		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, long value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.INT);
 		this.value_long = value;
-		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, String value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.STRING);
 		this.value_string = value;
-		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, boolean value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.BOOLEAN);
 		this.value_boolean = value;
-		computeMemEstimate();
 	}
 
 	@Override
@@ -214,7 +210,7 @@ public class LiteralOp extends Hops {
 		case STRING: 
 			_outputMemEstimate = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
 		case OBJECT:
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE; break;
 		}
 		
 		_memEstimate = getInputOutputSize();

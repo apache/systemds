@@ -2,6 +2,7 @@ package com.ibm.bi.dml.hops;
 
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.Rand;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -60,7 +61,6 @@ public class RandOp extends Hops
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.probabilityDensityFunction = probabilityDensityFunction;
-		computeMemEstimate();
 	}
 
 	@Override
@@ -160,6 +160,9 @@ public class RandOp extends Hops
 
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		else if (this.areDimsBelowThreshold() || this.isVector())
 			_etype = ExecType.CP;
 		else

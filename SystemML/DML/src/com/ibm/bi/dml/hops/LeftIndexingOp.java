@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.LeftIndex;
@@ -40,8 +41,6 @@ public class LeftIndexingOp  extends Hops {
 		inpRowU.getParent().add(this);
 		inpColL.getParent().add(this);
 		inpColU.getParent().add(this);
-
-		computeMemEstimate();
 	}
 
 	public Lops constructLops()
@@ -175,6 +174,9 @@ public class LeftIndexingOp  extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		else if ( getInput().get(0).areDimsBelowThreshold() )
 			_etype = ExecType.CP;
 		else 

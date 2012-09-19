@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
@@ -40,8 +41,6 @@ public class AggUnaryOp extends Hops {
 		getInput().add(0, inp);
 	
 		inp.getParent().add(this);
-		
-		computeMemEstimate();
 	}
 
 	public Lops constructLops()
@@ -295,6 +294,9 @@ public class AggUnaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		// Choose CP, if the input dimensions are below threshold or if the input is a vector
 		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
 			_etype = ExecType.CP;

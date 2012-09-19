@@ -13,6 +13,7 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.hops.ReorgOp;
@@ -27,6 +28,7 @@ import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.hops.Hops.OpOp3;
 import com.ibm.bi.dml.hops.Hops.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -362,6 +364,11 @@ public class DMLTranslator {
 	
 	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) throws ParseException, LanguageException, HopsException {
 
+		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			this.resetHopsDAGVisitStatus(dmlp);
+			this.refreshMemEstimates(dmlp);
+		}
+		
 		/**
 		 * Rule 1: Eliminate for Transient Write DataHops to have no parents
 		 * Solution: Move parent edges of Transient Write Hop to parent of
@@ -1245,6 +1252,92 @@ public class DMLTranslator {
 		}
 	}
 
+	public void refreshMemEstimates(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
+
+		// for each namespace, handle function program blocks -- forward direction
+		for (String namespaceKey : dmlp.getNamespaces().keySet()){
+			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
+				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey, fname);
+				refreshMemEstimates(fsblock);
+			}
+		}
+		
+		// handle statement blocks in "main" method
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
+			StatementBlock current = dmlp.getStatementBlock(i);
+			refreshMemEstimates(current);
+		}
+	}
+			
+	public void refreshMemEstimates(StatementBlock current) throws ParseException, HopsException {
+	
+		ArrayList<Hops> hopsDAG = current.get_hops();
+		if (hopsDAG != null && hopsDAG.size() > 0) {
+			Iterator<Hops> iter = hopsDAG.iterator();
+			while (iter.hasNext()) {
+				iter.next().refreshMemEstimates();
+			}
+		}
+		
+		if (current instanceof FunctionStatementBlock) {
+			
+			FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
+			for (StatementBlock sb : fstmt.getBody()){
+				refreshMemEstimates(sb);
+			}
+		}
+		
+		if (current instanceof WhileStatementBlock) {
+			// handle predicate
+			WhileStatementBlock wstb = (WhileStatementBlock) current;
+			wstb.getPredicateHops().refreshMemEstimates();
+		
+			if (wstb.getNumStatements() > 1)
+				System.out.println("error -- while stmt block has more than 1 stmt");
+			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
+			
+			for (StatementBlock sb : ws.getBody()){
+				refreshMemEstimates(sb);
+			}
+		}
+		
+		if (current instanceof IfStatementBlock) {
+			// handle predicate
+			IfStatementBlock istb = (IfStatementBlock) current;
+			istb.getPredicateHops().refreshMemEstimates();
+		
+			if (istb.getNumStatements() > 1)
+				System.out.println("error -- if stmt block has more than 1 stmt");
+			IfStatement is = (IfStatement)istb.getStatement(0);
+			
+			for (StatementBlock sb : is.getIfBody()){
+				refreshMemEstimates(sb);
+			}
+			for (StatementBlock sb : is.getElseBody()){
+				refreshMemEstimates(sb);
+			}
+		}
+		
+		if (current instanceof ForStatementBlock) {
+			// handle predicate
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			if (fsb.getFromHops() != null) 
+				fsb.getFromHops().refreshMemEstimates();
+			if (fsb.getToHops() != null) 
+				fsb.getToHops().refreshMemEstimates();
+			if (fsb.getIncrementHops() != null) 
+				fsb.getIncrementHops().refreshMemEstimates();
+		
+			if (fsb.getNumStatements() > 1)
+				System.out.println("error -- for stmt block has more than 1 stmt");
+			ForStatement ws = (ForStatement)fsb.getStatement(0);
+			
+			for (StatementBlock sb : ws.getBody()){
+				refreshMemEstimates(sb);
+			}
+		}
+	}
+	
 	public void resetHopsDAGVisitStatus(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
 
 		// for each namespace, handle function program blocks -- forward direction

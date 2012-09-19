@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.Group;
@@ -49,8 +50,6 @@ public class AggBinaryOp extends Hops {
 		getInput().add(1, in2);
 		in1.getParent().add(this);
 		in2.getParent().add(this);
-		
-		computeMemEstimate();
 	}
 	
 	public boolean isMatrixMultiply () {
@@ -191,6 +190,9 @@ public class AggBinaryOp extends Hops {
 		if( _etypeForced != null ) 			
 		{
 			_etype = _etypeForced;
+		}
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
 		}
 		// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
 		// OR if it is vector-vector inner product

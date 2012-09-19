@@ -2,6 +2,7 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.CentralMoment;
 import com.ibm.bi.dml.lops.CoVariance;
@@ -61,7 +62,6 @@ public class TertiaryOp extends Hops {
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
-		computeMemEstimate();
 	}
 
 	public Lops constructLops() throws HopsException {
@@ -648,6 +648,9 @@ public class TertiaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		else if ( (getInput().get(0).areDimsBelowThreshold() 
 				&& getInput().get(1).areDimsBelowThreshold()
 				&& getInput().get(2).areDimsBelowThreshold()) 

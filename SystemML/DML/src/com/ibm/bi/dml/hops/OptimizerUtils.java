@@ -9,13 +9,17 @@ public class OptimizerUtils {
 	/**
 	 * Optimization Types for Compilation
 	 * 
+	 *  STATIC - Decisions for scheduling operations on to CP/MR are based on
+	 *  predefined set of rules, which check if the dimensions are below a 
+	 *  fixed/static threshold (OLD Method of choosing between CP and MR).
+	 *  
 	 *  MEMORY_BASED - Every operation is scheduled either on CP or MR, solely
 	 *  based on the amount of memory required to perform that operation. 
 	 *  It does NOT take the execution time into account.
 	 *
 	 */
-	public enum OptimizationType { MEMORY_BASED };
-	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
+	public enum OptimizationType { STATIC, MEMORY_BASED };
+	private static OptimizationType _optType = OptimizationType.STATIC;
 	public static OptimizationType getOptType() {
 		return _optType;
 	}
@@ -31,7 +35,7 @@ public class OptimizerUtils {
 	 *              
 	 */
 	public enum OptimizationMode { ROBUST, AGGRESSIVE };
-	private static OptimizationMode _optMode = OptimizationMode.AGGRESSIVE;
+	private static OptimizationMode _optMode = OptimizationMode.ROBUST;
 	
 	public static OptimizationMode getOptMode() {
 		return _optMode;

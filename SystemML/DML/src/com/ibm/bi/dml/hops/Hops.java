@@ -11,6 +11,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
@@ -34,9 +35,9 @@ abstract public class Hops {
 	}
 
 	// static variable to assign an unique ID to every hop that is created
-	private static int UniqueHopID = 0;
+	private static IDSequence UniqueHopID = new IDSequence();
 	
-	protected int ID;
+	protected long ID;
 	protected Kind _kind;
 	protected String _name;
 	protected DataType _dataType;
@@ -64,11 +65,11 @@ abstract public class Hops {
 	// It includes the memory required for all inputs as well as the output 
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE; 
 	
-	private static int getNextHopID() {
-		return ++UniqueHopID;
+	private static long getNextHopID() {
+		return UniqueHopID.getNextID();
 	}
 	
-	public int getHopID() {
+	public long getHopID() {
 		return ID;
 	}
 	
@@ -166,6 +167,17 @@ abstract public class Hops {
 	 */
 	public abstract double computeMemEstimate();
 
+	/**
+	 * Recursively computes memory estimates for all the Hops in the DAG rooted at the 
+	 * current hop pointed by <code>this</code>.
+	 * 
+	 */
+	public void refreshMemEstimates() {
+		for (Hops h : this.getInput())
+			h.refreshMemEstimates();
+		this.computeMemEstimate();
+	}
+
 	/** 
 	 * Recompute the memory estimates.
 	 *  
@@ -188,12 +200,19 @@ abstract public class Hops {
 	 * @return
 	 */
 	protected ExecType findExecTypeByMemEstimate() {
+		ExecType et = null;
 		if ( getMemEstimate() < getMemBudget(true) ) {
-			return ExecType.CP;
+			et = ExecType.CP;
 		}
 		else {
-			return ExecType.MR;
+			et = ExecType.MR;
 		}
+		
+		if (DMLScript.DEBUG) {
+			System.out.println("  " + getHopID() + " MemEst (" + getOutputSize() + ", " + getMemEstimate() + ") " + et);
+		}
+		
+		return et;
 	}
 	
 	/**
@@ -258,7 +277,7 @@ abstract public class Hops {
 		if ( _dataType == DataType.SCALAR )
 			return 1.0;
 		
-		if (dimsKnown())
+		if (dimsKnown() && _nnz > 0)
 			return (double)_nnz/(double)(_dim1*_dim2);
 		else 
 			return OptimizerUtils.DEFAULT_SPARSITY;
@@ -309,10 +328,15 @@ abstract public class Hops {
 				hi.rule_BlockSizeAndReblock(GLOBAL_BLOCKSIZE);
 		}
 
+		boolean canReblock = true;
+		
+		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+			canReblock = false;
+		
 		if (this instanceof DataOp) {
 
 			// if block size does not match
-			if (DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE && get_dataType() != DataType.SCALAR
+			if (canReblock && get_dataType() != DataType.SCALAR
 					&& (get_rows_in_block() != GLOBAL_BLOCKSIZE || get_cols_in_block() != GLOBAL_BLOCKSIZE)) {
 
 				if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
@@ -407,7 +431,7 @@ abstract public class Hops {
 
 			// Constraint C3:
 			else {
-				if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+				if ( !canReblock ) {
 					set_rows_in_block(-1);
 					set_cols_in_block(-1);
 				}
@@ -767,6 +791,7 @@ abstract public class Hops {
 		System.out.print(" RowsInBlock: " + get_rows_in_block());
 		System.out.print(" ColsInBlock: " + get_cols_in_block());
 		System.out.print("\n");
+		System.out.println("  MemEstimate = " + _outputMemEstimate + " " + _memEstimate );
 	}
 
 	public long get_dim1() {

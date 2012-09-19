@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
@@ -52,8 +53,6 @@ public class BinaryOp extends Hops {
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
-
-		computeMemEstimate();
 	}
 
 	public Lops constructLops() throws HopsException {
@@ -1040,6 +1039,9 @@ public class BinaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
+		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			_etype = findExecTypeByMemEstimate();
+		}
 		else
 		{
 			_etype = null;

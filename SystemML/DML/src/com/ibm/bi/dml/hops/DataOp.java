@@ -53,8 +53,6 @@ public class DataOp extends Hops {
 				
 		if (dop == DataOpTypes.TRANSIENTREAD)
 			setFormatType(FileFormatTypes.BINARY);
-		
-		computeMemEstimate();
 	}
 
 	// WRITE operation
@@ -69,8 +67,6 @@ public class DataOp extends Hops {
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
-
-		computeMemEstimate();
 	}
 	
 	/**
@@ -95,8 +91,6 @@ public class DataOp extends Hops {
 		if (dop == DataOpTypes.TRANSIENTREAD ){
 			setFormatType(FileFormatTypes.BINARY);
 		}
-
-		computeMemEstimate();
 	}
 	
 	/**
@@ -127,8 +121,6 @@ public class DataOp extends Hops {
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
-		
-		computeMemEstimate();
 	}
 	
 	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {

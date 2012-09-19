@@ -225,9 +225,14 @@ public class DataExpression extends Expression {
 		        _output.setDataType(DataType.MATRIX);
 		        
 		        // set number non-zeros
-		        long nnz = new Long(this.getVarParam("nnz").toString());
-		        _output.setNnz(nnz);
-				
+		        Expression ennz = this.getVarParam("nnz");
+		        long nnz = -1;
+		        if( ennz != null )
+		        {
+			        nnz = new Long(ennz.toString());
+			        _output.setNnz(nnz);
+		        }
+		        
 		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
 				_output.setDimensions(-1, -1);

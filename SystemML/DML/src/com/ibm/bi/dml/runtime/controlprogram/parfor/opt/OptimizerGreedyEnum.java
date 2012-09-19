@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.Collection;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -45,7 +46,7 @@ class OptimizerGreedyEnum extends Optimizer
 		
 		//preparations
 		boolean change = false;
-		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb);
+		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb, new HashSet<Long>());
 		OptNode lRoot = lPlan.getRoot();
 		OptNode pRoot = pPlan.getRoot();
 		double T = est.getEstimate(TestMeasure.EXEC_TIME, pRoot);
@@ -157,7 +158,7 @@ class OptimizerGreedyEnum extends Optimizer
 	{
 		OptNode lroot = plan.getRoot();
 
-		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb);
+		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<Long>());
 		OptNode absRoot = absPlan.getRoot();
 		
 		Collection<OptNode> nodes = absRoot.getNodeList();

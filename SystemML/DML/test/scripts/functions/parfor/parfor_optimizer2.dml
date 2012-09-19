@@ -1,0 +1,213 @@
+
+/*
+ *
+ * For a given pair of attribute sets, compute bivariate statistics between all attribute pairs 
+ *   Given, S_1 = {A_11, A_12, ... A_1m} and S_2 = {A_21, A_22, ... A_2n} 
+ *          compute bivariate stats for m*n pairs (A_1i, A_2j), (1<= i <=m) and (1<= j <=n)
+ *
+ * Seven inputs:  
+ *    $1) D  - input data
+ *    $2) S1 - First attribute set {A_11, A_12, ... A_1m}
+ *    $3) S2 - Second attribute set {A_21, A_22, ... A_2n}
+ *    $4) K1 - kind for attributes in S1 
+ *    $5) K2 - kind for attributes in S2
+ *             kind=1 for scale, kind=2 for nominal, kind=3 for ordinal
+ *    $6) numPairs - total number of pairs (m*n)
+ *    $7) maxC - maximum number of categories in any categorical attribute
+ * 
+ * One output:    
+ *    $6) output directory in which following four statistics files are created
+ *        + bivar.stats - matrix with all 8 bivariate statistics computed for different attribute pairs
+ *                        (R, (chi-sq, df, pval, cramersv), spearman, Eta, F)
+ *        + categorical.counts - 
+ *        + categorical.means - 
+ *        + categorical.variances - 
+ *          -> Values in these three matrices are applicable only for scale-categorical attribute pairs. 
+ *          k^th column in these matrices denote the attribute pair (A_1i,A_2j) where i*j = k.
+ *
+ *
+ *  TODO discussion script:
+ *    - changed ID
+ *    - exploit symmetry and compute only upper-triangular matrix
+ *    - exploit fine-grained opt potential ( why are certain statistics for
+ *      the outer loop var computed over and over again in the innner loop )  
+ *    - reject computations on same data sets / already processed combinations  
+ *   
+ */
+
+
+#TODO MB exploit symmetry
+
+D = read($1, rows=$7, cols=$8);  # input data set
+S1 = read($2, rows=1, cols=$9); # attribute set 1
+S2 = read($3, rows=1, cols=$9); # attribute set 2
+K1 = read($4, rows=1, cols=$9); # kind for attributes in S1
+K2 = read($5, rows=1, cols=$9); # kind for attributes in S2
+numPairs = $10; # number of attribute pairs (|S1|*|S2|)
+maxC = $11;     # max number of categories in any categorical attribute
+
+s1size = ncol(S1);
+s2size = ncol(S2);
+
+#numpairs = s1size * s2size;
+#print(s1size + ", " + s2size + ", " + numpairs);
+
+# R, chisq, cramers, spearman, eta, anovaf
+numstats = 8;
+basestats = Rand(rows=numstats, cols=numPairs, min=0, max=0);
+cat_counts = Rand(rows=maxC, cols=numPairs, min=0, max=0);
+cat_means = Rand(rows=maxC, cols=numPairs, min=0, max=0);
+cat_vars = Rand(rows=maxC, cols=numPairs, min=0, max=0);
+
+dummy = Rand(rows=1, cols=1, min=1, max=1);
+
+
+parfor( i in 1:s1size, check=0, opt=RULEBASED) {
+    a1 = castAsScalar(S1[,i]);
+    k1 = castAsScalar(K1[1,i]);
+    A1 = D[,a1];
+
+    parfor( j in 1:s2size, check=0) {
+        pairID = (i-1)*s2size+j; 
+        a2 = castAsScalar(S2[,j]);
+        k2 = castAsScalar(K2[1,j]);
+        A2 = D[,a2];
+    
+        if (k1 == k2) {
+            if (k1 == 1) {
+                # scale-scale
+                print("[" + i + "," + j + "] scale-scale");
+                r = bivar_ss(A1,A2);   
+                basestats[1,pairID] = dummy*r;
+            } else {
+                # nominal-nominal or ordinal-ordinal
+                print("[" + i + "," + j + "] categorical-categorical");
+                [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
+                basestats[2,pairID] = dummy*chisq;
+                basestats[3,pairID] = dummy*df;
+                basestats[4,pairID] = dummy*pval;
+                basestats[5,pairID] = dummy*cramersv;
+
+                if ( k1 == 3 ) {
+                    # ordinal-ordinal
+                    print("[" + i + "," + j + "] ordinal-ordinal");
+                    #sp = spearman(A1,A2);
+                    #FIXME basestats[6,pairID] = dummy*sp;
+                }
+            }
+        } 
+        else {
+            if (k1 == 1 | k2 == 1) {
+                # Scale-nominal/ordinal      TODO MB correctness errors
+                print("[" + i + "," + j + "] scale-categorical");
+                
+               if ( k1 == 1 ) {
+                    [eta,f, counts, means, vars] = bivar_sc(A1,A2);
+                }
+                else {
+                    [eta,f, counts, means, vars] = bivar_sc(A2,A1);
+                }
+                basestats[7,pairID] = dummy*eta;
+                basestats[8,pairID] = dummy*f;
+                cat_counts[,pairID] = counts;
+                cat_means[,pairID] = means;
+                cat_vars[,pairID] = vars; 
+            }
+            else {
+                # nominal-ordinal or ordinal-nominal
+                print("[" + i + "," + j + "] categorical-categorical");
+                [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
+                basestats[2,pairID] = dummy*chisq;
+                basestats[3,pairID] = dummy*df;
+                basestats[4,pairID] = dummy*pval;
+                basestats[5,pairID] = dummy*cramersv;
+            }
+        }
+    }
+}
+
+write(basestats, $6 + "/bivar.stats");
+write(cat_counts, $6 + "/category.counts");
+write(cat_means, $6 + "/category.means");
+write(cat_vars, $6 + "/category.variances");
+
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double chisq, Double df, Double pval, Double cramersv) {
+
+    # Contingency Table
+    F = ctable(A,B);
+
+    # Chi-Squared
+    W = sum(F);
+    r = rowSums(F);
+    c = colSums(F);
+    E = (r %*% c)/W;
+    T = (F-E)^2/E;
+    chi_squared = sum(T);
+
+    # compute p-value
+    degFreedom = (nrow(F)-1)*(ncol(F)-1);
+    pValue = 1 - cumulativeProbability(target=chi_squared, dist="chisq", df=degFreedom);
+
+    # Cramer's V
+    R = nrow(F);
+    C = ncol(F);
+    q = min(R,C);
+    cramers_v = sqrt(chi_squared/(W*(q-1)));
+
+    # Assign return values
+    chisq = chi_squared;
+    df = degFreedom;
+    pval = pValue;
+    cramersv = cramers_v;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R) {
+
+    # Unweighted co-variance
+    covXY = cov(X,Y);
+
+    # compute standard deviations for both X and Y by computing 2^nd central moment
+    W = nrow(X);
+    m2X = centralMoment(X,2);
+    m2Y = centralMoment(Y,2);
+    sigmaX = sqrt(m2X * (W/(W-1.0)) );
+    sigmaY = sqrt(m2Y * (W/(W-1.0)) );
+
+    # Pearson's R
+    R = covXY / (sigmaX*sigmaY);
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+# Y points to SCALE variable
+# A points to CATEGORICAL variable
+bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double Eta, Double AnovaF, Matrix[Double] CFreqs, Matrix[Double] CMeans, Matrix[Double] CVars ) {
+
+    # mean and variance in target variable
+    W = nrow(A);
+    my = mean(Y);
+    varY = centralMoment(Y,2) * W/(W-1.0)
+
+    # category-wise (frequencies, means, variances)
+    CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
+    CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+    CVars = groupedAggregate(target=Y, groups=A, fn="variance");
+
+    # number of categories
+    R = nrow(CFreqs);
+
+    Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
+
+    anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+    anova_den = sum( (CFreqs-1)*CVars )/(W-R);
+    AnovaF = anova_num/anova_den;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+

@@ -291,6 +291,25 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		return vs;
 	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 */
+	public ArrayList<String> getReadOnlyParentVars() 
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+
+		VariableSet read = variablesRead();
+		VariableSet updated = variablesUpdated();
+		VariableSet livein = liveIn();	
+		for( String var : livein.getVariableNames() ) //for all parent variables
+			if( read.containsVariable(var) && !updated.containsVariable(var) ) //read-only
+				ret.add( var );
+		
+		return ret;
+	}
 
 	/**
 	 * Determines the PDataPartitioningFormat for read-only parent variables according

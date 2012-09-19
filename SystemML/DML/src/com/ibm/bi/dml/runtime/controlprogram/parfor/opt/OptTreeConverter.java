@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.DataOp;
@@ -27,6 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
@@ -68,7 +70,9 @@ public class OptTreeConverter
 		switch( type )
 		{
 			case ABSTRACT_PLAN:
-				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true);	
+				HashSet<Long> memo = new HashSet<Long>();
+				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true, memo);	
+				root.checkAndCleanup();
 				break;
 			case RUNTIME_PLAN:
 				root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );
@@ -100,7 +104,7 @@ public class OptTreeConverter
 		return tree;
 	}
 	
-	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb ) 
+	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<Long> memo ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		OptTree tree = null;
@@ -108,7 +112,7 @@ public class OptTreeConverter
 		
 		try
 		{
-			root = rCreateAbstractOptNode( pfsb, pfpb, pfpb.getVariables(), true );
+			root = rCreateAbstractOptNode( pfsb, pfpb, pfpb.getVariables(), true, memo );
 			tree = new OptTree(ck, cm, root);
 		}
 		catch(HopsException he)
@@ -264,7 +268,7 @@ public class OptTreeConverter
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	private static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) 
+	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		OptNode node = new OptNode(NodeType.INST);
@@ -312,7 +316,7 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel ) 
+	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, HashSet<Long> memo ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException 
 	{
 		OptNode node = null;
@@ -327,25 +331,27 @@ public class OptTreeConverter
 			node.setExecType(ExecType.CP);
 			//process if condition
 			OptNode ifn = new OptNode(NodeType.GENERIC);
+			ifn.setExecType(ExecType.CP);
 			node.addChild( ifn );
 			int len = is.getIfBody().size();
 			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
 			{
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
 				StatementBlock lsb = is.getIfBody().get(0);
-				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel) );
+				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 			}
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
 			{
 				OptNode efn = new OptNode(NodeType.GENERIC);
+				efn.setExecType(ExecType.CP);
 				node.addChild( efn );
 				int len2 = is.getElseBody().size();
 				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
-					ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel) );
+					ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 				}
 			}				
 		}
@@ -363,7 +369,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 			}			
 		}
 		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
@@ -378,9 +384,9 @@ public class OptTreeConverter
 			
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
-			node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars ) );
-			node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars ) );
-			node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars ) );
+			node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
+			node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
+			node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
 			
 			//process body
 			int len = fs.getBody().size();
@@ -388,7 +394,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 			}	
 		}
 		else if( pb instanceof ParForProgramBlock )
@@ -415,9 +421,9 @@ public class OptTreeConverter
 			
 			if( !topLevel )
 			{
-				node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars ) );
-				node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars ) );
-				node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars ) );
+				node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
+				node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
+				node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
 			}
 			
 			//process body
@@ -426,7 +432,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 			}
 			
 			//parameters, add required parameters
@@ -435,11 +441,19 @@ public class OptTreeConverter
 		{
 			node = new OptNode(NodeType.GENERIC);
 			_hlMap.putProgMapping(sb, pb, node);
-			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars) );
+			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars, memo) );
 			node.setExecType(ExecType.CP);
+			
+			//TODO remove this workaround once this information can be obtained from the compiler
+			if( node.isCPOnly() && containsMRJobInstruction(pb) )
+				node.setExecType(ExecType.MR);
+				
 		}
 			
 		//TODO function call statement block
+		
+		//final cleanup
+		node.checkAndCleanup();
 		
 		return node;
 	}
@@ -453,11 +467,11 @@ public class OptTreeConverter
 	 * @param vars
 	 * @return
 	 */
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars) 
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<Long> memo ) 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		for( Hops hop : hops )
-			ret.addAll(rCreateAbstractOptNodes(hop,vars));
+			ret.addAll(rCreateAbstractOptNodes(hop,vars, memo));
 		return ret;
 	}
 	
@@ -467,7 +481,7 @@ public class OptTreeConverter
 	 * @param vars
 	 * @return
 	 */
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars) 
+	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<Long> memo) 
 	{
 		//System.out.println(hop.getOpString());
 		
@@ -476,23 +490,52 @@ public class OptTreeConverter
 		
 		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
 		{
-			OptNode node = new OptNode(NodeType.HOP);
-			String opstr = hop.getOpString();
-			node.addParam(ParamType.OPSTRING,opstr);
-			LopProperties.ExecType et = hop.getExecType();
-			node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
-			_hlMap.putHopMapping(hop, node);
-			ret.add(node);
+			if( !memo.contains(hop.getHopID()) )
+			{
+				OptNode node = new OptNode(NodeType.HOP);
+				String opstr = hop.getOpString();
+				node.addParam(ParamType.OPSTRING,opstr);
+				LopProperties.ExecType et = hop.getExecType();
+				node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
+				_hlMap.putHopMapping(hop, node);
+				ret.add(node);
+			
+				memo.add(hop.getHopID());
+			}
 		}
-		
+		//else
+		//	if( OptimizationWrapper.LDEBUG )
+		//		System.out.println("ParFOR Opt: Mem estimate name="+hop.get_name()+" "+hop.getOpString()+"="+OptimizerRuleBased.toMB(hop.getMemEstimate()));
+			
+
 		if( in != null )
-			for( Hops hin : in )
+			for( Hops hin : in ) 
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
-					ret.addAll(rCreateAbstractOptNodes(hin,vars));
-		
+					ret.addAll(rCreateAbstractOptNodes(hin,vars, memo));
+				//else
+				//	if( OptimizationWrapper.LDEBUG )
+				//		System.out.println("ParFOR Opt: Mem estimate name="+hin.get_name()+" "+hin.getOpString()+"="+OptimizerRuleBased.toMB(hin.getMemEstimate()));
+			
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	private static boolean containsMRJobInstruction( ProgramBlock pb )
+	{
+		boolean ret = false;
+		for( Instruction inst : pb.getInstructions() )
+			if( inst instanceof MRJobInstruction )
+			{
+				ret = true;
+				break;
+			}
+
+		return ret;
+	}
 	
 	
 	/**
@@ -791,7 +834,6 @@ public class OptTreeConverter
 		
 		return pRoot;
 	}
-
 
 	public static void clear()
 	{

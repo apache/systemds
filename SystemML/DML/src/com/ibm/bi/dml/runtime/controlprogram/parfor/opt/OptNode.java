@@ -44,7 +44,8 @@ public class OptNode
 	public enum ParamType{
 		OPTYPE,
 		OPSTRING,
-		PARTITIONER,
+		TASK_PARTITIONER,
+		DATA_PARTITIONER,
 		NUM_ITERATIONS
 	}
 
@@ -303,6 +304,38 @@ public class OptNode
 				ret &= n.isCPOnly();
 			}
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean hasNestedParallelism()
+	{
+		boolean ret = false;
+		if( _childs != null )
+			for( OptNode n : _childs )
+			{
+				if( ret ) break; //early abort if already true
+				ret |= n.hasNestedParallelism();
+			}
+		return ret;
+	}
+	
+
+	public void checkAndCleanup() 
+	{
+		if( _childs != null )
+			for( int i=0; i<_childs.size(); i++ )
+			{
+				OptNode n = _childs.get(i);
+				n.checkAndCleanup();
+				if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST )
+				{
+					_childs.remove(i);
+					i--;
+				}
+			}
 	}
 	
 	/**

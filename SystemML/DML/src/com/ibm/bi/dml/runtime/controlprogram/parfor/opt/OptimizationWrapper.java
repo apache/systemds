@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -47,11 +48,11 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class OptimizationWrapper 
 {
-	private static final boolean LDEBUG = DMLScript.DEBUG || true;
+	public static final boolean LDEBUG = DMLScript.DEBUG || true;
+	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
 	
 	//internal parameters
 	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
-	private static final int     PAR_FACTOR_INFRASTRUCTURE = 1;
 	
 	/**
 	 * Called once per DML script (during program compile time) 
@@ -123,8 +124,8 @@ public class OptimizationWrapper
 		}
 		
 		//set max contraints if not specified
-		int ck = Math.max( InfrastructureAnalyzer.getCkMaxCP(),
-						   InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE;
+		int ck = UtilFunctions.toInt( Math.max( InfrastructureAnalyzer.getCkMaxCP(),
+						                        InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE );
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer

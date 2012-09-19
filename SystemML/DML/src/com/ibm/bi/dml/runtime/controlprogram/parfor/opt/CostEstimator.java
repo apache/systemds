@@ -17,8 +17,8 @@ public abstract class CostEstimator
 	public static final double DEFAULT_EST_PARALLELISM = 1.0; //default degree of parallelism: serial
 	public static final int    FACTOR_NUM_ITERATIONS   = 10; //default problem size
 	public static final double DEFAULT_TIME_ESTIMATE   = 5;  //default execution time: 5ms
-	public static final double DEFAULT_MEM_ESTIMATE    = 1024; //default memory consumption: 1KB 
-	
+	public static final double DEFAULT_MEM_ESTIMATE_CP = 1024; //default memory consumption: 1KB 
+	public static final double DEFAULT_MEM_ESTIMATE_MR = 10*1024*1024; //default memory consumption: 20MB 
 	
 	
 	/**
@@ -156,7 +156,7 @@ public abstract class CostEstimator
 		switch( measure )
 		{
 			case EXEC_TIME: val = DEFAULT_TIME_ESTIMATE; break;
-			case MEMORY_USAGE: val = DEFAULT_MEM_ESTIMATE; break;
+			case MEMORY_USAGE: val = DEFAULT_MEM_ESTIMATE_CP; break;
 		}
 		
 		return val;

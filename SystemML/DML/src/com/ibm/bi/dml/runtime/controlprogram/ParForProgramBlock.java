@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringCons
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
@@ -68,7 +69,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
  * 
- * TODO Rulebased optimizer
  * TODO runtime integration of rulebased optimizer
  * TODO parser integration of rulebased optimizer
  * TODO testcases rulebased optimizer
@@ -128,7 +128,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	//optimizer
 	public enum POptMode{
 		NONE,       //no optimization, use defaults and specified parameters
-		RULEBASED, //TODO
+		RULEBASED, //some simple rule-based rewritings (affects only parfor PB) - similar to HEURISTIC but no exec time estimates
 		HEURISTIC, //some simple cost-based rewritings (affects only parfor PB)
 		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
 		FULL_DP    //full cost-based optimization algorithm (global optimum, affects all instructions)				
@@ -140,14 +140,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean MONITOR                     = false;	// collect internal statistics
 	public static final boolean OPTIMIZE                    = true;	// run all automatic optimizations on top-level parfor
 	public static final boolean USE_PB_CACHE                = true;  	// reuse copied program blocks whenever possible
-	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = false;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
-	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small taskqueue
+	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = true;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
+	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean USE_BINARY_MR_TASK_REP	    = false;    // serialize tasks to binary representation for remote communication
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
 	public static final boolean ALLOW_REUSE_MR_JVMS         = true;     // potential benefits: less setup costs per task
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
-	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial //TODO change back to parallel once we synchronized set for all matrix formats
+	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
 	public static final int     WRITE_REPLICATION_FACTOR    = 3;
@@ -320,6 +320,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		_params.put(ParForStatementBlock.TASK_PARTITIONER, String.valueOf(_taskPartitioner)); //kept up-to-date for copies
 	}
 	
+	public void setDataPartitioner(PDataPartitioner partitioner) 
+	{
+		_dataPartitioner = partitioner;
+		_params.put(ParForStatementBlock.DATA_PARTITIONER, String.valueOf(_dataPartitioner)); //kept up-to-date for copies
+	}
+	
 	public int getNumIterations()
 	{
 		return _numIterations;
@@ -376,7 +382,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
-			ArrayList<String> vars = getReadOnlyParentVars(_sb);
+			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
 			for( String var : vars )
 			{
 				Data dat = _variables.get(var);
@@ -634,6 +640,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String resultFile = constructResultFileName();
 		
 		int numIterations = partitioner.getNumIterations();
+		int maxDigits = (int)Math.log10(to.getIntValue()) + 1;
 		int numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION )
 		{
@@ -641,14 +648,14 @@ public class ParForProgramBlock extends ForProgramBlock
 
 			//put tasks into queue and start writing to taskFile
 			numCreatedTasks = partitioner.createTasks(queue);
-			taskFile        = writeTasksToFile( taskFile, queue );				
+			taskFile        = writeTasksToFile( taskFile, queue, maxDigits );				
 		}
 		else
 		{
 			//sequentially create tasks and write to disk
 			Collection<Task> tasks = partitioner.createTasks();
 			numCreatedTasks        = tasks.size();
-		    taskFile               = writeTasksToFile( taskFile, tasks );				
+		    taskFile               = writeTasksToFile( taskFile, tasks, maxDigits );				
 		}
 				
 		if( MONITOR )
@@ -785,28 +792,6 @@ public class ParForProgramBlock extends ForProgramBlock
 					out.put(var, dataObj);
 			}
 	}
-
-	/**
-	 * 
-	 * @param sb
-	 * @return
-	 */
-	private ArrayList<String> getReadOnlyParentVars(ParForStatementBlock sb) 
-	{
-		ArrayList<String> ret = new ArrayList<String>();
-		
-		if( sb != null )
-		{
-			VariableSet read = sb.variablesRead();
-			VariableSet updated = sb.variablesUpdated();
-			VariableSet livein = sb.liveIn();	
-			for( String var : livein.getVariableNames() ) //for all parent variables
-				if( read.containsVariable(var) && !updated.containsVariable(var) ) //read-only
-					ret.add( var );
-		}
-		
-		return ret;
-	}
 	
 	/**
 	 * 
@@ -847,10 +832,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		// Step 2) obtain remaining tasks
 		String taskFile = constructTaskFileName();
+		int maxDigits = (int)Math.log10(to.getIntValue()) + 1;
 		if( USE_STREAMING_TASK_CREATION )
 		{
 			//write available tasks to task file
-			taskFile = writeTasksToFile( taskFile, q );	
+			taskFile = writeTasksToFile( taskFile, q, maxDigits );	
 		}
 		else
 		{
@@ -860,7 +846,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			while( (lTask = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS )
 				tasks.add( lTask );
 			//write task file
-			taskFile = writeTasksToFile( taskFile, tasks );		
+			taskFile = writeTasksToFile( taskFile, tasks, maxDigits );		
 		}
 		
 		// Step 3) submit MR job (wait for finished work)
@@ -1040,7 +1026,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private String writeTasksToFile(String fname, Collection<Task> tasks)
+	private String writeTasksToFile(String fname, Collection<Task> tasks, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;
@@ -1052,10 +1038,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	        
 			for( Task t : tasks )
 			{
-				if( USE_BINARY_MR_TASK_REP )
-					br.write( t.toBinary() + "\n" );
-				else
-					br.write( t.toCompactString() + "\n" );
+				br.write( createTaskFileLine( t, maxDigits ) );
 			}
 		}
 		catch(Exception ex)
@@ -1078,7 +1061,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private String writeTasksToFile(String fname, LocalTaskQueue queue)
+	private String writeTasksToFile(String fname, LocalTaskQueue queue, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;
@@ -1091,10 +1074,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			Task t = null;
 			while( (t = queue.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS )
 			{
-				if( USE_BINARY_MR_TASK_REP )
-					br.write( t.toBinary() + "\n" );
-				else
-					br.write( t.toCompactString() + "\n" );
+				br.write( createTaskFileLine( t, maxDigits ) );
 			}
 		}
 		catch(Exception ex)
@@ -1107,6 +1087,25 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		return fname;
+	}
+	
+	private String createTaskFileLine( Task t, int maxDigits ) 
+	{
+		String ret = null;
+		
+		if( USE_BINARY_MR_TASK_REP )
+		{
+			ret = t.toBinary() + "\n";
+		}
+		else
+		{
+			if( t.getType() == TaskType.RANGE && (_taskPartitioner==PTaskPartitioner.FACTORING || _taskPartitioner==PTaskPartitioner.CFACTORING ) )
+				ret = t.toCompactString(maxDigits) + "\n";
+			else
+				ret = t.toCompactString() + "\n";
+		}
+		
+		return ret;
 	}
 	
 	/**

@@ -15,6 +15,8 @@ import com.ibm.bi.dml.utils.HopsException;
 //for now only works for range based indexing op
 public class IndexingOp extends Hops {
 
+	public static String OPSTRING = "Indexing";
+	
 	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
 		/*
@@ -96,7 +98,7 @@ public class IndexingOp extends Hops {
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "Indexing";
+		s += OPSTRING;
 		return s;
 	}
 

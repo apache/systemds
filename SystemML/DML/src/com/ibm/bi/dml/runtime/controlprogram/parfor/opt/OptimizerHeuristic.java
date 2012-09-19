@@ -318,7 +318,7 @@ public class OptimizerHeuristic extends Optimizer
 		pfpb.setTaskPartitioner(partitioner);
 		
 		// modify plan
-		n.addParam(ParamType.PARTITIONER, partitioner.toString());
+		n.addParam(ParamType.TASK_PARTITIONER, partitioner.toString());
 	}
 
 }

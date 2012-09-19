@@ -14,6 +14,7 @@ public class AggregateBinaryOperator extends Operator {
 	{
 		binaryFn=inner;
 		aggOp=outer;
+		//so far, we only support matrix multiplication, and it is sparseSafe
 		if(binaryFn instanceof Multiply && aggOp.increOp.fn instanceof Plus)
 			sparseSafe=true;
 		else

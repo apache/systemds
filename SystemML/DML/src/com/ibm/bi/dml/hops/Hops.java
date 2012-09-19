@@ -155,7 +155,7 @@ abstract public class Hops {
 	}
 
 	public boolean isMemEstimated() {
-		return (_memEstimate == OptimizerUtils.INVALID_SIZE);
+		return (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
 
 	/**
@@ -173,6 +173,27 @@ abstract public class Hops {
 	 */
 	public double refreshMemEstimate() {
 		return computeMemEstimate();
+	}
+	
+	/**
+	 * This method determines the execution type (CP, MR) based ONLY on the 
+	 * estimated memory footprint required for this operation, which includes 
+	 * memory for all inputs and the output represented by this Hop.
+	 * 
+	 * It is used when <code>OptimizationType = MEMORY_BASED</code>.
+	 * This optimization schedules an operation to CP whenever inputs+output 
+	 * fit in memory -- note that this decision MAY NOT be optimal in terms of 
+	 * execution time.
+	 * 
+	 * @return
+	 */
+	protected ExecType findExecTypeByMemEstimate() {
+		if ( getMemEstimate() < getMemBudget(true) ) {
+			return ExecType.CP;
+		}
+		else {
+			return ExecType.MR;
+		}
 	}
 	
 	/**

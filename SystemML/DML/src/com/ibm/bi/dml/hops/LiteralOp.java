@@ -25,21 +25,25 @@ public class LiteralOp extends Hops {
 	public LiteralOp(String l, double value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.DOUBLE);
 		this.value_double = value;
+		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, long value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.INT);
 		this.value_long = value;
+		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, String value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.STRING);
 		this.value_string = value;
+		computeMemEstimate();
 	}
 
 	public LiteralOp(String l, boolean value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.BOOLEAN);
 		this.value_boolean = value;
+		computeMemEstimate();
 	}
 
 	@Override

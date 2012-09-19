@@ -60,6 +60,7 @@ public class RandOp extends Hops
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.probabilityDensityFunction = probabilityDensityFunction;
+		computeMemEstimate();
 	}
 
 	@Override

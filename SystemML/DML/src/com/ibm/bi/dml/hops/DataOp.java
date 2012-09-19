@@ -53,6 +53,8 @@ public class DataOp extends Hops {
 				
 		if (dop == DataOpTypes.TRANSIENTREAD)
 			setFormatType(FileFormatTypes.BINARY);
+		
+		computeMemEstimate();
 	}
 
 	// WRITE operation
@@ -67,6 +69,8 @@ public class DataOp extends Hops {
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
+
+		computeMemEstimate();
 	}
 	
 	/**
@@ -91,6 +95,8 @@ public class DataOp extends Hops {
 		if (dop == DataOpTypes.TRANSIENTREAD ){
 			setFormatType(FileFormatTypes.BINARY);
 		}
+
+		computeMemEstimate();
 	}
 	
 	/**
@@ -121,6 +127,8 @@ public class DataOp extends Hops {
 
 		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setFormatType(FileFormatTypes.BINARY);
+		
+		computeMemEstimate();
 	}
 	
 	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
@@ -418,7 +426,7 @@ public class DataOp extends Hops {
 		
 		if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
 			if ( getNnz() > 0 ) {
-				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+				_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
 			}
 			else {
 				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEFAULT_SPARSITY);

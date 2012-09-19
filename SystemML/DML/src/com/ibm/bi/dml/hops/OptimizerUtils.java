@@ -9,6 +9,20 @@ public class OptimizerUtils {
 	/**
 	 * Optimization Types for Compilation
 	 * 
+	 *  MEMORY_BASED - Every operation is scheduled either on CP or MR, solely
+	 *  based on the amount of memory required to perform that operation. 
+	 *  It does NOT take the execution time into account.
+	 *
+	 */
+	public enum OptimizationType { MEMORY_BASED };
+	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
+	public static OptimizationType getOptType() {
+		return _optType;
+	}
+	
+	/**
+	 * Optimization Modes for Compilation
+	 * 
 	 * ROBUST - prepares for worst-case scenarios, and tries to avoid OutofMemoryExceptions
 	 * 
 	 * AGGRESSIVE - prepares for average-case scenarios, takes into account "expectations" 
@@ -16,11 +30,11 @@ public class OptimizerUtils {
 	 * necessary precautions at runtime (e.g., make sure to avoid OutOfMemoryExceptions)
 	 *              
 	 */
-	public enum OptimizationType { ROBUST, AGGRESSIVE};
-	private static OptimizationType _optType = OptimizationType.AGGRESSIVE;
+	public enum OptimizationMode { ROBUST, AGGRESSIVE };
+	private static OptimizationMode _optMode = OptimizationMode.AGGRESSIVE;
 	
-	public static OptimizationType getOptType() {
-		return _optType;
+	public static OptimizationMode getOptMode() {
+		return _optMode;
 	}
 	
 	/**
@@ -49,7 +63,7 @@ public class OptimizerUtils {
 	 */
 	public static double DEFAULT_SIZE = -1d;
 	static {
-		if ( _optType == OptimizationType.ROBUST ) 
+		if ( _optMode == OptimizationMode.ROBUST ) 
 			DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
 		else 
 			DEFAULT_SIZE = DEF_MEM_FACTOR * InfrastructureAnalyzer.getLocalMaxMemory();
@@ -102,7 +116,7 @@ public class OptimizerUtils {
 	 * @return
 	 */
 	public static long estimateSize(long nrows, long ncols, double sp) {
-		if (_optType == OptimizationType.ROBUST  ) {
+		if (_optMode == OptimizationMode.ROBUST  ) {
 			// In case of ROBUST, ignore the value given for <code>sp</code>, 
 			// and provide a worst-case estimate i.e., a dense representation
 			sp = 1.0;

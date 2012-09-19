@@ -53,6 +53,8 @@ public class UnaryOp extends Hops {
 		inp.getParent().add(this);
 
 		_op = o;
+		
+		computeMemEstimate();
 	}
 
 	public void printMe() throws HopsException {

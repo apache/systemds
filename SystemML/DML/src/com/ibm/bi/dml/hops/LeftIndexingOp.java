@@ -41,6 +41,7 @@ public class LeftIndexingOp  extends Hops {
 		inpColL.getParent().add(this);
 		inpColU.getParent().add(this);
 
+		computeMemEstimate();
 	}
 
 	public Lops constructLops()

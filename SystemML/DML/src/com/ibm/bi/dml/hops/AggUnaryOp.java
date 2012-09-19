@@ -40,6 +40,8 @@ public class AggUnaryOp extends Hops {
 		getInput().add(0, inp);
 	
 		inp.getParent().add(this);
+		
+		computeMemEstimate();
 	}
 
 	public Lops constructLops()

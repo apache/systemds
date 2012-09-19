@@ -37,6 +37,7 @@ public class ReorgOp extends Hops {
 		op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
+		computeMemEstimate();
 
 	}
 
@@ -48,6 +49,7 @@ public class ReorgOp extends Hops {
 		getInput().add(1, inp2);
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
+		computeMemEstimate();
 
 	}
 	

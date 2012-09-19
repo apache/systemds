@@ -49,6 +49,8 @@ public class AggBinaryOp extends Hops {
 		getInput().add(1, in2);
 		in1.getParent().add(this);
 		in2.getParent().add(this);
+		
+		computeMemEstimate();
 	}
 	
 	public boolean isMatrixMultiply () {

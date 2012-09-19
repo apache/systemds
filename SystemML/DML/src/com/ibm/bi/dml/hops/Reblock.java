@@ -39,6 +39,7 @@ public class Reblock extends Hops {
 				}
 			}
 		}
+		computeMemEstimate();
 	}
 
 	// Constructor that adds a Reblock Hop *BEFORE* a hop to create its block
@@ -68,6 +69,7 @@ public class Reblock extends Hops {
 				in.getParent().add(this);
 			}
 		}
+		computeMemEstimate();
 	}
 
 	@Override

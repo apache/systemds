@@ -61,6 +61,7 @@ public class TertiaryOp extends Hops {
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
+		computeMemEstimate();
 	}
 
 	public Lops constructLops() throws HopsException {

@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationMode;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
@@ -39,6 +39,7 @@ public class IndexingOp extends Hops {
 		inpColL.getParent().add(this);
 		inpColU.getParent().add(this);
 
+		computeMemEstimate();
 	}
 
 	public Lops constructLops()
@@ -131,12 +132,12 @@ public class IndexingOp extends Hops {
 			// output sparsity is same as that of the input 
 			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), input.getSparsity() );
 		} else {
-			if ( OptimizerUtils.getOptType() == OptimizationType.ROBUST ){
+			if ( OptimizerUtils.getOptMode() == OptimizationMode.ROBUST ){
 				// In the worst case, indexing returns the entire matrix
 				// therefore, worst case estimate is the size of input matrix 
 				_outputMemEstimate = input.getOutputSize();
 			}
-			else if ( OptimizerUtils.getOptType() == OptimizationType.AGGRESSIVE ) {
+			else if ( OptimizerUtils.getOptMode() == OptimizationMode.AGGRESSIVE ) {
 				// In an average case, we expect indexing will touch 10% of data. 
 				_outputMemEstimate = 0.1 * input.getOutputSize();
 			}

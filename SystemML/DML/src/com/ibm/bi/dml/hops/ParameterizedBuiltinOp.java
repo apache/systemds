@@ -57,6 +57,7 @@ public class ParameterizedBuiltinOp extends Hops {
 			_paramIndexMap.put(s, index);
 			index++;
 		}
+		computeMemEstimate();
 	}
 
 	@Override

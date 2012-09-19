@@ -137,6 +137,17 @@ public class Reblock extends Hops {
 	}
 
 	@Override
+	public double computeMemEstimate() {
+		
+		/* This method should never be invoked while deciding CP vs. MR */
+		
+		_outputMemEstimate = getInput().get(0).getOutputSize();
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
+	
+
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			throw new HopsException(this.printErrorLocation() + "In Reblock Hop, REBLOCKing is an invalid operation when execution mode = SINGLE_NODE \n");

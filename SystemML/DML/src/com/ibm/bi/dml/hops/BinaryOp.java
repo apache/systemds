@@ -1010,6 +1010,28 @@ public class BinaryOp extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		if (get_dataType() == DataType.SCALAR)
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		else {
+			Hops input1 = getInput().get(0);
+			Hops input2 = getInput().get(1);
+			
+			if (dimsKnown()) {
+				double outputSparsity = OptimizerUtils.binaryOpSparsity(input1.getSparsity(), input2.getSparsity(), op);
+				_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
+			}
+			else {
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			}
+		}
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

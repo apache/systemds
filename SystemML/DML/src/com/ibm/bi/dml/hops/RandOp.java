@@ -143,6 +143,16 @@ public class RandOp extends Hops
 	}	
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		_outputMemEstimate = OptimizerUtils.estimate(get_dim1(), get_dim2(), sparsity);
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

@@ -163,6 +163,25 @@ public class AggBinaryOp extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		if (dimsKnown() && isMatrixMultiply()) {
+			Hops input1 = getInput().get(0);
+			Hops input2 = getInput().get(1);
+			double outputSparsity = OptimizerUtils.matMultSparsity( input1.getSparsity(), input2.getSparsity(), 
+																	input1.get_dim1(), input1.get_dim2(), input2.get_dim2());
+
+			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
+		} else {
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+		}
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+
+	@Override
 	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();

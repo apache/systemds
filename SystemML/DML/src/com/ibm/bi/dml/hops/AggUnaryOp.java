@@ -258,6 +258,35 @@ public class AggUnaryOp extends Hops {
 	}
 
 	@Override
+	public double computeMemEstimate() {
+		
+		if (get_dataType() == DataType.SCALAR)
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		else {
+			if (dimsKnown()) {
+				Hops input = getInput().get(0);
+				double inputSparsity = input.getSparsity();
+				double outputSparsity = OptimizerUtils.DEFAULT_SPARSITY;
+				
+				if ( _direction == Direction.Col )
+					outputSparsity = inputSparsity * input.get_dim2();
+				else // ( _direction == Direction.Row )
+					outputSparsity = inputSparsity * input.get_dim1();
+					
+				// result is a one-dimensional vector
+				_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
+			}
+			else {
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			}
+		}
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

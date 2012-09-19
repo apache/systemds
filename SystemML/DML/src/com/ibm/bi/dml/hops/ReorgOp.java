@@ -225,7 +225,54 @@ public class ReorgOp extends Hops {
 	{
 		return true;
 	}
+	
+	// TRANSPOSE, DIAG_V2M, DIAG_M2V, APPEND
+	@Override
+	public double computeMemEstimate() {
+		Hops input = getInput().get(0);
+		
+		switch(op) {
+		case TRANSPOSE:
+			// transpose does not change #nnz, and hence it takes same amount of space as that of its input
+			_outputMemEstimate = input.getOutputSize(); 
+			break;
+			
+		case DIAG_V2M:
+			// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
+			// In the worst case, #nnz in output = k => sparsity = 1/k
+			if (dimsKnown()) {
+				long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
+				_outputMemEstimate = OptimizerUtils.estimate(k, k, (double)1/k);
+			}
+			else {
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			}
+			break;
+			
+		case DIAG_M2V:
+			// input is [k,k] matrix and output is [k,1] matrix
+			// #nnz in the output is likely to be k (a dense matrix)
+			_outputMemEstimate = OptimizerUtils.estimateSize(input.get_dim1(), input.get_dim1(), 1.0);
+			break;
+		
+		case APPEND:
+			if(dimsKnown()) {
+				// result is a concatenation of both the inputs
+				_outputMemEstimate = input.getOutputSize() + getInput().get(1).getOutputSize(); 
+			}
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			break;
+			
+		}
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+	
 
+	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		

@@ -242,6 +242,37 @@ public class ParameterizedBuiltinOp extends Hops {
 	}
 
 	@Override
+	public double computeMemEstimate() {
+		
+		if ( _op == ParamBuiltinOp.CDF ) {
+			// currently, only CDF produces a scalar
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		}
+		else if (_op == ParamBuiltinOp.GROUPEDAGG) {
+			// Output dimensions are completely data dependent. In the worst case, 
+			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
+			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
+			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
+			
+			Hops target = getInput().get(_paramIndexMap.get("target"));
+			
+			// get the size of longer dimension
+			long m = (target.get_dim1() > 1 ? target.get_dim1() : target.get_dim2()); 
+			if ( m > 1 )
+				// Output is always a one-dimensional matrix
+				_outputMemEstimate = OptimizerUtils.estimateSize(m, 1, 1.0);
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
+		}
+		else {
+			throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
+		}
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

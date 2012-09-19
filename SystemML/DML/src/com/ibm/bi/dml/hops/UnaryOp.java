@@ -449,6 +449,23 @@ public class UnaryOp extends Hops {
 	{
 		return true;
 	}
+	
+	//MINUS, NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
+	@Override
+	public double computeMemEstimate() {
+		
+		if ( get_dataType() == DataType.SCALAR ) {
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		}
+		else {
+			// If output is a Matrix then this operation must be one of the following: (B = op(A)) or (B = A op const)
+			// Dimensions of B are same as that of A, and sparsity may/maynot change
+			// The size of input is a good estimate 
+			_outputMemEstimate = getInput().get(0).getOutputSize();
+		}
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {

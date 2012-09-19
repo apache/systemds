@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -125,7 +125,7 @@ public class OptimizationWrapper
 		//set max contraints if not specified
 		int ck = Math.max( InfrastructureAnalyzer.getCkMaxCP(),
 						   InfrastructureAnalyzer.getCkMaxMR() ) * PAR_FACTOR_INFRASTRUCTURE;
-		double cm = InfrastructureAnalyzer.getCmMax() * Hops.MEM_UTIL_FACTOR; 
+		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
 		optimize( type, ck, cm, sb, pb );

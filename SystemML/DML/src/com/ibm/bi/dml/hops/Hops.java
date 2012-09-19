@@ -19,8 +19,6 @@ import com.ibm.bi.dml.utils.LopsException;
 
 abstract public class Hops {
 
-	public static final double MEM_UTIL_FACTOR = 0.7d;
-	
 	
 	public static boolean BREAKONSCALARS = false;
 	public static boolean SPLITLARGEMATRIXMULT = true;
@@ -38,17 +36,17 @@ abstract public class Hops {
 	// static variable to assign an unique ID to every hop that is created
 	private static int UniqueHopID = 0;
 	
-	private int ID;
-	private Kind _kind;
-	private String _name;
-	private DataType _dataType;
-	private ValueType _valueType;
-	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
-	private long _dim1 = -1;
-	private long _dim2 = -1;
-	private long _rows_in_block = -1;
-	private long _cols_in_block = -1;
-	private long _nnz = -1;
+	protected int ID;
+	protected Kind _kind;
+	protected String _name;
+	protected DataType _dataType;
+	protected ValueType _valueType;
+	protected VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
+	protected long _dim1 = -1;
+	protected long _dim2 = -1;
+	protected long _rows_in_block = -1;
+	protected long _cols_in_block = -1;
+	protected long _nnz = -1;
 
 	protected ArrayList<Hops> _parent = new ArrayList<Hops>();
 	protected ArrayList<Hops> _input = new ArrayList<Hops>();
@@ -58,7 +56,13 @@ abstract public class Hops {
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
-	protected double _memEstimate = -1;
+	
+	// Estimated size for the output produced from this Hop
+	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
+	
+	// Estimated size for the entire operation represented by this Hop
+	// It includes the memory required for all inputs as well as the output 
+	protected double _memEstimate = OptimizerUtils.INVALID_SIZE; 
 	
 	private static int getNextHopID() {
 		return ++UniqueHopID;
@@ -108,12 +112,35 @@ abstract public class Hops {
 			_etypeForced = ExecType.MR;
 	}
 	
+	
+	/**
+	 * Returns the memory estimate for the output produced from this Hop.
+	 * It must be invoked only within Hops. From outside Hops, one must 
+	 * only use getMemEstimate(), which gives memory required to store 
+	 * all inputs and the output.
+	 * 
+	 * @return
+	 */
+	protected double getOutputSize() {
+		return _outputMemEstimate;
+	}
+	
+	protected double getInputOutputSize() {
+		double sum = this._outputMemEstimate;
+		for(Hops h : _input ) {
+			sum += h._outputMemEstimate;
+		}
+		return sum;
+	}
 	/**
 	 * 
 	 * @return
 	 */
 	public double getMemEstimate()
 	{
+		if ( ! isMemEstimated() ) {
+				computeMemEstimate();
+		}
 		return _memEstimate;
 	}
 	
@@ -125,6 +152,27 @@ abstract public class Hops {
 	public void setMemEstimate( double mem )
 	{
 		_memEstimate = mem;
+	}
+
+	public boolean isMemEstimated() {
+		return (_memEstimate == OptimizerUtils.INVALID_SIZE);
+	}
+
+	/**
+	 * Computes the estimate of memory required to store the output of this hop in memory. 
+	 * Note that it DOES NOT include the memory needed for its inputs.
+	 * 
+	 * @return computed estimate
+	 */
+	public abstract double computeMemEstimate();
+
+	/** 
+	 * Recompute the memory estimates.
+	 *  
+	 * @return compute estimate
+	 */
+	public double refreshMemEstimate() {
+		return computeMemEstimate();
 	}
 	
 	/**
@@ -141,7 +189,7 @@ abstract public class Hops {
 		else
 			ret = InfrastructureAnalyzer.getGlobalMaxMemory();
 		
-		return ret * MEM_UTIL_FACTOR;
+		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
 	public ArrayList<Hops> getParent() {
@@ -184,6 +232,17 @@ abstract public class Hops {
 		return _nnz;
 	}
 	
+	public double getSparsity() {
+		
+		if ( _dataType == DataType.SCALAR )
+			return 1.0;
+		
+		if (dimsKnown())
+			return (double)_nnz/(double)(_dim1*_dim2);
+		else 
+			return OptimizerUtils.DEFAULT_SPARSITY;
+	}
+	
 	public Kind getKind() {
 		return _kind;
 	}
@@ -204,6 +263,10 @@ abstract public class Hops {
 		return (_dim1 <= Hops.CPThreshold && _dim2 <= Hops.CPThreshold );
 	}
 	
+	protected boolean dimsKnown() {
+		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0) );
+	}
+
 	public void resetVisitStatus() {
 		if (this.get_visited() == Hops.VISIT_STATUS.NOTVISITED)
 			return;

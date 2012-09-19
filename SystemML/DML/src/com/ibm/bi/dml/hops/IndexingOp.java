@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
@@ -120,6 +121,31 @@ public class IndexingOp extends Hops {
 		return true;
 	}
 	
+	@Override
+	public double computeMemEstimate() {
+		
+		Hops input = getInput().get(0);
+		
+		if (dimsKnown()) {
+			// Indexing does not affect the sparsity, and the 
+			// output sparsity is same as that of the input 
+			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), input.getSparsity() );
+		} else {
+			if ( OptimizerUtils.getOptType() == OptimizationType.ROBUST ){
+				// In the worst case, indexing returns the entire matrix
+				// therefore, worst case estimate is the size of input matrix 
+				_outputMemEstimate = input.getOutputSize();
+			}
+			else if ( OptimizerUtils.getOptType() == OptimizationType.AGGRESSIVE ) {
+				// In an average case, we expect indexing will touch 10% of data. 
+				_outputMemEstimate = 0.1 * input.getOutputSize();
+			}
+		}
+		
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
+
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		

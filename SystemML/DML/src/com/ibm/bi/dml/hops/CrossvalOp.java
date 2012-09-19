@@ -64,6 +64,11 @@ public class CrossvalOp extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		return OptimizerUtils.INVALID_SIZE;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		// TODO Auto-generated method stub
 		return null;

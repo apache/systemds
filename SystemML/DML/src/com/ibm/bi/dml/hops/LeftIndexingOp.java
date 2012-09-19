@@ -157,6 +157,17 @@ public class LeftIndexingOp  extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
+		// However, the sparsity might change -- TODO: we can not handle the change in sparsity, for now
+		_outputMemEstimate = getInput().get(0).getOutputSize();
+		
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

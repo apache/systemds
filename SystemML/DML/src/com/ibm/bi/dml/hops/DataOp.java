@@ -414,6 +414,28 @@ public class DataOp extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
+			if ( getNnz() > 0 ) {
+				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+			}
+			else {
+				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEFAULT_SPARSITY);
+			}
+		}
+		else {
+			// memory estimate is not required for "write" nodes
+			// as a placeholder, we simply use input's estimate
+			_outputMemEstimate = 0;
+		}
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		// Since a DATA hop does not represent any computation, 
 		// this function is not applicable. 

@@ -198,6 +198,26 @@ public class LiteralOp extends Hops {
 	}
 
 	@Override
+	public double computeMemEstimate() {
+		
+		switch(this.get_valueType()) {
+		case INT:
+			_outputMemEstimate = OptimizerUtils.INT_SIZE; break;
+		case DOUBLE:
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE; break;
+		case BOOLEAN:
+			_outputMemEstimate = OptimizerUtils.BOOLEAN_SIZE; break;
+		case STRING: 
+			_outputMemEstimate = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
+		case OBJECT:
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+		}
+		
+		_memEstimate = getInputOutputSize();
+		return _memEstimate;
+	}
+	
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		// Since a Literal hop does not represent any computation, 
 		// this function is not applicable. 

@@ -596,6 +596,51 @@ public class TertiaryOp extends Hops {
 	}
 	
 	@Override
+	public double computeMemEstimate() {
+		
+		if ( get_dataType() == DataType.SCALAR ) {
+			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		}
+		else {
+			switch(op) {
+			case CTABLE:
+				// since the dimensions of both inputs must be the same, checking for one input is sufficient
+				int index = -1;
+				if ( getInput().get(0).dimsKnown() ) 
+					index = 0;
+				else if ( getInput().get(1).dimsKnown() )
+					index = 1;
+				else 
+					index = -1;
+				
+				if ( index >= 0 ) {
+					// Output dimensions are completely data dependent. In the worst case, 
+					// #categories in each attribute = #rows (e.g., an ID column, say EmployeeID).
+
+					// both inputs are one-dimensional matrices with exact same dimensions, m = size of longer dimension
+					long m = (getInput().get(index).get_dim1() > 1 ? getInput().get(index).get_dim1() : getInput().get(index).get_dim2());
+					
+					// C=ctable(A,B)
+					//   worst case dimensions of C = [m,m]
+					//   worst case #nnz in C = m => sparsity = 1/m
+					_outputMemEstimate = OptimizerUtils.estimate(m, m, (double)1/m);
+				}
+				else {
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				}
+				break;
+			
+			default:
+				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
+			}
+		}
+		
+		_memEstimate = getInputOutputSize();
+		
+		return _memEstimate;
+	}
+
+	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();

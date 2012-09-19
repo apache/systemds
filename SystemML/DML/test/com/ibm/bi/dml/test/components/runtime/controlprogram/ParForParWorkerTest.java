@@ -33,7 +33,7 @@ public class ParForParWorkerTest extends ParWorker
 	public void testExecutionSet() 
 		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{ 
-		Collection<Task> tasks = createTasks( TaskType.ITERATION_SET );
+		Collection<Task> tasks = createTasks( TaskType.SET );
 		setParWorkerAttributes();
 		
 		for( Task ltask : tasks )
@@ -47,7 +47,7 @@ public class ParForParWorkerTest extends ParWorker
 	public void testExecutionRange() 
 		throws InterruptedException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{ 
-		Collection<Task> tasks = createTasks( TaskType.ITERATION_RANGE );
+		Collection<Task> tasks = createTasks( TaskType.RANGE );
 		setParWorkerAttributes();
 		
 		for( Task ltask : tasks )
@@ -64,18 +64,18 @@ public class ParForParWorkerTest extends ParWorker
 		//create N tasks
 		Collection<Task> tasks = new LinkedList<Task>();
 		
-		if( type == TaskType.ITERATION_SET )
+		if( type == TaskType.SET )
 		{
 			for( int i=1; i<=_N; i++ )
 			{
-				Task ltask = new Task(TaskType.ITERATION_SET);
+				Task ltask = new Task(TaskType.SET);
 				ltask.addIteration(new IntObject("i",i));
 				tasks.add(ltask);
 	 		}
 		}
-		else if(type == TaskType.ITERATION_RANGE)
+		else if(type == TaskType.RANGE)
 		{
-			Task ltask = new Task(TaskType.ITERATION_RANGE);
+			Task ltask = new Task(TaskType.RANGE);
 			ltask.addIteration(new IntObject("i",1));
 			ltask.addIteration(new IntObject("i",_N));
 			ltask.addIteration(new IntObject("i",1));

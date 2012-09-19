@@ -848,7 +848,7 @@ public class ParForTaskPartitionerTest
 		int current = from;
 		for( Task t : tasks )
 		{
-			if( range && t.getType()==TaskType.ITERATION_RANGE )
+			if( range && t.getType()==TaskType.RANGE )
 			{
 				int lfrom = t.getIterations().get(0).getIntValue();
 				int lto = t.getIterations().get(1).getIntValue();
@@ -887,7 +887,7 @@ public class ParForTaskPartitionerTest
 	{
 		int ret = -1;
 		
-		if( t.getType()==TaskType.ITERATION_RANGE )
+		if( t.getType()==TaskType.RANGE )
 		{
 			int from = t.getIterations().get(0).getIntValue();
 			int to = t.getIterations().get(1).getIntValue();

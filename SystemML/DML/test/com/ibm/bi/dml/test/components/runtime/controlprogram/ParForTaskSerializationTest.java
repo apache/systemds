@@ -20,7 +20,7 @@ public class ParForTaskSerializationTest
 	{ 
 		int i = 7;
 		
-		Task t1 = new Task(TaskType.ITERATION_SET);
+		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i));
 		
 		String str = t1.toCompactString();
@@ -37,7 +37,7 @@ public class ParForTaskSerializationTest
 		int i1 = 3;
 		int i2 = 7;
 		
-		Task t1 = new Task(TaskType.ITERATION_SET);
+		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i1));
 		t1.addIteration(new IntObject("i",i2));
 		
@@ -56,10 +56,14 @@ public class ParForTaskSerializationTest
 	{ 
 		int i = 7;
 		
-		Task t1 = new Task(TaskType.ITERATION_SET);
+		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i));
 		
 		byte[] b = t1.toBinary();
+		//for( int k=0; k<b.length; k++ )
+		//	if( b[k]==0 )
+		//		Assert.fail("Binary tasks should never include zero bytes (k="+k+").");
+		
 		Task t2 = Task.parseBinary(b);
 		
 		IntObject val = t2.getIterations().getFirst(); 
@@ -73,11 +77,14 @@ public class ParForTaskSerializationTest
 		int i1 = 3;
 		int i2 = 7;
 		
-		Task t1 = new Task(TaskType.ITERATION_SET);
+		Task t1 = new Task(TaskType.SET);
 		t1.addIteration(new IntObject("i",i1));
 		t1.addIteration(new IntObject("i",i2));
 		
 		byte[] b = t1.toBinary();
+		//for( int k=0; k<b.length; k++ )
+		//	if( b[k]==0 )
+		//		Assert.fail("Binary tasks should never include zero bytes (k="+k+").");
 		Task t2 = Task.parseBinary(b);
 		
 		IntObject val1 = t2.getIterations().get(0); 
@@ -91,13 +98,13 @@ public class ParForTaskSerializationTest
 	@Test
 	public void testTaskRangeStringSerilization() 
 	{ 
-		int to = 1;
-		int from = 10;
+		int from = 1;
+		int to = 10;
 		int incr = 2;
 		
-		Task t1 = new Task(TaskType.ITERATION_RANGE);
-		t1.addIteration(new IntObject("i",to));
+		Task t1 = new Task(TaskType.RANGE);
 		t1.addIteration(new IntObject("i",from));
+		t1.addIteration(new IntObject("i",to));
 		t1.addIteration(new IntObject("i",incr));
 		
 		String str = t1.toCompactString();
@@ -107,33 +114,55 @@ public class ParForTaskSerializationTest
 		IntObject val2 = t2.getIterations().get(1);
 		IntObject val3 = t2.getIterations().get(2);
 		
-		Assert.assertEquals(to, val1.getIntValue());
-		Assert.assertEquals(from, val2.getIntValue());
+		Assert.assertEquals(from, val1.getIntValue());
+		Assert.assertEquals(to, val2.getIntValue());
 		Assert.assertEquals(incr, val3.getIntValue());
 	}
 	
 	@Test
 	public void testTaskRangeBinarySerilization() 
 	{ 
-		int to = 1;
-		int from = 10;
+		int from = 1;
+		int to = 10;
 		int incr = 2;
 		
-		Task t1 = new Task(TaskType.ITERATION_RANGE);
-		t1.addIteration(new IntObject("i",to));
+		Task t1 = new Task(TaskType.RANGE);
 		t1.addIteration(new IntObject("i",from));
+		t1.addIteration(new IntObject("i",to));
 		t1.addIteration(new IntObject("i",incr));
 		
 		byte[] b = t1.toBinary();
+		//for( int k=0; k<b.length; k++ )
+		//	if( b[k]==0 )
+		//		Assert.fail("Binary tasks should never include zero bytes (k="+k+").");
+		
 		Task t2 = Task.parseBinary(b);
 		
 		IntObject val1 = t2.getIterations().get(0); 
 		IntObject val2 = t2.getIterations().get(1);
 		IntObject val3 = t2.getIterations().get(2);
 		
-		Assert.assertEquals(to, val1.getIntValue());
-		Assert.assertEquals(from, val2.getIntValue());
+		Assert.assertEquals(from, val1.getIntValue());
+		Assert.assertEquals(to, val2.getIntValue());
 		Assert.assertEquals(incr, val3.getIntValue());
 	}
 
+	
+	
+	@Test
+	public void testTaskStringNumberLength() 
+	{ 
+		int val = 7;
+		String valStr = "007";
+		
+		Task t1 = new Task(TaskType.RANGE);
+		t1.addIteration(new IntObject("i",val));
+		
+		String str = t1.toCompactString( valStr.length() );
+		Assert.assertEquals(valStr, str.substring(9, 12));
+		
+		Task t2 = Task.parseCompactString(str);		
+		IntObject valRet = t2.getIterations().get(0);
+		Assert.assertEquals(val, valRet.getIntValue());
+	}
 }

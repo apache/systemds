@@ -31,7 +31,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 		
 		//range tasks (similar to run-length encoding) make only sense if taskSize>3
 		TaskType type = (ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL && _taskSize>3 ) ? 
-				           TaskType.ITERATION_RANGE : TaskType.ITERATION_SET;
+				           TaskType.RANGE : TaskType.SET;
 		
 		int lFrom  = _fromVal.getIntValue();
 		int lTo    = _toVal.getIntValue();
@@ -48,7 +48,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 			
 			// add <tasksize> iterations to task 
 			// (last task might have less)
-			if( type == TaskType.ITERATION_SET ) 
+			if( type == TaskType.SET ) 
 			{
 				//value based tasks
 				for( int j=0; j<_taskSize+corr && i<=lTo; j++, i+=lIncr )
@@ -81,7 +81,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 		
 		//range tasks (similar to run-length encoding) make only sense if taskSize>3
 		TaskType type = (ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL && _taskSize>3 ) ? 
-				              TaskType.ITERATION_RANGE : TaskType.ITERATION_SET;
+				              TaskType.RANGE : TaskType.SET;
 		
 		int lFrom  = _fromVal.getIntValue();
 		int lTo    = _toVal.getIntValue();
@@ -99,7 +99,7 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 				
 				// add <tasksize> iterations to task 
 				// (last task might have less)
-				if( type == TaskType.ITERATION_SET ) 
+				if( type == TaskType.SET ) 
 				{
 					//value based tasks
 					for( int j=0; j<_taskSize+corr && i<=lTo; j++, i+=lIncr )

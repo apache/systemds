@@ -99,10 +99,10 @@ public abstract class ParWorker
 		
 		switch( task.getType() )
 		{
-			case ITERATION_SET:
+			case SET:
 				executeSetTask( task );
 				break;
-			case ITERATION_RANGE:
+			case RANGE:
 				executeRangeTask( task );
 				break;		
 			//default: //MB: due to enum types this can never happen

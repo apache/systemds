@@ -16,8 +16,8 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class Task 
 {
 	public enum TaskType {
-		ITERATION_RANGE, 
-		ITERATION_SET
+		RANGE, 
+		SET
 	}
 	
 	public static final int MAX_VARNAME_SIZE  = 256;
@@ -66,7 +66,7 @@ public class Task
 	public void mergeTask( Task task )
 	{
 		//check for set iteration type
-		if( _type==TaskType.ITERATION_RANGE )
+		if( _type==TaskType.RANGE )
 			throw new RuntimeException("Task Merging not supported for tasks of type ITERATION_RANGE.");
 		
 		//check for same iteration name
@@ -129,7 +129,7 @@ public class Task
 			IntObject dat0 = _iterations.getFirst();
 			sb.append(dat0.getName());
 			sb.append(".{");
-			
+		
 			int count = 0;
 			for( IntObject dat : _iterations )
 			{
@@ -149,13 +149,51 @@ public class Task
 	 * 
 	 * @return
 	 */
+	public String toCompactString( int maxDigits )
+	{
+		StringBuilder sb = new StringBuilder( );
+		sb.append(_type);
+		
+		if( size() > 0 )
+		{
+			sb.append(".");
+			IntObject dat0 = _iterations.getFirst();
+			sb.append(dat0.getName());
+			sb.append(".{");
+		
+			int count = 0;
+			for( IntObject dat : _iterations )
+			{
+				if( count!=0 ) 
+					sb.append(",");
+				
+				String tmp = String.valueOf(dat.getIntValue());
+				for( int k=tmp.length(); k<maxDigits; k++ )
+					sb.append("0");
+				sb.append(tmp);
+				count++;
+			}
+			
+			sb.append("}");
+		}
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * Binary encoding useful for (1) reducing serialization, transfer, and parsing time,
+	 * as well as (2) for preventing unwanted split sorting (according to size) by Hadoop
+	 *  
+	 * @return
+	 */
+	@Deprecated
 	public byte[] toBinary()
 	{
 		// type (1B), strlen_varname (1B), varname (strlen(varname)B ), len (4B), all vals (4B each)
 		String varName = _iterations.getFirst().getName();
 		int strlen = varName.length(); 
 		int len = 2 + 8*strlen + 4 + 4*size();
-		
+
 		//init and type
 		byte[] ret = new byte[len];
 		ret[0] = (byte)_type.ordinal();
@@ -166,7 +204,7 @@ public class Task
 		int i=-1;
 		for( i=2; i<2+tmp.length; i++ )
 			ret[i]=(byte)tmp[i-2];
-		
+			
 		//len
 		int len2 = size();
         ret[i++]=(byte)(len2 >>> 24);
@@ -183,6 +221,10 @@ public class Task
 	        ret[i++]=(byte)(val >>> 8);
 	        ret[i++]=(byte) val;
 		}
+		
+		//ensure there are no \0, 
+		//for( int k=0; k<ret.length; k++ )
+		//	ret[k] = (byte) (ret[k] + 1); //note: reverted during parsing
 			
 		return ret;
 	}
@@ -219,9 +261,15 @@ public class Task
 	 * @param btask
 	 * @return
 	 */
+	@Deprecated
 	public static Task parseBinary( byte[] btask )
 	{
+		//initial preparation (see toBinary)
+		//for( int k=0; k<btask.length; k++ )
+		//	btask[k] = (byte) (btask[k] - 1); 
+		
 		int type = btask[0];
+		
 		int strlen = btask[1];
 		Task lTask = new Task( Task.TaskType.values()[type] );
 		String varName = null;

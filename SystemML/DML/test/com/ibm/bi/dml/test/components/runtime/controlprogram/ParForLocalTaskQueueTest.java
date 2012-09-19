@@ -29,7 +29,7 @@ public class ParForLocalTaskQueueTest
 		Collection<Task> tasks = new LinkedList<Task>();
 		for( int i=1; i<=_N; i++ )
 		{
-			Task ltask = new Task(TaskType.ITERATION_SET);
+			Task ltask = new Task(TaskType.SET);
 			ltask.addIteration(new IntObject("i",i));
 			tasks.add(ltask);
  		}

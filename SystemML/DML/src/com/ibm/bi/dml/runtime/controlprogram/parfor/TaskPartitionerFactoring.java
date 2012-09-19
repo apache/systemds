@@ -53,7 +53,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 			R -= (K * P);
 			
 			type = (ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL && K>3 ) ? 
-					   TaskType.ITERATION_RANGE : TaskType.ITERATION_SET;
+					   TaskType.RANGE : TaskType.SET;
 			
 			//for each logical processor
 			for( int j=0; j<P; j++ )
@@ -66,7 +66,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 				tasks.addLast(lTask);
 				
 				// add iterations to task 
-				if( type == TaskType.ITERATION_SET ) 
+				if( type == TaskType.SET ) 
 				{
 					//value based tasks
 					for( int k=0; k<K && i<=lTo; k++, i+=lIncr )
@@ -116,7 +116,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 				R -= (K * P);
 				
 				type = (ParForProgramBlock.USE_RANGE_TASKS_IF_USEFUL && K>3 ) ? 
-						   TaskType.ITERATION_RANGE : TaskType.ITERATION_SET;
+						   TaskType.RANGE : TaskType.SET;
 				
 				//for each logical processor
 				for( int j=0; j<P; j++ )
@@ -128,7 +128,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 					Task lTask = new Task( type );
 					
 					// add iterations to task 
-					if( type == TaskType.ITERATION_SET ) 
+					if( type == TaskType.SET ) 
 					{
 						//value based tasks
 						for( int k=0; k<K && i<=lTo; k++, i+=lIncr )

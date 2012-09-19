@@ -21,7 +21,7 @@ public class OptimizerUtils {
 	 *
 	 */
 	public enum OptimizationType { STATIC, MEMORY_BASED };
-	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
+	private static OptimizationType _optType = OptimizationType.STATIC;
 	public static OptimizationType getOptType() {
 		return _optType;
 	}

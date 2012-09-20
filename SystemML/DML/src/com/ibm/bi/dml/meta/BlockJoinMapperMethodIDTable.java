@@ -32,7 +32,7 @@ public abstract class BlockJoinMapperMethodIDTable {
 		
 	public MatrixBlock getSubRowBlock(MatrixBlock blk, int rownum) throws DMLRuntimeException {
 		int ncols = blk.getNumColumns();
-		MatrixBlock thissubrowblk = new MatrixBlock(1, ncols, true);	//presume sparse
+		MatrixBlock thissubrowblk = new MatrixBlock(1, ncols, true, blk.getNonZeros()/blk.getNumRows());	//presume sparse
 		//populate subrowblock
 		for(int c=0; c<ncols; c++) {
 			thissubrowblk.setValue(rownum, c, blk.getValue(rownum, c));

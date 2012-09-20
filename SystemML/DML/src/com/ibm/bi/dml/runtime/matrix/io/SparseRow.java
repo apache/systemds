@@ -2,7 +2,9 @@ package com.ibm.bi.dml.runtime.matrix.io;
 
 public class SparseRow {
 
-	public static final int defaultCapacity=16;
+	public static final int initialCapacity=16;
+	private int estimatedNzs=initialCapacity;
+	private int maxNzs=Integer.MAX_VALUE;
 	private int size=0;
 	private double[] values=null;
 	private int[] indexes=null;
@@ -15,7 +17,7 @@ public class SparseRow {
 	 */
 	public long getObjectSizeInMemory ()
 	{
-		long all_size = 16;
+		long all_size = 28;
 		if (values != null)
 			all_size += values.length * 8;
 		if (indexes != null)
@@ -30,16 +32,27 @@ public class SparseRow {
 			ret+=indexes[i]+": "+values[i]+"\t";
 		return ret;
 	}
-	public SparseRow()
+/*	public SparseRow()
 	{
-		values=new double[defaultCapacity];
-		indexes=new int[defaultCapacity];
+		values=new double[initialCapacity];
+		indexes=new int[initialCapacity];
+	}
+*/	
+	public SparseRow(int estnns, int maxnns)
+	{
+		if(estnns>initialCapacity)
+			estimatedNzs=estnns;
+	//	else if(estnns<=0)//TODO
+	//		estnns=maxnns;
+		maxNzs=maxnns;
+		values=new double[initialCapacity];
+		indexes=new int[initialCapacity];
 	}
 	
 	public SparseRow(SparseRow that)
 	{
 		size=that.size;
-		int capa=Math.max(defaultCapacity, that.size);
+		int capa=Math.max(initialCapacity, that.size);
 		values=new double[capa];
 		indexes=new int[capa];
 		System.arraycopy(that.values, 0, values, 0, that.size);
@@ -107,8 +120,15 @@ public class SparseRow {
 		size++;
 	}
 	
-	public void reset()
+/*	public void reset()
 	{
+		size=0;
+	}
+*/	
+	public void reset(int estnns, int maxnns)
+	{
+		this.estimatedNzs=estnns;
+		this.maxNzs=maxnns;
 		size=0;
 	}
 	
@@ -122,15 +142,27 @@ public class SparseRow {
 		System.arraycopy(oldvalues, 0, values, 0, size);
 		System.arraycopy(oldindexes, 0, indexes, 0, size);
 	}
+	/*
+	 * doubling before capacity reaches estimated nonzeros, then 1.1x after that
+	 * for default behavor: always 1.1x
+	 */
+	private int newCapacity()
+	{
+		if(values.length<this.estimatedNzs)
+		{
+			//System.out.println(">> capacity change from "+values.length+" to "+Math.min(this.estimatedNzs, values.length*2)+" , est: "+estimatedNzs+", max: "+maxNzs);
+			return Math.min(this.estimatedNzs, values.length*2);
+		}
+		else
+		{
+			//System.out.println(">> capacity change from "+values.length+" to "+(int) Math.min(this.maxNzs, Math.floor((double)(values.length)*1.1))+" , est: "+estimatedNzs+", max: "+maxNzs);
+			return (int) Math.min(this.maxNzs, Math.floor((double)(values.length)*1.1)); //exponential growth
+			//return (int) Math.min(this.maxNzs, values.length+Math.floor((double)(estimatedNzs)*0.1)); //constant growth
+		}
+	}
 	
 	private void recap() {
-		
-		double[] oldvalues=values;
-		int[] oldindexes=indexes;
-		values=new double[size+defaultCapacity];
-		indexes=new int[size+defaultCapacity];
-		System.arraycopy(oldvalues, 0, values, 0, size);
-		System.arraycopy(oldindexes, 0, indexes, 0, size);
+		recap(newCapacity());
 	}
 
 	public boolean set(int col, double v)
@@ -164,10 +196,11 @@ public class SparseRow {
 	}
 
 	private void resizeAndInsert(int index, int col, double v) {
+		int newCap=newCapacity();
 		double[] oldvalues=values;
 		int[] oldindexes=indexes;
-		values=new double[size+defaultCapacity];
-		indexes=new int[size+defaultCapacity];
+		values=new double[newCap];
+		indexes=new int[newCap];
 		System.arraycopy(oldvalues, 0, values, 0, index);
 		System.arraycopy(oldindexes, 0, indexes, 0, index);
 		indexes[index]=col;
@@ -275,7 +308,7 @@ public class SparseRow {
 	
 	public static void main(String[] args) throws Exception
 	{
-		SparseRow row=new SparseRow();
+		SparseRow row=new SparseRow(6, 40);
 		row.append(9, 21);
 		row.append(11, 43);
 		row.append(24, 23);

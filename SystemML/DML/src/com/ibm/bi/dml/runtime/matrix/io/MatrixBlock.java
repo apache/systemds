@@ -16,6 +16,11 @@ public class MatrixBlock extends MatrixBlockDSM
 		super(i, j, sparse1);
 	}
 
+	public MatrixBlock(int rl, int cl, boolean sp, int estnnzs)
+	{
+		super(rl, cl, sp, estnnzs);
+	}
+	
 	public MatrixBlock() {
 		super();
 	}

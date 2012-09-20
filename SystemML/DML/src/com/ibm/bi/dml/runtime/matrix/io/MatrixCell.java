@@ -118,6 +118,10 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 	public void reset(int rl, int cl, boolean sp) {		
 		value=0;
 	}
+	
+	public void reset(int rl, int cl, boolean sp, int nnzs) {		
+		value=0;
+	}
 
 	@Override
 	public void resetDenseWithValue(int rl, int cl, double v) {

@@ -179,6 +179,12 @@ public class MatrixBlock1D extends MatrixValue{
 		reset(rl, cl);
 	}
 	
+	public void reset(int rl, int cl, boolean sp, int nnzs)
+	{
+		sparse=sp;
+		reset(rl, cl);
+	}
+	
 	public void resetDenseWithValue(int rl, int cl, double v) {
 		rlen=rl;
 		clen=cl;

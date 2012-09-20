@@ -147,7 +147,7 @@ public class DataConverter
 			sparse = false;
 		
 		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse);
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(expectedSparsity*rlen*clen));
 		if( !sparse )
 			ret.spaceAllocForDenseUnsafe((int)rlen, (int)clen);
 		
@@ -684,6 +684,7 @@ public class DataConverter
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
+	//	long time=System.currentTimeMillis();
 		boolean sparse = dest.isInSparseFormat();
 		SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
 		InputSplit[] splits = informat.getSplits(job, 1);				
@@ -722,7 +723,7 @@ public class DataConverter
 							while( iter.hasNext() )
 							{
 								IJV cell = iter.next();
-								dest.setValue(row_offset+cell.i, col_offset+cell.j, cell.v);
+								dest.quickSetValue(row_offset+cell.i, col_offset+cell.j, cell.v);
 							}
 						}
 						else //DENSE<-SPARSE
@@ -745,7 +746,7 @@ public class DataConverter
 								{
 								    double lvalue = value.getValueDenseUnsafe(i, j);  //input value
 									if( lvalue != 0  ) 					//for all nnz
-										dest.setValue(row_offset+i, col_offset+j, lvalue );	
+										dest.quickSetValue(row_offset+i, col_offset+j, lvalue );	
 								}
 						}
 						else //DENSE<-DENSE
@@ -767,6 +768,9 @@ public class DataConverter
 					reader.close();
 			}
 		}
+	//	time=System.currentTimeMillis()-time;
+	//	System.out.println("------------- read ------------");
+	//	System.out.println(time+"\t"+dest.getCapacity()+"\t"+dest.getNonZeros());
 	}
 	
 	

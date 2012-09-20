@@ -90,6 +90,8 @@ public abstract class MatrixValue implements WritableComparable {
 	public abstract void reset(int rl, int cl);
 
 	public abstract void reset(int rl, int cl, boolean sp);
+	
+	public abstract void reset(int rl, int cl, boolean sp, int nnzs);
 
 	public abstract void resetDenseWithValue(int rl, int cl, double v);
 

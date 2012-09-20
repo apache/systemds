@@ -151,6 +151,10 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 	@Override
 	public void reset(int rl, int cl, boolean sp) {
 	}
+	
+	public void reset(int rl, int cl, boolean sp, int nnzs)
+	{
+	}
 
 	@Override
 	public void resetDenseWithValue(int rl, int cl, double v) {

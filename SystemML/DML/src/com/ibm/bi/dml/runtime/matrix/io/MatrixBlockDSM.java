@@ -40,6 +40,7 @@ import com.ibm.bi.dml.runtime.util.RandNPair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.functionobjects.And;
 
 
 public class MatrixBlockDSM extends MatrixValue{
@@ -56,6 +57,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	protected SparseRow[] sparseRows=null;
 	protected int nonZeros=0;
 	
+	protected int estimatedNNzsPerRow=-1;//only used for allocation purpose for sparse representation
 	
 	/**
 	 * Computes the size of this {@link MatrixBlockDSM} object in main memory,
@@ -79,41 +81,94 @@ public class MatrixBlockDSM extends MatrixValue{
 		return all_size;
 	}*/
 	
-	public static boolean checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
+	public static long estimateSize(int nrows, int ncols, double sparsity)
 	{
+		long size=44;//the basic variables and references sizes
+		//get real sparsity
+		boolean sparse=true;
+		if(ncols==1)
+			sparse=false;
+		else
+			sparse= sparsity < SPARCITY_TURN_POINT;
+		if(sparse)
+		{
+			size+=(Math.max(SparseRow.initialCapacity, Math.floor(sparsity*ncols))*12+28)*nrows;
+		}else
+			size+=nrows*ncols*8;
+		return size;
+	}
+	
+	public static class SparsityEstimate
+	{
+		public int estimatedNonZeros=0;
+		public boolean sparse=false;
+		public SparsityEstimate(boolean sps, int nnzs)
+		{
+			sparse=sps;
+			estimatedNonZeros=nnzs;
+		}
+		public SparsityEstimate(){}
+	}
+	
+	public static SparsityEstimate checkSparcityOnAggBinary(MatrixBlockDSM m1, MatrixBlockDSM m2, AggregateBinaryOperator op)
+	{
+		SparsityEstimate est=new SparsityEstimate();
+		
+		double m=m2.getNumColumns();
+		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if ( m2.getNumColumns() == 1)
-			return false;
-		double n=m1.getNumRows();
-		double k=m1.getNumColumns();
-		double m=m2.getNumColumns();
-		double nz1=m1.getNonZeros();
-		double nz2=m2.getNonZeros();
-		double pq=nz1*nz2/n/k/k/m;
-	//	double estimated= 1-Math.pow(1-pq, k);
-		return ( 1-Math.pow(1-pq, k) < SPARCITY_TURN_POINT );
+		if ( !op.sparseSafe || m == 1)
+		{
+			est.sparse=false;
+		}
+		else
+		{
+			double n=m1.getNumRows();
+			double k=m1.getNumColumns();	
+			double nz1=m1.getNonZeros();
+			double nz2=m2.getNonZeros();
+			double pq=nz1*nz2/n/k/k/m;
+			double estimated= 1-Math.pow(1-pq, k);
+			est.sparse=(estimated < SPARCITY_TURN_POINT);
+			est.estimatedNonZeros=(int)(estimated*n*m);
+		}
+		return est;
 	}
 	
 	/*private boolean isVector() {
 		return (this.getNumRows() == 1 || this.getNumColumns() == 1);
 	}*/
 	
-	private static boolean checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2)
+	private static SparsityEstimate checkSparcityOnBinary(MatrixBlockDSM m1, MatrixBlockDSM m2, BinaryOperator op)
 	{
+		SparsityEstimate est=new SparsityEstimate();
+		double m=m1.getNumColumns();
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide 
-		if ( m1.getNumColumns()==1 )
-			return false;
+		if(!op.sparseSafe || m==1)
+		{
+			est.sparse=false;
+			return est;
+		}
 		
 		double n=m1.getNumRows();
-		double m=m1.getNumColumns();
 		double nz1=m1.getNonZeros();
 		double nz2=m2.getNonZeros();
-		//1-(1-p)*(1-q)
-	//	double estimated=1- (1-nz1/n/m)*(1-nz2/n/m);
-		return ( 1- (1-nz1/n/m)*(1-nz2/n/m) < SPARCITY_TURN_POINT);
 		
+		double estimated=0;
+		if(op.fn instanceof And || op.fn instanceof Multiply)//p*q
+		{
+			estimated=nz1/n/m*nz2/n/m;
+			
+		}else //1-(1-p)*(1-q)
+		{
+			estimated=1-(1-nz1/n/m)*(1-nz2/n/m);
+		}
+		est.sparse= (estimated<SPARCITY_TURN_POINT);
+		est.estimatedNonZeros=(int)(estimated*n*m);
+		
+		return est;
 	}
 	
 	private static boolean checkRealSparcity(MatrixBlockDSM m)
@@ -141,6 +196,12 @@ public class MatrixBlockDSM extends MatrixValue{
 		sparse=sp;
 		nonZeros=0;
 		maxrow = maxcolumn = 0;
+	}
+	
+	public MatrixBlockDSM(int rl, int cl, boolean sp, int estnnzs)
+	{
+		this(rl, cl, sp);
+		estimatedNNzsPerRow=(int)Math.floor((double)estnnzs/(double)rl);	
 	}
 	
 	public MatrixBlockDSM(MatrixBlockDSM that)
@@ -187,6 +248,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		nonZeros = 0;
 		maxrow = nrows;
 		maxcolumn = ncols;
+		estimatedNNzsPerRow=(int)Math.floor((double)map.size()/(double)rlen);
 		
 		for (CellIndex index : map.keySet()) {
 			double d  = map.get(index).doubleValue();
@@ -269,11 +331,13 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			for(int i=0; i<Math.min(rlen, sparseRows.length); i++)
 				if(sparseRows[i]!=null)
-					sparseRows[i].reset();
+					sparseRows[i].reset(estimatedNNzsPerRow, clen);
 		}
 	}
-	public void reset()
+	
+	public void reset(int estnnzs)
 	{
+		estimatedNNzsPerRow=(int)Math.floor((double)estnnzs/(double)rlen);
 		if(sparse)
 		{
 			resetSparse();
@@ -291,6 +355,18 @@ public class MatrixBlockDSM extends MatrixValue{
 		nonZeros=0;
 	}
 	
+	public void reset()
+	{
+		reset(-rlen);
+	}
+	
+	public void reset(int rl, int cl, int estnnzs) {
+		rlen=rl;
+		clen=cl;
+		nonZeros=0;
+		reset(estnnzs);
+	}
+	
 	public void reset(int rl, int cl) {
 		rlen=rl;
 		clen=cl;
@@ -304,7 +380,16 @@ public class MatrixBlockDSM extends MatrixValue{
 		reset(rl, cl);
 	}
 	
+	public void reset(int rl, int cl, boolean sp, int estnnzs)
+	{
+		sparse=sp;
+		reset(rl, cl, estnnzs);
+	}
+	
+	
 	public void resetDenseWithValue(int rl, int cl, double v) {
+		
+		estimatedNNzsPerRow=-1;
 		rlen=rl;
 		clen=cl;
 		sparse=false;
@@ -371,7 +456,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				else
 					sparseRows[i].copy(that.sparseRows[i]);
 			}else if(this.sparseRows[i]!=null)
-				this.sparseRows[i].reset();
+				this.sparseRows[i].reset(estimatedNNzsPerRow, clen);
 		}
 	}
 	
@@ -433,9 +518,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 		{
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			else
-				sparseRows[r].reset();
+				sparseRows[r].reset(estimatedNNzsPerRow, clen);
 			
 			for(int c=0; c<clen; c++)
 			{
@@ -456,6 +541,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=sp;
+		estimatedNNzsPerRow=(int)Math.floor((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)
@@ -477,6 +563,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=checkRealSparcity(that);
+		estimatedNNzsPerRow=(int)Math.floor((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)
@@ -741,9 +828,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			sp = false; // if the operation is not sparse safe, then result will be in dense format
 		
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sp);
+			result=new MatrixBlockDSM(rlen, clen, sp, this.nonZeros);
 		else
-			result.reset(rlen, clen, sp);
+			result.reset(rlen, clen, sp, this.nonZeros);
 		
 		result.copy(this, sp);
 		
@@ -768,8 +855,14 @@ public class MatrixBlockDSM extends MatrixValue{
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		checkType(result);
+		
+		// estimate the sparsity structure of result matrix
+		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
+		if (!op.sparseSafe)
+			sp = false; // if the operation is not sparse safe, then result will be in dense format
+		
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sparse);
+			result=new MatrixBlockDSM(rlen, clen, sp, this.nonZeros);
 		result.copy(this);
 		
 		if(op.sparseSafe)
@@ -791,11 +884,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	private MatrixBlockDSM denseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
 	throws DMLRuntimeException 
 	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
+		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, resultSparse);
+			result=new MatrixBlockDSM(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		else
-			result.reset(rlen, clen, resultSparse);
+			result.reset(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
 		//double st = System.nanoTime();
 		double v;
@@ -883,11 +976,11 @@ public class MatrixBlockDSM extends MatrixValue{
 	private MatrixBlockDSM sparseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
 	throws DMLRuntimeException 
 	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
+		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, resultSparse);
+			result=new MatrixBlockDSM(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		else
-			result.reset(rlen, clen, resultSparse);
+			result.reset(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
 		if(this.sparse && that.sparse)
 		{
@@ -1243,7 +1336,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			double curV=sparseRows[r].get(c);
 			if(curV==0)
 				nonZeros++;
@@ -1321,7 +1414,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				return;
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			
 			if(sparseRows[r].set(c, v))
 				nonZeros++;
@@ -1355,7 +1448,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				return;
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			
 			if(sparseRows[r].set(c, v))
 				nonZeros++;
@@ -1394,7 +1487,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		{
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			sparseRows[r].append(c, v);
 			nonZeros++;
 		}
@@ -1582,13 +1675,13 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(nr==0)
 			{
 				if(sparseRows[r]!=null)
-					sparseRows[r].reset();
+					sparseRows[r].reset(estimatedNNzsPerRow, clen);
 				continue;
 			}
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(nr);
 			else
-				sparseRows[r].reset();
+				sparseRows[r].reset(nr, clen);
 			for(int j=0; j<nr; j++)
 				sparseRows[r].append(in.readInt(), in.readDouble());
 		}
@@ -1710,6 +1803,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(MaxIndex.getMaxIndexFnObject())))
 			throw new DMLRuntimeException("the current reorgOperations cannot support "
 					+op.fn.getClass()+", needs to examine whether appendValue is applicable!");
+	//	long time=System.currentTimeMillis();
 		MatrixBlockDSM result=checkType(ret);
 		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
 		boolean sps;
@@ -1719,9 +1813,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			sps=checkRealSparcity(this);
 			
 		if(result==null)
-			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps);
+			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps);
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
@@ -1757,8 +1851,29 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
-		
+	//	time=System.currentTimeMillis()-time;
+	//	System.out.println("------------- transpose ------------");
+	//	System.out.println(time+"\t"+result.getCapacity()+"\t"+result.getNonZeros());
 		return result;
+	}
+	
+	public int getCapacity()
+	{
+		if(sparse)
+		{
+			if(sparseRows==null)
+				return 0;
+			int size=0;
+			for(int r=0; r<Math.min(sparseRows.length, getNumRows()); r++)
+				if(sparseRows[r]!=null)
+					size+=sparseRows[r].capacity();
+			return size;
+		}else
+		{
+			if(denseBlock==null)
+				return 0;
+			return denseBlock.length;
+		}
 	}
 	
 	//TODO MB: remove row, col, len because not used (after MatrixObject is removed)
@@ -1775,9 +1890,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			sps=checkRealSparcity(this);
 			
 		if(result==null)
-			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps);
+			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		else if(result.getNumRows()==0 && result.getNumColumns()==0)
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps);
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
@@ -1925,10 +2040,11 @@ public class MatrixBlockDSM extends MatrixValue{
 		// (assuming a uniform distribution of non-zeros in the input)
 		boolean result_sparsity = this.sparse;
 		MatrixBlockDSM result=checkType(ret);
+		int estnnzs=(int) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		if(result==null)
-			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity);
+			result=new MatrixBlockDSM(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
 		else
-			result.reset(ru-rl+1, cu-cl+1, result_sparsity);
+			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
 		
 		if (sparse) {
 			if ( sparseRows != null ) {
@@ -2069,9 +2185,9 @@ public class MatrixBlockDSM extends MatrixValue{
 			sps=false;
 			
 		if(result==null)
-			result=new MatrixBlockDSM(rlen, clen, sps);
+			result=new MatrixBlockDSM(rlen, clen, sps, (int)(estimatedSps*rlen*clen));
 		else
-			result.reset(rlen, clen, sps);
+			result.reset(rlen, clen, sps, (int)(estimatedSps*rlen*clen));
 		
 		
 		if(sparse)
@@ -2975,11 +3091,11 @@ public class MatrixBlockDSM extends MatrixValue{
 			throw new RuntimeException("dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+")");
 		int rl=m1.rlen;
 		int cl=m2.clen;
-		boolean sp=checkSparcityOnAggBinary(m1, m2);
+		SparsityEstimate sp=checkSparcityOnAggBinary(m1, m2, op);
 		if(result==null)
-			result=new MatrixBlockDSM(rl, cl, sp);//m1.sparse&&m2.sparse);
+			result=new MatrixBlockDSM(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
 		else
-			result.reset(rl, cl, sp);//m1.sparse&&m2.sparse);
+			result.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
 		
 		if(op.sparseSafe)
 			sparseAggregateBinaryHelp(m1, m2, (MatrixBlockDSM)result, op);
@@ -3691,7 +3807,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		for(int r=0; r<rlen; r++)
 		{
 			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow();
+				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
 			
 			for(int c=0; c<clen; c++)
 			{
@@ -3740,10 +3856,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
 	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
-		if(resultSparse && !this.sparse)
+		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
+		if(resultSparse.sparse && !this.sparse)
 			denseToSparse();
-		else if(!resultSparse && this.sparse)
+		else if(!resultSparse.sparse && this.sparse)
 			sparseToDense();
 		
 		double v;
@@ -3757,10 +3873,10 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private void sparseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
 	{
-		boolean resultSparse=checkSparcityOnBinary(this, that);
-		if(resultSparse && !this.sparse)
+		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
+		if(resultSparse.sparse && !this.sparse)
 			denseToSparse();
-		else if(!resultSparse && this.sparse)
+		else if(!resultSparse.sparse && this.sparse)
 			sparseToDense();
 		
 		if(this.sparse && that.sparse)
@@ -3917,7 +4033,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			// sparse representation
 			this.sparseRows=new SparseRow[rows];
 			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow();	
+				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
 				for(int j=0; j<cols; j++) {
 					if(random.nextDouble() <= sparsity) {
 						val = min + (range * ru.nextDouble());
@@ -3975,7 +4091,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			RandN rn = new RandN(ru);
 			this.sparseRows=new SparseRow[rows];
 			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow();	
+				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
 				for(int j=0; j<cols; j++) {
 					if(random.nextDouble()>sparsity)
 						continue;
@@ -4017,12 +4133,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
 		Random random=new Random(seed);
-		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true);
+		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, true, (int)(sparsity*rows*cols));
 		m.sparseRows=new SparseRow[rows];
 		double val;
 		for(int i=0; i<rows; i++)
 		{
-			m.sparseRows[i]=new SparseRow();	
+			m.sparseRows[i]=new SparseRow(m.estimatedNNzsPerRow, m.clen);	
 			for(int j=0; j<cols; j++)
 			{
 				if(random.nextDouble()>sparsity)
@@ -4152,11 +4268,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	 * this should be called only in the read and write functions for CP
 	 * This function should be called before calling any setValueSparseUnsafe() or appendValueSparseUnsafe()
 	 */
-	public void spaceAllocForSparseUnsafe(int rl, int cl)
+	public void spaceAllocForSparseUnsafe(int rl, int cl, int estimatedmNNzs)
 	{
 		sparse=true;
 		rlen=rl;
 		clen=cl;
+		int nnzsPerRow=(int) Math.floor((double)estimatedmNNzs/(double)rl);
 		if(sparseRows!=null)
 		{
 			if(sparseRows.length>=rlen)
@@ -4164,9 +4281,9 @@ public class MatrixBlockDSM extends MatrixValue{
 				for(int i=0; i<rlen; i++)
 				{
 					if(sparseRows[i]==null)
-						sparseRows[i]=new SparseRow();
+						sparseRows[i]=new SparseRow(nnzsPerRow, cl);
 					else
-						sparseRows[i].reset();
+						sparseRows[i].reset(nnzsPerRow, cl);
 				}
 			}else
 			{
@@ -4178,19 +4295,19 @@ public class MatrixBlockDSM extends MatrixValue{
 					if(temp[i]!=null)
 					{
 						sparseRows[i]=temp[i];
-						sparseRows[i].reset();
+						sparseRows[i].reset(nnzsPerRow, cl);
 					}else
-						sparseRows[i]=new SparseRow();
+						sparseRows[i]=new SparseRow(nnzsPerRow, cl);
 				}
 				for(; i<rlen; i++)
-					sparseRows[i]=new SparseRow();
+					sparseRows[i]=new SparseRow(nnzsPerRow, cl);
 			}
 			
 		}else
 		{
 			sparseRows=new SparseRow[rlen];
 			for(int i=0; i<rlen; i++)
-				sparseRows[i]=new SparseRow();
+				sparseRows[i]=new SparseRow(nnzsPerRow, cl);
 		}
 	}
 	
@@ -4252,7 +4369,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		System.out.println(b1);
 		
 		MatrixBlockDSM b2=new MatrixBlockDSM();
-		b2.spaceAllocForSparseUnsafe(r, c);
+		b2.spaceAllocForSparseUnsafe(r, c, SparseRow.initialCapacity*r);
 		for(int i=0; i<r; i++)
 			for(int j=0; j<c; j++)
 				b2.setValueSparseUnsafe(i, j, b1.getValueDenseUnsafe(i, j));
@@ -4262,7 +4379,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		//append is better than set, if you control the order of set
 		MatrixBlockDSM b3=new MatrixBlockDSM();
-		b3.spaceAllocForSparseUnsafe(r, c);
+		b3.spaceAllocForSparseUnsafe(r, c, SparseRow.initialCapacity*r);
 		for(int i=0; i<r; i++)
 			for(int j=0; j<c; j++)
 				b3.appendValueSparseUnsafe(i, j, b2.getValueSparseUnsafe(i, j));
@@ -4550,8 +4667,21 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
+		MatrixBlockDSM m=getRandomSparseMatrix(10, 10, 0.5, 1);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		MatrixBlockDSM m2=new MatrixBlock();
+		m2.copy(m);
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m2);
+		m.reset(20, 20, true, 200);
+		m.setValue(1, 19, 119);
+		m.setValue(19, 19, 1919);
 		
-		testGetSparseCellInterator();
+		System.out.println("~~~~~~~~~~~~");
+		System.out.println(m);
+		
+		//testGetSparseCellInterator();
 		//testUnsafeSetNGet(10, 10);
 		
 	//	int rows=10, cols=10, runs=10;

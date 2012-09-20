@@ -1071,7 +1071,7 @@ public class PerfTestTool
 				mb = new MatrixBlock(dim,dim,false);
 				break;
 			case SPARSE:
-				mb = new MatrixBlock(dim,dim,true);
+				mb = new MatrixBlock(dim,dim,true, (int)(sparsity*dim*dim));
 				break;
 		}
 		
@@ -1123,7 +1123,7 @@ public class PerfTestTool
 				mb = new MatrixBlock(d1,d2,false);
 				break;
 			case SPARSE:
-				mb = new MatrixBlock(d1,d2,true);
+				mb = new MatrixBlock(d1,d2,true, (int)(sparsity*dim1*dim2));
 				break;
 		}
 		

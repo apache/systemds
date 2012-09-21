@@ -126,8 +126,12 @@ public class ELStatementBlock extends StatementBlock {
 		for (String input : pp.getInputs()){
 		
 			DataIdentifier var = this.liveIn().getVariables().get(input);
+			
+			long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+			long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
+			
 			DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), 
-				DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(),
+				DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(),
 				var.getRowsInBlock(), var.getColumnsInBlock());
 			read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 			read.set_rows_in_block(var.getRowsInBlock()) ;

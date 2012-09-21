@@ -1694,7 +1694,9 @@ public class DMLTranslator {
 			
 			for (String varName : liveIn.getVariables().keySet()) {
 				DataIdentifier var = liveIn.getVariables().get(varName);
-				DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, var.getDim1(), var.getDim2(), var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
+				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
+				DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
 				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 				_ids.put(varName, read);
 			}
@@ -1734,6 +1736,9 @@ public class DMLTranslator {
 
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
+					
+					
+					
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
 					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 					transientwrite.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
@@ -2054,8 +2059,11 @@ public class DMLTranslator {
 			if (var == null) {
 				throw new ParseException(var.printErrorLocation() + "variable " + varName + " not live variable for conditional predicate");
 			} else {
+				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
+				
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, var.getDim1(), var.getDim2(), var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
+						null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
 				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 			}
 			_ids.put(varName, read);
@@ -2112,8 +2120,10 @@ public class DMLTranslator {
 				throw new ParseException(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
 			}
 			else {
+				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, var.getDim1(), var.getDim2(),  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
+						null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
 				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
 			}
 			_ids.put(varName, read);
@@ -2325,8 +2335,7 @@ public class DMLTranslator {
 					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(source.getName()));
 					rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 				} catch (HopsException e) {
-					e.printStackTrace();
-					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString());
+					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString() + e);
 				}
 			}
 		}
@@ -2346,8 +2355,7 @@ public class DMLTranslator {
 				try {
 					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(source.getName()));
 				} catch (HopsException e) {
-					e.printStackTrace();
-					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString());
+					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
 				}
 			}
 		}

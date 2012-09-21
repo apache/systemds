@@ -1374,8 +1374,10 @@ public class MatrixBlockDSM extends MatrixValue{
 			if ( sparseRows != null ) {
 				double []values = null;
 				for(int r=0; r < sparseRows.length; r++ ) {
+					if ( sparseRows[r] == null )
+						continue;
 					values = sparseRows[r].getValueContainer();
-					for (int i=0; i<values.length; i++) {
+					for (int i=0; i<sparseRows[r].size(); i++) {
 						if ( values[i] != 0 )
 							++nnz;
 					}
@@ -3451,7 +3453,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				if ( sparseRows[i] == null)
 					continue;
 				double[] values = sparseRows[i].getValueContainer();
-				for ( int j=0; j < values.length; j++ ) {
+				for ( int j=0; j < sparseRows[i].size(); j++ ) {
 					d = values[j];
 					min = (d < min ? d : min);
 					max = (d > max ? d : max);
@@ -3466,7 +3468,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 		if ( min <= 0 )
-			throw new DMLRuntimeException("Invalid value (" + min + ") encountered in \"groups\" while computing groupedAggregate.");
+			throw new DMLRuntimeException("Invalid value (" + min + ") encountered in \"groups\" while computing groupedAggregate");
 		if ( max <= 0 )
 			throw new DMLRuntimeException("Invalid value (" + max + ") encountered in \"groups\" while computing groupedAggregate.");
 		int numGroups = (int) max;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -145,7 +146,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 				
 				//parallel merge of all inputs
 
-				int numThreads = Math.min(par, inMO.size());
+				int numThreads = Math.min(par, inMO.size()); //number of inputs can be lower than par
+				numThreads = Math.min(numThreads, InfrastructureAnalyzer.getLocalParallelism()); //ensure robustness for remote exec
 				Thread[] threads = new Thread[ numThreads ];
 				for( int k=0; k<inMO.size(); k+=numThreads ) //multiple waves if necessary
 				{

@@ -56,7 +56,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  *       and since partitioning only applied if exclusively indexed access.
  *
  *
- * TODO metadata file for partitioned matrices ?
  * TODO parallel writing of sequence files (most expensive part and nicely parallelizable, but larger memory requirements)
  *
  */

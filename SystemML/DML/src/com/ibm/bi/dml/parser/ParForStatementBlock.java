@@ -158,7 +158,18 @@ public class ParForStatementBlock extends ForStatementBlock
 			//set defaults for all non-specified values
 			for( String key : _paramNames )
 				if( !params.containsKey(key) )
-					params.put(key, _paramDefaults.get(key));
+				{
+					//special treatment for degree of parallelism
+					if( key.equals(PAR) && params.containsKey(EXEC_MODE) 
+						&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
+					{
+						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelMapTasks()));
+					}
+					else //default case
+						params.put(key, _paramDefaults.get(key));
+				}
+			
+		 
 		}
 		else
 		{

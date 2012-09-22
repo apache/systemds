@@ -151,15 +151,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 				
-				//init local cache manager 
-				if( !CacheableData.isCachingActive() ) 
-					CacheableData.initCaching(); //incl activation
-				
-				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
-				{
-					CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
-					CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
-				}
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
@@ -169,6 +160,16 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				_ec          = body.getEc();				
 				_resultVars  = body.getResultVarNames();
 		
+				//init local cache manager 
+				if( !CacheableData.isCachingActive() ) 
+					CacheableData.initCaching(); //incl activation
+				
+				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
+				{
+					CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
+					CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
+				}
+				
 				//ensure that resultvar files are not removed
 				pinResultVariables();
 				

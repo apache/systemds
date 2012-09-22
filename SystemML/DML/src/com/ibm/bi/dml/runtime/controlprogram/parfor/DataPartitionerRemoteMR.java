@@ -52,7 +52,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	{
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
-		job.setJobName("ParFOR-DP_"+_pfid);
+		job.setJobName("ParFor_Partition-MR_"+_pfid);
 		
 		try
 		{

@@ -37,6 +37,9 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * - 4) rewrite set degree of parallelism
  * - 5) rewrite set task partitioner		 		 
  * - 6) remove unnecessary parfor 			 
+ * - 7) blockwise partitioning TODO requires postprocessing step and runtime extension
+ *  
+ * TODO: decide on column blockwise / row-blockwise  
  *  
  */
 public class OptimizerRuleBased extends Optimizer

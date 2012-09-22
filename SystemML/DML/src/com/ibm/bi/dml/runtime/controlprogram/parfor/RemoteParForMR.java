@@ -55,7 +55,7 @@ public class RemoteParForMR
 		
 		JobConf job;
 		job = new JobConf( RemoteParForMR.class );
-		job.setJobName("ParFOR-MR_"+pfid);
+		job.setJobName("ParFor_Execute-MR"+pfid);
 		
 	
 		try

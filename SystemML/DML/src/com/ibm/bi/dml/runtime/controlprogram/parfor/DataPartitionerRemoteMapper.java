@@ -93,7 +93,7 @@ public class DataPartitionerRemoteMapper
 		protected DataPartitionerMapper( MultipleOutputs mos, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
 		{
 			_mos = mos;
-			
+
 			_rlen = rlen;
 			_clen = clen;
 			_brlen = brlen;

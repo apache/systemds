@@ -1,0 +1,18 @@
+dynRead = externalFunction(String fname, Integer rows, Integer cols, String format)
+return (Matrix[Double] M) 
+implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP",exectype="mem")   
+
+dynWrite = externalFunction(Matrix[Double] in, String fname, String format)
+return(Boolean success)
+implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP",exectype="mem")  
+
+
+X = read($1, rows=$2, cols=$3, format="text");
+
+s = $1+"2";
+ret1 = dynWrite(X, s, $4);
+Y = dynRead(s, $2, $3, $4);
+ret2 = dynWrite(Y, $5, $4);
+
+print("successfully written: "+ret2);
+   

@@ -51,7 +51,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * 
  * TODO potential extension: parallel merge (create individual staging files concurrently)
  *     
- *      NOTE: file merge typically used due to memory constraints - parallel merge would increas the memory
+ *      NOTE: file merge typically used due to memory constraints - parallel merge would increase the memory
  *      consumption again.
  */
 public class ResultMergeLocalFile extends ResultMerge
@@ -792,7 +792,7 @@ public class ResultMergeLocalFile extends ResultMerge
 						int maxRow = (int)(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
 						int maxCol = (int)(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
 				
-						mb = new MatrixBlock(maxRow, maxCol, false); //TODO see DataConverter writeMatrixtoHDFS
+						mb = new MatrixBlock(maxRow, maxCol, false);
 					}	
 					
 					//mb.examSparsity(); //done on write anyway

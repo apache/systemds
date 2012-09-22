@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
@@ -53,10 +52,10 @@ public abstract class CacheableData extends Data
 	public static final CACHE_EVICTION_POLICY cacheEvictionPolicy = CACHE_EVICTION_POLICY.DEFAULT;
     public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
 	
-    public static final String cacheEvictionLocalFilePath = "/tmp/systemml/cache/"+Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; 
+    public static String cacheEvictionLocalFilePath = null; //set during init
     public static String cacheEvictionLocalFilePrefix = "cache";
     public static final String cacheEvictionLocalFileExtension = ".dat";
-    public static final String cacheEvictionHDFSFilePath = Lops.PROCESS_PREFIX+DMLScript.getUUID()+"/"; //prefix dir is set during runtime
+    public static String cacheEvictionHDFSFilePath = null; //prefix dir is set during runtime
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
     
@@ -160,6 +159,8 @@ public abstract class CacheableData extends Data
 				break;
 		}
 		
+		
+		
 		//clean files with cache prefix
 		try
 		{
@@ -167,20 +168,16 @@ public abstract class CacheableData extends Data
 			{
 				case LOCAL:
 					File fdir = new File(dir);
-					File[] files = fdir.listFiles();
-					for( File f : files )
-						if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-							f.delete();
-					fdir.delete();
+					if( fdir.exists() ){ //just for robustness
+						File[] files = fdir.listFiles();
+						for( File f : files )
+							if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+								f.delete();
+						fdir.delete();
+					}
 					break;
 				case HDFS:
 					MapReduceTool.deleteFileIfExistOnHDFS( dir );
-					//old version
-					//FileSystem fs = FileSystem.get(new Configuration());
-					//FileStatus[] status = fs.listStatus(new Path(dir));
-					//for( FileStatus f : status )
-					//	if( f.getPath().getName().startsWith(cacheEvictionHDFSFilePrefix) )
-					//		fs.delete(f.getPath(), true);
 					break;
 			}
 		}
@@ -200,19 +197,18 @@ public abstract class CacheableData extends Data
 	{
 		//get directory name
 		String dir = null;
+		DMLConfig conf = ConfigurationManager.getConfig();
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				dir = cacheEvictionLocalFilePath;
+				dir = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR)
+				      + "/cache/" + Lops.PROCESS_PREFIX + DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				cacheEvictionLocalFilePath = dir;
 				break;
 			case HDFS:
-				try {
-					dir = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) + 
-					      Lops.FILE_SEPARATOR + cacheEvictionHDFSFilePath;
-				} 
-				catch (ParseException e){ 
-					System.out.println("Error parsing configuration file."); 
-				}
+				dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
+				      + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX+DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				cacheEvictionHDFSFilePath = dir;
 				break;
 		}
 		

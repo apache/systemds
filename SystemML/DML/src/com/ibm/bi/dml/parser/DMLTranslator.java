@@ -32,6 +32,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLCleanup;
@@ -51,6 +52,7 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLWhileProgramBlock;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLWithTable;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -58,11 +60,19 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class DMLTranslator {
-	public static final int DMLBlockSize = 1000;
+	public static int DMLBlockSize = 1000;
+	
 	public DMLProgram _dmlProg;
 		
-	public DMLTranslator(DMLProgram dmlp) {
+	public DMLTranslator(DMLProgram dmlp) 
+		throws DMLRuntimeException 
+	{
 		_dmlProg = dmlp;
+		
+		//each script sets its own block size, opt level etc
+		DMLConfig conf = ConfigurationManager.getConfig();
+		DMLBlockSize = conf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE );	
+		OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
 	}
 
 	/**

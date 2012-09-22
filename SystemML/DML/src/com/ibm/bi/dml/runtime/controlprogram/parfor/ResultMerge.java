@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -10,6 +11,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -21,7 +23,8 @@ public abstract class ResultMerge
 {
 	protected static final boolean LDEBUG = DMLScript.DEBUG || false; //local debug flag
 	protected static final String NAME_SUFFIX = "_rm";
-	protected static final String STAGING_DIR = "/tmp/systemml/resultmerge/";	
+	
+	protected static String STAGING_DIR = null;
 	
 	//inputs to result merge
 	protected MatrixObjectNew   _output      = null;
@@ -33,6 +36,12 @@ public abstract class ResultMerge
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
+		
+		DMLConfig conf = ConfigurationManager.getConfig();
+		if( conf != null )
+			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
+		else
+			STAGING_DIR = "tmp/systemml/resultmerge/";
 	}
 	
 	/**
@@ -105,8 +114,6 @@ public abstract class ResultMerge
 		
 		if( in.isInSparseFormat() ) //sparse input format
 		{
-			//for a merge this case will seldom happen, as each input MatrixObject
-			//has at most 1/numThreads of all values in it.
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
 				for( int i=0; i<rows; i++ )

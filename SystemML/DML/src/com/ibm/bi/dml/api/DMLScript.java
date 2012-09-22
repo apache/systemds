@@ -208,21 +208,14 @@ public class DMLScript {
 		}
 		ConfigurationManager.setConfig(defaultConfig);
 		
+		
 		////////////////print config file parameters /////////////////////////////
 		if (DEBUG){
-			System.out.println("INFO: ****** DMLConfig parameters *****");			
-			System.out.println("INFO: " + DMLConfig.SCRATCH_SPACE  + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
-			System.out.println("INFO: " + DMLConfig.NUM_REDUCERS   + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REDUCERS));
-			System.out.println("INFO: " + DMLConfig.DEF_BLOCK_SIZE + ": " + ConfigurationManager.getConfig().getTextValue(DMLConfig.DEF_BLOCK_SIZE));
-			System.out.println("INFO: " + DMLConfig.NUM_MERGE_TASKS      + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_MERGE_TASKS));
-			System.out.println("INFO: " + DMLConfig.NUM_SOW_THREADS      + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_SOW_THREADS));
-			System.out.println("INFO: " + DMLConfig.NUM_REAP_THREADS     + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NUM_REAP_THREADS ));
-			System.out.println("INFO: " + DMLConfig.SOWER_WAIT_INTERVAL  + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.SOWER_WAIT_INTERVAL ));
-			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));
-			System.out.println("INFO: " + DMLConfig.NIMBLE_SCRATCH       + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.NIMBLE_SCRATCH ));
-			System.out.println("INFO: " + DMLConfig.REAPER_WAIT_INTERVAL + ": "+ ConfigurationManager.getConfig().getTextValue(DMLConfig.REAPER_WAIT_INTERVAL));	
+			System.out.println("INFO: ****** DMLConfig parameters *****");	
+			defaultConfig.printConfigInfo();
 		}
-
+		
+		
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(_dmlScriptString, _argVals);

@@ -36,6 +36,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -146,7 +147,8 @@ public class Dag<N extends Lops> {
 
 		/** get number of reducers from job config */
 		JobConf jConf = new JobConf();
-		total_reducers = jConf.getInt("mapred.reduce.tasks", DMLConfig.DEFAULT_NUM_REDUCERS);
+		DMLConfig conf = ConfigurationManager.getConfig();
+		total_reducers = jConf.getInt("mapred.reduce.tasks", conf.getIntValue(DMLConfig.NUM_REDUCERS) );
 	}
 
 	public ArrayList<Instruction> getJobs(boolean debug, DMLConfig config)

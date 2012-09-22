@@ -4,6 +4,7 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -11,6 +12,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -20,14 +22,21 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 public abstract class DataPartitioner 
 {	
 	protected static final String NAME_SUFFIX = "_dp";
-	protected static final String STAGING_DIR = "/tmp/systemml/partitioning/";	
 	protected static final int CELL_BUFFER_SIZE = 100000;
+	
+	protected static String STAGING_DIR = null;	
 	
 	protected PDataPartitionFormat _format = null;
 	
 	protected DataPartitioner( PDataPartitionFormat dpf )
 	{
 		_format = dpf;
+		
+		DMLConfig conf = ConfigurationManager.getConfig();
+		if( conf != null )
+			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
+		else
+			STAGING_DIR = "tmp/systemml/partitioning/";
 	}
 	
 	/**

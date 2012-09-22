@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class OptimizerUtils {
 
@@ -21,7 +22,7 @@ public class OptimizerUtils {
 	 *
 	 */
 	public enum OptimizationType { STATIC, MEMORY_BASED };
-	private static OptimizationType _optType = OptimizationType.STATIC;
+	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
 	public static OptimizationType getOptType() {
 		return _optType;
 	}
@@ -36,12 +37,39 @@ public class OptimizerUtils {
 	 * necessary precautions at runtime (e.g., make sure to avoid OutOfMemoryExceptions)
 	 *              
 	 */
-	public enum OptimizationMode { ROBUST, AGGRESSIVE };
+	public enum OptimizationMode { NONE, ROBUST, AGGRESSIVE };
 	private static OptimizationMode _optMode = OptimizationMode.ROBUST;
 	
 	public static OptimizationMode getOptMode() {
 		return _optMode;
 	}
+	
+	public static void setOptimizationLevel( int optlevel ) 
+		throws DMLRuntimeException
+	{
+		if( optlevel < 1 || optlevel > 3 )
+			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 1-3).");
+	
+		switch( optlevel )
+		{
+			// opt level 1: static dimensionality
+			case 1:
+				_optType = OptimizationType.STATIC;
+				_optMode = OptimizationMode.NONE;
+				break;
+			// opt level 2: memory-based (worst-case assumptions)	
+			case 2:
+				_optType = OptimizationType.MEMORY_BASED;
+				_optMode = OptimizationMode.ROBUST;
+				break;
+			// opt level 3: memory-based (average-case assumptions)
+			case 3:
+				_optType = OptimizationType.MEMORY_BASED;
+				_optMode = OptimizationMode.AGGRESSIVE;
+				break;
+		}
+	}
+	
 	
 	/**
 	 * Optimization Constants

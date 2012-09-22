@@ -1,11 +1,27 @@
 <root>
-<numreducers>10</numreducers>
-<scratch>scratch_space</scratch>
-<defaultblocksize>1000</defaultblocksize>
-<NumMergeTasks>4</NumMergeTasks>
-<NumberOfSowThreads>1</NumberOfSowThreads>
-<NumberOfReapThreads>1</NumberOfReapThreads>
-<SowerWaitInterval>1000</SowerWaitInterval>
-<ReaperWaitInterval>1000</ReaperWaitInterval>
-<NimbleScratch>nimbleoutput</NimbleScratch>
+   <!-- local fs tmp working directory-->
+   <localtmpdir>/tmp/systemml</localtmpdir>
+
+   <!-- hdfs tmp working directory--> 
+   <scratch>scratch_space</scratch> 
+
+   <!-- compiler optimization level, valid values: 1 | 2 | 3 
+         opt level 1: static dimensionality
+         opt level 2: memory-based (worst-case assumptions)
+         opt level 3: memory-based (average-case assumptions) -->
+   <optlevel>1</optlevel>  
+
+   <!-- default number of reduce tasks per MR job -->
+   <numreducers>10</numreducers> 
+
+   <!-- default block dim for binary files -->
+   <defaultblocksize>1000</defaultblocksize> 
+
+   <!-- configuration properties for Nimble external package support -->
+   <NumMergeTasks>4</NumMergeTasks>
+   <NumberOfSowThreads>1</NumberOfSowThreads>
+   <NumberOfReapThreads>1</NumberOfReapThreads>
+   <SowerWaitInterval>1000</SowerWaitInterval>
+   <ReaperWaitInterval>1000</ReaperWaitInterval>
+   <NimbleScratch>nimbleoutput</NimbleScratch>
 </root>

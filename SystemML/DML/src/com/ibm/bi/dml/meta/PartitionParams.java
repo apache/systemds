@@ -2,11 +2,11 @@ package com.ibm.bi.dml.meta;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileObject;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 
@@ -49,8 +49,8 @@ public class PartitionParams {
 	
 	String scratch = "";
 	
-	public int rows_in_block = DMLConfig.DEFAULT_BLOCK_SIZE; 
-	public int columns_in_block = DMLConfig.DEFAULT_BLOCK_SIZE; 
+	public int rows_in_block = DMLTranslator.DMLBlockSize; 
+	public int columns_in_block = DMLTranslator.DMLBlockSize; 
 	
 	public int get_rows_in_block() {
 		return rows_in_block ;

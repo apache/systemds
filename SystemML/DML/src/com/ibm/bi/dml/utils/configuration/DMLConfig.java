@@ -3,8 +3,9 @@ package com.ibm.bi.dml.utils.configuration;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.*;
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -29,32 +30,45 @@ public class DMLConfig
 {
 	// external names of configuration properties 
 	// (single point of change for all internal refs)
+	public static final String LOCAL_TMP_DIR        = "localtmpdir";
 	public static final String SCRATCH_SPACE        = "scratch";
+	public static final String OPTIMIZATION_LEVEL   = "optlevel";	
 	public static final String NUM_REDUCERS         = "numreducers";
-	public static final String DEF_BLOCK_SIZE       = "defaultblocksize"; //TODO remove ambiguity (many different places)
+	public static final String DEFAULT_BLOCK_SIZE   = "defaultblocksize"; 	
 	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
 	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
 	public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
 	public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
 	public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
 	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
+
+	//internal config
+	public static String LOCAL_MR_MODE_STAGING_DIR = null;
 	
-	//internal default values
-	public static final int DEFAULT_BLOCK_SIZE = 1000;
-    public static final int DEFAULT_NUM_REDUCERS = 75;
-    public static final String LOCAL_MR_MODE_STAGING_DIR="/tmp/hadoop/mapred/staging";
-	String config_file_name;
+	//configuration default values
+	private static HashMap<String, String> _defaultVals = null;
 	
-	public String getConfig_file_name() {
-		return config_file_name;
-	}
-	Element xml_root;
+
+    private String config_file_name = null;
+	private Element xml_root = null;
 	
 	
-	public DMLConfig( Element root )
+	static
 	{
-		xml_root = root;
+		_defaultVals = new HashMap<String, String>();
+		_defaultVals.put(LOCAL_TMP_DIR,        "/tmp/systemml" );
+		_defaultVals.put(SCRATCH_SPACE,        "scratch_space" );
+		_defaultVals.put(OPTIMIZATION_LEVEL,   "2" );
+		_defaultVals.put(NUM_REDUCERS,         "10" );
+		_defaultVals.put(DEFAULT_BLOCK_SIZE,   "1000" );
+		_defaultVals.put(NUM_MERGE_TASKS,      "4" );
+		_defaultVals.put(NUM_SOW_THREADS,      "1" );
+		_defaultVals.put(NUM_REAP_THREADS,     "1" );
+		_defaultVals.put(SOWER_WAIT_INTERVAL,  "1000" );
+		_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
+		_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 	}
+	
 	
 	/**
 	 * Constructor to setup a DML configuration
@@ -64,7 +78,8 @@ public class DMLConfig
 	 * @throws IOException
 	 */
 
-	public DMLConfig(String fileName) throws ParseException
+	public DMLConfig(String fileName) 
+		throws ParseException
 	{
 		config_file_name = fileName;
 		try {
@@ -73,9 +88,23 @@ public class DMLConfig
 		catch (Exception e){
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
+				
+		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 	}
 	
-	public void merge(DMLConfig otherConfig) throws ParseException
+	
+	public String getConfig_file_name() 
+	{
+		return config_file_name;
+	}
+	
+	public DMLConfig( Element root )
+	{
+		xml_root = root;
+	}
+	
+	public void merge(DMLConfig otherConfig) 
+		throws ParseException
 	{
 		if (otherConfig == null) 
 			return;
@@ -131,20 +160,31 @@ public class DMLConfig
 	
 	/**
 	 * Method to get string value of a configuration parameter
-	 * Handles processing of conguration parameters 
+	 * Handles processing of configuration parameters 
 	 * @param tagName the name of the DMLConfig parameter being retrieved
 	 * @return a string representation of the DMLConfig parameter value.  
 	 */
-	public String getTextValue(String tagName) throws ParseException
+	public String getTextValue(String tagName) 
 	{
+		//get the actual value
 		String retVal = getTextValue(xml_root,tagName);
-		if (retVal == null){
-			throw new ParseException("ERROR: could not find parameter " + tagName + " in DMLConfig" );
+		
+		if (retVal == null)
+		{
+			if( _defaultVals.containsKey(tagName) )
+				retVal = _defaultVals.get(tagName);
+			else
+				System.out.println("Error: requested dml configuration property '"+tagName+"' is invalid.");
 		}
+	
 		
 		return retVal;
 	}
 	
+	public int getIntValue( String tagName )
+	{
+		return Integer.parseInt( getTextValue(tagName) );
+	}
 	
 	
 	/**
@@ -220,5 +260,26 @@ public class DMLConfig
 		}
 		
 		return ret;
+	}
+
+
+	public void printConfigInfo() 
+	{
+		String[] tmpConfig = new String[]{ LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
+				                     NUM_REDUCERS,DEFAULT_BLOCK_SIZE, NUM_MERGE_TASKS, 
+				                     NUM_SOW_THREADS,NUM_REAP_THREADS,SOWER_WAIT_INTERVAL,
+				                     REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH }; 
+		
+		StringBuilder sb = new StringBuilder();
+		for( String tmp : tmpConfig )
+		{
+			sb.append("INFO: ");
+			sb.append(tmp);
+			sb.append(": ");
+			sb.append(getTextValue(tmp));
+			sb.append("\n");
+		}
+		
+		System.out.println(sb.toString());
 	}
 }

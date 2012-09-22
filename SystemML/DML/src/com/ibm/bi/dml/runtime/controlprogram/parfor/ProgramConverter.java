@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
@@ -542,7 +543,7 @@ public class ProgramConverter
 		//handle program
 		sb.append( PARFOR_PROG_BEGIN );
 		sb.append( NEWLINE );
-		sb.append( serializeProgram(prog) );
+		sb.append( serializeProgram(prog, pbs) );
 		sb.append( PARFOR_PROG_END );
 		sb.append( NEWLINE );
 		sb.append( COMPONENTS_DELIM );
@@ -587,14 +588,52 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static String serializeProgram( Program prog ) 
+	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//note program contains variables, programblocks and function program blocks 
 		//but in order to avoid redundancy, we only serialize function program blocks
 		
-		return rSerializeFunctionProgramBlocks( prog.getFunctionProgramBlocks() );
+		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks();		
+		HashSet<String> cand = new HashSet<String>();
+		rFindSerializationCandidates(pbs, cand);
+		
+		return rSerializeFunctionProgramBlocks( fpb, cand );
 	}
+	
+	public static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand )
+	{
+		for( ProgramBlock pb : pbs )
+		{
+			if( pb instanceof WhileProgramBlock )
+			{
+				WhileProgramBlock wpb = (WhileProgramBlock) pb;
+				rFindSerializationCandidates(wpb.getChildBlocks(), cand);			
+			}
+			else if ( pb instanceof ForProgramBlock || pb instanceof ParForProgramBlock )
+			{
+				ForProgramBlock fpb = (ForProgramBlock) pb; 
+				rFindSerializationCandidates(fpb.getChildBlocks(), cand);
+			}				
+			else if ( pb instanceof IfProgramBlock )
+			{
+				IfProgramBlock ipb = (IfProgramBlock) pb;
+				rFindSerializationCandidates(ipb.getChildBlocksIfBody(), cand);
+				if( ipb.getChildBlocksElseBody() != null )
+					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand);
+			}
+			else //all generic program blocks
+			{
+				for( Instruction inst : pb.getInstructions() )
+					if( inst instanceof FunctionCallCPInstruction )
+					{
+						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
+						cand.add( fci.getNamespace() + Program.KEY_DELIM + fci.getFunctionName() );
+					}
+			}
+		}
+	}
+	
 	
 	/**
 	 * 
@@ -643,14 +682,15 @@ public class ProgramConverter
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
 				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
-				matrixMetaData = new String[7];
+				matrixMetaData = new String[8];
 				matrixMetaData[0] = String.valueOf( mc.get_rows() );
 				matrixMetaData[1] = String.valueOf( mc.get_cols() );
 				matrixMetaData[2] = String.valueOf( mc.get_rows_per_block() );
 				matrixMetaData[3] = String.valueOf( mc.get_cols_per_block() );
-				matrixMetaData[4] = InputInfo.inputInfoToString( md.getInputInfo() );
-				matrixMetaData[5] = OutputInfo.outputInfoToString( md.getOutputInfo() );
-				matrixMetaData[6] = String.valueOf( partFormat );
+				matrixMetaData[4] = String.valueOf( mc.getNonZeros() );
+				matrixMetaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
+				matrixMetaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
+				matrixMetaData[7] = String.valueOf( partFormat );
 				break;
 			default:
 				throw new DMLRuntimeException("Unable to serialize datatype "+datatype);
@@ -859,7 +899,7 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static String rSerializeFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs) 
+	public static String rSerializeFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs, HashSet<String> cand) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		StringBuilder sb = new StringBuilder();
@@ -867,6 +907,9 @@ public class ProgramConverter
 		int count = 0;
 		for( Entry<String,FunctionProgramBlock> pb : pbs.entrySet() )
 		{
+			if( !cand.contains(pb.getKey()) ) //skip function not included in the parfor body
+				continue;
+				
 			if( count>0 )
 			{
 			   sb.append( ELEMENT_DELIM );
@@ -1728,14 +1771,15 @@ public class ProgramConverter
 			case MATRIX:
 			{
 				MatrixObjectNew mo = new MatrixObjectNew(valuetype,valString);
-				int rows = Integer.parseInt( st.nextToken() );
-				int cols = Integer.parseInt( st.nextToken() );
+				long rows = Long.parseLong( st.nextToken() );
+				long cols = Long.parseLong( st.nextToken() );
 				int brows = Integer.parseInt( st.nextToken() );
 				int bcols = Integer.parseInt( st.nextToken() );
+				long nnz = Long.parseLong( st.nextToken() );
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
 				PDataPartitionFormat partFormat = PDataPartitionFormat.valueOf( st.nextToken() );
-				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols); 
+				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );

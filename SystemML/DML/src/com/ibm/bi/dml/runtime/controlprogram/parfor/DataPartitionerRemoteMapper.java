@@ -55,14 +55,12 @@ public class DataPartitionerRemoteMapper
 		InputInfo ii = MRJobConfiguration.getPartitioningInputInfo( job );
 		PDataPartitionFormat pdf = MRJobConfiguration.getPartitioningFormat( job );
 		
-		MultipleOutputs mos = new MultipleOutputs(job);
-		
 		if( ii == InputInfo.TextCellInputInfo )
-			_mapper = new DataPartitionerMapperTextcell(mos, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperTextcell(job, rlen, clen, brlen, bclen, pdf);
 		else if( ii == InputInfo.BinaryCellInputInfo )
-			_mapper = new DataPartitionerMapperBinarycell(mos, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperBinarycell(job, rlen, clen, brlen, bclen, pdf);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_mapper = new DataPartitionerMapperBinaryblock(mos, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperBinaryblock(job, rlen, clen, brlen, bclen, pdf);
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
@@ -80,6 +78,7 @@ public class DataPartitionerRemoteMapper
 	
 	private abstract class DataPartitionerMapper //NOTE: could also be refactored as three different mappers
 	{
+		protected JobConf _job = null;
 		protected MultipleOutputs _mos = null;
 		
 		protected long _rlen = -1;
@@ -90,10 +89,10 @@ public class DataPartitionerRemoteMapper
 		protected PDataPartitionFormat _pdf = null;
 	
 		
-		protected DataPartitionerMapper( MultipleOutputs mos, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
+		protected DataPartitionerMapper( JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
 		{
-			_mos = mos;
-
+			_job = job;
+			
 			_rlen = rlen;
 			_clen = clen;
 			_brlen = brlen;
@@ -107,15 +106,18 @@ public class DataPartitionerRemoteMapper
 		protected void close() 
 			throws IOException
 		{
-			_mos.close();
+			if( _mos!=null )
+				_mos.close();
 		}
 	}
 	
+	//TODO flush for textcell binarycell every buffersize or 1000 opened filehandles
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperTextcell(MultipleOutputs mos, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperTextcell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(mos, rlen, clen, brlen, bclen, pdf);
+			super(job, rlen, clen, brlen, bclen, pdf);
+			_mos = new MultipleOutputs(_job);
 		}
 
 		@Override
@@ -181,9 +183,10 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperBinarycell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperBinarycell(MultipleOutputs mos, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinarycell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(mos, rlen, clen, brlen, bclen, pdf);
+			super(job, rlen, clen, brlen, bclen, pdf);
+			_mos = new MultipleOutputs(_job);
 		}
 
 		@Override
@@ -241,17 +244,20 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperBinaryblock extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperBinaryblock(MultipleOutputs mos, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		
+		protected DataPartitionerMapperBinaryblock(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(mos, rlen, clen, brlen, bclen, pdf);
+			super(job, rlen, clen, brlen, bclen, pdf);
 		}
-
+		
 		@Override
 		protected void processKeyValue(Writable key, Writable value, Reporter reporter) 
 			throws IOException 
 		{
 			try
 			{
+				_mos = new MultipleOutputs(_job); //TODO ggf for buffer of key value
+				
 				MatrixIndexes key2 =  (MatrixIndexes)key;
 				MatrixBlock value2 = (MatrixBlock)value;
 				long row_offset = (key2.getRowIndex()-1)*_brlen;
@@ -260,7 +266,7 @@ public class DataPartitionerRemoteMapper
 				boolean sparse = value2.isInSparseFormat();
 				int rows = value2.getNumRows();
 				int cols = value2.getNumColumns();
-	
+
 				//bound check per block
 				if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )
 				{
@@ -314,6 +320,7 @@ public class DataPartitionerRemoteMapper
 						for( int i=0; i<cols; i++ )
 						{
 							outName= String.valueOf( (col_offset+1+i) );
+							//System.out.println(outName);
 							key2.setIndexes((row_offset/_brlen+1), 1 );
 							if( sparse )
 							{
@@ -343,6 +350,9 @@ public class DataPartitionerRemoteMapper
 						out.collect(key2, value2);
 						break;
 				}
+				
+				//flush open file descriptors and buffered mem
+				_mos.close();
 			} 
 			catch (Exception e) 
 			{

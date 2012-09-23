@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -133,8 +134,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
 		FULL_DP    //full cost-based optimization algorithm (global optimum, affects all instructions)				
 	}
-	
-
 		
 	// internal parameters
 	public static final boolean MONITOR                     = false;	// collect internal statistics
@@ -144,13 +143,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean USE_BINARY_MR_TASK_REP	    = false;    // serialize tasks to binary representation for remote communication
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
-	public static final boolean ALLOW_REUSE_MR_JVMS         = true;     // potential benefits: less setup costs per task
+	public static final boolean ALLOW_REUSE_MR_JVMS         = false;     // potential benefits: less setup costs per task
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
-	public static final int     WRITE_REPLICATION_FACTOR    = 3;
+	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
 	
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
@@ -983,7 +982,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				dp = new DataPartitionerLocal(dpf);
 				break;
 			case REMOTE_MR:
-				dp = new DataPartitionerRemoteMR( dpf, _ID, _numThreads, 
+				dp = new DataPartitionerRemoteMR( dpf, _ID, Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
 						                          WRITE_REPLICATION_FACTOR, 
 						                          MAX_RETRYS_ON_ERROR, 
 						                          ALLOW_REUSE_MR_JVMS );

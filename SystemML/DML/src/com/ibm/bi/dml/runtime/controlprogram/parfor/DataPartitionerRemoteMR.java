@@ -23,11 +23,14 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 /**
  * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
  * 
- * TODO create or handle not created directories.
+ * TODO check not created directories.
+ * TODO investigate MultipleSequenceFileOutputFormat
  *
  */
 public class DataPartitionerRemoteMR extends DataPartitioner
 {
+	private static final double MEM_FACTOR = 0.5;
+	
 	private long _pfid = -1;
 	private int  _numMappers = -1;
 	private int  _replication = -1;
@@ -52,7 +55,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	{
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
-		job.setJobName("ParFor_Partition-MR_"+_pfid);
+		job.setJobName("ParFor_Partition-MR"+_pfid);
 		
 		try
 		{
@@ -107,7 +110,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			//set optimization parameters
 
 			//set the number of mappers and reducers 
-			job.setNumMapTasks(_numMappers); //numMappers
+			job.setNumMapTasks(_numMappers); 
 			job.setNumReduceTasks( 0 );			
 
 			//use FLEX scheudler configuration properties
@@ -127,6 +130,12 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			//enables the reuse of JVMs (multiple tasks per MR task)
 			if( _jvmReuse )
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
+			
+			//double mem = MEM_FACTOR*InfrastructureAnalyzer.getRemoteMaxMemory()/(1024*1024);
+			//System.out.println("io.sort.mb = "+mem);
+			//job.setInt("io.sort.mb", (int) mem);
+			//job.setInt("io.sort.factor", 100); 
+			
 			
 			//set the replication factor for the results
 			job.setInt("dfs.replication", _replication);

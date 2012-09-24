@@ -421,7 +421,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}else
 		{
-			if(sp<SPARCITY_TURN_POINT) {
+			if(sp<SPARCITY_TURN_POINT && clen != 1) {
 				//System.out.println("Calling denseToSparse(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				denseToSparse();
 			}

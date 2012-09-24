@@ -181,7 +181,8 @@ public class DataConverter
 			//finally check if change of sparse/dense block representation required
 			if( !sparse )
 				ret.recomputeNonZeros();
-			ret.examSparsity();	
+			if(clen != 1) //prevent conversion to sparse vector
+				ret.examSparsity();	
 		} 
 		catch (Exception e) 
 		{

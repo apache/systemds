@@ -102,8 +102,8 @@ public class MRJobConfiguration {
 	private static final String PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
 	private static final String PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG="partitioning.input.block.num.column";
 	private static final String PARTITIONING_INPUT_INFO_CONFIG="partitioning.input.inputinfo";
-	private static final String PARTITIONING_INPUT_FORMAT_CONFIG="partitioning.input.format";
-	
+	private static final String PARTITIONING_OUTPUT_FORMAT_CONFIG="partitioning.output.format";
+	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
@@ -472,14 +472,15 @@ public class MRJobConfiguration {
 	}
 	
 	//partitioning configurations
-	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, PDataPartitionFormat dpf )
+	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, PDataPartitionFormat dpf, String fnameNew )
 	{
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG, String.valueOf(bclen));
 		job.set(PARTITIONING_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
-		job.set(PARTITIONING_INPUT_FORMAT_CONFIG, dpf.toString());
+		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
+		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
 	}
 	
 	public static long getPartitioningNumRows( JobConf job )
@@ -509,7 +510,12 @@ public class MRJobConfiguration {
 	
 	public static PDataPartitionFormat getPartitioningFormat( JobConf job )
 	{
-		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_INPUT_FORMAT_CONFIG));
+		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
+	}
+	
+	public static String getPartitioningFilename( JobConf job )
+	{
+		return job.get(PARTITIONING_OUTPUT_FILENAME_CONFIG);
 	}
 	
 	

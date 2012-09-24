@@ -982,7 +982,10 @@ public class ParForProgramBlock extends ForProgramBlock
 				dp = new DataPartitionerLocal(dpf);
 				break;
 			case REMOTE_MR:
-				dp = new DataPartitionerRemoteMR( dpf, _ID, Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
+				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+				dp = new DataPartitionerRemoteMR( dpf, _ID, 
+						                          Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
+						                          numReducers,
 						                          WRITE_REPLICATION_FACTOR, 
 						                          MAX_RETRYS_ON_ERROR, 
 						                          ALLOW_REUSE_MR_JVMS );

@@ -199,7 +199,7 @@ public class ParForDataPartitionerTest
 			if( dp == PDataPartitioner.LOCAL )
 				dpart = new DataPartitionerLocal(format);
 			else if( dp == PDataPartitioner.REMOTE_MR )
-				dpart = new DataPartitionerRemoteMR(format, 7, 4, 3, 1, true);
+				dpart = new DataPartitionerRemoteMR(format, 7, 4, 4, 3, 1, true);
 			
 			MatrixObjectNew mo2 = dpart.createPartitionedMatrixObject(mo1, true);			
 			matrix2 = readPartitionedMatrix(format, mo2.getFileName(),ii, _rows, _cols, _brlen, _bclen);

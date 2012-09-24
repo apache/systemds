@@ -3,16 +3,17 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
-import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
@@ -20,10 +21,10 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
- * Remote data partitioner implementation, realized as MR mapper.
+ * Remote data partitioner mapper implementation that does the actual
+ * partitioning and key creation according to the given format.
  *
  */
-@SuppressWarnings("unchecked")
 public class DataPartitionerRemoteMapper 
 	implements Mapper<Writable, Writable, Writable, Writable>
 {	
@@ -40,7 +41,7 @@ public class DataPartitionerRemoteMapper
 	public void map(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
 	{
-		_mapper.processKeyValue(key, value, reporter);		
+		_mapper.processKeyValue(key, value, out, reporter);		
 	}
 
 	/**
@@ -56,11 +57,11 @@ public class DataPartitionerRemoteMapper
 		PDataPartitionFormat pdf = MRJobConfiguration.getPartitioningFormat( job );
 		
 		if( ii == InputInfo.TextCellInputInfo )
-			_mapper = new DataPartitionerMapperTextcell(job, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperTextcell(rlen, clen, brlen, bclen, pdf);
 		else if( ii == InputInfo.BinaryCellInputInfo )
-			_mapper = new DataPartitionerMapperBinarycell(job, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperBinarycell(rlen, clen, brlen, bclen, pdf);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_mapper = new DataPartitionerMapperBinaryblock(job, rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf);
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
@@ -71,28 +72,19 @@ public class DataPartitionerRemoteMapper
 	@Override
 	public void close() throws IOException 
 	{
-		if( _mapper != null )
-			_mapper.close();
+		//do nothing
 	}
-	
 	
 	private abstract class DataPartitionerMapper //NOTE: could also be refactored as three different mappers
 	{
-		protected JobConf _job = null;
-		protected MultipleOutputs _mos = null;
-		
 		protected long _rlen = -1;
 		protected long _clen = -1;
 		protected int _brlen = -1;
 		protected int _bclen = -1;
-		
 		protected PDataPartitionFormat _pdf = null;
 	
-		
-		protected DataPartitionerMapper( JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
+		protected DataPartitionerMapper( long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
 		{
-			_job = job;
-			
 			_rlen = rlen;
 			_clen = clen;
 			_brlen = brlen;
@@ -100,28 +92,19 @@ public class DataPartitionerRemoteMapper
 			_pdf = pdf;
 		}
 		
-		protected abstract void processKeyValue( Writable key, Writable value, Reporter reporter ) 
+		protected abstract void processKeyValue( Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter ) 
 			throws IOException;
-		
-		protected void close() 
-			throws IOException
-		{
-			if( _mos!=null )
-				_mos.close();
-		}
 	}
 	
-	//TODO flush for textcell binarycell every buffersize or 1000 opened filehandles
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperTextcell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(job, rlen, clen, brlen, bclen, pdf);
-			_mos = new MultipleOutputs(_job);
+			super(rlen, clen, brlen, bclen, pdf);
 		}
 
 		@Override
-		protected void processKeyValue(Writable key, Writable value, Reporter reporter) 
+		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 			throws IOException 
 		{
 			long row = -1;
@@ -135,23 +118,23 @@ public class DataPartitionerRemoteMapper
 				col = Long.parseLong( st.nextToken() );
 				double lvalue = Double.parseDouble( st.nextToken() );
 				
-				String outName = null;
+				LongWritable longKey = new LongWritable();
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						outName = String.valueOf(row);
+						longKey.set( row );
 						row = 1;
 						break;
 					case ROW_BLOCK_WISE:
-						outName = String.valueOf( (row-1)/_brlen+1 );
+						longKey.set( (row-1)/_brlen+1 );
 						row = (row-1)%_brlen+1;
 						break;
 					case COLUMN_WISE:
-						outName = String.valueOf(col);
+						longKey.set( col );
 						col = 1;
 						break;
 					case COLUMN_BLOCK_WISE:
-						outName = String.valueOf( (col-1)/_bclen+1 );
+						longKey.set( (col-1)/_bclen+1 );
 						col = (col-1)%_bclen+1;
 						break;
 				}
@@ -164,8 +147,7 @@ public class DataPartitionerRemoteMapper
 				sb.append(lvalue);
 				Text outValue = new Text(sb.toString());
 					
-				OutputCollector<NullWritable, Text> out = _mos.getCollector(outName, reporter);
-				out.collect(NullWritable.get(), outValue);	
+				out.collect(longKey, outValue);	
 			} 
 			catch (Exception e) 
 			{
@@ -183,14 +165,13 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperBinarycell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperBinarycell(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(job, rlen, clen, brlen, bclen, pdf);
-			_mos = new MultipleOutputs(_job);
+			super(rlen, clen, brlen, bclen, pdf);
 		}
 
 		@Override
-		protected void processKeyValue(Writable key, Writable value, Reporter reporter) 
+		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 			throws IOException 
 		{
 			long row = -1;
@@ -198,35 +179,36 @@ public class DataPartitionerRemoteMapper
 
 			try
 			{
+				LongWritable longKey = new LongWritable();
+				PairWritableCell pairValue = new PairWritableCell();
 				MatrixIndexes key2 = (MatrixIndexes)key;
 				MatrixCell value2 = (MatrixCell)value;
 				row = key2.getRowIndex();
 				col = key2.getColumnIndex();
 				
-				String outName = null;
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						outName = String.valueOf(row);
+						longKey.set(row);
 						row = 1;
 						break;
 					case ROW_BLOCK_WISE:
-						outName = String.valueOf( (row-1)/_brlen+1 );
-						row = (row-1)%_brlen+1;
+						longKey.set( (row-1)/_brlen+1 );
+						row = (row-1)%_brlen+1; 
 						break;
 					case COLUMN_WISE:
-						outName = String.valueOf(col);
+						longKey.set(col);
 						col = 1;
 						break;
 					case COLUMN_BLOCK_WISE:
-						outName = String.valueOf( (col-1)/_bclen+1 );
-						col = (col-1)%_bclen+1;
+						longKey.set( (col-1)/_bclen+1 );
+						col = (col-1)%_bclen+1; 
 						break;
 				}
 				key2.setIndexes(row, col);	
-				
-				OutputCollector<MatrixIndexes, MatrixCell> out = _mos.getCollector(outName, reporter);
-				out.collect(key2, value2); 
+				pairValue.indexes = key2;
+				pairValue.cell = value2;
+				out.collect(longKey, pairValue);
 			} 
 			catch (Exception e) 
 			{
@@ -245,19 +227,19 @@ public class DataPartitionerRemoteMapper
 	private class DataPartitionerMapperBinaryblock extends DataPartitionerMapper
 	{
 		
-		protected DataPartitionerMapperBinaryblock(JobConf job, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
-			super(job, rlen, clen, brlen, bclen, pdf);
+			super(rlen, clen, brlen, bclen, pdf);
 		}
 		
 		@Override
-		protected void processKeyValue(Writable key, Writable value, Reporter reporter) 
+		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 			throws IOException 
 		{
 			try
 			{
-				_mos = new MultipleOutputs(_job); //TODO ggf for buffer of key value
-				
+				LongWritable longKey = new LongWritable();
+				PairWritableBlock pairValue = new PairWritableBlock();
 				MatrixIndexes key2 =  (MatrixIndexes)key;
 				MatrixBlock value2 = (MatrixBlock)value;
 				long row_offset = (key2.getRowIndex()-1)*_brlen;
@@ -266,7 +248,7 @@ public class DataPartitionerRemoteMapper
 				boolean sparse = value2.isInSparseFormat();
 				int rows = value2.getNumRows();
 				int cols = value2.getNumColumns();
-
+				
 				//bound check per block
 				if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )
 				{
@@ -274,10 +256,7 @@ public class DataPartitionerRemoteMapper
 							              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
 				}
 				
-				String outName = null;
-				OutputCollector<MatrixIndexes, MatrixBlock> out = null;
-				MatrixBlock tmp = null;
-					
+				MatrixBlock tmp = null;				
 				switch( _pdf )
 				{
 					case ROW_WISE:
@@ -285,8 +264,8 @@ public class DataPartitionerRemoteMapper
 						tmp.spaceAllocForDenseUnsafe(1, cols);				
 						for( int i=0; i<rows; i++ )
 						{
-							outName= String.valueOf( (row_offset+1+i) );
-							key2.setIndexes(1, (col_offset/_bclen+1) );						
+							longKey.set(row_offset+1+i);
+							key2.setIndexes(1, (col_offset/_bclen+1) );	
 							if( sparse )
 							{
 								for( int j=0; j<cols; j++ )
@@ -304,24 +283,25 @@ public class DataPartitionerRemoteMapper
 								}
 							}
 							tmp.recomputeNonZeros();
-							out = _mos.getCollector(outName, reporter);
-							out.collect(key2, tmp);
+							pairValue.indexes = key2;
+							pairValue.block = tmp;
+							out.collect(longKey, pairValue);
 						}
 						break;
 					case ROW_BLOCK_WISE:
-						outName= String.valueOf( (row_offset/_brlen+1) );
+						longKey.set((row_offset/_brlen+1));
 						key2.setIndexes(1, (col_offset/_bclen+1) );
-						out = _mos.getCollector(outName, reporter);
-						out.collect(key2, value2);
+						pairValue.indexes = key2;
+						pairValue.block = value2;
+						out.collect(longKey, pairValue);
 						break;
 					case COLUMN_WISE:
 						tmp = new MatrixBlock( rows, 1, false ); 
 						tmp.spaceAllocForDenseUnsafe(rows, 1);
 						for( int i=0; i<cols; i++ )
 						{
-							outName= String.valueOf( (col_offset+1+i) );
-							//System.out.println(outName);
-							key2.setIndexes((row_offset/_brlen+1), 1 );
+							longKey.set(col_offset+1+i);
+							key2.setIndexes(row_offset/_brlen+1, 1);
 							if( sparse )
 							{
 								for( int j=0; j<rows; j++ )
@@ -339,20 +319,19 @@ public class DataPartitionerRemoteMapper
 								}					
 							}
 							tmp.recomputeNonZeros();
-							out = _mos.getCollector(outName, reporter);
-							out.collect(key2, tmp);
+							pairValue.indexes = key2;
+							pairValue.block = tmp;
+							out.collect(longKey, pairValue );
 						}	
 						break;
 					case COLUMN_BLOCK_WISE:
-						outName= String.valueOf( (col_offset/_bclen+1) );
-						key2.setIndexes( (row_offset/_brlen+1), 1 );
-						out = _mos.getCollector(outName, reporter);
-						out.collect(key2, value2);
+						longKey.set(col_offset/_bclen+1);
+						key2.setIndexes( row_offset/_brlen+1, 1 );
+						pairValue.indexes = key2;
+						pairValue.block = value2;
+						out.collect(longKey, pairValue);
 						break;
 				}
-				
-				//flush open file descriptors and buffered mem
-				_mos.close();
 			} 
 			catch (Exception e) 
 			{

@@ -736,7 +736,13 @@ public class MatrixObjectNew extends CacheableData
 				
 				
 				//read the 
-				mb = readMatrixFromHDFS( fname, rows, cols );
+				if( MapReduceTool.existsFileOnHDFS(fname) )
+					mb = readMatrixFromHDFS( fname, rows, cols );
+				else
+				{
+					mb = new MatrixBlock((int)rows, (int)cols, true);
+					System.out.println("Warning: Reading empty matrix partition "+fname);
+				}
 				mb.clearEnvelope();
 			}
 			

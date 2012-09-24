@@ -26,6 +26,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -56,11 +57,11 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  *       and since partitioning only applied if exclusively indexed access.
  *
  *
- * TODO parallel writing of sequence files (most expensive part and nicely parallelizable, but larger memory requirements)
- *
  */
 public class DataPartitionerLocal extends DataPartitioner
 {
+	private static final boolean PARALLEL = true; 
+	
 	private IDSequence _seq = null;
 	
 	public DataPartitionerLocal(PDataPartitionFormat dpf) 
@@ -155,9 +156,28 @@ public class DataPartitionerLocal extends DataPartitioner
 			}
 
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
-			String[] fnamesPartitions = new File(fnameStaging).list();			
-			for( String pdir : fnamesPartitions  )
-				writeTextCellSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );			
+			String[] fnamesPartitions = new File(fnameStaging).list();	
+			if(PARALLEL) 
+			{
+				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				Thread[] threads = new Thread[len];
+				for( int i=0;i<len;i++ )
+				{
+					int start = i*(int)Math.ceil(((double)fnamesPartitions.length)/len);
+					int end = (i+1)*(int)Math.ceil(((double)fnamesPartitions.length)/len)-1;
+					end = Math.min(end, fnamesPartitions.length-1);
+					threads[i] = new Thread(new DataPartitionerWorkerTextCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
+					threads[i].start();
+				}
+				
+				for( Thread t : threads )
+					t.join();
+			}
+			else
+			{
+				for( String pdir : fnamesPartitions  )
+					writeTextCellFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );	
+			}
 		} 
 		catch (Exception e) 
 		{
@@ -235,8 +255,27 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
 			String[] fnamesPartitions = new File(fnameStaging).list();			
-			for( String pdir : fnamesPartitions  )
-				writeBinaryCellSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );			
+			if(PARALLEL) 
+			{
+				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				Thread[] threads = new Thread[len];
+				for( int i=0;i<len;i++ )
+				{
+					int start = i*(int)Math.ceil(((double)fnamesPartitions.length)/len);
+					int end = (i+1)*(int)Math.ceil(((double)fnamesPartitions.length)/len)-1;
+					end = Math.min(end, fnamesPartitions.length-1);
+					threads[i] = new Thread(new DataPartitionerWorkerBinaryCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
+					threads[i].start();
+				}
+				
+				for( Thread t : threads )
+					t.join();
+			}
+			else
+			{
+				for( String pdir : fnamesPartitions  )
+					writeBinaryCellSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );	
+			}
 		} 
 		catch (Exception e) 
 		{
@@ -308,8 +347,27 @@ public class DataPartitionerLocal extends DataPartitioner
 
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
 			String[] fnamesPartitions = new File(fnameStaging).list();			
-			for( String pdir : fnamesPartitions  )
-				writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );			
+			if(PARALLEL) 
+			{
+				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				Thread[] threads = new Thread[len];
+				for( int i=0;i<len;i++ )
+				{
+					int start = i*(int)Math.ceil(((double)fnamesPartitions.length)/len);
+					int end = (i+1)*(int)Math.ceil(((double)fnamesPartitions.length)/len)-1;
+					end = Math.min(end, fnamesPartitions.length-1);
+					threads[i] = new Thread(new DataPartitionerWorkerBinaryBlock(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
+					threads[i].start();
+				}
+				
+				for( Thread t : threads )
+					t.join();
+			}
+			else
+			{
+				for( String pdir : fnamesPartitions  )
+					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );		
+			}
 		} 
 		catch (Exception e) 
 		{
@@ -532,7 +590,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
-	public void writeTextCellSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
+	public void writeTextCellFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
@@ -623,4 +681,91 @@ public class DataPartitionerLocal extends DataPartitioner
 		File fdir = new File(dir);		
 		StagingFileUtils.rDelete( fdir );
 	}
+	
+	private abstract class DataPartitionerWorker implements Runnable
+	{
+		private JobConf _job = null;
+		private String _fnameNew = null;
+		private String _fnameStaging = null;
+		private String[] _fnamesPartitions = null;
+		private int _start = -1;
+		private int _end = -1;
+		
+		public DataPartitionerWorker(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end)
+		{
+			_job = job;
+			_fnameNew = fnameNew;
+			_fnameStaging = fnameStaging;
+			_fnamesPartitions = fnamesPartitions;
+			_start = start;
+			_end = end;
+		}
+
+		@Override
+		public void run() 
+		{
+			//read each input if required
+			try
+			{
+				for( int i=_start; i<=_end; i++ )
+				{
+					String pdir = _fnamesPartitions[i];
+					writeFileToHDFS( _job, _fnameNew, _fnameStaging+"/"+pdir );	
+				}
+			}
+			catch(Exception ex)
+			{
+				throw new RuntimeException("Failed on parallel data partitioning.", ex);
+			}
+		}
+		
+		public abstract void writeFileToHDFS( JobConf job, String fnameNew, String stagingDir ) 
+			throws IOException;
+	}
+	
+	private class DataPartitionerWorkerTextCell extends DataPartitionerWorker
+	{
+		public DataPartitionerWorkerTextCell(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end) 
+		{
+			super(job, fnameNew, fnameStaging, fnamesPartitions, start, end);
+		}
+
+		@Override
+		public void writeFileToHDFS(JobConf job, String fnameNew, String stagingDir) 
+			throws IOException 
+		{
+			writeTextCellFileToHDFS( job, fnameNew, stagingDir );	
+		}	
+	}	
+	
+	private class DataPartitionerWorkerBinaryCell extends DataPartitionerWorker
+	{
+		public DataPartitionerWorkerBinaryCell(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end) 
+		{
+			super(job, fnameNew, fnameStaging, fnamesPartitions, start, end);
+		}
+
+		@Override
+		public void writeFileToHDFS(JobConf job, String fnameNew, String stagingDir) 
+			throws IOException 
+		{
+			writeBinaryCellSequenceFileToHDFS( job, fnameNew, stagingDir );	
+		}	
+	}
+	
+	private class DataPartitionerWorkerBinaryBlock extends DataPartitionerWorker
+	{
+		public DataPartitionerWorkerBinaryBlock(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end) 
+		{
+			super(job, fnameNew, fnameStaging, fnamesPartitions, start, end);
+		}
+
+		@Override
+		public void writeFileToHDFS(JobConf job, String fnameNew, String stagingDir) 
+			throws IOException 
+		{
+			writeBinaryBlockSequenceFileToHDFS( job, fnameNew, stagingDir );	
+		}	
+	}
+
 }

@@ -713,7 +713,7 @@ public class DMLScript {
 		Statistics.startRunTimer();		
 		try 
 		{   
-			initHadoopExecution();
+			initHadoopExecution( config );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute (new LocalVariableMap (), null);  
@@ -745,10 +745,16 @@ public class DMLScript {
 	} // end executeHadoop
 
 	/**
+	 * @throws ParseException 
+	 * @throws IOException 
 	 * 
 	 */
-	private static void initHadoopExecution()
+	private static void initHadoopExecution( DMLConfig config ) 
+		throws IOException, ParseException
 	{
+		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
+		cleanupHadoopExecution(config); 
+		
 		//init caching (incl set active)
 		CacheableData.initCaching();
 		

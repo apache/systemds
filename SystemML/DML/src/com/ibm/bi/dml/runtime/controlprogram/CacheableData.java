@@ -159,31 +159,32 @@ public abstract class CacheableData extends Data
 				break;
 		}
 		
-		
-		
 		//clean files with cache prefix
-		try
+		if( dir != null ) //if previous init cache
 		{
-			switch (CacheableData.cacheEvictionStorageType)
+			try
 			{
-				case LOCAL:
-					File fdir = new File(dir);
-					if( fdir.exists() ){ //just for robustness
-						File[] files = fdir.listFiles();
-						for( File f : files )
-							if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-								f.delete();
-						fdir.delete();
-					}
-					break;
-				case HDFS:
-					MapReduceTool.deleteFileIfExistOnHDFS( dir );
-					break;
+				switch (CacheableData.cacheEvictionStorageType)
+				{
+					case LOCAL:
+						File fdir = new File(dir);
+						if( fdir.exists()){ //just for robustness
+							File[] files = fdir.listFiles();
+							for( File f : files )
+								if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+									f.delete();
+							fdir.delete();
+						}
+						break;
+					case HDFS:
+						MapReduceTool.deleteFileIfExistOnHDFS( dir );
+						break;
+				}
 			}
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
 		}
 		
 		_activeFlag = false;

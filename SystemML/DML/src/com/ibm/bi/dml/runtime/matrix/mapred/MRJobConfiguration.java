@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Vector;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -1286,8 +1285,11 @@ public class MRJobConfiguration {
 		sb.append(Lops.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
-		//TODO MB: clarify if we could replace this with sequence IDs in order to guarantee that conflicts cannot occur 
+		
+		sb.append("TmpOutput"+seq.getNextID());
+		
+		//old unique dir (no guarantees): 
+		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
 		
 		return sb.toString(); 
 	}

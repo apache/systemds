@@ -635,7 +635,7 @@ public class TertiaryOp extends Hops {
 				// This part of the code is executed only when a vector of quantiles are computed
 				
 				// Output a vector of length = #of quantiles to be computed, and it is likely to be dense.  
-				_outputMemEstimate = OptimizerUtils.estimate(getInput().get(2)._dim1, 1, 1);
+				_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, 1);
 				
 				break;
 			

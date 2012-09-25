@@ -28,7 +28,6 @@ import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.hops.Hops.OpOp3;
 import com.ibm.bi.dml.hops.Hops.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -54,8 +53,8 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -374,10 +373,14 @@ public class DMLTranslator {
 	
 	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) throws ParseException, LanguageException, HopsException {
 
-		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+		/*
+		 * Compute memory estimates for all the hops. These estimates are used
+		 * subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
+		 */
+		//if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 			this.resetHopsDAGVisitStatus(dmlp);
 			this.refreshMemEstimates(dmlp);
-		}
+		//}
 		
 		/**
 		 * Rule 1: Eliminate for Transient Write DataHops to have no parents

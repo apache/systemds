@@ -225,7 +225,7 @@ abstract public class Hops {
 			c = '*';
 		}
 		
-		if (true) { //DMLScript.DEBUG) {
+		if (DMLScript.DEBUG) {
 			System.out.printf("  %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
 			//System.out.println("  " + getHopID() + " " + getOpString() + " (" + OptimizerUtils.toMB(_outputMemEstimate) + ", " + OptimizerUtils.toMB(_memEstimate) + ")  " + et);
 		}

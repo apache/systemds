@@ -9,6 +9,7 @@ import org.apache.commons.math.distribution.FDistributionImpl;
 import org.apache.commons.math.distribution.NormalDistributionImpl;
 import org.apache.commons.math.distribution.TDistributionImpl;
 
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
@@ -62,7 +63,7 @@ public class ParameterizedBuiltin extends ValueFunction {
 		switch ( code ) {
 		case CDF:
 			// str2 will point the appropriate distribution
-			ProbabilityDistributionCode dcode = String2DistCode.get(str2);
+			ProbabilityDistributionCode dcode = String2DistCode.get(str2.toLowerCase());
 			switch(dcode) {
 			case NORMAL:
 				if ( normalObj == null )
@@ -152,7 +153,7 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"Degrees of freedom is needed to compute probabilities from chi-squared distribution " +
 						"(e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
 			}
-			int df = Integer.parseInt(params.get("df"));
+			int df = UtilFunctions.parseToInt(params.get("df"));
 			ChiSquaredDistributionImpl chdist = new ChiSquaredDistributionImpl(df);
 			return chdist.cumulativeProbability(quantile);
 		
@@ -162,8 +163,8 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"Degrees of freedom is needed to compute probabilities from F distribution " +
 						"(e.g., q = cumulativeProbability(1.5, dist=\"f\", df1=20, df2=30))");
 			}
-			int df1 = Integer.parseInt(params.get("df1"));
-			int df2 = Integer.parseInt(params.get("df2"));
+			int df1 = UtilFunctions.parseToInt(params.get("df1"));
+			int df2 = UtilFunctions.parseToInt(params.get("df2"));
 			FDistributionImpl fdist = new FDistributionImpl(df1, df2);
 			return fdist.cumulativeProbability(quantile);
 		case CDF_T:
@@ -172,7 +173,7 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"Degrees of freedom is needed to compute probabilities from T distribution " +
 						"(e.g., q = cumulativeProbability(1.5, dist=\"t\", df=10))");
 			}
-			int t_df = Integer.parseInt(params.get("df"));
+			int t_df = UtilFunctions.parseToInt(params.get("df"));
 			TDistributionImpl tdist = new TDistributionImpl(t_df);
 			return tdist.cumulativeProbability(quantile);
 		}

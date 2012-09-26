@@ -252,4 +252,8 @@ public abstract class Expression {
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
+	
+	public String printInfoLocation(){
+		return "INFO: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
 }

@@ -213,7 +213,7 @@ public class DataExpression extends Expression {
 				}
 	        }
 	        else {
-	        	System.out.println("INFO: could not find metadata file: " + new Path(filename));
+	        	System.out.println("INFO: metadata file: " + new Path(filename) + " not provided");
 	        }
 			
 	        

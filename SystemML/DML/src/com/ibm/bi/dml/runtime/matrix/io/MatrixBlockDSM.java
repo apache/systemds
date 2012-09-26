@@ -92,7 +92,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			sparse= sparsity < SPARCITY_TURN_POINT;
 		if(sparse)
 		{
-			size+=(Math.max(SparseRow.initialCapacity, Math.floor(sparsity*ncols))*12+28)*nrows;
+			size+=(Math.ceil(sparsity*ncols)*12+28)*nrows;
 		}else
 			size+=nrows*ncols*8;
 		return size;
@@ -201,7 +201,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	public MatrixBlockDSM(int rl, int cl, boolean sp, int estnnzs)
 	{
 		this(rl, cl, sp);
-		estimatedNNzsPerRow=(int)Math.floor((double)estnnzs/(double)rl);	
+		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rl);	
 	}
 	
 	public MatrixBlockDSM(MatrixBlockDSM that)
@@ -248,7 +248,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		nonZeros = 0;
 		maxrow = nrows;
 		maxcolumn = ncols;
-		estimatedNNzsPerRow=(int)Math.floor((double)map.size()/(double)rlen);
+		estimatedNNzsPerRow=(int)Math.ceil((double)map.size()/(double)rlen);
 		
 		for (CellIndex index : map.keySet()) {
 			double d  = map.get(index).doubleValue();
@@ -337,7 +337,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public void reset(int estnnzs)
 	{
-		estimatedNNzsPerRow=(int)Math.floor((double)estnnzs/(double)rlen);
+		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rlen);
 		if(sparse)
 		{
 			resetSparse();
@@ -541,7 +541,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=sp;
-		estimatedNNzsPerRow=(int)Math.floor((double)thatValue.getNonZeros()/(double)rlen);
+		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)
@@ -563,7 +563,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=checkRealSparcity(that);
-		estimatedNNzsPerRow=(int)Math.floor((double)thatValue.getNonZeros()/(double)rlen);
+		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)
@@ -1811,6 +1811,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		boolean sps;
 		if(reducedDim)
 			sps=false;
+		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject()))
+			sps=true;
 		else
 			sps=checkRealSparcity(this);
 			
@@ -4275,7 +4277,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		sparse=true;
 		rlen=rl;
 		clen=cl;
-		int nnzsPerRow=(int) Math.floor((double)estimatedmNNzs/(double)rl);
+		int nnzsPerRow=(int) Math.ceil((double)estimatedmNNzs/(double)rl);
 		if(sparseRows!=null)
 		{
 			if(sparseRows.length>=rlen)

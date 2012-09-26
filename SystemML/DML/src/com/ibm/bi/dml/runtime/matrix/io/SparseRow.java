@@ -45,8 +45,15 @@ public class SparseRow {
 	//	else if(estnns<=0)//TODO
 	//		estnns=maxnns;
 		maxNzs=maxnns;
-		values=new double[initialCapacity];
-		indexes=new int[initialCapacity];
+		if(estnns<initialCapacity)
+		{
+			values=new double[estnns];
+			indexes=new int[estnns];
+		}else
+		{
+			values=new double[initialCapacity];
+			indexes=new int[initialCapacity];
+		}
 	}
 	
 	public SparseRow(SparseRow that)
@@ -156,7 +163,7 @@ public class SparseRow {
 		else
 		{
 			//System.out.println(">> capacity change from "+values.length+" to "+(int) Math.min(this.maxNzs, Math.floor((double)(values.length)*1.1))+" , est: "+estimatedNzs+", max: "+maxNzs);
-			return (int) Math.min(this.maxNzs, Math.floor((double)(values.length)*1.1)); //exponential growth
+			return (int) Math.min(this.maxNzs, Math.ceil((double)(values.length)*1.1)); //exponential growth
 			//return (int) Math.min(this.maxNzs, values.length+Math.floor((double)(estimatedNzs)*0.1)); //constant growth
 		}
 	}

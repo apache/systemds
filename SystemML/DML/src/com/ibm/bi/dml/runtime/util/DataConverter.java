@@ -143,7 +143,7 @@ public class DataConverter
 		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if ( clen == 1 )
+		if ( clen <=MatrixBlock.SKINNY_MATRIX_TURN_POINT )
 			sparse = false;
 		
 		//prepare result matrix block

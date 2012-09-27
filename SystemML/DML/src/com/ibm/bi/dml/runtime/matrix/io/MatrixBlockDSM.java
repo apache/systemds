@@ -45,8 +45,10 @@ import com.ibm.bi.dml.runtime.functionobjects.And;
 
 public class MatrixBlockDSM extends MatrixValue{
 
-	public static final double SPARCITY_TURN_POINT=0.4;
+	public static final double SPARCITY_TURN_POINT=0.4;//based on practial experiments on space consumption and performance
 	//protected static final Log LOG = LogFactory.getLog(MatrixBlock1D.class);
+	
+	public static final int SKINNY_MATRIX_TURN_POINT=4;//based on math
 	
 	private int rlen;
 	private int clen;
@@ -86,7 +88,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		long size=44;//the basic variables and references sizes
 		//get real sparsity
 		boolean sparse=true;
-		if(ncols==1)
+		if(ncols<=SKINNY_MATRIX_TURN_POINT)
 			sparse=false;
 		else
 			sparse= sparsity < SPARCITY_TURN_POINT;
@@ -118,7 +120,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if ( !op.sparseSafe || m == 1)
+		if ( !op.sparseSafe || m <=SKINNY_MATRIX_TURN_POINT)
 		{
 			est.sparse=false;
 		}
@@ -146,7 +148,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		double m=m1.getNumColumns();
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide 
-		if(!op.sparseSafe || m==1)
+		if(!op.sparseSafe || m<=SKINNY_MATRIX_TURN_POINT)
 		{
 			est.sparse=false;
 			return est;
@@ -175,7 +177,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(m.getNumColumns()==1)
+		if(m.getNumColumns()<=SKINNY_MATRIX_TURN_POINT)
 			return false;
 		else
 			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
@@ -415,13 +417,13 @@ public class MatrixBlockDSM extends MatrixValue{
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
 		if(sparse)
 		{
-			if(sp>SPARCITY_TURN_POINT || clen==1) {
+			if(sp>SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT) {
 				//System.out.println("Calling sparseToDense(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				sparseToDense();
 			}
 		}else
 		{
-			if(sp<SPARCITY_TURN_POINT && clen != 1) {
+			if(sp<SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT) {
 				//System.out.println("Calling denseToSparse(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				denseToSparse();
 			}
@@ -1699,7 +1701,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows==null)
 				writeEmptyBlock(out);
 			//if it should be dense, then write to the dense format
-			else if(nonZeros>rlen*clen*SPARCITY_TURN_POINT)
+			else if(nonZeros>rlen*clen*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
 				writeSparseToDense(out);
 			else
 				writeSparseBlock(out);
@@ -1708,7 +1710,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(denseBlock==null)
 				writeEmptyBlock(out);
 			//if it should be sparse
-			else if(nonZeros<rlen*clen*SPARCITY_TURN_POINT)
+			else if(nonZeros<rlen*clen*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
 				writeDenseToSparse(out);
 			else
 				writeDenseBlock(out);
@@ -1964,7 +1966,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(finalClen==1)
+		if(finalClen<=SKINNY_MATRIX_TURN_POINT)
 			return false;
 		else
 			return((double)nonZeros/(double)rlen/(double)clen*(double)selectRlen*(double)selectClen/(double)finalRlen/(double)finalClen<SPARCITY_TURN_POINT);
@@ -2185,7 +2187,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		else sps=false;
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(clen==1)
+		if(clen<=SKINNY_MATRIX_TURN_POINT)
 			sps=false;
 			
 		if(result==null)
@@ -4019,7 +4021,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		sparse = (sparsity < SPARCITY_TURN_POINT);
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols==1)
+		if(cols<=SKINNY_MATRIX_TURN_POINT)
 			sparse=false;
 		this.reset(rows, cols, sparse);
 		
@@ -4082,7 +4084,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		sparse = (sparsity < SPARCITY_TURN_POINT);
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols==1)
+		if(cols<=SKINNY_MATRIX_TURN_POINT)
 			sparse=false;
 		this.reset(rows, cols, sparse);
 

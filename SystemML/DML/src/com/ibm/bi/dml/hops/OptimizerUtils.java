@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -120,7 +121,7 @@ public class OptimizerUtils {
 	public static long estimate(long nrows, long ncols, double sp) {
 		
 		boolean sparse_rep = true; // type of representation
-		if (ncols == 1) {
+		if (ncols<=MatrixBlock.SKINNY_MATRIX_TURN_POINT) {
 			sparse_rep = false;
 		}
 		else {

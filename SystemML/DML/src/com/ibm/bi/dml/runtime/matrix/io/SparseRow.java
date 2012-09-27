@@ -45,7 +45,7 @@ public class SparseRow {
 	//	else if(estnns<=0)//TODO
 	//		estnns=maxnns;
 		maxNzs=maxnns;
-		if(estnns<initialCapacity)
+		if(estnns<initialCapacity && estnns>0)
 		{
 			values=new double[estnns];
 			indexes=new int[estnns];

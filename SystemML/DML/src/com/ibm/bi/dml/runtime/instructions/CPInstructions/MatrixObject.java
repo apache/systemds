@@ -341,7 +341,7 @@ public class MatrixObject extends Data {
 		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(sparsity > MatrixBlock.SPARCITY_TURN_POINT || cols==1)
+		if(sparsity > MatrixBlock.SPARCITY_TURN_POINT || cols<=MatrixBlock.SKINNY_MATRIX_TURN_POINT)
 			_data.reset((int)rows, (int)cols, false);
 		else
 			_data.reset((int)rows, (int)cols, true);

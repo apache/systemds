@@ -97,7 +97,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
 				{
-					//ensure that file resides on disk
+					//ensure that input file resides on disk
 					in.exportData();
 					
 					//add to merge list
@@ -106,7 +106,11 @@ public class ResultMergeLocalFile extends ResultMerge
 			}
 
 			if( inMO.size() > 0 )
-			{	
+			{
+				//ensure that outputfile (for comparison) resides on disk
+				_output.exportData();
+				
+				//actual merge
 				merge( _outputFName, _output, inMO );
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict

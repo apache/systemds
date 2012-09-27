@@ -75,10 +75,13 @@ public class ProgramConverter
 	public static final String CP_ROOT_THREAD_ID = "_t0";       
 	public static final String CP_CHILD_THREAD   = "_t";
 		
+	public static final String PARFOR_CDATA_BEGIN = "<![CDATA[";
+	public static final String PARFOR_CDATA_END = " ]]>";
+	
 	public static final String PARFOR_PROG_BEGIN = " PROG" + LEVELIN;
 	public static final String PARFOR_PROG_END   = LEVELOUT;	
-	public static final String PARFORBODY_BEGIN  = "PARFORBODY" + LEVELIN;
-	public static final String PARFORBODY_END    = LEVELOUT;
+	public static final String PARFORBODY_BEGIN  = PARFOR_CDATA_BEGIN+"PARFORBODY" + LEVELIN;
+	public static final String PARFORBODY_END    = LEVELOUT+PARFOR_CDATA_END;
 	public static final String PARFOR_VARS_BEGIN = " VARS: ";
 	public static final String PARFOR_VARS_END   = "";
 	public static final String PARFOR_PBS_BEGIN  = " PBS" + LEVELIN;
@@ -773,6 +776,7 @@ public class ProgramConverter
 	{
 		String tmp = instStr;
 
+		//1) check own delimiters
 		if( tmp.contains(COMPONENTS_DELIM) )
 			tmp = tmp.replaceAll(COMPONENTS_DELIM, ".");
 		
@@ -788,8 +792,13 @@ public class ProgramConverter
 		//NOTE: DATA_FIELD_DELIM and KEY_VALUE_DELIM not required
 		//because those literals cannot occur in critical places.
 		
+		//2) check end tag of CDATA
+		if( tmp.contains(PARFOR_CDATA_END) )
+			tmp = tmp.replaceAll(PARFOR_CDATA_END, ".");		
+		
 		return tmp;
 	}
+	
 	
 	/**
 	 * 
@@ -1487,7 +1496,7 @@ public class ProgramConverter
 		IfProgramBlock ipb = new IfProgramBlock(prog,inst);
 		ipb.setExitInstructions2(exit);
 		ipb.setChildBlocksIfBody(pbs1);
-		ipb.setChildBlocksIfBody(pbs2);
+		ipb.setChildBlocksElseBody(pbs2);
 		ipb.setVariables(vars);
 		
 		return ipb;

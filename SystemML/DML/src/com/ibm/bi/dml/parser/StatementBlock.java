@@ -2,7 +2,9 @@ package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
@@ -829,6 +831,58 @@ public class StatementBlock extends LiveVariableAnalysis{
 	
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	
+	/**
+	 * 
+	 * @param asb
+	 * @param upVars
+	 */
+	public void rFindUpdatedVariables( ArrayList<StatementBlock> asb, HashSet<String> upVars )
+	{
+		for(StatementBlock sb : asb ) // foreach statementblock
+			for( Statement s : sb._statements ) // foreach statement in statement block
+			{
+				if( s instanceof ForStatement || s instanceof ParForStatement )
+				{
+					rFindUpdatedVariables(((ForStatement)s).getBody(), upVars);
+				}
+				else if( s instanceof WhileStatement ) 
+				{
+					rFindUpdatedVariables(((WhileStatement)s).getBody(), upVars);
+				}
+				else if( s instanceof IfStatement ) 
+				{
+					rFindUpdatedVariables(((IfStatement)s).getIfBody(), upVars);
+					rFindUpdatedVariables(((IfStatement)s).getElseBody(), upVars);
+				}
+				else if( s instanceof FunctionStatement ) 
+				{
+					rFindUpdatedVariables(((FunctionStatement)s).getBody(), upVars);
+				}
+				else
+				{
+					//evaluate assignment statements
+					Collection<DataIdentifier> tmp = null; 
+					if( s instanceof AssignmentStatement )
+					{
+						tmp = ((AssignmentStatement)s).getTargetList();	
+					}
+					else if (s instanceof FunctionStatement)
+					{
+						tmp = ((FunctionStatement)s).getOutputParams();
+					}
+					else if (s instanceof MultiAssignmentStatement)
+					{
+						tmp = ((MultiAssignmentStatement)s).getTargetList();
+					}
+					
+					//add names of updated data identifiers to results
+					if( tmp!=null )
+						for( DataIdentifier di : tmp )
+							upVars.add( di.getName() );
+				}
+			}
 	}
 	
 }  // end class

@@ -3,6 +3,7 @@ package com.ibm.bi.dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
@@ -38,12 +39,19 @@ public class ForStatementBlock extends StatementBlock {
 		predicate.validateExpression(ids.getVariables(), constVars);
 		ArrayList<StatementBlock> body = fs.getBody();
 		
+		//remove updated vars from constants
+		HashSet<String> updatedVars = new HashSet<String>();
+		rFindUpdatedVariables(body, updatedVars);
+		for( String var : updatedVars )
+			if( constVars.containsKey( var ) )
+				constVars.remove( var );
+				
 		//perform constant propagation for ( from, to, incr )
 		//(e.g., useful for reducing false positives in parfor dependency analysis)
 		performConstantPropagation(constVars);
 		
 		//validate body
-		this._dmlProg = dmlProg;
+		_dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
 			ids = sb.validate(dmlProg, ids, constVars);

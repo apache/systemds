@@ -3,6 +3,7 @@ package com.ibm.bi.dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
@@ -26,10 +27,17 @@ public class WhileStatementBlock extends StatementBlock {
 		// merge function calls if possible
 		wstmt.setBody(StatementBlock.mergeFunctionCalls(wstmt.getBody(), dmlProg));
 		
+		//remove updated vars from constants
+		HashSet<String> updatedVars = new HashSet<String>();
+		rFindUpdatedVariables(wstmt.getBody(), updatedVars);
+		for( String var : updatedVars )
+			if( constVars.containsKey( var ) )
+				constVars.remove( var );
+		
 		// process the statement blocks in the body of the while statement
 		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
 		ArrayList<StatementBlock> body = wstmt.getBody();
-		this._dmlProg = dmlProg;
+		_dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
 			ids = sb.validate(dmlProg, ids, constVars);

@@ -112,7 +112,7 @@ public class Program {
 				pb.execute(ec);
 			}
 			catch(Exception e){
-				throw new DMLRuntimeException(pb.printBlockErrorLocation() + e);
+				throw new DMLRuntimeException(pb.printBlockErrorLocation(), e);
 			}
 			
 			_programVariables = pb.getVariables();

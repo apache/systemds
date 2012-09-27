@@ -496,7 +496,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 			else if (current instanceof AssignmentStatement){
 				AssignmentStatement as = (AssignmentStatement)current;
 				DataIdentifier target = as.getTarget(); 
-				Expression source = as.getSource();
+			 	Expression source = as.getSource();
 				
 				if (source instanceof FunctionCallIdentifier)			
 					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars);
@@ -577,7 +577,10 @@ public class StatementBlock extends LiveVariableAnalysis{
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
 					
-				
+					((IndexedIdentifier)target).setOriginalDimensions(target.getDim1(), target.getDim2());
+					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
+					
+					
 				}
 				ids.addVariable(target.getName(), target);
 				

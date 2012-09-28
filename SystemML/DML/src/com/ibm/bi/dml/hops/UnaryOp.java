@@ -459,10 +459,13 @@ public class UnaryOp extends Hops {
 			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 		}
 		else {
-			// If output is a Matrix then this operation must be one of the following: (B = op(A)) or (B = A op const)
+			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
 			// The size of input is a good estimate 
-			_outputMemEstimate = getInput().get(0).getOutputSize();
+			if ( dimsKnown() )
+				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, getInput().get(0).getSparsity());
+			else 
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}
 		_memEstimate = getInputOutputSize();
 		return _memEstimate;

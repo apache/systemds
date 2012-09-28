@@ -53,6 +53,8 @@ public class Reblock extends Hops {
 		
 		set_rows_in_block(par.get_rows_in_block());
 		set_cols_in_block(par.get_cols_in_block());
+		
+		setNnz(par.getNnz());
 
 		getParent().add(par);
 		getInput().addAll(par.getInput());

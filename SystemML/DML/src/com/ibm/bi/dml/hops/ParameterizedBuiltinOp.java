@@ -247,7 +247,10 @@ public class ParameterizedBuiltinOp extends Hops {
 		
 		if ( _op == ParamBuiltinOp.CDF ) {
 			// currently, only CDF produces a scalar
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+			if ( _dataType == DataType.SCALAR ) 
+				_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+			else
+				throw new RuntimeException("Memory estimates for CDF w/ Matrices are not defined yet!");
 		}
 		else if (_op == ParamBuiltinOp.GROUPEDAGG) {
 			// Output dimensions are completely data dependent. In the worst case, 

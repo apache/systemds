@@ -4,8 +4,8 @@ import java.text.DecimalFormat;
 
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class OptimizerUtils {
@@ -69,6 +69,7 @@ public class OptimizerUtils {
 				_optMode = OptimizationMode.AGGRESSIVE;
 				break;
 		}
+		setDefaultSize();
 	}
 	
 	
@@ -86,7 +87,7 @@ public class OptimizerUtils {
 	 */
 	public static double DEFAULT_SIZE;
 	public static final double DEF_MEM_FACTOR = 0.25d; 
-	static {
+	private static void setDefaultSize() {
 		if ( _optMode == OptimizationMode.ROBUST ) 
 			DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
 		else 
@@ -119,6 +120,9 @@ public class OptimizerUtils {
 	 * @return
 	 */
 	public static long estimate(long nrows, long ncols, double sp) {
+		return MatrixBlockDSM.estimateSize(nrows,ncols,sp);
+		/*boolean sparse_rep = true; // type of representation
+		if (ncols == 1) {
 		
 		boolean sparse_rep = true; // type of representation
 		if (ncols<=MatrixBlock.SKINNY_MATRIX_TURN_POINT) {
@@ -130,11 +134,12 @@ public class OptimizerUtils {
 		
 		long size = 44;// the basic variables and references sizes
 		if (sparse_rep) {
-			size += (Math.floor(sp * ncols) * 12 + 28) * nrows;
+			//size += (Math.floor(sp * ncols) * 12 + 28) * nrows;
+			size += estimateRowSize(ncols, sp) * nrows;
 		} else
 			size += nrows * ncols * 8;
 
-		return size;
+		return size;*/
 	}
 	
 	/**
@@ -155,6 +160,37 @@ public class OptimizerUtils {
 		return estimate(nrows, ncols, sp);
 	}
 	
+	/**
+	 * Estimates the memory footprint of a SparseRow with <code>clen</code>
+	 * columns and <code>sp</code> sparsity. This method accounts for the
+	 * overhead incurred by extra cells allocated (but not used) for SparseRow.
+	 * It assumes that non-zeros are uniformly distributed in the matrix --
+	 * i.e., #estimated nnz in a given SparseRow = clen*sp.
+	 * 
+	 * @param clen
+	 * @param sp
+	 * @return estimated size in bytes
+	 */
+	public static long estimateRowSize(long clen, double sp) {
+		
+		if ( sp == 0 )
+			return 0;
+		
+		int basicSize = 28;
+		int cellSize = 12; // every cell takes 12 (8+4) bytes
+		if ( sp == 1 ) {
+			return clen * cellSize; 
+		}
+		long  numCells = SparseRow.initialCapacity;
+		if ( (long) (sp*clen) > numCells ) {
+			numCells = (long) (sp*clen);
+		}
+		long allocatedCells = (long)Math.pow(2, Math.ceil(Math.log(numCells)/Math.log(2)) );
+		long rowSize = basicSize +  allocatedCells * cellSize;
+		//System.out.println("Rowsize for clen " + clen + ", sp " + sp + " -> allocated " + allocatedCells + ", "+ rowSize + " bytes.");
+		return rowSize;
+	}
+
 	/**
 	 * Estimates the result sparsity for Matrix Multiplication A %*% B. 
 	 *  

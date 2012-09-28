@@ -239,9 +239,11 @@ public class ReorgOp extends Hops {
 		case DIAG_V2M:
 			// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
 			// In the worst case, #nnz in output = k => sparsity = 1/k
+			//_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			if (dimsKnown()) {
 				long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
 				_outputMemEstimate = OptimizerUtils.estimate(k, k, (double)1/k);
+				//System.out.println("DIAG k=" + k + ": " + _outputMemEstimate);
 			}
 			else {
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
@@ -255,12 +257,15 @@ public class ReorgOp extends Hops {
 			break;
 		
 		case APPEND:
-			if(dimsKnown()) {
+			// always get a worst-case estimate for append!
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
+			/*if(dimsKnown()) {
 				// result is a concatenation of both the inputs
 				_outputMemEstimate = input.getOutputSize() + getInput().get(1).getOutputSize(); 
 			}
 			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;*/
 			break;
 			
 		}

@@ -136,7 +136,9 @@ public class IndexingOp extends Hops {
 			if ( OptimizerUtils.getOptMode() == OptimizationMode.ROBUST ){
 				// In the worst case, indexing returns the entire matrix
 				// therefore, worst case estimate is the size of input matrix 
-				_outputMemEstimate = input.getOutputSize();
+				
+				// use dimensions of "input" instead of input.getOutputSize()
+				_outputMemEstimate = OptimizerUtils.estimateSize(input.get_dim1(), input.get_dim2(), input.getSparsity() ); //input.getOutputSize();
 			}
 			else if ( OptimizerUtils.getOptMode() == OptimizationMode.AGGRESSIVE ) {
 				// In an average case, we expect indexing will touch 10% of data. 

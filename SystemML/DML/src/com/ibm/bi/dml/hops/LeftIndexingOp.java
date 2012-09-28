@@ -17,16 +17,7 @@ public class LeftIndexingOp  extends Hops {
 
 	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
-		/*
-		if(inpRowL==null)
-			inpRowL=new DataOp("1", DataType.SCALAR, ValueType.INT, DataOpTypes.PERSISTENTREAD, "1", -1, -1, -1, -1);
-		if(inpRowU==null)
-			inpRowU=new DataOp(Long.toString(get_dim1()), DataType.SCALAR, ValueType.INT, DataOpTypes.PERSISTENTREAD, Long.toString(get_dim1()), -1, -1, -1, -1);
-		if(inpColL==null)
-			inpColL=new DataOp("1", DataType.SCALAR, ValueType.INT, DataOpTypes.PERSISTENTREAD, "1", -1, -1, -1, -1);
-		if(inpColU==null)
-			inpColU=new DataOp(Long.toString(get_dim2()), DataType.SCALAR, ValueType.INT, DataOpTypes.PERSISTENTREAD, Long.toString(get_dim2()), -1, -1, -1, -1);
-	*/
+
 		getInput().add(0, inpMatrixLeft);
 		getInput().add(1, inpMatrixRight);
 		getInput().add(2, inpRowL);
@@ -159,9 +150,14 @@ public class LeftIndexingOp  extends Hops {
 	@Override
 	public double computeMemEstimate() {
 		
-		// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
-		// However, the sparsity might change -- TODO: we can not handle the change in sparsity, for now
-		_outputMemEstimate = getInput().get(0).getOutputSize();
+		if ( dimsKnown() ) {
+			// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
+			// However, the sparsity might change -- TODO: we can not handle the change in sparsity, for now
+			_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, getInput().get(0).getSparsity());
+		}
+		else {
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+		}
 		
 		_memEstimate = getInputOutputSize();
 		return _memEstimate;

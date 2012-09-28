@@ -612,7 +612,7 @@ public class TertiaryOp extends Hops {
 				else if ( getInput().get(1).dimsKnown() )
 					index = 1;
 				else 
-					index = -1;
+					index = -1;  // dims are unknown
 				
 				if ( index >= 0 ) {
 					// Output dimensions are completely data dependent. In the worst case, 
@@ -633,9 +633,11 @@ public class TertiaryOp extends Hops {
 			
 			case QUANTILE:
 				// This part of the code is executed only when a vector of quantiles are computed
-				
-				// Output a vector of length = #of quantiles to be computed, and it is likely to be dense.  
-				_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, 1);
+				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
+				if ( dimsKnown() )
+					_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, 1);
+				else 
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				
 				break;
 			

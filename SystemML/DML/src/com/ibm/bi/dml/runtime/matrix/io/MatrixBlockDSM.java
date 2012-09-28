@@ -83,7 +83,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return all_size;
 	}*/
 	
-	public static long estimateSize(int nrows, int ncols, double sparsity)
+	public static long estimateSize(long nrows, long ncols, double sparsity)
 	{
 		long size=44;//the basic variables and references sizes
 		//get real sparsity
@@ -1813,8 +1813,9 @@ public class MatrixBlockDSM extends MatrixValue{
 		boolean sps;
 		if(reducedDim)
 			sps=false;
-		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject()))
+		else if(op.fn.equals(MaxIndex.getMaxIndexFnObject())) {
 			sps=true;
+		}
 		else
 			sps=checkRealSparcity(this);
 			
@@ -1822,6 +1823,8 @@ public class MatrixBlockDSM extends MatrixValue{
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
+		
+		System.out.println("  reorg: [" + result.rlen + ", " + result.clen + "]  nnz(" + result.nonZeros + ", " + result.estimatedNNzsPerRow + ")");
 		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
@@ -1857,6 +1860,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
+		
 	//	time=System.currentTimeMillis()-time;
 	//	System.out.println("------------- transpose ------------");
 	//	System.out.println(time+"\t"+result.getCapacity()+"\t"+result.getNonZeros());
@@ -4673,7 +4677,12 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static void  main(String[] args) throws Exception
 	{
-		MatrixBlockDSM m=getRandomSparseMatrix(10, 10, 0.5, 1);
+		long rows=7525500;
+		long cols=rows;
+		double sp = (double)1/rows;
+		System.out.println("rows " + rows + ", cols " + cols + ", sp " + sp + ": " + (estimateSize(rows,cols,sp)/1024/1024));
+		
+		/*MatrixBlockDSM m=getRandomSparseMatrix(10, 10, 0.5, 1);
 		System.out.println("~~~~~~~~~~~~");
 		System.out.println(m);
 		MatrixBlockDSM m2=new MatrixBlock();
@@ -4685,7 +4694,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		m.setValue(19, 19, 1919);
 		
 		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
+		System.out.println(m);*/
 		
 		//testGetSparseCellInterator();
 		//testUnsafeSetNGet(10, 10);

@@ -9,6 +9,8 @@ public class SparseRow {
 	private double[] values=null;
 	private int[] indexes=null;
 	
+	public static boolean LDEBUG = false;
+	
 	/**
 	 * Computes the size of this {@link SparseRow} object in main memory,
 	 * in bytes, as precisely as possible.  Used for caching purposes.
@@ -47,10 +49,14 @@ public class SparseRow {
 		maxNzs=maxnns;
 		if(estnns<initialCapacity && estnns>0)
 		{
+			if(LDEBUG)
+				System.out.println("allocating 1 .. " + estnns);
 			values=new double[estnns];
 			indexes=new int[estnns];
 		}else
 		{
+			if(LDEBUG)
+				System.out.println("allocating 2 .. " + estnns);
 			values=new double[initialCapacity];
 			indexes=new int[initialCapacity];
 		}

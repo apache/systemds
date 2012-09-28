@@ -65,8 +65,8 @@ public class IndexedIdentifier extends DataIdentifier {
 			if (rowLB_1_1 < 1)
 				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowLB_1_1 > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getOrigDim1() > 0)  && (rowLB_1_1 > this.getOrigDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "lower-bound row index " + rowLB_1_1 + " initialized to out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 		
 			// valid lower row bound value
 			isConst_rowLowerBound = true;
@@ -99,8 +99,8 @@ public class IndexedIdentifier extends DataIdentifier {
 						System.out.println(this.printInfoLocation() + "lower-bound row index " + identifierName + " initialized to "  + tempRowLB + " May cause runtime exception (runtime value must be >= 1)");	
 						validRowLB = false;
 					}
-					if (this.getDim1() > 0  && tempRowLB > this.getDim1()){ 
-						System.out.println(this.printInfoLocation() + "lower-bound row index " + identifierName + " initialized to " + tempRowLB + " May cause runtime exception (Rows in " + this.getName() + ": " + this.getDim1() +")");
+					if (this.getOrigDim1() > 0  && tempRowLB > this.getOrigDim1()){ 
+						System.out.println(this.printInfoLocation() + "lower-bound row index " + identifierName + " initialized to " + tempRowLB + " May cause runtime exception (Rows in " + this.getName() + ": " + this.getOrigDim1() +")");
 						validRowLB = false;
 					}	
 					
@@ -147,8 +147,8 @@ public class IndexedIdentifier extends DataIdentifier {
 			if (rowUB_1_1 < 1)
 				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value. Value must be >= 1");
 			
-			if ((this.getDim1() > 0)  && (rowUB_1_1 > this.getDim1())) 
-				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getDim1());
+			if ((this.getOrigDim1() > 0)  && (rowUB_1_1 > this.getOrigDim1())) 
+				throw new LanguageException(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " out of bounds value.  Rows in " + this.getName() + ": " + this.getOrigDim1());
 		
 			if (isConst_rowLowerBound && rowUB_1_1 < rowLB_1)
 				System.out.println(this.printErrorLocation() + "upper-bound row index " + rowUB_1_1 + " greater than lower-bound row index " + rowLB_1);
@@ -183,8 +183,8 @@ public class IndexedIdentifier extends DataIdentifier {
 						System.out.println(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (runtime value must be >= 1)");	
 						validRowUB = false;
 					}
-					if (this.getDim1() > 0  && tempRowUB > this.getDim1()){ 
-						System.out.println(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (Rows in " + this.getName() + ": " + this.getDim1() +")");
+					if (this.getOrigDim1() > 0  && tempRowUB > this.getOrigDim1()){ 
+						System.out.println(this.printInfoLocation() + "upper-bound row index " + identifierName + " initialized to "  + tempRowUB + " May cause runtime exception (Rows in " + this.getName() + ": " + this.getOrigDim1() +")");
 						validRowUB = false;
 					}	
 					if (isConst_rowLowerBound && tempRowUB < rowLB_1){
@@ -224,8 +224,8 @@ public class IndexedIdentifier extends DataIdentifier {
 			if (colLB_1_1 < 1)
 				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value. Value must be >= 1");
 			
-			if ((this.getDim2() > 0)  && (colLB_1_1 > this.getDim2())) 
-				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getDim2());
+			if ((this.getOrigDim2() > 0)  && (colLB_1_1 > this.getOrigDim2())) 
+				throw new LanguageException(this.printErrorLocation() + "lower-bound column index " + colLB_1_1 + " initialized to out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 		
 			// valid lower row bound value
 			isConst_colLowerBound = true;
@@ -258,8 +258,8 @@ public class IndexedIdentifier extends DataIdentifier {
 						System.out.println(this.printInfoLocation() + "lower-bound column index " + identifierName + " initialized to "  + tempColLB + " May cause runtime exception (runtime value must be >= 1)");	
 						validColLB = false;
 					}
-					if (this.getDim2() > 0  && tempColLB > this.getDim2()){ 
-						System.out.println(this.printInfoLocation() + "lower-bound column index " + identifierName + " initialized to " + tempColLB + " May cause runtime exception (Columns in " + this.getName() + ": " + this.getDim2() +")");
+					if (this.getOrigDim2() > 0  && tempColLB > this.getOrigDim2()){ 
+						System.out.println(this.printInfoLocation() + "lower-bound column index " + identifierName + " initialized to " + tempColLB + " May cause runtime exception (Columns in " + this.getName() + ": " + this.getOrigDim2() +")");
 						validColLB = false;
 					}	
 					
@@ -306,8 +306,8 @@ public class IndexedIdentifier extends DataIdentifier {
 			if (colUB_1_1 < 1)
 				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value. Value must be >= 1");
 			
-			if ((this.getDim2() > 0)  && (colUB_1_1 > this.getDim2())) 
-				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getDim2());
+			if ((this.getOrigDim2() > 0)  && (colUB_1_1 > this.getOrigDim2())) 
+				throw new LanguageException(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " out of bounds value.  Columns in " + this.getName() + ": " + this.getOrigDim2());
 		
 			if (isConst_rowLowerBound && colUB_1_1 < colLB_1)
 				System.out.println(this.printErrorLocation() + "upper-bound column index " + colUB_1_1 + " greater than lower-bound row index " + colLB_1);
@@ -342,8 +342,8 @@ public class IndexedIdentifier extends DataIdentifier {
 						System.out.println(this.printInfoLocation() + "upper-bound column index " + identifierName + " initialized to "  + tempColUB + " May cause runtime exception (runtime value must be >= 1)");	
 						validColUB = false;
 					}
-					if (this.getDim2() > 0  && tempColUB > this.getDim2()){ 
-						System.out.println(this.printInfoLocation() + "upper-bound column index " + identifierName + " initialized to "  + tempColUB + " May cause runtime exception (Columns in " + this.getName() + ": " + this.getDim2() + ")");
+					if (this.getOrigDim2() > 0  && tempColUB > this.getOrigDim2()){ 
+						System.out.println(this.printInfoLocation() + "upper-bound column index " + identifierName + " initialized to "  + tempColUB + " May cause runtime exception (Columns in " + this.getName() + ": " + this.getOrigDim2() + ")");
 						validColUB = false;
 					}	
 					if (isConst_colLowerBound && tempColUB < colLB_1){

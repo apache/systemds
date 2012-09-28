@@ -70,8 +70,7 @@ public class FunctionProgramBlock extends ProgramBlock {
 				pb.execute(ec);
 			}
 			catch (Exception e){
-				System.out.println(e.toString());
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function body");
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function body", e);
 			}
 			
 			_variables = pb._variables;

@@ -164,8 +164,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			}
 		}
 		catch (Exception e){
-			e.printStackTrace();
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error exporting input variables to HDFS");
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error exporting input variables to HDFS", e);
 		}
 		
 		// convert block to cell
@@ -176,9 +175,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			try {
 				this.execute(tempInst,ec);
 			} catch (Exception e) {
-				e.printStackTrace();
+				
 				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error executing "
-						+ tempInst.toString());
+						+ tempInst.toString(), e);
 			}
 		}
 		
@@ -192,10 +191,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 							.get(i),
 							this._prog.getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
-					e.printStackTrace();
+				
 					throw new PackageRuntimeException(this.printBlockErrorLocation() + 
 							"Failed to execute instruction "
-									+ _inst.get(i).toString());
+									+ _inst.get(i).toString(), e);
 				}
 			}
 		}

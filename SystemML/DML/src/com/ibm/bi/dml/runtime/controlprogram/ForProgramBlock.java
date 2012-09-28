@@ -167,8 +167,7 @@ public class ForProgramBlock extends ProgramBlock
 					pb.execute(ec);
 				}
 				catch (Exception e){
-					System.out.println(e.toString());
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block");
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
 				}
 				
 				_variables = pb._variables;
@@ -185,8 +184,7 @@ public class ForProgramBlock extends ProgramBlock
 			execute(_exitInstructions, ec);	
 		}
 		catch (Exception e){
-			System.out.println(e.toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating for program block exit instructions");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating for program block exit instructions", e);
 		}
 	}
 
@@ -232,7 +230,7 @@ public class ForProgramBlock extends ProgramBlock
 						try {
 							tmp = (IntObject) ec.getVariable(retName, ValueType.INT);
 						} catch (Exception e) {
-							throw new DMLRuntimeException(this.printBlockErrorLocation() + "error" + e);
+							throw new DMLRuntimeException(this.printBlockErrorLocation() + "error" , e);
 						}
 					}
 					// Execute all other instructions in the predicate (variableCPInstruction, etc.)
@@ -250,8 +248,7 @@ public class ForProgramBlock extends ProgramBlock
 			else if (pos == 2) predNameStr = "to";
 			else if (pos == 3) predNameStr = "increment";
 			
-			System.out.println(ex.toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate", ex);
 		}
 		
 		//final check of resulting int object

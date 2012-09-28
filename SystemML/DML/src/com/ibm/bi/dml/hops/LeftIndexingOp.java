@@ -121,7 +121,7 @@ public class LeftIndexingOp  extends Hops {
 					set_lops(left);
 				}
 			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops -- " + e);
+				throw new HopsException(this.printErrorLocation() + "In LeftIndexingOp Hop, error in constructing Lops " , e);
 			}
 
 		}

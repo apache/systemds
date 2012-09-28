@@ -226,7 +226,7 @@ public class UnaryOp extends Hops {
 				set_lops(unary1);
 			}
 			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " + e);
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 			}
 		}
 		return get_lops();

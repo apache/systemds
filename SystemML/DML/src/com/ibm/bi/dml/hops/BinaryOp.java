@@ -404,7 +404,7 @@ public class BinaryOp extends Hops {
 				}
 			}
 			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for BinaryOp Hop -- \n" + e);
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for BinaryOp Hop -- \n" , e);
 			}
 		}
 		return get_lops();

@@ -155,8 +155,7 @@ public class IfProgramBlock extends ProgramBlock {
 			predResult = executePredicate(ec); 
 		}
 		catch (Exception e){
-			System.out.println(e.toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if predicate");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if predicate", e);
 		}
 			
 		if(predResult.getBooleanValue()){
@@ -170,8 +169,8 @@ public class IfProgramBlock extends ProgramBlock {
 					pb.execute(ec);
 				}
 				catch(Exception e){
-					System.out.println(e.toString());
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statmement body ");
+					
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statmement body ", e);
 				}
 				
 				_variables = pb._variables;
@@ -188,8 +187,8 @@ public class IfProgramBlock extends ProgramBlock {
 					pb.execute(ec);
 				}
 				catch (Exception e){
-					System.out.println(e.toString());
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statmement body ");
+					
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statmement body ", e);
 				}
 				_variables = pb._variables;
 			}
@@ -198,8 +197,8 @@ public class IfProgramBlock extends ProgramBlock {
 			execute(_exitInstructions, ec);
 		}
 		catch (Exception e){
-			System.out.println(e.toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating exit instructions ");
+			
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating exit instructions ", e);
 		}
 	}
 	

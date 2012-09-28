@@ -117,7 +117,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		} 
 		catch (Exception e) 
 		{
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " + e.toString() );
+			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " ,e );
 		}
 
 		if (!(o instanceof PackageFunction))

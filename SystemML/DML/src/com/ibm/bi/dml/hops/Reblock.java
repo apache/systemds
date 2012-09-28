@@ -90,7 +90,7 @@ public class Reblock extends Hops {
 				else 
 					throw new HopsException(this.printErrorLocation() + "In Reblock Hop, Invalid ExecType (" + et + ") for Reblock. \n");
 			} catch ( Exception e ) {
-				throw new HopsException(this.printErrorLocation() + "In Reblock Hop, error constructing Lops -- \n" + e);
+				throw new HopsException(this.printErrorLocation() + "In Reblock Hop, error constructing Lops -- \n" , e);
 			}
 		}
 		return get_lops();

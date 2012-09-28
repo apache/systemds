@@ -71,7 +71,7 @@ public class RunMRJobs {
 						throw new DMLRuntimeException(pb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
 					}
 				} catch (IOException e) {
-					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " + e);
+					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " , e);
 				}
 			}
 		}
@@ -240,7 +240,7 @@ public class RunMRJobs {
 			
 		} // end of try block
 		catch (Exception e) {
-			throw new DMLRuntimeException(pb.printBlockErrorLocation() + e);
+			throw new DMLRuntimeException(pb.printBlockErrorLocation() , e);
 		}
 
 		if (ret.checkReturnStatus()) {

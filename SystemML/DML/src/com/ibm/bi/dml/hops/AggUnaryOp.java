@@ -114,7 +114,7 @@ public class AggUnaryOp extends Hops {
 					}
 				}
 			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops --" + e);
+				throw new HopsException(this.printErrorLocation() + "In AggUnary Hop, error constructing Lops " , e);
 			}
 
 		}

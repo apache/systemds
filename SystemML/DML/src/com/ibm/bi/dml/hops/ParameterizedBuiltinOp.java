@@ -175,7 +175,7 @@ public class ParameterizedBuiltinOp extends Hops {
 								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
-						throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp -- \n" + e);
+						throw new HopsException(this.printErrorLocation() + "error creating Reblock Lop in ParameterizedBuiltinOp " , e);
 					}
 					reblock.getOutputParameters().setDimensions(-1, -1, 
 							get_rows_in_block(), get_cols_in_block(), -1);
@@ -203,7 +203,7 @@ public class ParameterizedBuiltinOp extends Hops {
 									get_cols_in_block(), get_dataType(),
 									get_valueType());
 						} catch (Exception e) {
-							throw new HopsException(this.printErrorLocation() + "In ParameterizedBuiltinOp, error creating Reblock Lop -- \n " + e);
+							throw new HopsException(this.printErrorLocation() + "In ParameterizedBuiltinOp, error creating Reblock Lop " , e);
 						}
 						reblock.getOutputParameters().setDimensions(-1, -1, 
 								get_rows_in_block(), get_cols_in_block(), -1);

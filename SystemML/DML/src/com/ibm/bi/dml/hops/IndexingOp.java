@@ -88,7 +88,7 @@ public class IndexingOp extends Hops {
 					set_lops(reindex);
 				}
 			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops -- " + e);
+				throw new HopsException(this.printErrorLocation() + "In IndexingOp Hop, error constructing Lops " , e);
 			}
 
 		}

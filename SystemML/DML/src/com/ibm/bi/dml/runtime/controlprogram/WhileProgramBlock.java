@@ -129,7 +129,6 @@ public class WhileProgramBlock extends ProgramBlock {
 			predResult = executePredicate(ec); 
 		}
 		catch(Exception e){
-			System.out.println(e.toString());
 			
 			if (DMLScript.DEBUG){
 				System.out.println();
@@ -137,7 +136,7 @@ public class WhileProgramBlock extends ProgramBlock {
 				printSymbolTable();
 			}
 			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate ");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate ", e);
 		}
 		
 		while(predResult.getBooleanValue()){
@@ -151,7 +150,6 @@ public class WhileProgramBlock extends ProgramBlock {
 					pb.execute(ec);
 				}
 				catch(Exception e){
-					System.out.println(e.toString());
 					
 					if (DMLScript.DEBUG){
 						System.out.println();
@@ -159,7 +157,7 @@ public class WhileProgramBlock extends ProgramBlock {
 						printSymbolTable();
 					}
 					
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block");
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
 				}
 				
 				_variables = pb._variables;
@@ -171,8 +169,7 @@ public class WhileProgramBlock extends ProgramBlock {
 			execute(_exitInstructions, ec);
 		}
 		catch(Exception e){
-			System.out.println(e.toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing exit instructions ");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing exit instructions ", e);
 		}
 		
 	}

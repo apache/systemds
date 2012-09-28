@@ -262,7 +262,7 @@ public class TertiaryOp extends Hops {
 									get_cols_in_block(), get_dataType(),
 									get_valueType());
 						} catch (Exception e) {
-							throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop -- " + e);
+							throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop " , e);
 						}
 						reblock.getOutputParameters().setDimensions(-1, -1,  
 								get_rows_in_block(), get_cols_in_block(), -1);
@@ -389,7 +389,7 @@ public class TertiaryOp extends Hops {
 								get_cols_in_block(), get_dataType(),
 								get_valueType());
 					} catch (Exception e) {
-						throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop -- \n" + e);
+						throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 					}
 					reblock.getOutputParameters().setDimensions(-1, -1, 
 							get_rows_in_block(), get_cols_in_block(), -1);
@@ -404,7 +404,7 @@ public class TertiaryOp extends Hops {
 						+ ") while constructing Lops \n");
 			}
 			} catch(LopsException e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop -- \n" + e);
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 			}
 		}
 		return get_lops();

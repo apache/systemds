@@ -2219,7 +2219,7 @@ public class Dag<N extends Lops> {
 				try {
 					oparams.setDimensions(oparams.getNum_rows(), oparams.getNum_cols(), -1, -1, oparams.getNnz());
 				} catch(HopsException e) {
-					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag -- \n " + e);
+					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag " + e);
 				}
 			}
 		} else {

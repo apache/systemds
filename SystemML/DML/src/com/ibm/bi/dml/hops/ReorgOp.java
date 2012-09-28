@@ -122,7 +122,7 @@ public class ReorgOp extends Hops {
 
 					set_lops(agg1);
 				} catch (LopsException e) {
-					throw new HopsException(this.printErrorLocation() + "In ReorgOp Hop, error constructing Lops -- \n " + e);
+					throw new HopsException(this.printErrorLocation() + "In ReorgOp Hop, error constructing Lops " , e);
 				}
 			} else if(op == ReorgOp.APPEND){
 				ExecType et = optFindExecType();
@@ -152,7 +152,7 @@ public class ReorgOp extends Hops {
 							append, get_rows_in_block(),
 							get_cols_in_block(), get_dataType(), get_valueType());
 				} catch (Exception e) {
-					throw new HopsException(this.printErrorLocation() + "error in constructing Lops for ReorgOp -- \n" + e);
+					throw new HopsException(this.printErrorLocation() + "error in constructing Lops for ReorgOp " , e);
 				}
 				reblock.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 						get_rows_in_block(), get_cols_in_block(), getNnz());

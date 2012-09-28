@@ -162,8 +162,7 @@ public class ProgramBlock {
 					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 				}
 				catch (Exception e){
-					e.printStackTrace();
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (an MRJobInstruction). inst: " + currInst.toString() );
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (an MRJobInstruction). inst: " + currInst.toString() , e);
 				}
 			} 
 			
@@ -199,8 +198,8 @@ public class ProgramBlock {
 					}
 				}
 				catch (Exception e){
-					e.printStackTrace();
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a CPInstruction). inst: " + currInst.toString() );
+				
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a CPInstruction). inst: " + currInst.toString(), e );
 				}
 			} 
 			else if(currInst instanceof SQLInstructionBase)
@@ -210,8 +209,7 @@ public class ProgramBlock {
 				}
 				catch(Exception e)
 				{
-					e.printStackTrace();
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a SQLInstruction). inst: " + currInst.toString() );
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (a SQLInstruction). inst: " + currInst.toString(), e );
 				}
 			}
 			/*
@@ -232,7 +230,7 @@ public class ProgramBlock {
 			MatrixObjectNew mobj = (MatrixObjectNew) this.getVariable(varName);
 			return mobj.acquireRead();
 		} catch (CacheException e) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
 		}
 	}
 	
@@ -240,7 +238,7 @@ public class ProgramBlock {
 		try {
 			((MatrixObjectNew)this.getVariable(varName)).release();
 		} catch (CacheException e) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
 		}
 	}
 	
@@ -272,6 +270,7 @@ public class ProgramBlock {
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Unknown variable: " + name + ", or unknown value type: " + vt);
 				}
 			} catch (Exception e) {
+				
 				e.printStackTrace();
 			}
 		}
@@ -306,7 +305,7 @@ public class ProgramBlock {
 	        this.setVariable (varName, sores);
 		
 		} catch ( CacheException e ) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
 		}
 	}
 

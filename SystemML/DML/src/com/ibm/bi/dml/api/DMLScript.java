@@ -176,12 +176,14 @@ public class DMLScript {
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			} catch (Exception e) { // it is ok to not have the default
 				defaultConfig = null;
+				System.err.println("INFO: default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
 			}
 			try { // try to get the optional config next
 				optionalConfig = new DMLConfig(_optConfig);	
-			} catch (Exception e) { // it is not ok as the specification is wrong
+			} 
+			catch (Exception e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
-				System.err.println("ERROR: Error parsing optional configuration file: " + _optConfig);
+				System.err.println("ERROR:  Optional config file " +  _optConfig + " not found ");
 				//return false;
 			}
 			if (defaultConfig != null) {

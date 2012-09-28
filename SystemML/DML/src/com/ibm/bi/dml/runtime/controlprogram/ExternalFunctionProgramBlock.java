@@ -208,9 +208,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				tempInst.addAll(cell2BlockInst);
 				this.execute(tempInst, ec);
 			} catch (Exception e) {
-				e.printStackTrace();
+				
 				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Failed to execute instruction "
-						+ cell2BlockInst.toString());
+						+ cell2BlockInst.toString(), e);
 			}
 		}
 	}

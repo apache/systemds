@@ -577,7 +577,6 @@ public class StatementBlock extends LiveVariableAnalysis{
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
 					
-					((IndexedIdentifier)target).setOriginalDimensions(target.getDim1(), target.getDim2());
 					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
 					
 					

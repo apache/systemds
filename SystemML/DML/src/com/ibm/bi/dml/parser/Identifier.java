@@ -6,14 +6,14 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 public abstract class Identifier extends Expression{
 
-	private DataType _dataType;
-	private ValueType _valueType;
-	private long _dim1;
-	private long _dim2;
-	private long _rows_in_block;
-	private long _columns_in_block;
-	private long _nnz;
-	private FormatType _formatType;
+	protected DataType _dataType;
+	protected ValueType _valueType;
+	protected long _dim1;
+	protected long _dim2;
+	protected long _rows_in_block;
+	protected long _columns_in_block;
+	protected long _nnz;
+	protected FormatType _formatType;
 		
 	public Identifier(Identifier i){
 		_dataType = i.getDataType();
@@ -53,7 +53,7 @@ public abstract class Identifier extends Expression{
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
-			
+				
 	}
 	
 	public void setDimensionValueProperties(Identifier i){
@@ -160,8 +160,8 @@ public abstract class Identifier extends Expression{
 				if (indexedIdentiferOut.getColUpperBound() != null) 
 					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars);
 				
-				// update the size of the indexed expression output
-				((IndexedIdentifier)this.getOutput()).updateIndexedDimensions(constVars);
+				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(constVars);
+				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				
 				
 				

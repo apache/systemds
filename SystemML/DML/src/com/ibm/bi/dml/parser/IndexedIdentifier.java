@@ -38,7 +38,7 @@ public class IndexedIdentifier extends DataIdentifier {
 	public IndexPair calculateIndexedDimensions(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
 		
 		// stores the updated row / col dimension info
-		long updatedRowDim = 1, updatedColDim = 1;
+		long updatedRowDim = -1, updatedColDim = -1;
 		
 		boolean isConst_rowLowerBound = false;
 		boolean isConst_rowUpperBound = false;
@@ -376,7 +376,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// CASE: (lower == null && upper == null) --> updated row dim = (rows of input)
 		else if (_rowLowerBound == null && _rowUpperBound == null){
-			updatedRowDim = this.getDim1(); 
+			updatedRowDim = this.getOrigDim1(); 
 		}
 		
 		// CASE: (lower == null) && (upper == constant) --> updated row dim = (constant)
@@ -388,8 +388,8 @@ public class IndexedIdentifier extends DataIdentifier {
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> rowCount - lower bound + 1
-		else if (isConst_rowLowerBound && _rowUpperBound == null && this.getDim1() > 0) {
-			long rowCount = this.getDim1();
+		else if (isConst_rowLowerBound && _rowUpperBound == null && this.getOrigDim1() > 0) {
+			long rowCount = this.getOrigDim1();
 			if (_rowLowerBound instanceof IntIdentifier)
 				updatedRowDim = rowCount - ((IntIdentifier)_rowLowerBound).getValue() + 1;
 			else if (_rowLowerBound instanceof DoubleIdentifier)
@@ -427,7 +427,7 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		// CASE: (lower == null && upper == null) --> updated col dim = (cols of input)
 		else if (_colLowerBound == null && _colUpperBound == null){
-			updatedColDim = this.getDim2(); 
+			updatedColDim = this.getOrigDim2(); 
 		}
 		// CASE: (lower == null) && (upper == constant) --> updated col dim = (constant)
 		else if (_colLowerBound == null && isConst_colUpperBound) {
@@ -438,8 +438,8 @@ public class IndexedIdentifier extends DataIdentifier {
 		}
 			
 		// CASE: (lower == constant) && (upper == null) && (dimIndex > 0) --> colCount - lower bound + 1
-		else if (isConst_colLowerBound && _colUpperBound == null && this.getDim2() > 0) {
-			long colCount = this.getDim2();
+		else if (isConst_colLowerBound && _colUpperBound == null && this.getOrigDim2() > 0) {
+			long colCount = this.getOrigDim2();
 			if (_colLowerBound instanceof IntIdentifier)
 				updatedColDim = colCount - ((IntIdentifier)_colLowerBound).getValue() + 1;
 			else if (_colLowerBound instanceof DoubleIdentifier)
@@ -469,20 +469,6 @@ public class IndexedIdentifier extends DataIdentifier {
 		
 		return new IndexPair(updatedRowDim, updatedColDim);
 		
-	}
-	
-	
-	public void updateIndexedDimensions(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException{
-	
-		IndexPair updatedIndices = calculateIndexedDimensions(currConstVars);
-		long updatedRowDim = updatedIndices._row;
-		long updatedColDim = updatedIndices._col;
-		
-		// set the "original" dimensions (dimension values of object being indexed
-		this.setOriginalDimensions(this.getDim1(), this.getDim2());
-		
-		// set the updated dimensions
-		this.setDimensions(updatedRowDim, updatedColDim);
 	}
 	
 	public void setOriginalDimensions(long passedDim1, long passedDim2){
@@ -668,6 +654,27 @@ public class IndexedIdentifier extends DataIdentifier {
 		else {
 			this._endLine = blp;
 			this._endColumn = bcp;
+		}
+	}
+	
+	
+	public void setProperties(Identifier i){
+		_dataType = i.getDataType();
+		_valueType = i.getValueType();
+		_dim1 = i.getDim1();
+		_dim2 = i.getDim2();
+		_rows_in_block = i.getRowsInBlock();
+		_columns_in_block = i.getColumnsInBlock();
+		_nnz = i.getNnz();
+		_formatType = i.getFormatType();
+		
+		if (i instanceof IndexedIdentifier){
+			_origDim1 = ((IndexedIdentifier)i).getOrigDim1();
+			_origDim2 = ((IndexedIdentifier)i).getOrigDim2();
+		}
+		else{
+			_origDim1 = i.getDim1();
+			_origDim2 = i.getDim2();
 		}
 	}
 	

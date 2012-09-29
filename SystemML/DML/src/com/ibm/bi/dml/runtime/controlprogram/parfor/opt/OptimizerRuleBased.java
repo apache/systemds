@@ -37,9 +37,10 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * - 4) rewrite set degree of parallelism
  * - 5) rewrite set task partitioner		 		 
  * - 6) remove unnecessary parfor 			 
- * - 7) blockwise partitioning TODO requires postprocessing step and runtime extension
- *  
- * TODO: decide on column blockwise / row-blockwise  
+ * - ( 7) blockwise partitioning )
+ * 
+ * TODO blockwise partitioning
+ * TODO result partitioning 
  *  
  */
 public class OptimizerRuleBased extends Optimizer
@@ -86,7 +87,8 @@ public class OptimizerRuleBased extends Optimizer
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		System.out.println("--- RULEBASED OPTIMIZER -------");
+		if( OptimizationWrapper.LDEBUG )
+			System.out.println("--- RULEBASED OPTIMIZER -------");
 
 		//ANALYZE infrastructure properties
 		if( OptimizationWrapper.LDEBUG )
@@ -299,7 +301,7 @@ public class OptimizerRuleBased extends Optimizer
 			int cpk = (int) Math.min( _lk, Math.floor( _lm / M ) ); //estimated local exploited par  
 			
 			//MR if local par cannot be exploited due to mem constraints (this implies that we work on large data)
-			if( cpk < _N && cpk < _rk )
+			if( cpk < _lk && cpk < _N && cpk < _rk )
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
@@ -433,7 +435,7 @@ public class OptimizerRuleBased extends Optimizer
 				kMax = _lkmaxCP;
 			else
 				kMax = _lkmaxMR;
-
+			
 			//ensure local memory constraint
 			kMax = Math.min( kMax, (int)Math.floor( _lm / M ) );
 			if( kMax < 1 )

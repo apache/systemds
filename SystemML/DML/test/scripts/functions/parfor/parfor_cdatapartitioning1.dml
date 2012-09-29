@@ -4,7 +4,7 @@ n = $3;
 R = Rand(rows=1,cols=n,min=0,max=0); 
 dummy = Rand(rows=1, cols=1, min=1, max=1);
 
-parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=NONE )
+parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=NONE, opt=NONE )
 {
    X = V[,i];                 
    sX = sum(X);

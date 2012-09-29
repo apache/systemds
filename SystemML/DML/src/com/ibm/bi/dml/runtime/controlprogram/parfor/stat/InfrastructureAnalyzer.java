@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
 
 import java.io.IOException;
+import java.util.StringTokenizer;
 
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
@@ -10,9 +11,14 @@ import org.apache.hadoop.mapred.JobConf;
  * Central place for analyzing and obtaining static infrastructure properties
  * such as memory and number of logical processors.
  * 
+ * 
+ * TODO handle mapred.child.java.opts
+ * 
  */
 public class InfrastructureAnalyzer 
 {
+	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
+	
 	//static local master node properties
 	public static int  _localPar        = -1;
 	public static long _localJVMMaxMem  = -1;
@@ -23,7 +29,7 @@ public class InfrastructureAnalyzer
 	public static int  _remoteParReduce = -1;
 	public static long _remoteJVMMaxMem = -1;
 	public static long _remoteMRSortMem = -1;
-	
+	public static boolean _localJT      = false;
 	
 	//static initialization, called for each JVM (on each node)
 	static 
@@ -165,6 +171,13 @@ public class InfrastructureAnalyzer
 		return _remoteMRSortMem;		
 	}
 	
+	public static boolean isLocalMode()
+	{
+		if( _remoteJVMMaxMem == -1 )
+			analyzeHadoopCluster();
+		
+		return _localJT;		
+	}
 	
 	///////
 	//methods for obtaining constraints or respective defaults
@@ -229,8 +242,15 @@ public class InfrastructureAnalyzer
 				_remotePar = stat.getTaskTrackers();
 				_remoteParMap = stat.getMaxMapTasks(); 
 				_remoteParReduce = stat.getMaxReduceTasks(); 
-				_remoteJVMMaxMem = (1024*1024) * job.getLong("mapred.child.java.opts",1024); //1GB
 				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
+				
+				//handle jvm max mem
+				String javaOpts = job.get("mapred.child.java.opts");
+				_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts);
+				
+				//analyze if local mode
+				String jobTracker = job.get("mapred.job.tracker", "local");
+				_localJT = jobTracker.equals("local");
 			}		
 		} 
 		catch (IOException e) 
@@ -239,4 +259,39 @@ public class InfrastructureAnalyzer
 		}
 	}
 
+	
+	private static long extractMaxMemoryOpt(String javaOpts)
+	{
+		long ret = -1; //mem in bytes
+		
+		try
+		{
+			StringTokenizer st = new StringTokenizer( javaOpts, " " );
+			String arg = null;
+			while( (arg = st.nextToken()) != null )
+			{
+				if( !arg.startsWith("-Xmx") ) //search for max mem
+					continue;
+				
+				arg = arg.substring(4); //cut off "-Xmx"
+				//parse number and unit
+				if ( arg.endsWith("m") )
+					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024 * 1024;
+				else if( arg.endsWith("k") )
+					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024;
+				else 
+					ret = Long.parseLong(arg.substring(0,arg.length()-2));
+			}
+			
+			if( ret < 0 ) // no argument found
+				ret = DEFAULT_JVM_SIZE;
+		}
+		catch(Exception ex)
+		{
+			//if anything breaks during parsing (e.g., because args not specified correctly)
+			ret = DEFAULT_JVM_SIZE;
+		}
+		
+		return ret;
+	}
 }

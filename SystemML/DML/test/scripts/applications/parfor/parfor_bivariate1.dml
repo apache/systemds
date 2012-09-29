@@ -24,28 +24,7 @@
  *        + categorical.variances - 
  *          -> Values in these three matrices are applicable only for scale-categorical attribute pairs. 
  *          k^th column in these matrices denote the attribute pair (A_1i,A_2j) where i*j = k.
- *
- *
- *  TODO discussion script:
- *    - changed ID
- *    - exploit symmetry and compute only upper-triangular matrix
- *    - exploit fine-grained opt potential ( why are certain statistics for
- *      the outer loop var computed over and over again in the innner loop )  
- *    - reject computations on same data sets / already processed combinations  
- *   
  */
-
-/*
-v = Rand(rows=100000, cols=100000, sparsity=0.001 );  # input data set
-w = Rand(rows=100000, cols=10); # attribute set 1
-h = Rand(rows=10, cols=100000); # attribute set 2
-
-write(v,"./out2/v",format="text");
-write(w,"./out2/w",format="text");
-write(h,"./out2/h",format="text");
-*/
-
-#TODO MB exploit symmetry
 
 D = read($1, rows=$7, cols=$8);  # input data set
 S1 = read($2, rows=1, cols=$9); # attribute set 1
@@ -58,9 +37,6 @@ maxC = $11;     # max number of categories in any categorical attribute
 s1size = ncol(S1);
 s2size = ncol(S2);
 
-#numpairs = s1size * s2size;
-#print(s1size + ", " + s2size + ", " + numpairs);
-
 # R, chisq, cramers, spearman, eta, anovaf
 numstats = 8;
 basestats = Rand(rows=numstats, cols=numPairs, min=0, max=0);
@@ -71,12 +47,12 @@ cat_vars = Rand(rows=maxC, cols=numPairs, min=0, max=0);
 dummy = Rand(rows=1, cols=1, min=1, max=1);
 
 
-parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
+parfor( i in 1:s1size, par=4, mode=LOCAL, check=0, opt=NONE) {
     a1 = castAsScalar(S1[,i]);
     k1 = castAsScalar(K1[1,i]);
     A1 = D[,a1];
 
-    parfor( j in 1:s2size, par=4, mode=LOCAL, check=0) {
+    parfor( j in 1:s2size, par=4, mode=LOCAL, check=0, opt=NONE) {
         pairID = (i-1)*s2size+j; 
         a2 = castAsScalar(S2[,j]);
         k2 = castAsScalar(K2[1,j]);

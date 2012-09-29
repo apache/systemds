@@ -69,17 +69,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * The ParForProgramBlock has the same execution semantics as a ForProgamBlock but executes
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
- * 
- * TODO runtime integration of rulebased optimizer
- * TODO parser integration of rulebased optimizer
- * TODO testcases rulebased optimizer
- *       - bivariate stats CP, MR (called small, large combined with few, many)
- *       - correlation CP, MR
- *       - folds creation CP, MR
- * TODO test rulebased optimizer on cluster       
+ *       
  * 
  * NEW PERFORMANCE IMPROVEMENTS (probably not for BI 2.0 release)
- * TODO: parallel local data partitioning
  * TODO: parallel local file-based result merge
  * TODO: parallel remote MR result merge
  * 
@@ -91,6 +83,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public class ParForProgramBlock extends ForProgramBlock 
 {
+	public static final boolean LDEBUG = DMLScript.DEBUG || false;
+	
 	// execution modes
 	public enum PExecMode{
 		LOCAL,      //local (master) multi-core execution mode
@@ -255,8 +249,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( USE_PB_CACHE ) 
 			_pbcache = new HashMap<Long, ArrayList<ProgramBlock>>();
 		
-		if( DMLScript.DEBUG )
-			System.out.println("PARFOR: ParForProgramBlock created with numThreads="+_numThreads+", taskSize="+_taskSize);
+		if( LDEBUG )
+			System.out.println("PARFOR: ParForProgramBlock created with mode="+_execMode+", optmode="+_optMode+", numThreads="+_numThreads);
 	}
 	
 	public long getID()
@@ -301,7 +295,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public void setDegreeOfParallelism(int k)
 	{
-		//System.out.println("ID="+_ID+", set degree of parallelism: "+k);
 		_numThreads = k;
 		_params.put(ParForStatementBlock.PAR, String.valueOf(_numThreads)); //kept up-to-date for copies
 		setLocalParWorkerIDs();
@@ -391,10 +384,11 @@ public class ParForProgramBlock extends ForProgramBlock
 					if( !moVar.isPartitioned() )
 					{
 						PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
-						System.out.println("INFO: PARFOR ID="+_ID+": Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
+						if( LDEBUG )
+							System.out.println("INFO: PARFOR ID="+_ID+": Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 						if( dpf != PDataPartitionFormat.NONE )
 						{
-							Timing ltime = new Timing();//TODO remove for final version
+							Timing ltime = new Timing();
 							ltime.start();
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
@@ -402,16 +396,18 @@ public class ParForProgramBlock extends ForProgramBlock
 							MatrixObjectNew moVarNew = dp.createPartitionedMatrixObject(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
-							System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
+							if( LDEBUG )
+								System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
 						}
 					}
 					else if( ALLOW_UNSCOPED_PARTITIONING ) //note: vars partitioned and not recompiled can only happen in case of unscoped partitioning over multiple top-level parfors.
 					{
 						//only recompile if input matrix is already paritioned.
-						Timing ltime = new Timing();//TODO remove for final version
+						Timing ltime = new Timing();
 						ltime.start();
 						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
-						System.out.println("Recompilation done in "+ltime.stop()+" ms");
+						if(LDEBUG)
+							System.out.println("Recompilation done in "+ltime.stop()+" ms");
 					}
 				}
 			}
@@ -425,8 +421,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
 		///////
-		if( DMLScript.DEBUG ) 
-			System.out.println("EXECUTE PARFOR ID="+_ID+" with mode="+_execMode+", numThreads="+_numThreads+", partitioner="+_taskPartitioner);
+		if( LDEBUG ) 
+			System.out.println("EXECUTE PARFOR ID="+_ID+" with mode="+_execMode+", numThreads="+_numThreads+", taskpartitioner="+_taskPartitioner);
 		
 		
 		if( MONITOR )
@@ -1214,12 +1210,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructTaskFileName()
 	{
-		String scratchSpaceLoc = null;
-		try {
-			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-		} catch (Exception e){
-			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-		}
+		String scratchSpaceLoc = ConfigurationManager.getConfig()
+        							.getTextValue(DMLConfig.SCRATCH_SPACE);
 	
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
@@ -1239,12 +1231,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructResultFileName()
 	{
-		String scratchSpaceLoc = null;
-		try {
-			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-		} catch (Exception e){
-			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-		}
+		String scratchSpaceLoc = ConfigurationManager.getConfig()
+									.getTextValue(DMLConfig.SCRATCH_SPACE);
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
@@ -1262,12 +1250,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructResultMergeFileName()
 	{
-		String scratchSpaceLoc = null;
-		try {
-			scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-		} catch (Exception e){
-			System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-		}
+		String scratchSpaceLoc = ConfigurationManager.getConfig()
+		                             .getTextValue(DMLConfig.SCRATCH_SPACE);
 		
 		String fname = PARFOR_MR_RESULTMERGE_FNAME;
 		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID

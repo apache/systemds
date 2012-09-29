@@ -1054,7 +1054,7 @@ public class MatrixObjectNew extends CacheableData
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		double sparsity = ((double)mc.nonZero)/(mc.numRows*mc.numColumns); //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
-				                           rlen, clen, mc.numRowsPerBlock, mc.get_cols_per_block(), sparsity);
+				                           rlen, clen, mc.numRowsPerBlock, mc.numColumnsPerBlock, sparsity);
 		
 		if( newData == null )
 		{

@@ -74,6 +74,13 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		runParForBivariateStatsTest(PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
 	}*/
 	
+
+	@Test
+	public void testParForBivariateStatsDefaultMR() 
+	{
+		runParForBivariateStatsTest(true, null, null, ExecType.MR);
+	}
+	
 	/**
 	 * 
 	 * @param outer execution mode of outer parfor loop
@@ -95,7 +102,8 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		{
 			if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
 			else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
-			else 									scriptNum=1;
+			else if( outer == PExecMode.LOCAL ) 	scriptNum=1;
+			else                                    scriptNum=4; //optimized
 		}
 		else
 		{

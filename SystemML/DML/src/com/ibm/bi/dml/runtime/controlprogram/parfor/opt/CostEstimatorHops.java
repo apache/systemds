@@ -5,6 +5,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
@@ -13,9 +14,17 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class CostEstimatorHops extends CostEstimator
 {
-	public static final double DEFAULT_MEM_MR = 20*1024*1024;
+	public static double DEFAULT_MEM_MR = -1;
 	
 	private OptTreePlanMappingAbstract _map = null;
+	
+	static
+	{
+		DEFAULT_MEM_MR = 20*1024*1024; //20MB
+		if( InfrastructureAnalyzer.isLocalMode() )
+			DEFAULT_MEM_MR = DEFAULT_MEM_MR + InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
+	}
+	
 	
 	public CostEstimatorHops( OptTreePlanMappingAbstract map )
 	{

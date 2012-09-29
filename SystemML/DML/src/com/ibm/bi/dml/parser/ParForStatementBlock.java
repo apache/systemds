@@ -89,7 +89,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.NONE) );
 		_paramDefaults.put( RESULT_MERGE,      String.valueOf(PResultMerge.LOCAL_AUTOMATIC) );
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
-		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.NONE) ); //TODO change to RULEBASED whenever new Hops optimizer available
+		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.RULEBASED) );
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();

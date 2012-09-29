@@ -7,10 +7,13 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Different test cases for ParFOR loop dependency analysis:
@@ -242,6 +245,9 @@ public class ParForDependencyAnalysisTest
 		boolean raisedException = false;
 		try
 		{
+			DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			ConfigurationManager.setConfig(conf);
+			
 			String dmlScriptString="";
 			HashMap<String, String> argVals = new HashMap<String,String>();
 			

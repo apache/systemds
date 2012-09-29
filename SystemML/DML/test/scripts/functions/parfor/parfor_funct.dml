@@ -8,7 +8,7 @@ V = read($1, rows=$2, cols=$3);
 R = Rand(rows=$3,cols=1,min=0,max=0); 
 dummy = Rand(rows=1, cols=1, min=1, max=1);
 
-parfor( i in 1:$3, mode=REMOTE_MR ) 
+parfor( i in 1:$3, mode=REMOTE_MR, opt=NONE ) 
 {
    X = V[,i];
    sumx = execSum(X);

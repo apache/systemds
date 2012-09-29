@@ -557,8 +557,9 @@ public class OptTreeConverter
 			if( inst instanceof RandCPInstruction )
 			{
 				RandCPInstruction linst = (RandCPInstruction) inst;
-				DataFormat df = (linst.sparsity>MatrixBlockDSM.SPARCITY_TURN_POINT) ? 
-						                        DataFormat.DENSE : DataFormat.SPARSE; 
+				DataFormat df = (   linst.sparsity >= MatrixBlockDSM.SPARCITY_TURN_POINT 
+						         || linst.cols <= MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT ) ? 
+						            DataFormat.DENSE : DataFormat.SPARSE; 
 				ret = new OptNodeStatistics(linst.rows, linst.cols, -1, -1, linst.sparsity, df);
 			}
 			else if ( inst instanceof FunctionCallCPInstruction )
@@ -581,7 +582,9 @@ public class OptTreeConverter
 							ret.setDim1( mc1.numRows );
 							ret.setDim2( mc1.numColumns );
 							ret.setSparsity( mc1.nonZero /(  ret.getDim1() * ret.getDim2() ) ); //sparsity
-							ret.setDataFormat((ret.getSparsity() < MatrixBlockDSM.SPARCITY_TURN_POINT )? DataFormat.SPARSE : DataFormat.DENSE ); 
+							ret.setDataFormat(  (ret.getSparsity() < MatrixBlockDSM.SPARCITY_TURN_POINT 
+									          && mc1.numColumns > MatrixBlockDSM.SKINNY_MATRIX_TURN_POINT ) ? 
+									        		  DataFormat.SPARSE : DataFormat.DENSE ); 
 							maxSize = mc1.numRows*mc1.numColumns;
 						}
 					}
@@ -810,7 +813,7 @@ public class OptTreeConverter
 			
 			//copy node internals (because it might be root node)
 			//(no need for update mapping)
-			rtNode.setExecType(newRtNode.getExecType()); //TODO extend as required
+			rtNode.setExecType(newRtNode.getExecType()); //
 		}
 		else if (hlNode.getNodeType() == NodeType.HOP)
 		{

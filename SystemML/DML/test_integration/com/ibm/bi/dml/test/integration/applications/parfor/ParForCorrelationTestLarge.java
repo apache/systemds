@@ -61,6 +61,12 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 	}
 	*/
 	
+	@Test
+	public void testParForCorrleationLargeDefault() 
+	{
+		runParForCorrelationTest(null, null);
+	}
+	
 	/**
 	 * 
 	 * @param outer execution mode of outer parfor loop
@@ -73,7 +79,8 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 		int scriptNum = -1;
 		if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
 		else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
-		else 									scriptNum=1;
+		else if( outer == PExecMode.LOCAL )     scriptNum=1;
+		else                                    scriptNum=4; //optimized
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

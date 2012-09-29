@@ -33,8 +33,10 @@ public class DotGraph {
 			}
 		}
 		else {
-			System.out.println("Warning: Can not visualize the graph on current OS (" + osname + "). Displaying the graph in text format.");
-			//printGraphString(content, title);
+			if ( draw_graph ) { 
+				System.out.println("Warning: Can not visualize the graph on current OS (" + osname + "). Displaying the graph in text format.");
+				printGraphString(content, title);
+			}
 		}
 	}
 

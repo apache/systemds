@@ -780,8 +780,8 @@ public class MRJobInstruction extends Instruction
 			System.out.println("    shuffle inst - " + iv_shuffleInstructions );
 		if ( !iv_aggInstructions.equals("")) 
 			System.out.println("    agg inst - " + iv_aggInstructions );
-		if ( !iv_aggInstructions.equals("")) 
-			System.out.println("    other inst - " + iv_aggInstructions );
+		if ( !iv_otherInstructions.equals("")) 
+			System.out.println("    other inst - " + iv_otherInstructions );
 
 		System.out.println("  Outputs:");
 		for(int i=0; i < outputVars.length; i++ ) {

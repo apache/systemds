@@ -63,7 +63,7 @@ for( i in 1:s1size ) {
                 if ( k1 == 3 ) {
                     # ordinal-ordinal   
                     print("ordinal-ordinal");
-                    # FIXME basestats[6,pairID] <- cor(A1,A2, method="spearman");
+                    basestats[6,pairID] <- cor(A1,A2, method="spearman");
                 }
             }
         } 

@@ -291,7 +291,6 @@ public class VariableCPInstruction extends CPInstruction {
 		//int hash = d.hashCode();
 		for( String key : pb.getVariables().keySet() ) {
 			//System.out.println("    probing for " + key + ": " + pb.getVariable(key));
-			//if ( pb.getVariable(key).hashCode() == hash ) {
 			if ( pb.getVariable(key).equals(d) ) {
 				refCount++;
 				
@@ -347,6 +346,10 @@ public class VariableCPInstruction extends CPInstruction {
 			
 			Data input1_data = pb.getVariable(input1.get_name());
 			
+			if ( input1_data == null ) {
+				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+			}
+
 			// check if any other variable refers to the same Data object
 			int refCount = getRefCount(pb, input1_data, true);
 			if ( refCount == 1 ) {
@@ -356,7 +359,7 @@ public class VariableCPInstruction extends CPInstruction {
 					// clean in-memory object
 					clearCachedMatrixObject(pb, input1_data);
 					
-					if ( ((MatrixObjectNew) input1_data).isFileExists() )
+					if ( ((MatrixObjectNew) input1_data).isFileExists() && ((MatrixObjectNew) input1_data).isCleanupEnabled() )
 						// clean data on hdfs, if exists
 						cleanDataOnHDFS(pb, input1_data);
 				}
@@ -377,6 +380,10 @@ public class VariableCPInstruction extends CPInstruction {
 			// example instruction: cpvar <srcVar> <destVar>
 			
 			Data dd = pb.getVariable(input1.get_name());		
+			
+			if ( dd == null ) {
+				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
+			}
 			
 			// check if <destVar> has any existing references
 			int destRefCount = getRefCount(pb, pb.getVariable(input2.get_name()), false);

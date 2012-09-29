@@ -439,7 +439,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//preserve result variables of cleanup
-		pinResultVariables();
+		//pinResultVariables();
+		_resultVarsState = pinVariables(_resultVars);
 		
 		try 
 		{		
@@ -463,8 +464,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//clear result variables 
-		unpinResultVariables();
-		
+		//unpinResultVariables();
+		unpinVariables(_resultVars,_resultVarsState);
+
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		_variables.put(iterVarName, iterVar);

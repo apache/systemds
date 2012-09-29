@@ -334,6 +334,58 @@ public class ProgramBlock {
 		_inst = inst;
 	}
 	
+	/**
+	 * Pin a given list of variables i.e., set the "clean up" state in 
+	 * corresponding matrix objects, so that the cached data inside these
+	 * objects is not cleared and the corresponding HDFS files are not 
+	 * deleted (through rmvar instructions). 
+	 * 
+	 * The function returns the OLD "clean up" state of matrix objects.
+	 */
+	public ArrayList<Boolean> pinVariables(ArrayList<String> varList) 
+	{
+		ArrayList<Boolean> varsState = new ArrayList<Boolean>();
+		
+		for( String var : varList )
+		{
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObjectNew )
+			{
+				//System.out.println("pin ("+_ID+") "+var);
+				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				varsState.add( mo.isCleanupEnabled() );
+				mo.enableCleanup(false); 
+			}
+		}
+		return varsState;
+	}
+	
+	/**
+	 * Unpin the a given list of variables by setting their "cleanup" status
+	 * to the values specified by <code>varsStats</code>.
+	 * 
+	 * Typical usage:
+	 *    <code> 
+	 *    oldStatus = pinVariables(varList);
+	 *    ...
+	 *    unpinVariables(varList, oldStatus);
+	 *    </code>
+	 * 
+	 * i.e., a call to unpinVariables() is preceded by pinVariables(). 
+	 */
+	public void unpinVariables(ArrayList<String> varList, ArrayList<Boolean> varsState)
+	{
+		for( int i=0; i<varList.size(); i++ )
+		{
+			//System.out.println("unpin ("+_ID+") "+var);
+			
+			String var = varList.get(i);
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObjectNew )
+				((MatrixObjectNew)dat).enableCleanup(varsState.get(i));
+		}
+	}
+
 	public void printMe() {
 		//System.out.println("***** INSTRUCTION BLOCK *****");
 		for (Instruction i : this._inst) {

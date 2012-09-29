@@ -1824,8 +1824,6 @@ public class MatrixBlockDSM extends MatrixValue{
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
 		
-		System.out.println("  reorg: [" + result.rlen + ", " + result.clen + "]  nnz(" + result.nonZeros + ", " + result.estimatedNNzsPerRow + ")");
-		
 		CellIndex temp = new CellIndex(0, 0);
 		if(sparse)
 		{
@@ -2038,7 +2036,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
 					"["+rowLower+":"+rowUpper+"," + colLower+":"+colUpper+"] " +
-							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+".");
+							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
 		}
 		
 		int rl = (int)rowLower-1;

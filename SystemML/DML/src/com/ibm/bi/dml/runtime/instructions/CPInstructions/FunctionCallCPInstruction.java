@@ -136,6 +136,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			functionVariables.put(currFormalParamName,currFormalParamValue);	
 					
 		}
+		
+		// Pin the input variables so that they do not get deleted 
+		// from pb's symbol table at the end of execution of function
+		ArrayList<Boolean> pinStatus = pb.pinVariables(this._boundInputParamNames);
 			
 		// execute the function block
 		fpb.setVariables(functionVariables);
@@ -144,11 +148,14 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			fpb.execute(null);
 		}
 		catch (Exception e){
-			System.out.println(e.toString());
+			e.printStackTrace();
 			String fname = this._namespace + "::" + this._functionName;
 			throw new DMLRuntimeException("error executing function " + fname);
 		}
-			
+		
+		// Unpin the pinned variables
+		pb.unpinVariables(this._boundInputParamNames, pinStatus);
+		
 		LocalVariableMap returnedVariables = fpb.getVariables(); 
 		
 		// add the updated binding for each return variable to the program block variables

@@ -313,7 +313,8 @@ public class Dag<N extends Lops> {
 		if (DEBUG)
 			System.out.println("In delete updated variables");
 
-		/*Set<String> in = sb.liveIn().getVariables().keySet();
+		/*
+		Set<String> in = sb.liveIn().getVariables().keySet();
 		Set<String> out = sb.liveOut().getVariables().keySet();
 		Set<String> updated = sb.variablesUpdated().getVariables().keySet();
 		
@@ -322,12 +323,15 @@ public class Dag<N extends Lops> {
 		intersection.retainAll(updated);
 		
 		for (String var : intersection) {
-			if(DEBUG)
-				System.out.println(inst.toString());
-			inst.add(createCleanupInstruction(var));
-		}*/
+			inst.add(VariableCPInstruction.prepareRemoveInstruction(var));
+		}
+		*/
 
+		// CANDIDATE list of variables which could have been updated in this statement block 
 		HashMap<String, N> labelNodeMapping = new HashMap<String, N>();
+		
+		// ACTUAL list of variables whose value is updated, AND the old value of the variable 
+		// is no longer accessible/used.
 		HashSet<String> updatedLabels = new HashSet<String>();
 		
 		// first capture all transient read variables
@@ -338,8 +342,23 @@ public class Dag<N extends Lops> {
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.READ
 					&& ((Data) node).get_dataType() == DataType.MATRIX) {
-				labelNodeMapping.put(node.getOutputParameters().getLabel(),
-						node);
+				
+				// "node" is considered as updated ONLY IF the old value is not used any more
+				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
+				boolean hasWriteParent=false;
+				for(Lops p : node.getOutputs()) {
+					if(p.getExecLocation() == ExecLocation.Data) {
+						// if the "p" is of type Data, then it has to be a WRITE
+						hasWriteParent = true;
+						break;
+					}
+				}
+				
+				if ( hasWriteParent == false ) {
+					// node has no parent of type WRITE, so this is a CANDIDATE variable 
+					// add it to labelNodeMapping so that it is considered in further processing  
+					labelNodeMapping.put(node.getOutputParameters().getLabel(), node);
+				}
 			}
 		}
 
@@ -364,12 +383,6 @@ public class Dag<N extends Lops> {
 		while (it.hasNext()) {
 			String label = it.next();
 
-			/*rm_inst = CPInstructionParser.parseSingleInstruction("CP"
-					+ Lops.OPERAND_DELIMITOR + "rmfilevar"
-					+ Lops.OPERAND_DELIMITOR + label + Lops.VALUETYPE_PREFIX
-					+ Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR
-					+ "true" + Lops.VALUETYPE_PREFIX
-					+ Expression.ValueType.BOOLEAN);*/
 			rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
 			
 			if (DEBUG)

@@ -100,8 +100,8 @@ parfor( i in 1:s1size, par=4, mode=LOCAL, check=0) {
                 if ( k1 == 3 ) {
                     # ordinal-ordinal
                     print("[" + i + "," + j + "] ordinal-ordinal");
-                    #sp = spearman(A1,A2);
-                    #FIXME basestats[6,pairID] = dummy*sp;
+                    sp = bivar_oo(A1, A2);
+                    basestats[6,pairID] = dummy*sp;
                 }
             }
         } 
@@ -215,6 +215,61 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double Eta, Doub
     anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
     anova_den = sum( (CFreqs-1)*CVars )/(W-R);
     AnovaF = anova_num/anova_den;
+}
+
+# -----------------------------------------------------------------------------------------------------------
+# Function to compute ranks
+# takes a column vector as input, and produces a vector of same size in which each cell denotes to the computed score for that category
+computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
+    dummy = Rand(rows=1, cols=1, min=1, max=1);
+    Rks = X;
+    size = nrow(X);
+    for(i in 1:size) {
+        prefixSum = 0.0;
+        for(j in 1:(i-1)) {
+            prefixSum = prefixSum + castAsScalar(X[j,1]);
+        }
+        Rks[i,1] = dummy * (prefixSum + ((castAsScalar(X[i,1])+1)/2));
+    }
+    Ranks = Rks;
+}
+
+#-------------------------------------------------------------------------
+
+bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
+
+    # compute contingency table
+    F = ctable(A,B);
+
+    catA = nrow(F);  # number of categories in A
+    catB = ncol(F);  # number of categories in B
+
+    # compute category-wise counts for both the attributes
+    R = rowSums(F);
+    S = colSums(F);
+
+    # compute scores, both are column vectors
+    [C] = computeRanks(R);
+    meanX = mean(C,R); 
+
+    columnS = t(S);
+    [D] = computeRanks(columnS);
+
+    # scores (C,D) are individual values, and counts (R,S) act as weights
+    meanY = mean(D,columnS);
+
+    W = sum(F); # total weight, or total #cases
+    varX = centralMoment(C,R,2)*(W/(W-1.0));
+    varY = centralMoment(D,columnS,2)*(W/(W-1.0));
+
+    covXY = 0.0;
+    for(i in 1:catA) {
+        for(j in 1:catB) {
+            covXY = covXY + ((castAsScalar(F[i,j])/(W-1)) * (castAsScalar(C[i,1])-meanX) * (castAsScalar(D[j,1])-meanY));
+        }
+    }
+
+    sp = covXY/(sqrt(varX)*sqrt(varY));
 }
 
 # -----------------------------------------------------------------------------------------------------------

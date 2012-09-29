@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix;
 
+import java.util.HashSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
@@ -20,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 
 
 /*
@@ -229,9 +232,6 @@ public class MMCJMR {
 		//set up the aggregate binary operation for the mmcj job
 		MRJobConfiguration.setAggregateBinaryInstructions(job, aggBinInstrction);
 		
-		//set up the number of reducers
-		job.setNumReduceTasks(numReducers);
-		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		
@@ -240,7 +240,7 @@ public class MMCJMR {
 		// byte[] resultIndexes=new byte[]{AggregateBinaryInstruction.parseMRInstruction(aggBinInstrction).output};
 		
 		//set up what matrices are needed to pass from the mapper to reducer
-		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, aggInstructionsInReducer, 
+		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, aggInstructionsInReducer, 
 				aggBinInstrction, resultIndexes );
 		
 		//set up the multiple output files, and their format information
@@ -263,14 +263,18 @@ public class MMCJMR {
 	//	if(aggInstructionsInReducer!=null && !aggInstructionsInReducer.isEmpty())
 	//		job.setCombinerClass(MMCJMRCombiner.class);
 		
-		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, null, resultIndexes);
+		MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
+				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, null, resultIndexes, 
+				mapoutputIndexes, true);
+		
+		//set up the number of reducers
+		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		//configure reducer
 		job.setReducerClass(MMCJMRReducerWithAggregator.class);
 		
 		
-		return stats;
+		return ret.stats;
 	}
 	
 	/*public static JobReturn runJob(boolean inBlockRepresentation, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 

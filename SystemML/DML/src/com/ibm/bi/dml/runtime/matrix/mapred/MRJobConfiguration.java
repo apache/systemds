@@ -1,9 +1,12 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TreeMap;
 import java.util.Vector;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -12,6 +15,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
@@ -941,37 +945,69 @@ public class MRJobConfiguration {
 				outputInfos, inBlockRepresentation, false);
 	}
 	
-	public static MatrixCharacteristics[] computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
+	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
 			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes) throws DMLUnsupportedOperationException, DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, null, aggInstructionsInReducer, 
-				aggBinInstructions, otherInstructionsInReducer, resultIndexes);
+				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
 	}
 	
-	public static MatrixCharacteristics[] computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
+	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes) throws DMLUnsupportedOperationException, DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, reblockInstructions, aggInstructionsInReducer, 
-				aggBinInstructions, otherInstructionsInReducer, resultIndexes);
+				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
 	}
-	public static MatrixCharacteristics[] computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String randInstructions,
+	
+	public static void setNumReducers(JobConf job, long numReducerGroups, int numFromCompiler) throws IOException
+	{
+		JobClient client=new JobClient(job);
+		int n=client.getClusterStatus().getMaxReduceTasks();
+		n=Math.min(n, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS));
+		n=Math.min(n, numFromCompiler);
+		if(numReducerGroups>0)
+			n=(int) Math.min(n, numReducerGroups);
+		job.setNumReduceTasks(n); 
+	}
+	
+/*	public static long getNumBlocks(MatrixCharacteristics dim)
+	{
+		return (long) (Math.ceil((double)dim.numRows/(double)dim.numRowsPerBlock)*Math.ceil((double)dim.numColumns/(double)dim.numColumnsPerBlock));
+	}*/
+	
+	public static class MatrixChar_N_ReducerGroups
+	{
+		public MatrixCharacteristics[] stats;
+		public long numReducerGroups=0;
+		
+		public MatrixChar_N_ReducerGroups(MatrixCharacteristics[] sts, long ng)
+		{
+			stats=sts;
+			numReducerGroups=ng;
+		}
+	}
+	
+	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String randInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes) throws DMLUnsupportedOperationException, DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		HashSet<Byte> intermediateMatrixIndexes=new HashSet<Byte>();
 		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<Byte, MatrixCharacteristics>();
 		for(byte i: inputIndexes){
-			dims.put(i, new MatrixCharacteristics(getNumRows(job, i), getNumColumns(job, i), 
-					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i)));
+			MatrixCharacteristics dim=new MatrixCharacteristics(getNumRows(job, i), getNumColumns(job, i), 
+					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i));
+			dims.put(i, dim);
 		}
 		RandInstruction[] randIns = null;
 		randIns = MRInstructionParser.parseRandInstructions(randInstructions);
 		if(randIns!=null)
 		{
 			for(RandInstruction ins: randIns)
+			{
 				MatrixCharacteristics.computeDimension(dims, ins);
+			}
 		}
 		
 		MRInstruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
@@ -990,13 +1026,6 @@ public class MRJobConfiguration {
 			}
 		}
 		
-		Instruction[] aggIns = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
-		if(aggIns!=null)
-		{
-			for(Instruction ins: aggIns)
-				MatrixCharacteristics.computeDimension(dims, (MRInstruction) ins);
-		}
-		
 		ReblockInstruction[] reblockIns = MRInstructionParser.parseReblockInstructions(reblockInstructions);
 		if(reblockIns!=null)
 		{
@@ -1007,6 +1036,14 @@ public class MRJobConfiguration {
 			}
 		}
 		
+		Instruction[] aggIns = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
+		if(aggIns!=null)
+		{
+			for(Instruction ins: aggIns)
+				MatrixCharacteristics.computeDimension(dims, (MRInstruction) ins);
+		}
+		
+		long numReduceGroups=0;
 		AggregateBinaryInstruction[] aggBinIns = getAggregateBinaryInstructions(job);
 		if(aggBinIns!=null)
 		{
@@ -1017,8 +1054,59 @@ public class MRJobConfiguration {
 				setMatrixCharactristicsForBinAgg(job, ins.input1, dim1);
 				setMatrixCharactristicsForBinAgg(job, ins.input2, dim2);
 				MatrixCharacteristics.computeDimension(dims, ins);
+				if(forMMCJ)//there will be only one aggbin operation for MMCJ
+					numReduceGroups=(long) Math.ceil((double)dim1.numColumns/(double)dim1.numColumnsPerBlock);
 			}
 		}
+		if(!forMMCJ)
+		{
+			//store the skylines
+			ArrayList<Long> xs=new ArrayList<Long>(mapOutputIndexes.size());
+			ArrayList<Long> ys=new ArrayList<Long>(mapOutputIndexes.size());
+			for(byte idx: mapOutputIndexes)
+			{
+				MatrixCharacteristics dim=dims.get(idx);
+				long x=(long)Math.ceil((double)dim.numRows/(double)dim.numRowsPerBlock);
+				long y=(long)Math.ceil((double)dim.numColumns/(double)dim.numColumnsPerBlock);
+				
+				int i=0; 
+				boolean toadd=true;
+				while(i<xs.size())
+				{
+					if( (x>=xs.get(i)&&y>ys.get(i)) || (x>xs.get(i)&&y>=ys.get(i)))
+					{
+						//remove any included x's and y's
+						xs.remove(i);
+						ys.remove(i);
+					}else if(x<=xs.get(i) && y<=ys.get(i))//if included in others, stop
+					{
+						toadd=false;
+						break;
+					}
+					else
+						i++;
+				}
+				
+				if(toadd)
+				{
+					xs.add(x);
+					ys.add(y);
+				}
+			}
+			//sort by x
+			TreeMap<Long, Long> map=new TreeMap<Long, Long>();
+			for(int i=0; i<xs.size(); i++)
+				map.put(xs.get(i), ys.get(i));
+			numReduceGroups=0;
+			//compute area
+			long prev=0;
+			for(Entry<Long, Long> e: map.entrySet())
+			{
+				numReduceGroups+=(e.getKey()-prev)*e.getValue();
+				prev=e.getKey();
+			}
+		}
+		
 		
 		MRInstruction[] insReducer = MRInstructionParser.parseMixedInstructions(otherInstructionsInReducer);
 		if(insReducer!=null)
@@ -1047,7 +1135,7 @@ public class MRJobConfiguration {
 			setMatrixCharactristicsForOutput(job, resultIndexes[i], stats[i]);
 		}
 		
-		return stats;
+		return new MatrixChar_N_ReducerGroups(stats, numReduceGroups);
 	}
 	
 	public static void setIntermediateMatrixCharactristics(JobConf job,
@@ -1128,22 +1216,22 @@ public class MRJobConfiguration {
 		return dim;
 	}
 	
-	public static void setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
+	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
 			String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
+		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
 				null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 	}
 	
-	public static void setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
+	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
 			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
+		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
 				reblockInstructions, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 	}
-	public static void setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String randInstructions, String instructionsInMapper, 
+	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String randInstructions, String instructionsInMapper, 
 			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -1183,6 +1271,7 @@ public class MRJobConfiguration {
 	//	System.out.println("indexes needed to be output: "+indexesInMapper);
 		
 		job.set(OUTPUT_INDEXES_IN_MAPPER_CONFIG, getIndexesString(indexesInMapper));
+		return indexesInMapper;
 	}
 	
 	public static CollectMultipleConvertedOutputs getMultipleConvertedOutputs(JobConf job)

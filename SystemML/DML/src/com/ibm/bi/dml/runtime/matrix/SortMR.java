@@ -247,7 +247,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    if(job.get("mapred.job.tracker").indexOf("local")>=0)
 	    	job.setNumReduceTasks(1);
 	    else
-	    	job.setNumReduceTasks(numReducers);
+	    	MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
 	    job.setJobName("SortMR");
 	    job.setOutputKeyClass(outputInfo.outputKeyClass);
 	    job.setOutputValueClass(outputInfo.outputValueClass);

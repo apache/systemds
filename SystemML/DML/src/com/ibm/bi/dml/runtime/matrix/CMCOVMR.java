@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix;
 
+import java.util.HashSet;
+
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
@@ -59,14 +61,11 @@ public class CMCOVMR {
 		//set up the aggregate instructions that will happen in the combiner and reducer
 		MRJobConfiguration.setCM_N_COMInstructions(job, cmNcomInstructions);
 		
-		//set up the number of reducers
-		job.setNumReduceTasks(numReducers);
-		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
-		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, null, 
+		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, null, 
 				cmNcomInstructions, resultIndexes);
 		
 		//set up the multiple output files, and their format information
@@ -85,7 +84,10 @@ public class CMCOVMR {
 		//job.setReducerClass(PassThroughReducer.class);
 		
 		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, null, null, cmNcomInstructions, resultIndexes);
+				instructionsInMapper, null, null, cmNcomInstructions, resultIndexes, mapoutputIndexes, false).stats;
+		
+		//set up the number of reducers
+		MRJobConfiguration.setNumReducers(job, mapoutputIndexes.size(), numReducers);//each output tag is a group
 		
 		// Print the complete instruction
 		if ( DMLScript.DEBUG )

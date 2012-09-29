@@ -61,7 +61,7 @@ public class GroupedAggMR {
 		MRJobConfiguration.setInstructionsInReducer(job, simpleReduceInstructions);
 		
 		//set up the number of reducers
-		job.setNumReduceTasks(numReducers);
+		MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);

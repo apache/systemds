@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.Random;
 
 import org.apache.commons.math.random.Well1024a;
@@ -29,6 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.RandMapper;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
@@ -165,8 +167,6 @@ public class RandMR
 			//set up the instructions that will happen in the reducer, after the aggregation instrucions
 			MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 			
-			//set up the number of reducers
-			job.setNumReduceTasks(numReducers);
 			
 			//set up the replication factor for the results
 			job.setInt("dfs.replication", replication);
@@ -178,11 +178,16 @@ public class RandMR
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer
-			MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  randInsStr, instructionsInMapper, null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
+			HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  randInsStr, instructionsInMapper, null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 			
-			stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
-					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, resultIndexes);
-
+			MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
+					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, 
+					resultIndexes, mapoutputIndexes, false);
+			stats=ret.stats;
+			
+			//set up the number of reducers
+			MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
+			
 			// print the complete MRJob instruction
 			if (DMLScript.DEBUG)
 				inst.printCompelteMRJobInstruction(stats);

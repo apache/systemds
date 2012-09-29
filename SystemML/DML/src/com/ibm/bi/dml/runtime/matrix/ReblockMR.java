@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix;
 
+import java.util.HashSet;
+
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
@@ -17,6 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 
 
 /*
@@ -70,18 +73,21 @@ public class ReblockMR {
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 		
-		//set up the number of reducers
-		job.setNumReduceTasks(numReducers);
-		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
-		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, 
+		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, 
 				reblockInstructions, null, otherInstructionsInReducer, resultIndexes);
 		
-		MatrixCharacteristics[] stats=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, reblockInstructions, null, null, otherInstructionsInReducer, resultIndexes);
+		MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
+				instructionsInMapper, reblockInstructions, null, null, otherInstructionsInReducer, 
+				resultIndexes, mapoutputIndexes, false);
+		
+		MatrixCharacteristics[] stats=ret.stats;
+		
+		//set up the number of reducers
+		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		// Print the complete instruction
 		if ( DMLScript.DEBUG )

@@ -162,7 +162,7 @@ public abstract class Identifier extends Expression{
 				
 				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(constVars);
 				if ( this.getOutput().getDim1() > 0 && this.getOutput().getDim2() > 0)  
-				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
+					((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				
 				
 				

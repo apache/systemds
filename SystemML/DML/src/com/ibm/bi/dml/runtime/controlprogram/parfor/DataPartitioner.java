@@ -11,6 +11,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -32,11 +33,15 @@ public abstract class DataPartitioner
 	{
 		_format = dpf;
 		
+		//configure staging dir root
 		DMLConfig conf = ConfigurationManager.getConfig();
 		if( conf != null )
 			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
 		else
 			STAGING_DIR = "tmp/systemml/partitioning/";
+		
+		//create shared staging dir if not existing
+		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**

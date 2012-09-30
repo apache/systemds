@@ -10,12 +10,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -24,6 +26,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.nimble.configuration.NimbleConfig;
@@ -46,6 +50,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
@@ -746,51 +751,6 @@ public class DMLScript {
 		}
 	} // end executeHadoop
 
-	/**
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * 
-	 */
-	private static void initHadoopExecution( DMLConfig config ) 
-		throws IOException, ParseException
-	{
-		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
-		cleanupHadoopExecution(config); 
-		
-		//init caching (incl set active)
-		CacheableData.initCaching();
-		
-		//reset statistics (required if multiple scripts executed in one JVM)
-		Statistics.setNoOfExecutedMRJobs( 0 );
-	}
-	
-	private static void cleanupHadoopExecution( DMLConfig config ) 
-		throws IOException, ParseException
-	{
-		//create dml-script-specific suffix
-		StringBuilder sb = new StringBuilder();
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
-		sb.append(DMLScript.getUUID());
-		String dirSuffix = sb.toString();
-		
-		//cleanup scratch space (everything for current uuid) 
-		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
-		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
-		//cleanup working dirs (hadoop, cache)
-		MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
-			                                   dirSuffix  );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
-				                               dirSuffix  );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
-                                               dirSuffix );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
-											   dirSuffix  );
-		CacheableData.cleanupCacheDir();
-		DataPartitionerLocal.cleanupWorkingDirectory();
-		ResultMergeLocalFile.cleanupWorkingDirectory();
-	}
-	
 	
 	/**
 	 * executeNetezza: handles execution on Netezza runtime
@@ -927,6 +887,120 @@ public class DMLScript {
 		return driver.getDAGQueue();
 	}
 
+
+	/**
+	 * @throws ParseException 
+	 * @throws IOException 
+	 * 
+	 */
+	private static void initHadoopExecution( DMLConfig config ) 
+		throws IOException, ParseException
+	{
+		//check security aspects
+		checkSecuritySetup();
+		
+		//create scratch space with appropriate permissions
+		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+		MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		
+		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
+		cleanupHadoopExecution(config); 
+		
+		//init caching (incl set active)
+		CacheableData.initCaching();
+		
+		//reset statistics (required if multiple scripts executed in one JVM)
+		Statistics.setNoOfExecutedMRJobs( 0 );
+	}
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private static void checkSecuritySetup() 
+		throws IOException
+	{
+		//analyze local configuration
+		String userName = System.getProperty( "user.name" );
+		HashSet<String> groupNames = new HashSet<String>();
+		try{
+			//check existence, for backwards compatibility to < hadoop 0.21
+			if( UserGroupInformation.class.getMethod("getCurrentUser") != null ){
+				String[] groups = UserGroupInformation.getCurrentUser().getGroupNames();
+				for( String g : groups )
+					groupNames.add( g );
+			}
+		}catch(Exception ex){}
+		
+		//analyze hadoop configuration
+		JobConf job = new JobConf();
+		String jobTracker     = job.get("mapred.job.tracker", "local");
+		String taskController = job.get("mapred.task.tracker.task-controller", "org.apache.hadoop.mapred.DefaultTaskController");
+		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
+		String perm           = job.get("dfs.permissions","null"); //note: job.get("dfs.permissions.supergroup",null);
+		URI fsURI             = FileSystem.getDefaultUri(job);
+
+		//determine security states
+		boolean flagDiffUser = !(   taskController.equals("org.apache.hadoop.mapred.LinuxTaskController") //runs map/reduce tasks as the current user
+							     || jobTracker.equals("local")  // run in the same JVM anyway
+							     || groupNames.contains( ttGroupName) ); //user in task tracker group 
+		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
+		boolean flagSecurity = perm.equals("yes"); 
+		
+		//print debug output
+		if( DEBUG )
+		{
+			System.out.println("SystemML security check:");
+			System.out.println(" local.user.name                     = " + userName );
+			System.out.println(" local.user.groups                   = " + ProgramConverter.serializeStringHashSet(groupNames) );		
+			System.out.println(" mapred.job.tracker                  = " + jobTracker ); 
+			System.out.println(" mapred.task.tracker.task-controller = " + taskController );
+			System.out.println(" mapreduce.tasktracker.group         = " + ttGroupName );		
+			System.out.println(" fs.default.name                     = " + fsURI.getScheme() );
+			System.out.println(" dfs.permissions                     = " + perm );
+		} 
+
+		//print warning if permission issues possible
+		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )
+		{
+			System.out.println("Warning: Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
+		}
+	}
+	
+	/**
+	 * 
+	 * @param config
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	private static void cleanupHadoopExecution( DMLConfig config ) 
+		throws IOException, ParseException
+	{
+		//create dml-script-specific suffix
+		StringBuilder sb = new StringBuilder();
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		String dirSuffix = sb.toString();
+		
+		//cleanup scratch space (everything for current uuid) 
+		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
+		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
+		//cleanup working dirs (hadoop, cache)
+		MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
+			                                   dirSuffix  );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+				                               dirSuffix  );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+                                               dirSuffix );
+		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+											   dirSuffix  );
+		CacheableData.cleanupCacheDir();
+		DataPartitionerLocal.cleanupWorkingDirectory();
+		ResultMergeLocalFile.cleanupWorkingDirectory();
+	}
+	
+	
 	private static String getDateTime() {
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		Date date = new Date();

@@ -1,6 +1,9 @@
 package com.ibm.bi.dml.runtime.util;
 
+import java.io.File;
+
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class UtilFunctions {
 
@@ -90,5 +93,27 @@ public class UtilFunctions {
 	public static long toLong( double val )
 	{
 		return (long) Math.floor( val + DOUBLE_EPS );
+	}
+	
+	public static void createLocalFileIfNotExist( String dir, String permission )
+	{
+		File fdir = new File(dir);
+		if( !fdir.exists() )
+		{
+			fdir.mkdirs();
+			UtilFunctions.setLocalFilePermissions(fdir, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		}
+	}
+	
+	public static void setLocalFilePermissions( File file, String permissions )
+	{
+		//note: user and group treated the same way
+		char[] c = permissions.toCharArray();
+		short sU = (short)(c[0]-48);
+		short sO = (short)(c[2]-48); 
+		
+		file.setExecutable( (sU&1)==1, (sO&1)==0 );
+		file.setWritable(   (sU&2)==2, (sO&2)==0 );
+		file.setReadable(   (sU&4)==4, (sO&4)==0 );
 	}
 }

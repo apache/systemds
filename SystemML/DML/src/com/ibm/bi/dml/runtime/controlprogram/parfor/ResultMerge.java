@@ -10,6 +10,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -36,12 +37,16 @@ public abstract class ResultMerge
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
-		
+	
+		//configure staging dir root
 		DMLConfig conf = ConfigurationManager.getConfig();
 		if( conf != null )
 			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
 		else
 			STAGING_DIR = "tmp/systemml/resultmerge/";
+		
+		//create shared staging dir if not existing
+		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**

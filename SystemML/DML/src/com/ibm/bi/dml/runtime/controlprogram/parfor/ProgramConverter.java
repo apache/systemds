@@ -826,6 +826,26 @@ public class ProgramConverter
 	 * @param vars
 	 * @return
 	 */
+	public static String serializeStringHashSet( HashSet<String> set)
+	{
+		StringBuilder sb = new StringBuilder();
+		int count=0;
+		for( String s : set )
+		{
+			if(count>0)
+				sb.append( ELEMENT_DELIM );
+			sb.append( s );
+			count++;
+		}
+		return sb.toString();
+	}
+	
+	
+	/**
+	 * 
+	 * @param vars
+	 * @return
+	 */
 	public static String serializeStringArrayList( ArrayList<String> vars)
 	{
 		StringBuilder sb = new StringBuilder();

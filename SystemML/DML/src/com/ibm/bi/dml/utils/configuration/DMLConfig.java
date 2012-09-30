@@ -44,6 +44,7 @@ public class DMLConfig
 
 	//internal config
 	public static String LOCAL_MR_MODE_STAGING_DIR = null;
+	public static String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and hdfs
 	
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;

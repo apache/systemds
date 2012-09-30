@@ -12,6 +12,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -636,6 +637,11 @@ public class MapReduceTool {
 		
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public static int extractNumberFromOutputFile(String name)
 	{
 		int i=name.indexOf("part-");
@@ -643,8 +649,34 @@ public class MapReduceTool {
 		return Integer.parseInt(name.substring(i+5));
 	}
 	
+	/**
+	 * 
+	 * @param dir
+	 * @param permissions
+	 * @throws IOException
+	 */
+	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 
+		throws IOException
+	{
+		JobConf job = new JobConf();
+		Path path = new Path(dir);
+		FileSystem fs = FileSystem.get(job);
+		if( !fs.exists(path) ) 
+		{
+			char[] c = permissions.toCharArray();
+			short sU = (short)((c[0]-48) * 64);
+			short sG = (short)((c[1]-48) * 8);
+			short sO = (short)((c[2]-48)); 
+			short mode = (short)(sU + sG + sO);
+			FsPermission perm = new FsPermission(mode);
+			fs.mkdirs(path, perm);
+		}	
+		
+		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
+		//similarly setting dfs.datanode.data.dir.perm as no effect either.
+	}
+	
 	/*
-	TODO incl full integration
 	
 	public static FileSystem getURIAwareFileSystem( String uriStr )
 		throws IOException

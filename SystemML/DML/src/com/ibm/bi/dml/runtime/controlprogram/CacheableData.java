@@ -12,6 +12,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.CacheIOException;
@@ -193,36 +194,30 @@ public abstract class CacheableData extends Data
 	
 	/**
 	 * Creates the DML-script-specific caching working dir.
+	 * @throws IOException 
 	 */
-	public synchronized static void initCaching()
+	public synchronized static void initCaching() 
+		throws IOException
 	{
 		//get directory name
-		String dir = null;
+		String dirRoot = null, dir = null;
 		DMLConfig conf = ConfigurationManager.getConfig();
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				dir = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR)
-				      + "/cache/" + Lops.PROCESS_PREFIX + DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				//get directory
+				dirRoot = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
+				UtilFunctions.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+				UtilFunctions.createLocalFileIfNotExist(dirRoot+"/cache/", DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+				dir = dirRoot + "/cache/" + Lops.PROCESS_PREFIX + DMLScript.getUUID()+Lops.FILE_SEPARATOR;
 				cacheEvictionLocalFilePath = dir;
+				
 				break;
 			case HDFS:
+				//get directory
 				dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
 				      + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX+DMLScript.getUUID()+Lops.FILE_SEPARATOR;
 				cacheEvictionHDFSFilePath = dir;
-				break;
-		}
-		
-		//create dir 
-		switch (CacheableData.cacheEvictionStorageType)
-		{
-			case LOCAL:
-				File fdir = new File(dir);
-				if( !fdir.exists() )
-					fdir.mkdirs();
-				break;
-			case HDFS:
-				//do nothing (create on the fly)
 				break;
 		}
 

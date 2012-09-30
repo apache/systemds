@@ -148,9 +148,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			fpb.execute(null);
 		}
 		catch (Exception e){
-			e.printStackTrace();
 			String fname = this._namespace + "::" + this._functionName;
-			throw new DMLRuntimeException("error executing function " + fname);
+			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
 		
 		// Unpin the pinned variables

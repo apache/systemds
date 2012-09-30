@@ -161,6 +161,7 @@ public abstract class Identifier extends Expression{
 					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars);
 				
 				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(constVars);
+				if ( this.getOutput().getDim1() > 0 && this.getOutput().getDim2() > 0)  
 				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				
 				

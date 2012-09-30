@@ -48,7 +48,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class OptimizationWrapper 
 {
-	public static final boolean LDEBUG = DMLScript.DEBUG || true;
+	public static final boolean LDEBUG = DMLScript.DEBUG || false;
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
 	
 	//internal parameters

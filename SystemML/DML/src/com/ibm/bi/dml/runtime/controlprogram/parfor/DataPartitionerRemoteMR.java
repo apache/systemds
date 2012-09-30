@@ -97,7 +97,15 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 
 			//set the number of mappers and reducers 
 		    //job.setNumMapTasks( _numMappers ); //use default num mappers
-			job.setNumReduceTasks( _numReducers ); 			
+		    long reducerGroups = -1;
+		    switch( _format )
+		    {
+			    case ROW_WISE: reducerGroups = rlen; break;
+			    case COLUMN_WISE: reducerGroups = clen; break;
+			    case ROW_BLOCK_WISE: reducerGroups = (rlen/brlen)+((rlen%brlen==0)?0:1); break;
+			    case COLUMN_BLOCK_WISE: reducerGroups = (clen/bclen)+((clen%bclen==0)?0:1); break;
+		    }
+			job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
 			//use FLEX scheduler configuration properties
 			//System.out.println("numMappers="+numMappers);

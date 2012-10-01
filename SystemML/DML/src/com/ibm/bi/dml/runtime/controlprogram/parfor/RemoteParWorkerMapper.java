@@ -15,6 +15,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -221,7 +222,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	public void close() throws IOException 
 	{
 		//cleanup cached variables in order to prevent writing to disk
-		//cleanupCachedVariables();
+		boolean isLocal = InfrastructureAnalyzer.isLocalMode();
+		if( !isLocal && !ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
+			CacheableData.disableCaching();
 	}
 	
 }

@@ -229,6 +229,11 @@ public abstract class CacheableData extends Data
 		return _activeFlag;
 	}
 	
+	public static synchronized void disableCaching()
+	{
+		_activeFlag = false;
+	}
+	
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
 	

@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -342,9 +343,9 @@ public class ProgramBlock {
 	 * 
 	 * The function returns the OLD "clean up" state of matrix objects.
 	 */
-	public ArrayList<Boolean> pinVariables(ArrayList<String> varList) 
+	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
 	{
-		ArrayList<Boolean> varsState = new ArrayList<Boolean>();
+		HashMap<String, Boolean> varsState = new HashMap<String,Boolean>();
 		
 		for( String var : varList )
 		{
@@ -353,7 +354,7 @@ public class ProgramBlock {
 			{
 				//System.out.println("pin ("+_ID+") "+var);
 				MatrixObjectNew mo = (MatrixObjectNew)dat;
-				varsState.add( mo.isCleanupEnabled() );
+				varsState.put( var, mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
 			}
 		}
@@ -373,16 +374,15 @@ public class ProgramBlock {
 	 * 
 	 * i.e., a call to unpinVariables() is preceded by pinVariables(). 
 	 */
-	public void unpinVariables(ArrayList<String> varList, ArrayList<Boolean> varsState)
+	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState)
 	{
-		for( int i=0; i<varList.size(); i++ )
+		for( String var : varList)
 		{
 			//System.out.println("unpin ("+_ID+") "+var);
 			
-			String var = varList.get(i);
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObjectNew )
-				((MatrixObjectNew)dat).enableCleanup(varsState.get(i));
+				((MatrixObjectNew)dat).enableCleanup(varsState.get(var));
 		}
 	}
 

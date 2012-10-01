@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -139,7 +140,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		ArrayList<Boolean> pinStatus = pb.pinVariables(this._boundInputParamNames);
+		HashMap<String,Boolean> pinStatus = pb.pinVariables(this._boundInputParamNames);
 			
 		// execute the function block
 		fpb.setVariables(functionVariables);

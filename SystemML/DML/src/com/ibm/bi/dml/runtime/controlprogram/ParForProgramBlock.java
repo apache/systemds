@@ -69,6 +69,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * The ParForProgramBlock has the same execution semantics as a ForProgamBlock but executes
  * the independent iterations in parallel. See ParForStatementBlock for the loop dependency
  * analysis. At runtime level, iterations are guaranteed to be completely independent.
+ * 
+ * TODO currently it seams that there is a general issue with JVM reuse in Hadoop 1.0.3
+ * (Error Task log directory for task attempt_201209251949_2586_m_000014_0 does not exist. May be cleaned up by Task Tracker, if older logs.)      
  *       
  * 
  * NEW PERFORMANCE IMPROVEMENTS (probably not for BI 2.0 release)
@@ -435,8 +438,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//preserve result variables of cleanup
-		//pinResultVariables();
-		_resultVarsState = pinVariables(_resultVars);
+		pinResultVariables();
+		//_resultVarsState = pinVariables(_resultVars); //TODO consolidate
 		
 		try 
 		{		
@@ -460,8 +463,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//clear result variables 
-		//unpinResultVariables();
-		unpinVariables(_resultVars,_resultVarsState);
+		unpinResultVariables();
+		//unpinVariables(_resultVars,_resultVarsState); TODO consolidate
 
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for

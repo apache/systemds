@@ -420,5 +420,17 @@ public abstract class Lops {
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
+
+	public String getInstructions(String input, String rowl, String rowu,
+			String coll, String colu, String leftRowDim,
+			String leftColDim, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	public String getInstructions(int input, int rowl, int rowu,
+			int coll, int colu, int leftRowDim,
+			int leftColDim, int output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
 	
 }

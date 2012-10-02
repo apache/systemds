@@ -3,10 +3,13 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationMode;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -16,6 +19,9 @@ import com.ibm.bi.dml.utils.HopsException;
 public class IndexingOp extends Hops {
 
 	public static String OPSTRING = "Indexing";
+	
+	//right indexing doesn't really need the dimensionality of the left matrix
+	private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	
 	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
@@ -49,9 +55,10 @@ public class IndexingOp extends Hops {
 			try {
 				ExecType et = optFindExecType();
 				if(et == ExecType.MR) {
+					
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							get_dataType(), get_valueType(), et);
 	
 					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
@@ -80,7 +87,7 @@ public class IndexingOp extends Hops {
 				else {
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), get_dim1(), get_dim2(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							get_dataType(), get_valueType(), et);
 					reindex.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
 							get_rows_in_block(), get_cols_in_block(), getNnz());

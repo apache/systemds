@@ -6,8 +6,10 @@ import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.LeftIndex;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.ZeroOut;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -56,9 +58,13 @@ public class LeftIndexingOp  extends Hops {
 					//newc=leftmatrix.row-a+1, newd=leftmatrix.row
 					*/
 					//right hand matrix
+					Lops nrow=new UnaryCP(getInput().get(0).constructLops(), 
+									OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
+					Lops ncol=new UnaryCP(getInput().get(0).constructLops(), 
+											OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(1).constructLops(), top, bottom, 
-							left, right, getInput().get(0).get_dim1(), getInput().get(0).get_dim2(),
+							left, right, nrow, ncol,
 							get_dataType(), get_valueType(), et, true);
 					
 					reindex.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 

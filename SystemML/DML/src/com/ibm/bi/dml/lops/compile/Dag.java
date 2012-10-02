@@ -1383,6 +1383,18 @@ public class Dag<N extends Lops> {
 								node.getInputs().get(5).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					}
+					else if (node.getInputs().size() == 7) {
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getInputs().get(2).getOutputParameters().getLabel(),
+								node.getInputs().get(3).getOutputParameters().getLabel(),
+								node.getInputs().get(4).getOutputParameters().getLabel(),
+								node.getInputs().get(5).getOutputParameters().getLabel(),
+								node.getInputs().get(6).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					}
+
 					else {
 						throw new LopsException(node.printErrorLocation() + "Node with " + node.getInputs().size() + " inputs is not supported in CP yet! \n");
 					}
@@ -3308,16 +3320,16 @@ public class Dag<N extends Lops> {
 			if (node.getInputs().size() == 1)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), output_index));
-			if (node.getInputs().size() == 2)
+			else if (node.getInputs().size() == 2)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
-			if (node.getInputs().size() == 3)
+			else if (node.getInputs().size() == 3)
 				instructionsInMapper.add(node.getInstructions(inputIndices.get(0), 
 															  inputIndices.get(1), 
 															  inputIndices.get(2), 
 															  output_index));
 			
-			if ( node.getInputs().size() == 5) {
+			else if ( node.getInputs().size() == 5) {
 				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u]
 				instructionsInMapper.add(node.getInstructions(
 						inputIndices.get(0),
@@ -3327,6 +3339,22 @@ public class Dag<N extends Lops> {
 						inputIndices.get(4),
 						output_index ));
 			}
+			else if ( node.getInputs().size() == 7 ) {
+				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u] = B
+				instructionsInMapper.add(node.getInstructions(
+						inputIndices.get(0),
+						inputIndices.get(1),
+						inputIndices.get(2),
+						inputIndices.get(3),
+						inputIndices.get(4),
+						inputIndices.get(5),
+						inputIndices.get(6),
+						output_index ));
+			}
+			else
+				throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in dag.java.");
+			
+			
 			return output_index;
 
 		}

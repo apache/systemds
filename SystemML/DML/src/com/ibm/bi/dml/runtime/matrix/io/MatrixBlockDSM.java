@@ -1013,7 +1013,7 @@ public class MatrixBlockDSM extends MatrixValue{
 							estimateSize+=that.sparseRows[r].size();
 						estimateSize=Math.min(clen, estimateSize);
 						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(estimateSize);
+							result.sparseRows[r]=new SparseRow(estimateSize, result.clen);
 						else if(result.sparseRows[r].capacity()<estimateSize)
 							result.sparseRows[r].recap(estimateSize);
 					}
@@ -1044,7 +1044,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					if(result.sparse)
 					{
 						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(that.sparseRows[r].size());
+							result.sparseRows[r]=new SparseRow(that.sparseRows[r].size(), result.clen);
 						else if(result.sparseRows[r].capacity()<that.sparseRows[r].size())
 							result.sparseRows[r].recap(that.sparseRows[r].size());
 					}
@@ -1060,8 +1060,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					if(result.sparse)
 					{
 						if(result.sparseRows[r]==null)
-							result.sparseRows[r]=new SparseRow(this.sparseRows[r].size());
-						else if(result.sparseRows[r].capacity()<that.sparseRows[r].size())
+							result.sparseRows[r]=new SparseRow(this.sparseRows[r].size(), result.clen);
+						else if(result.sparseRows[r].capacity()<this.sparseRows[r].size())
 							result.sparseRows[r].recap(this.sparseRows[r].size());
 					}
 					appendLeftForSparseBinary(op, this.sparseRows[r].getValueContainer(), 
@@ -1492,6 +1492,11 @@ public class MatrixBlockDSM extends MatrixValue{
 			adjustSparseRows(r);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
+			/*else { 
+				if (sparseRows[r].capacity()==0) {
+					System.out.println(" ... !null: " + sparseRows[r].size() + ", " + sparseRows[r].capacity() + ", " + sparseRows[r].getValueContainer().length + ", " + sparseRows[r].estimatedNzs + ", " + sparseRows[r].maxNzs);
+				}
+			}*/
 			sparseRows[r].append(c, v);
 			nonZeros++;
 		}
@@ -3921,7 +3926,7 @@ public class MatrixBlockDSM extends MatrixValue{
 						
 						//temp
 						SparseRow thisRow=this.sparseRows[r];
-						this.sparseRows[r]=new SparseRow(estimateSize);
+						this.sparseRows[r]=new SparseRow(estimateSize, clen);
 						
 						if(thisRow!=null)
 						{
@@ -3946,7 +3951,7 @@ public class MatrixBlockDSM extends MatrixValue{
 					if(that.sparseRows[r]==null)
 						continue;
 					
-					this.sparseRows[r]=new SparseRow(that.sparseRows[r].size());
+					this.sparseRows[r]=new SparseRow(that.sparseRows[r].size(), clen);
 					appendRightForSparseBinary(op, that.sparseRows[r].getValueContainer(), 
 							that.sparseRows[r].getIndexContainer(), that.sparseRows[r].size(), 0, r, this);
 				}

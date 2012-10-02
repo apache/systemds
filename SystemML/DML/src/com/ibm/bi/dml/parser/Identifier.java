@@ -47,8 +47,14 @@ public abstract class Identifier extends Expression{
 	public void setProperties(Identifier i){
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();
-		_dim1 = i.getDim1();
-		_dim2 = i.getDim2();
+		if (i instanceof IndexedIdentifier){
+			_dim1 = ((IndexedIdentifier)i).getOrigDim1();
+			_dim2 = ((IndexedIdentifier)i).getOrigDim2();
+		}
+		else {
+			_dim1 = i.getDim1();
+			_dim2 = i.getDim2();
+		}
 		_rows_in_block = i.getRowsInBlock();
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
@@ -161,8 +167,7 @@ public abstract class Identifier extends Expression{
 					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars);
 				
 				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(constVars);
-				if ( this.getOutput().getDim1() > 0 && this.getOutput().getDim2() > 0)  
-					((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
+				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				
 				
 				

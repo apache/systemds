@@ -536,6 +536,10 @@ public class StatementBlock extends LiveVariableAnalysis{
 				// CASE: target NOT indexed identifier
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
+					if (source.getOutput() instanceof IndexedIdentifier){
+						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
+					}
+					
 				}
 				// CASE: target is indexed identifier
 				else {
@@ -577,8 +581,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
 					
-					if (((IndexedIdentifier)target).getOrigDim1() == -1 &&  ((IndexedIdentifier)target).getOrigDim1() == -1)
-						((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
+					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
 					
 						
 				}

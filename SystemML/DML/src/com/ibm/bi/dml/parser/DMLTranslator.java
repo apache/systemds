@@ -1833,13 +1833,20 @@ public class DMLTranslator {
 					// TODO: DRB: CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hops ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, _ids);
+						
 						_ids.put(target.getName(), ae);
 						
+						// obtain origDim values BEFORE they are potentially updated during setProperties call
+						//	(this is incorrect for LHS Indexing
+						long origDim1 = ((IndexedIdentifier)target).getOrigDim1();
+						long origDim2 = ((IndexedIdentifier)target).getOrigDim2();						 
 						target.setProperties(source.getOutput());
+						((IndexedIdentifier)target).setOriginalDimensions(origDim1, origDim2);
+						
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
+							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 							transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
@@ -2319,6 +2326,8 @@ public class DMLTranslator {
 		setIdentifierParams(leftIndexOp, target);
 	
 		leftIndexOp.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
+		leftIndexOp.set_dim1(target.getOrigDim1());
+		leftIndexOp.set_dim2(target.getOrigDim2());
 	
 		return leftIndexOp;
 	}

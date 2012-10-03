@@ -1163,7 +1163,7 @@ public class MatrixObjectNew extends CacheableData
 	private synchronized void writeMatrixToLocal (String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
-		//System.out.println("write matrix local");
+		//System.out.println("write matrix local "+filePathAndName );
 
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		BufferedOutputStream bos = new BufferedOutputStream( fos );

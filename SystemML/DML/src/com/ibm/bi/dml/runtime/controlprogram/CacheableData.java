@@ -36,7 +36,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
-	public static final boolean LDEBUG = false;
+	public static final boolean LDEBUG = DMLScript.DEBUG || false;
 
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
 	private static boolean _activeFlag = false;
@@ -210,6 +210,9 @@ public abstract class CacheableData extends Data
 				UtilFunctions.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 				UtilFunctions.createLocalFileIfNotExist(dirRoot+"/cache/", DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 				dir = dirRoot + "/cache/" + Lops.PROCESS_PREFIX + DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				//create own local dir with default permission
+				File fdir = new File(dir);
+				fdir.mkdirs();
 				cacheEvictionLocalFilePath = dir;
 				
 				break;

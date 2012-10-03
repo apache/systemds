@@ -2273,7 +2273,7 @@ public class DMLTranslator {
 		else
 		{
 			if ( target.getDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(Long.toString(target.getDim1()), target.getDim1());
+				rowUpperHops = new LiteralOp(Long.toString(target.getOrigDim1()), target.getOrigDim1());
 			else
 			{
 				try {
@@ -2296,7 +2296,7 @@ public class DMLTranslator {
 		else
 		{
 			if ( target.getDim2() != -1 ) 
-				colUpperHops = new LiteralOp(Long.toString(target.getDim2()), target.getDim2());
+				colUpperHops = new LiteralOp(Long.toString(target.getOrigDim2()), target.getOrigDim2());
 			else
 			{
 				try {

@@ -99,12 +99,13 @@ public class MRJobConfiguration {
 	//parfor serialized program
 	private static final String PARFOR_PROGRAMBLOCKS_IN_MAPPER_CONFIG="programblocks.in.mapper";
 	
-	//partitioning input info
+	//partitioning input/output info
 	private static final String PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG="partitioning.input.matrix.num.row";
 	private static final String PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG="partitioning.input.matrix.num.column";
 	private static final String PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
 	private static final String PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG="partitioning.input.block.num.column";
 	private static final String PARTITIONING_INPUT_INFO_CONFIG="partitioning.input.inputinfo";
+	private static final String PARTITIONING_OUTPUT_INFO_CONFIG="partitioning.output.outputinfo";
 	private static final String PARTITIONING_OUTPUT_FORMAT_CONFIG="partitioning.output.format";
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	
@@ -475,13 +476,14 @@ public class MRJobConfiguration {
 	}
 	
 	//partitioning configurations
-	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, PDataPartitionFormat dpf, String fnameNew )
+	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, String fnameNew )
 	{
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG, String.valueOf(bclen));
 		job.set(PARTITIONING_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
+		job.set(PARTITIONING_OUTPUT_INFO_CONFIG, OutputInfo.outputInfoToString(oi));
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
 		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
 	}
@@ -509,6 +511,11 @@ public class MRJobConfiguration {
 	public static InputInfo getPartitioningInputInfo( JobConf job )
 	{
 		return InputInfo.stringToInputInfo(job.get(PARTITIONING_INPUT_INFO_CONFIG));
+	}
+	
+	public static OutputInfo getPartitioningOutputInfo( JobConf job )
+	{
+		return OutputInfo.stringToOutputInfo(job.get(PARTITIONING_OUTPUT_INFO_CONFIG));
 	}
 	
 	public static PDataPartitionFormat getPartitioningFormat( JobConf job )

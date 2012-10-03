@@ -60,29 +60,29 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			/////
 			//configure the MR job
-			MRJobConfiguration.setPartitioningInfoInMapper(job, rlen, clen, brlen, bclen, ii, _format, fnameNew);
+			MRJobConfiguration.setPartitioningInfoInMapper(job, rlen, clen, brlen, bclen, ii, oi, _format, fnameNew);
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(DataPartitionerRemoteMapper.class); 
 			job.setReducerClass(DataPartitionerRemoteReducer.class);
 			
-			if( ii == InputInfo.TextCellInputInfo )
+			if( oi == OutputInfo.TextCellOutputInfo )
 			{
 				job.setMapOutputKeyClass(LongWritable.class);
 				job.setMapOutputValueClass(Text.class);	
 			}
-			else if( ii == InputInfo.BinaryCellInputInfo )
+			else if( oi == OutputInfo.BinaryCellOutputInfo )
 			{
 				job.setMapOutputKeyClass(LongWritable.class);
 				job.setMapOutputValueClass(PairWritableCell.class);
 			}
-			else if ( ii == InputInfo.BinaryBlockInputInfo )
+			else if ( oi == OutputInfo.BinaryBlockOutputInfo )
 			{
 				job.setMapOutputKeyClass(LongWritable.class);
 				job.setMapOutputValueClass(PairWritableBlock.class);
 			}
 			
-			//set input format (one split per row, NLineInputFormat default N=1)
+			//set input format 
 			job.setInputFormat(ii.inputFormatClass);
 			
 			//set the input path and output path 
@@ -125,6 +125,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			if( _jvmReuse )
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
+			//enables compression - not conclusive for different codecs (empirically good compression ratio, but significantly slower)
+			//job.set("mapred.compress.map.output", "true");
+			//job.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
+			
 			//set the replication factor for the results
 			job.setInt("dfs.replication", _replication);
 			
@@ -136,7 +140,8 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			MRJobConfiguration.setUniqueWorkingDir(job, mode);
 			
 			/////
-			// execute the MR job			
+			// execute the MR job	
+			
 			JobClient.runJob(job);
 		}
 		catch(Exception ex)

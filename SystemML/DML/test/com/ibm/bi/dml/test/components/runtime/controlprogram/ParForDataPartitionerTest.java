@@ -28,160 +28,307 @@ public class ParForDataPartitionerTest
 	private int _bclen = 1000;
 	private int _rows = 1200;
 	private int _cols = 1500;
-	private double _sparsity = 0.7d;
+	private double _sparsity1 = 0.7d;
+	private double _sparsity2 = 0.07d;
 	private String _fname = "./scratch_space/A3";
 	
 	
 	@Test
-	public void testLocalRowWisePartitioningTextCell() 
+	public void testLocalRowWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColWisePartitioningTextCell() 
+	public void testLocalColWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalRowBlockWisePartitioningTextCell() 
+	public void testLocalRowBlockWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColBlockWisePartitioningTextCell() 
+	public void testLocalColBlockWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalRowWisePartitioningBinaryCell() 
+	public void testLocalRowWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColWisePartitioningBinaryCell() 
+	public void testLocalColWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalRowBlockWisePartitioningBinaryCell() 
+	public void testLocalRowBlockWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColBlockWisePartitioningBinaryCell() 
+	public void testLocalColBlockWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 
 	
 	@Test
-	public void testLocalRowWisePartitioningBinaryBlock() 
+	public void testLocalRowWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColWisePartitioningBinaryBlock() 
+	public void testLocalColWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalRowBlockWisePartitioningBinaryBlock() 
+	public void testLocalRowBlockWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testLocalColBlockWisePartitioningBinaryBlock() 
+	public void testLocalColBlockWisePartitioningBinaryBlockDense() 
 	{ 
-		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteRowWisePartitioningTextCell() 
+	public void testRemoteRowWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColWisePartitioningTextCell() 
+	public void testRemoteColWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteRowBlockWisePartitioningTextCell() 
+	public void testRemoteRowBlockWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColBlockWisePartitioningTextCell() 
+	public void testRemoteColBlockWisePartitioningTextCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity1 );
 	}
 	
 	
 	@Test
-	public void testRemoteRowWisePartitioningBinaryCell() 
+	public void testRemoteRowWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColWisePartitioningBinaryCell() 
+	public void testRemoteColWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteRowBlockWisePartitioningBinaryCell() 
+	public void testRemoteRowBlockWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColBlockWisePartitioningBinaryCell() 
+	public void testRemoteColBlockWisePartitioningBinaryCellDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity1 );
 	}
 
 	@Test
-	public void testRemoteRowWisePartitioningBinaryBlock() 
+	public void testRemoteRowWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColWisePartitioningBinaryBlock() 
+	public void testRemoteColWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteRowBlockWisePartitioningBinaryBlock() 
+	public void testRemoteRowBlockWisePartitioningBinaryBlockDense() 
 	{
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
 	}
 	
 	@Test
-	public void testRemoteColBlockWisePartitioningBinaryBlock() 
+	public void testRemoteColBlockWisePartitioningBinaryBlockDense() 
 	{ 
-		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity1 );
+	}
+
+	@Test
+	public void testLocalRowWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalRowBlockWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColBlockWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalRowWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalRowBlockWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColBlockWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+
+	
+	@Test
+	public void testLocalRowWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalRowBlockWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testLocalColBlockWisePartitioningBinaryBlockSparse() 
+	{ 
+		testMatrixDataPartitioning( PDataPartitioner.LOCAL, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteRowWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteRowBlockWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColBlockWisePartitioningTextCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, _sparsity2 );
 	}
 	
 	
-	private void testMatrixDataPartitioning( PDataPartitioner dp, PDataPartitionFormat format, InputInfo ii, OutputInfo oi )
+	@Test
+	public void testRemoteRowWisePartitioningBinaryCellSparse() 
 	{
-		double[][] matrix = TestUtils.generateTestMatrix(_rows, _cols, 0, 1, _sparsity, 7);
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteRowBlockWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColBlockWisePartitioningBinaryCellSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, _sparsity2 );
+	}
+
+	@Test
+	public void testRemoteRowWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteRowBlockWisePartitioningBinaryBlockSparse() 
+	{
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.ROW_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	@Test
+	public void testRemoteColBlockWisePartitioningBinaryBlockSparse() 
+	{ 
+		testMatrixDataPartitioning( PDataPartitioner.REMOTE_MR, PDataPartitionFormat.COLUMN_BLOCK_WISE, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, _sparsity2 );
+	}
+	
+	
+	private void testMatrixDataPartitioning( PDataPartitioner dp, PDataPartitionFormat format, InputInfo ii, OutputInfo oi, double sparsity )
+	{
+		double[][] matrix = TestUtils.generateTestMatrix(_rows, _cols, 0, 1, sparsity, 7);
 		double[][] matrix2 = null;
 		
 		try 
@@ -201,7 +348,8 @@ public class ParForDataPartitionerTest
 			else if( dp == PDataPartitioner.REMOTE_MR )
 				dpart = new DataPartitionerRemoteMR(format, 7, 4, 4, 3, 1, true);
 			
-			MatrixObjectNew mo2 = dpart.createPartitionedMatrixObject(mo1, true);			
+			MatrixObjectNew mo2 = dpart.createPartitionedMatrixObject(mo1, true);	
+			ii = ((MatrixFormatMetaData)mo2.getMetaData()).getInputInfo();
 			matrix2 = readPartitionedMatrix(format, mo2.getFileName(),ii, _rows, _cols, _brlen, _bclen);
 			
 			//cleanup

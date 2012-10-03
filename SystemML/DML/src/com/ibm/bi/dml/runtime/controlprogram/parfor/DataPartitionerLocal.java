@@ -36,6 +36,8 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -84,7 +86,12 @@ public class DataPartitionerLocal extends DataPartitioner
 		else if( ii == InputInfo.BinaryCellInputInfo )
 			partitionBinaryCell( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			partitionBinaryBlock( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+		{
+			if( oi == OutputInfo.BinaryBlockOutputInfo )
+				partitionBinaryBlock( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+			else if ( oi == OutputInfo.BinaryCellOutputInfo )
+				partitionBinaryBlock2BinaryCell( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+		}
 		else	
 			throw new DMLRuntimeException("Cannot create data partitions of format: "+ii.toString());
 	}
@@ -375,6 +382,124 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 
+	/**
+	 * 
+	 * @param fname
+	 * @param fnameStaging
+	 * @param fnameNew
+	 * @param brlen
+	 * @param bclen
+	 * @throws DMLRuntimeException
+	 */
+	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
+		throws DMLRuntimeException
+	{
+		try 
+		{		
+			//STEP 1: read matrix from HDFS and write blocks to local staging area	
+			//check and add input path
+			JobConf job = new JobConf();
+			Path path = new Path(fname);
+			FileInputFormat.addInputPath(job, path);
+			
+			//prepare sequence file reader, and write to local staging area
+			SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
+			InputSplit[] splits = informat.getSplits(job, 1);				
+			MatrixIndexes key = new MatrixIndexes(); 
+			MatrixBlock value = new MatrixBlock();
+			
+			LinkedList<Cell> buffer = new LinkedList<Cell>();
+			
+			for(InputSplit split : splits)
+			{
+				RecordReader<MatrixIndexes,MatrixBlock> reader=informat.getRecordReader(split, job, Reporter.NULL);
+				try
+				{
+					while(reader.next(key, value)) //for each block
+					{
+						long row_offset = (key.getRowIndex()-1)*brlen;
+						long col_offset = (key.getColumnIndex()-1)*bclen;
+						int rows = value.getNumRows();
+						int cols = value.getNumColumns();
+						
+						//bound check per block
+						if( row_offset + rows < 1 || row_offset + rows > rlen || col_offset + cols<1 || col_offset + cols > clen )
+						{
+							throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
+									              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+						}
+						
+						boolean sparse = value.isInSparseFormat();
+						if( sparse ) //SPARSE
+						{
+							SparseCellIterator iter = value.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								Cell tmp = new Cell( row_offset + lcell.i + 1, 
+													 col_offset + lcell.j + 1,
+													 lcell.v ); 
+								buffer.addLast( tmp );
+							}
+						}
+						else //DENSE
+						{
+							for( int i=0; i<rows; i++ )
+								for( int j=0; j<cols; j++ )
+								{
+									double lvalue  = value.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //for nnz
+									{
+										Cell tmp = new Cell( row_offset + i + 1, 
+												 			 col_offset + j + 1,
+												 			 lvalue ); 
+										buffer.addLast( tmp );
+									}
+								}
+						}
+						
+						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						buffer.clear();
+					}
+				}
+				finally
+				{
+					if( reader != null )
+						reader.close();
+				}
+			}
+
+			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
+			String[] fnamesPartitions = new File(fnameStaging).list();			
+			if(PARALLEL) 
+			{
+				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				Thread[] threads = new Thread[len];
+				for( int i=0;i<len;i++ )
+				{
+					int start = i*(int)Math.ceil(((double)fnamesPartitions.length)/len);
+					int end = (i+1)*(int)Math.ceil(((double)fnamesPartitions.length)/len)-1;
+					end = Math.min(end, fnamesPartitions.length-1);
+					threads[i] = new Thread(new DataPartitionerWorkerBinaryCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
+					threads[i].start();
+				}
+				
+				for( Thread t : threads )
+					t.join();
+			}
+			else
+			{
+				for( String pdir : fnamesPartitions  )
+					writeBinaryCellSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );	
+			}
+		} 
+		catch (Exception e) 
+		{
+			throw new DMLRuntimeException("Unable to partition binary block matrix.", e);
+		}
+	}
+
+	
 	/**
 	 * 
 	 * @param dir

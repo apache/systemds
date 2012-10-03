@@ -264,6 +264,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		MatrixObjectNew mo = (MatrixObjectNew) vars.get( varName );
 		
+		//those are worst-case (dense) estimates
 		switch( dpf )
 		{
 			case COLUMN_WISE:

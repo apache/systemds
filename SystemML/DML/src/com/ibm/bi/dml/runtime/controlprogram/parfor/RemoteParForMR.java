@@ -146,7 +146,7 @@ public class RemoteParForMR
 			
 			
 			// read all files of result variables and prepare for return
-			LocalVariableMap [] results = readResultFile(resultFile); 
+			LocalVariableMap[] results = readResultFile(resultFile); 
 
 			ret = new RemoteParForJobReturn(runjob.isSuccessful(), 
 					                        numTasks, numIters, 
@@ -206,12 +206,12 @@ public class RemoteParForMR
 				
 				LongWritable key = new LongWritable();
 		        Text value = new Text();
+		
 		        while( reader.next(key, value) ) 
 		        {
 		        	if( !tmp.containsKey( key.get() ) )
 		        		tmp.put(key.get(), new LocalVariableMap ());	        	
 		        	Object[] dat = ProgramConverter.parseDataObject( value.toString() );
-		        	//System.out.println("Result line: key="+key.get()+", value="+value.toString());
 		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
 		        }
 			}

@@ -18,10 +18,10 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
@@ -56,16 +56,16 @@ public class DataPartitionerRemoteReducer
 	public void configure(JobConf job)
 	{
 		String fnameNew = MRJobConfiguration.getPartitioningFilename( job );
-		InputInfo ii = MRJobConfiguration.getPartitioningInputInfo( job );
+		OutputInfo oi = MRJobConfiguration.getPartitioningOutputInfo( job );
 		
-		if( ii == InputInfo.TextCellInputInfo )
+		if( oi == OutputInfo.TextCellOutputInfo )
 			_reducer = new DataPartitionerReducerTextcell(job, fnameNew);
-		else if( ii == InputInfo.BinaryCellInputInfo )
+		else if( oi == OutputInfo.BinaryCellOutputInfo )
 			_reducer = new DataPartitionerReducerBinarycell(job, fnameNew);
-		else if( ii == InputInfo.BinaryBlockInputInfo )
+		else if( oi == OutputInfo.BinaryBlockOutputInfo )
 			_reducer = new DataPartitionerReducerBinaryblock(job, fnameNew);
 		else
-			throw new RuntimeException("Unable to configure reducer with unknown input info: "+ii.toString());	
+			throw new RuntimeException("Unable to configure reducer with unknown output info: "+oi.toString());	
 	}
 	
 	/**

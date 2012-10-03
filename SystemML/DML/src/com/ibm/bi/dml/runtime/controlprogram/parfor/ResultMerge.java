@@ -43,7 +43,7 @@ public abstract class ResultMerge
 		if( conf != null )
 			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
 		else
-			STAGING_DIR = "tmp/systemml/resultmerge/";
+			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
 		
 		//create shared staging dir if not existing
 		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);

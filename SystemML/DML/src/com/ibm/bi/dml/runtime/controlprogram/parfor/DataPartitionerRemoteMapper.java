@@ -18,6 +18,9 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
@@ -54,6 +57,7 @@ public class DataPartitionerRemoteMapper
 		int brlen = MRJobConfiguration.getPartitioningBlockNumRows( job );
 		int bclen = MRJobConfiguration.getPartitioningBlockNumCols( job );
 		InputInfo ii = MRJobConfiguration.getPartitioningInputInfo( job );
+		OutputInfo oi = MRJobConfiguration.getPartitioningOutputInfo( job );
 		PDataPartitionFormat pdf = MRJobConfiguration.getPartitioningFormat( job );
 		
 		if( ii == InputInfo.TextCellInputInfo )
@@ -61,7 +65,14 @@ public class DataPartitionerRemoteMapper
 		else if( ii == InputInfo.BinaryCellInputInfo )
 			_mapper = new DataPartitionerMapperBinarycell(rlen, clen, brlen, bclen, pdf);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
-			_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf);
+		{
+			if( oi == OutputInfo.BinaryBlockOutputInfo )
+				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf);
+			else if( oi == OutputInfo.BinaryCellOutputInfo )
+				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(rlen, clen, brlen, bclen, pdf); 
+			else
+				throw new RuntimeException("Paritioning from '"+ii+"' to '"+oi+"' not supported");
+		}
 		else
 			throw new RuntimeException("Unable to configure mapper with unknown input info: "+ii.toString());
 	}
@@ -337,6 +348,181 @@ public class DataPartitionerRemoteMapper
 			{
 				throw new IOException("Unable to partition binary block matrix.", e);
 			}
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private class DataPartitionerMapperBinaryblock2Binarycell extends DataPartitionerMapper
+	{
+		
+		protected DataPartitionerMapperBinaryblock2Binarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		{
+			super(rlen, clen, brlen, bclen, pdf);
 		}
+		
+		@Override
+		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter) 
+			throws IOException 
+		{
+			try
+			{
+				LongWritable longKey = new LongWritable();
+				PairWritableCell pairValue = new PairWritableCell();
+				MatrixIndexes key2 =  (MatrixIndexes)key;
+				MatrixBlock value2 = (MatrixBlock)value;
+				MatrixIndexes cellkey2 = new MatrixIndexes();
+				MatrixCell cellvalue2 = new MatrixCell();
+				
+				long row_offset = (key2.getRowIndex()-1)*_brlen;
+				long col_offset = (key2.getColumnIndex()-1)*_bclen;
+				
+				boolean sparse = value2.isInSparseFormat();
+				int rows = value2.getNumRows();
+				int cols = value2.getNumColumns();
+				
+				//bound check per block
+				if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )
+				{
+					throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
+							              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
+				}
+							
+				switch( _pdf )
+				{
+					case ROW_WISE:
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								longKey.set( row_offset + lcell.i + 1 );
+								cellkey2.setIndexes( 1, col_offset + lcell.j + 1 );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int i=0; i<rows; i++ )
+							{
+								longKey.set(row_offset + i + 1);
+								for( int j=0; j<cols; j++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( 1, col_offset + j + 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}
+							}	
+						break;
+					case ROW_BLOCK_WISE:
+						longKey.set((row_offset/_brlen+1));
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								cellkey2.setIndexes( 1, col_offset + lcell.j + 1 );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int i=0; i<rows; i++ )
+								for( int j=0; j<cols; j++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( 1, col_offset + j + 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}	
+						break;
+					case COLUMN_WISE:
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								longKey.set( col_offset + lcell.j + 1 );
+								cellkey2.setIndexes( row_offset + lcell.i + 1, 1 );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int j=0; j<cols; j++ )
+							{
+								longKey.set(col_offset + j + 1);
+								for( int i=0; i<rows; i++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( row_offset + i + 1, 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}
+							}	
+						break;
+					case COLUMN_BLOCK_WISE:
+						longKey.set(col_offset/_bclen+1);
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								cellkey2.setIndexes( row_offset + lcell.i + 1, 1 );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int j=0; j<cols; j++ )
+								for( int i=0; i<rows; i++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( row_offset + i + 1, 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}
+						break;
+				}
+			} 
+			catch (Exception e) 
+			{
+				throw new IOException("Unable to partition binary block matrix.", e);
+			}
+		}	
 	}
 }

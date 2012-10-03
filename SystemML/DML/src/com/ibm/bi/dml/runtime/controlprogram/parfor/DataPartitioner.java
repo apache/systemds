@@ -22,12 +22,18 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class DataPartitioner 
 {	
-	protected static final String NAME_SUFFIX = "_dp";
-	protected static final int CELL_BUFFER_SIZE = 100000;
+	//note: the following value has been empirically determined but might change in the future,
+	//MatrixBlockDSM.SPARCITY_TURN_POINT (with 0.4) was too high because we create 3-4 values per nnz and 
+	//have some computation overhead for binary cell.
+	protected static final double SPARSITY_CELL_THRESHOLD = 0.1d; 
 	
+	protected static final String NAME_SUFFIX = "_dp";
+	protected static final int CELL_BUFFER_SIZE = 100000;	
 	protected static String STAGING_DIR = null;	
 	
+	//instance variables
 	protected PDataPartitionFormat _format = null;
+	
 	
 	protected DataPartitioner( PDataPartitionFormat dpf )
 	{
@@ -38,7 +44,7 @@ public abstract class DataPartitioner
 		if( conf != null )
 			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
 		else
-			STAGING_DIR = "tmp/systemml/partitioning/";
+			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
 		
 		//create shared staging dir if not existing
 		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
@@ -90,6 +96,7 @@ public abstract class DataPartitioner
 		int brlen = mc.get_rows_per_block();
 		int bclen = mc.get_cols_per_block();
 		long nonZeros = mc.getNonZeros();
+		double sparsity = ((double)nonZeros)/(rows*cols);
 		
 		if( !force ) //try to optimize, if format not forced
 		{
@@ -111,6 +118,16 @@ public abstract class DataPartitioner
 				System.out.println("INFO: DataPartitioner: Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;
 			}
+		}
+		
+		//check changing to binarycell in case of sparse cols (robustness)
+		boolean convertBlock2Cell = false;
+		if(    ii == InputInfo.BinaryBlockInputInfo 
+			&& _format == PDataPartitionFormat.COLUMN_WISE	
+			&& sparsity < SPARSITY_CELL_THRESHOLD )
+		{
+			oi = OutputInfo.BinaryCellOutputInfo;
+			convertBlock2Cell = true;
 		}
 		
 		//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
@@ -138,12 +155,26 @@ public abstract class DataPartitioner
 				                           (_format==PDataPartitionFormat.ROW_WISE)? 1 : (int)brlen, //for blockwise brlen anyway
 				                           (_format==PDataPartitionFormat.COLUMN_WISE)? 1 : (int)bclen ); //for blockwise bclen anyway
 		mcNew.setNonZeros( nonZeros );
+		if( convertBlock2Cell )
+			ii = InputInfo.BinaryCellInputInfo;
 		MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,oi,ii);
 		mobj.setMetaData(metaNew);	 
 		
 		return mobj;
 	}
 
+	/**
+	 * 
+	 * @param fname
+	 * @param fnameNew
+	 * @param ii
+	 * @param oi
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @throws DMLRuntimeException
+	 */
 	protected abstract void partitionMatrix( String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException;
 

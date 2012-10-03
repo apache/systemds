@@ -283,4 +283,14 @@ public class DMLConfig
 		
 		System.out.println(sb.toString());
 	}
+	
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static String getDefaultTextValue( String key )
+	{
+		return _defaultVals.get( key );
+	}
 }

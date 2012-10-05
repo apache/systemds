@@ -225,10 +225,10 @@ public class ForProgramBlock extends ProgramBlock
 					}
 					
 					if(!isSQL)
-						tmp = (IntObject) getScalarInput(retName, ValueType.INT);
+						tmp = (ScalarObject) getScalarInput(retName, ValueType.INT);
 					else {
 						try {
-							tmp = (IntObject) ec.getVariable(retName, ValueType.INT);
+							tmp = (ScalarObject) ec.getVariable(retName, ValueType.INT);
 						} catch (Exception e) {
 							throw new DMLRuntimeException(this.printBlockErrorLocation() + "error" , e);
 						}

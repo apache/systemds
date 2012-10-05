@@ -165,6 +165,16 @@ public class StatementBlock extends LiveVariableAnalysis{
 				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
 				}
+				else {
+					 // check if statement block is a control block
+					 StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+					 if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock){
+						 return false;
+					 }
+					 else {
+						return true; 
+					 }
+				}
 			}
 		}
 		// regular function block
@@ -187,11 +197,16 @@ public class StatementBlock extends LiveVariableAnalysis{
 				if (fblock == null)
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 			
-				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
+				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1){
 					return false;
 				}
 				else {
-					return true;
+					// check if statement block is a control block
+					StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+					if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
+						return false;
+					else
+						return true;
 				}
 			}
 		}

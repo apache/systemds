@@ -14,6 +14,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "parfor_optimizer1";
 	private final static String TEST_NAME2 = "parfor_optimizer2";
+	private final static String TEST_NAME3 = "parfor_optimizer3";
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static double eps = 1e-10;
 	
@@ -27,7 +28,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private final static int cols21 = 5;  //small nested parfor
 	private final static int cols22 = 50; //large nested parfor
 	private final static int cols31 = 2;  //small nested parfor
-	private final static int cols32 = 20; //large nested parfor
+	private final static int cols32 = 8; //large nested parfor
 	
 	
 	private final static double sparsity = 0.7;
@@ -44,6 +45,10 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 				TEST_NAME2, 
 				new TestConfiguration(TEST_DIR, TEST_NAME2, 
 				new String[] { "Rout" })   ); 
+		addTestConfiguration(
+				TEST_NAME3, 
+				new TestConfiguration(TEST_DIR, TEST_NAME3, 
+				new String[] { "Rout" })   ); 		
 	}
 
 	
@@ -97,7 +102,31 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	{
 		runParForOptimizerTest(2, true, true);
 	}
-	 
+	
+	@Test
+	public void testParForOptimizerFunctionInvocationSmallSmall() 
+	{
+		runParForOptimizerTest(3, false, false);
+	}
+	
+	@Test
+	public void testParForOptimizerFunctionInvocationSmallLarge() 
+	{
+		runParForOptimizerTest(3, false, true);
+	}
+	
+	@Test
+	public void testParForOptimizerFunctionInvocationLargeSmall() 
+	{
+		runParForOptimizerTest(3, true, false);
+	}
+	
+	@Test
+	public void testParForOptimizerFunctionInvocationLargeLarge() 
+	{
+		runParForOptimizerTest(3, true, true);
+	}
+	
 	
 	private void runParForOptimizerTest( int scriptNum, boolean largeRows, boolean largeCols )
 	{
@@ -133,26 +162,49 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 			case 2:
 				runNaryTest(scriptNum, rows, cols);
 				break;
+			case 3: 
+				runUnaryTest(scriptNum, rows, cols);
+				break;	
 		}
 	}
 	
 	private void runUnaryTest(int scriptNum, int rows, int cols )
 	{
-		
-		TestConfiguration config = getTestConfiguration(TEST_NAME1);
+		TestConfiguration config = null;
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		if( scriptNum==1 )
+		{
+			config=getTestConfiguration(TEST_NAME1);
+			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+		}
+		else if( scriptNum==3 )
+		{
+			config=getTestConfiguration(TEST_NAME3);
+			fullDMLScriptName = HOME + TEST_NAME3 + ".dml";
+		}
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-		programArgs = new String[]{ "-args", HOME + INPUT_DIR + "V" , 
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        HOME + OUTPUT_DIR + "R" };
-				
-		rCmd = "Rscript" + " " + HOME + TEST_NAME1 + ".R" + " " + 
+		if( scriptNum==1 )
+		{
+			programArgs = new String[]{ "-args", HOME + INPUT_DIR + "V" , 
+					                        Integer.toString(rows),
+					                        Integer.toString(cols),
+					                        HOME + OUTPUT_DIR + "R" };
+			rCmd = "Rscript" + " " + HOME + TEST_NAME1 + ".R" + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+		}	
+		else if( scriptNum==3 )
+		{
+			programArgs = new String[]{ "-args", HOME + INPUT_DIR + "V" , 
+							                Integer.toString(rows),
+							                Integer.toString(cols),
+							                Integer.toString(cols/2),
+							                HOME + OUTPUT_DIR + "R" };	
+			rCmd = "Rscript" + " " + HOME + TEST_NAME3 + ".R" + " " + 
+		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+		}	
+		
 		
 		loadTestConfiguration(config);
 

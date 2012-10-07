@@ -3,13 +3,14 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.FunctionStatement;
+import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.ParForStatement;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -17,11 +18,13 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
@@ -32,7 +35,6 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -50,6 +52,10 @@ import com.ibm.bi.dml.utils.HopsException;
  */
 public class OptTreeConverter 
 {		
+	//internal configuration flags
+	public static boolean INCLUDE_FUNCTIONS = true;
+	public static boolean INCLUDE_ALL_FUNCTION_CALLS = true;
+	
 	//internal state
 	private static OptTreePlanMappingAbstract _hlMap = null; 
 	private static OptTreePlanMappingRuntime  _rtMap = null;	
@@ -119,9 +125,6 @@ public class OptTreeConverter
 		{
 			throw new DMLRuntimeException(he);
 		}	
-		
-		if( DMLScript.DEBUG )
-			System.out.println( tree.explain(true) );
 			
 		return tree;
 	}
@@ -336,13 +339,14 @@ public class OptTreeConverter
 			int len = is.getIfBody().size();
 			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
 			{
-				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
-				StatementBlock lsb = is.getIfBody().get(0);
+				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(i);
+				StatementBlock lsb = is.getIfBody().get(i);
 				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
 			}
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
 			{
+				//FIXME System.out.println("process else path");
 				OptNode efn = new OptNode(NodeType.GENERIC);
 				efn.setExecType(ExecType.CP);
 				node.addChild( efn );
@@ -351,7 +355,8 @@ public class OptTreeConverter
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
-					ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+					efn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+					//FIXME System.out.println("after adding nodes, with size "+lsb.get_hops().size());
 				}
 			}				
 		}
@@ -439,18 +444,52 @@ public class OptTreeConverter
 		}
 		else //last level program block
 		{
+			//process all hops
 			node = new OptNode(NodeType.GENERIC);
 			_hlMap.putProgMapping(sb, pb, node);
 			node.addChilds( createAbstractOptNodes(sb.get_hops(), vars, memo) );
 			node.setExecType(ExecType.CP);
 			
-			//TODO remove this workaround once this information can be obtained from the compiler
+			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() && containsMRJobInstruction(pb) )
 				node.setExecType(ExecType.MR);
 				
+			//TODO remove this workaround once this information can be obtained from hops/lops omcpiler
+			//process function call statements
+			if( INCLUDE_FUNCTIONS )
+			{
+				for( Instruction inst : pb.getInstructions() )
+					if( inst instanceof FunctionCallCPInstruction )
+					{
+						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
+						String fname = fci.getFunctionName();
+						String fnspace = fci.getNamespace();
+						FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnspace, fname);
+						FunctionStatementBlock fsb = sb.getDMLProg().getFunctionStatementBlock(fnspace, fname);
+						FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+						
+						OptNode fn = new OptNode(NodeType.FUNCCALL);
+						_hlMap.putProgMapping(fsb, fpb, fn);
+						fn.setExecType(ExecType.CP);
+						node.addChild( fn );
+						
+						//process body
+						int len = fs.getBody().size();
+						for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+						{
+							ProgramBlock lpb = fpb.getChildBlocks().get(i);
+							StatementBlock lsb = fs.getBody().get(i);
+							if( INCLUDE_ALL_FUNCTION_CALLS )
+								fn.addChild(rCreateAbstractOptNode(lsb,lpb,vars,topLevel, new HashSet<Long>()));
+							else
+							{
+								//NOTE: memo prevents inclusion of functions multiple times
+								fn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+							}
+						}		
+					}
+			}
 		}
-			
-		//TODO function call statement block
 		
 		//final cleanup
 		node.checkAndCleanup();
@@ -574,7 +613,7 @@ public class OptTreeConverter
 					Data dat = vars.get(param);
 					if( dat!=null && dat.getDataType()==DataType.MATRIX )
 					{
-						MatrixObjectNew mdat1 = (MatrixObjectNew) dat;
+						MatrixObject mdat1 = (MatrixObject) dat;
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						
 						if( mc1.numRows*mc1.numColumns > maxSize )
@@ -605,7 +644,7 @@ public class OptTreeConverter
 					
 					if( dat1 != null )
 					{
-						MatrixObjectNew mdat1 = (MatrixObjectNew) dat1;
+						MatrixObject mdat1 = (MatrixObject) dat1;
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );
@@ -614,7 +653,7 @@ public class OptTreeConverter
 					}
 					if( dat2 != null )
 					{
-						MatrixObjectNew mdat2 = (MatrixObjectNew) dat2;
+						MatrixObject mdat2 = (MatrixObject) dat2;
 						MatrixCharacteristics mc2 = ((MatrixFormatMetaData)mdat2.getMetaData()).getMatrixCharacteristics();
 						ret.setDim3( mc2.numRows );
 						ret.setDim4( mc2.numColumns );
@@ -627,7 +666,7 @@ public class OptTreeConverter
 					
 					if( dat1 != null )
 					{
-						MatrixObjectNew mdat1 = (MatrixObjectNew) dat1;
+						MatrixObject mdat1 = (MatrixObject) dat1;
 						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
 						ret.setDim1( mc1.numRows );
 						ret.setDim2( mc1.numColumns );

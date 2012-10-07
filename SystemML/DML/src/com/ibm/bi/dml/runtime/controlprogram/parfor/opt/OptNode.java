@@ -20,6 +20,7 @@ public class OptNode
 {
 	public enum NodeType{
 		GENERIC,
+		FUNCCALL,
 		IF,
 		WHILE,
 		FOR,

@@ -46,10 +46,15 @@ public class CostEstimatorHops extends CostEstimator
 		double value = h.getMemEstimate();
 		
 		//handle specific cases 
-		if(    h.getExecType()==ExecType.MR 
-			&& value>DEFAULT_MEM_ESTIMATE_MR ) //CP estimate but MR type
+		if( value >= DEFAULT_MEM_ESTIMATE_MR )   	  
 		{
-			value = DEFAULT_MEM_MR;
+			if( h.getExecType()==ExecType.MR ) //CP estimate but MR type
+				value = DEFAULT_MEM_MR;
+			else if ( value >= Hops.getMemBudget(true) )
+			{
+				System.out.println("ParFOR Opt: Warning: memory estimate larger than budget but CP exec type ("+h.getOpString()+" "+h.get_name()+", memest="+h.getMemEstimate()+").");
+				value = DEFAULT_MEM_MR;
+			}
 		}
 		
 		if( value <= 0 ) //no mem estimate

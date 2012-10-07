@@ -66,6 +66,7 @@ public abstract class CostEstimator
 					switch( node.getNodeType() )
 					{
 						case GENERIC:
+						case FUNCCALL:	
 							val = getSumEstimate(measure, node.getChilds()); 
 							break;
 						case IF:
@@ -91,6 +92,7 @@ public abstract class CostEstimator
 					switch( node.getNodeType() )
 					{
 						case GENERIC:
+						case FUNCCALL:
 						case IF:
 						case WHILE:
 						case FOR:
@@ -216,6 +218,7 @@ public abstract class CostEstimator
 			switch( current.getNodeType() )
 			{
 				case GENERIC:
+				case FUNCCALL:
 				case IF:
 				case WHILE:
 				case FOR:

@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -27,16 +27,16 @@ public class ResultMergeLocalMemory extends ResultMerge
 	//internal comparison matrix
 	private double[][]        _compare     = null;
 	
-	public ResultMergeLocalMemory( MatrixObjectNew out, MatrixObjectNew[] in, String outputFilename )
+	public ResultMergeLocalMemory( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
 		super( out, in, outputFilename );
 	}
 	
 	@Override
-	public MatrixObjectNew executeSerialMerge() 
+	public MatrixObject executeSerialMerge() 
 		throws DMLRuntimeException
 	{
-		MatrixObjectNew moNew = null; //always create new matrix object (required for nested parallelism)
+		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
 		Timing time = null;
 		if( LDEBUG )
@@ -61,7 +61,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			
 			//serial merge all inputs
 			boolean flagMerged = false;
-			for( MatrixObjectNew in : _inputs )
+			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
@@ -105,10 +105,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 	}
 	
 	@Override
-	public MatrixObjectNew executeParallelMerge( int par ) 
+	public MatrixObject executeParallelMerge( int par ) 
 		throws DMLRuntimeException
 	{		
-		MatrixObjectNew moNew = null; //always create new matrix object (required for nested parallelism)
+		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 	
 		Timing time = null;
 		if( LDEBUG )
@@ -122,8 +122,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 		{
 			//get matrix blocks through caching 
 			MatrixBlock outMB = _output.acquireRead();
-			ArrayList<MatrixObjectNew> inMO = new ArrayList<MatrixObjectNew>();
-			for( MatrixObjectNew in : _inputs )
+			ArrayList<MatrixObject> inMO = new ArrayList<MatrixObject>();
+			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
@@ -218,14 +218,14 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	private MatrixObjectNew createNewMatrixObject( MatrixBlock data ) 
+	private MatrixObject createNewMatrixObject( MatrixBlock data ) 
 		throws DMLRuntimeException
 	{
 		String varName = _output.getVarName();
 		ValueType vt = _output.getValueType();
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
 		
-		MatrixObjectNew moNew = new MatrixObjectNew( vt, _outputFName );
+		MatrixObject moNew = new MatrixObject( vt, _outputFName );
 		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
 		moNew.setDataType( DataType.MATRIX );
 		
@@ -274,10 +274,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 */
 	private class ResultMergeWorker implements Runnable
 	{
-		private MatrixObjectNew _inMO  = null;
+		private MatrixObject _inMO  = null;
 		private MatrixBlock     _outMB = null;
 		
-		public ResultMergeWorker(MatrixObjectNew inMO, MatrixBlock outMB)
+		public ResultMergeWorker(MatrixObject inMO, MatrixBlock outMB)
 		{
 			_inMO  = inMO;
 			_outMB = outMB;

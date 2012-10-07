@@ -2,8 +2,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -15,13 +15,13 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 {
 	private ResultMerge _rm = null;
 	
-	public ResultMergeLocalAutomatic( MatrixObjectNew out, MatrixObjectNew[] in, String outputFilename )
+	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
 		super( out, in, outputFilename );
 	}
 
 	@Override
-	public MatrixObjectNew executeSerialMerge() 
+	public MatrixObject executeSerialMerge() 
 		throws DMLRuntimeException 
 	{
 		Timing time = new Timing();
@@ -37,7 +37,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
 		
-		MatrixObjectNew ret = _rm.executeSerialMerge();
+		MatrixObject ret = _rm.executeSerialMerge();
 
 		if( LDEBUG )
 			System.out.println("Automatic result merge ("+_rm.getClass().getName()+") executed in "+time.stop()+"ms.");
@@ -46,7 +46,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	}
 	
 	@Override
-	public MatrixObjectNew executeParallelMerge(int par) 
+	public MatrixObject executeParallelMerge(int par) 
 		throws DMLRuntimeException 
 	{
 		MatrixDimensionsMetaData metadata = (MatrixDimensionsMetaData) _output.getMetaData();

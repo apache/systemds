@@ -4,14 +4,14 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -47,7 +47,7 @@ public abstract class DataPartitioner
 			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
 		
 		//create shared staging dir if not existing
-		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		LocalFileUtils.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**
@@ -58,7 +58,7 @@ public abstract class DataPartitioner
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObjectNew createPartitionedMatrixObject( MatrixObjectNew in )
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in )
 		throws DMLRuntimeException
 	{
 		return createPartitionedMatrixObject(in, false);
@@ -76,7 +76,7 @@ public abstract class DataPartitioner
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObjectNew createPartitionedMatrixObject( MatrixObjectNew in, boolean force )
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, boolean force )
 		throws DMLRuntimeException
 	{
 		//check for naive partitioning
@@ -147,7 +147,7 @@ public abstract class DataPartitioner
 		partitionMatrix( fname, fnameNew, ii, oi, rows, cols, brlen, bclen );
 		
 		//create output matrix object
-		MatrixObjectNew mobj = new MatrixObjectNew(vt, fnameNew );
+		MatrixObject mobj = new MatrixObject(vt, fnameNew );
 		mobj.setDataType(DataType.MATRIX);
 		mobj.setVarName( varname+NAME_SUFFIX );
 		mobj.setPartitioned( _format ); 

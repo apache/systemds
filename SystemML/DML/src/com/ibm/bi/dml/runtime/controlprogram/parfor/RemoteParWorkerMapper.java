@@ -13,14 +13,14 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
@@ -84,7 +84,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				
 				//export output variable to HDFS (see RunMRJobs)
 				if ( dat.getDataType() == DataType.MATRIX ) {
-					MatrixObjectNew inputObj = (MatrixObjectNew) dat;
+					MatrixObject inputObj = (MatrixObject) dat;
 					//System.out.println("exporting "+inputObj.getFileName());
 					inputObj.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
 				}
@@ -207,9 +207,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		for( String var : _resultVars )
 		{
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObjectNew )
+			if( dat instanceof MatrixObject )
 			{
-				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				MatrixObject mo = (MatrixObject)dat;
 				mo.enableCleanup(false); 
 			}
 		}

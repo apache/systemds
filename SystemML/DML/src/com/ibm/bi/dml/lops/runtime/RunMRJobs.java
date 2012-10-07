@@ -16,9 +16,9 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
@@ -51,16 +51,16 @@ public class RunMRJobs {
 			System.out.println(inst.toString());
 
 		// Obtain references to all input matrices 
-		MatrixObjectNew[] inputMatrices = inst.extractInputMatrices(pb);
+		MatrixObject[] inputMatrices = inst.extractInputMatrices(pb);
 		
 		// export dirty matrices to HDFS
-		for(MatrixObjectNew m : inputMatrices) {
+		for(MatrixObject m : inputMatrices) {
 			if ( m.isDirty() )
 				m.exportData();
 		}
 		
 		// Obtain references to all output matrices
-		MatrixObjectNew[] outputMatrices = inst.extractOutputMatrices(pb);
+		MatrixObject[] outputMatrices = inst.extractOutputMatrices(pb);
 		
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
@@ -311,7 +311,7 @@ public class RunMRJobs {
 		if ( val != null ) {
 			String replacement = null;
 			if (val.getDataType() == DataType.MATRIX) {
-				replacement = ((MatrixObjectNew)val).getFileName();
+				replacement = ((MatrixObject)val).getFileName();
 			}
 
 			if (val.getDataType() == DataType.SCALAR)

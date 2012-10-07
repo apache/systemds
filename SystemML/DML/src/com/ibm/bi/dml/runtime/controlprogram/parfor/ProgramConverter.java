@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -37,7 +38,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -680,7 +680,7 @@ public class ProgramConverter
 				value = so.getStringValue();
 				break;
 			case MATRIX:
-				MatrixObjectNew mo = (MatrixObjectNew) dat;
+				MatrixObject mo = (MatrixObject) dat;
 				MatrixFormatMetaData md = (MatrixFormatMetaData) dat.getMetaData();
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
@@ -1799,7 +1799,7 @@ public class ProgramConverter
 		    }
 			case MATRIX:
 			{
-				MatrixObjectNew mo = new MatrixObjectNew(valuetype,valString);
+				MatrixObject mo = new MatrixObject(valuetype,valString);
 				long rows = Long.parseLong( st.nextToken() );
 				long cols = Long.parseLong( st.nextToken() );
 				int brows = Integer.parseInt( st.nextToken() );

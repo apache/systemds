@@ -40,6 +40,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -48,7 +49,6 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -1020,8 +1020,8 @@ public class PerfTestTool
 		for( String str : pb.getVariables().keySet() )
 		{
 			Data dat = pb.getVariable(str); 
-			if( dat instanceof MatrixObjectNew )
-				((MatrixObjectNew)dat).clearData();		
+			if( dat instanceof MatrixObject )
+				((MatrixObject)dat).clearData();		
 		}
 		
 		return value;
@@ -1055,7 +1055,7 @@ public class PerfTestTool
 	 * @throws IOException
 	 * @throws CacheException 
 	 */
-	public static MatrixObjectNew generateInputDataset(String fname, double datasize, double sparsity, DataFormat df) 
+	public static MatrixObject generateInputDataset(String fname, double datasize, double sparsity, DataFormat df) 
 		throws IOException, CacheException
 	{
 		int dim = (int)Math.sqrt( datasize );
@@ -1085,7 +1085,7 @@ public class PerfTestTool
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE,fname,md);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		mo.acquireModify(mb);
 		mo.release();
 		mo.exportData(); //write to HDFS
@@ -1104,7 +1104,7 @@ public class PerfTestTool
 	 * @throws IOException
 	 * @throws CacheException
 	 */
-	public static MatrixObjectNew generateInputDataset(String fname, double dim1, double dim2, double sparsity, DataFormat df) 
+	public static MatrixObject generateInputDataset(String fname, double dim1, double dim2, double sparsity, DataFormat df) 
 		throws IOException, CacheException
 	{		
 		int d1 = (int) dim1;
@@ -1137,7 +1137,7 @@ public class PerfTestTool
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE,fname,md);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		mo.acquireModify(mb);
 		mo.release();
 		mo.exportData(); //write to HDFS
@@ -1154,7 +1154,7 @@ public class PerfTestTool
 	 * @throws IOException
 	 * @throws CacheException
 	 */
-	public static MatrixObjectNew generateEmptyResult(String fname, double datasize, DataFormat df ) 
+	public static MatrixObject generateEmptyResult(String fname, double datasize, DataFormat df ) 
 		throws IOException, CacheException
 	{
 		int dim = (int)Math.sqrt( datasize );
@@ -1173,7 +1173,7 @@ public class PerfTestTool
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE,fname,md);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		
 		return mo;
 	}
@@ -1188,7 +1188,7 @@ public class PerfTestTool
 	 * @throws IOException
 	 * @throws CacheException
 	 */
-	public static MatrixObjectNew generateEmptyResult(String fname, double dim1, double dim2, DataFormat df ) 
+	public static MatrixObject generateEmptyResult(String fname, double dim1, double dim2, DataFormat df ) 
 		throws IOException, CacheException
 	{
 		int d1 = (int)dim1;
@@ -1208,7 +1208,7 @@ public class PerfTestTool
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObjectNew mo = new MatrixObjectNew(ValueType.DOUBLE,fname,md);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		
 		return mo;
 	}

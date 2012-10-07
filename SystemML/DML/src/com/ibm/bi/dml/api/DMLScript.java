@@ -44,11 +44,11 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.controlprogram.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
@@ -370,7 +370,8 @@ public class DMLScript {
 			return success;
 		}
 		
-		if (DEBUG){
+		if (DEBUG)
+		{
 			System.out.println("INFO: ****** args to DML Script ****** ");
 			System.out.println("INFO: UUID: " + getUUID());
 			System.out.println("INFO: SCRIPT PATH: " + scriptPathName);
@@ -438,7 +439,8 @@ public class DMLScript {
 			return success;
 		}
 		
-		if (DEBUG){
+		if (DEBUG)
+		{
 			System.out.println("INFO: ****** args to DML Script ****** ");
 			System.out.println("INFO: UUID: " + getUUID());
 			System.out.println("INFO: SCRIPT: " + _dmlScriptString);

@@ -9,10 +9,10 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -270,12 +270,12 @@ public class ParForResultMergeTest
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, retOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
 			DataConverter.writeMatrixToHDFS(retOld, _fname, oi, _rows, _cols, _brlen, _bclen);		
-			MatrixObjectNew moOut = new MatrixObjectNew(ValueType.DOUBLE,_fname);
+			MatrixObject moOut = new MatrixObject(ValueType.DOUBLE,_fname);
 			moOut.setVarName("VarOut");
 			moOut.setMetaData(meta);
 			
 			//create inputs 
-			MatrixObjectNew[] in = new MatrixObjectNew[ _par ];
+			MatrixObject[] in = new MatrixObject[ _par ];
 			int numCols = _cols/_par;
 			for( int k=0; k<_par; k++ ) //for all subresults
 			{
@@ -294,7 +294,7 @@ public class ParForResultMergeTest
 				MatrixCharacteristics mc2 = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, tmpMB.getNonZeros());
 				MatrixFormatMetaData meta2 = new MatrixFormatMetaData(mc2, oi, ii);
 				DataConverter.writeMatrixToHDFS(tmpMB, _fname+k, oi, _rows, _cols, _brlen, _bclen);		
-				MatrixObjectNew tmpMo = new MatrixObjectNew(ValueType.DOUBLE,_fname+k);
+				MatrixObject tmpMo = new MatrixObject(ValueType.DOUBLE,_fname+k);
 				tmpMo.setVarName("Var"+k);
 				tmpMo.setMetaData(meta2);
 				in[ k ] = tmpMo;
@@ -308,7 +308,7 @@ public class ParForResultMergeTest
 				rm = new ResultMergeLocalFile( moOut, in, _fname+"out" );
 			
 			//execute result merge
-			MatrixObjectNew tmpRet = null;
+			MatrixObject tmpRet = null;
 			if( parallel )
 				tmpRet = rm.executeParallelMerge( _par );
 			else

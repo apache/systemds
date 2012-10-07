@@ -21,6 +21,7 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
@@ -55,7 +56,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
@@ -381,9 +381,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( String var : vars )
 			{
 				Data dat = _variables.get(var);
-				if( dat != null && dat instanceof MatrixObjectNew )
+				if( dat != null && dat instanceof MatrixObject )
 				{
-					MatrixObjectNew moVar = (MatrixObjectNew) dat;
+					MatrixObject moVar = (MatrixObject) dat;
 					if( !moVar.isPartitioned() )
 					{
 						PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
@@ -396,7 +396,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
-							MatrixObjectNew moVarNew = dp.createPartitionedMatrixObject(moVar);
+							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
 							if( LDEBUG )
@@ -476,7 +476,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//we can replace those variables, because partitioning only applied for read-only matrices
 			for( String var : _variablesDPOriginal.keySet() )
 			{
-				MatrixObjectNew mo = (MatrixObjectNew) _variablesDPOriginal.get( var );
+				MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
 				_variables.put(var, mo);
 			}
 		}
@@ -698,11 +698,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( String var : _resultVars )
 		{
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObjectNew )
+			if( dat instanceof MatrixObject )
 			{
 				//System.out.println("pin ("+_ID+") "+var);
 				
-				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				MatrixObject mo = (MatrixObject)dat;
 				_resultVarsState.add( mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
 			}
@@ -720,8 +720,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			String var = _resultVars.get(i);
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObjectNew )
-				((MatrixObjectNew)dat).enableCleanup(_resultVarsState.get(i));
+			if( dat instanceof MatrixObject )
+				((MatrixObject)dat).enableCleanup(_resultVarsState.get(i));
 		}
 		
 		_resultVarsState = null;
@@ -733,10 +733,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param out 
 	 * @throws CacheException 
 	 */
-	private void cleanWorkerResultVariables(MatrixObjectNew out, MatrixObjectNew[] in) 
+	private void cleanWorkerResultVariables(MatrixObject out, MatrixObject[] in) 
 		throws CacheException
 	{
-		for( MatrixObjectNew tmp : in )
+		for( MatrixObject tmp : in )
 		{
 			//check for empty inputs (no iterations executed)
 			if( tmp != null && tmp != out )
@@ -805,7 +805,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			Data d = getVariable(key);
 			if ( d.getDataType() == DataType.MATRIX )
 			{
-				((MatrixObjectNew)d).exportData();
+				((MatrixObject)d).exportData();
 			}
 		}
 	}
@@ -998,7 +998,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		return dp;
 	}
 	
-	private ResultMerge createResultMerge( PResultMerge prm, MatrixObjectNew out, MatrixObjectNew[] in, String fname ) 
+	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname ) 
 		throws DMLRuntimeException 
 	{
 		ResultMerge rm = null;
@@ -1129,13 +1129,13 @@ public class ParForProgramBlock extends ForProgramBlock
 			//System.out.println("DEBUG: PARFOR("+_ID+"): Executing result merge for var: "+var);
 			
 			String varname = var;
-			MatrixObjectNew out = (MatrixObjectNew) getVariable(varname);
-			MatrixObjectNew[] in = new MatrixObjectNew[ results.length ];
+			MatrixObject out = (MatrixObject) getVariable(varname);
+			MatrixObject[] in = new MatrixObject[ results.length ];
 			for( int i=0; i< results.length; i++ )
-				in[i] = (MatrixObjectNew) results[i].get( varname ); 			
+				in[i] = (MatrixObject) results[i].get( varname ); 			
 			String fname = constructResultMergeFileName();
 			ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
-			MatrixObjectNew outNew = null;
+			MatrixObject outNew = null;
 			if( USE_PARALLEL_RESULT_MERGE )
 				outNew = rm.executeParallelMerge( _numThreads );
 			else

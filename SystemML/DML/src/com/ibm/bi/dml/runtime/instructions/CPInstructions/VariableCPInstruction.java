@@ -6,6 +6,7 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -321,7 +322,7 @@ public class VariableCPInstruction extends CPInstruction {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}
 				
-				MatrixObjectNew mobj = new MatrixObjectNew(input1.get_valueType(), fname );
+				MatrixObject mobj = new MatrixObject(input1.get_valueType(), fname );
 				mobj.setVarName(input1.get_name());
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
@@ -355,11 +356,11 @@ public class VariableCPInstruction extends CPInstruction {
 			if ( refCount == 1 ) {
 				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 				
-				if ( input1_data instanceof MatrixObjectNew ) {
+				if ( input1_data instanceof MatrixObject ) {
 					// clean in-memory object
 					clearCachedMatrixObject(pb, input1_data);
 					
-					if ( ((MatrixObjectNew) input1_data).isFileExists() && ((MatrixObjectNew) input1_data).isCleanupEnabled() )
+					if ( ((MatrixObject) input1_data).isFileExists() && ((MatrixObject) input1_data).isCleanupEnabled() )
 						// clean data on hdfs, if exists
 						cleanDataOnHDFS(pb, input1_data);
 				}
@@ -408,7 +409,7 @@ public class VariableCPInstruction extends CPInstruction {
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
 			boolean del = ( (BooleanObject) pb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
-			MatrixObjectNew m = (MatrixObjectNew) pb.getVariable(input1.get_name());
+			MatrixObject m = (MatrixObject) pb.getVariable(input1.get_name());
 			if ( !del ) {
 				// HDFS file should be retailed after clearData(), 
 				// therefore data must be exported if dirty flag is set
@@ -447,7 +448,7 @@ public class VariableCPInstruction extends CPInstruction {
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick a value from "temp3" and assign to Var0
 			
-			MatrixObjectNew mat = (MatrixObjectNew)pb.getVariable(input1.get_name());
+			MatrixObject mat = (MatrixObject)pb.getVariable(input1.get_name());
 			String fname = mat.getFileName();
 			MetaData mdata = mat.getMetaData();
 			ScalarObject pickindex = pb.getScalarInput(input2.get_name(), input2.get_valueType());
@@ -576,7 +577,7 @@ public class VariableCPInstruction extends CPInstruction {
 				}
 			}
 			else {
-				MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable(input1.get_name());
+				MatrixObject mo = (MatrixObject)pb.getVariable(input1.get_name());
 				mo.exportData(input2.get_name(), input3.get_name());
 			}
 			break;
@@ -585,7 +586,7 @@ public class VariableCPInstruction extends CPInstruction {
 			Data data = pb.getVariable(input1.get_name());
 			if ( data.getDataType() == DataType.MATRIX ) {
 				if ( input3.get_name().equalsIgnoreCase("remote") ) {
-					((MatrixObjectNew)data).setFileName(input2.get_name());
+					((MatrixObject)data).setFileName(input2.get_name());
 				}
 				else {
 					throw new DMLRuntimeException("Invalid location (" + input3.get_name() + ") in SetFileName instruction: " + instString);
@@ -609,15 +610,15 @@ public class VariableCPInstruction extends CPInstruction {
 	public void clearCachedMatrixObject( ProgramBlock pb, Data d) 
 		throws CacheException 
 	{
-		if ( d instanceof MatrixObjectNew ) {
-			((MatrixObjectNew)d).clearData();
+		if ( d instanceof MatrixObject ) {
+			((MatrixObject)d).clearData();
 		}
 	}
 	
 	private void cleanDataOnHDFS(ProgramBlock pb, Data d) 
 			throws DMLRuntimeException {
-		if (d instanceof MatrixObjectNew ) {
-			MatrixObjectNew m = (MatrixObjectNew) d;
+		if (d instanceof MatrixObject ) {
+			MatrixObject m = (MatrixObject) d;
 			try {
 				String fpath = m.getFileName();
 				if (fpath != null) {

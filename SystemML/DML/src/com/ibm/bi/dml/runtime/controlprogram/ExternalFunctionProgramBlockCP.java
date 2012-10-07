@@ -14,9 +14,9 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -85,8 +85,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 				executeInstruction( inst );
 			}
 			catch (Exception e){
-				System.out.println(e.toString());
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString());
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString(), e);
 			}
 		}
 		
@@ -169,22 +168,22 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	}
 
 	@Override
-	protected void modifyInputMatrix(Matrix m, MatrixObjectNew mobj) 
+	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
 	{
 		//pass in-memory object to external function
 		m.setMatrixObject( mobj );
 	}
 	
 	@Override
-	protected MatrixObjectNew createOutputMatrixObject(Matrix m)
+	protected MatrixObject createOutputMatrixObject(Matrix m)
 	{
-		MatrixObjectNew ret = m.getMatrixObject();
+		MatrixObject ret = m.getMatrixObject();
 		
 		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
 		{
 			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-			ret = new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
+			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 		}
 		
 		//for allowing in-memory packagesupport matrices w/o filesnames

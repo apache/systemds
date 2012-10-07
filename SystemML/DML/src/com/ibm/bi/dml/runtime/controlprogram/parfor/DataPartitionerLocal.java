@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -545,14 +546,14 @@ public class DataPartitionerLocal extends DataPartitioner
 					}
 				}
 				tmp.recomputeNonZeros();
-				StagingFileUtils.writeBlockToLocal(pfname, tmp);
+				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
 			}
 		}
 		else if( _format == PDataPartitionFormat.ROW_BLOCK_WISE )
 		{
 			String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset/brlen+1));
 			String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
-			StagingFileUtils.writeBlockToLocal(pfname, mb);
+			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
 		{
@@ -581,14 +582,14 @@ public class DataPartitionerLocal extends DataPartitioner
 					}					
 				}
 				tmp.recomputeNonZeros();
-				StagingFileUtils.writeBlockToLocal(pfname, tmp);
+				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
 			}				
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 		{
 			String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset/bclen+1));
 			String pfname = pdir+"/"+"block_"+(row_offset/brlen+1);
-			StagingFileUtils.writeBlockToLocal(pfname, mb);
+			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 	}
 	
@@ -663,7 +664,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
-				MatrixBlock tmp = StagingFileUtils.readBlockFromLocal(lpdir+"/"+fnameBlock);
+				MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(lpdir+"/"+fnameBlock);
 				long key2 = getKey2FromFileName(fnameBlock);
 				
 				if( _format == PDataPartitionFormat.ROW_WISE || _format == PDataPartitionFormat.ROW_BLOCK_WISE )

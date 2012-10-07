@@ -9,6 +9,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -167,8 +168,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 				throw new DMLUnsupportedOperationException(boundVarName + " was not assigned a return value");
 
 			//add/replace data in symbol table
-			if( boundValue instanceof MatrixObjectNew )
-				((MatrixObjectNew) boundValue).setVarName(boundVarName);
+			if( boundValue instanceof MatrixObject )
+				((MatrixObject) boundValue).setVarName(boundVarName);
 			pb.getVariables().put(boundVarName, boundValue);
 		}
 	}

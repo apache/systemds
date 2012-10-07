@@ -8,6 +8,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -16,7 +17,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLInstructionBase;
@@ -228,7 +228,7 @@ public class ProgramBlock {
 	
 	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {
 		try {
-			MatrixObjectNew mobj = (MatrixObjectNew) this.getVariable(varName);
+			MatrixObject mobj = (MatrixObject) this.getVariable(varName);
 			return mobj.acquireRead();
 		} catch (CacheException e) {
 			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
@@ -237,7 +237,7 @@ public class ProgramBlock {
 	
 	public void releaseMatrixInput(String varName) throws DMLRuntimeException {
 		try {
-			((MatrixObjectNew)this.getVariable(varName)).release();
+			((MatrixObject)this.getVariable(varName)).release();
 		} catch (CacheException e) {
 			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
 		}
@@ -292,7 +292,7 @@ public class ProgramBlock {
 	}
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) throws DMLRuntimeException {
-		MatrixObjectNew sores = (MatrixObjectNew) this.getVariable (varName);
+		MatrixObject sores = (MatrixObject) this.getVariable (varName);
         
 		try {
 			sores.acquireModify (outputData);
@@ -350,10 +350,10 @@ public class ProgramBlock {
 		for( String var : varList )
 		{
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObjectNew )
+			if( dat instanceof MatrixObject )
 			{
 				//System.out.println("pin ("+_ID+") "+var);
-				MatrixObjectNew mo = (MatrixObjectNew)dat;
+				MatrixObject mo = (MatrixObject)dat;
 				varsState.put( var, mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
 			}
@@ -381,8 +381,8 @@ public class ProgramBlock {
 			//System.out.println("unpin ("+_ID+") "+var);
 			
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObjectNew )
-				((MatrixObjectNew)dat).enableCleanup(varsState.get(var));
+			if( dat instanceof MatrixObject )
+				((MatrixObject)dat).enableCleanup(varsState.get(var));
 		}
 	}
 

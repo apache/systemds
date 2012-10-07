@@ -11,7 +11,7 @@ import org.nimble.hadoop.HDFSFileManager;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -34,7 +34,7 @@ public class Matrix extends FIO {
 	private long 		 _rows;
 	private long 		 _cols;
 	private ValueType 	 _vType;
-	private MatrixObjectNew _mo;
+	private MatrixObject _mo;
 
 	public enum ValueType {
 		Double, 
@@ -72,12 +72,12 @@ public class Matrix extends FIO {
 		_vType = vType;
 	}
 	
-	public void setMatrixObject( MatrixObjectNew mo )
+	public void setMatrixObject( MatrixObject mo )
 	{
 		_mo = mo;
 	}
 	
-	public MatrixObjectNew getMatrixObject()
+	public MatrixObject getMatrixObject()
 	{
 		return _mo;
 	}
@@ -224,7 +224,7 @@ public class Matrix extends FIO {
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);
 		try 
 		{
-			_mo = new MatrixObjectNew(Expression.ValueType.DOUBLE, _filePath, mfmd);
+			_mo = new MatrixObject(Expression.ValueType.DOUBLE, _filePath, mfmd);
 			_mo.acquireModify( mb );
 			_mo.release();
 		} 

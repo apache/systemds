@@ -29,6 +29,7 @@ import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -37,7 +38,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
@@ -158,7 +158,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			for(DataIdentifier di : inputParams ) {			
 				Data d = getVariable(di.getName());
 				if ( d.getDataType() == DataType.MATRIX ) {
-					MatrixObjectNew inputObj = (MatrixObjectNew) d;
+					MatrixObject inputObj = (MatrixObject) d;
 					inputObj.exportData();
 				}
 			}
@@ -610,7 +610,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 				// add result to variableMapping
 				String varName = tokens.get(1);
-				MatrixObjectNew newVar = createOutputMatrixObject( m ); 
+				MatrixObject newVar = createOutputMatrixObject( m ); 
 				newVar.setVarName(varName);
 				
 				/* cleanup not required because done at central position (FunctionCallCPInstruction)
@@ -678,12 +678,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		}
 	}
 
-	protected MatrixObjectNew createOutputMatrixObject( Matrix m ) 
+	protected MatrixObject createOutputMatrixObject( Matrix m ) 
 		throws CacheException 
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
-		return new MatrixObjectNew(ValueType.DOUBLE, m.getFilePath(), mfmd);
+		return new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 	}
 
 	/**
@@ -749,7 +749,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 			if (tokens.get(0).equals("Matrix")) {
 				String varName = tokens.get(1);
-				MatrixObjectNew mobj = (MatrixObjectNew) variableMapping.get(varName);
+				MatrixObject mobj = (MatrixObject) variableMapping.get(varName);
 				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) mobj.getMetaData();
 				Matrix m = new Matrix(mobj.getFileName(),
 						md.getMatrixCharacteristics().numRows,
@@ -781,7 +781,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 	}
 
-	protected void modifyInputMatrix(Matrix m, MatrixObjectNew mobj) 
+	protected void modifyInputMatrix(Matrix m, MatrixObject mobj) 
 	{
 		//do nothing, intended for extensions
 	}

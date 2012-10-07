@@ -8,10 +8,10 @@ import org.junit.Test;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -339,7 +339,7 @@ public class ParForDataPartitionerTest
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen);
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
 			DataConverter.writeMatrixToHDFS(mb1, _fname, oi, _rows, _cols, _brlen, _bclen);		
-			MatrixObjectNew mo1 = new MatrixObjectNew(ValueType.DOUBLE,_fname);
+			MatrixObject mo1 = new MatrixObject(ValueType.DOUBLE,_fname);
 			mo1.setMetaData(meta);
 			
 			DataPartitioner dpart = null;
@@ -348,7 +348,7 @@ public class ParForDataPartitionerTest
 			else if( dp == PDataPartitioner.REMOTE_MR )
 				dpart = new DataPartitionerRemoteMR(format, 7, 4, 4, 3, 1, true);
 			
-			MatrixObjectNew mo2 = dpart.createPartitionedMatrixObject(mo1, true);	
+			MatrixObject mo2 = dpart.createPartitionedMatrixObject(mo1, true);	
 			ii = ((MatrixFormatMetaData)mo2.getMetaData()).getInputInfo();
 			matrix2 = readPartitionedMatrix(format, mo2.getFileName(),ii, _rows, _cols, _brlen, _bclen);
 			

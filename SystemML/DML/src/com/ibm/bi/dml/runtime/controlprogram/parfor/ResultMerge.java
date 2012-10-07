@@ -3,14 +3,14 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.ArrayList;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
@@ -28,11 +28,11 @@ public abstract class ResultMerge
 	protected static String STAGING_DIR = null;
 	
 	//inputs to result merge
-	protected MatrixObjectNew   _output      = null;
-	protected MatrixObjectNew[] _inputs      = null; 
+	protected MatrixObject   _output      = null;
+	protected MatrixObject[] _inputs      = null; 
 	protected String            _outputFName = null;
 	
-	public ResultMerge( MatrixObjectNew out, MatrixObjectNew[] in, String outputFilename )
+	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
 		_output = out;
 		_inputs = in;
@@ -46,7 +46,7 @@ public abstract class ResultMerge
 			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
 		
 		//create shared staging dir if not existing
-		UtilFunctions.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		LocalFileUtils.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**
@@ -57,7 +57,7 @@ public abstract class ResultMerge
 	 * @return output (merged) matrix
 	 * @throws DMLRuntimeException
 	 */
-	public abstract MatrixObjectNew executeSerialMerge() 
+	public abstract MatrixObject executeSerialMerge() 
 		throws DMLRuntimeException;
 	
 	/**
@@ -69,7 +69,7 @@ public abstract class ResultMerge
 	 * @return output (merged) matrix
 	 * @throws DMLRuntimeException
 	 */
-	public abstract MatrixObjectNew executeParallelMerge( int par ) 
+	public abstract MatrixObject executeParallelMerge( int par ) 
 		throws DMLRuntimeException;
 	
 	/**
@@ -146,13 +146,13 @@ public abstract class ResultMerge
 	}
 	
 
-	protected long computeNonZeros( MatrixObjectNew out, ArrayList<MatrixObjectNew> in )
+	protected long computeNonZeros( MatrixObject out, ArrayList<MatrixObject> in )
 	{
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) out.getMetaData();
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
 		long outNNZ = mc.getNonZeros();	
 		long ret = outNNZ;
-		for( MatrixObjectNew tmp : in )
+		for( MatrixObject tmp : in )
 		{
 			MatrixFormatMetaData tmpmetadata = (MatrixFormatMetaData) tmp.getMetaData();
 			MatrixCharacteristics tmpmc = tmpmetadata.getMatrixCharacteristics();

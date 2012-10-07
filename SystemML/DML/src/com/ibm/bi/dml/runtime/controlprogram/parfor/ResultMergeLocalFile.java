@@ -28,12 +28,12 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -59,12 +60,12 @@ public class ResultMergeLocalFile extends ResultMerge
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
 	private static final boolean ALLOW_COPY_CELLFILES = false;	
 	private static final String COMPARE_NAME_SUFFIX = "_compare";
-	protected static final int CELL_BUFFER_SIZE = 100000;
+	private static final int CELL_BUFFER_SIZE = 100000;
 	
 	//internal comparison matrix
 	private IDSequence _seq = null;
 	
-	public ResultMergeLocalFile( MatrixObjectNew out, MatrixObjectNew[] in, String outputFilename )
+	public ResultMergeLocalFile( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
 		super( out, in, outputFilename );
 		
@@ -73,10 +74,10 @@ public class ResultMergeLocalFile extends ResultMerge
 
 
 	@Override
-	public MatrixObjectNew executeSerialMerge() 
+	public MatrixObject executeSerialMerge() 
 		throws DMLRuntimeException 
 	{
-		MatrixObjectNew moNew = null; //always create new matrix object (required for nested parallelism)
+		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
 		Timing time = null;
 		if( LDEBUG )
@@ -91,8 +92,8 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			
 			//collect all relevant inputs
-			ArrayList<MatrixObjectNew> inMO = new ArrayList<MatrixObjectNew>();
-			for( MatrixObjectNew in : _inputs )
+			ArrayList<MatrixObject> inMO = new ArrayList<MatrixObject>();
+			for( MatrixObject in : _inputs )
 			{
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
@@ -133,7 +134,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 	
 	@Override
-	public MatrixObjectNew executeParallelMerge(int par) 
+	public MatrixObject executeParallelMerge(int par) 
 		throws DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("not suported yet.");
@@ -146,14 +147,14 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	private MatrixObjectNew createNewMatrixObject(MatrixObjectNew output, ArrayList<MatrixObjectNew> inMO ) 
+	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		String varName = _output.getVarName();
 		ValueType vt = _output.getValueType();
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) _output.getMetaData();
 		
-		MatrixObjectNew moNew = new MatrixObjectNew( vt, _outputFName );
+		MatrixObject moNew = new MatrixObject( vt, _outputFName );
 		moNew.setVarName( varName.contains(NAME_SUFFIX) ? varName : varName+NAME_SUFFIX );
 		moNew.setDataType( DataType.MATRIX );
 		
@@ -177,7 +178,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void merge( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		OutputInfo oi = ((MatrixFormatMetaData)outMo.getMetaData()).getOutputInfo();
@@ -213,7 +214,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeTextCellWithoutComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		try
@@ -237,7 +238,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			try
 			{
-				for( MatrixObjectNew in : inMO ) //read/write all inputs
+				for( MatrixObject in : inMO ) //read/write all inputs
 				{
 					if( LDEBUG )
 						System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
@@ -290,7 +291,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeTextCellWithComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeTextCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		String fnameStaging = STAGING_DIR+"/"+fnameNew;
@@ -307,7 +308,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			createTextCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
-			for( MatrixObjectNew in : inMO )
+			for( MatrixObject in : inMO )
 			{
 				if( LDEBUG )
 					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
@@ -332,7 +333,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		try
@@ -357,7 +358,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			try
 			{
-				for( MatrixObjectNew in : inMO ) //read/write all inputs
+				for( MatrixObject in : inMO ) //read/write all inputs
 				{
 					if( LDEBUG )
 						System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
@@ -405,7 +406,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeBinaryCellWithComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeBinaryCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		String fnameStaging = STAGING_DIR+"/"+fnameNew;
@@ -422,7 +423,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			createBinaryCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
-			for( MatrixObjectNew in : inMO )
+			for( MatrixObject in : inMO )
 			{
 				if( LDEBUG )
 					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
@@ -447,7 +448,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeBinaryBlockWithoutComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeBinaryBlockWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		String fnameStaging = STAGING_DIR+"/"+fnameNew;
@@ -458,7 +459,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			cleanupDirectories(fnameNew, true);
 			
 			//Step 1) read and write blocks to staging area
-			for( MatrixObjectNew in : inMO )
+			for( MatrixObject in : inMO )
 			{
 				if( LDEBUG )
 					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");				
@@ -482,7 +483,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param inMO
 	 * @throws DMLRuntimeException
 	 */
-	private void mergeBinaryBlockWithComp( String fnameNew, MatrixObjectNew outMo, ArrayList<MatrixObjectNew> inMO ) 
+	private void mergeBinaryBlockWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
 		String fnameStaging = STAGING_DIR+"/"+fnameNew;
@@ -500,7 +501,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			createBinaryBlockStagingFile(fnameStagingCompare, outMo);
 			
 			//Step 1) read and write blocks to staging area
-			for( MatrixObjectNew in : inMO )
+			for( MatrixObject in : inMO )
 			{
 				if( LDEBUG )
 					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");		
@@ -522,7 +523,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @param mo
 	 * @throws IOException
 	 */
-	private void createBinaryBlockStagingFile( String fnameStaging, MatrixObjectNew mo ) 
+	private void createBinaryBlockStagingFile( String fnameStaging, MatrixObject mo ) 
 		throws IOException
 	{		
 		MatrixIndexes key = new MatrixIndexes(); 
@@ -546,7 +547,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					if( value.getNonZeros()>0 ) //write only non-empty blocks
 					{
 						StagingFileUtils.checkAndCreateStagingDir( dir );
-						StagingFileUtils.writeBlockToLocal(dir+"/"+_seq.getNextID(), value);
+						LocalFileUtils.writeMatrixBlockToLocal(dir+"/"+_seq.getNextID(), value);
 					}
 				}
 			}
@@ -566,7 +567,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
-	private void createTextCellStagingFile( String fnameStaging, MatrixObjectNew mo, long ID ) 
+	private void createTextCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
 		JobConf job = new JobConf();
@@ -585,7 +586,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		int brlen = mc.get_rows_per_block();
 		int bclen = mc.get_cols_per_block();
 		
-		for(InputSplit split: splits)
+		for(InputSplit split : splits)
 		{
 			RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 			try
@@ -627,7 +628,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
-	private void createBinaryCellStagingFile( String fnameStaging, MatrixObjectNew mo, long ID ) 
+	private void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
 		JobConf job = new JobConf();
@@ -764,13 +765,13 @@ public class ResultMergeLocalFile extends ResultMerge
 							String[] lnames2 = dir2.list();
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
-							mb = StagingFileUtils.readBlockFromLocal( dir2+"/"+lnames2[0] );
+							mb = LocalFileUtils.readMatrixBlockFromLocal( dir2+"/"+lnames2[0] );
 							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
 							
 							String[] lnames = dir.list();
 							for( String lname : lnames )
 							{
-								MatrixBlock tmp = StagingFileUtils.readBlockFromLocal(  dir+"/"+lname );
+								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 								mergeWithComp(mb, tmp, compare);
 							}
 						}
@@ -781,10 +782,10 @@ public class ResultMergeLocalFile extends ResultMerge
 							for( String lname : lnames )
 							{
 								if( mb == null )
-									mb = StagingFileUtils.readBlockFromLocal( dir+"/"+lname );
+									mb = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 								else
 								{
-									MatrixBlock tmp = StagingFileUtils.readBlockFromLocal(  dir+"/"+lname );
+									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
 									mergeWithoutComp(mb, tmp);
 								}
 							}	
@@ -1029,7 +1030,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws CacheException
 	 * @throws IOException
 	 */
-	private void copyAllFiles( String fnameNew, ArrayList<MatrixObjectNew> inMO ) 
+	private void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
 		throws CacheException, IOException
 	{
 		JobConf job = new JobConf();
@@ -1041,7 +1042,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		//merge in all input matrix objects
 		IDSequence seq = new IDSequence();
-		for( MatrixObjectNew in : inMO )
+		for( MatrixObject in : inMO )
 		{			
 			System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via file rename.");
 			

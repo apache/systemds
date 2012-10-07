@@ -1,11 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,29 +15,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
 public class StagingFileUtils 
 {
-	
-	/**
-	 * 
-	 * @param fname
-	 * @param mb
-	 * @throws IOException
-	 */
-	public static void writeBlockToLocal(String fname, MatrixBlock mb) 
-		throws IOException
-	{
-		FileOutputStream fos = new FileOutputStream( fname );
-		BufferedOutputStream bos = new BufferedOutputStream( fos );
-		DataOutputStream out = new DataOutputStream( bos );
-		try 
-		{
-			mb.write(out);
-		}
-		finally
-		{
-			if( out != null )
-				out.close();	
-		}	
-	}
 	
 	/**
 	 * 
@@ -82,32 +55,6 @@ public class StagingFileUtils
 	 * @return
 	 * @throws IOException
 	 */
-	public static MatrixBlock readBlockFromLocal(String fname) 
-		throws IOException
-	{
-		FileInputStream fis = new FileInputStream( fname );
-		BufferedInputStream bis = new BufferedInputStream( fis );
-		DataInputStream in = new DataInputStream( bis );
-		MatrixBlock mb = new MatrixBlock();
-		try 
-		{
-			mb.readFields(in);
-		}
-		finally
-		{
-			if( in != null )
-				in.close ();
-		}
-   		
-		return mb;
-	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * @return
-	 * @throws IOException
-	 */
 	public static LinkedList<Cell> readCellListFromLocal( String fname ) 
 		throws IOException
 	{
@@ -139,7 +86,7 @@ public class StagingFileUtils
 	}
 
 	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen ) 
-		throws IOException //FIXME
+		throws IOException 
 	{
 		MatrixBlock tmp = new MatrixBlock( brlen, bclen, false );
 		tmp.spaceAllocForDenseUnsafe(brlen, bclen);
@@ -158,7 +105,6 @@ public class StagingFileUtils
 				col = Long.parseLong( st.nextToken() );
 				double lvalue = Double.parseDouble( st.nextToken() );
 				tmp.setValueDenseUnsafe((int)row, (int)col, lvalue);
-				//FIXME tmp.setValueDenseUnsafe(row-row_offset, col-col_offset, lvalue);
 			}
 		}
 		finally

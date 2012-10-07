@@ -36,7 +36,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * is also able to write several formats/representation of matrices to HDFS.
  * 
  */
-public class MatrixObject extends Data {
+public class MatrixObjectOld extends Data {
 	/*
 	 * Container object that holds the actual data.
 	 */
@@ -59,7 +59,7 @@ public class MatrixObject extends Data {
 	/**
 	 * Default constructor
 	 */
-	public MatrixObject() {
+	public MatrixObjectOld() {
 		super(DataType.MATRIX, ValueType.DOUBLE); // DOUBLE is the default value type
 		_data = null;
 		_metaData = null;
@@ -69,7 +69,7 @@ public class MatrixObject extends Data {
 	/**
 	 * Constructor that takes both HDFS filename and associated metadata.
 	 */
-	public MatrixObject(ValueType vt, String file, MetaData mtd) {
+	public MatrixObjectOld(ValueType vt, String file, MetaData mtd) {
 		super(DataType.MATRIX, vt);
 		_hdfsFileName = file; // HDFS file path
 		_metaData = mtd; // Metadata
@@ -79,7 +79,7 @@ public class MatrixObject extends Data {
 	/**
 	 * Constructor that takes only the HDFS filename.
 	 */
-	public MatrixObject(ValueType vt, String file) {
+	public MatrixObjectOld(ValueType vt, String file) {
 		super(DataType.MATRIX, vt);
 		_hdfsFileName = file; // HDFS file path
 		_metaData = null;
@@ -139,7 +139,7 @@ public class MatrixObject extends Data {
 	 * operations (from MR side) should read this matrix.
 	 */
 
-	public MatrixObject binaryOperations(BinaryOperator bin_op, MatrixObject that, MatrixObject result) throws DMLRuntimeException,
+	public MatrixObjectOld binaryOperations(BinaryOperator bin_op, MatrixObjectOld that, MatrixObjectOld result) throws DMLRuntimeException,
 			DMLUnsupportedOperationException {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.binaryOperations(bin_op, that._data, new MatrixBlock() ));
@@ -161,9 +161,9 @@ public class MatrixObject extends Data {
 		mc.setNonZeros(_data.getNonZeros());
 	}
 	
-	public MatrixObject aggregateBinaryOperations(
-			AggregateBinaryOperator ab_op, MatrixObject that,
-			MatrixObject result) throws DMLRuntimeException,
+	public MatrixObjectOld aggregateBinaryOperations(
+			AggregateBinaryOperator ab_op, MatrixObjectOld that,
+			MatrixObjectOld result) throws DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
 		// perform computation and update result data
@@ -179,8 +179,8 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
-	public MatrixObject aggregateUnaryOperations(AggregateUnaryOperator au_op, 
-			MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public MatrixObjectOld aggregateUnaryOperations(AggregateUnaryOperator au_op, 
+			MatrixObjectOld result) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.aggregateUnaryOperations(
 				au_op, new MatrixBlock(), _data.getNumRows(), _data.getNumColumns(),
@@ -195,19 +195,19 @@ public class MatrixObject extends Data {
 		return this._data.cmOperations(cm_op);
 	}
 
-	public CM_COV_Object cmOperations(CMOperator cm_op, MatrixObject weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public CM_COV_Object cmOperations(CMOperator cm_op, MatrixObjectOld weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		return this._data.cmOperations(cm_op, weights._data);
 	}
 
-	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObject that) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObjectOld that) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		return this._data.covOperations(cov_op, that._data);
 	}
 
-	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObject that, MatrixObject weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public CM_COV_Object covOperations(COVOperator cov_op, MatrixObjectOld that, MatrixObjectOld weights) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		return this._data.covOperations(cov_op, that._data, weights._data);
 	}
 
-	public MatrixObject scalarOperations(ScalarOperator sc_op, MatrixObject result) throws DMLUnsupportedOperationException,
+	public MatrixObjectOld scalarOperations(ScalarOperator sc_op, MatrixObjectOld result) throws DMLUnsupportedOperationException,
 			DMLRuntimeException {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.scalarOperations(sc_op, new MatrixBlock()));
@@ -218,7 +218,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
-	public MatrixObject reorgOperations(ReorgOperator r_op, MatrixObject result)
+	public MatrixObjectOld reorgOperations(ReorgOperator r_op, MatrixObjectOld result)
 			throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.reorgOperations(r_op, new MatrixBlock(),
@@ -230,7 +230,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
-	public MatrixObject appendOperations(ReorgOperator r_op, MatrixObject result)
+	public MatrixObjectOld appendOperations(ReorgOperator r_op, MatrixObjectOld result)
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
 		MatrixBlock result_data = result.getData();
 		if(result_data == null)
@@ -245,7 +245,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 	
-	public MatrixObject unaryOperations(UnaryOperator u_op, MatrixObject result)
+	public MatrixObjectOld unaryOperations(UnaryOperator u_op, MatrixObjectOld result)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
 		MatrixBlock result_data = (MatrixBlock) (_data.unaryOperations(u_op, new MatrixBlock()));
@@ -257,7 +257,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 	
-	public MatrixObject indexOperations(long rl, long ru, long cl, long cu, MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public MatrixObjectOld indexOperations(long rl, long ru, long cl, long cu, MatrixObjectOld result) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		MatrixBlock result_data = (MatrixBlock) _data.slideOperations(rl, ru, cl, cu, new MatrixBlock());
 		result.setData(result_data);
 		// update the metadata for resulting matrix
@@ -265,7 +265,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 
-	public MatrixObject sortOperations(MatrixObject weights, MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public MatrixObjectOld sortOperations(MatrixObjectOld weights, MatrixObjectOld result) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		MatrixBlock result_data = null;
 		if ( weights != null )
 			result_data = (MatrixBlock) (_data.sortOperations(weights._data, new MatrixBlock()));
@@ -277,7 +277,7 @@ public class MatrixObject extends Data {
 		return result;
 	}
 	
-	public MatrixObject valuePick(MatrixObject quantiles, MatrixObject result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public MatrixObjectOld valuePick(MatrixObjectOld quantiles, MatrixObjectOld result) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		MatrixBlock result_data = null;
 		result_data = (MatrixBlock) (_data.pickValues(quantiles._data, new MatrixBlock()));
 		result.setData(result_data);
@@ -296,7 +296,7 @@ public class MatrixObject extends Data {
 		return _data.interQuartileMean();
 	}
 
-	private MatrixObject finalizeCtableOperations(HashMap<CellIndex,Double> ctable, MatrixObject result) throws DMLRuntimeException {
+	private MatrixObjectOld finalizeCtableOperations(HashMap<CellIndex,Double> ctable, MatrixObjectOld result) throws DMLRuntimeException {
 		MatrixBlock result_data = new MatrixBlock(ctable);
 		result.setData(result_data);
 		result.updateMatrixMetaData();
@@ -304,7 +304,7 @@ public class MatrixObject extends Data {
 	}
 	
 	// F=ctable(A,B,W)
-	public MatrixObject tertiaryOperations(SimpleOperator op, MatrixObject input2, MatrixObject input3, MatrixObject result)
+	public MatrixObjectOld tertiaryOperations(SimpleOperator op, MatrixObjectOld input2, MatrixObjectOld input3, MatrixObjectOld result)
 	throws DMLUnsupportedOperationException, DMLRuntimeException {
 		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
 		_data.tertiaryOperations(op, input2.getData(), input3.getData(), ctable);
@@ -312,7 +312,7 @@ public class MatrixObject extends Data {
 	}
 
 	// F=ctable(A,B) or F=ctable(A,B,1);
-	public MatrixObject tertiaryOperations(SimpleOperator op, MatrixObject input2, ScalarObject input3, MatrixObject result)
+	public MatrixObjectOld tertiaryOperations(SimpleOperator op, MatrixObjectOld input2, ScalarObject input3, MatrixObjectOld result)
 	throws DMLUnsupportedOperationException, DMLRuntimeException {
 		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
 		_data.tertiaryOperations(op, input2.getData(), input3.getDoubleValue(), ctable);
@@ -320,7 +320,7 @@ public class MatrixObject extends Data {
 	}
 	
 	// F=ctable(A,1) or F = ctable(A,1,1)
-	public MatrixObject tertiaryOperations(SimpleOperator op, ScalarObject input2, ScalarObject input3, MatrixObject result)
+	public MatrixObjectOld tertiaryOperations(SimpleOperator op, ScalarObject input2, ScalarObject input3, MatrixObjectOld result)
 	throws DMLUnsupportedOperationException, DMLRuntimeException {
 		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
 		_data.tertiaryOperations(op, input2.getDoubleValue(), input3.getDoubleValue(), ctable);
@@ -328,14 +328,14 @@ public class MatrixObject extends Data {
 	}
 
 	// F=ctable(A,1,W)
-	public MatrixObject tertiaryOperations(SimpleOperator op, ScalarObject input2, MatrixObject input3, MatrixObject result)
+	public MatrixObjectOld tertiaryOperations(SimpleOperator op, ScalarObject input2, MatrixObjectOld input3, MatrixObjectOld result)
 	throws DMLUnsupportedOperationException, DMLRuntimeException {
 		HashMap<CellIndex,Double> ctable = new HashMap<CellIndex,Double>();
 		_data.tertiaryOperations(op, input2.getDoubleValue(), input3.getData(), ctable);
 		return finalizeCtableOperations(ctable, result);
 	}
 
-	public MatrixObject randOperations(long rows, long cols, double minValue, double maxValue, long seed, double sparsity) throws DMLRuntimeException{
+	public MatrixObjectOld randOperations(long rows, long cols, double minValue, double maxValue, long seed, double sparsity) throws DMLRuntimeException{
 		Random random=new Random();
 		_data = new MatrixBlock();
 		

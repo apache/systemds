@@ -6,7 +6,7 @@ import com.ibm.bi.dml.packagesupport.PackageFunction;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.packagesupport.Scalar;
 import com.ibm.bi.dml.packagesupport.Scalar.ScalarType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -45,7 +45,7 @@ public class DynamicWriteMatrixCP extends PackageFunction
 			String fname = ((Scalar) this.getFunctionInput(1)).getValue();
 			String format = ((Scalar) this.getFunctionInput(2)).getValue();
 			
-			MatrixObjectNew mo = mat.getMatrixObject();
+			MatrixObject mo = mat.getMatrixObject();
 			MatrixCharacteristics mc = ((MatrixDimensionsMetaData)mo.getMetaData()).getMatrixCharacteristics();
 			long rlen = mc.get_rows();
 			long clen = mc.get_cols();

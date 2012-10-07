@@ -10,8 +10,8 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixObjectNew;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -583,7 +583,7 @@ public class MRJobInstruction extends Instruction
 	 * Every reference in <code>outputMatrices</code> is always points to MATRIX 
 	 * since MR jobs always produces matrices. 
 	 */
-	private MatrixObjectNew[] inputMatrices, outputMatrices;
+	private MatrixObject[] inputMatrices, outputMatrices;
 
 	// Indicates the data type of inputVars
 	private DataType[] inputDataTypes;
@@ -620,7 +620,7 @@ public class MRJobInstruction extends Instruction
 		return outputInfos;
 	}
 
-	public MatrixObjectNew[] getInputMatrices() {
+	public MatrixObject[] getInputMatrices() {
 		return inputMatrices;
 	}
 
@@ -637,17 +637,17 @@ public class MRJobInstruction extends Instruction
 	 * 
 	 * @param pb
 	 */
-	public MatrixObjectNew[] extractInputMatrices(ProgramBlock pb) {
-		ArrayList<MatrixObjectNew> inputmat = new ArrayList<MatrixObjectNew>();
+	public MatrixObject[] extractInputMatrices(ProgramBlock pb) {
+		ArrayList<MatrixObject> inputmat = new ArrayList<MatrixObject>();
 		inputDataTypes = new DataType[inputVars.length];
 		for ( int i=0; i < inputVars.length; i++ ) {
 			Data d = pb.getVariable(inputVars[i]);
 			inputDataTypes[i] = d.getDataType();
 			if ( d.getDataType() == DataType.MATRIX ) {
-				inputmat.add((MatrixObjectNew) d);
+				inputmat.add((MatrixObject) d);
 			}
 		}
-		inputMatrices = inputmat.toArray(new MatrixObjectNew[inputmat.size()]);
+		inputMatrices = inputmat.toArray(new MatrixObject[inputmat.size()]);
 		
 		// populate auxiliary data structures
 		populateInputs();
@@ -655,7 +655,7 @@ public class MRJobInstruction extends Instruction
 		return inputMatrices;
 	}
 
-	public MatrixObjectNew[] getOutputMatrices() {
+	public MatrixObject[] getOutputMatrices() {
 		return outputMatrices;
 	}
 
@@ -672,13 +672,13 @@ public class MRJobInstruction extends Instruction
 	 * 
 	 * @param pb
 	 */
-	public MatrixObjectNew[] extractOutputMatrices(ProgramBlock pb) throws DMLRuntimeException {
-		outputMatrices = new MatrixObjectNew[getOutputVars().length];
+	public MatrixObject[] extractOutputMatrices(ProgramBlock pb) throws DMLRuntimeException {
+		outputMatrices = new MatrixObject[getOutputVars().length];
 		int ind = 0;
 		for(String oo: getOutputVars()) {
 			Data d = pb.getVariable(oo);
 			if ( d.getDataType() == DataType.MATRIX ) {
-				outputMatrices[ind++] = (MatrixObjectNew)d;
+				outputMatrices[ind++] = (MatrixObject)d;
 			}
 			else {
 				throw new DMLRuntimeException(getJobType() + ": invalid datatype (" + d.getDataType() + ") for output variable " + oo);

@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
@@ -111,7 +112,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 		long cl = pb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
 		long cu = pb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
 		
-		MatrixObjectNew mo = (MatrixObjectNew)pb.getVariable(input1.get_name());
+		MatrixObject mo = (MatrixObject)pb.getVariable(input1.get_name());
 		MatrixBlock resultBlock = null;
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) //MB: it will always be rangeReIndex!

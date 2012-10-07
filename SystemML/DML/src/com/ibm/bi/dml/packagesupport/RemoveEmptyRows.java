@@ -83,6 +83,9 @@ public class RemoveEmptyRows extends PackageFunction
 			
 			try
 			{
+				//for obj reuse and preventing repeated buffer re-allocations
+				StringBuilder sb = new StringBuilder();
+				
 				for(InputSplit split: splits)
 				{
 					RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);				
@@ -100,15 +103,15 @@ public class RemoveEmptyRows extends PackageFunction
 								keyMap.put(row, ID++);
 							long rowNew = keyMap.get( row );
 							
-							StringBuilder sb = new StringBuilder();
 							sb.append(rowNew);
-							sb.append(" ");
+							sb.append(' ');
 							sb.append(col);
-							sb.append(" ");
+							sb.append(' ');
 							sb.append(lvalue);
-							sb.append("\n");
+							sb.append('\n');
 							
 							ostream.writeBytes( sb.toString() );	
+							sb.setLength(0);
 						}
 					}
 					finally

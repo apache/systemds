@@ -109,9 +109,14 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
+		private StringBuilder _sb = null;
+		
 		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
 			super(rlen, clen, brlen, bclen, pdf);
+			
+			//for obj reuse and preventing repeated buffer re-allocations
+			_sb = new StringBuilder();
 		}
 
 		@Override
@@ -150,14 +155,14 @@ public class DataPartitionerRemoteMapper
 						break;
 				}
 				
-				StringBuilder sb = new StringBuilder();
-				sb.append(row);
-				sb.append(" ");
-				sb.append(col);
-				sb.append(" ");
-				sb.append(lvalue);
-				Text outValue = new Text(sb.toString());
-					
+				_sb.append(row);
+				_sb.append(' ');
+				_sb.append(col);
+				_sb.append(' ');
+				_sb.append(lvalue);
+				Text outValue = new Text(_sb.toString());
+				_sb.setLength(0);	
+				
 				out.collect(longKey, outValue);	
 			} 
 			catch (Exception e) 

@@ -725,20 +725,23 @@ public class DataPartitionerLocal extends DataPartitioner
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 		try
 		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
 				LinkedList<Cell> tmp = StagingFileUtils.readCellListFromLocal(lpdir+"/"+fnameBlock);
 				for( Cell c : tmp )
 				{
-					StringBuilder sb = new StringBuilder();
 					sb.append(c.row);
-					sb.append(" ");
+					sb.append(' ');
 					sb.append(c.col);
-					sb.append(" ");
+					sb.append(' ');
 					sb.append(c.value);
-					sb.append("\n");
-					out.write( sb.toString() );
+					sb.append('\n');
+					out.write( sb.toString() );		
+					sb.setLength(0);
 				}
 			}
 		}

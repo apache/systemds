@@ -838,6 +838,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 		try
 		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
 			boolean written=false;
 			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)brlen); brow++)
 				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)bclen); bcol++)
@@ -894,14 +897,14 @@ public class ResultMergeLocalFile extends ResultMerge
 								double lvalue = mb.getValueDenseUnsafe(i, j);
 								if( lvalue != 0 ) //for nnz
 								{
-									StringBuilder sb = new StringBuilder();
 									sb.append(row_offset+i);
-									sb.append(" ");
+									sb.append(' ');
 									sb.append(col_offset+j);
-									sb.append(" ");
+									sb.append(' ');
 									sb.append(lvalue);
-									sb.append("\n");
+									sb.append('\n');
 									out.write( sb.toString() ); 
+									sb.setLength(0);
 									written = true;
 								}
 							}

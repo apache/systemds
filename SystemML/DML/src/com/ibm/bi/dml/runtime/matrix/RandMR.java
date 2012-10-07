@@ -99,6 +99,9 @@ public class RandMR
 			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 			PrintWriter pw = new PrintWriter(fsOut);
 			
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
 			//seed generation
 			long lSeed = ins.seed;
 			if(lSeed == RandOp.UNSPECIFIED_SEED)
@@ -124,13 +127,18 @@ public class RandMR
 				for(long c = 0; c < ins.cols; c += bclens[i])
 				{
 					long curBlockColSize = Math.min(bclens[i], (ins.cols - c));
-					StringBuilder sb = new StringBuilder();
-					sb.append(((r / brlens[i]) + 1) + ",");
-					sb.append(((c / bclens[i]) + 1) + ",");
-					sb.append(curBlockRowSize + ",");
-					sb.append(curBlockColSize + ",");
+					
+					sb.append((r / brlens[i]) + 1);
+					sb.append(',');
+					sb.append((c / bclens[i]) + 1);
+					sb.append(',');
+					sb.append(curBlockRowSize);
+					sb.append(',');
+					sb.append(curBlockColSize);
+					sb.append(',');
 					sb.append(bigrand.nextLong());
 					pw.println(sb.toString());
+					sb.setLength(0);
 					numblocks++;
 				}
 			}

@@ -29,16 +29,19 @@ public class StagingFileUtils
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos));	
 		try 
 		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
 			for( Cell c : buffer )
 			{
-				StringBuilder sb = new StringBuilder();
 				sb.append(c.row);
-				sb.append(" ");
+				sb.append(' ');
 				sb.append(c.col);
-				sb.append(" ");
+				sb.append(' ');
 				sb.append(c.value);
-				sb.append("\n");
+				sb.append('\n');
 				out.write( sb.toString() );
+				sb.setLength(0);
 			}
 		}
 		finally

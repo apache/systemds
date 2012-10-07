@@ -225,6 +225,9 @@ public class DataConverter
 		
 		try
 		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
 			if( sparse ) //SPARSE
 			{			   
 				SparseCellIterator iter = src.getSparseCellIterator();
@@ -232,14 +235,14 @@ public class DataConverter
 				{
 					IJV cell = iter.next();
 
-					StringBuilder sb = new StringBuilder();
 					sb.append(cell.i+1);
-					sb.append(" ");
+					sb.append(' ');
 					sb.append(cell.j+1);
-					sb.append(" ");
+					sb.append(' ');
 					sb.append(cell.v);
-					sb.append("\n");
+					sb.append('\n');
 					br.write( sb.toString() ); //same as append
+					sb.setLength(0); 
 					entriesWritten = true;					
 				}
 			}
@@ -251,14 +254,14 @@ public class DataConverter
 						double lvalue = src.getValueDenseUnsafe(i, j);
 						if( lvalue != 0 ) //for nnz
 						{
-							StringBuilder sb = new StringBuilder();
 							sb.append(i+1);
-							sb.append(" ");
+							sb.append(' ');
 							sb.append(j+1);
-							sb.append(" ");
+							sb.append(' ');
 							sb.append(lvalue);
-							sb.append("\n");
+							sb.append('\n');
 							br.write( sb.toString() ); //same as append
+							sb.setLength(0); 
 							entriesWritten = true;
 						}
 					}
@@ -712,8 +715,6 @@ public class DataConverter
 						throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
 								              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 					}
-						
-					//NOTE: at this point value is typically in dense format (see write)
 					
 					//copy block to result
 					if( value.isInSparseFormat() ) //sparse input format

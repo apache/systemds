@@ -800,7 +800,7 @@ public class ResultMergeLocalFile extends ResultMerge
 						mb = new MatrixBlock(maxRow, maxCol, false);
 					}	
 					
-					//mb.examSparsity(); //done on write anyway
+					//mb.examSparsity(); //done on write anyway and mb not reused
 					indexes.setIndexes(brow, bcol);
 					writer.append(indexes, mb);
 				}	

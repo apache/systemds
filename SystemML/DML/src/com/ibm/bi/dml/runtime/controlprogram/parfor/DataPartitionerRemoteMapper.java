@@ -262,8 +262,10 @@ public class DataPartitionerRemoteMapper
 				long col_offset = (key2.getColumnIndex()-1)*_bclen;
 				
 				boolean sparse = value2.isInSparseFormat();
+				int nnz = value2.getNonZeros();
 				int rows = value2.getNumRows();
 				int cols = value2.getNumColumns();
+				double sparsity = ((double)nnz)/(rows*cols);
 				
 				//bound check per block
 				if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )
@@ -276,8 +278,9 @@ public class DataPartitionerRemoteMapper
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						tmp = new MatrixBlock( 1, cols, false ); 
-						tmp.spaceAllocForDenseUnsafe(1, cols);				
+						tmp = new MatrixBlock( 1, cols, sparse, (int)(cols*sparsity) );
+						if(!sparse)
+							tmp.spaceAllocForDenseUnsafe(1, cols);				
 						for( int i=0; i<rows; i++ )
 						{
 							longKey.set(row_offset+1+i);
@@ -287,7 +290,8 @@ public class DataPartitionerRemoteMapper
 								for( int j=0; j<cols; j++ )
 								{
 									double lvalue = value2.getValueSparseUnsafe(i, j);
-									tmp.setValueDenseUnsafe(0, j, lvalue);
+									if( lvalue != 0 )
+										tmp.quickSetValue(0, j, lvalue);
 								}
 							}
 							else
@@ -295,13 +299,16 @@ public class DataPartitionerRemoteMapper
 								for( int j=0; j<cols; j++ )
 								{
 									double lvalue = value2.getValueDenseUnsafe(i, j);
-									tmp.setValueDenseUnsafe(0, j, lvalue);
+									if( lvalue != 0 )
+										tmp.setValueDenseUnsafe(0, j, lvalue);
 								}
+
+								tmp.recomputeNonZeros();
 							}
-							tmp.recomputeNonZeros();
 							pairValue.indexes = key2;
 							pairValue.block = tmp;
 							out.collect(longKey, pairValue);
+							tmp.reset();
 						}
 						break;
 					case ROW_BLOCK_WISE:
@@ -312,7 +319,7 @@ public class DataPartitionerRemoteMapper
 						out.collect(longKey, pairValue);
 						break;
 					case COLUMN_WISE:
-						tmp = new MatrixBlock( rows, 1, false ); 
+						tmp = new MatrixBlock( rows, 1, false ); //cols always dense
 						tmp.spaceAllocForDenseUnsafe(rows, 1);
 						for( int i=0; i<cols; i++ )
 						{
@@ -323,7 +330,8 @@ public class DataPartitionerRemoteMapper
 								for( int j=0; j<rows; j++ )
 								{
 									double lvalue = value2.getValueSparseUnsafe(j, i);
-									tmp.setValueDenseUnsafe(j, 0, lvalue);
+									if( lvalue != 0 )
+										tmp.setValueDenseUnsafe(j, 0, lvalue);
 								}
 							}
 							else
@@ -331,13 +339,15 @@ public class DataPartitionerRemoteMapper
 								for( int j=0; j<rows; j++ )
 								{
 									double lvalue = value2.getValueDenseUnsafe(j, i);
-									tmp.setValueDenseUnsafe(j, 0, lvalue);
+									if( lvalue != 0 )
+										tmp.setValueDenseUnsafe(j, 0, lvalue);
 								}					
 							}
 							tmp.recomputeNonZeros();
 							pairValue.indexes = key2;
 							pairValue.block = tmp;
 							out.collect(longKey, pairValue );
+							tmp.reset();
 						}	
 						break;
 					case COLUMN_BLOCK_WISE:

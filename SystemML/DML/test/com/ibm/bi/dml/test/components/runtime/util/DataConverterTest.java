@@ -1,7 +1,5 @@
 package com.ibm.bi.dml.test.components.runtime.util;
 
-import java.io.IOException;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,33 +15,49 @@ public class DataConverterTest
 {
 	private int _brlen = 1000;
 	private int _bclen = 1000;
-	private int _rows = 2500;
-	private int _cols = 1500;
+	private int _rows = 3500;
+	private int _cols = 3500;
 	private double _sparsity = 0.7d;
+	private double _sparsitySkew1 = 0.9d;
+	private double _sparsitySkew2 = 0.1d;
+	
 	private String _fname = "./scratch_space/A";
 	
 	@Test
 	public void testReadWriteTextCellFormat() 
 	{
-		testReadWriteMatrix( InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testReadWriteMatrix( InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo, false );
 	}
 	
 	@Test
 	public void testReadWriteBinaryCellFormat() 
 	{
-		testReadWriteMatrix( InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testReadWriteMatrix( InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo, false );
 	}
 	
 	@Test
 	public void testReadWriteBinaryBlockFormat() 
 	{
-		testReadWriteMatrix( InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testReadWriteMatrix( InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, false );
 	}
 	
-	private void testReadWriteMatrix( InputInfo ii, OutputInfo oi )
+	@Test
+	public void testReadWriteBinaryBlockFormatWithSkew() 
 	{
-		double[][] matrix = TestUtils.generateTestMatrix(_rows, _cols, 0, 1, _sparsity, 7);
+		testReadWriteMatrix( InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo, true );
+	}
+	
+	
+	private void testReadWriteMatrix( InputInfo ii, OutputInfo oi, boolean skew )
+	{
+		double[][] matrix = null;
 		double[][] matrix2 = null;
+		
+		//create initial matrix
+		if( skew )
+			matrix = generateSkewedTestMatrix();
+		else
+			matrix = generateUniformTestMatrix();
 		
 		try 
 		{
@@ -57,7 +71,7 @@ public class DataConverterTest
 			//cleanup
 			MapReduceTool.deleteFileIfExistOnHDFS(_fname);
 		} 
-		catch (IOException e) 
+		catch(Exception e) 
 		{
 			e.printStackTrace();
 		}
@@ -67,5 +81,28 @@ public class DataConverterTest
 			for( int j=0; j<_cols; j++ )
 				if( matrix[i][j]!=matrix2[i][j] )
 					Assert.fail("Wrong value i="+i+", j="+j+", value1="+matrix[i][j]+", value2="+matrix2[i][j]);
+	}
+	
+	private double[][] generateUniformTestMatrix()
+	{
+		return TestUtils.generateTestMatrix(_rows, _cols, 0, 1, _sparsity, 7);
+	}
+	
+	private double[][] generateSkewedTestMatrix()
+	{
+		double[][] mat = new double[_rows][_cols];
+		double[][] tmp1 = TestUtils.generateTestMatrix(_rows, _cols/2, 0, 1, _sparsitySkew1, 3);
+		double[][] tmp2 = TestUtils.generateTestMatrix(_rows, _cols/2, 0, 1, _sparsitySkew2, 7);
+		
+		for( int i=0; i<_rows; i++ )
+			for( int j=0; j<_cols; j++ )
+			{
+				if( j<=_cols/2-1 )
+					mat[i][j] = tmp1[i][j];
+				else
+					mat[i][j] = tmp2[i][j-(_cols/2)];
+			}
+		
+		return mat;
 	}
 }

@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.utils.CacheException;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Class to represent the matrix input type
@@ -195,9 +195,10 @@ public class Matrix extends FIO {
 	 * 
 	 * @return
 	 * @throws IOException 
+	 * @throws DMLRuntimeException 
 	 */
 	public void setMatrixDoubleArray(double[][] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
-		throws IOException 
+		throws IOException, DMLRuntimeException 
 	{
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
 		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
@@ -228,7 +229,7 @@ public class Matrix extends FIO {
 			_mo.acquireModify( mb );
 			_mo.release();
 		} 
-		catch (CacheException e) 
+		catch(Exception e) 
 		{
 			throw new IOException(e);
 		} 

@@ -517,13 +517,16 @@ public class DataPartitionerLocal extends DataPartitioner
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
-		long rows = mb.getNumRows();
-		long cols = mb.getNumColumns();
+		int nnz = mb.getNonZeros();
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		double sparsity = ((double)nnz)/(rows*cols);
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			MatrixBlock tmp = new MatrixBlock( 1, (int)cols, false ); 
-			tmp.spaceAllocForDenseUnsafe(1, (int)cols);
+			MatrixBlock tmp = new MatrixBlock( 1, (int)cols, sparse, (int) (cols*sparsity) ); 
+			if(!sparse)
+				tmp.spaceAllocForDenseUnsafe(1, (int)cols);
 			
 			for( int i=0; i<rows; i++ )
 			{
@@ -534,7 +537,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					for( int j=0; j<cols; j++ )
 					{
 						double value = mb.getValueSparseUnsafe(i, j);
-						tmp.setValueDenseUnsafe(0, j, value);
+						if( value != 0 )
+							tmp.quickSetValue(0, j, value);
 					}
 				}
 				else
@@ -542,11 +546,13 @@ public class DataPartitionerLocal extends DataPartitioner
 					for( int j=0; j<cols; j++ )
 					{
 						double value = mb.getValueDenseUnsafe(i, j);
-						tmp.setValueDenseUnsafe(0, j, value);
+						if( value != 0 )
+							tmp.setValueDenseUnsafe(0, j, value);
 					}
+					tmp.recomputeNonZeros();
 				}
-				tmp.recomputeNonZeros();
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
+				tmp.reset();
 			}
 		}
 		else if( _format == PDataPartitionFormat.ROW_BLOCK_WISE )
@@ -558,7 +564,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
 		{
 			//create object for reuse
-			MatrixBlock tmp = new MatrixBlock( (int)rows, 1, false ); 
+			MatrixBlock tmp = new MatrixBlock( (int)rows, 1, false ); //cols always dense
 			tmp.spaceAllocForDenseUnsafe((int)rows, 1);
 						
 			for( int i=0; i<cols; i++ )
@@ -570,7 +576,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					for( int j=0; j<rows; j++ )
 					{
 						double value = mb.getValueSparseUnsafe(j, i);
-						tmp.setValueDenseUnsafe(j, 0, value);
+						if( value != 0 )
+							tmp.setValueDenseUnsafe(j, 0, value);
 					}
 				}
 				else
@@ -578,11 +585,13 @@ public class DataPartitionerLocal extends DataPartitioner
 					for( int j=0; j<rows; j++ )
 					{
 						double value = mb.getValueDenseUnsafe(j, i);
-						tmp.setValueDenseUnsafe(j, 0, value);
+						if( value != 0 )
+							tmp.setValueDenseUnsafe(j, 0, value);
 					}					
 				}
 				tmp.recomputeNonZeros();
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
+				tmp.reset();
 			}				
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_BLOCK_WISE )

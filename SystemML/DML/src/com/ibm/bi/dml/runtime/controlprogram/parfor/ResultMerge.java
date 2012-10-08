@@ -76,8 +76,10 @@ public abstract class ResultMerge
 	 * 
 	 * @param out initially empty block
 	 * @param in 
+	 * @throws DMLRuntimeException 
 	 */
-	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in )
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in ) 
+		throws DMLRuntimeException
 	{
 		if( in.isInSparseFormat() ) //sparse input format
 		{
@@ -85,7 +87,7 @@ public abstract class ResultMerge
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
-				out.setValue(cell.i, cell.j, cell.v);
+				out.quickSetValue(cell.i, cell.j, cell.v);
 			}
 		}
 		else //dense input format
@@ -100,19 +102,21 @@ public abstract class ResultMerge
 					{
 						double value = in.getValueDenseUnsafe(i,j); //input value
 						if( value != 0  ) 					       //for all nnz
-						{
-							out.setValue( i, j, value );	
-						}
+							out.quickSetValue( i, j, value );	
 					}
 		}	
+		
+		out.examSparsity();
 	}
 
 	/**
 	 * 
 	 * @param out
 	 * @param in
+	 * @throws DMLRuntimeException 
 	 */
-	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare )
+	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
+		throws DMLRuntimeException
 	{
 		//NOTE: always iterate over entire block in order to compare all values
 		//      (using sparse iterator would miss values set to 0)
@@ -126,7 +130,7 @@ public abstract class ResultMerge
 					{
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
 						if( value != compare[i][j] )  //for new values only (div)
-							out.setValue( i, j, value );	
+							out.quickSetValue( i, j, value );	
 					}
 		}
 		else //dense input format
@@ -140,9 +144,11 @@ public abstract class ResultMerge
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
 						if( value != compare[i][j] )  //for new values only (div)
-							out.setValue( i, j, value );	
+							out.quickSetValue( i, j, value );	
 					}
-		}			
+		}	
+		
+		out.examSparsity();
 	}
 	
 

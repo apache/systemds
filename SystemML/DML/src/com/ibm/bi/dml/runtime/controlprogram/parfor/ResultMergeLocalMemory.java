@@ -259,8 +259,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 * 
 	 * @param out
 	 * @param in
+	 * @throws DMLRuntimeException 
 	 */
-	private void merge( MatrixBlock out, MatrixBlock in )
+	private void merge( MatrixBlock out, MatrixBlock in ) 
+		throws DMLRuntimeException
 	{
 		if( _compare == null )
 			mergeWithoutComp(out, in);

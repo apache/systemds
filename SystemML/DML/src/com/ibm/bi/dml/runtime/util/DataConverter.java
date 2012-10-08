@@ -37,6 +37,7 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 /**
@@ -371,18 +372,17 @@ public class DataConverter
 		FileSystem fs = FileSystem.get(job);
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		
-		//reblock and write		
-		MatrixBlock fullBlock = new MatrixBlock(brlen, bclen, false);	//TODO check for sparsity
-		fullBlock.spaceAllocForDenseUnsafe(brlen, bclen);
-		MatrixBlock block = null;
+		//initialize blocks for reuse (at most 4 different blocks required)
+		MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
 		
-		//bound check per block
+		//bound check for src block
 		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
 		{
 			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
 					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 		}
 		
+		//reblock and write
 		try
 		{
 			for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
@@ -394,29 +394,18 @@ public class DataConverter
 					int row_offset = blockRow*brlen;
 					int col_offset = blockCol*bclen;
 					
-					//memory allocation
-					if(maxRow < brlen || maxCol < bclen)
-					{
-						block = new MatrixBlock(maxRow, maxCol, false);
-						block.spaceAllocForDenseUnsafe(maxRow, maxCol);
-					}
-					else 
-					{
-						block = fullBlock;
-					}
-					
-					//TODO: monitor written entries and write only blocks with nnz>0
-					//      (this requires changes of the runtime level before)
-					
-					//NOTE: set all values (incl nnz) due to block reuse
-					if(sparse) //DENSE<-SPARSE
+					//get reuse matrix block
+					MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+
+					if(sparse) //SPARSE<-SPARSE
 					{
 						//NOTE: cannot use sparse iterator since only subset required
 						for(int i = 0; i < maxRow; i++) 
 							for(int j = 0; j < maxCol; j++)
 							{
 								double value = src.getValueSparseUnsafe( row_offset + i, col_offset + j);
-								block.setValueDenseUnsafe(i, j, value);
+								if( value != 0 )
+									block.quickSetValue(i, j, value);
 							}
 					}
 					else //DENSE<-DENSE
@@ -425,16 +414,18 @@ public class DataConverter
 							for(int j = 0; j < maxCol; j++)
 							{
 								double value = src.getValueDenseUnsafe( row_offset + i, col_offset + j);
-								block.setValueDenseUnsafe(i, j, value);
+								if( value != 0 )
+									block.setValueDenseUnsafe(i, j, value);
 							}
+						
+						//recompute nonzeros due to use of unsafe methods
+						block.recomputeNonZeros();
 					}	
 					
-					block.recomputeNonZeros();
-					
-					//handle empty result, append and reset
-					if ( blockRow == 0 && blockCol == 0 & block.getNonZeros() == 0 )
-						block.addDummyZeroValue();
+					//append block to sequence file
 					writer.append(new MatrixIndexes(blockRow+1, blockCol+1), block);
+					
+					//reset block for later reuse
 					block.reset();
 				}
 		}
@@ -444,6 +435,7 @@ public class DataConverter
 				writer.close();
 		}
 	}
+	
 	
 	/**
 	 * 
@@ -488,7 +480,7 @@ public class DataConverter
 							row = Integer.parseInt( st.nextToken() )-1;
 							col = Integer.parseInt( st.nextToken() )-1;
 							double lvalue = Double.parseDouble( st.nextToken() );
-							dest.setValue( row, col, lvalue );
+							dest.quickSetValue( row, col, lvalue );
 						}
 					} 
 					else //DENSE<-value
@@ -561,7 +553,7 @@ public class DataConverter
 					row = Integer.parseInt( st.nextToken() )-1;
 					col = Integer.parseInt( st.nextToken() )-1;
 					double lvalue = Double.parseDouble( st.nextToken() );
-					dest.setValue( row, col, lvalue );
+					dest.quickSetValue( row, col, lvalue );
 				}
 			} 
 			else //DENSE<-value
@@ -636,7 +628,7 @@ public class DataConverter
 							row = (int)key.getRowIndex()-1;
 							col = (int)key.getColumnIndex()-1;
 							double lvalue = value.getValue();
-							dest.setValue( row, col, lvalue );
+							dest.quickSetValue( row, col, lvalue );
 						}
 					}
 					else
@@ -815,12 +807,12 @@ public class DataConverter
 	/**
 	 * Creates a dense Matrix Block and copies the given double matrix into it.
 	 * 
-	 * TODO convert and check for sparsity
-	 * 
 	 * @param data
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static MatrixBlock convertToMatrixBlock( double[][] data )
+	public static MatrixBlock convertToMatrixBlock( double[][] data ) 
+		throws DMLRuntimeException
 	{
 		int rows = data.length;
 		int cols = (rows > 0)? data[0].length : 0;
@@ -832,7 +824,91 @@ public class DataConverter
 		} 
 		catch (Exception e){} //can never happen
 		
+		//check and convert internal representation
+		mb.examSparsity();
+		
 		return mb;
+	}
+
+	
+	
+	/////////////////////////////////////////////
+	// Helper methods for the specific formats //
+	/////////////////////////////////////////////
+
+	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param sparse
+	 * @return
+	 */
+	private static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros )
+	{
+		MatrixBlock[] blocks = new MatrixBlock[4];
+		double sparsity = ((double)nonZeros)/(rlen*clen);
+		int estNNZ = -1;
+		
+		//full block 
+		if( rlen >= brlen && clen >= bclen )
+		{
+			estNNZ = (int) (brlen*bclen*sparsity);
+			blocks[0] = new MatrixBlock( brlen, bclen, sparse, estNNZ );
+		}
+		//partial col block
+		if( rlen >= brlen && clen%bclen!=0 )
+		{
+			estNNZ = (int) (brlen*(clen%bclen)*sparsity);
+			blocks[1] = new MatrixBlock( brlen, (int)(clen%bclen), sparse, estNNZ );
+		}
+		//partial row block
+		if( rlen%brlen!=0 && clen>=bclen )
+		{
+			estNNZ = (int) ((rlen%brlen)*bclen*sparsity);
+			blocks[2] = new MatrixBlock( (int)(rlen%brlen), bclen, sparse, estNNZ );
+		}
+		//partial row/col block
+		if( rlen%brlen!=0 && clen%bclen!=0 )
+		{
+			estNNZ = (int) ((rlen%brlen)*(clen%bclen)*sparsity);
+			blocks[3] = new MatrixBlock( (int)(rlen%brlen), (int)(clen%bclen), sparse, estNNZ );
+		}
+		
+		//space allocation
+		for( MatrixBlock b : blocks )
+			if( b != null )
+				if( !sparse )
+					b.spaceAllocForDenseUnsafe(b.getNumRows(), b.getNumColumns());		
+		//NOTE: no preallocation for sparse (preallocate sparserows with estnnz) in order to reduce memory footprint
+		
+		return blocks;
+	}
+	
+	/**
+	 * 
+	 * @param blocks
+	 * @param rows
+	 * @param cols
+	 * @param brlen
+	 * @param bclen
+	 * @return
+	 */
+	private static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen )
+	{
+		int index = -1;
+		
+		if( rows==brlen && cols==bclen )
+			index = 0;
+		else if( rows==brlen && cols<bclen )
+			index = 1;
+		else if( rows<brlen && cols==bclen )
+			index = 2;
+		else //if( rows<brlen && cols<bclen )
+			index = 3;
+
+		return blocks[ index ];
 	}
 
 	
@@ -997,243 +1073,4 @@ public class DataConverter
 		return ret;
 	}
 	
-	
-	
-	
-	
-	/**
-	 * Reads a matrix from HDFS (in block format) and returns its values in a 1D
-	 * array containing double values.
-	 * 
-	 * @param dir
-	 * @param numRows
-	 *            Number of rows which the matrix should have
-	 * @param numCols
-	 *            Number of columns which the matrix should have
-	 * @param blockSizeRows
-	 *            Number of rows in normal blocks
-	 * @param blockSizeCols
-	 *            Number of cols in normal blocks
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	/*private static void readDouble1DArrayMatrixFromHDFSBlock(String dir, 
-															MatrixBlock1D mat,
-															int blockSizeRows, 
-															int blockSizeCols) 
-			throws DMLRuntimeException {		
-		try {
-			Path[] subpaths = getSubDirs(dir);
-			FileSystem fs = FileSystem.get(conf);
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixBlock value = new MatrixBlock();
-
-			for (Path path : subpaths) {
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-				BinaryBlockToBinaryCellConverter conv = new BinaryBlockToBinaryCellConverter();
-				conv.setBlockSize(blockSizeRows, blockSizeCols);
-
-				while (reader.next(indexes, value)) {
-					conv.convert(indexes, value);
-					while (conv.hasNext()) {
-						Pair<MatrixIndexes, MatrixCell> pair = conv.next();
-						int row = (int)(pair.getKey().getRowIndex()) - 1;
-						int col = (int)(pair.getKey().getColumnIndex()) - 1;
-						
-						if(row >= mat.getNumRows() || col >= mat.getNumColumns())
-							throw new DMLRuntimeException("matrix on disk "
-														  + dir
-														  + " does not match size of matrix object");
-						
-						mat.setValue(row,
-									 col,
-									 pair.getValue().getValue());
-					}
-				}
-			}
-		} catch (IOException e) {
-			throw new DMLRuntimeException(e);
-		}
-	}*/
-
-	/**
-	 * Reads a matrix from HDFS (in block format) and returns its values in a 1D
-	 * array containing double values.
-	 * 
-	 * @param dir
-	 * @param numRows
-	 *            Number of rows which the matrix should have
-	 * @param numCols
-	 *            Number of columns which the matrix should have
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	/*private static void readDouble1DArrayMatrixFromHDFSText(String dir, MatrixBlock1D mat)
-			throws DMLRuntimeException {
-		try {
-			Path[] subpaths = getSubDirs(dir);
-			FileSystem fs = FileSystem.get(conf);
-			if (!fs.isDirectory(new Path(dir))) {
-				subpaths = new Path[] { new Path(dir) };
-			}
-
-			LongWritable indexes = new LongWritable();
-			Text value = new Text();
-
-			for (Path path : subpaths) {
-				// SequenceFile.Reader reader = new SequenceFile.Reader(fs,
-				// path, conf);
-				TextToBinaryCellConverter conv = new TextToBinaryCellConverter();
-				FSDataInputStream fi = fs.open(path);
-				BufferedReader br = new BufferedReader(new InputStreamReader(fi));
-				String line = null;
-				while ((line = br.readLine()) != null) {
-					value = new Text(line);
-
-					conv.convert(indexes, value);
-					while (conv.hasNext()) {
-						Pair<MatrixIndexes, MatrixCell> pair = conv.next();
-						
-						int row = (int)(pair.getKey().getRowIndex() - 1);
-						int col = (int)(pair.getKey().getColumnIndex() - 1);
-						
-						if(row >= mat.getNumRows() || col >= mat.getNumColumns())
-							throw new DMLRuntimeException("matrix on disk "
-														  + dir
-														  + " does not match size of matrix object");
-						
-						mat.setValue(row, 
-									  col, 
-									  pair.getValue().getValue());
-					}
-				}
-			}
-		} catch (IOException e) {
-			throw new DMLRuntimeException(e);
-		}
-	}*/
-
-	/**
-	 * Reads a matrix from HDFS (in cell format) and returns its values in a 1D
-	 * array containing double values.
-	 * 
-	 * @param dir
-	 * @param numRows
-	 *            Number of rows which the matrix is expected to have
-	 * @param numCols
-	 *            Number of columns which the matrix is expected to have
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	/*private static void readDouble1DArrayMatrixFromHDFSCell(String dir, MatrixBlock1D mat)
-			throws DMLRuntimeException {
-		try {
-			Path[] subpaths = getSubDirs(dir);
-			FileSystem fs = FileSystem.get(conf);
-			MatrixIndexes indexes = new MatrixIndexes();
-			MatrixCell value = new MatrixCell();
-
-			for (Path path : subpaths) {
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-
-				while (reader.next(indexes, value)) {
-					long i = indexes.getRowIndex() - 1;
-					long j = indexes.getColumnIndex() - 1;
-					long p = i * mat.getNumColumns() + j;
-					if (p > (int) p)
-						throw new DMLRuntimeException("Matrix is too large");
-
-					int row = (int)i;
-					int col = (int)j;
-					
-					if(row >= mat.getNumRows() || col >= mat.getNumColumns())
-						throw new DMLRuntimeException("matrix on disk "
-													  + dir
-													  + " does not match size of matrix object");
-					
-					mat.setValue(row, col, value.getValue());
-				}
-			}
-		} catch (IOException e) {
-			throw new DMLRuntimeException(e);
-		}
-	}*/
-
-	/*private static void writeDoubleMatrixToHDFSBlock(String dir, 
-													int blockSizeRows, 
-													int blockSizeCols,
-													MatrixBlock1D mat) 
-			throws DMLRuntimeException {
-		int numRows = mat.getNumRows();
-		int numCols = mat.getNumColumns();
-		try {
-			SequenceFile.Writer writer = new SequenceFile.Writer(FileSystem.get(conf), conf, new Path(dir),
-					MatrixIndexes.class, MatrixBlock.class);
-
-			MatrixIndexes index = new MatrixIndexes();
-			MatrixBlock value = new MatrixBlock();
-			for (int i = 0; i < mat.getNumRows(); i += numRows) {
-				int rows = Math.min(numRows, (mat.getNumRows() - i));
-				for (int j = 0; j < mat.getNumColumns(); j += numCols) {
-					int cols = Math.min(numCols, (mat.getNumColumns() - j));
-					index.setIndexes(((i / numRows) + 1), ((j / numCols) + 1));
-					value = new MatrixBlock(rows, cols, true);
-					for (int k = 0; k < rows; k++) {
-						for (int l = 0; l < cols; l++) 
-							value.setValue(k, l, mat.getValue(i+k, j+l));
-					}
-					writer.append(index, value);
-				}
-			}
-
-			writer.close();
-		} catch (IOException e) {
-			throw new DMLRuntimeException(e);
-		}
-	}*/
-
-	//writes to one file only
-	/*private static void writeDoubleMatrixToHDFSText(String dir, MatrixBlock1D mat)
-		throws DMLRuntimeException{
-		try{
-			Path path = new Path(dir);
-			FileSystem fs = FileSystem.get(conf);
-			PrintWriter writer;
-			if(fs.exists(path))
-				System.err.println(path.toString()+" already exists");
-			writer = new PrintWriter(fs.create(path, true));
-			
-			if(mat.isInSparseFormat()){
-				HashMap<CellIndex, Double> map = mat.getSparseMap();
-				Iterator<Map.Entry<CellIndex, Double>> it = map.entrySet().iterator();
-				while(it.hasNext()){
-					Map.Entry<CellIndex, Double> elt = it.next();
-					int row = elt.getKey().row;
-					int col = elt.getKey().column;
-					double v = elt.getValue().doubleValue();
-					writer.println((row+1)+" "+(col+1)+" "+v);
-				}
-			}else
-				for(int i=0; i<mat.getNumRows(); i++)
-					for(int j=0; j<mat.getNumColumns(); j++)
-						writer.println((i+1)+" "+(j+1)+" "+mat.getValue(i, j));
-			
-			writer.close();
-		}catch(IOException e){
-			throw new DMLRuntimeException(e);
-		}
-	}*/
-	
-	/*private static Path[] getSubDirs(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(new Configuration());
-		ArrayList<Path> paths = new ArrayList<Path>();
-		for (FileStatus cur : fs.listStatus(new Path(dir))) {
-			paths.add(cur.getPath());
-		}
-		return paths.toArray(new Path[paths.size()]);
-	}*/
-
 }

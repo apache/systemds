@@ -135,6 +135,8 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
 		String2MRInstructionType.put( "rangeReIndexForLeft"  , MRINSTRUCTION_TYPE.RangeReIndex);
 		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
+		
+		String2MRInstructionType.put( "append"  , MRINSTRUCTION_TYPE.Append);
 	}
 	
 	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {

@@ -405,24 +405,25 @@ public class ParForStatementBlock extends ForStatementBlock
 				else
 				{
 					VariableSet vsUpdated = s.variablesUpdated();
-					for(String write : vsUpdated.getVariableNames())
-					{						 						
-						//add writes to non-local variables to candidate set
-						if( _vsParent.containsVariable(write) )
-						{
-							Collection<DataIdentifier> dats = getDataIdentifiers( s, true );
-							for( DataIdentifier dat : dats )
+					if( vsUpdated != null )
+						for(String write : vsUpdated.getVariableNames())
+						{						 						
+							//add writes to non-local variables to candidate set
+							if( _vsParent.containsVariable(write) )
 							{
-								Candidate c = new Candidate();
-								c._var = write; 
-								c._dat = dat; 
-								C.add( c );
+								Collection<DataIdentifier> dats = getDataIdentifiers( s, true );
+								for( DataIdentifier dat : dats )
+								{
+									Candidate c = new Candidate();
+									c._var = write; 
+									c._dat = dat; 
+									C.add( c );
+								}
+								
+								if( LDEBUG )
+									System.out.println("PARFOR: dependency candidate: var '"+write+"'");
 							}
-							
-							if( LDEBUG )
-								System.out.println("PARFOR: dependency candidate: var '"+write+"'");
 						}
-					}
 				}
 			}
 	}

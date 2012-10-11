@@ -260,7 +260,7 @@ public class InfrastructureAnalyzer
 	}
 
 	
-	private static long extractMaxMemoryOpt(String javaOpts)
+	public static long extractMaxMemoryOpt(String javaOpts)
 	{
 		long ret = -1; //mem in bytes
 		
@@ -275,9 +275,11 @@ public class InfrastructureAnalyzer
 				
 				arg = arg.substring(4); //cut off "-Xmx"
 				//parse number and unit
-				if ( arg.endsWith("m") )
+				if ( arg.endsWith("g") || arg.endsWith("G") )
+					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024 * 1024 * 1024;
+				else if ( arg.endsWith("m") || arg.endsWith("M") )
 					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024 * 1024;
-				else if( arg.endsWith("k") )
+				else if( arg.endsWith("k") || arg.endsWith("K") )
 					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024;
 				else 
 					ret = Long.parseLong(arg.substring(0,arg.length()-2));
@@ -293,5 +295,30 @@ public class InfrastructureAnalyzer
 		}
 		
 		return ret;
+	}
+	
+	public static void setMaxMemoryOpt(JobConf job, String key, long bytes)
+	{
+		String javaOptsOld = job.get( key );
+		String javaOptsNew = null;
+
+		//StringTokenizer st = new StringTokenizer( javaOptsOld, " " );
+		String[] tokens = javaOptsOld.split(" "); //account also for no ' '
+		StringBuilder sb = new StringBuilder();
+		for( String arg : tokens )
+		{
+			if( arg.startsWith("-Xmx") ) //search for max mem
+			{
+				sb.append("-Xmx");
+				sb.append( (bytes/(1024*1024)) );
+				sb.append("M");
+			}
+			else
+				sb.append(arg);
+			
+			sb.append(" ");
+		}
+		javaOptsNew = sb.toString().trim();		
+		job.set(key, javaOptsNew);
 	}
 }

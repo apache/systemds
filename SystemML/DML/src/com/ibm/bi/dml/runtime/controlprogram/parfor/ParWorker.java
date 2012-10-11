@@ -135,12 +135,14 @@ public abstract class ParWorker
 		//foreach iteration in task, execute iteration body
 		for( IntObject indexVal : task.getIterations() )
 		{
+			//System.out.println(" EXECUTE ITERATION: "+indexVal.getName()+"="+indexVal.getIntValue());
+			
 			//set index values
 			_variables.put(indexVal.getName(), indexVal);
 			
 			// for each program block
 			for (ProgramBlock pb : _childBlocks)
-			{	
+			{		
 				pb.setVariables(_variables);
 				pb.execute(_ec);
 
@@ -194,8 +196,24 @@ public abstract class ParWorker
 			_variables.put(lVarName, new IntObject(lVarName,i)); 
 			
 			// for each program block
+			//System.out.println(" EXECUTE ITERATION: "+lVarName+"="+i);
 			for (ProgramBlock pb : _childBlocks)
 			{	
+				/*System.out.println(" EXECUTE PB ------- ");
+				for( String var : _variables.keySet() )
+				{
+					Data dat = _variables.get(var);
+					if( dat instanceof MatrixObject )
+					{
+						MatrixObject mo = (MatrixObject)dat;
+						long rows = mo.getNumRows();
+						long cols = mo.getNumColumns();
+						long nnz = mo.getNnz();
+						boolean isInMem = mo.isBlobPresent();
+						System.out.println("Var '"+var+"' (rlen="+rows+", clen="+cols+", nnz="+nnz+", inMem="+isInMem+") in state "+mo.getStatusAsString());
+					}
+				}*/
+				
 				pb.setVariables(_variables);
 				pb.execute(_ec);
 

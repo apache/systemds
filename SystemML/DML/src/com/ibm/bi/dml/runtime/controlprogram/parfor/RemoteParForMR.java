@@ -22,6 +22,7 @@ import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -48,7 +49,7 @@ public class RemoteParForMR
 	 * @throws DMLRuntimeException
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, //inputs
-			                       ExecMode mode, int numMappers, int replication, int max_retry)  //opt params
+			                       ExecMode mode, int numMappers, int replication, int max_retry, long minMem)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -98,7 +99,7 @@ public class RemoteParForMR
 			//job.setInt("mapred.tasktracker.tasks.maximum",1); //system property
 			//job.setInt("mapred.jobtracker.maxtasks.per.job",1); //system property
 
-			//use FLEX scheudler configuration properties
+			//use FLEX scheduler configuration properties
 			//System.out.println("numMappers="+numMappers);
 			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
@@ -106,6 +107,14 @@ public class RemoteParForMR
 				job.setInt("flex.map.max", numMappers);
 				job.setInt("flex.reduce.min", 0);
 				job.setInt("flex.reduce.max", numMappers);
+			}
+			
+			//set jvm memory size (if require)
+			String memKey = "mapred.child.java.opts";
+			if( minMem > 0 && minMem > InfrastructureAnalyzer.extractMaxMemoryOpt(job.get(memKey)) )
+			{
+				InfrastructureAnalyzer.setMaxMemoryOpt(job, memKey, minMem);
+				System.out.println("Warning: Forcing '"+memKey+"' to -Xmx"+minMem/(1024*1024)+"M." );
 			}
 			
 			//disable automatic tasks timeouts and speculative task exec

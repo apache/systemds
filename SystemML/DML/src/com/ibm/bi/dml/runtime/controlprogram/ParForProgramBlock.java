@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.apache.hadoop.conf.Configuration;
@@ -13,6 +14,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -43,8 +46,13 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimator;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
@@ -666,7 +674,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				
 		// Step 3) submit MR job (wait for finished work)
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
-				                      ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR);
+				                      ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory());
 		
 		if( MONITOR ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -853,7 +861,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String resultFile = constructResultFileName();
 		
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
-				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR); 	
+				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory()); 	
 		
 		// Step 4) collecting results from each parallel worker
 
@@ -1272,6 +1280,36 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private long getMinMemory()
+	{
+		long ret = -1;
+		
+		//if forced remote exec and single node
+		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+			&& _execMode == PExecMode.REMOTE_MR
+			&& _optMode == POptMode.NONE      )
+		{
+			try 
+			{
+				OptTree tree;tree = OptTreeConverter.createAbstractOptTree(-1, -1, _sb, this, new HashSet<Long>());
+				CostEstimator est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
+				double mem = est.getEstimate(TestMeasure.MEMORY_USAGE, tree.getRoot());
+				
+				ret = (long) (mem * ( 1d/OptimizerUtils.MEM_UTIL_FACTOR  )); 
+			} 
+			catch(Exception e) 
+			{
+				e.printStackTrace();
+			} 
+		}
+		
+		return ret;
 	}
 	
 }

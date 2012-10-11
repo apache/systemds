@@ -232,7 +232,7 @@ public class MatrixObject extends CacheableData
 	public String toString()
 	{ 
 		StringBuilder str = new StringBuilder();
-		str.append("MatrixObjectNew: ");
+		str.append("Matrix: ");
 		str.append(_hdfsFileName + ", ");
 		//System.out.println(_hdfsFileName);
 		if ( _metaData instanceof NumItemsByEachReducerMetaData ) {
@@ -262,6 +262,8 @@ public class MatrixObject extends CacheableData
 				str.append("null, null");
 			}
 		}
+		str.append(",");
+		str.append(isDirty() ? "dirty" : "not-dirty");
 		
 		return str.toString();
 	}
@@ -597,6 +599,8 @@ public class MatrixObject extends CacheableData
 			//CASE 2: matrix already in same format but different file on hdfs (copy matrix to fname)
 			try
 			{
+				MapReduceTool.deleteFileIfExistOnHDFS(fName);
+				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
 				writeMetaData( fName, outputFormat );
 				MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
 			}
@@ -1127,7 +1131,7 @@ public class MatrixObject extends CacheableData
 	{
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 	
-		if (_data != null)
+		if (iimd != null)
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
 			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
@@ -1142,6 +1146,9 @@ public class MatrixObject extends CacheableData
 				mc = new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
 			}
 			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo);
+		}
+		else {
+			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
 		}
 	}
 	

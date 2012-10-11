@@ -1706,7 +1706,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows==null)
 				writeEmptyBlock(out);
 			//if it should be dense, then write to the dense format
-			else if(nonZeros>rlen*clen*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
+			else if(nonZeros>((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
 				writeSparseToDense(out);
 			else
 				writeSparseBlock(out);
@@ -1715,7 +1715,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(denseBlock==null)
 				writeEmptyBlock(out);
 			//if it should be sparse
-			else if(nonZeros<rlen*clen*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
+			else if(nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
 				writeDenseToSparse(out);
 			else
 				writeDenseBlock(out);

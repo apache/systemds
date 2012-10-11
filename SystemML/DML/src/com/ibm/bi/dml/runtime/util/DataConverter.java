@@ -849,31 +849,31 @@ public class DataConverter
 	{
 		MatrixBlock[] blocks = new MatrixBlock[4];
 		double sparsity = ((double)nonZeros)/(rlen*clen);
-		int estNNZ = -1;
+		long estNNZ = -1;
 		
 		//full block 
 		if( rlen >= brlen && clen >= bclen )
 		{
-			estNNZ = (int) (brlen*bclen*sparsity);
-			blocks[0] = new MatrixBlock( brlen, bclen, sparse, estNNZ );
+			estNNZ = (long) (brlen*bclen*sparsity);
+			blocks[0] = new MatrixBlock( brlen, bclen, sparse, (int)estNNZ );
 		}
 		//partial col block
 		if( rlen >= brlen && clen%bclen!=0 )
 		{
-			estNNZ = (int) (brlen*(clen%bclen)*sparsity);
-			blocks[1] = new MatrixBlock( brlen, (int)(clen%bclen), sparse, estNNZ );
+			estNNZ = (long) (brlen*(clen%bclen)*sparsity);
+			blocks[1] = new MatrixBlock( brlen, (int)(clen%bclen), sparse, (int)estNNZ );
 		}
 		//partial row block
 		if( rlen%brlen!=0 && clen>=bclen )
 		{
-			estNNZ = (int) ((rlen%brlen)*bclen*sparsity);
-			blocks[2] = new MatrixBlock( (int)(rlen%brlen), bclen, sparse, estNNZ );
+			estNNZ = (long) ((rlen%brlen)*bclen*sparsity);
+			blocks[2] = new MatrixBlock( (int)(rlen%brlen), bclen, sparse, (int)estNNZ );
 		}
 		//partial row/col block
 		if( rlen%brlen!=0 && clen%bclen!=0 )
 		{
-			estNNZ = (int) ((rlen%brlen)*(clen%bclen)*sparsity);
-			blocks[3] = new MatrixBlock( (int)(rlen%brlen), (int)(clen%bclen), sparse, estNNZ );
+			estNNZ = (long) ((rlen%brlen)*(clen%bclen)*sparsity);
+			blocks[3] = new MatrixBlock( (int)(rlen%brlen), (int)(clen%bclen), sparse, (int)estNNZ );
 		}
 		
 		//space allocation

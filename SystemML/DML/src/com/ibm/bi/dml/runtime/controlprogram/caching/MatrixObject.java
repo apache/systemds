@@ -443,7 +443,7 @@ public class MatrixObject extends CacheableData
 		super.release();
 		
 		if(     isCached() //not empty and not read/modify
-		    && (_data.getNumRows()*_data.getNumColumns() > CACHING_THRESHOLD) ) //min size for caching
+		    && (((long)_data.getNumRows())*((long)_data.getNumColumns()) > CACHING_THRESHOLD) ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) 
 			{
@@ -464,6 +464,8 @@ public class MatrixObject extends CacheableData
 			createCache();
 			_data = null;			
 		}
+		else if( LDEBUG )
+			System.out.println("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString()); 
 	}
 
 	/**
@@ -842,7 +844,7 @@ public class MatrixObject extends CacheableData
 	
 
 	@Override
-	protected boolean isBlobPresent()
+	public boolean isBlobPresent()
 	{
 		return (_data != null);
 	}

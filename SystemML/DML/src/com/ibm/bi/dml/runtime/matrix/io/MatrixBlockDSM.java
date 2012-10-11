@@ -2990,7 +2990,19 @@ public class MatrixBlockDSM extends MatrixValue{
 			t += quickGetValue(i,1);
 		} while(t<pos && i < getNumRows());
 		
-		return quickGetValue(i,0);
+		if ( sum_wt%2 == 1 ) {
+			// sum_wt is odd
+			return quickGetValue(i,0);
+		}
+		else {
+			// sum_wt is even
+			if ( pos+1 <= t ) {
+				return quickGetValue(i,0);
+			}
+			else {
+				return (quickGetValue(i,0)+quickGetValue(i+1,0))/2;
+			}
+		}
 	}
 	
 	

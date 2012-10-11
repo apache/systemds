@@ -156,7 +156,7 @@ class OptimizerGreedyEnum extends Optimizer
 	public boolean test(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		OptNode lroot = plan.getRoot();
+		//OptNode lroot = plan.getRoot();
 
 		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<Long>());
 		OptNode absRoot = absPlan.getRoot();

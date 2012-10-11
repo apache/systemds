@@ -52,14 +52,14 @@ public class CostEstimatorHops extends CostEstimator
 				value = DEFAULT_MEM_MR;
 			else if ( value >= Hops.getMemBudget(true) )
 			{
-				System.out.println("ParFOR Opt: Warning: memory estimate larger than budget but CP exec type ("+h.getOpString()+" "+h.get_name()+", memest="+h.getMemEstimate()+").");
+				System.out.println("ParFOR Opt: Warning: memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_MR;
 			}
 		}
 		
 		if( value <= 0 ) //no mem estimate
 		{
-			System.out.println("ParFOR Opt: Warning cannot get memory estimate for hop type "+h.getOpString()+".");
+			System.out.println("ParFOR Opt: Warning cannot get memory estimate for hop (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		}
 		

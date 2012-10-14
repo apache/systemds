@@ -333,8 +333,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					{
 						long row_offset = (key.getRowIndex()-1)*brlen;
 						long col_offset = (key.getColumnIndex()-1)*bclen;
-						int rows = value.getNumRows();
-						int cols = value.getNumColumns();
+						long rows = value.getNumRows();
+						long cols = value.getNumColumns();
 						
 						//bound check per block
 						if( row_offset + rows < 1 || row_offset + rows > rlen || col_offset + cols<1 || col_offset + cols > clen )
@@ -420,8 +420,8 @@ public class DataPartitionerLocal extends DataPartitioner
 					{
 						long row_offset = (key.getRowIndex()-1)*brlen;
 						long col_offset = (key.getColumnIndex()-1)*bclen;
-						int rows = value.getNumRows();
-						int cols = value.getNumColumns();
+						long rows = value.getNumRows();
+						long cols = value.getNumColumns();
 						
 						//bound check per block
 						if( row_offset + rows < 1 || row_offset + rows > rlen || col_offset + cols<1 || col_offset + cols > clen )
@@ -518,8 +518,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
 		int nnz = mb.getNonZeros();
-		int rows = mb.getNumRows();
-		int cols = mb.getNumColumns();
+		long rows = mb.getNumRows();
+		long cols = mb.getNumColumns();
 		double sparsity = ((double)nnz)/(rows*cols);
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 

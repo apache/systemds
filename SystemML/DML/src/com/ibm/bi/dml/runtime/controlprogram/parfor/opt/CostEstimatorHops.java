@@ -14,7 +14,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class CostEstimatorHops extends CostEstimator
 {
-	public static double DEFAULT_MEM_MR = -1;
+	public static long DEFAULT_MEM_MR = -1;
 	
 	private OptTreePlanMappingAbstract _map = null;
 	

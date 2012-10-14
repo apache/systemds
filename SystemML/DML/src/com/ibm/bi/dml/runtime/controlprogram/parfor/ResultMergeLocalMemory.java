@@ -134,10 +134,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 			{
 				//get old output matrix from cache for compare
 				//NOTE: always in dense representation in order to allow for parallel unsynchronized access 
-				int rows = outMB.getNumRows();
-				int cols = outMB.getNumColumns();
-				MatrixBlock outMBNew = new MatrixBlock(rows, cols, false);
-				outMBNew.spaceAllocForDenseUnsafe(rows, cols);
+				long rows = outMB.getNumRows();
+				long cols = outMB.getNumColumns();
+				MatrixBlock outMBNew = new MatrixBlock((int)rows, (int)cols, false);
+				outMBNew.spaceAllocForDenseUnsafe((int)rows, (int)cols);
 				
 				//create compare matrix if required (existing data in result)
 				_compare = createCompareMatrix(outMB);
@@ -277,7 +277,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 	private class ResultMergeWorker implements Runnable
 	{
 		private MatrixObject _inMO  = null;
-		private MatrixBlock     _outMB = null;
+		private MatrixBlock  _outMB = null;
 		
 		public ResultMergeWorker(MatrixObject inMO, MatrixBlock outMB)
 		{

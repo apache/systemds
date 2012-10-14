@@ -263,8 +263,8 @@ public class DataPartitionerRemoteMapper
 				
 				boolean sparse = value2.isInSparseFormat();
 				int nnz = value2.getNonZeros();
-				int rows = value2.getNumRows();
-				int cols = value2.getNumColumns();
+				long rows = value2.getNumRows();
+				long cols = value2.getNumColumns();
 				double sparsity = ((double)nnz)/(rows*cols);
 				
 				//bound check per block
@@ -278,9 +278,9 @@ public class DataPartitionerRemoteMapper
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						tmp = new MatrixBlock( 1, cols, sparse, (int)(cols*sparsity) );
+						tmp = new MatrixBlock( 1, (int)cols, sparse, (int)(cols*sparsity) );
 						if(!sparse)
-							tmp.spaceAllocForDenseUnsafe(1, cols);				
+							tmp.spaceAllocForDenseUnsafe(1, (int)cols);				
 						for( int i=0; i<rows; i++ )
 						{
 							longKey.set(row_offset+1+i);
@@ -319,8 +319,8 @@ public class DataPartitionerRemoteMapper
 						out.collect(longKey, pairValue);
 						break;
 					case COLUMN_WISE:
-						tmp = new MatrixBlock( rows, 1, false ); //cols always dense
-						tmp.spaceAllocForDenseUnsafe(rows, 1);
+						tmp = new MatrixBlock( (int)rows, 1, false ); //cols always dense
+						tmp.spaceAllocForDenseUnsafe((int)rows, 1);
 						for( int i=0; i<cols; i++ )
 						{
 							longKey.set(col_offset+1+i);
@@ -394,8 +394,8 @@ public class DataPartitionerRemoteMapper
 				long col_offset = (key2.getColumnIndex()-1)*_bclen;
 				
 				boolean sparse = value2.isInSparseFormat();
-				int rows = value2.getNumRows();
-				int cols = value2.getNumColumns();
+				long rows = value2.getNumRows();
+				long cols = value2.getNumColumns();
 				
 				//bound check per block
 				if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )

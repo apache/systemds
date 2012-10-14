@@ -13,20 +13,28 @@ public class Statistics {
 	/** number of compiled MR jobs */
 	private static int iNoOfCompiledMRJobs = 0;
 
-	public static void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
+	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
 
-	public static int getNoOfExecutedMRJobs() {
+	public static synchronized int getNoOfExecutedMRJobs() {
 		return iNoOfExecutedMRJobs;
 	}
+	
+	public static synchronized void incrementNoOfExecutedMRJobs() {
+		iNoOfExecutedMRJobs ++;
+	}
 
-	public static void setNoOfCompiledMRJobs(int iNoOfCompiledMRJobs) {
+	public static synchronized void setNoOfCompiledMRJobs(int iNoOfCompiledMRJobs) {
 		Statistics.iNoOfCompiledMRJobs = iNoOfCompiledMRJobs;
 	}
 
-	public static int getNoOfCompiledMRJobs() {
+	public static synchronized int getNoOfCompiledMRJobs() {
 		return iNoOfCompiledMRJobs;
+	}
+	
+	public static synchronized void incrementNoOfCompiledMRJobs() {
+		iNoOfCompiledMRJobs ++;
 	}
 
 	/**

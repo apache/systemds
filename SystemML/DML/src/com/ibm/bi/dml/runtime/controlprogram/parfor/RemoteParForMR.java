@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
@@ -58,6 +59,8 @@ public class RemoteParForMR
 		job = new JobConf( RemoteParForMR.class );
 		job.setJobName("ParFor_Execute-MR"+pfid);
 		
+		//maintain dml script counters
+		Statistics.incrementNoOfCompiledMRJobs();
 	
 		try
 		{
@@ -147,13 +150,12 @@ public class RemoteParForMR
 			// execute the MR job			
 			RunningJob runjob = JobClient.runJob(job);
 			
-			
 			// Process different counters 
+			Statistics.incrementNoOfExecutedMRJobs();
 			Counters group = runjob.getCounters();
 			int numTasks = (int)group.getCounter( Stat.PARFOR_NUMTASKS );
 			int numIters = (int)group.getCounter( Stat.PARFOR_NUMITERS );
-			
-			
+				
 			// read all files of result variables and prepare for return
 			LocalVariableMap[] results = readResultFile(resultFile); 
 

@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
@@ -52,6 +53,9 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
 		job.setJobName("ParFor_Partition-MR"+_pfid);
+
+		//maintain dml script counters
+		Statistics.incrementNoOfCompiledMRJobs();
 		
 		try
 		{
@@ -143,6 +147,9 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			// execute the MR job	
 			
 			JobClient.runJob(job);
+		
+			//maintain dml script counters
+			Statistics.incrementNoOfExecutedMRJobs();
 		}
 		catch(Exception ex)
 		{

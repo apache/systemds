@@ -105,6 +105,7 @@ public class ParForResultMergeTest
 		testMatrixResultMerge( true, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 
+	/*
 	@Test
 	public void testMemParallelDenseEmptyTextCell() 
 	{
@@ -176,7 +177,8 @@ public class ParForResultMergeTest
 	{
 		testMatrixResultMerge( true, true, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
-
+	 */
+	
 	@Test
 	public void testFileSerialDenseEmptyTextCell() 
 	{
@@ -319,8 +321,7 @@ public class ParForResultMergeTest
 			//read matrix
 			MatrixBlock ret = DataConverter.readMatrixFromHDFS(_fname+"out", ii, _rows, _cols, _brlen, _bclen);
 			double[][] retMat = DataConverter.convertToDoubleMatrix(ret);
-			
-
+	
 			//cleanup
 			moOut.clearData();
 			tmpRet.clearData();

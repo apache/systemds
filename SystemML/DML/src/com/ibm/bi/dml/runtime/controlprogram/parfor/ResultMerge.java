@@ -30,7 +30,7 @@ public abstract class ResultMerge
 	//inputs to result merge
 	protected MatrixObject   _output      = null;
 	protected MatrixObject[] _inputs      = null; 
-	protected String            _outputFName = null;
+	protected String         _outputFName = null;
 	
 	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
@@ -106,7 +106,8 @@ public abstract class ResultMerge
 					}
 		}	
 		
-		out.examSparsity();
+		//change sparsity if required
+		out.examSparsity(); 
 	}
 
 	/**
@@ -127,7 +128,7 @@ public abstract class ResultMerge
 			int cols = in.getNumColumns();
 				for( int i=0; i<rows; i++ )
 					for( int j=0; j<cols; j++ )
-					{
+					{	
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
 						if( value != compare[i][j] )  //for new values only (div)
 							out.quickSetValue( i, j, value );	
@@ -143,12 +144,13 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
-						if( value != compare[i][j] )  //for new values only (div)
-							out.quickSetValue( i, j, value );	
+					    if( value != compare[i][j] )  //for new values only (div)
+					    	out.quickSetValue( i, j, value );	
 					}
 		}	
 		
-		out.examSparsity();
+		//change sparsity if required 
+		out.examSparsity(); 
 	}
 	
 

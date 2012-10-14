@@ -41,6 +41,8 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -797,7 +799,7 @@ public class ResultMergeLocalFile extends ResultMerge
 						int maxRow = (int)(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
 						int maxCol = (int)(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
 				
-						mb = new MatrixBlock(maxRow, maxCol, false);
+						mb = new MatrixBlock(maxRow, maxCol, true);
 					}	
 					
 					//mb.examSparsity(); //done on write anyway and mb not reused
@@ -887,27 +889,47 @@ public class ResultMergeLocalFile extends ResultMerge
 							}	
 						}
 					}
-					
+
+					//write the block to text cell
 					if( mb!=null )
 					{
-						//always dense, note: specific cases required 
-						for( int i=0; i<brlen; i++ )
-							for( int j=0; j<bclen; j++ )
+						if( mb.isInSparseFormat() )
+						{
+							SparseCellIterator iter = mb.getSparseCellIterator();
+							while( iter.hasNext() )
 							{
-								double lvalue = mb.getValueDenseUnsafe(i, j);
-								if( lvalue != 0 ) //for nnz
+								IJV lcell = iter.next();
+								sb.append(row_offset+lcell.i);
+								sb.append(' ');
+								sb.append(col_offset+lcell.j);
+								sb.append(' ');
+								sb.append(lcell.v);
+								sb.append('\n');
+								out.write( sb.toString() ); 
+								sb.setLength(0);
+								written = true;
+							}							
+						}
+						else
+						{
+							for( int i=0; i<brlen; i++ )
+								for( int j=0; j<bclen; j++ )
 								{
-									sb.append(row_offset+i);
-									sb.append(' ');
-									sb.append(col_offset+j);
-									sb.append(' ');
-									sb.append(lvalue);
-									sb.append('\n');
-									out.write( sb.toString() ); 
-									sb.setLength(0);
-									written = true;
+									double lvalue = mb.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //for nnz
+									{
+										sb.append(row_offset+i);
+										sb.append(' ');
+										sb.append(col_offset+j);
+										sb.append(' ');
+										sb.append(lvalue);
+										sb.append('\n');
+										out.write( sb.toString() ); 
+										sb.setLength(0);
+										written = true;
+									}
 								}
-							}
+						}
 					}				
 				}	
 			
@@ -998,21 +1020,36 @@ public class ResultMergeLocalFile extends ResultMerge
 						}
 					}
 					
+					//write the block to binary cell
 					if( mb!=null )
 					{
-						//always dense, note: specific cases required 
-						for( int i=0; i<brlen; i++ )
-							for( int j=0; j<bclen; j++ )
+						if( mb.isInSparseFormat() )
+						{
+							SparseCellIterator iter = mb.getSparseCellIterator();
+							while( iter.hasNext() )
 							{
-								double lvalue = mb.getValueDenseUnsafe(i, j);
-								if( lvalue != 0 ) //for nnz
-								{
-									indexes.setIndexes(row_offset+i, col_offset+j);
-									cell.setValue(lvalue);
-									out.append(indexes,cell);
-									written = true;
-								}
+								IJV lcell = iter.next();
+								indexes.setIndexes(row_offset+lcell.i, col_offset+lcell.j);
+								cell.setValue(lcell.v);
+								out.append(indexes,cell);
+								written = true;
 							}
+						}
+						else
+						{
+							for( int i=0; i<brlen; i++ )
+								for( int j=0; j<bclen; j++ )
+								{
+									double lvalue = mb.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //for nnz
+									{
+										indexes.setIndexes(row_offset+i, col_offset+j);
+										cell.setValue(lvalue);
+										out.append(indexes,cell);
+										written = true;
+									}
+								}
+						}
 					}				
 				}	
 			

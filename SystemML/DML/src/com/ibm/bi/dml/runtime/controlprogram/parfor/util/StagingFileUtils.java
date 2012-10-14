@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class StagingFileUtils 
 {
@@ -89,10 +90,17 @@ public class StagingFileUtils
 	}
 
 	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen ) 
-		throws IOException 
+	throws IOException, DMLRuntimeException 
 	{
-		MatrixBlock tmp = new MatrixBlock( brlen, bclen, false );
-		tmp.spaceAllocForDenseUnsafe(brlen, bclen);
+		return readCellList2BlockFromLocal( fname, brlen, bclen, false );
+	}
+	
+	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen, boolean sparse ) 
+		throws IOException, DMLRuntimeException 
+	{
+		MatrixBlock tmp = new MatrixBlock( brlen, bclen, sparse );
+		if( !sparse )
+			tmp.spaceAllocForDenseUnsafe(brlen, bclen);
 		
 		FileInputStream fis = new FileInputStream( fname );
 		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
@@ -100,14 +108,31 @@ public class StagingFileUtils
 		{
 			String value = null;
 			long row, col;
-			while( (value=in.readLine())!=null )
+			if( sparse )
 			{
-				String cellStr = value.toString().trim();							
-				StringTokenizer st = new StringTokenizer(cellStr, " ");
-				row = Long.parseLong( st.nextToken() );
-				col = Long.parseLong( st.nextToken() );
-				double lvalue = Double.parseDouble( st.nextToken() );
-				tmp.setValueDenseUnsafe((int)row, (int)col, lvalue);
+				while( (value=in.readLine())!=null )
+				{
+					String cellStr = value.toString().trim();							
+					StringTokenizer st = new StringTokenizer(cellStr, " ");
+					row = Long.parseLong( st.nextToken() );
+					col = Long.parseLong( st.nextToken() );
+					double lvalue = Double.parseDouble( st.nextToken() );
+					tmp.quickSetValue((int)row, (int)col, lvalue);
+				}
+			}
+			else
+			{
+				while( (value=in.readLine())!=null )
+				{
+					String cellStr = value.toString().trim();							
+					StringTokenizer st = new StringTokenizer(cellStr, " ");
+					row = Long.parseLong( st.nextToken() );
+					col = Long.parseLong( st.nextToken() );
+					double lvalue = Double.parseDouble( st.nextToken() );
+					tmp.setValueDenseUnsafe((int)row, (int)col, lvalue);
+				}
+				
+				tmp.recomputeNonZeros();
 			}
 		}
 		finally
@@ -116,6 +141,9 @@ public class StagingFileUtils
 				in.close();
 		}
 			
+		//finally change internal representation if required
+		tmp.examSparsity();
+		
 		return tmp;
 	}
 	

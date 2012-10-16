@@ -7,9 +7,9 @@ import com.ibm.bi.dml.utils.LanguageException;
 
 public class BuiltinFunctionExpression extends DataIdentifier {
 
-	private Expression _first;
-	private Expression _second;
-	private Expression _third;
+	private Expression  	  _first;
+	private Expression  	  _second;
+	private Expression 		  _third;
 	private BuiltinFunctionOp _opcode;
 
 
@@ -187,7 +187,29 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			//checkMatchingDimensions();
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
-			output.setDimensions(-1, -1); // unknown output dimensions at compile time
+			
+			// set output dimensions
+			long appendDim1 = -1, appendDim2 = -1;
+			if (_first.getOutput().getDim1() > 0 && _second.getOutput().getDim1() > 0){
+				if (_first.getOutput().getDim1() != _second.getOutput().getDim1()){
+					throw new LanguageException(this.printErrorLocation() +
+							"inputs to append must have same number of rows: input 1 rows: " + 
+							_first.getOutput().getDim1() +  ", input 2 rows " + _second.getOutput().getDim1(),
+							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+				appendDim1 = _first.getOutput().getDim1();
+			}
+			else if (_first.getOutput().getDim1() > 0)	
+				appendDim1 = _first.getOutput().getDim1(); 
+			else if (_second.getOutput().getDim1() > 0 )
+				appendDim1 = _second.getOutput().getDim1(); 
+				
+			if (_first.getOutput().getDim2() > 0 && _second.getOutput().getDim2() > 0){
+				appendDim2 = _first.getOutput().getDim2() + _second.getOutput().getDim2();
+			}
+			
+			output.setDimensions(appendDim1, appendDim2); 
+			
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
 			break;
 		case PMIN:

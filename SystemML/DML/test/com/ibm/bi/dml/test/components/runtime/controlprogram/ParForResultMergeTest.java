@@ -9,10 +9,12 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeRemoteMR;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -27,82 +29,82 @@ public class ParForResultMergeTest
 	private int _brlen = 1000;
 	private int _bclen = 1000;
 	private int _rows = 3500;
-	private int _cols = 2500;
+	private int _cols = 2500; 
 	private int _par = 4; 
 	private double _sparsity1 = 0.3d;
 	private double _sparsity2 = 0.7d;
-	private String _fname = "./scratch_space/B";
+	private String _fname = "./scratch_space/B2";
 
 	@Test
 	public void testMemSerialDenseEmptyTextCell() 
 	{
-		testMatrixResultMerge( true, false, false, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testMemSerialDenseEmptyBinaryCell() 
 	{
-		testMatrixResultMerge( true, false, false, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialDenseEmptyBinaryBlock() 
 	{
-		testMatrixResultMerge( true, false, false, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialSparseEmptyTextCell() 
 	{
-		testMatrixResultMerge( true, false, true, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testMemSerialSparseEmptyBinaryCell() 
 	{
-		testMatrixResultMerge( true, false, true, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialSparseEmptyBinaryBlock() 
 	{
-		testMatrixResultMerge( true, false, true, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 
 	@Test
 	public void testMemSerialDenseFullTextCell() 
 	{
-		testMatrixResultMerge( true, false, false, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testMemSerialDenseFullBinaryCell() 
 	{
-		testMatrixResultMerge( true, false, false, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialDenseFullBinaryBlock() 
 	{
-		testMatrixResultMerge( true, false, false, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, false, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialSparseFullTextCell() 
 	{
-		testMatrixResultMerge( true, false, true, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testMemSerialSparseFullBinaryCell() 
 	{
-		testMatrixResultMerge( true, false, true, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testMemSerialSparseFullBinaryBlock() 
 	{
-		testMatrixResultMerge( true, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_MEM, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 
 	/*
@@ -182,79 +184,154 @@ public class ParForResultMergeTest
 	@Test
 	public void testFileSerialDenseEmptyTextCell() 
 	{
-		testMatrixResultMerge( false, false, false, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testFileSerialDenseEmptyBinaryCell() 
 	{
-		testMatrixResultMerge( false, false, false, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testFileSerialDenseEmptyBinaryBlock() 
 	{
-		testMatrixResultMerge( false, false, false, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 	
 	
 	@Test
 	public void testFileSerialSparseEmptyTextCell() 
 	{
-		testMatrixResultMerge( false, false, true, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testFileSerialSparseEmptyBinaryCell() 
 	{
-		testMatrixResultMerge( false, false, true, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	
 	@Test
 	public void testFileSerialSparseEmptyBinaryBlock() 
 	{
-		testMatrixResultMerge( false, false, true, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 	
 	@Test
 	public void testFileSerialDenseFullTextCell() 
 	{
-		testMatrixResultMerge( false, false, false, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testFileSerialDenseFullBinaryCell() 
 	{
-		testMatrixResultMerge( false, false, false, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testFileSerialDenseFullBinaryBlock() 
 	{
-		testMatrixResultMerge( false, false, false, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, false, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
 	}
 	
 	@Test
 	public void testFileSerialSparseFullTextCell() 
 	{
-		testMatrixResultMerge( false, false, true, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
 	}
 
 	@Test
 	public void testFileSerialSparseFullBinaryCell() 
 	{
-		testMatrixResultMerge( false, false, true, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	@Test
 	public void testFileSerialSparseFullBinaryBlock() 
 	{
-		testMatrixResultMerge( false, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+		testMatrixResultMerge( PResultMerge.LOCAL_FILE, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+	}
+	
+	//REMOTE_MR result merge
+	
+	@Test
+	public void testRemoteDenseEmptyTextCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteDenseEmptyBinaryCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteDenseEmptyBinaryBlock() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteSparseEmptyTextCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, true, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+	}
+
+	@Test
+	public void testRemoteSparseEmptyBinaryCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, true, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
 	}
 	
 	
-	private void testMatrixResultMerge( boolean inmemory, boolean parallel, boolean sparse, boolean initialEmpty, InputInfo ii, OutputInfo oi )
+	@Test
+	public void testRemoteSparseEmptyBinaryBlock() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, true, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteDenseFullTextCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+	}
+
+	@Test
+	public void testRemoteDenseFullBinaryCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteDenseFullBinaryBlock() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, false, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteSparseFullTextCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, false, InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo );
+	}
+
+	@Test
+	public void testRemoteSparseFullBinaryCell() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, false, InputInfo.BinaryCellInputInfo, OutputInfo.BinaryCellOutputInfo );
+	}
+	
+	@Test
+	public void testRemoteSparseFullBinaryBlock() 
+	{
+		testMatrixResultMerge( PResultMerge.REMOTE_MR, false, true, false, InputInfo.BinaryBlockInputInfo, OutputInfo.BinaryBlockOutputInfo );
+	}
+	 
+	
+	private void testMatrixResultMerge( PResultMerge type , boolean parallel, boolean sparse, boolean initialEmpty, InputInfo ii, OutputInfo oi )
 	{
 		double sparsity = sparse ? _sparsity1 : _sparsity2;
 		
@@ -268,6 +345,7 @@ public class ParForResultMergeTest
 			
 			//create and write original matrix
 			MatrixBlock retOld = DataConverter.convertToMatrixBlock(matrixOld);
+			retOld.computeNonZeros();
 			retOld.examSparsity();
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, retOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
@@ -304,10 +382,18 @@ public class ParForResultMergeTest
 			
 			
 			ResultMerge rm = null;
-			if( inmemory )
-				rm = new ResultMergeLocalMemory(moOut, in, _fname+"out" );
-			else //filebased
-				rm = new ResultMergeLocalFile( moOut, in, _fname+"out" );
+			switch( type )
+			{
+				case LOCAL_MEM:
+					rm = new ResultMergeLocalMemory(moOut, in, _fname+"out" );
+					break;
+				case LOCAL_FILE:
+					rm = new ResultMergeLocalFile( moOut, in, _fname+"out" );
+					break;
+				case REMOTE_MR:
+					rm = new ResultMergeRemoteMR( moOut, in, _fname+"out", 7, 4, 4, 3, 1, false );
+					break;
+			}
 			
 			//execute result merge
 			MatrixObject tmpRet = null;

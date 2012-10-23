@@ -109,6 +109,13 @@ public class MRJobConfiguration {
 	private static final String PARTITIONING_OUTPUT_FORMAT_CONFIG="partitioning.output.format";
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	
+	//result merge info
+	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_ROW_CONFIG="partitioning.input.block.num.row";
+	//private static final String RESULTMERGE_INPUT_BLOCK_NUM_COLUMN_CONFIG="partitioning.input.block.num.column";
+	private static final String RESULTMERGE_INPUT_INFO_CONFIG="resultmerge.input.inputinfo";
+	private static final String RESULTMERGE_COMPARE_FILENAME_CONFIG="resultmerge.compare.filename";
+	private static final String RESULTMERGE_STAGING_DIR_CONFIG="resultmerge.staging.dir";
+	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
 	private static final String INSTRUCTIONS_IN_REDUCER_CONFIG="instructions.in.reducer";
@@ -528,6 +535,27 @@ public class MRJobConfiguration {
 		return job.get(PARTITIONING_OUTPUT_FILENAME_CONFIG);
 	}
 	
+	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir )
+	{
+		job.set(RESULTMERGE_COMPARE_FILENAME_CONFIG, fnameNew);
+		job.set(RESULTMERGE_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
+		job.set(RESULTMERGE_STAGING_DIR_CONFIG, stagingDir);
+	}
+	
+	public static String getResultMergeInfoCompareFilename( JobConf job )
+	{
+		return job.get(RESULTMERGE_COMPARE_FILENAME_CONFIG);
+	}
+	
+	public static InputInfo getResultMergeInputInfo( JobConf job )
+	{
+		return InputInfo.stringToInputInfo( job.get(RESULTMERGE_INPUT_INFO_CONFIG) );
+	}
+	
+	public static String getResultMergeStagingDir( JobConf job )
+	{
+		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get("mapred.tip.id");
+	}
 	
 	public static byte[] getOutputIndexesInMapper(JobConf job)
 	{

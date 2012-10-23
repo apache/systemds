@@ -32,12 +32,18 @@ public abstract class ResultMerge
 	protected MatrixObject[] _inputs      = null; 
 	protected String         _outputFName = null;
 	
+	protected ResultMerge( )
+	{
+		
+	}
+	
 	public ResultMerge( MatrixObject out, MatrixObject[] in, String outputFilename )
 	{
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
-	
+		
+		
 		//configure staging dir root
 		DMLConfig conf = ConfigurationManager.getConfig();
 		if( conf != null )

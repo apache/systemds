@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeRemoteMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoring;
@@ -81,6 +82,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * TODO currently it seams that there is a general issue with JVM reuse in Hadoop 1.0.3
  * (Error Task log directory for task attempt_201209251949_2586_m_000014_0 does not exist. May be cleaned up by Task Tracker, if older logs.)      
  *       
+ * TODO: leftindexing recompile/partitioning
+ * TODO: remote result merge      
  * 
  * NEW PERFORMANCE IMPROVEMENTS (probably not for BI 2.0 release)
  * TODO: parallel local file-based result merge
@@ -128,7 +131,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	public enum PResultMerge {
 		LOCAL_MEM,  // in-core (in-memory) result merge (output and one input at a time)
 		LOCAL_FILE, // out-of-core result merge (file format dependent)
-		LOCAL_AUTOMATIC //decides between MEM and FILE based on the size of the output matrix 
+		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix //TODO move to optimizer
+		REMOTE_MR // remote parallel result merge
 	}
 	
 	//optimizer
@@ -327,6 +331,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		_dataPartitioner = partitioner;
 		_params.put(ParForStatementBlock.DATA_PARTITIONER, String.valueOf(_dataPartitioner)); //kept up-to-date for copies
+	}
+	
+	public void setResultMerge(PResultMerge merge) 
+	{
+		_resultMerge = merge;
+		_params.put(ParForStatementBlock.RESULT_MERGE, String.valueOf(_resultMerge)); //kept up-to-date for copies
 	}
 	
 	public int getNumIterations()
@@ -1022,6 +1032,15 @@ public class ParForProgramBlock extends ForProgramBlock
 			case LOCAL_AUTOMATIC:
 				rm = new ResultMergeLocalAutomatic( out, in, fname );
 				break;
+			case REMOTE_MR:
+				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+				rm = new ResultMergeRemoteMR( out, in, fname, _ID, 
+					                          Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
+					                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
+					                          WRITE_REPLICATION_FACTOR, 
+					                          MAX_RETRYS_ON_ERROR, 
+					                          ALLOW_REUSE_MR_JVMS );
+				break;	
 			default:
 				throw new DMLRuntimeException("Undefined result merge: '" +prm.toString()+"'.");
 		}

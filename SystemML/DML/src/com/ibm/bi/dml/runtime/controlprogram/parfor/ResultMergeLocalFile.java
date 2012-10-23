@@ -60,9 +60,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 public class ResultMergeLocalFile extends ResultMerge
 {
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
-	private static final boolean ALLOW_COPY_CELLFILES = false;	
+	public static final boolean ALLOW_COPY_CELLFILES = false;	
 	private static final String COMPARE_NAME_SUFFIX = "_compare";
-	private static final int CELL_BUFFER_SIZE = 100000;
 	
 	//internal comparison matrix
 	private IDSequence _seq = null;
@@ -139,7 +138,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	public MatrixObject executeParallelMerge(int par) 
 		throws DMLRuntimeException 
 	{
-		throw new DMLRuntimeException("not suported yet.");
+		//graceful degradation to serial merge
+		return executeSerialMerge();
 	}
 
 	/**
@@ -603,7 +603,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					Cell tmp = new Cell( row, col, lvalue ); 
 	
 					buffer.addLast( tmp );
-					if( buffer.size() > CELL_BUFFER_SIZE ) //periodic flush
+					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
 						appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
 						buffer.clear();
@@ -611,8 +611,11 @@ public class ResultMergeLocalFile extends ResultMerge
 				}
 				
 				//final flush
-				appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
-				buffer.clear();
+				if( buffer.size() > 0 )
+				{
+					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+					buffer.clear();
+				}
 			}
 			finally
 			{
@@ -658,7 +661,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					Cell tmp = new Cell( key.getRowIndex(), key.getColumnIndex(), value.getValue() ); 
 	
 					buffer.addLast( tmp );
-					if( buffer.size() > CELL_BUFFER_SIZE ) //periodic flush
+					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
 						appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
 						buffer.clear();
@@ -666,8 +669,11 @@ public class ResultMergeLocalFile extends ResultMerge
 				}
 				
 				//final flush
-				appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
-				buffer.clear();
+				if( buffer.size() > 0 )
+				{
+					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+					buffer.clear();
+				}
 			}
 			finally
 			{

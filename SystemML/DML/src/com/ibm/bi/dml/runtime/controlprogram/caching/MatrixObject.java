@@ -441,8 +441,9 @@ public class MatrixObject extends CacheableData
 		}
 		
 		super.release();
-		
-		if(     isCached() //not empty and not read/modify
+
+		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem) //TODO
+			&& isCached() //not empty and not read/modify
 		    && (((long)_data.getNumRows())*((long)_data.getNumColumns()) > CACHING_THRESHOLD) ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) 

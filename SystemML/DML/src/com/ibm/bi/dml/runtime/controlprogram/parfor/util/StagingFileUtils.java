@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
@@ -16,6 +18,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class StagingFileUtils 
 {
+	public static final int CELL_BUFFER_SIZE = 100000;
 	
 	/**
 	 * 
@@ -52,6 +55,94 @@ public class StagingFileUtils
 		}	
 	}
 
+	public static void writeKeyMappingToLocal( String fname, long[][] keys ) 
+		throws IOException
+	{
+		FileOutputStream fos = new FileOutputStream( fname, true );
+		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos));	
+		try 
+		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
+			for( long[] key : keys )
+			{
+				sb.append(key[0]);
+				sb.append(' ');
+				sb.append(key[1]);
+				sb.append('\n');
+				out.write( sb.toString() );
+				sb.setLength(0);
+			}
+		}
+		finally
+		{
+			if( out != null )
+				out.close();	
+		}	
+	}
+
+	public static BufferedReader openKeyMap( String name ) 
+		throws FileNotFoundException
+	{
+		FileInputStream fis = new FileInputStream( name );
+		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
+		return in;
+	}
+	
+	public static void nextKeyMap( BufferedReader in, HashMap<Integer,HashMap<Long,Long>> map, int bi, int blen ) 
+		throws NumberFormatException, IOException
+	{
+		String value = null;
+		while( (value=in.readLine())!=null )
+		{
+			String cellStr = value.toString().trim();							
+			StringTokenizer st = new StringTokenizer(cellStr, " ");
+			long row1 = Long.parseLong( st.nextToken() );
+			long row2 = Long.parseLong( st.nextToken() );
+			
+			int id = (int)row1/blen;
+			if( !map.containsKey(id) )
+				map.put(id, new HashMap<Long,Long>());
+			
+			map.get(id).put(row1, row2);
+			if( id > bi )
+				break;
+		}
+	}
+	
+	public static int nextSizedKeyMap( BufferedReader in, HashMap<Integer,HashMap<Long,Long>> map, int blen, int size ) 
+		throws NumberFormatException, IOException
+	{
+		String value = null;
+		int len = 0;
+		while( (value=in.readLine())!=null )
+		{
+			String cellStr = value.toString().trim();							
+			StringTokenizer st = new StringTokenizer(cellStr, " ");
+			long row1 = Long.parseLong( st.nextToken() );
+			long row2 = Long.parseLong( st.nextToken() );
+			
+			int id = (int)row1/blen;
+			if( !map.containsKey(id) )
+				map.put(id, new HashMap<Long,Long>());
+			
+			map.get(id).put(row1, row2);
+			len++;
+			
+			if( len >= size )
+				break;
+		}
+		
+		return len;
+	}
+	
+	public static void closeKeyMap( BufferedReader in ) 
+		throws IOException
+	{
+		if( in != null )
+			in.close();		
+	}
 	
 	/**
 	 * 
@@ -90,7 +181,7 @@ public class StagingFileUtils
 	}
 
 	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen ) 
-	throws IOException, DMLRuntimeException 
+		throws IOException, DMLRuntimeException 
 	{
 		return readCellList2BlockFromLocal( fname, brlen, bclen, false );
 	}
@@ -194,4 +285,6 @@ public class StagingFileUtils
 		//delete file itself
 		dir.delete();
 	}
+	
+	
 }

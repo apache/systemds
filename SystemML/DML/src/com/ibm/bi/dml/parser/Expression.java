@@ -30,7 +30,7 @@ public abstract class Expression {
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {
-		CDF, GROUPEDAGG, INVALID
+		CDF, GROUPEDAGG, RMEMPTY, INVALID
 	};
 	
 	public enum DataOp {

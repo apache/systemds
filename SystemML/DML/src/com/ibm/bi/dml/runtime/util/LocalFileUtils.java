@@ -69,6 +69,20 @@ public class LocalFileUtils
 				out.close ();	
 		}		
 	}
+
+	/**
+	 * 
+	 * @param dir
+	 */
+	public static void createLocalFileIfNotExist(String dir) 
+	{
+		File fdir = new File(dir);
+		if( !fdir.exists() )
+		{
+			fdir.mkdirs();
+		}
+	}
+	
 	
 	/**
 	 * 
@@ -101,4 +115,5 @@ public class LocalFileUtils
 		file.setWritable(   (sU&2)==2, (sO&2)==0 );
 		file.setReadable(   (sU&4)==4, (sO&4)==0 );
 	}
+
 }

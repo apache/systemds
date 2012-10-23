@@ -20,6 +20,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.CDF;
 		else if (functionName.equals("groupedAggregate"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;
+		else if (functionName.equals("removeEmpty"))
+			pbifop = Expression.ParameterizedBuiltinFunctionOp.RMEMPTY;
 		else
 			return null;
 		
@@ -180,6 +182,36 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			output.setDataType(DataType.SCALAR);
 			output.setValueType(ValueType.DOUBLE);
 			output.setDimensions(0, 0);
+
+			break;
+			
+		case RMEMPTY:
+
+			//check existence and correctness of arguments
+			Expression target = getVarParam("target");
+			if( target==null ) {
+				throw new LanguageException(this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( target.getOutput().getDataType() != DataType.MATRIX ){
+				throw new LanguageException(this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			}			
+			Expression margin = getVarParam("margin");
+			if( margin==null )
+			{
+				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' missing. Please specify 'rows' or 'cols'.",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
+				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.",
+						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			}
+			
+			// Output is a matrix with unknown dims
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setDimensions(-1, -1);
 
 			break;
 

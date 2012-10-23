@@ -2,6 +2,8 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.ParameterizedBuiltinCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.AggregateBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.AggregateUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.AppendCPInstruction;
@@ -28,6 +30,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 public class CPInstructionParser extends InstructionParser {
 
 	static public HashMap<String, CPINSTRUCTION_TYPE> String2CPInstructionType;
+	static public HashMap<String, CPINSTRUCTION_TYPE> String2CPFileInstructionType;
+	
 	static {
 		String2CPInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 
@@ -102,6 +106,7 @@ public class CPInstructionParser extends InstructionParser {
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "cdf"	 		, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "groupedagg"	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
@@ -135,13 +140,18 @@ public class CPInstructionParser extends InstructionParser {
 		
 		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
+	
 		
+		//CP FILE instruction
+		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
+
+		String2CPFileInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
 		if ( str == null || str.isEmpty() )
 			return null;
-		
+
 		CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
 		if ( cptype == null ) 
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
@@ -202,8 +212,12 @@ public class CPInstructionParser extends InstructionParser {
 			return (CPInstruction) FunctionCallCPInstruction.parseInstruction(str);
 			
 		case ParameterizedBuiltin: 
-			return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
-		
+			ExecType execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
+			if( execType == ExecType.CP )
+				return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
+			else //exectype CP_FILE
+				return (CPInstruction) ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
+			
 		case Sort: 
 			return (CPInstruction) SortCPInstruction.parseInstruction(str);
 		

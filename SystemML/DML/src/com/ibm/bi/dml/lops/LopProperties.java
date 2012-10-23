@@ -3,7 +3,7 @@ package com.ibm.bi.dml.lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 
 public class LopProperties {
-	public enum ExecType { CP, MR, INVALID };
+	public enum ExecType { CP, CP_FILE, MR, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 
 	// static variable to assign an unique ID to every lop that is created

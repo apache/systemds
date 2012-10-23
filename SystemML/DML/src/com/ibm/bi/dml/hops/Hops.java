@@ -894,7 +894,7 @@ abstract public class Hops {
 	};
 
 	public enum ParamBuiltinOp {
-		INVALID, CDF, GROUPEDAGG
+		INVALID, CDF, GROUPEDAGG, RMEMPTY
 	};
 
 	/**
@@ -1084,6 +1084,7 @@ abstract public class Hops {
 	static {
 		HopsParameterizedBuiltinLops = new HashMap<Hops.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 	}
 
 	static public HashMap<Hops.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format> HopsFileFormatTypes2Lops;

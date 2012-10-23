@@ -16,7 +16,7 @@ import com.ibm.bi.dml.utils.LopsException;
  */
 public class ParameterizedBuiltin extends Lops {
 
-	public enum OperationTypes { INVALID, CDF };
+	public enum OperationTypes { INVALID, CDF, RMEMPTY };
 	
 	OperationTypes operation;
 			
@@ -53,7 +53,7 @@ public class ParameterizedBuiltin extends Lops {
 		_inputParams = inputParametersLops;
 		
 		/*
-		 * This lop is executed in control program.
+		 * This lop is executed in control program. 
 		 */
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -61,8 +61,31 @@ public class ParameterizedBuiltin extends Lops {
 		lps.addCompatibility(JobType.INVALID);
 		this.lps.setProperties(ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 	}
+	
+	public ParameterizedBuiltin(ExecType et, HashMap<String, Lops> 
+		       inputParametersLops, OperationTypes op, DataType dt, ValueType vt) 
+	{
+		super(Lops.Type.ParameterizedBuiltin, dt, vt);
+		operation = op;
+		
+		for (Lops lop : inputParametersLops.values()) {
+			this.addInput(lop);
+			lop.addOutput(this);
+		}
+		
+		_inputParams = inputParametersLops;
+		
+		/*
+		 * This lop is executed in control program. 
+		 */
+		boolean breaksAlignment = false;
+		boolean aligner = false;
+		boolean definesMRJob = false;
+		lps.addCompatibility(JobType.INVALID);
+		this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+	}
 
-	// @Override
+	//@Override
 	public String getInstructions(String output) throws LopsException {
 		StringBuilder inst = new StringBuilder(getExecType() + Lops.OPERAND_DELIMITOR);
 
@@ -83,6 +106,24 @@ public class ParameterizedBuiltin extends Lops {
 				else {
 					inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");
 				}
+				inst.append(OPERAND_DELIMITOR);
+			}
+			break;
+			
+		case RMEMPTY:
+			inst.append("rmempty").append(OPERAND_DELIMITOR);
+			
+			for ( String s : _inputParams.keySet() ) {
+				
+				inst.append(s).append(NAME_VALUE_SEPARATOR);
+				
+				// get the value/label of the scalar input associated with name "s"
+				Lops iLop = _inputParams.get(s);
+				//System.out.println( iLop.getOutputParameters().getLabel()+" "+iLop.getExecLocation() );
+				//if ( iLop.getExecLocation() == ExecLocation.Data ) //TODO
+					inst.append(iLop.getOutputParameters().getLabel());
+				//else 
+				//	inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");
 				inst.append(OPERAND_DELIMITOR);
 			}
 			break;

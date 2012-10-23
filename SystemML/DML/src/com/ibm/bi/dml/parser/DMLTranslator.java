@@ -2562,6 +2562,11 @@ public class DMLTranslator {
 			currBuiltinOp = new ParameterizedBuiltinOp(
 					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.GROUPEDAGG, paramHops);
 			break;
+		
+		case RMEMPTY:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.RMEMPTY, paramHops);
+			break;
 			
 		default:
 			throw new ParseException(source.printErrorLocation() + 

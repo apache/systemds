@@ -18,7 +18,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	int arity;
-	HashMap<String,String> params;
+	protected HashMap<String,String> params;
 	
 	public ParameterizedBuiltinCPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String istr )
 	{
@@ -32,7 +32,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		return arity;
 	}
 	
-	private static HashMap<String, String> constructParameterMap(String[] params) {
+	protected static HashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
 		HashMap<String,String> paramMap = new HashMap<String,String>();
 		
@@ -45,9 +45,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		
 		return paramMap;
 	}
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
-
-
+	
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
@@ -65,7 +66,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist") );
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("groupedagg")) {
 			// check for mandatory arguments
 			String fnStr = paramsMap.get("fn");
@@ -78,6 +79,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, str);
+		}
+		else if ( opcode.equalsIgnoreCase("rmempty") ) {
+			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -116,6 +121,24 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			if ( params.get("weights") != null )
 				pb.releaseMatrixInput(params.get("weights"));
 			
+		}
+		else if ( opcode.equalsIgnoreCase("rmempty") ) {
+			// acquire locks
+			MatrixBlock target = pb.getMatrixInput(params.get("target"));
+			
+			// compute the result
+			String margin = params.get("margin");
+			MatrixBlock soresBlock = null;
+			if( margin.equals("rows") )
+				soresBlock = (MatrixBlock) target.removeEmptyRows(new MatrixBlock());
+			else if( margin.equals("cols") ) 
+				soresBlock = (MatrixBlock) target.removeEmptyColumns(new MatrixBlock());
+			else
+				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
+			
+			//release locks
+			pb.setMatrixOutput(output.get_name(), soresBlock);
+			pb.releaseMatrixInput(params.get("target"));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

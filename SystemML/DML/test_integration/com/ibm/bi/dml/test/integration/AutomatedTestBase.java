@@ -47,7 +47,7 @@ public abstract class AutomatedTestBase {
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
 	
-	protected static final RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	protected static final boolean DEBUG = false;
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;

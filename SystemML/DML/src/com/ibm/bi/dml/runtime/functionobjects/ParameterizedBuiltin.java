@@ -21,7 +21,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class ParameterizedBuiltin extends ValueFunction {
 	
-	public enum ParameterizedBuiltinCode { INVALID, CDF, CDF_NORMAL, CDF_EXP, CDF_CHISQ, CDF_F, CDF_T };
+	public enum ParameterizedBuiltinCode { INVALID, CDF, CDF_NORMAL, CDF_EXP, CDF_CHISQ, CDF_F, CDF_T, RMEMPTY };
 	public enum ProbabilityDistributionCode { INVALID, NORMAL, EXP, CHISQ, F, T };
 	
 	public ParameterizedBuiltinCode bFunc;
@@ -32,6 +32,7 @@ public class ParameterizedBuiltin extends ValueFunction {
 		String2ParameterizedBuiltinCode = new HashMap<String, ParameterizedBuiltinCode>();
 		
 		String2ParameterizedBuiltinCode.put( "cdf", ParameterizedBuiltinCode.CDF);
+		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
 	}
 	
 	static public HashMap<String, ProbabilityDistributionCode> String2DistCode;
@@ -60,35 +61,40 @@ public class ParameterizedBuiltin extends ValueFunction {
 		
 		ParameterizedBuiltinCode code = String2ParameterizedBuiltinCode.get(str);
 		
-		switch ( code ) {
-		case CDF:
-			// str2 will point the appropriate distribution
-			ProbabilityDistributionCode dcode = String2DistCode.get(str2.toLowerCase());
-			switch(dcode) {
-			case NORMAL:
-				if ( normalObj == null )
-					normalObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_NORMAL);
-				return normalObj;
-			case EXP:
-				if ( expObj == null )
-					expObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_EXP);
-				return expObj;
-			case CHISQ:
-				if ( chisqObj == null )
-					chisqObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_CHISQ);
-				return chisqObj;
-			case F:
-				if ( fObj == null )
-					fObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_F);
-				return fObj;
-			case T:
-				if ( tObj == null )
-					tObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_T);
-				return tObj;
-			default:
-				return null;
-			}
+		switch ( code ) 
+		{
+			case CDF:
+				// str2 will point the appropriate distribution
+				ProbabilityDistributionCode dcode = String2DistCode.get(str2.toLowerCase());
+				switch(dcode) {
+				case NORMAL:
+					if ( normalObj == null )
+						normalObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_NORMAL);
+					return normalObj;
+				case EXP:
+					if ( expObj == null )
+						expObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_EXP);
+					return expObj;
+				case CHISQ:
+					if ( chisqObj == null )
+						chisqObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_CHISQ);
+					return chisqObj;
+				case F:
+					if ( fObj == null )
+						fObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_F);
+					return fObj;
+				case T:
+					if ( tObj == null )
+						tObj = new ParameterizedBuiltin(ParameterizedBuiltinCode.CDF_T);
+					return tObj;
+				default:
+					return null;
+				}
+				
+			case RMEMPTY:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.RMEMPTY);
 		}
+		
 		
 		return null;
 	}

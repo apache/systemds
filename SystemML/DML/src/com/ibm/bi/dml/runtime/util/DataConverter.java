@@ -845,7 +845,7 @@ public class DataConverter
 	 * @param sparse
 	 * @return
 	 */
-	private static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros )
+	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros )
 	{
 		MatrixBlock[] blocks = new MatrixBlock[4];
 		double sparsity = ((double)nonZeros)/(rlen*clen);
@@ -895,7 +895,7 @@ public class DataConverter
 	 * @param bclen
 	 * @return
 	 */
-	private static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen )
+	public static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen )
 	{
 		int index = -1;
 		

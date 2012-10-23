@@ -3573,6 +3573,154 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		return result;
 	}
+
+	
+	/**
+	 * 
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue removeEmptyRows(MatrixValue ret) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//check for empty inputs
+		if( nonZeros==0 ) {
+			ret.reset(0, 0, false);
+			return ret;
+		}
+		
+		MatrixBlockDSM result = checkType(ret);
+		
+		//scan block and determine empty rows
+		int rlen2 = 0;
+		boolean[] flags = new boolean[ rlen ]; 
+		if( sparse ) 
+		{
+			for ( int i=0; i < sparseRows.length; i++ ) {
+				if ( sparseRows[i] != null &&  sparseRows[i].size() > 0 )
+				{
+					flags[i] = false;
+					rlen2++;
+				}
+				else
+					flags[i] = true;
+			}
+		}
+		else 
+		{
+			for(int i=0; i<rlen; i++) {
+				flags[i] = true;
+				int index = i*clen;
+				for(int j=0; j<clen; j++)
+					if( denseBlock[index++] != 0 )
+					{
+						flags[i] = false;
+						rlen2++;
+						break; //early abort for current row
+					}
+			}
+		}
+
+		//reset result and copy rows
+		result.reset(rlen2, clen, sparse);
+		int rindex = 0;
+		for( int i=0; i<rlen; i++ )
+			if( !flags[i] )
+			{
+				//copy row to result
+				if(sparse)
+				{
+					result.appendRow(rindex, sparseRows[i]);
+				}
+				else
+				{
+					if( result.denseBlock==null )
+						result.denseBlock = new double[ rlen2*clen ];
+					int index1 = i*clen;
+					int index2 = rindex*clen;
+					for(int j=0; j<clen; j++)
+					{
+						if( denseBlock[index1] != 0 )
+						{
+							result.denseBlock[index2] = denseBlock[index1];
+							result.nonZeros++;
+						}
+						index1++;
+						index2++;
+					}
+				}
+				rindex++;
+			}
+		
+		
+		//check sparsity
+		result.examSparsity();
+		
+		return result;
+	}
+	
+	/**
+	 * 
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue removeEmptyColumns(MatrixValue ret) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//check for empty inputs
+		if( nonZeros==0 ) {
+			ret.reset(0, 0, false);
+			return ret;
+		}
+		
+		MatrixBlockDSM result = checkType(ret);
+		
+		//scan block and determine empty cols
+		int clen2 = 0;
+		boolean[] flags = new boolean[ clen ]; 
+		
+		for(int j=0; j<clen; j++) {
+			flags[j] = true;
+			for(int i=0; i<rlen; i++) {
+				double value = quickGetValue(i, j);
+				if( value != 0 )
+				{
+					flags[j] = false;
+					clen2++;
+					break; //early abort for current col
+				}
+			}
+		}
+
+		//reset result and copy rows
+		result.reset(rlen, clen2, sparse);
+		
+		int cindex = 0;
+		for( int j=0; j<clen; j++ )
+			if( !flags[j] )
+			{
+				//copy col to result
+				for( int i=0; i<rlen; i++ )
+				{
+					double value = quickGetValue(i, j);
+					if( value != 0 )
+						result.quickSetValue(i, cindex, value);
+				}
+				
+				cindex++;
+			}
+		
+		//check sparsity
+		result.examSparsity();
+		
+		return result;
+	}
+	
+	
 	
 	@Override
 	/*

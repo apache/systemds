@@ -145,7 +145,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						Cell tmp = new Cell( row, col, lvalue ); 
 		
 						buffer.addLast( tmp );
-						if( buffer.size() > CELL_BUFFER_SIZE ) //periodic flush
+						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 						{
 							appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
 							buffer.clear();
@@ -153,8 +153,11 @@ public class DataPartitionerLocal extends DataPartitioner
 					}
 					
 					//final flush
-					appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
-					buffer.clear();
+					if( buffer.size() > 0 )
+					{
+						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						buffer.clear();
+					}
 				}
 				finally
 				{
@@ -243,7 +246,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						Cell tmp = new Cell( row, col, value.getValue() ); 
 		
 						buffer.addLast( tmp );
-						if( buffer.size() > CELL_BUFFER_SIZE ) //periodic flush
+						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 						{
 							appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
 							buffer.clear();
@@ -251,8 +254,11 @@ public class DataPartitionerLocal extends DataPartitioner
 					}
 					
 					//final flush
-					appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
-					buffer.clear();
+					if( buffer.size()>0 )
+					{
+						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						buffer.clear();
+					}
 				}
 				finally
 				{

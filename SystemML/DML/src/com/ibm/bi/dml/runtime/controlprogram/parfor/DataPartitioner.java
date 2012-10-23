@@ -28,7 +28,6 @@ public abstract class DataPartitioner
 	protected static final double SPARSITY_CELL_THRESHOLD = 0.1d; 
 	
 	protected static final String NAME_SUFFIX = "_dp";
-	protected static final int CELL_BUFFER_SIZE = 100000;	
 	protected static String STAGING_DIR = null;	
 	
 	//instance variables

@@ -76,7 +76,8 @@ public class ParameterizedBuiltinOp extends Hops {
 						.constructLops());
 			}
 
-			if (_op == ParamBuiltinOp.CDF) {
+			if (   _op == ParamBuiltinOp.CDF ) 
+			{
 				// simply pass the hashmap of parameters to the lop
 
 				// set the lop for the function call
@@ -92,7 +93,8 @@ public class ParameterizedBuiltinOp extends Hops {
 				// set the dimesnions for the lop for the output
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-			} else if (_op == ParamBuiltinOp.GROUPEDAGG) {
+			} 
+			else if (_op == ParamBuiltinOp.GROUPEDAGG) {
 				
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
@@ -214,6 +216,24 @@ public class ParameterizedBuiltinOp extends Hops {
 					}
 				}
 			}
+			else if(   _op == ParamBuiltinOp.RMEMPTY ) 
+			{
+				ExecType et = optFindExecType();
+				if( et == ExecType.MR ) //no MR version for rmempty
+					et = ExecType.CP_FILE; //use file-based function for robustness
+				
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+						et, inputlops,
+						HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+				
+				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				set_lops(pbilop);
+
+				// set the dimesnions for the lop for the output
+				get_lops().getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			} 
 
 		}
 
@@ -252,7 +272,7 @@ public class ParameterizedBuiltinOp extends Hops {
 			else
 				throw new RuntimeException("Memory estimates for CDF w/ Matrices are not defined yet!");
 		}
-		else if (_op == ParamBuiltinOp.GROUPEDAGG) {
+		else if (   _op == ParamBuiltinOp.GROUPEDAGG ) { 
 			// Output dimensions are completely data dependent. In the worst case, 
 			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
@@ -268,6 +288,17 @@ public class ParameterizedBuiltinOp extends Hops {
 			else
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			
+		}
+		else if (   _op == ParamBuiltinOp.RMEMPTY ) { 
+			// similar to groupedagg because in the worst-case ouputsize eq inputsize
+			Hops target = getInput().get(_paramIndexMap.get("target"));
+			long rows = target.get_dim1();
+			long cols = target.get_dim2(); 
+			long nnz = target.getNnz();
+			if ( rows > 0 && cols > 0 )
+				_outputMemEstimate = OptimizerUtils.estimateSize( rows, cols, ((double)nnz)/(rows*cols) );
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}
 		else {
 			throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");

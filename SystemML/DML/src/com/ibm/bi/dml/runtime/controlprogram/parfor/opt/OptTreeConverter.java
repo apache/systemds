@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.DataOp;
@@ -441,6 +442,10 @@ public class OptTreeConverter
 			}
 			
 			//parameters, add required parameters
+			HashMap<String,String> lparams = fpb.getParForParams();
+			node.addParam(ParamType.DATA_PARTITIONER, lparams.get(ParForStatementBlock.DATA_PARTITIONER));
+			node.addParam(ParamType.TASK_PARTITIONER, lparams.get(ParForStatementBlock.TASK_PARTITIONER));
+			node.addParam(ParamType.RESULT_MERGE, lparams.get(ParForStatementBlock.RESULT_MERGE));
 		}
 		else //last level program block
 		{

@@ -1,10 +1,12 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
+import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -15,15 +17,20 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -35,10 +42,12 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * - 2) rewrite set execution strategy		 
  * - 3) rewrite nested parallelism 
  * - 4) rewrite set degree of parallelism
- * - 5) rewrite set task partitioner		 		 
- * - 6) remove unnecessary parfor 			 
- * - ( 7) blockwise partitioning )
+ * - 5) rewrite set task partitioner
+ * - 6) rewrite set result merge 		 		 
+ * - 7) remove unnecessary parfor		
  * 
+ * 	 
+ * - TODO ( 7) blockwise partitioning )
  * TODO blockwise partitioning
  * TODO result partitioning 
  *  
@@ -124,6 +133,9 @@ public class OptimizerRuleBased extends Optimizer
 		rewriteSetDataPartitioner( pn, pb.getVariables() );
 		M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate due to potential recompile in rewrite data partitioner
 		
+		boolean flagLeftIndexRewrite = false;
+		//TODO rewrite leftindexing 
+		
 		// rewrite 2: execution strategy
 		rewriteSetExecutionStategy( pn, M );
 
@@ -153,10 +165,13 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, PTaskPartitioner.FACTORING );
 		}	
 		
+		//rewrite 6: 
+		rewriteSetResultMerge( pn, pb.getVariables(), flagLeftIndexRewrite );
+		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 6: parfor (par=1) to for 
+		// rewrite 7: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -196,7 +211,10 @@ public class OptimizerRuleBased extends Optimizer
 				cand2.put( c, dpf );
 		}
 		boolean apply = rFindDataPartitioningCandidates(n, cand2, vars);
-		PDataPartitioner pdp = (apply)? PDataPartitioner.REMOTE_MR : PDataPartitioner.NONE;
+		PDataPartitioner pdp = (apply)? PDataPartitioner.REMOTE_MR : PDataPartitioner.NONE;		
+		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
+		//      matrix and hence always apply REMOTE_MR (the benefit for large matrices outweigths
+		//      potentially unnecessary MR jobs for smaller matrices)
 		
 		// modify rtprog 
 		pfpb.setDataPartitioner( pdp );
@@ -544,6 +562,129 @@ public class OptimizerRuleBased extends Optimizer
 			System.out.println("RULEBASED OPTIMIZER: rewrite 'set task partitioner' - result="+partitioner );
 	}
 	
+	
+	///////
+	//REWRITE set result merge
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 */
+	private void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean appliedLeftIndexRewrite )
+	{
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		
+		//investigate details of current parfor node
+		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
+		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables() );
+		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
+		
+		//actual decision on result merge
+		PResultMerge ret = null;
+		if(    ((flagMRParFOR && appliedLeftIndexRewrite) || flagMRLeftIndexing) 
+			&& !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
+			ret = PResultMerge.REMOTE_MR;
+		else
+			ret = PResultMerge.LOCAL_AUTOMATIC;
+		//NOTE: 'at least one' instead of 'all' condition of flagMRLeftIndexing because the 
+		//      benefit for large matrices outweigths potentially unnecessary MR jobs for smaller matrices)
+		
+		// modify rtprog	
+		pfpb.setResultMerge(ret);
+			
+		// modify plan
+		n.addParam(ParamType.RESULT_MERGE, ret.toString());			
+
+		//recursively apply rewrite for parfor nodes
+		if( n.getChilds() != null )
+			rInvokeSetResultMerge(n.getChilds(), vars, appliedLeftIndexRewrite);
+		
+		if( OptimizationWrapper.LDEBUG )
+			System.out.println("RULEBASED OPTIMIZER: rewrite 'set result merge' - result="+ret );
+	}
+	
+	/**
+	 * 
+	 * @param resultVars
+	 * @param vars
+	 * @return
+	 */
+	private boolean determineFlagCellFormatWoCompare( ArrayList<String> resultVars, LocalVariableMap vars  )
+	{
+		boolean ret = true;
+		
+		for( String rVar : resultVars )
+		{
+			Data dat = vars.get(rVar);
+			if( dat == null || !(dat instanceof MatrixObject) )
+			{
+				ret = false; 
+				break;
+			}
+			else
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				MatrixFormatMetaData meta = (MatrixFormatMetaData) mo.getMetaData();
+				OutputInfo oi = meta.getOutputInfo();
+				long nnz = meta.getMatrixCharacteristics().getNonZeros();
+				
+				if( oi == OutputInfo.BinaryBlockOutputInfo || nnz != 0 )
+				{
+					ret = false; 
+					break;
+				}
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param resultVars
+	 * @return
+	 */
+	public boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars )
+	{
+		boolean ret = false;
+		
+		if( n.isLeaf() )
+		{
+			String opName = n.getParam(ParamType.OPSTRING);
+			//check opstring and exec type
+			if( opName.equals(LeftIndexingOp.OPSTRING) && n.getExecType()==ExecType.MR )
+			{
+				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				//check agains set of varname
+				if( resultVars.contains(hop.getInput().get(0).get_name()) )
+					ret = true;
+			}
+		}
+		else
+		{
+			for( OptNode c : n.getChilds() )
+				ret |= hasResultMRLeftIndexing(c, resultVars);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param nodes
+	 * @param vars
+	 */
+	private void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean flag )
+	{
+		for( OptNode n : nodes )
+			if( n.getNodeType() == NodeType.PARFOR )
+				rewriteSetResultMerge(n, vars, flag);
+			else if( n.getChilds()!=null )  
+				rInvokeSetResultMerge(n.getChilds(), vars, flag);
+	}
 	
 	///////
 	//REWRITE remove unnecessary parfor

@@ -17,6 +17,8 @@ import com.ibm.bi.dml.utils.HopsException;
 
 public class LeftIndexingOp  extends Hops {
 
+	public static String OPSTRING = "LeftIndexing";
+	
 	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
 
@@ -128,7 +130,7 @@ public class LeftIndexingOp  extends Hops {
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "LeftIndexing";
+		s += OPSTRING;
 		return s;
 	}
 

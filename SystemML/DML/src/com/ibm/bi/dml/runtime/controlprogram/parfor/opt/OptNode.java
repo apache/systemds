@@ -47,6 +47,7 @@ public class OptNode
 		OPSTRING,
 		TASK_PARTITIONER,
 		DATA_PARTITIONER,
+		RESULT_MERGE,
 		NUM_ITERATIONS
 	}
 
@@ -359,6 +360,15 @@ public class OptNode
 		sb.append(_etype);
 		sb.append(", k=");
 		sb.append(_k);
+		if( _ntype == NodeType.PARFOR )
+		{
+			sb.append(", dp="); //data partitioner
+			sb.append(_params.get(ParamType.DATA_PARTITIONER));
+			sb.append(", tp="); //task partitioner
+			sb.append(_params.get(ParamType.TASK_PARTITIONER));
+			sb.append(", rm="); //result merge
+			sb.append(_params.get(ParamType.RESULT_MERGE));
+		}
 		sb.append("\n");
 		
 		if( _childs != null )

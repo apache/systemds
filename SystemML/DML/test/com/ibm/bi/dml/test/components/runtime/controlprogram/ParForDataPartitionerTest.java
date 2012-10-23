@@ -346,7 +346,7 @@ public class ParForDataPartitionerTest
 			if( dp == PDataPartitioner.LOCAL )
 				dpart = new DataPartitionerLocal(format);
 			else if( dp == PDataPartitioner.REMOTE_MR )
-				dpart = new DataPartitionerRemoteMR(format, 7, 4, 4, 3, 1, true);
+				dpart = new DataPartitionerRemoteMR(format, 7, 4, 4, 3, 1, false);
 			
 			MatrixObject mo2 = dpart.createPartitionedMatrixObject(mo1, true);	
 			ii = ((MatrixFormatMetaData)mo2.getMetaData()).getInputInfo();

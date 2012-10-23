@@ -21,7 +21,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
 
 /**
- * MR job class for submitting parfor remote MR jobs, controlling its execution and obtaining results.
+ * MR job class for submitting parfor remote partitioning MR jobs.
  *
  */
 public class DataPartitionerRemoteMR extends DataPartitioner

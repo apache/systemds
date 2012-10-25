@@ -57,6 +57,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
@@ -988,15 +989,27 @@ public class DMLScript {
 		//cleanup scratch space (everything for current uuid) 
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
-		//cleanup working dirs (hadoop, cache)
-		MapReduceTool.deleteFileIfExistOnHDFS( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
-			                                   dirSuffix  );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
-				                               dirSuffix  );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
-                                               dirSuffix );
-		MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
-											   dirSuffix  );
+		
+		//cleanup hadoop working dirs
+		try {
+			LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
+				                                   dirSuffix  );
+			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+					                               dirSuffix  );
+			LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+	                                               dirSuffix );
+			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+												   dirSuffix  );
+		}
+		catch(Exception ex)
+		{
+			//we give only a warning because those directories are written by the mapred deamon 
+			//and hence, execution can still succeed
+			if( DEBUG )
+				System.out.println("Warning: Unable to cleanup hadoop working dirs: "+ex.getMessage());
+		}
+			
+		//cleanup systemml-internal working dirs
 		CacheableData.cleanupCacheDir();
 		DataPartitionerLocal.cleanupWorkingDirectory();
 		ResultMergeLocalFile.cleanupWorkingDirectory();

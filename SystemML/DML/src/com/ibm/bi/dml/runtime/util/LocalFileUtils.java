@@ -83,6 +83,19 @@ public class LocalFileUtils
 		}
 	}
 	
+	/**
+	 * 
+	 * @param dir
+	 */
+	public static void deleteFileIfExists(String dir) 
+	{
+		File fdir = new File(dir);
+		if( fdir.exists() )
+		{
+			fdir.delete();
+		}
+	}
+	
 	
 	/**
 	 * 

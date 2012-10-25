@@ -31,7 +31,7 @@ public class FunctionStatementBlock extends StatementBlock {
 			
 		if (!(fstmt instanceof ExternalFunctionStatement)){
 			
-			fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlProg));
+			//fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlProg));
 			
 			// perform validate for function body
 			this._dmlProg = dmlProg;

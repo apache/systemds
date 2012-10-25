@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -23,24 +24,30 @@ public class IfStatementBlock extends StatementBlock {
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
 		
 		// merge function calls if possible
-		ifstmt.setIfBody(StatementBlock.mergeFunctionCalls(ifstmt.getIfBody(), dmlProg));
-		ifstmt.setElseBody(StatementBlock.mergeFunctionCalls(ifstmt.getElseBody(), dmlProg));
+		//ifstmt.setIfBody(StatementBlock.mergeFunctionCalls(ifstmt.getIfBody(), dmlProg));
+		//ifstmt.setElseBody(StatementBlock.mergeFunctionCalls(ifstmt.getElseBody(), dmlProg));
 		
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
 		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
-		
+			
 		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier> ();
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> ();
+		HashMap<String,ConstIdentifier> constVarsOrigCopy = new HashMap<String,ConstIdentifier> ();
+		
 		for (String varName : constVars.keySet()){
 			constVarsIfCopy.put(varName, constVars.get(varName));
 			constVarsElseCopy.put(varName, constVars.get(varName));
+			constVarsOrigCopy.put(varName, constVars.get(varName));
 		}
 		
-		VariableSet idsIfCopy = new VariableSet();
+		VariableSet idsIfCopy 	= new VariableSet();
 		VariableSet idsElseCopy = new VariableSet();
+		VariableSet	idsOrigCopy = new VariableSet();
+
 		for (String varName : ids.getVariableNames()){
 			idsIfCopy.addVariable(varName, ids.getVariable(varName));
 			idsElseCopy.addVariable(varName, ids.getVariable(varName));
+			idsOrigCopy.addVariable(varName, ids.getVariable(varName));
 		}
 		
 		// handle if stmt body
@@ -58,14 +65,125 @@ public class IfStatementBlock extends StatementBlock {
 			constVarsElseCopy = sb.getConstOut();
 		}
 		
-		// need to reconcile both idsIfCopy and idsElseCopy 
-		HashMap<String,ConstIdentifier> recConstVars = new HashMap<String,ConstIdentifier>();
-		recConstVars.putAll(constVarsIfCopy);
-		recConstVars.putAll(constVarsElseCopy);
+		// handle constant variable propogation -- (IF UNION ELSE) MINUS updated vars
 		
+		//////////////////////////////////////////////////////////////////////////////////
+		// handle constant variables 
+		// 1) (IF UNION ELSE) MINUS updated const vars
+		// 2) reconcile updated const vars
+		// 		a) IF updated const variables have same value and datatype in both if / else branch, THEN set updated size to updated size
+		//		b) ELSE leave out of reconciled set
+		/////////////////////////////////////////////////////////////////////////////////
+		
+		HashMap<String,ConstIdentifier> recConstVars = new HashMap<String,ConstIdentifier>();
+		
+		// STEP 1:  (IF UNION ELSE) MINUS updated vars
+		for (String varName : constVarsIfCopy.keySet()){
+			if (!this._updated.containsVariable(varName))
+				recConstVars.put(varName,constVarsIfCopy.get(varName));
+		}
+		for (String varName : constVarsElseCopy.keySet()){
+			if (!this._updated.containsVariable(varName))
+				recConstVars.put(varName,constVarsElseCopy.get(varName));
+		}
+		
+		// STEP 2: check that updated const values have in both if / else branches 
+		//		a) same data type, 
+		//		b) same value type (SCALAR),
+		//		c) same value
+		for (String updatedVar : this._updated.getVariableNames()){
+			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
+			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			if (ifVersion != null && elseVersion != null 
+					&& ifVersion.getOutput().getDataType().equals(DataType.SCALAR) 
+					&& elseVersion.getOutput().getDataType().equals(DataType.SCALAR) 
+					&& ifVersion.getOutput().getValueType().equals(elseVersion.getOutput().getValueType()))
+			{
+				ConstIdentifier ifConstVersion   = constVarsIfCopy.get(updatedVar);
+				ConstIdentifier elseConstVersion = constVarsElseCopy.get(updatedVar);
+				// IntIdentifier
+				if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof IntIdentifier && elseConstVersion instanceof IntIdentifier){
+					if ( ((IntIdentifier)ifConstVersion).getValue() == ((IntIdentifier) elseConstVersion).getValue() )
+						recConstVars.put(updatedVar, ifConstVersion);
+				}
+				// DoubleIdentifier
+				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof DoubleIdentifier && elseConstVersion instanceof DoubleIdentifier){
+					if ( ((DoubleIdentifier)ifConstVersion).getValue() == ((DoubleIdentifier) elseConstVersion).getValue() )
+						recConstVars.put(updatedVar, ifConstVersion);
+				}
+				// Boolean 
+				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof BooleanIdentifier && elseConstVersion instanceof BooleanIdentifier){
+					if ( ((BooleanIdentifier)ifConstVersion).getValue() == ((BooleanIdentifier) elseConstVersion).getValue() )
+						recConstVars.put(updatedVar, ifConstVersion);
+				}
+				
+				// String
+				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof StringIdentifier && elseConstVersion instanceof StringIdentifier){
+					if ( ((BooleanIdentifier)ifConstVersion).getValue() == ((BooleanIdentifier) elseConstVersion).getValue() )
+						recConstVars.put(updatedVar, ifConstVersion);
+				}
+				
+			}
+					
+			
+		}
+		
+		//////////////////////////////////////////////////////////////////////////////////
+		// handle DataIdentifier variables 
+		// 1) (IF UNION ELSE) MINUS updated vars
+		// 2) reconcile size updated variables
+		// 		a) IF updated variables have same size in both if / else branch, THEN set updated size to updated size
+		//		b) ELSE  set size updated to (-1,-1)
+		// 3) add updated vars to reconciled set
+		/////////////////////////////////////////////////////////////////////////////////
+		
+		// STEP 1:  (IF UNION ELSE) MINUS updated vars
+		VariableSet recVars = new VariableSet();
+	
+		for (String varName : idsIfCopy.getVariableNames()){
+			if (!this._updated.containsVariable(varName))
+				recVars.addVariable(varName,idsIfCopy.getVariable(varName));
+		}
+		for (String varName : idsElseCopy.getVariableNames()){
+			if (!this._updated.containsVariable(varName))
+				recVars.addVariable(varName,idsElseCopy.getVariable(varName));
+		}
+		
+		// STEP 2: reconcile size of updated variables
+		for (String updatedVar : this._updated.getVariableNames()){
+			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
+			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			if (ifVersion != null && elseVersion != null) {
+				long updatedDim1 = -1, updatedDim2 = -1;
+				if (ifVersion.getDim1() == elseVersion.getDim1())
+					updatedDim1 = ifVersion.getDim1();
+				if (ifVersion.getDim2() == elseVersion.getDim2())
+					updatedDim2 = ifVersion.getDim2();
+				
+				ifVersion.setDimensions(updatedDim1, updatedDim2);
+			
+				recVars.addVariable(updatedVar, ifVersion);
+			}
+			else {
+				if (ifVersion != null){
+					// update dimensions to unknown
+					ifVersion.setDimensions(-1, -1);
+					recVars.addVariable(updatedVar, ifVersion);
+				}
+				else if (elseVersion != null){
+					elseVersion.setDimensions(-1, -1);
+					recVars.addVariable(updatedVar, elseVersion);
+				}
+				else {
+					_updated.getVariable(updatedVar).setDimensions(-1,-1);
+					recVars.addVariable(updatedVar, _updated.getVariable(updatedVar));
+				}
+			}
+		}
+		
+		// propogate updated variables
 		VariableSet allIdVars = new VariableSet();
-		allIdVars.addVariables(idsIfCopy);
-		allIdVars.addVariables(idsElseCopy);
+		allIdVars.addVariables(recVars);
 		
 		_constVarsIn.putAll(constVars);
 		_constVarsOut.putAll(recConstVars);

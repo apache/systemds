@@ -647,12 +647,9 @@ public class StatementBlock extends LiveVariableAnalysis{
 			{
 				RandStatement rs = (RandStatement) current;
 				
-				// perform constant propagation by replacing exprParams which are DataIdentifier (but NOT IndexedIdentifier) variables with constant values. 
-				// Also perform "best-effort" validation of parameter values (i.e., for parameter values which are constant expressions) 
-				rs.performConstantPropagation(currConstVars);
+				// validate Rand statement 
+				rs.validateStatement(ids, currConstVars);
 							
-				
-				
 				// update properties of RandStatement target identifier
 				rs.setIdentifierProperties();
 				

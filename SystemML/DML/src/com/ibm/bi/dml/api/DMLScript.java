@@ -242,8 +242,9 @@ public class DMLScript {
 		///////////////////////////////////// construct HOPS ///////////////////////////////
 		
 		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.validateParseTree(prog);
 		dmlt.liveVariableAnalysis(prog);
+		dmlt.validateParseTree(prog);
+		
 
 		if (DEBUG) {
 			System.out.println("********************** COMPILER *******************");

@@ -802,6 +802,8 @@ public class ParForProgramBlock extends ForProgramBlock
 						//TODO currently we do not create any unscoped matrix object outputs
 						//because metadata (e.g., outputinfo) not known at this place.
 						break;
+					case UNKNOWN:
+						break;
 					default:
 						throw new DMLRuntimeException("Datatype not supported: "+datatype);
 				}

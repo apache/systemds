@@ -31,7 +31,7 @@ public class ForStatementBlock extends StatementBlock {
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		
 		ForStatement fs = (ForStatement) _statements.get(0);
-		fs.setBody(StatementBlock.mergeFunctionCalls(fs.getBody(), dmlProg));
+		//fs.setBody(StatementBlock.mergeFunctionCalls(fs.getBody(), dmlProg));
 		
 		IterablePredicate predicate = fs.getIterablePredicate();
 		

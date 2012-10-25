@@ -25,7 +25,7 @@ public class WhileStatementBlock extends StatementBlock {
 		ConditionalPredicate predicate = wstmt.getConditionalPredicate();
 		
 		// merge function calls if possible
-		wstmt.setBody(StatementBlock.mergeFunctionCalls(wstmt.getBody(), dmlProg));
+		//wstmt.setBody(StatementBlock.mergeFunctionCalls(wstmt.getBody(), dmlProg));
 		
 		//remove updated vars from constants
 		HashSet<String> updatedVars = new HashSet<String>();

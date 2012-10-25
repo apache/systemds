@@ -115,7 +115,7 @@ public class DMLTranslator {
 		// handle regular blocks -- "main" program
 		VariableSet vs = new VariableSet();
 		
-		dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
+		//dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
 		
 		HashMap<String, ConstIdentifier> constVars = new HashMap<String, ConstIdentifier>();
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
@@ -135,6 +135,9 @@ public class DMLTranslator {
 			for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock fsb = dmlp.getFunctionStatementBlock(namespaceKey, fname);
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+				
+				// perform function inlining
+				fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlp));
 				
 				VariableSet activeIn = new VariableSet();
 				for (DataIdentifier id : fstmt.getInputParams()){
@@ -168,18 +171,20 @@ public class DMLTranslator {
 		
 		// handle regular program blocks 
 		VariableSet currentLiveOut = new VariableSet();
-		int numBlocks = dmlp.getNumStatementBlocks();
 		VariableSet activeIn = new VariableSet();
-				
-		for (int i = 0; i < numBlocks; i++) {
+		
+		// handle function inlining
+		dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
+		
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock sb = dmlp.getStatementBlock(i);
 			activeIn = sb.initializeforwardLV(activeIn);
 		}
 
-		if (numBlocks > 0){
-			StatementBlock lastSb = dmlp.getStatementBlock(numBlocks - 1);
+		if (dmlp.getNumStatementBlocks() > 0){
+			StatementBlock lastSb = dmlp.getStatementBlock(dmlp.getNumStatementBlocks() - 1);
 			lastSb._liveOut = new VariableSet();
-			for (int i = numBlocks - 1; i >= 0; i--) {
+			for (int i = dmlp.getNumStatementBlocks() - 1; i >= 0; i--) {
 				StatementBlock sb = dmlp.getStatementBlock(i);
 				currentLiveOut = sb.analyze(currentLiveOut);
 			}
@@ -1748,10 +1753,7 @@ public class DMLTranslator {
 
 
 				Integer statementId = liveOutToTemp.get(target.getName());
-				if ((statementId != null) && (statementId.intValue() == i)) {
-					
-					
-					
+				if ((statementId != null) && (statementId.intValue() == i)) {			
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
 					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 					transientwrite.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
@@ -1830,14 +1832,14 @@ public class DMLTranslator {
 						}
 					} // end if (!(target instanceof IndexedIdentifier)) {
 					
-					// TODO: DRB: CASE: target is indexed identifier (left-hand side indexed expression)
+					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hops ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, _ids);
 						
 						_ids.put(target.getName(), ae);
 						
 						// obtain origDim values BEFORE they are potentially updated during setProperties call
-						//	(this is incorrect for LHS Indexing
+						//	(this is incorrect for LHS Indexing)
 						long origDim1 = ((IndexedIdentifier)target).getOrigDim1();
 						long origDim2 = ((IndexedIdentifier)target).getOrigDim2();						 
 						target.setProperties(source.getOutput());
@@ -1952,8 +1954,21 @@ public class DMLTranslator {
 				DataIdentifier target = rs.getIdentifier();
 				
 				if ( target.getDim1() <= 0 || target.getDim2() <=0 ) {
-					throw new ParseException(current.printErrorLocation() + "Invalid target dimensions (" + target.getDim1() + "x" + target.getDim2() + ") in Rand statement: \"" + rs.toString() + "\"");
+					//throw new ParseException(current.printErrorLocation() + "Invalid target dimensions (" + target.getDim1() + "x" + target.getDim2() + ") in Rand statement: \"" + rs.toString() + "\"");
+				
+					// target size may have been set to (-1,-1) during validate --- attempt to update based on dims in Rand Statement
+					Long updatedDim1 = -1L;
+					Long updatedDim2 = -1L;
+					
+					if (rs.getExprParam(RandStatement.RAND_ROWS) instanceof IntIdentifier)
+						updatedDim1 = ((IntIdentifier)rs.getExprParam(RandStatement.RAND_ROWS)).getValue();
+					
+					if (rs.getExprParam(RandStatement.RAND_COLS) instanceof IntIdentifier)
+						updatedDim2 = ((IntIdentifier)rs.getExprParam(RandStatement.RAND_COLS)).getValue();
+
+					target.setDimensions(updatedDim1, updatedDim2);
 				}
+				
 				
 				// TODO: DRB: BEGIN RETROFIT FOR RAND ///////////////////////////////////// 
 				double randMinValue = new Double(rs.getExprParam(RandStatement.RAND_MIN).toString());

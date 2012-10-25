@@ -1,5 +1,20 @@
-A = Rand(rows=10, cols=10, min=1, max=1)
-B = Rand(rows=15, cols=15, min=1, max=1)
-A[,:] = A; 
-Asum = sum(A);
-print(Asum);
+execSum = function(Matrix[Double] X) return (Double sx) 
+{
+   sx = sum(X);    
+}
+
+#V = read($1, rows=$2, cols=$3);
+V = Rand( rows=5,cols=5);
+
+R = Rand(rows=5,cols=1,min=0,max=0); 
+dummy = Rand(rows=1, cols=1, min=1, max=1);
+
+i = 1
+#while( i in 1:5 ) 
+#{
+   X = V[,i];
+   sumx = execSum(X);
+   R[i,1] = dummy * sumx; 
+#}  
+
+write(R, "dollar_4");       

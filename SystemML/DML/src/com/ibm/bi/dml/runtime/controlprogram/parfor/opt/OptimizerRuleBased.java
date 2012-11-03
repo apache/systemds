@@ -3,7 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
@@ -38,16 +40,16 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * Rule-Based ParFor Optimizer (time: O(n)):
  * 
  * Applied rule-based rewrites
- * - 1) rewrite set data partitioner
- * - 2) rewrite set execution strategy		 
- * - 3) rewrite nested parallelism 
- * - 4) rewrite set degree of parallelism
- * - 5) rewrite set task partitioner
- * - 6) rewrite set result merge 		 		 
- * - 7) remove unnecessary parfor		
+ * - 1) rewrite set data partitioner (incl. recompile rightindexing)
+ * - 2) rewrite set execution strategy
+ * - 3) rewrite use data colocation		 
+ * - 4) rewrite use nested parallelism 
+ * - 5) rewrite set degree of parallelism
+ * - 6) rewrite set task partitioner
+ * - 7) rewrite set result merge 		 		 
+ * - 8) remove unnecessary parfor		
  * 
  * 	 
- * - TODO ( 7) blockwise partitioning )
  * TODO blockwise partitioning
  * TODO result partitioning 
  *  
@@ -142,13 +144,16 @@ public class OptimizerRuleBased extends Optimizer
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
 		{
-			// rewrite 3: nested parallelism (incl exec types)	
+			// rewrite 3: data colocation
+			rewriteDataColocation( pn, pb.getVariables() );
+			
+			// rewrite 4: nested parallelism (incl exec types)	
 			boolean nested = rewriteNestedParallelism( pn, M );
 			
-			// rewrite 4: determine parallelism
+			// rewrite 5: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, nested );
 			
-			// rewrite 5: task partitioning
+			// rewrite 6: task partitioning
 			if( nested ){
 				rewriteSetTaskPartitioner( pn, PTaskPartitioner.STATIC );
 				rewriteSetTaskPartitioner( pn.getChilds().get(0), PTaskPartitioner.FACTORING );
@@ -158,20 +163,20 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 4: determine parallelism
+			// rewrite 5: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 5: task partitioning
+			// rewrite 6: task partitioning
 			rewriteSetTaskPartitioner( pn, PTaskPartitioner.FACTORING );
 		}	
 		
-		//rewrite 6: 
+		//rewrite 7: 
 		rewriteSetResultMerge( pn, pb.getVariables(), flagLeftIndexRewrite );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 7: parfor (par=1) to for 
+		// rewrite 8: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -206,7 +211,7 @@ public class OptimizerRuleBased extends Optimizer
 		HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
 		for( String c : cand )
 		{
-			PDataPartitionFormat dpf= pfsb.determineDataPartitionFormat( c );
+			PDataPartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
 			if( dpf != PDataPartitionFormat.NONE )
 				cand2.put( c, dpf );
 		}
@@ -255,6 +260,7 @@ public class OptimizerRuleBased extends Optimizer
 				if( mnew < _lm ) //apply rewrite if partitions fit into memory
 				{
 					n.setExecType(ExecType.CP);
+					n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
 					h.setMemEstimate( mnew );
 					ret = true;
 				}
@@ -350,10 +356,99 @@ public class OptimizerRuleBased extends Optimizer
 		if( OptimizationWrapper.LDEBUG )
 			System.out.println("RULEBASED OPTIMIZER: rewrite 'set execution strategy' - result="+mode );
 	}
-
-
+	
 	///////
-	//REWRITE nested parallelism
+	//REWRITE enable data colocation
+	///
+
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException 
+	 */
+	private void rewriteDataColocation( OptNode n, LocalVariableMap vars ) 
+		throws DMLRuntimeException
+	{
+		// data colocation is beneficial if we have dp=REMOTE_MR, etype=REMOTE_MR
+		// and there is at least one direct col-/row-wise access with the index variable
+		// on the partitioned matrix
+		boolean apply = false;
+		String varname = null;
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		
+		if(    n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+			&& n.getExecType()==ExecType.MR )
+		{
+			//find all candidates matrices (at least one partitioned access via iterVar)
+			HashSet<String> cand = new HashSet<String>();
+			rFindDataColocationCandidates(n, cand, pfpb.getIterablePredicateVars()[0]);
+			
+			//select largest matrix for colocation (based on nnz to account for sparsity)
+			long nnzMax = Long.MIN_VALUE;
+			for( String c : cand ) {
+				MatrixObject tmp = (MatrixObject)vars.get(c);
+				long nnzTmp = tmp.getNnz();
+				if( nnzTmp > nnzMax ) {
+					nnzMax = nnzTmp;
+					varname = c;
+					apply = true;
+				}
+			}		
+		}
+		
+		//modify the runtime plan (apply true if at least one candidate)
+		if( apply )
+			pfpb.enableColocatedPartitionedMatrix( varname );
+		
+		if( OptimizationWrapper.LDEBUG )
+			System.out.println("RULEBASED OPTIMIZER: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param cand
+	 * @param iterVarname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private void rFindDataColocationCandidates( OptNode n, HashSet<String> cand, String iterVarname ) 
+		throws DMLRuntimeException
+	{
+		if( !n.isLeaf() )
+		{
+			for( OptNode cn : n.getChilds() )
+				rFindDataColocationCandidates( cn, cand, iterVarname );
+		}
+		else if(    n.getNodeType()== NodeType.HOP
+			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
+			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
+		{
+			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
+			Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			String inMatrix = h.getInput().get(0).get_name();
+			String indexAccess = null;
+			switch( dpf )
+			{
+				case ROW_WISE: //input 1 and 2 eq
+					if( h.getInput().get(1) instanceof DataOp )
+						indexAccess = h.getInput().get(1).get_name();
+					break;
+				case COLUMN_WISE: //input 3 and 4 eq
+					if( h.getInput().get(3) instanceof DataOp )
+						indexAccess = h.getInput().get(3).get_name();
+					break;
+			}
+			
+			if( indexAccess != null && indexAccess.equals(iterVarname) )
+				cand.add( inMatrix );
+		}
+	}
+	
+	
+	///////
+	//REWRITE enable nested parallelism
 	///
 	
 	/**
@@ -419,7 +514,7 @@ public class OptimizerRuleBased extends Optimizer
 		}
 
 		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'MR nested parallelism' - result="+nested );
+			System.out.println("RULEBASED OPTIMIZER: rewrite 'enable nested parallelism' - result="+nested );
 		
 		return nested;
 	}

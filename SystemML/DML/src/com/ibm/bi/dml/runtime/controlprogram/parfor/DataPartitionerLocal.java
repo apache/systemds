@@ -629,20 +629,20 @@ public class DataPartitionerLocal extends DataPartitioner
 			switch(_format)
 			{
 				case ROW_WISE:
-					key = c.row;
-					c.row = 1;
+					key = c.getRow();
+					c.setRow(1);
 					break;
 				case ROW_BLOCK_WISE:
-					key = (c.row-1)/brlen+1;
-					c.row = (c.row-1)%brlen+1;
+					key = (c.getRow()-1)/brlen+1;
+					c.setRow((c.getRow()-1)%brlen+1);
 					break;
 				case COLUMN_WISE:
-					key = c.col;
-					c.col = 1;
+					key = c.getCol();
+					c.setCol(1);
 					break;
 				case COLUMN_BLOCK_WISE:
-					key = (c.col-1)/bclen+1;
-					c.col = (c.col-1)%bclen+1;
+					key = (c.getCol()-1)/bclen+1;
+					c.setCol((c.getCol()-1)%bclen+1);
 					break;
 			}
 			
@@ -718,8 +718,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				LinkedList<Cell> tmp = StagingFileUtils.readCellListFromLocal(lpdir+"/"+fnameBlock);
 				for( Cell c : tmp )
 				{
-					indexes.setIndexes(c.row, c.col);
-					cell.setValue(c.value);
+					indexes.setIndexes(c.getRow(), c.getCol());
+					cell.setValue(c.getValue());
 					writer.append(indexes, cell);
 				}
 			}
@@ -749,11 +749,11 @@ public class DataPartitionerLocal extends DataPartitioner
 				LinkedList<Cell> tmp = StagingFileUtils.readCellListFromLocal(lpdir+"/"+fnameBlock);
 				for( Cell c : tmp )
 				{
-					sb.append(c.row);
+					sb.append(c.getRow());
 					sb.append(' ');
-					sb.append(c.col);
+					sb.append(c.getCol());
 					sb.append(' ');
-					sb.append(c.value);
+					sb.append(c.getValue());
 					sb.append('\n');
 					out.write( sb.toString() );		
 					sb.setLength(0);

@@ -569,6 +569,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
+	
 	private void createTextCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
 		throws IOException, DMLRuntimeException
 	{		
@@ -585,8 +586,14 @@ public class ResultMergeLocalFile extends ResultMerge
 
 		MatrixFormatMetaData metadata = (MatrixFormatMetaData) mo.getMetaData();
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
-		int brlen = mc.get_rows_per_block();
+		int brlen = mc.get_rows_per_block(); 
 		int bclen = mc.get_cols_per_block();
+		long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
+		//NOTE MB: Originally, we used long row, col but this led reproducibly to JIT compilation
+		// errors during runtime; experienced under WINDOWS, Intel x86-64, IBM JDK 64bit/32bit.
+		// It works fine with int row, col but we require long for larger matrices.
+		// Since, textcell is never used for result merge (hybrid/hadoop: binaryblock, singlenode:binarycell)
+		// we just propose the to exclude it with -Xjit:exclude={package.method*}(count=0,optLevel=0)
 		
 		for(InputSplit split : splits)
 		{
@@ -595,13 +602,14 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				while(reader.next(key, value))
 				{
-					String cellStr = value.toString().trim();							
+					String cellStr = value.toString().trim();						
 					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					long row = Long.parseLong( st.nextToken() );
-					long col = Long.parseLong( st.nextToken() );
+					row = Long.parseLong( st.nextToken() ); //see above
+				    col = Long.parseLong( st.nextToken() ); //see above
 					double lvalue = Double.parseDouble( st.nextToken() );
+					
 					Cell tmp = new Cell( row, col, lvalue ); 
-	
+					
 					buffer.addLast( tmp );
 					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
@@ -684,7 +692,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 	
 	/**
-	 * 
 	 * @param fnameStaging
 	 * @param ID
 	 * @param buffer
@@ -701,13 +708,13 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		for( Cell c : buffer )
 		{
-			brow = (c.row-1)/brlen + 1;
-			bcol = (c.col-1)/bclen + 1;
+			brow = (c.getRow()-1)/brlen + 1;
+			bcol = (c.getCol()-1)/bclen + 1;
 			row_offset = (brow-1)*brlen + 1;
 			col_offset = (bcol-1)*bclen + 1;
 			
-			c.row = c.row - row_offset;
-			c.col = c.col - col_offset;
+			c.setRow( c.getRow() - row_offset);
+			c.setCol(c.getCol() - col_offset);
 			
 			if( !sortedBuffer.containsKey(brow) )
 				sortedBuffer.put(brow, new HashMap<Long,LinkedList<Cell>>());

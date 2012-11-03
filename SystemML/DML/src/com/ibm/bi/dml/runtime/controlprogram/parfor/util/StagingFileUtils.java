@@ -38,11 +38,11 @@ public class StagingFileUtils
 			
 			for( Cell c : buffer )
 			{
-				sb.append(c.row);
+				sb.append(c.getRow());
 				sb.append(' ');
-				sb.append(c.col);
+				sb.append(c.getCol());
 				sb.append(' ');
-				sb.append(c.value);
+				sb.append(c.getValue());
 				sb.append('\n');
 				out.write( sb.toString() );
 				sb.setLength(0);

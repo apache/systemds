@@ -444,7 +444,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			String key = null;
 			for( Cell c : buffer )
 			{
-				key = (c.row/brlen+1) +"_"+(c.col/bclen+1);
+				key = (c.getRow()/brlen+1) +"_"+(c.getCol()/bclen+1);
 				
 				if( !sortedBuffer.containsKey(key) )
 					sortedBuffer.put(key, new LinkedList<Cell>());
@@ -506,7 +506,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						else{
 							LinkedList<Cell> buffer = StagingFileUtils.readCellListFromLocal(fname);
 							for( Cell c : buffer )
-								flags[ (int)c.row-blockRow*brlen-1 ] = false;
+								flags[ (int)c.getRow()-blockRow*brlen-1 ] = false;
 						}
 					} 
 			
@@ -544,7 +544,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						else{
 							LinkedList<Cell> buffer = StagingFileUtils.readCellListFromLocal(fname);
 							for( Cell c : buffer )
-								flags[ (int)c.col-blockCol*bclen-1 ] = false;
+								flags[ (int)c.getCol()-blockCol*bclen-1 ] = false;
 						}
 					} 
 			
@@ -616,11 +616,11 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							if( ii == InputInfo.TextCellInputInfo )
 								for( Cell c : buffer )
 								{
-									sb.append(keyMap.get(blockRow).get(c.row-1)+1);
+									sb.append(keyMap.get(blockRow).get(c.getRow()-1)+1);
 									sb.append(' ');
-									sb.append(c.col);
+									sb.append(c.getCol());
 									sb.append(' ');
-									sb.append(c.value);
+									sb.append(c.getValue());
 									sb.append('\n');
 									twriter.write( sb.toString() );	
 									sb.setLength(0);
@@ -628,8 +628,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							else if( ii == InputInfo.BinaryCellInputInfo )
 								for( Cell c : buffer )
 								{
-									key.setIndexes(keyMap.get(blockRow).get(c.row-1)+1, c.col);
-									value.setValue(c.value);
+									key.setIndexes(keyMap.get(blockRow).get(c.getRow()-1)+1, c.getCol());
+									value.setValue(c.getValue());
 									bwriter.append(key, value);	
 								}
 						}
@@ -648,11 +648,11 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							if( ii == InputInfo.TextCellInputInfo )
 								for( Cell c : buffer )
 								{
-									sb.append(c.row);
+									sb.append(c.getRow());
 									sb.append(' ');
-									sb.append(keyMap.get(blockCol).get(c.col-1)+1);
+									sb.append(keyMap.get(blockCol).get(c.getCol()-1)+1);
 									sb.append(' ');
-									sb.append(c.value);
+									sb.append(c.getValue());
 									sb.append('\n');
 									twriter.write( sb.toString() );	
 									sb.setLength(0);
@@ -660,8 +660,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 							else if( ii == InputInfo.BinaryCellInputInfo )
 								for( Cell c : buffer )
 								{
-									key.setIndexes(c.row, keyMap.get(blockCol).get(c.col-1)+1);
-									value.setValue(c.value);
+									key.setIndexes(c.getRow(), keyMap.get(blockCol).get(c.getCol()-1)+1);
+									value.setValue(c.getValue());
 									bwriter.append(key, value);	
 								}
 						}

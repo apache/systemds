@@ -34,6 +34,7 @@ public class ParForResultMergeTest
 	private double _sparsity1 = 0.3d;
 	private double _sparsity2 = 0.7d;
 	private String _fname = "./scratch_space/B2";
+	private String _fname2 = "./scratch_space/w/B2";
 
 	@Test
 	public void testMemSerialDenseEmptyTextCell() 
@@ -373,8 +374,8 @@ public class ParForResultMergeTest
 				tmpMB.examSparsity();
 				MatrixCharacteristics mc2 = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, tmpMB.getNonZeros());
 				MatrixFormatMetaData meta2 = new MatrixFormatMetaData(mc2, oi, ii);
-				DataConverter.writeMatrixToHDFS(tmpMB, _fname+k, oi, _rows, _cols, _brlen, _bclen);		
-				MatrixObject tmpMo = new MatrixObject(ValueType.DOUBLE,_fname+k);
+				DataConverter.writeMatrixToHDFS(tmpMB, _fname2+k, oi, _rows, _cols, _brlen, _bclen);		
+				MatrixObject tmpMo = new MatrixObject(ValueType.DOUBLE,_fname2+k);
 				tmpMo.setVarName("Var"+k);
 				tmpMo.setMetaData(meta2);
 				in[ k ] = tmpMo;

@@ -565,6 +565,9 @@ public class DMLProgram {
 			//post processing for generating missing instructions
 			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
 			
+			// add statement block
+			retPB.setStatementBlock(sb);
+			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
@@ -641,6 +644,7 @@ public class DMLProgram {
 				{
 					//create RMVAR instruction and put it into the programblock
 					Instruction inst = createCleanupInstruction(varName);
+					//System.out.println("add rvar rule2 "+inst.toString());
 					addCleanupInstruction(pb, inst);
 					
 					if( DMLScript.DEBUG )

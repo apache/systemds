@@ -162,4 +162,13 @@ public class Reblock extends Hops {
 		return _etype;
 	}
 
+	@Override
+	public void refreshSizeInformation()
+	{
+		Hops input1 = getInput().get(0);
+		set_dim1( input1.get_dim1() );
+		set_dim2( input1.get_dim2() );
+		setNnz( input1.getNnz() );
+	}
+	
 }

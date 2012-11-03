@@ -142,9 +142,10 @@ public class DataOp extends Hops {
 	@Override
 	public Lops constructLops()
 			throws HopsException, LopsException {
-		
+				
 		if (get_lops() == null) {
 			Lops l = null;
+
 			//TODO: need to remove this if statement
 			/*if (!(_fileName==null)){
 				
@@ -456,5 +457,11 @@ public class DataOp extends Hops {
 		// Since a DATA hop does not represent any computation, 
 		// this function is not applicable. 
 		return null;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//do nothing; dimensions updated via set output params
 	}
 }

@@ -76,4 +76,10 @@ public class PartitionOp extends Hops {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		// TODO modify whenever CL/EL integrated into the optimizer
+	}
 }

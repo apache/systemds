@@ -191,21 +191,27 @@ public class AggBinaryOp extends Hops {
 		{
 			_etype = _etypeForced;
 		}
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
-		// OR if it is vector-vector inner product
-		else if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
-					|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
+		else 
 		{
-			_etype = ExecType.CP;
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
+			// OR if it is vector-vector inner product
+			else if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+						|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
+			{
+				_etype = ExecType.CP;
+			}
+			else
+			{
+				_etype = ExecType.MR;
+			}
 		}
-		else
-		{
-			_etype = ExecType.MR;
-		}
-		
 		return _etype;
 	}
 	
@@ -624,6 +630,38 @@ public class AggBinaryOp extends Hops {
 				//TODO split
 				return String.format(SQLLops.AGGSUMOP, operation, op1, SQLLops.JOIN, op2);
 			}
+		}
+	}
+	
+/*	public void refreshDims()
+	{
+		//TODO
+		Hops input1 = getInput().get(0);
+		Hops input2 = getInput().get(1);
+		
+		if( isMatrixMultiply() )
+		{
+				set_dim1(input1.get_dim1());
+				set_dim2(input2.get_dim2());
+		}
+		
+		input1.set_visited(VISIT_STATUS.NOTVISITED);
+		input2.set_visited(VISIT_STATUS.NOTVISITED);
+		
+		refreshMemEstimates();
+		
+	}*/
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		Hops input1 = getInput().get(0);
+		Hops input2 = getInput().get(1);
+		
+		if( isMatrixMultiply() )
+		{
+			set_dim1(input1.get_dim1());
+			set_dim2(input2.get_dim2());
 		}
 	}
 }

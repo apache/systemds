@@ -478,15 +478,38 @@ public class UnaryOp extends Hops {
 	
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;		
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		// Choose CP, if the input dimensions are below threshold or if the input is a vector
-		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			_etype = ExecType.CP;
 		else 
-			_etype = ExecType.MR;
-		
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+				_etype = ExecType.CP;
+			else 
+				_etype = ExecType.MR;
+		}
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		if ( get_dataType() == DataType.SCALAR ) 
+		{
+			//do nothing always known
+		}
+		else 
+		{
+			// If output is a Matrix then this operation is of type (B = op(A))
+			// Dimensions of B are same as that of A, and sparsity may/maynot change
+			Hops input = getInput().get(0);
+			set_dim1( input.get_dim1() );
+			set_dim2( input.get_dim2() );
+		}
 	}
 }

@@ -66,6 +66,11 @@ abstract public class Hops {
 	// It includes the memory required for all inputs as well as the output 
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE; 
 	
+	// indicates if there are unknowns during compilation 
+	// (in that case re-complication ensures robustness and efficiency)
+	protected boolean _requiresRecompile = false;
+	
+	
 	private static long getNextHopID() {
 		return UniqueHopID.getNextID();
 	}
@@ -1239,6 +1244,29 @@ abstract public class Hops {
 			gen = GENERATES.DML;
 		return gen;
 	}
+	
+	/////////////////////////////////////
+	// methods for dynamic re-compilation
+	/////////////////////////////////////
+
+	/**
+	 * Indicates if dynamic recompilation is required for this hop. 
+	 */
+	public boolean requiresRecompile() 
+	{
+		return _requiresRecompile;
+	}
+	
+	public void setRequiresRecompile()
+	{
+		_requiresRecompile = true;
+	}
+	
+	/**
+	 * Update the output size information for this hop.
+	 */
+	public abstract void refreshSizeInformation();
+	
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for Hops

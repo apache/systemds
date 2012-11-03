@@ -294,15 +294,41 @@ public class AggUnaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
+		else
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+				_etype = ExecType.CP;
+			else 
+				_etype = ExecType.MR;
 		}
-		// Choose CP, if the input dimensions are below threshold or if the input is a vector
-		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			_etype = ExecType.CP;
-		else 
-			_etype = ExecType.MR;
-		
 		return _etype;
+	}
+	
+	/*
+	public void refreshDims()
+	{
+		//TODO
+		Hops input1 = getInput().get(0);
+		
+		set_dim1(input1.get_dim1());
+		set_dim2(input1.get_dim2());
+		
+		input1.set_visited(VISIT_STATUS.NOTVISITED);
+		refreshMemEstimates();
+		
+	}*/
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//do nothing; output always scalar
 	}
 }

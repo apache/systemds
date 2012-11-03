@@ -314,16 +314,46 @@ public class ParameterizedBuiltinOp extends Hops {
 
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;	
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
+		else 
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			else if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
+				if ( this.getInput().get(0).areDimsBelowThreshold() )
+					_etype = ExecType.CP;
+				else
+					_etype = ExecType.MR;
+			}
 		}
-		else if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
-			if ( this.getInput().get(0).areDimsBelowThreshold() )
-				_etype = ExecType.CP;
-			else
-				_etype = ExecType.MR;
-		}
-		
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		switch( _op )
+		{
+			case CDF:
+				//do nothing; CDF is a scalar
+				break;
+			
+			case GROUPEDAGG:  
+				//do nothing; output dimensions are completely data dependent and dim2=1 always known
+				break;
+			
+			case RMEMPTY: 
+				Hops target = getInput().get(_paramIndexMap.get("target"));
+				String margin = getInput().get(_paramIndexMap.get("margin")).toString();
+				if( margin.equals("rows") )
+					set_dim2( target.get_dim2() );
+				else if (margin.equals("cols"))
+					set_dim1( target.get_dim1() );
+				break;
+		}
 	}
 }

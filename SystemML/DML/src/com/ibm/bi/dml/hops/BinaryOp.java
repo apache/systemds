@@ -1039,45 +1039,87 @@ public class BinaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		else
+		else 
 		{
-			_etype = null;
-			DataType dt1 = getInput().get(0).get_dataType();
-			DataType dt2 = getInput().get(1).get_dataType();
-			if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
-				// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
-				// OR if both are vectors
-				if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
-						|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
-				{
-					_etype = ExecType.CP;
-				}
-			}
-			else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
-				if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-				{
-					_etype = ExecType.CP;
-				}
-			}
-			else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
-				if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
-				{
-					_etype = ExecType.CP;
-				}
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
 			}
 			else
 			{
-				_etype = ExecType.CP;
+				_etype = null;
+				DataType dt1 = getInput().get(0).get_dataType();
+				DataType dt2 = getInput().get(1).get_dataType();
+				if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
+					// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
+					// OR if both are vectors
+					if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
+							|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
+					{
+						_etype = ExecType.CP;
+					}
+				}
+				else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
+					if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+					{
+						_etype = ExecType.CP;
+					}
+				}
+				else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
+					if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
+					{
+						_etype = ExecType.CP;
+					}
+				}
+				else
+				{
+					_etype = ExecType.CP;
+				}
+				
+				//if no CP condition applied
+				if( _etype == null )
+					_etype = ExecType.MR;
 			}
-			
-			//if no CP condition applied
-			if( _etype == null )
-				_etype = ExecType.MR;
 		}
-		
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		Hops input1 = getInput().get(0);
+		Hops input2 = getInput().get(1);		
+		DataType dt1 = input1.get_dataType();
+		DataType dt2 = input2.get_dataType();
+		
+		if ( get_dataType() == DataType.SCALAR ) 
+		{
+			//do nothing always known
+		}
+		else 
+		{
+			if( !(op == OpOp2.QUANTILE) )
+			{
+				//PLUS, MINUS, MULT, DIV
+				if ( dt1 == DataType.MATRIX ) 
+				{
+					set_dim1(input1.get_dim1());
+					set_dim2(input1.get_dim2());
+				}
+				else if ( dt2 == DataType.MATRIX ) 
+				{
+					set_dim1(input2.get_dim1());
+					set_dim2(input2.get_dim2());
+				}
+				else
+				{
+					set_dim1(0);
+					set_dim2(0);
+				}
+			}//else do nothing
+		}	
 	}
 }

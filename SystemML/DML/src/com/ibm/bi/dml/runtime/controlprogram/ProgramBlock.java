@@ -5,8 +5,11 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
+import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
@@ -38,6 +41,8 @@ public class ProgramBlock {
 	protected ArrayList<Instruction> _inst;
 	protected LocalVariableMap _variables;
 	
+	protected StatementBlock _sb;
+	
 	public ProgramBlock(Program prog) throws DMLRuntimeException {
 		
 		_prog = prog;
@@ -58,6 +63,16 @@ public class ProgramBlock {
 		_prog = prog;
 	}
 	
+	public StatementBlock getStatementBlock()
+	{
+		return _sb;
+	}
+	
+	public void setStatementBlock( StatementBlock sb )
+	{
+		_sb = sb;
+	}
+	
 	public void setMetaData(String fname, MetaData md) throws DMLRuntimeException {
 		_variables.get(fname).setMetaData(md);
 	}
@@ -70,8 +85,28 @@ public class ProgramBlock {
 		 _variables.get(varname).removeMetaData();
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		execute(_inst, ec);
+	public void execute(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		ArrayList<Instruction> tmp = _inst;
+		
+		//dynamically recompile instructions if enabled and required
+		try {
+			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				&& _sb != null 
+				&& Recompiler.requiresRecompilation(_sb.get_hops()) 
+				&& !Recompiler.containsNonRecompileInstructions(tmp) )
+			{
+				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables);
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to recompile program block.", ex);
+		}
+		
+		//actual instruction execution
+		execute(tmp, ec);
 	}
 
 	public void removeVariable(String name) {
@@ -154,7 +189,8 @@ public class ProgramBlock {
 							}
 						}
 					}
-					if ( DMLScript.DEBUG ) {
+					if ( DMLScript.DEBUG ) 
+					{
 						duration = System.currentTimeMillis()-st;
 						//instTimer.addTime(currMRInst.getID(), duration);
 						System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (duration));

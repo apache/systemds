@@ -158,7 +158,10 @@ public class ProgramConverter
 				}
 			}	
 			else
+			{
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
+				tmpPB.setStatementBlock(pb.getStatementBlock()); //TODO generalize
+			}
 
 			//copy instructions
 			tmpPB.setInstructions( createDeepCopyInstructionSet(pb.getInstructions(), pid, IDPrefix, prog) );
@@ -533,7 +536,7 @@ public class ProgramConverter
 		sb.append( PARFORBODY_BEGIN );
 		sb.append( NEWLINE );
 		
-		//handle DMLScript UUID
+		//handle DMLScript UUID (propagate original uuid for writing to scratch space)
 		sb.append( DMLScript.getUUID() );
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );		

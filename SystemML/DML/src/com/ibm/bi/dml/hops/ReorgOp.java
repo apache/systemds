@@ -286,15 +286,57 @@ public class ReorgOp extends Hops {
 	
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		// Choose CP, if the input dimensions are below threshold or if the input is a vector
-		else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			_etype = ExecType.CP;
 		else 
-			_etype = ExecType.MR;
-		
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+				_etype = ExecType.CP;
+			else 
+				_etype = ExecType.MR;
+		}
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		Hops input1 = getInput().get(0);
+		
+		switch(op) 
+		{
+			case TRANSPOSE:
+				set_dim1(input1.get_dim2());
+				set_dim2(input1.get_dim1());
+				setNnz(input1.getNnz());
+				break;
+				
+			case DIAG_V2M:
+				// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
+				int maxDim = (int) Math.max(input1.get_dim1(), input1.get_dim2());
+				set_dim1(maxDim);
+				set_dim2(maxDim);
+				break;
+				
+			case DIAG_M2V:
+				// input is [k,k] matrix and output is [k,1] matrix
+				set_dim1(input1.get_dim1());
+				set_dim2(1);								
+				break;
+			
+			case APPEND:
+				Hops input2 = getInput().get(1);
+				set_dim1( input1.get_dim1() );
+				set_dim2( input1.get_dim2() + input2.get_dim2() );
+				setNnz( input1.getNnz() + input2.getNnz() );
+				break;
+				
+		}	
 	}
 }

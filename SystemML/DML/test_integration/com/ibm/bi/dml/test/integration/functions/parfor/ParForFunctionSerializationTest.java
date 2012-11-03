@@ -9,7 +9,7 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class ParForFunctionSerialization extends AutomatedTestBase 
+public class ParForFunctionSerializationTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "parfor_funct";
 	private final static String TEST_NAME2 = "parfor_extfunct";

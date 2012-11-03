@@ -658,18 +658,51 @@ public class TertiaryOp extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		else if ( (getInput().get(0).areDimsBelowThreshold() 
-				&& getInput().get(1).areDimsBelowThreshold()
-				&& getInput().get(2).areDimsBelowThreshold()) 
-				//|| (getInput().get(0).isVector() && getInput().get(1).isVector() && getInput().get(1).isVector() )
-			)
-			_etype = ExecType.CP;
 		else
-			_etype = ExecType.MR;
-		
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			else if ( (getInput().get(0).areDimsBelowThreshold() 
+					&& getInput().get(1).areDimsBelowThreshold()
+					&& getInput().get(2).areDimsBelowThreshold()) 
+					//|| (getInput().get(0).isVector() && getInput().get(1).isVector() && getInput().get(1).isVector() )
+				)
+				_etype = ExecType.CP;
+			else
+				_etype = ExecType.MR;
+		}
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		if ( get_dataType() == DataType.SCALAR ) 
+		{
+			//do nothing always known
+		}
+		else 
+		{
+			switch(op) 
+			{
+				case CTABLE:
+					//do nothing because the output size is data dependent
+					break;
+				
+				case QUANTILE:
+					// This part of the code is executed only when a vector of quantiles are computed
+					// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
+					// TODO
+					break;	
+					
+				default:
+					throw new RuntimeException("Size information for operation (" + op + ") can not be updated.");
+			}
+		}	
 	}
 }

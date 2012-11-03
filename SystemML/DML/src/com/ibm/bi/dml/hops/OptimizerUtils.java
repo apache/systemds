@@ -104,6 +104,16 @@ public class OptimizerUtils {
 	public static final long BOOLEAN_SIZE = 1;
 	public static final double INVALID_SIZE = -1d; // used to indicate the memory estimate is not computed
 
+	
+	/**
+	 * Enables/disables dynamic re-compilation of lops/instructions.
+	 * If enabled, we recompile each program block that contains at least
+	 * one hop that requires re-compilation (e.g., unknown statistics 
+	 * during compilation, or program blocks in functions).  
+	 */
+	public static boolean ALLOW_DYN_RECOMPILATION = true;
+	
+	
 	/**
 	 * Estimates the footprint (in bytes) for an in-memory representation of a
 	 * matrix with dimensions=(nrows,ncols) and sparsity=sp.

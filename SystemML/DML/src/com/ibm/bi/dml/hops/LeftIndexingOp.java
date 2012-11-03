@@ -178,15 +178,28 @@ public class LeftIndexingOp  extends Hops {
 		
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		else if ( getInput().get(0).areDimsBelowThreshold() )
-			_etype = ExecType.CP;
 		else 
-			_etype = ExecType.MR;
-		
+		{	
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			else if ( getInput().get(0).areDimsBelowThreshold() )
+				_etype = ExecType.CP;
+			else 
+				_etype = ExecType.MR;
+		}
 		return _etype;
 	}
 
+	@Override
+	public void refreshSizeInformation()
+	{
+		Hops input1 = getInput().get(0);		
+		set_dim1( input1.get_dim1() );
+		set_dim2( input1.get_dim2() );
+	}
 }

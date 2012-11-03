@@ -4,9 +4,11 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
+import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Dag;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
@@ -59,16 +61,18 @@ public class ProgramRecompiler
 			hop.set_lops(null); //to enable fresh construction
 		
 			//get all hops of statement and construct new instructions
-			ArrayList<Instruction> newInst = null;
 			Dag<Lops> dag = new Dag<Lops>();
 			for( Hops hops : sbOld.get_hops() )
 			{
-				System.out.println(hops.getOpString());
-				rClearLops(hops);
+				hops.resetVisitStatus();
+				Recompiler.rClearLops(hops);
 				Lops lops = hops.constructLops();
 				lops.addToDag(dag);
-				newInst = dag.getJobs(false,ConfigurationManager.getConfig());
 			}
+			
+			//construct new instructions
+			ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig());
+			
 			
 			//exchange instructions
 			System.out.println("OLD");
@@ -83,24 +87,6 @@ public class ProgramRecompiler
 		{
 			throw new DMLRuntimeException(ex);
 		}
-	}
-	
-	/**
-	 * 
-	 * @param hop
-	 */
-	private static void rClearLops( Hops hop )
-	{
-		//System.out.println(hop.getOpString());
-		
-		//preserve Treads to prevent wrong rmfilevar instructions
-		if( hop.getOpString().equals("TRead") )
-			return; 
-		
-		//clear all relevant lops to allow for recompilation
-		hop.set_lops(null);
-		for( Hops c : hop.getInput() )
-			rClearLops(c);
 	}
 
 	
@@ -137,16 +123,18 @@ public class ProgramRecompiler
 				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
 				hop.set_lops(null); //to enable fresh construction
 			
-				//get all hops of statement and construct new instructions
-				ArrayList<Instruction> newInst = null;
+				//get all hops of statement and construct new lops
 				Dag<Lops> dag = new Dag<Lops>();
 				for( Hops hops : sbOld.get_hops() )
 				{
-					rClearLops(hops);
+					hops.resetVisitStatus();
+					Recompiler.rClearLops(hops);
 					Lops lops = hops.constructLops();
 					lops.addToDag(dag);
-					newInst = dag.getJobs(false,ConfigurationManager.getConfig());
 				}
+				
+				//construct new instructions
+				ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig());
 				
 				//exchange instructions
 				pbNew = new ProgramBlock(pbOld.getProgram());
@@ -301,6 +289,7 @@ public class ProgramRecompiler
 				boolean ret = false;
 				for( Hops h : sb.get_hops() )
 				{
+					h.resetVisitStatus();
 					ret |= rFindAndSetCPIndexingHOP(h, var);
 				}
 				
@@ -308,16 +297,18 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//get all hops of statement and construct new instructions
-					ArrayList<Instruction> newInst = null;
 					Dag<Lops> dag = new Dag<Lops>();
 					for( Hops hops : sb.get_hops() )
 					{
-						rClearLops(hops);
+						hops.resetVisitStatus();
+						Recompiler.rClearLops(hops);
 						Lops lops = hops.constructLops();
 						lops.addToDag(dag);
-						newInst = dag.getJobs(false,ConfigurationManager.getConfig());
 					}
 					
+					//construct new instructions
+					ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig()); 
+								
 					//exchange instructions
 					pb.getInstructions().clear();
 					pb.getInstructions().addAll(newInst);
@@ -333,6 +324,10 @@ public class ProgramRecompiler
 	public static boolean rFindAndSetCPIndexingHOP(Hops hop, String var) 
 	{
 		boolean ret = false;
+		
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return ret;
+		
 		ArrayList<Hops> in = hop.getInput();
 		
 		if( hop instanceof IndexingOp )
@@ -350,6 +345,8 @@ public class ProgramRecompiler
 		if( in != null )
 			for( Hops hin : in )
 				ret |= rFindAndSetCPIndexingHOP(hin,var);
+		
+		hop.set_visited(VISIT_STATUS.DONE);
 		
 		return ret;
 	}

@@ -223,4 +223,10 @@ public class LiteralOp extends Hops {
 		// this function is not applicable. 
 		return null;
 	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//do nothing; it is a scalar
+	}
 }

@@ -162,14 +162,58 @@ public class IndexingOp extends Hops {
 
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		else if ( getInput().get(0).areDimsBelowThreshold() )
-			_etype = ExecType.CP;
 		else
-			_etype = ExecType.MR;
-		
+		{	
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			else if ( getInput().get(0).areDimsBelowThreshold() )
+				_etype = ExecType.CP;
+			else
+				_etype = ExecType.MR;
+		}
 		return _etype;
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//TODO MB: verify with Doug and Shirish that the structure is always as expected here.
+		
+		Hops input1 = getInput().get(0); //original matrix
+		Hops input2 = getInput().get(1); //inpRowL
+		Hops input3 = getInput().get(2); //inpRowU
+		Hops input4 = getInput().get(3); //inpColL
+		Hops input5 = getInput().get(4); //inpColU
+		
+		//parse input information
+		boolean singleRow = false;
+		boolean allRows = false;
+		if( input2 instanceof LiteralOp )
+		{
+			if( input3 instanceof LiteralOp && ((LiteralOp)input2).get_name().equals(((LiteralOp)input3).get_name()) )
+				singleRow = true;
+			else if ( ((LiteralOp)input2).get_name().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
+				allRows = true;
+		}		
+		boolean singleCol = false;
+		boolean allCols = false;
+		if( input4 instanceof LiteralOp )
+		{
+			if( input5 instanceof LiteralOp && ((LiteralOp)input4).get_name().equals(((LiteralOp)input5).get_name()) )
+				singleCol = true;
+			else if ( ((LiteralOp)input4).get_name().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
+				allCols = true;
+		}
+		
+		//set dimension information
+		if( singleRow )    set_dim1(1);
+		else if( allRows ) set_dim1(input1.get_dim1());
+		if( singleCol )    set_dim2(1);
+		else if( allCols ) set_dim2(input1.get_dim2());
 	}
 }

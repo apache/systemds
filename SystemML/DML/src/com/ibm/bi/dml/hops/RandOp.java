@@ -160,19 +160,31 @@ public class RandOp extends Hops
 
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
-		else if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			_etype = findExecTypeByMemEstimate();
-		}
-		else if (this.areDimsBelowThreshold() || this.isVector())
-			_etype = ExecType.CP;
-		else
-			_etype = ExecType.MR;
-		
+		else 
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			else if (this.areDimsBelowThreshold() || this.isVector())
+				_etype = ExecType.CP;
+			else
+				_etype = ExecType.MR;
+			}
 		return _etype;
 	}
 	
 	public static long generateRandomSeed()
 	{
 		return System.nanoTime();
+	}
+	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//do nothing always known (TODO modify whenever we take expressions for rows/cols)
 	}
 }

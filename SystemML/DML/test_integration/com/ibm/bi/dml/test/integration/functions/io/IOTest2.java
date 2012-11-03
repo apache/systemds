@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.test.integration.io;
+package com.ibm.bi.dml.test.integration.functions.io;
 
 import org.junit.Test;
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 
  * 
  */
-public class IOTest3 extends AutomatedTestBase {
+public class IOTest2 extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
@@ -34,7 +34,7 @@ public class IOTest3 extends AutomatedTestBase {
 		
 
 		// negative tests
-		availableTestConfigurations.put("SimpleTest", new TestConfiguration("functions/io/", "IOTest3", new String[] { "a" }));
+		availableTestConfigurations.put("SimpleTest", new TestConfiguration("functions/io/", "IOTest2", new String[] { "a" }));
 	}
 
 	@Test

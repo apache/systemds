@@ -71,6 +71,29 @@ public class ParForRowwiseDataPartitioningTest extends AutomatedTestBase
 		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, false, true);
 	}
 	
+	@Test
+	public void testParForDataPartitioningRemoteLocalLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteLocalLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningRemoteRemoteLargeDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteRemoteLargeSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, true);
+	}
 	
 	
 	/**
@@ -97,12 +120,12 @@ public class ParForRowwiseDataPartitioningTest extends AutomatedTestBase
 				else
 					scriptNum=3;				
 				break; 
-			//case REMOTE_MR: 
-			//	if( mode==PExecMode.REMOTE_MR )
-			//		scriptNum=4;
-			//	else
-			//		scriptNum=5;
-			//	break; 
+			case REMOTE_MR: 
+				if( mode==PExecMode.REMOTE_MR )
+					scriptNum=4;
+				else
+					scriptNum=5;
+				break; 
 		}
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

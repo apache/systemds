@@ -505,9 +505,19 @@ public class MRJobConfiguration {
 		return Long.parseLong(job.get(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG));
 	}
 	
+	public static void setPartitioningBlockNumRows( JobConf job, int brlen )
+	{
+		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
+	}
+	
 	public static int getPartitioningBlockNumRows( JobConf job )
 	{
 		return Integer.parseInt(job.get(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG));
+	}
+
+	public static void setPartitioningBlockNumCols( JobConf job, int bclen )
+	{
+		job.set(PARTITIONING_INPUT_BLOCK_NUM_COLUMN_CONFIG,String.valueOf(bclen));
 	}
 	
 	public static int getPartitioningBlockNumCols( JobConf job )
@@ -524,10 +534,20 @@ public class MRJobConfiguration {
 	{
 		return OutputInfo.stringToOutputInfo(job.get(PARTITIONING_OUTPUT_INFO_CONFIG));
 	}
+
+	public static void setPartitioningFormat( JobConf job, PDataPartitionFormat dpf )
+	{
+		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
+	}
 	
 	public static PDataPartitionFormat getPartitioningFormat( JobConf job )
 	{
 		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
+	}
+	
+	public static void setPartitioningFilename( JobConf job, String fname )
+	{
+		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fname);
 	}
 	
 	public static String getPartitioningFilename( JobConf job )

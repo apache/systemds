@@ -83,11 +83,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * (Error Task log directory for task attempt_201209251949_2586_m_000014_0 does not exist. May be cleaned up by Task Tracker, if older logs.)      
  *       
  * TODO: leftindexing recompile/partitioning
- * TODO: remote result merge      
- * 
- * NEW PERFORMANCE IMPROVEMENTS (probably not for BI 2.0 release)
- * TODO: parallel local file-based result merge
- * TODO: parallel remote MR result merge
  * 
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
@@ -156,6 +151,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
+	public static final boolean ALLOW_DATA_COLOCATION       = true;
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
@@ -184,7 +180,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected int              _numIterations   = -1; 
 	
 	//specifics used for data partitioning
-	protected LocalVariableMap _variablesDPOriginal;
+	protected LocalVariableMap _variablesDPOriginal = null;
+	protected String           _colocatedDPMatrix   = null;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -331,6 +328,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		_dataPartitioner = partitioner;
 		_params.put(ParForStatementBlock.DATA_PARTITIONER, String.valueOf(_dataPartitioner)); //kept up-to-date for copies
+	}
+	
+	public void enableColocatedPartitionedMatrix( String varname )
+	{
+		//only enabled though optimizer
+		_colocatedDPMatrix = varname;
 	}
 	
 	public void setResultMerge(PResultMerge merge) 
@@ -683,7 +686,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS();
 				
 		// Step 3) submit MR job (wait for finished work)
-		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
+		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)_variables.get(_colocatedDPMatrix) : null;
+		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj,
 				                      ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory());
 		
 		if( MONITOR ) 
@@ -872,7 +876,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 3) submit MR job (wait for finished work)
 		String resultFile = constructResultFileName();
 		
-		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, 
+		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, null,
 				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory()); 	
 		
 		// Step 4) collecting results from each parallel worker

@@ -22,9 +22,12 @@ import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -49,7 +52,7 @@ public class RemoteParForMR
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, //inputs
+	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
 			                       ExecMode mode, int numMappers, int replication, int max_retry, long minMem)  //opt params
 		throws DMLRuntimeException
 	{
@@ -74,7 +77,19 @@ public class RemoteParForMR
 			job.setMapperClass(RemoteParWorkerMapper.class); //map-only
 
 			//set input format (one split per row, NLineInputFormat default N=1)
-			job.setInputFormat(NLineInputFormat.class);
+			if( ParForProgramBlock.ALLOW_DATA_COLOCATION && colocatedDPMatrixObj != null )
+			{
+				job.setInputFormat(RemoteParForColocatedNLineInputFormat.class);
+				MRJobConfiguration.setPartitioningFormat(job, colocatedDPMatrixObj.getPartitionFormat());
+				MatrixCharacteristics mc = ((MatrixFormatMetaData)colocatedDPMatrixObj.getMetaData()).getMatrixCharacteristics();
+				MRJobConfiguration.setPartitioningBlockNumRows(job, mc.get_rows_per_block());
+				MRJobConfiguration.setPartitioningBlockNumCols(job, mc.get_cols_per_block());
+				MRJobConfiguration.setPartitioningFilename(job, colocatedDPMatrixObj.getFileName());
+			}
+			else //default case 
+			{
+				job.setInputFormat(NLineInputFormat.class);
+			}
 			
 			//set the input path and output path 
 		    FileInputFormat.setInputPaths(job, new Path(taskFile));

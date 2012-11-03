@@ -314,13 +314,23 @@ public abstract class CacheableData extends Data
 				|| _cacheStatus == CacheStatus.CACHED);
 	}
 
-
 	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------
-
+	
+	
 	/**
-	 * Deletes the DML-script-specific caching working dir.
+	 * 
 	 */
 	public synchronized static void cleanupCacheDir()
+	{
+		cleanupCacheDir(true);
+	}
+	
+	/**
+	 * Deletes the DML-script-specific caching working dir.
+	 * 
+	 * @param withDir
+	 */
+	public synchronized static void cleanupCacheDir(boolean withDir)
 	{
 		//get directory name
 		String dir = null;
@@ -344,11 +354,16 @@ public abstract class CacheableData extends Data
 					case LOCAL:
 						File fdir = new File(dir);
 						if( fdir.exists()){ //just for robustness
-							File[] files = fdir.listFiles();
-							for( File f : files )
-								if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-									f.delete();
-							fdir.delete();
+							String[] fnames = fdir.list();
+							for( String fname : fnames )
+								if( fname.startsWith(cacheEvictionLocalFilePrefix) )
+									new File(fname).delete();
+							//File[] files = fdir.listFiles();
+							//for( File f : files )
+							//	if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+							//		f.delete();
+							if( withDir )
+								fdir.delete(); //deletes dir only if empty
 						}
 						break;
 					case HDFS:
@@ -365,12 +380,24 @@ public abstract class CacheableData extends Data
 		_activeFlag = false;
 	}
 	
-	
 	/**
-	 * Creates the DML-script-specific caching working dir.
+	 * Inits caching with the default uuid of DMLScript
 	 * @throws IOException 
 	 */
 	public synchronized static void initCaching() 
+		throws IOException
+	{
+		initCaching(DMLScript.getUUID());
+	}
+	
+	/**
+	 * Creates the DML-script-specific caching working dir.
+	 * 
+	 * Takes the UUID in order to allow for custom uuid, e.g., for remote parfor caching
+	 * 
+	 * @throws IOException 
+	 */
+	public synchronized static void initCaching( String uuid ) 
 		throws IOException
 	{
 		//get directory name
@@ -387,7 +414,7 @@ public abstract class CacheableData extends Data
 					dirRoot = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR);
 				LocalFileUtils.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 				LocalFileUtils.createLocalFileIfNotExist(dirRoot+"/cache/", DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-				dir = dirRoot + "/cache/" + Lops.PROCESS_PREFIX + DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				dir = dirRoot + "/cache/" + Lops.PROCESS_PREFIX + uuid + Lops.FILE_SEPARATOR;
 				//create own local dir with default permission
 				File fdir = new File(dir);
 				fdir.mkdirs();
@@ -397,7 +424,7 @@ public abstract class CacheableData extends Data
 			case HDFS:
 				//get directory
 				dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
-				      + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX+DMLScript.getUUID()+Lops.FILE_SEPARATOR;
+				      + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + uuid + Lops.FILE_SEPARATOR;
 				cacheEvictionHDFSFilePath = dir;
 				break;
 		}
@@ -414,4 +441,5 @@ public abstract class CacheableData extends Data
 	{
 		_activeFlag = false;
 	}
+
 }

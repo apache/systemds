@@ -163,7 +163,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		
 				//init local cache manager 
 				if( !CacheableData.isCachingActive() ) 
-					CacheableData.initCaching(); //incl activation
+					CacheableData.initCaching( IDHandler.createDistributedUniqueID() ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
 				
 				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
 				{
@@ -224,7 +224,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		//cleanup cached variables in order to prevent writing to disk
 		boolean isLocal = InfrastructureAnalyzer.isLocalMode();
 		if( !isLocal && !ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
+		{
+			//no cleanup
+			CacheableData.cleanupCacheDir();
 			CacheableData.disableCaching();
+		}
 	}
 	
 }

@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.api;
 
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.bi.dml.utils.AppException;
 
@@ -13,14 +14,20 @@ import com.ibm.bi.dml.utils.AppException;
 
 public class AppExceptionJaqlUdf {
 	
-	public static void eval(JsonString errMsg) throws AppException {
+	public static JsonBool eval(JsonString errMsg) throws AppException {
 
-		throw new AppException(errMsg.toString());
+		if (errMsg.length() > 0) {
+		  throw new AppException(errMsg.toString());
+		}
+		return JsonBool.FALSE;
 	}
 
-	public static void eval(JsonString errMsg, Exception e)
+	public static JsonBool eval(JsonString errMsg, Exception e)
 			throws AppException {
-		throw new AppException(errMsg.toString(), e);
+		if (errMsg.length() > 0) {
+		   throw new AppException(errMsg.toString(), e);
+		}
+		return JsonBool.FALSE;
 	}
 
 }

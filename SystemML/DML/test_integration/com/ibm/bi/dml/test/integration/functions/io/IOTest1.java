@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.test.integration.io;
+package com.ibm.bi.dml.test.integration.functions.io;
 
 import org.junit.Test;
 

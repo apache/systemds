@@ -354,14 +354,14 @@ public abstract class CacheableData extends Data
 					case LOCAL:
 						File fdir = new File(dir);
 						if( fdir.exists()){ //just for robustness
-							String[] fnames = fdir.list();
-							for( String fname : fnames )
-								if( fname.startsWith(cacheEvictionLocalFilePrefix) )
-									new File(fname).delete();
-							//File[] files = fdir.listFiles();
-							//for( File f : files )
-							//	if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-							//		f.delete();
+							//String[] fnames = fdir.list();
+							//for( String fname : fnames )
+							//	if( fname.startsWith(cacheEvictionLocalFilePrefix) )
+							//		new File(fname).delete();
+							File[] files = fdir.listFiles();
+							for( File f : files )
+								if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+									f.delete();
 							if( withDir )
 								fdir.delete(); //deletes dir only if empty
 						}

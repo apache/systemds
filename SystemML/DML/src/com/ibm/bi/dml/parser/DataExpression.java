@@ -366,7 +366,7 @@ public class DataExpression extends Expression {
 				throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 			
 			break;
-		case RAND: 
+case RAND: 
 			
 			for (String key : _varParams.keySet()){
 				boolean found = false;

@@ -44,7 +44,7 @@ public class MRJobInstruction extends Instruction
 	//public enum JobType {MMCJ, MMRJ, GMR, Partition, RAND, ReBlock, SortKeys, Combine, CMCOV, GroupedAgg}; 
 	JobType jobType;
 	
-	public String iv_randInstructions = "";
+	String iv_randInstructions = "";
 	String iv_recordReaderInstructions = "";
 	String iv_instructionsInMapper = ""; 
 	String iv_shuffleInstructions = ""; 

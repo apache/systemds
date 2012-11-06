@@ -67,6 +67,10 @@ public class DataExpression extends Expression {
 		return _varParams;
 	}
 	
+	public void setVarParams(HashMap<String, Expression> varParams) {
+		_varParams = varParams;
+	}
+	
 	public Expression getVarParam(String name) {
 		return _varParams.get(name);
 	}
@@ -108,6 +112,7 @@ public class DataExpression extends Expression {
 	 * statement
 	 *  
 	 * @throws LanguageException
+	 * @throws ParseException 
 	 * @throws IOException 
 	 */
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars)
@@ -116,12 +121,11 @@ public class DataExpression extends Expression {
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
 			getVarParam(s).validateExpression(ids, currConstVars);
-			
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-			}
-		}
-		
+				}
+		}	
+					
 		// IMPORTANT: for each operation, one must handle unnamed parameters
 		
 		switch (this.getOpCode()) {
@@ -130,7 +134,7 @@ public class DataExpression extends Expression {
 			
 			
 			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier))
-				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
+				throw new LanguageException(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 			
 			
@@ -362,7 +366,309 @@ public class DataExpression extends Expression {
 				throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 			
 			break;
+		case RAND: 
+			
+			for (String key : _varParams.keySet()){
+				boolean found = false;
+				for (String name : RandStatement.RAND_VALID_PARAM_NAMES){
+					if (name.equals(key))
+					found = true;
+				}
+				if (!found)
+					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
+						"\". Legal parameters for Rand statement are " 
+						+ "(capitalization-sensitive): " 	+ RandStatement.RAND_ROWS 	
+						+ ", " + RandStatement.RAND_COLS		+ ", " + RandStatement.RAND_MIN + ", " + RandStatement.RAND_MAX  	
+						+ ", " + RandStatement.RAND_SPARSITY + ", " + RandStatement.RAND_SEED     + ", " + RandStatement.RAND_PDF);
+				}
+			
+			//TODO: Leo Need to check with Doug about the data types
+			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
+			if (!(getVarParam(RandStatement.RAND_ROWS) instanceof IntIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BuiltinFunctionExpression || getVarParam(RandStatement.RAND_ROWS) instanceof IndexedIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BinaryExpression || getVarParam(RandStatement.RAND_ROWS) instanceof DataIdentifier) ||
+				!(getVarParam(RandStatement.RAND_COLS) instanceof IntIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BuiltinFunctionExpression || getVarParam(RandStatement.RAND_ROWS) instanceof IndexedIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BinaryExpression || getVarParam(RandStatement.RAND_COLS) instanceof DataIdentifier) ||
+				!(getVarParam(RandStatement.RAND_MAX) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_MAX) instanceof IntIdentifier) ||
+				!(getVarParam(RandStatement.RAND_MIN) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_MIN) instanceof IntIdentifier) ||
+				!(getVarParam(RandStatement.RAND_SPARSITY) instanceof DoubleIdentifier) ||
+				!(getVarParam(RandStatement.RAND_SEED) instanceof IntIdentifier) ||
+				!(getVarParam(RandStatement.RAND_PDF) instanceof StringIdentifier)){
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement, one or more of parameters " + RandStatement.RAND_MIN 
+						+ ", " + RandStatement.RAND_MAX + ", " + RandStatement.RAND_SPARSITY 
+						+ ", " + RandStatement.RAND_SEED + ", " + RandStatement.RAND_PDF + " have incorrect data types");
+			}
+			
+			if (!(getVarParam(RandStatement.RAND_PDF).toString()).equals("uniform")){
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement, " + RandStatement.RAND_PDF 
+						+ " only support " + RandStatement.RAND_PDF_UNIFORM);
+			}
+			
+			long rowsLong = -1L, colsLong = -1L;
 
+			///////////////////////////////////////////////////////////////////
+			// HANDLE ROWS
+			///////////////////////////////////////////////////////////////////
+			Expression rowsExpr = getVarParam(RandStatement.RAND_ROWS);
+			if (rowsExpr instanceof IntIdentifier) {
+				if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
+					rowsLong = ((IntIdentifier)rowsExpr).getValue();
+				}
+				else {
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+				}
+			}
+			else if (rowsExpr instanceof DoubleIdentifier) {
+				if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
+					rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
+				}
+				else {
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
+				}		
+			}
+			else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
+				
+				// check if the DataIdentifier variable is a ConstIdentifier
+				String identifierName = ((DataIdentifier)rowsExpr).getName();
+				if (currConstVars.containsKey(identifierName)){
+					
+					// handle int constant
+					ConstIdentifier constValue = currConstVars.get(identifierName);
+					if (constValue instanceof IntIdentifier){
+						
+						// check rows is >= 1 --- throw exception
+						if (((IntIdentifier)constValue).getValue() < 1)
+							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						
+						// update row expr with new IntIdentifier 
+						long roundedValue = ((IntIdentifier)constValue).getValue();
+						rowsExpr = new IntIdentifier(roundedValue);
+						rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+						rowsLong = roundedValue; 
+					}
+					// handle double constant 
+					else if (constValue instanceof DoubleIdentifier){
+						
+						if (((DoubleIdentifier)constValue).getValue() < 1.0)
+							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						
+						// update row expr with new IntIdentifier (rounded down)
+						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+						rowsExpr = new IntIdentifier(roundedValue);
+						rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+						rowsLong = roundedValue; 
+						
+					}
+					else {
+						// exception -- rows must be integer or double constant
+						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+					}
+				}
+				else {
+					// handle general expression
+					rowsExpr.validateExpression(ids, currConstVars);
+				}
+			}	
+			else {
+				// handle general expression
+				rowsExpr.validateExpression(ids, currConstVars);
+			}
+				
+	
+			///////////////////////////////////////////////////////////////////
+			// HANDLE COLUMNS
+			///////////////////////////////////////////////////////////////////
+			
+			Expression colsExpr = getVarParam(RandStatement.RAND_COLS);
+			if (colsExpr instanceof IntIdentifier) {
+				if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
+					colsLong = ((IntIdentifier)colsExpr).getValue();
+				}
+				else {
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+				}
+			}
+			else if (colsExpr instanceof DoubleIdentifier) {
+				if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
+					colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+				}
+				else {
+					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+				}		
+			}
+			else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
+				
+				// check if the DataIdentifier variable is a ConstIdentifier
+				String identifierName = ((DataIdentifier)colsExpr).getName();
+				if (currConstVars.containsKey(identifierName)){
+					
+					// handle int constant
+					ConstIdentifier constValue = currConstVars.get(identifierName);
+					if (constValue instanceof IntIdentifier){
+						
+						// check cols is >= 1 --- throw exception
+						if (((IntIdentifier)constValue).getValue() < 1)
+							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						
+						// update col expr with new IntIdentifier 
+						long roundedValue = ((IntIdentifier)constValue).getValue();
+						colsExpr = new IntIdentifier(roundedValue);
+						colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_COLS, colsExpr);
+						colsLong = roundedValue; 
+					}
+					// handle double constant 
+					else if (constValue instanceof DoubleIdentifier){
+						
+						if (((DoubleIdentifier)constValue).getValue() < 1)
+							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						
+						// update col expr with new IntIdentifier (rounded down)
+						long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+						colsExpr = new IntIdentifier(roundedValue);
+						colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_COLS, colsExpr);
+						colsLong = roundedValue; 
+						
+					}
+					else {
+						// exception -- rows must be integer or double constant
+						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+					}
+				}
+				else {
+					// handle general expression
+					colsExpr.validateExpression(ids, currConstVars);
+				}
+					
+			}	
+			else {
+				// handle general expression
+				colsExpr.validateExpression(ids, currConstVars);
+			}
+			
+			///////////////////////////////////////////////////////////////////
+			// HANDLE MIN
+			///////////////////////////////////////////////////////////////////	
+			Expression minExpr = getVarParam(RandStatement.RAND_MIN);
+			
+			// perform constant propogation
+			if (minExpr instanceof DataIdentifier && !(minExpr instanceof IndexedIdentifier)) {
+				
+				// check if the DataIdentifier variable is a ConstIdentifier
+				String identifierName = ((DataIdentifier)minExpr).getName();
+				if (currConstVars.containsKey(identifierName)){
+					
+					// handle int constant
+					ConstIdentifier constValue = currConstVars.get(identifierName);
+					if (constValue instanceof IntIdentifier){
+						
+						// update min expr with new IntIdentifier 
+						long roundedValue = ((IntIdentifier)constValue).getValue();
+						minExpr = new DoubleIdentifier(roundedValue);
+						minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_MIN, minExpr);
+					}
+					// handle double constant 
+					else if (constValue instanceof DoubleIdentifier){
+		
+						// update col expr with new IntIdentifier (rounded down)
+						double roundedValue = ((DoubleIdentifier)constValue).getValue();
+						minExpr = new DoubleIdentifier(roundedValue);
+						minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_MIN, minExpr);
+						
+					}
+					else {
+						// exception -- rows must be integer or double constant
+						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign min a numerical " +
+								"value -- attempted to assign: " + constValue.toString());
+					}
+				}
+				else {
+					// handle general expression
+					minExpr.validateExpression(ids, currConstVars);
+				}
+					
+			}	
+			else {
+				// handle general expression
+				minExpr.validateExpression(ids, currConstVars);
+			}
+			
+			
+			///////////////////////////////////////////////////////////////////
+			// HANDLE MAX
+			///////////////////////////////////////////////////////////////////
+			Expression maxExpr = getVarParam(RandStatement.RAND_MAX);
+			
+			// perform constant propogation
+			if (maxExpr instanceof DataIdentifier && !(maxExpr instanceof IndexedIdentifier)) {
+				
+				// check if the DataIdentifier variable is a ConstIdentifier
+				String identifierName = ((DataIdentifier)maxExpr).getName();
+				if (currConstVars.containsKey(identifierName)){
+					
+					// handle int constant
+					ConstIdentifier constValue = currConstVars.get(identifierName);
+					if (constValue instanceof IntIdentifier){
+						
+						// update min expr with new IntIdentifier 
+						long roundedValue = ((IntIdentifier)constValue).getValue();
+						maxExpr = new DoubleIdentifier(roundedValue);
+						maxExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_MAX, maxExpr);
+					}
+					// handle double constant 
+					else if (constValue instanceof DoubleIdentifier){
+		
+						// update col expr with new IntIdentifier (rounded down)
+						double roundedValue = ((DoubleIdentifier)constValue).getValue();
+						maxExpr = new DoubleIdentifier(roundedValue);
+						maxExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						addVarParam(RandStatement.RAND_MAX, maxExpr);
+						
+					}
+					else {
+						// exception -- rows must be integer or double constant
+						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign max a numerical " +
+								"value -- attempted to assign: " + constValue.toString());
+					}
+				}
+				else {
+					// handle general expression
+					maxExpr.validateExpression(ids, currConstVars);
+				}		
+			}	
+			else {
+				// handle general expression
+				maxExpr.validateExpression(ids, currConstVars);
+			}
+		
+			_output.setFormatType(FormatType.BINARY);
+			_output.setDataType(DataType.MATRIX);
+			_output.setValueType(ValueType.DOUBLE);
+			_output.setDimensions(rowsLong, colsLong);
+			
+			if (_output instanceof IndexedIdentifier){
+				((IndexedIdentifier) _output).setOriginalDimensions(_output.getDim1(), _output.getDim2());
+			}
+			//_output.computeDataType();
+
+			if (_output instanceof IndexedIdentifier){
+				System.out.println(this.printWarningLocation() + "Output for Rand Statement may have incorrect size information");
+			}
+			
+			break;
 		default:
 			throw new LanguageException(this.printErrorLocation() + "Unsupported Data expression"
 						+ this.getOpCode(),

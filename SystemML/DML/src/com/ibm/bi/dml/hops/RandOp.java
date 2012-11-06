@@ -1,12 +1,17 @@
 package com.ibm.bi.dml.hops;
 
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.Rand;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.RandStatement;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
@@ -16,6 +21,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
@@ -28,48 +34,55 @@ public class RandOp extends Hops
 	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
 	public static final long UNSPECIFIED_SEED = -1;
 	
+	/**
+	 * List of "named" input parameters. They are maintained as a hashmap:
+	 * parameter names (String) are mapped as indices (Integer) into getInput()
+	 * arraylist.
+	 * 
+	 * i.e., getInput().get(_paramIndexMap.get(parameterName)) refers to the Hop
+	 * that is associated with parameterName.
+	 */
+	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
+	
 	/** target identifier which will hold the random object */
 	private DataIdentifier id;
-	/** minimum of the random values */
-	private double minValue;
-	/** maximum of the random values */
-	private double maxValue;
 	/** sparsity of the random object */
+	/** this is used for mem estimate */
 	private double sparsity;
-	/** fixed seed for all invocations, -1 for random seed on each invocation */
-	private long seed;
-	/** probability density function which is used to produce the sparsity */
-	private String probabilityDensityFunction;
-
 	
 	/**
-	 * <p>Creates a new Rand-HOP. The target identifier has to hold the dimensions of the new random object.</p>
+	 * <p>Creates a new Rand HOP.</p>
 	 * 
 	 * @param id the target identifier
-	 * @param minValue minimum of the random values
-	 * @param maxValue maximum of the random values
-	 * @param sparsity sparsity of the random object
-	 * @param probabilityDensityFunction probability density function
+	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public RandOp(DataIdentifier id, double minValue, double maxValue, double sparsity, long seed,
-			String probabilityDensityFunction)
-	{
-		super(Kind.RandOp, id.getName(), id.getDataType(), ValueType.DOUBLE);
-		this.id = id;
-		this.minValue = minValue;
-		this.maxValue = maxValue;
-		this.sparsity = sparsity;
-		this.seed = seed;
-		this.probabilityDensityFunction = probabilityDensityFunction;
-	}
 
+
+
+	public RandOp(DataIdentifier id, HashMap<String, Hops> inputParameters){
+		super(Kind.RandOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
+		
+		this.id = id;
+				
+		int index = 0;
+		for (String s : inputParameters.keySet()) {
+			Hops input = inputParameters.get(s);
+			getInput().add(input);
+			input.getParent().add(this);
+
+			_paramIndexMap.put(s, index);
+			index++;
+		}
+		sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
+	}
+	
 	@Override
 	public String getOpString() {
 		return "rand";
 	}
 	
 	@Override
-	public Lops constructLops() throws HopsException
+	public Lops constructLops() throws HopsException, LopsException
 	{
 		if(get_lops() == null)
 		{
@@ -82,10 +95,17 @@ public class RandOp extends Hops
 				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 			}
 			
-			Rand rnd = new Rand(id, minValue, maxValue, sparsity, seed, probabilityDensityFunction, 
+			HashMap<String, Lops> inputLops = new HashMap<String, Lops>();
+			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+				inputLops.put(cur.getKey(), getInput().get(cur.getValue())
+						.constructLops());
+			}
+			
+			Rand rnd = new Rand(id, inputLops,
 					scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 		   					          Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR,
 					get_dataType(), get_valueType(), et);
+			
 			rnd.getOutputParameters().setDimensions(
 					get_dim1(), get_dim2(),
 					get_rows_in_block(), get_cols_in_block(), getNnz());
@@ -120,7 +140,7 @@ public class RandOp extends Hops
 
 			//TODO extend for seed
 			sqllop.set_sql("CALL gensparsematrix('" + sqllop.get_tableName() + "', " + this.get_dim1() + ", "
-					+ this.get_dim2() + ", " + this.minValue + ", " + this.maxValue + ", " + this.sparsity + ");");
+					+ this.get_dim2() + ");");
 			
 			sqllop.set_properties(getProperties());
 			this.set_sqllops(sqllop);

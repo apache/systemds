@@ -80,7 +80,8 @@ public class DMLQLParser extends DMLQLParserBase{
 		commandArgs = ca;
 	}
 
-	private String printErrorLocation(int line, int col){		return "ERROR: line " + line + ", col " + col + " -- "; 
+	private String printErrorLocation(int line, int col){
+		return "ERROR: line " + line + ", col " + col + " -- "; 
 	}
 
 	private String printWarningLocation(int line, int col){
@@ -525,17 +526,20 @@ ImportStatement ImportStatement() :
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;
 
-		if (t4 != null){			elp = t4.endLine;
+		if (t4 != null){
+			elp = t4.endLine;
 			ecp = t4.endColumn;
 		}
-		else if (t3 != null){			elp = t3.endLine;
+		else if (t3 != null){
+			elp = t3.endLine;
 			ecp = t3.endColumn;
 		}
 		else if (t2 != null){
 			elp = t2.endLine;
 			ecp = t2.endColumn;
 		}
-		else {			elp = t1.endLine;
+		else {
+			elp = t1.endLine;
 			ecp = t1.endColumn;
 		}
 
@@ -767,7 +771,8 @@ Vector<DataIdentifier> ReadTypedArgList() :
 			valueType = t1.image;
         }
 
-		try {		  	d1.setTypeInfo(valueType, dataType);      
+		try {
+		  	d1.setTypeInfo(valueType, dataType);      
        		params.add(d1);
        } catch (ParseException e) {
 			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " function parameter has unknown value type");
@@ -840,7 +845,8 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
      	targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
      	| target = Expression() {targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList); } 	
 	)?
-	{	  	// CASE: no indexing dimensions given
+	{
+	  	// CASE: no indexing dimensions given
 		if (targetList == null){
 			targetList = new ArrayList<Expression>();
 			targetList.add(null);
@@ -857,8 +863,12 @@ ArrayList<ArrayList<Expression>> ReadIndexList() :
 			targetList = ColonDelimitedExpression() {targetListList.add(targetList);}
 			|	target = Expression() { targetList = new ArrayList<Expression>(); targetList.add(target); targetListList.add(targetList);}
    		)?
-   		{   	  				// CASE: no indexing dimesnions given
-			if (targetList == null)			{				targetList = new ArrayList<Expression>();
+   		{
+   	  	
+			// CASE: no indexing dimesnions given
+			if (targetList == null)
+			{
+				targetList = new ArrayList<Expression>();
 				targetList.add(null);
 				targetList.add(null);
 				targetListList.add(targetList);
@@ -1963,13 +1973,17 @@ DataIdentifier Identifier() :
 		if (functCall != null) {
 
 			// CASE: no namespace handle built-in functions
-			if ( tNamespace == null )			{				// verify passed function name is a (non-parameterized) built-in function.
+			if ( tNamespace == null )
+			{
+				// verify passed function name is a (non-parameterized) built-in function.
 				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(t.image, functCall.getParamExpressions());
-				if (bife != null){					bife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+				if (bife != null){
+					bife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
 					return bife;
 				}
 				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(t.image, functCall.getNamedParamExpressions());
-				if (pbife != null){					pbife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
+				if (pbife != null){
+					pbife.setAllPositions(blp, bcp, functCall.getEndLine(), functCall.getEndColumn());
 					return pbife;
 				}
 			}
@@ -1985,8 +1999,10 @@ DataIdentifier Identifier() :
 		}
 		else if (exprListList != null){
 			IndexedIdentifier iid = new IndexedIdentifier(id.getName(), false, false);
-			try {				iid.setIndices(exprListList);
-			} catch (ParseException e) {				throw new ParseException(printErrorLocation(blp,bcp) + "matrix indices must be specified for 2 dimensions -- currently specified indices for " + exprListList.size() + " dimensions ");
+			try {
+				iid.setIndices(exprListList);
+			} catch (ParseException e) {
+				throw new ParseException(printErrorLocation(blp,bcp) + "matrix indices must be specified for 2 dimensions -- currently specified indices for " + exprListList.size() + " dimensions ");
 			}
 			
 			// set position information
@@ -2020,7 +2036,8 @@ FunctionCallIdentifier FunctionCall():
 				if (t1 != null){
 					namedExprs.put(t1.image, expr);
 				}	
-				else {				   exprs.add(expr);
+				else {
+				   exprs.add(expr);
 				}
 				t1 = null;
 			}
@@ -2062,7 +2079,8 @@ InputStatement InputStatement() :
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 	Token tEnd = null;
 }
-{	  id = Identifier()
+{
+	  id = Identifier()
 	
 	{
 		if (id.getName().startsWith("$"))
@@ -2074,7 +2092,9 @@ InputStatement InputStatement() :
 		//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
 		(
 			<COMMA>
-			(				{Token t1 = null;}				t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}
+			(
+				{Token t1 = null;}
+				t1 = <ID> < ASSIGN > t2 = Expression() {is.addExprParam(t1.image, t2,false);}
 			)
 		)*
 		tEnd = <RIGHTPAREN> [<SEMICOLON>]
@@ -2185,6 +2205,7 @@ RandStatement RandStatement() :
 		elp = tEnd.beginLine;
 		ecp = tEnd.beginColumn;
 		rs.setAllPositions(blp, bcp, elp, ecp);
+		rs.setRandDefault();
 		return rs;
 	}
 }
@@ -2310,7 +2331,8 @@ CVStatement CVStatement() :
 		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for crossval -- should be \"(train params) as (train outputs)\"");
 		if (!"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for crossval -- should be \"(test params) as (test outputs)\"");
 		if (!"as".equals(tAs_4)) throw new ParseException(printErrorLocation(tAs_4.beginLine, tAs_4.beginColumn) + "incorrect syntax for crossval -- should be \"(error agg params) as (error agg outputs)\"");
-			MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+	
+		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
 				trainFunctionName, trainFunctionParams, trainFunctionOutputs,
 				testFunctionName,  testFunctionParams,  testFunctionOutputs,
 				partitionOutputs,

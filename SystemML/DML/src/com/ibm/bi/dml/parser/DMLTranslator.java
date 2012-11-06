@@ -172,7 +172,7 @@ public class DMLTranslator {
 		// handle regular program blocks 
 		VariableSet currentLiveOut = new VariableSet();
 		VariableSet activeIn = new VariableSet();
-		
+				
 		// handle function inlining
 		dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
 		
@@ -1753,7 +1753,10 @@ public class DMLTranslator {
 
 
 				Integer statementId = liveOutToTemp.get(target.getName());
-				if ((statementId != null) && (statementId.intValue() == i)) {			
+				if ((statementId != null) && (statementId.intValue() == i)) {
+					
+					
+					
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
 					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
 					transientwrite.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
@@ -1772,7 +1775,6 @@ public class DMLTranslator {
 				DataOp ae = (DataOp)processExpression(source, target, _ids);
 				String formatName = os.getFormatName();
 				ae.setFormatType(Expression.convertFormatType(formatName));
-				//_ids.put(target.getName(), ae);
 
 
 				if (ae.getFormatType() == FileFormatTypes.TEXT || 
@@ -1951,38 +1953,16 @@ public class DMLTranslator {
 			
 			if (current instanceof RandStatement) {
 				RandStatement rs = (RandStatement) current;
+				
+				DataExpression source = rs.getSource();
 				DataIdentifier target = rs.getIdentifier();
 				
-				if ( target.getDim1() <= 0 || target.getDim2() <=0 ) {
-					//throw new ParseException(current.printErrorLocation() + "Invalid target dimensions (" + target.getDim1() + "x" + target.getDim2() + ") in Rand statement: \"" + rs.toString() + "\"");
-				
-					// target size may have been set to (-1,-1) during validate --- attempt to update based on dims in Rand Statement
-					Long updatedDim1 = -1L;
-					Long updatedDim2 = -1L;
-					
-					if (rs.getExprParam(RandStatement.RAND_ROWS) instanceof IntIdentifier)
-						updatedDim1 = ((IntIdentifier)rs.getExprParam(RandStatement.RAND_ROWS)).getValue();
-					
-					if (rs.getExprParam(RandStatement.RAND_COLS) instanceof IntIdentifier)
-						updatedDim2 = ((IntIdentifier)rs.getExprParam(RandStatement.RAND_COLS)).getValue();
-
-					target.setDimensions(updatedDim1, updatedDim2);
-				}
-				
-				
-				// TODO: DRB: BEGIN RETROFIT FOR RAND ///////////////////////////////////// 
-				double randMinValue = new Double(rs.getExprParam(RandStatement.RAND_MIN).toString());
-				double randMaxValue = new Double(rs.getExprParam(RandStatement.RAND_MAX).toString());
-				double randSparsityValue = new Double(rs.getExprParam(RandStatement.RAND_SPARSITY).toString());
-				long randSeedValue = new Long(rs.getExprParam(RandStatement.RAND_SEED).toString());
-				String randPdfValue = rs.getExprParam(RandStatement.RAND_PDF).toString();
-				// TODO: DRB: END RETROFIT FOR RAND ///////////////////////////////////////
-				
-				Hops rand = new RandOp(target, randMinValue, randMaxValue, randSparsityValue, randSeedValue, randPdfValue);
+				RandOp rand = (RandOp)processExpression(source, target, _ids);
 				rand.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
-				setIdentifierParams(rand, target);
 				_ids.put(target.getName(), rand);
+				
+				// TODO: Leo What does this piece of code do?
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), rand, DataOpTypes.TRANSIENTWRITE, null);
@@ -1991,6 +1971,7 @@ public class DMLTranslator {
 					updatedLiveOut.addVariable(target.getName(), target);
 					output.add(transientwrite);
 				}
+				
 			}
 		}
 		sb.updateLiveVariablesOut(updatedLiveOut);
@@ -2637,13 +2618,20 @@ public class DMLTranslator {
 					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTWRITE, hops.get(name), paramHops);
 			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
 			break;
-		
+			
+		case RAND:
+			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
+			currBuiltinOp = new RandOp(target, paramHops);
+			break;
+			
 		default:
 			throw new ParseException(source.printErrorLocation() + 
 					"processDataExpression():: Unknown operation:  "
 							+ source.getOpCode());
 		}
 		
+		
+		//TODO: Leo This might be a problem, because we do not know cols and rows
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;

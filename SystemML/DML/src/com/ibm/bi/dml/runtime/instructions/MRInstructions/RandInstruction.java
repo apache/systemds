@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -38,26 +39,25 @@ public class RandInstruction extends UnaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction(String str) 
+	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
 	{
-		String[] s = str.split(Instruction.OPERAND_DELIM);
-		
-		// s[0]: CP or MR (exec type)
-		// s[1]: Rand (opcode)
+		InstructionUtils.checkNumFields ( str, 12 );
+
+		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		Operator op = null;
-		byte input = Byte.parseByte(s[2]);
-		byte output = Byte.parseByte(s[3]);
-		long rows = Long.parseLong(s[4].substring(5));
-		long cols = Long.parseLong(s[5].substring(5));
-		int rpb = Integer.parseInt(s[6].substring(12));
-		int cpb = Integer.parseInt(s[7].substring(12));
-		double minValue = Double.parseDouble(s[8].substring(4));
-		double maxValue = Double.parseDouble(s[9].substring(4));
-		double sparsity = Double.parseDouble(s[10].substring(9));
-		long seed = Long.parseLong(s[11].substring(5));
-		String pdf = s[12].substring(4);
-		String baseDir = s[13].substring(4);
+		byte input = Byte.parseByte(parts[1]);
+		byte output = Byte.parseByte(parts[2]);
+		long rows = Long.parseLong(parts[3]);
+		long cols = Long.parseLong(parts[4]);
+		int rpb = Integer.parseInt(parts[5]);
+		int cpb = Integer.parseInt(parts[6]);
+		double minValue = Double.parseDouble(parts[7]);
+		double maxValue = Double.parseDouble(parts[8]);
+		double sparsity = Double.parseDouble(parts[9]);
+		long seed = Long.parseLong(parts[10]);
+		String pdf = parts[11];
+		String baseDir = parts[12];
 		
 		return new RandInstruction(op, input, output, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, baseDir, str);
 	}

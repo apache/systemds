@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -33,9 +34,10 @@ public class RandCPInstruction extends UnaryCPInstruction{
 							  double maxValue,
 							  double sparsity, 
 							  long seed,
-							  String probabilityDensityFunction, 
-							  String istr ) {
+							  String probabilityDensityFunction,
+							  String istr) {
 		super(op, in, out, istr);
+		
 		this.rows = rows;
 		this.cols = cols;
 		this.rowsInBlock = rpb;
@@ -45,29 +47,40 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdf = probabilityDensityFunction;
+
 	}
 
-	public static Instruction parseInstruction(String str) 
+	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
 	{
-		Operator op = null;
+		InstructionUtils.checkNumFields ( str, 13 );
 		
-		// Example: CP:Rand:rows=10:cols=10:rowsInBlock=1000:colsInBlock=1000:min=0.0:max=1.0:sparsity=1.0:seed=7:pdf=uniform:dir=scratch_space/_t0/:mVar0-MATRIX-DOUBLE
-		String[] s = InstructionUtils.getInstructionPartsWithValueType(str);
-		CPOperand in = null; // Rand instruction does not have any input matrices
+		Operator op = null;
+
+		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
+		CPOperand in = null;
+		
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		out.split(s[s.length-1]); // ouput is specified by the last operand
 		
-		long rows = Long.parseLong(s[1].substring(5));
-		long cols = Long.parseLong(s[2].substring(5));
-		int rpb = Integer.parseInt(s[3].substring(12));
-		int cpb = Integer.parseInt(s[4].substring(12));
-		double minValue = Double.parseDouble(s[5].substring(4));
-		double maxValue = Double.parseDouble(s[6].substring(4));
-		double sparsity = Double.parseDouble(s[7].substring(9));
-		long seed = Long.parseLong(s[8].substring(5));
-		String pdf = s[9].substring(4);
+		long rows = -1, cols = -1;
+        if (!s[3].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+		   	rows = Long.parseLong(s[3]);
+        }
+        if (!s[4].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+        	cols = Long.parseLong(s[4]);
+        }
+		
+		int rpb = Integer.parseInt(s[5]);
+		int cpb = Integer.parseInt(s[6]);
+		double minValue = Double.parseDouble(s[7]);
+		double maxValue = Double.parseDouble(s[8]);
+		double sparsity = Double.parseDouble(s[9]);
+		long seed = Long.parseLong(s[10]);
+		String pdf = s[11];
+		
 		
 		return new RandCPInstruction(op, in, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, str);
+				
 	}
 	
 	public void processInstruction (ProgramBlock pb)

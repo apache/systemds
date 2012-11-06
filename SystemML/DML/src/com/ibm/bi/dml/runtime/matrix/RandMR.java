@@ -75,6 +75,7 @@ public class RandMR
 		//whether use block representation or cell representation
 		MRJobConfiguration.setMatrixValueClass(job, true);
 		
+		
 		byte[] realIndexes=new byte[randInstructions.length];
 		for(byte b=0; b<realIndexes.length; b++)
 			realIndexes[b]=b;
@@ -115,8 +116,6 @@ public class RandMR
 			if( DMLScript.DEBUG )
 				System.out.println("process RandMR with seed="+lSeed+".");
 
-			if(ins==null)
-				throw new RuntimeException("bad rand instruction: "+randInstructions[i]);
 			rlens[i]=ins.rows;
 			clens[i]=ins.cols;
 			brlens[i] = ins.rowsInBlock;

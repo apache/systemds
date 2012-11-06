@@ -22,7 +22,6 @@ import java.util.Map.Entry;
 public class DataOp extends Hops {
 
 	DataOpTypes _dataop;
-	//TODO: remove fileName
 	String _fileName;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
 	

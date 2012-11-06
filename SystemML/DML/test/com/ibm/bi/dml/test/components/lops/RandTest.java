@@ -1,12 +1,20 @@
 package com.ibm.bi.dml.test.components.lops;
 
+import static org.junit.Assert.*;
+
+import java.util.HashMap;
+
 import org.junit.Test;
 
+import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.Rand;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.utils.LopsException;
 
 
 public class RandTest {
@@ -24,21 +32,50 @@ public class RandTest {
     
     
     @Test
-    public void testGetInstructionsIntInt() {
+    public void testGetInstructionsIntInt() throws LopsException {
         Rand randLop = getRandInstance();
-        //assertEquals("Rand 0 1 min=" + MIN_VALUE + " max=" + MAX_VALUE + " sparsity=" + SPARSITY + " pdf=" + PDF + " dir=" + DIR ,
-        //        randLop.getInstructions(0, 1));
+
+        assertEquals("MR"+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + 
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "0" + 
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "1" + 
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(NUM_ROWS) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(NUM_COLS) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + String.valueOf(NUM_ROWS_IN_BLOCK) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + String.valueOf(NUM_COLS_IN_BLOCK) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(MIN_VALUE) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(MAX_VALUE) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(SPARSITY) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(SEED) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pREAD"+ String.valueOf(PDF) +
+        		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + String.valueOf(DIR),
+                randLop.getInstructions(0, 1));
     }
     
-    private Rand getRandInstance() {
+    private Rand getRandInstance() throws LopsException {
         DataIdentifier id = new DataIdentifier("A");
         id.setFormatType(FormatType.BINARY);
         id.setValueType(ValueType.DOUBLE);
         id.setDataType(DataType.MATRIX);
         id.setDimensions(NUM_ROWS, NUM_COLS);
         id.setBlockDimensions(NUM_ROWS_IN_BLOCK, NUM_COLS_IN_BLOCK);
-        return new Rand(id, MIN_VALUE, MAX_VALUE, SPARSITY, SEED, PDF, DIR,
-        		DataType.MATRIX, ValueType.DOUBLE);
+        Data min = new Data("", Data.OperationTypes.READ, String.valueOf(MIN_VALUE), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data max = new Data("", Data.OperationTypes.READ, String.valueOf(MAX_VALUE), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data sparsity = new Data("", Data.OperationTypes.READ, String.valueOf(SPARSITY), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data seed = new Data("", Data.OperationTypes.READ, String.valueOf(SEED), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data pdf = new Data("", Data.OperationTypes.READ, String.valueOf(PDF), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data rows = new Data("", Data.OperationTypes.READ, String.valueOf(NUM_ROWS), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        Data cols = new Data("", Data.OperationTypes.READ, String.valueOf(NUM_COLS), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        HashMap<String, Lops> 
+    	inputParametersLops = new HashMap<String, Lops>();
+        inputParametersLops.put("min", min);
+        inputParametersLops.put("max", max);
+        inputParametersLops.put("sparsity", sparsity);
+        inputParametersLops.put("seed", seed);
+        inputParametersLops.put("pdf", pdf);
+        inputParametersLops.put("rows", rows);
+        inputParametersLops.put("cols", cols);
+        return new Rand(id, inputParametersLops, DIR,
+        		DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
     }
 
 }

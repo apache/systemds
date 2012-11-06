@@ -84,4 +84,14 @@ public class InstructionUtils {
 		return (bfc != null);
 	}
 	
+	public static boolean isOperand(String str) {
+		String[] parts = str.split(Instruction.DATATYPE_PREFIX);
+		if (parts.length > 1){
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
 }

@@ -4,9 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.Rand;
@@ -35,7 +39,7 @@ public class RandOpTest {
 	private static final String DIR = "scratch_space/_p"+IDHandler.createDistributedUniqueID()+"//_t0/";
 	
 	@Test
-	public void testConstructLops() throws HopsException {
+	public void testConstructLops() throws HopsException, LopsException {
 		setupConfiguration();
 		RandOp ro = getRandOpInstance();
 		Lops lop = ro.constructLops();
@@ -54,16 +58,16 @@ public class RandOpTest {
 		try {
 			assertEquals("CP" + com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "0"
 					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "1"
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "rows=" + NUM_ROWS
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "cols=" + NUM_COLS
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "rowsInBlock=" + NUM_ROWS_IN_BLOCK
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "colsInBlock=" + NUM_COLS_IN_BLOCK
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "min=" + MIN_VALUE
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "max=" + MAX_VALUE
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "sparsity=" + SPARSITY
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "seed=" + SEED
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "pdf=" + PDF
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "dir=" + DIR, lop
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_ROWS
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_COLS
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_ROWS_IN_BLOCK
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_COLS_IN_BLOCK
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + MIN_VALUE
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + MAX_VALUE
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + SPARSITY
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + SEED
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + PDF
+					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + DIR, lop
 					.getInstructions(0, 1));
 		} catch (LopsException e) {
 			fail("failed to get instructions: " + e.getMessage());
@@ -77,7 +81,22 @@ public class RandOpTest {
 		id.setDataType(DataType.MATRIX);
 		id.setDimensions(NUM_ROWS, NUM_COLS);
 		id.setBlockDimensions(NUM_ROWS_IN_BLOCK, NUM_COLS_IN_BLOCK);
-		RandOp rand = new RandOp(id, MIN_VALUE, MAX_VALUE, SPARSITY, SEED, PDF);
+		LiteralOp min = new LiteralOp(String.valueOf(MIN_VALUE), MIN_VALUE);
+		LiteralOp max = new LiteralOp(String.valueOf(MAX_VALUE), MAX_VALUE);
+		LiteralOp sparsity = new LiteralOp(String.valueOf(SPARSITY), SPARSITY);
+		LiteralOp seed = new LiteralOp(String.valueOf(SEED), SEED);
+		LiteralOp pdf = new LiteralOp(String.valueOf(PDF), PDF);
+		LiteralOp rows = new LiteralOp(String.valueOf(NUM_ROWS), NUM_ROWS);
+		LiteralOp cols = new LiteralOp(String.valueOf(NUM_COLS), NUM_COLS);
+		HashMap<String, Hops> inputParameters = new HashMap<String, Hops>();
+		inputParameters.put("min", min);
+		inputParameters.put("max", max);
+		inputParameters.put("sparsity", sparsity);
+		inputParameters.put("seed", seed);
+		inputParameters.put("pdf", pdf);
+		inputParameters.put("rows", rows);
+		inputParameters.put("cols", cols);
+		RandOp rand = new RandOp(id, inputParameters);
 		rand.set_dim1(id.getDim1());
 		rand.set_dim2(id.getDim2());
 		rand.setNnz(id.getNnz());

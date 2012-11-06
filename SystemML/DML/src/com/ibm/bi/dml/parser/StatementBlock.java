@@ -647,15 +647,71 @@ public class StatementBlock extends LiveVariableAnalysis{
 			{
 				RandStatement rs = (RandStatement) current;
 				
-				// validate Rand statement 
-				rs.validateStatement(ids, currConstVars);
+				DataIdentifier target = rs.getIdentifier(); 
+				Expression source = rs.getSource();
+				source.setOutput(target);
+				
+				// validate Rand Statement
+				source.validateExpression(ids.getVariables(), currConstVars);
+				
+				// use existing size and properties information for LHS IndexedIdentifier
+				// Do we want to support this? if not, throw an exception, if yes, copy from Assignment part 
+				// CASE: target NOT indexed identifier
+				if (!(target instanceof IndexedIdentifier)){
+					target.setProperties(source.getOutput());
+					if (source.getOutput() instanceof IndexedIdentifier){
+						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
+					}
+					
+				}
+				// CASE: target is indexed identifier
+				else {
+					// process the "target" being indexed
+					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+					if (targetAsSeen == null)
+						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+					target.setProperties(targetAsSeen);
+					
+					// process the expressions for the indexing
+					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )
+						((IndexedIdentifier)target).getRowLowerBound().validateExpression(ids.getVariables(), currConstVars);
+					if ( ((IndexedIdentifier)target).getRowUpperBound() != null  )
+						((IndexedIdentifier)target).getRowUpperBound().validateExpression(ids.getVariables(), currConstVars);
+					if ( ((IndexedIdentifier)target).getColLowerBound() != null  )
+						((IndexedIdentifier)target).getColLowerBound().validateExpression(ids.getVariables(), currConstVars);
+					if ( ((IndexedIdentifier)target).getColUpperBound() != null  )
+						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars);
+					
+					// validate that LHS indexed identifier is being assigned a matrix value
+					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
+						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
+					}
+					
+					// validate that size of LHS index ranges is being assigned:
+					//	(a) a matrix value of same size as LHS
+					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
+					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
 							
-				// update properties of RandStatement target identifier
-				rs.setIdentifierProperties();
+					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
+						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
+										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
+					}
+					
+					if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
+						throw new LanguageException(target.printErrorLocation() + "Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions " 
+										+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions " 
+										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
+					}
+					
+					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
+					
+						
+				}
 				
 				// add RandStatement target to available variables list
-				ids.addVariable(rs.getIdentifier().getName(), rs.getIdentifier());
-				
+				ids.addVariable(target.getName(),target);
+			
 			}
 				
 			else if(current instanceof CVStatement || current instanceof ELStatement || 
@@ -694,7 +750,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		 	
 	 		Expression formatTypeExpr = s.getExprParam(Statement.FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier))
-				throw new LanguageException(s.printErrorLocation() + "input statement parameter " + Statement.FORMAT_TYPE 
+				throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
 						+ " can only be a string with one of following values: binary, text", 
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	 		
@@ -703,7 +759,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 				s._id.setFormatType(FormatType.BINARY);
 			} else if (ft.equalsIgnoreCase("text")){
 				s._id.setFormatType(FormatType.TEXT);
-			} else throw new LanguageException(s.printErrorLocation() + "input statement parameter " + Statement.FORMAT_TYPE 
+			} else throw new LanguageException(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 
 					+ " can only be a string with one of following values: binary, text", 
 					LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		} else {

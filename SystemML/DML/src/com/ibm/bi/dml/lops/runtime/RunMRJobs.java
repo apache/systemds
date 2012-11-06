@@ -79,6 +79,7 @@ public class RunMRJobs {
 		// Spawn MapReduce Jobs
 		try {
 			// replace all placeholders in all instructions with appropriate values
+			String rdInst = updateLabels(inst.getIv_randInstructions(), pb.getVariables());
 			String rrInst = updateLabels(inst.getIv_recordReaderInstructions(), pb.getVariables());
 			String mapInst = updateLabels(inst.getIv_instructionsInMapper(), pb.getVariables());
 			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(),pb.getVariables());
@@ -96,9 +97,8 @@ public class RunMRJobs {
 				 break;
 
 			case RAND:
-				ret = RandMR.runJob(inst, inst.getIv_randInstructions().split(Lops.INSTRUCTION_DELIMITOR), 
-						//inst.getBrlens(), inst.getBclens(), 
-						mapInst, aggInst, otherInst, 
+				ret = RandMR.runJob(inst, 
+						rdInst.split(Lops.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos());
 				break;

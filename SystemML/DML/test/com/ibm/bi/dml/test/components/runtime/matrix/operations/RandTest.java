@@ -31,16 +31,16 @@ public class RandTest {
         	StringBuilder instruction = new StringBuilder("MR" + Instruction.OPERAND_DELIM + "Rand");
         	instruction.append(Instruction.OPERAND_DELIM + 0);
         	instruction.append(Instruction.OPERAND_DELIM + 1);
-        	instruction.append(Instruction.OPERAND_DELIM + "rows=10");
-        	instruction.append(Instruction.OPERAND_DELIM + "cols=11");
-        	instruction.append(Instruction.OPERAND_DELIM + "rowsInBlock=2");
-        	instruction.append(Instruction.OPERAND_DELIM + "colsInBlock=2");
-        	instruction.append(Instruction.OPERAND_DELIM + "min=0.0");
-        	instruction.append(Instruction.OPERAND_DELIM + "max=1.0");
-        	instruction.append(Instruction.OPERAND_DELIM + "sparsity=0.5");
-        	instruction.append(Instruction.OPERAND_DELIM + "seed=7");
-        	instruction.append(Instruction.OPERAND_DELIM + "pdf=uniform");
-        	instruction.append(Instruction.OPERAND_DELIM + "dir=scratch_space/_t0/");
+        	instruction.append(Instruction.OPERAND_DELIM + "10");
+        	instruction.append(Instruction.OPERAND_DELIM + "11");
+        	instruction.append(Instruction.OPERAND_DELIM + "2");
+        	instruction.append(Instruction.OPERAND_DELIM + "2");
+        	instruction.append(Instruction.OPERAND_DELIM + "0.0");
+        	instruction.append(Instruction.OPERAND_DELIM + "1.0");
+        	instruction.append(Instruction.OPERAND_DELIM + "0.5");
+        	instruction.append(Instruction.OPERAND_DELIM + "7");
+        	instruction.append(Instruction.OPERAND_DELIM + "uniform");
+        	instruction.append(Instruction.OPERAND_DELIM + "scratch_space/_t0/");
         	RandInstruction instType = (RandInstruction)RandInstruction.parseInstruction(instruction.toString());
         	
         	

@@ -32,7 +32,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 public enum JobType {
 
 	/* Add new job types to the following list */
-	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction, shuffleLopType)
+	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction)
 	INVALID			(-1, "INVALID", false, false, false), 
 	ANY				(0, "ANY", false, false, false), 
 	GMR				(1, "GMR", false, false, false), 
@@ -40,7 +40,7 @@ public enum JobType {
 	REBLOCK_TEXT	(3, "REBLOCK_TEXT", false, false, false), 
 	REBLOCK_BINARY	(4, "REBLOCK_BINARY", false, false, false), 
 	MMCJ			(5, "MMCJ", true, false, true), 
-	MMRJ			(6, "MMRJ", false, false, true), 
+	MMRJ			(6, "MMRJ", false, false, false), 
 	COMBINE			(7, "COMBINE", true, false, false), 
 	SORT			(8, "SORT", true, false, true), 
 	CM_COV			(9, "CM_COV", false, false, false), 

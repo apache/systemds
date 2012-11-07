@@ -47,7 +47,7 @@ public class MMRJMR {
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
-			String aggInstructionsInReducer, String aggBinInstrction, String otherInstructionsInReducer, 
+			String aggInstructionsInReducer, String aggBinInstrctions, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
@@ -86,7 +86,7 @@ public class MMRJMR {
 		MRJobConfiguration.setAggregateInstructions(job, aggInstructionsInReducer);
 		
 		//set up the aggregate binary operation for the mmcj job
-		MRJobConfiguration.setAggregateBinaryInstructions(job, aggBinInstrction);
+		MRJobConfiguration.setAggregateBinaryInstructions(job, aggBinInstrctions);
 		
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
@@ -104,10 +104,10 @@ public class MMRJMR {
 		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  instructionsInMapper, aggInstructionsInReducer, 
-				aggBinInstrction, resultIndexes );
+				aggBinInstrctions, resultIndexes );
 		
 		MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, 
-				instructionsInMapper, aggInstructionsInReducer, aggBinInstrction, otherInstructionsInReducer, 
+				instructionsInMapper, aggInstructionsInReducer, aggBinInstrctions, otherInstructionsInReducer, 
 				resultIndexes, mapoutputIndexes, false);
 		
 		MatrixCharacteristics[] stats=ret.stats;

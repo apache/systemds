@@ -624,8 +624,8 @@ public class Dag<N extends Lops> {
 		 * by multiple lops then we should mark it as not-finished.
 		 */
 		Vector<N> nodesWithUnfinishedOutputs = new Vector<N>();
-		int[] jobIndices = {JobType.MMCJ.getId(), JobType.MMRJ.getId()};
-		Lops.Type[] lopTypes = { Lops.Type.MMCJ, Lops.Type.MMRJ };
+		int[] jobIndices = {JobType.MMCJ.getId()};
+		Lops.Type[] lopTypes = { Lops.Type.MMCJ};
 		
 		// TODO: SortByValue should be treated similar to MMCJ, since it can
 		// only sort one file now

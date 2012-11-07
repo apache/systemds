@@ -227,6 +227,9 @@ public class AggBinaryOp extends Hops {
 		// most robust plan -- which is CPMM
 		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
 			return MMultMethod.CPMM;
+		if(m1_rows == 1 || m2_cols == 1)
+			return MMultMethod.RMM;
+			
 		
 		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
 		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2

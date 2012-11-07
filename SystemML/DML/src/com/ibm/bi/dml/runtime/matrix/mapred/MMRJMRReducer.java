@@ -29,7 +29,7 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	private TripleIndexes prevIndexes=new TripleIndexes(-1, -1, -1);
 	private boolean firsttime=true;
 	//aggregate binary instruction for the mmrj
-	protected AggregateBinaryInstruction aggBinInstruction=null;
+	protected AggregateBinaryInstruction[] aggBinInstructions=null;
 //	private MatrixIndexes indexBuf=new MatrixIndexes();
 	
 	@Override
@@ -55,11 +55,14 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		}else
 		{
 			//clear the buffer
-	//		System.out.println("cacheValues before remore: \n"+cachedValues);
-			cachedValues.remove(aggBinInstruction.input1);
-	//		System.out.println("cacheValues after remore: "+aggBinInstruction.input1+"\n"+cachedValues);
-			cachedValues.remove(aggBinInstruction.input2);
-	//		System.out.println("cacheValues after remore: "+aggBinInstruction.input2+"\n"+cachedValues);
+			for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
+			{
+//				System.out.println("cacheValues before remore: \n"+cachedValues);
+				cachedValues.remove(aggBinInstruction.input1);
+		//		System.out.println("cacheValues after remore: "+aggBinInstruction.input1+"\n"+cachedValues);
+				cachedValues.remove(aggBinInstruction.input2);
+		//		System.out.println("cacheValues after remore: "+aggBinInstruction.input2+"\n"+cachedValues);
+			}
 		}
 		
 		//perform aggregation first
@@ -69,17 +72,18 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	//	System.out.println("cacheValues after aggregation: \n"+cachedValues);
 		
 		//perform aggbinary for this group
-		processAggBinaryPerGroup(aggIndexes);
+		for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
+			processAggBinaryPerGroup(aggIndexes, aggBinInstruction);
 		
 	//	System.out.println("cacheValues after aggbinary: \n"+cachedValues);
-				
+
 		prevIndexes.setIndexes(triple);
 		
 		report.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
 	
 	//perform pairwise aggregate binary, and added to the aggregates
-	private void processAggBinaryPerGroup(MatrixIndexes indexes) throws IOException
+	private void processAggBinaryPerGroup(MatrixIndexes indexes, AggregateBinaryInstruction aggBinInstruction) throws IOException
 	{
 		IndexedMatrixValue left = cachedValues.getFirst(aggBinInstruction.input1);
 		IndexedMatrixValue right= cachedValues.getFirst(aggBinInstruction.input2);
@@ -131,17 +135,13 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 	public void configure(JobConf job)
 	{
 		super.configure(job);
-		AggregateBinaryInstruction[] ins;
 		try {
-			ins = MRJobConfiguration.getAggregateBinaryInstructions(job);
+			aggBinInstructions = MRJobConfiguration.getAggregateBinaryInstructions(job);
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
-		if(ins.length!=1)
-			throw new RuntimeException("MMRJ only perform one aggregate binary instruction");
-		aggBinInstruction=ins[0];
 	}
 
 }

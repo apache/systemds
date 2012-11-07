@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -21,10 +22,11 @@ public class MMRJMRMapper extends MapperBase
 implements Mapper<Writable, Writable, Writable, Writable>{
 	
 	//the aggregate binary instruction for this mmcj job
-	private AggregateBinaryInstruction aggBinInstruction;
 	private TripleIndexes triplebuffer=new TripleIndexes();
 	private TaggedMatrixValue taggedValue=null;
 	private HashMap<Byte, Long> numRepeats=new HashMap<Byte, Long>();
+	private HashSet<Byte> aggBinInput1s=new HashSet<Byte>();
+	private HashSet<Byte> aggBinInput2s=new HashSet<Byte>();
 	
 	@Override
 	protected void specialOperationsForActualMap(int index,
@@ -40,23 +42,23 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 				continue;
 			
 			//output the left matrix
-			if(output==aggBinInstruction.input1)
+			if(aggBinInput1s.contains(output))
 			{
-				for(long j=0; j<numRepeats.get(aggBinInstruction.input1); j++)
+				for(long j=0; j<numRepeats.get(output); j++)
 				{
 					triplebuffer.setIndexes(result.getIndexes().getRowIndex(), j+1, result.getIndexes().getColumnIndex());
 					taggedValue.setBaseObject(result.getValue());
-					taggedValue.setTag(aggBinInstruction.input1);
+					taggedValue.setTag(output);
 					out.collect(triplebuffer, taggedValue);
 				//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 				}
-			}else if(output==aggBinInstruction.input2)//output the right matrix
+			}else if(aggBinInput2s.contains(output))//output the right matrix
 			{
-				for(long i=0; i<numRepeats.get(aggBinInstruction.input2); i++)
+				for(long i=0; i<numRepeats.get(output); i++)
 				{
 					triplebuffer.setIndexes(i+1, result.getIndexes().getColumnIndex(), result.getIndexes().getRowIndex());
 					taggedValue.setBaseObject(result.getValue());
-					taggedValue.setTag(aggBinInstruction.input2);
+					taggedValue.setTag(output);
 					out.collect(triplebuffer, taggedValue);
 				//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 				}
@@ -86,47 +88,28 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	{
 		super.configure(job);
 		taggedValue=TaggedMatrixValue.createObject(valueClass);
-		AggregateBinaryInstruction[] ins;
+		AggregateBinaryInstruction[] aggBinInstructions;
 		try {
-			ins = MRJobConfiguration.getAggregateBinaryInstructions(job);
+			aggBinInstructions = MRJobConfiguration.getAggregateBinaryInstructions(job);
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
-		if(ins.length!=1)
-			throw new RuntimeException("MMRJ only perform one aggregate binary instruction");
-		aggBinInstruction=ins[0];
 		
-	
-		MatrixCharacteristics mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input2);
-		long matrixNumColumn=mc.numColumns;
-		int blockNumColumn=mc.numColumnsPerBlock;
-		numRepeats.put(aggBinInstruction.input1, (long)Math.ceil((double)matrixNumColumn/(double)blockNumColumn));
-		
-		mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input1);
-		long matrixNumRow=mc.numRows;
-		int blockNumRow=mc.numRowsPerBlock;
-		numRepeats.put(aggBinInstruction.input2, (long)Math.ceil((double)matrixNumRow/(double)blockNumRow));
-		
-		////////////////////////////////////////////////////////
-	/*	for(int i=0; i<representativeMatrixes.size(); i++)
+		for(AggregateBinaryInstruction aggBinInstruction: aggBinInstructions)
 		{
-			if(representativeMatrixes.get(i)==aggBinInstruction.input1)
-			{
-				MatrixCharacteristics mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input2);
-				long matrixNumColumn=mc.numColumns;
-				int blockNumColumn=mc.numColumnsPerBlock;
-				numRepeats.put(aggBinInstruction.input1, (long)Math.ceil((double)matrixNumColumn/(double)blockNumColumn));
-			}
+			MatrixCharacteristics mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input2);
+			long matrixNumColumn=mc.numColumns;
+			int blockNumColumn=mc.numColumnsPerBlock;
+			numRepeats.put(aggBinInstruction.input1, (long)Math.ceil((double)matrixNumColumn/(double)blockNumColumn));
 			
-			if(representativeMatrixes.get(i)==aggBinInstruction.input2)
-			{
-				MatrixCharacteristics mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input1);
-				long matrixNumRow=mc.numRows;
-				int blockNumRow=mc.numRowsPerBlock;
-				numRepeats.put(aggBinInstruction.input2, (long)Math.ceil((double)matrixNumRow/(double)blockNumRow));
-			}
-		}*/
+			mc=MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, aggBinInstruction.input1);
+			long matrixNumRow=mc.numRows;
+			int blockNumRow=mc.numRowsPerBlock;
+			numRepeats.put(aggBinInstruction.input2, (long)Math.ceil((double)matrixNumRow/(double)blockNumRow));
+			aggBinInput1s.add(aggBinInstruction.input1);
+			aggBinInput2s.add(aggBinInstruction.input2);
+		}
 	}
 }

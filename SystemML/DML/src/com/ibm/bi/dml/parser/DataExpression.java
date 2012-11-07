@@ -384,23 +384,28 @@ case RAND:
 			
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
-			if (!(getVarParam(RandStatement.RAND_ROWS) instanceof IntIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BuiltinFunctionExpression || getVarParam(RandStatement.RAND_ROWS) instanceof IndexedIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BinaryExpression || getVarParam(RandStatement.RAND_ROWS) instanceof DataIdentifier) ||
-				!(getVarParam(RandStatement.RAND_COLS) instanceof IntIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BuiltinFunctionExpression || getVarParam(RandStatement.RAND_ROWS) instanceof IndexedIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BinaryExpression || getVarParam(RandStatement.RAND_COLS) instanceof DataIdentifier) ||
-				!(getVarParam(RandStatement.RAND_MAX) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_MAX) instanceof IntIdentifier) ||
-				!(getVarParam(RandStatement.RAND_MIN) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_MIN) instanceof IntIdentifier) ||
-				!(getVarParam(RandStatement.RAND_SPARSITY) instanceof DoubleIdentifier) ||
-				!(getVarParam(RandStatement.RAND_SEED) instanceof IntIdentifier) ||
-				!(getVarParam(RandStatement.RAND_PDF) instanceof StringIdentifier)){
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement, one or more of parameters " + RandStatement.RAND_MIN 
-						+ ", " + RandStatement.RAND_MAX + ", " + RandStatement.RAND_SPARSITY 
-						+ ", " + RandStatement.RAND_SEED + ", " + RandStatement.RAND_PDF + " have incorrect data types");
-			}
-			
-			if (!(getVarParam(RandStatement.RAND_PDF).toString()).equals("uniform")){
-				throw new LanguageException(this.printErrorLocation() + "for Rand statement, " + RandStatement.RAND_PDF 
-						+ " only support " + RandStatement.RAND_PDF_UNIFORM);
-			}
-			
+			if (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier)
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");
+				
+			if (getVarParam(RandStatement.RAND_COLS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BooleanIdentifier)
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_COLS + " has incorrect data type");
+				
+			if (getVarParam(RandStatement.RAND_MAX) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MAX) instanceof BooleanIdentifier) 
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MAX + " has incorrect data type");
+				
+			if (getVarParam(RandStatement.RAND_MIN) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MIN) instanceof BooleanIdentifier) 
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MIN + " has incorrect data type");
+				
+			if (!(getVarParam(RandStatement.RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_SPARSITY) instanceof IntIdentifier))
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SPARSITY + " has incorrect data type");
+				
+			if (!(getVarParam(RandStatement.RAND_SEED) instanceof IntIdentifier))
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SEED + " has incorrect data type");
+				
+			if (!(getVarParam(RandStatement.RAND_PDF) instanceof StringIdentifier)) 
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_PDF + " has incorrect data type");
+				
+	
 			long rowsLong = -1L, colsLong = -1L;
 
 			///////////////////////////////////////////////////////////////////

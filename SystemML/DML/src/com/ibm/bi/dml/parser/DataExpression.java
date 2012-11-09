@@ -382,7 +382,6 @@ case RAND:
 						+ ", " + RandStatement.RAND_SPARSITY + ", " + RandStatement.RAND_SEED     + ", " + RandStatement.RAND_PDF);
 				}
 			
-			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
 			if (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier)
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");

@@ -130,8 +130,10 @@ public class RandStatement extends Statement
 		// check name is valid
 		boolean found = false;
 		for (String name : RAND_VALID_PARAM_NAMES){
-			if (name.equals(paramName))
+			if (name.equals(paramName)) {
 				found = true;
+				break;
+			}			
 		}
 		if (!found)
 			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +

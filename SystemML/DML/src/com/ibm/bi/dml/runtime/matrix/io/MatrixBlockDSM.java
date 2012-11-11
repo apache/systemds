@@ -86,17 +86,28 @@ public class MatrixBlockDSM extends MatrixValue{
 	public static long estimateSize(long nrows, long ncols, double sparsity)
 	{
 		long size=44;//the basic variables and references sizes
-		//get real sparsity
+		
+		//determine sparse/dense representation
 		boolean sparse=true;
 		if(ncols<=SKINNY_MATRIX_TURN_POINT)
 			sparse=false;
 		else
 			sparse= sparsity < SPARCITY_TURN_POINT;
+		
+		//estimate memory consumption for sparse/dense
 		if(sparse)
 		{
-			size+=(Math.ceil(sparsity*ncols)*12+28)*nrows;
-		}else
-			size+=nrows*ncols*8;
+			//account for sparsity and initial capacity
+			int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
+			size += nrows * (28 + 12 * len );
+			
+			//size += (Math.ceil(sparsity*ncols)*12+28)*nrows;
+		}
+		else
+		{
+			size += nrows*ncols*8;
+		}
+		
 		return size;
 	}
 	

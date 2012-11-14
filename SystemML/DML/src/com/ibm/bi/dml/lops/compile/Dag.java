@@ -1060,8 +1060,7 @@ public class Dag<N extends Lops> {
 
 				// map node, add, if no parent needs reduce, else queue
 				if (node.getExecLocation() == ExecLocation.Map) {
-					if (!hasChildNode(node, execNodes,
-							ExecLocation.MapAndReduce)) {
+					if (!hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
 						if (DEBUG)
 							System.out.println(indent + "Adding -"
 									+ node.toString());

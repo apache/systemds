@@ -38,6 +38,7 @@ public class Append extends Lops{
 		
 		if ( et == ExecType.MR ) {
 			//confirm this
+			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 			this.lps.setProperties( et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );

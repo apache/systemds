@@ -1957,6 +1957,19 @@ public class DMLTranslator {
 				DataExpression source = rs.getSource();
 				DataIdentifier target = rs.getIdentifier();
 				
+				// CASE: rand statement -- result of validate reset due to not propogating sizes for loops.  Need to re-update here 
+				Expression rowsExpr = rs.getSource().getVarParam(RandStatement.RAND_ROWS);
+				if ( rowsExpr instanceof IntIdentifier && ((IntIdentifier)rowsExpr).getValue() > 0){
+					rs.getSource().getOutput()._dim1 = ((IntIdentifier)rowsExpr).getValue();
+					rs.getIdentifier()._dim1 = ((IntIdentifier)rowsExpr).getValue();
+				}
+				
+				Expression colsExpr = rs.getSource().getVarParam(RandStatement.RAND_COLS);
+				if ( colsExpr instanceof IntIdentifier && ((IntIdentifier)colsExpr).getValue() > 0){
+					rs.getSource().getOutput()._dim2 = ((IntIdentifier)colsExpr).getValue();
+					rs.getIdentifier()._dim2 = ((IntIdentifier)colsExpr).getValue();
+				}
+				
 				RandOp rand = (RandOp)processExpression(source, target, _ids);
 				rand.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
@@ -3023,7 +3036,6 @@ public class DMLTranslator {
 	}
 		
 	public void setIdentifierParams(Hops h, Identifier id) {
-
 		h.set_dim1(id.getDim1());
 		h.set_dim2(id.getDim2());
 		h.setNnz(id.getNnz());

@@ -654,13 +654,17 @@ public class StatementBlock extends LiveVariableAnalysis{
 				// validate Rand Statement
 				source.validateExpression(ids.getVariables(), currConstVars);
 				
+				
+				
 				// use existing size and properties information for LHS IndexedIdentifier
 				// Do we want to support this? if not, throw an exception, if yes, copy from Assignment part 
 				// CASE: target NOT indexed identifier
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
+					
 					if (source.getOutput() instanceof IndexedIdentifier){
 						target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
+						rs.getIdentifier().setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
 					}
 					
 				}

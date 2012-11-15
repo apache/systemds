@@ -1668,13 +1668,18 @@ public class DMLTranslator {
 		HashMap<String, Hops> _ids = new HashMap<String, Hops>();
 		ArrayList<Hops> output = new ArrayList<Hops>();
 
-		VariableSet liveIn = sb.liveIn();
+		VariableSet liveIn 	= sb.liveIn();
 		VariableSet liveOut = sb.liveOut();
+		VariableSet	updated = sb._updated;
+		VariableSet gen 	= sb._gen;
 		VariableSet updatedLiveOut = new VariableSet();
 
+		// handle liveout variables that are updated --> target identifiers for 
+		//	Assignment, MultiAssignment, RandStatement, InputStatement
 		HashMap<String, Integer> liveOutToTemp = new HashMap<String, Integer>();
 		for (int i = 0; i < sb.getNumStatements(); i++) {
 			Statement current = sb.getStatement(i);
+			
 			if (current instanceof AssignmentStatement) {
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
@@ -1708,34 +1713,25 @@ public class DMLTranslator {
 			}
 		}
 
+		// only create transient read operations for variables either updated or read-before-update 
+		//	(i.e., from LV analysis, updated and gen sets)
 		if (liveIn.getVariables().values().size() > 0) {
 			
 			for (String varName : liveIn.getVariables().keySet()) {
-				DataIdentifier var = liveIn.getVariables().get(varName);
-				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
-				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
-				DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
-				read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
-				_ids.put(varName, read);
-			}
-		}
 
-		// Handle liveout variables that are not updated in this block
-
-		if (liveOut.getVariables().values().size() > 0) {
-			for (String varName : liveOut.getVariables().keySet()) {
-				Integer statementId = liveOutToTemp.get(varName);
-				if (statementId == null) {
-					Hops varHop = _ids.get(varName);
-
-					DataOp transientwrite = new DataOp(varName, varHop.get_dataType(), varHop.get_valueType(), varHop, DataOpTypes.TRANSIENTWRITE, null);
-					transientwrite.setOutputParams(varHop.get_dim1(), varHop.get_dim2(), varHop.getNnz(), varHop.get_rows_in_block(), varHop.get_cols_in_block());
-					transientwrite.setAllPositions(varHop.getBeginLine(), varHop.getBeginColumn(), varHop.getEndLine(), varHop.getEndColumn());
-					output.add(transientwrite);
+				if (updated.containsVariable(varName) || gen.containsVariable(varName)){
+				
+					DataIdentifier var = liveIn.getVariables().get(varName);
+					long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
+					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
+					read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+					_ids.put(varName, read);
 				}
 			}
 		}
 
+	
 		for (int i = 0; i < sb.getNumStatements(); i++) {
 			Statement current = sb.getStatement(i);
 
@@ -1754,8 +1750,6 @@ public class DMLTranslator {
 
 				Integer statementId = liveOutToTemp.get(target.getName());
 				if ((statementId != null) && (statementId.intValue() == i)) {
-					
-					
 					
 					DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.TRANSIENTWRITE, ae, null);
 					transientwrite.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), ae.get_rows_in_block(), ae.get_cols_in_block());
@@ -1862,7 +1856,7 @@ public class DMLTranslator {
 				else {
 					
 					/**
-					 * Instruction format extFunct:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
+					 * Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
 					 * These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
 					 * extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
 					 * 

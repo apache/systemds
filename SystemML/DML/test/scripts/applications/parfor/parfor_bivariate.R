@@ -4,11 +4,16 @@ options(digits=22)
 library("Matrix")
 
 
-D <- readMM(paste(args[1], "D.mtx", sep=""))
-S1 <- readMM(paste(args[1], "S1.mtx", sep=""))
-S2 <- readMM(paste(args[1], "S2.mtx", sep=""))
-K1 <- readMM(paste(args[1], "K1.mtx", sep=""))
-K2 <- readMM(paste(args[1], "K2.mtx", sep=""))
+D1 <- readMM(paste(args[1], "D.mtx", sep=""))
+S11 <- readMM(paste(args[1], "S1.mtx", sep=""))
+S21 <- readMM(paste(args[1], "S2.mtx", sep=""))
+K11 <- readMM(paste(args[1], "K1.mtx", sep=""))
+K21 <- readMM(paste(args[1], "K2.mtx", sep=""))
+D <- as.matrix(D1);
+S1 <- as.matrix(S11);
+S2 <- as.matrix(S21);
+K1 <- as.matrix(K11);
+K2 <- as.matrix(K21);
 
 numPairs <- ncol(S1) * ncol(S2); # number of attribute pairs (|S1|*|S2|)
 maxC <- args[2]; # max number of categories in any categorical attribute

@@ -3,7 +3,14 @@ options(digits=22)
 
 library("Matrix")
 
-V <- readMM(paste(args[1], "V.mtx", sep=""))
+#NOTES MB: readMM returns an obj inherited from matrix
+# (it seams like it internally uses lists, which makes
+# is very slow if there are multiple passes over the data). 
+# adding 'V <- as.matrix(V1)' by more than a factor of 10.
+# However, this will always result in a dense matrix. 
+
+V1 <- readMM(paste(args[1], "V.mtx", sep=""))
+V <- as.matrix(V1);
 
 m <- nrow(V);
 n <- ncol(V); 
@@ -19,7 +26,7 @@ for( i in 1:(n-1) )
    {
       Y <- V[ ,j];  
       R[i,j] <- cor(X, Y)  
-      #print(R[i,j]);
+#      print(R[i,j]);
    }
 }   
 

@@ -2,7 +2,9 @@ args <- commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-A=readMM(paste(args[1], "A.mtx", sep=""))
+A1=readMM(paste(args[1], "A.mtx", sep=""))
+A = as.matrix(A1);
+
 B=A[args[2]:args[3],args[4]:args[5]]
 C=A[1:args[3],args[4]:ncol(A)]
 D=A[,args[4]:args[5]]

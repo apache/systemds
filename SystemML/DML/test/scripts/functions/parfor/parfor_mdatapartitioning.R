@@ -3,7 +3,8 @@ options(digits=22)
 
 library("Matrix")
 
-V <- readMM(paste(args[1], "V.mtx", sep=""))
+V1 <- readMM(paste(args[1], "V.mtx", sep=""))
+V <- as.matrix(V1);
 n <- ncol(V); 
 
 R1 <- array(0,dim=c(1,n))

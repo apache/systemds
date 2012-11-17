@@ -70,7 +70,10 @@ public abstract class CostEstimator
 							val = getSumEstimate(measure, node.getChilds()); 
 							break;
 						case IF:
-							val = getMaxEstimate(measure, node.getChilds()); 
+							if( node.getChilds().size()==2 )
+								val = getWeightedEstimate(measure, node.getChilds());
+							else
+								val = getMaxEstimate(measure, node.getChilds()); 
 							break;
 						case WHILE:
 							val = FACTOR_NUM_ITERATIONS * getSumEstimate(measure, node.getChilds()); 
@@ -198,6 +201,24 @@ public abstract class CostEstimator
 		for( OptNode n : nodes )
 			sum += getEstimate( measure, n );
 		return sum;	
+	}
+	
+	/**
+	 * 
+	 * @param measure
+	 * @param nodes
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	protected double getWeightedEstimate( TestMeasure measure, ArrayList<OptNode> nodes ) 
+		throws DMLRuntimeException 
+	{
+		double ret = 0;
+		int len = nodes.size();
+		for( OptNode n : nodes )
+			ret += getEstimate( measure, n );
+		ret /= len; //weighting
+		return ret;
 	}
 	
 	/**

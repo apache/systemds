@@ -556,7 +556,11 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		result.addVariables(_first.variablesRead());
 		if (_second != null) {
 			result.addVariables(_second.variablesRead());
+		}		
+		if( _third != null ) {
+			result.addVariables(_third.variablesRead());
 		}
+		
 		return result;
 	}
 

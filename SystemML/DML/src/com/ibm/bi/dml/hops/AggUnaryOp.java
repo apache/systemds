@@ -329,6 +329,19 @@ public class AggUnaryOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		//do nothing; output always scalar
+		if (get_dataType() != DataType.SCALAR)
+		{
+			Hops input = getInput().get(0);
+			if ( _direction == Direction.Col ) //colwise computations
+			{
+				set_dim1(1);
+				set_dim2(input.get_dim2());
+			}
+			else if ( _direction == Direction.Row )
+			{
+				set_dim1(input.get_dim1());
+				set_dim2(1);	
+			}
+		}
 	}
 }

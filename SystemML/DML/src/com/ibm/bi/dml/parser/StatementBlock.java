@@ -144,15 +144,21 @@ public class StatementBlock extends LiveVariableAnalysis{
 		Statement stmt = this.getStatement(0);
 		
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
-		if (stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement || 
-				stmt instanceof FunctionStatement || stmt instanceof CVStatement || stmt instanceof ELStatement)
+		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement 
+			|| stmt instanceof FunctionStatement || stmt instanceof CVStatement || stmt instanceof ELStatement )
+		{
 			return false;
+		}
 		
 		// for regular stmt block, check if this is a function call stmt block
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
 			Expression sourceExpr = null;
-			if (stmt instanceof AssignmentStatement)
-				sourceExpr = ((AssignmentStatement)stmt).getSource();
+			if (stmt instanceof AssignmentStatement) {
+				AssignmentStatement astmt = (AssignmentStatement)stmt;
+				if( astmt.containsIndividualStatementBlockOperations() )
+					return false;
+				sourceExpr = astmt.getSource();
+			}
 			else
 				sourceExpr = ((MultiAssignmentStatement)stmt).getSource();
 			
@@ -298,6 +304,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		if (currentBlock != null) {
 			result.add(currentBlock);
 		}
+		
 		return result;		
 	}
 	
@@ -347,6 +354,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		if (currentBlock != null) {
 			result.add(currentBlock);
 		}
+		
 		return result;
 
 	}

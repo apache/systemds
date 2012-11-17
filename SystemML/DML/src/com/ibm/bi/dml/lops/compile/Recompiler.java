@@ -3,8 +3,10 @@ package com.ibm.bi.dml.lops.compile;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -44,6 +46,12 @@ public class Recompiler
 		
 		synchronized( hops ) //need for synchronization as we do temp changes
 		{	
+			if( DMLScript.DEBUG )
+			{
+				System.out.println("**************** Optimizer (Recompile) *************");
+				System.out.println("Memory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");				
+			}
+			
 			//Timing time = new Timing();
 			//time.start();
 			
@@ -81,6 +89,7 @@ public class Recompiler
 			// construct instructions
 			newInst = dag.getJobs(false,ConfigurationManager.getConfig());
 			
+			//System.out.println(newInst);
 			//System.out.println("Construct instructions in "+time.stop()+"ms");
 		}
 		

@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
@@ -64,11 +65,37 @@ public class AssignmentStatement extends Statement{
 	
 	@Override
 	public boolean controlStatement() {
-		// for now, insure that function call ends up in different statement block
+		// for now, ensure that function call ends up in different statement block
 		if (_source instanceof FunctionCallIdentifier)
 			return true;
-		else
-			return false;
+		
+		// ensure that specific ops end up in different statement block
+		if( containsIndividualStatementBlockOperations() )
+			return true;
+		
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean containsIndividualStatementBlockOperations()
+	{
+		boolean ret = false;
+		
+		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
+		{
+			//TODO enable this for groupedAggregate after resolved reblock issue
+			//if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG.toString()) )
+			//	ret = true;		
+			
+			if( _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
+				ret = true;
+		}
+		//System.out.println(_source +": "+ret);
+		
+		return ret;
 	}
 	
 	public void initializeforwardLV(VariableSet activeIn){}

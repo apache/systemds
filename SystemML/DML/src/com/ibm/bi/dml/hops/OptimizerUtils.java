@@ -112,6 +112,16 @@ public class OptimizerUtils {
 	 * during compilation, or program blocks in functions).  
 	 */
 	public static boolean ALLOW_DYN_RECOMPILATION = true;
+	/**
+	 * Enables/disables to put operations with data-dependent output
+	 * size into individual statement blocks / program blocks.
+	 * Since recompilation is done on the granularity of program blocks
+	 * this enables recompilation of subsequent operations according
+	 * to the actual output size. This rewrite might limit the opportunity
+	 * for piggybacking and therefore should only be applied if 
+	 * dyanmic recompilation is enabled as well.
+	 */
+	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
 	
 	
 	/**

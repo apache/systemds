@@ -309,6 +309,24 @@ public class OptNode
 		return ret;
 	}
 	
+	public int getTotalK()
+	{
+		int k = 1;		
+		if( _childs != null )
+			for( OptNode n : _childs )
+				k = Math.max(k, n.getTotalK() );
+		
+		if( _ntype == NodeType.PARFOR )
+		{
+			if( _etype==ExecType.CP )
+				k = _k + _k * k;
+			else //MR
+				k = 1;
+		}
+		
+		return k;
+	}
+	
 	/**
 	 * 
 	 * @return
@@ -322,6 +340,10 @@ public class OptNode
 				if( ret ) break; //early abort if already true
 				ret |= n.hasNestedParallelism();
 			}
+		
+		if( _ntype == NodeType.PARFOR )
+			ret = true;
+			
 		return ret;
 	}
 	

@@ -124,6 +124,15 @@ public class InfrastructureAnalyzer
 	}
 	
 	/**
+	 * 
+	 * @param localMem
+	 */
+	public static void setLocalMaxMemory( long localMem )
+	{
+		_localJVMMaxMem = localMem;
+	}
+	
+	/**
 	 * Gets the maximum memory [in bytes] of a hadoop task JVM.
 	 * 
 	 * @return

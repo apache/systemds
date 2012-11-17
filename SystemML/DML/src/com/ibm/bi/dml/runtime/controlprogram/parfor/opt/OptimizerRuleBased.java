@@ -47,7 +47,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * - 5) rewrite set degree of parallelism
  * - 6) rewrite set task partitioner
  * - 7) rewrite set result merge 		 		 
- * - 8) remove unnecessary parfor		
+ * - 8) rewrite set recompile memory budget
+ * - 9) remove unnecessary parfor		
  * 
  * 	 
  * TODO blockwise partitioning
@@ -170,13 +171,16 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetTaskPartitioner( pn, PTaskPartitioner.FACTORING );
 		}	
 		
-		//rewrite 7: 
+		//rewrite 7: set result merge
 		rewriteSetResultMerge( pn, pb.getVariables(), flagLeftIndexRewrite );
+		
+		//rewrite 8: set local recompile memory budget
+		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 8: parfor (par=1) to for 
+		// rewrite 9: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -780,6 +784,38 @@ public class OptimizerRuleBased extends Optimizer
 			else if( n.getChilds()!=null )  
 				rInvokeSetResultMerge(n.getChilds(), vars, flag);
 	}
+
+	
+	///////
+	//REWRITE set recompile memory budget
+	///
+
+	/**
+	 * 
+	 * @param n
+	 * @param M
+	 */
+	private void rewriteSetRecompileMemoryBudget( OptNode n )
+	{
+		double newLocalMem = _lm; 
+		
+		//check et because recompilation only happens at the master node
+		if( n.getExecType() == ExecType.CP )
+		{
+			//compute local recompile memory budget
+			int par = n.getTotalK();
+			newLocalMem = _lm / par;
+			
+			//modify runtime plan
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+            							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			pfpb.setRecompileMemoryBudget( newLocalMem );
+		}
+		
+		if( OptimizationWrapper.LDEBUG )
+			System.out.println("RULEBASED OPTIMIZER: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
+	}	
+	
 	
 	///////
 	//REWRITE remove unnecessary parfor
@@ -800,6 +836,13 @@ public class OptimizerRuleBased extends Optimizer
 			System.out.println("RULEBASED OPTIMIZER: rewrite 'remove unnecessary parfor' - result="+count );
 	}
 	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	private int removeUnnecessaryParFor( OptNode n ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -843,7 +886,6 @@ public class OptimizerRuleBased extends Optimizer
 	
 	public static String toMB( double inB )
 	{
-		return String.valueOf( (inB/(1024*1024)) ) + "MB";
-		//return String.valueOf( (int)(inB/(1024*1024)) ) + "MB";
+		return OptimizerUtils.toMB(inB) + "MB";
 	}
 }

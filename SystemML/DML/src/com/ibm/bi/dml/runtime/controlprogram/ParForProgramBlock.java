@@ -42,7 +42,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeRemoteMR;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoring;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringConstrained;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringCmax;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
@@ -106,7 +107,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		NAIVE,      //naive task partitioner (tasksize=1)
 		STATIC,     //static task partitioner (numIterations/numThreads)
 		FACTORING,  //factoring task partitioner  
-		CFACTORING  //constrained factoring task partitioner, uses tasksize as min constraint
+		FACTORING_CMIN,  //constrained factoring task partitioner, uses tasksize as min constraint
+		FACTORING_CMAX,  //constrained factoring task partitioner, uses tasksize as max constraint
 	}
 	
 	public enum PDataPartitionFormat {
@@ -182,6 +184,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
 	protected String           _colocatedDPMatrix   = null;
+	//specifics used for robustness
+	protected double           _oldMemoryBudget = -1;
+	protected double           _recompileMemoryBudget = -1;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -340,6 +345,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		_resultMerge = merge;
 		_params.put(ParForStatementBlock.RESULT_MERGE, String.valueOf(_resultMerge)); //kept up-to-date for copies
+	}
+	
+	public void setRecompileMemoryBudget( double localMem )
+	{
+		_recompileMemoryBudget = localMem;
 	}
 	
 	public int getNumIterations()
@@ -544,6 +554,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			time.start();
 		}
 		
+		//restrict recompilation to thread local memory
+		setMemoryBudget();
+		
 		// Step 1) init parallel workers, task queue and threads
 		LocalTaskQueue queue     = new LocalTaskQueue();
 		Thread[] threads         = new Thread[_numThreads];
@@ -609,6 +622,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		//consolidate results into global symbol table
 		consolidateAndCheckResults( numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
 				                    localVariables );
+		
+		//remove thread-local memory budget
+		resetMemoryBudget();
 		
 		if( MONITOR ) 
 		{
@@ -976,11 +992,17 @@ public class ParForProgramBlock extends ForProgramBlock
 				tp = new TaskPartitionerFactoring( _taskSize,_numThreads, _iterablePredicateVars[0],
 							                       from, to, incr );
 				break;
-			case CFACTORING:
+			case FACTORING_CMIN:
 				//for constrained factoring the tasksize is used as the minimum constraint
-				tp = new TaskPartitionerFactoringConstrained( _taskSize,_numThreads, _taskSize, _iterablePredicateVars[0],
+				tp = new TaskPartitionerFactoringCmin( _taskSize,_numThreads, _taskSize, _iterablePredicateVars[0],
 							                       from, to, incr );
 				break;
+
+			case FACTORING_CMAX:
+				//for constrained factoring the tasksize is used as the minimum constraint
+				tp = new TaskPartitionerFactoringCmax( _taskSize,_numThreads, _taskSize, _iterablePredicateVars[0],
+							                       from, to, incr );
+				break;	
 			default:
 				throw new DMLRuntimeException("Undefined task partitioner: '"+_taskPartitioner+"'.");
 		}
@@ -1135,7 +1157,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		else
 		{
-			if( t.getType() == TaskType.RANGE && (_taskPartitioner==PTaskPartitioner.FACTORING || _taskPartitioner==PTaskPartitioner.CFACTORING ) )
+			if( t.getType() == TaskType.RANGE && isFactoringTaskpartitioner() )
 				ret = t.toCompactString(maxDigits) + "\n";
 			else
 				ret = t.toCompactString() + "\n";
@@ -1337,4 +1359,27 @@ public class ParForProgramBlock extends ForProgramBlock
 		return ret;
 	}
 	
+	private boolean isFactoringTaskpartitioner()
+	{
+		return (   _taskPartitioner==PTaskPartitioner.FACTORING 
+				|| _taskPartitioner==PTaskPartitioner.FACTORING_CMIN
+				|| _taskPartitioner==PTaskPartitioner.FACTORING_CMAX );
+	}
+	
+	private void setMemoryBudget()
+	{
+		if( _recompileMemoryBudget > 0 )
+		{
+			_oldMemoryBudget = (double)InfrastructureAnalyzer.getLocalMaxMemory();
+			InfrastructureAnalyzer.setLocalMaxMemory((long)_recompileMemoryBudget);
+		}
+	}
+	
+	private void resetMemoryBudget()
+	{
+		if( _recompileMemoryBudget > 0 )
+		{
+			InfrastructureAnalyzer.setLocalMaxMemory((long)_oldMemoryBudget);
+		}
+	}
 }

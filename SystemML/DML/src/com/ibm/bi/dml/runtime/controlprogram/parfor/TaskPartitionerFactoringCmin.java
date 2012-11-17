@@ -3,13 +3,13 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 
 /**
- * 
+ * Factoring with minimum constraint (e.g., if communication is expensive)
  */
-public class TaskPartitionerFactoringConstrained extends TaskPartitionerFactoring
+public class TaskPartitionerFactoringCmin extends TaskPartitionerFactoring
 {
 	protected int _constraint = -1;
 	
-	public TaskPartitionerFactoringConstrained( int taskSize, int numThreads, int constraint, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
+	public TaskPartitionerFactoringCmin( int taskSize, int numThreads, int constraint, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		super(taskSize, numThreads, iterVarName, fromVal, toVal, incrVal);
 		

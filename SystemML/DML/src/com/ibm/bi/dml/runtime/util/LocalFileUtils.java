@@ -91,9 +91,26 @@ public class LocalFileUtils
 	{
 		File fdir = new File(dir);
 		if( fdir.exists() )
+			rDelete(fdir);
+	}
+	
+
+	/**
+	 * 
+	 * @param dir
+	 */
+	private static void rDelete(File dir)
+	{
+		//recursively delete files if required
+		if( dir.isDirectory() )
 		{
-			fdir.delete();
+			File[] files = dir.listFiles();
+			for( File f : files )
+				rDelete( f );	
 		}
+		
+		//delete file itself
+		dir.delete();
 	}
 	
 	
@@ -129,4 +146,5 @@ public class LocalFileUtils
 		file.setReadable(   (sU&4)==4, (sO&4)==0 );
 	}
 
+	
 }

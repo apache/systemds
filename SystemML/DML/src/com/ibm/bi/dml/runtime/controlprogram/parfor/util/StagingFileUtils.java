@@ -266,6 +266,11 @@ public class StagingFileUtils
 		
 		return dir;
 	}
+	
+	
+	////////////////////////////
+	// private helper functions
+	////////////////////////////
 
 	
 	/**
@@ -285,6 +290,4 @@ public class StagingFileUtils
 		//delete file itself
 		dir.delete();
 	}
-	
-	
 }

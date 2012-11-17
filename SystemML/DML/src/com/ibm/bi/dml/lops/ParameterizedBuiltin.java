@@ -117,10 +117,10 @@ public class ParameterizedBuiltin extends Lops {
 				
 				inst.append(s).append(NAME_VALUE_SEPARATOR);
 				
-				// get the value/label of the scalar input associated with name "s"
+				// instruction patching not required because rmEmpty always executed as CP/CP_FILE
 				Lops iLop = _inputParams.get(s);
-				//System.out.println( iLop.getOutputParameters().getLabel()+" "+iLop.getExecLocation() );
-				//if ( iLop.getExecLocation() == ExecLocation.Data ) //TODO
+				//if ( iLop.getExecLocation() == ExecLocation.Data 
+				//		&& ((Data)iLop).isLiteral() ) 
 					inst.append(iLop.getOutputParameters().getLabel());
 				//else 
 				//	inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");

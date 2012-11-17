@@ -110,6 +110,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			MatrixObject out = (MatrixObject)pb.getVariable( output.get_name() );
 			String margin = params.get("margin");
 			
+			// export input matrix (if necessary)
+			src.exportData();
+			
 			//core execution
 			RemoveEmpty rm = new RemoveEmpty( margin, src, out );
 			out = rm.execute();

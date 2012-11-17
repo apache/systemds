@@ -1,0 +1,4 @@
+V = read($1, rows=$2, cols=$3, format="text");
+V1 = removeEmpty(target=V, margin="rows");
+Vp = removeEmpty(target=V1, margin="cols");
+write(Vp, $4, format="text");  

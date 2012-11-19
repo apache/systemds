@@ -1,11 +1,12 @@
 package com.ibm.bi.dml.runtime.matrix;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -20,6 +21,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class GroupedAggMR {
 
+	private static final Log LOG = LogFactory.getLog(GroupedAggMR.class.getName());
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String grpAggInstructions, String simpleReduceInstructions/*only scalar or reorg instructions allowed*/, 
 			int numReducers, int replication, byte[] resultIndexes,	String dimsUnknownFilePrefix, String[] outputs, OutputInfo[] outputInfos) 
@@ -75,7 +77,7 @@ public class GroupedAggMR {
 			stats[i] = new MatrixCharacteristics();
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 
 		byte[] resultDimsUnknown=new byte[resultIndexes.length];

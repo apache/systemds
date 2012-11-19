@@ -55,6 +55,7 @@ public class MapPerLineTextInputFormat extends TextInputFormat {
 	    	
 	    	in.close();	      
 	    }
+
 	    LOG.debug("Total # of splits: " + splits.size());
 	    return splits.toArray(new FileSplit[splits.size()]);
 	  }

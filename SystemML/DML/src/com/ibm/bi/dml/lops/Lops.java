@@ -2,6 +2,9 @@ package com.ibm.bi.dml.lops;
 
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Dag;
@@ -30,6 +33,8 @@ public abstract class Lops {
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
 
+	protected static final Log LOG =  LogFactory.getLog(Lops.class.getName());
+	
 	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
 	private DataType _dataType;
 	private ValueType _valueType;
@@ -211,33 +216,37 @@ public abstract class Lops {
 	 */
 
 	public final void printMe() {
-		if (this.get_visited() != VISIT_STATUS.DONE) {
-			System.out.println(getType() + ": " + getID() ); // hashCode());
-			System.out.print("Inputs: ");
-			for (int i = 0; i < this.getInputs().size(); i++) {
-				System.out.print(" " + this.getInputs().get(i).getID() + " ");
-			}
+		if (LOG.isDebugEnabled()){
+			StringBuilder s = new StringBuilder("");
+			if (this.get_visited() != VISIT_STATUS.DONE) {
+				s.append(getType() + ": " + getID() + "\n" ); // hashCode());
+				s.append("Inputs: ");
+				for (int i = 0; i < this.getInputs().size(); i++) {
+					s.append(" " + this.getInputs().get(i).getID() + " ");
+				}
 
-			System.out.print("\n");
-			System.out.print("Outputs: ");
-			for (int i = 0; i < this.getOutputs().size(); i++) {
-				System.out.print(" " + this.getOutputs().get(i).getID() + " ");
-			}
+				s.append("\n");
+				s.append("Outputs: ");
+				for (int i = 0; i < this.getOutputs().size(); i++) {
+					s.append(" " + this.getOutputs().get(i).getID() + " ");
+				}
 
-			System.out.print("\n");
-			System.out.println(this.toString());
-			System.out.println("Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn);
-			System.out.println("FORMAT:" + this.getOutputParameters().getFormat() + ", rows="
-					+ this.getOutputParameters().getNum_rows() + ", cols=" + this.getOutputParameters().getNum_cols()
-					+ ", Blocked?: " + this.getOutputParameters().isBlocked_representation() + ", rowsInBlock=" + 
-					this.getOutputParameters().get_rows_in_block() + ", colsInBlock=" + 
-					this.getOutputParameters().get_cols_in_block());
-			this.set_visited(VISIT_STATUS.DONE);
-			System.out.print("\n");
+				s.append("\n");
+				s.append(this.toString());
+				s.append("Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
+				s.append("FORMAT:" + this.getOutputParameters().getFormat() + ", rows="
+						+ this.getOutputParameters().getNum_rows() + ", cols=" + this.getOutputParameters().getNum_cols()
+						+ ", Blocked?: " + this.getOutputParameters().isBlocked_representation() + ", rowsInBlock=" + 
+						this.getOutputParameters().get_rows_in_block() + ", colsInBlock=" + 
+						this.getOutputParameters().get_cols_in_block() + "\n");
+				this.set_visited(VISIT_STATUS.DONE);
+				s.append("\n");
 
-			for (int i = 0; i < this.getInputs().size(); i++) {
-				this.getInputs().get(i).printMe();
+				for (int i = 0; i < this.getInputs().size(); i++) {
+					this.getInputs().get(i).printMe();
+				}
 			}
+			LOG.debug(s.toString());
 		}
 	}
 

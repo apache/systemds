@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.runtime.matrix.io;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class SparseRow {
 
 	public static final int initialCapacity=16;
@@ -8,8 +11,8 @@ public class SparseRow {
 	private int size=0;
 	private double[] values=null;
 	private int[] indexes=null;
-	
-	public static boolean LDEBUG = false;
+	private static final Log LOG = LogFactory.getLog(SparseRow.class.getName());
+
 	
 	/**
 	 * Computes the size of this {@link SparseRow} object in main memory,
@@ -49,14 +52,12 @@ public class SparseRow {
 		maxNzs=maxnns;
 		if(estnns<initialCapacity && estnns>0)
 		{
-			if(LDEBUG)
-				System.out.println("allocating 1 .. " + estnns);
+			LOG.trace("Allocating 1 .. " + estnns);
 			values=new double[estnns];
 			indexes=new int[estnns];
 		}else
 		{
-			if(LDEBUG)
-				System.out.println("allocating 2 .. " + estnns);
+			LOG.trace("Allocating 2 .. " + estnns);
 			values=new double[initialCapacity];
 			indexes=new int[initialCapacity];
 		}

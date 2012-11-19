@@ -2,9 +2,9 @@ package com.ibm.bi.dml.test.integration.functions.io;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -53,7 +53,7 @@ public class IOTest4 extends AutomatedTestBase {
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("a", a);
 
-		runTest(true, LanguageException.class);
+		runTest(true, ParseException.class);
 
 	}
 

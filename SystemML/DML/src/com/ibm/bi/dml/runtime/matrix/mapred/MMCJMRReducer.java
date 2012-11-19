@@ -17,7 +17,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 

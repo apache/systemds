@@ -2,11 +2,12 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -21,7 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 
 public class CMCOVMR {
-	
+	private static final Log LOG = LogFactory.getLog(CMCOVMR.class.getName());
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String cmNcomInstructions, 
 			int numReducers, int replication, byte[] resultIndexes,	String[] outputs, OutputInfo[] outputInfos) 
@@ -90,7 +91,7 @@ public class CMCOVMR {
 		MRJobConfiguration.setNumReducers(job, mapoutputIndexes.size(), numReducers);//each output tag is a group
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 		
 		

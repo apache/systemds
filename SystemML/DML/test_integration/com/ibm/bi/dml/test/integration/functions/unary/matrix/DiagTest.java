@@ -2,9 +2,9 @@ package com.ibm.bi.dml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 
@@ -80,7 +80,7 @@ public class DiagTest extends AutomatedTestBase {
 		
 		createRandomMatrix("a", rows, cols, -1, 1, 0.5, -1);
 		
-		runTest(true, LanguageException.class);
+		runTest(true, ParseException.class);
 	}
 
 }

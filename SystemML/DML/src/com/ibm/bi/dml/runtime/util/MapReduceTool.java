@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -25,7 +27,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-//import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler; TODO
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -42,6 +43,8 @@ import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 
 
 public class MapReduceTool {
+	
+	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
 	// private static final Log LOG = LogFactory.getLog(AggregateReducer.class);
 	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
 		//TODO: investigate ID pattern, required for parallel jobs
@@ -660,17 +663,23 @@ public class MapReduceTool {
 	{
 		JobConf job = new JobConf();
 		Path path = new Path(dir);
-		FileSystem fs = FileSystem.get(job);
-		if( !fs.exists(path) ) 
-		{
-			char[] c = permissions.toCharArray();
-			short sU = (short)((c[0]-48) * 64);
-			short sG = (short)((c[1]-48) * 8);
-			short sO = (short)((c[2]-48)); 
-			short mode = (short)(sU + sG + sO);
-			FsPermission perm = new FsPermission(mode);
-			fs.mkdirs(path, perm);
-		}	
+		try {
+			FileSystem fs = FileSystem.get(job);
+			if( !fs.exists(path) ) 
+			{
+				char[] c = permissions.toCharArray();
+				short sU = (short)((c[0]-48) * 64);
+				short sG = (short)((c[1]-48) * 8);
+				short sO = (short)((c[2]-48)); 
+				short mode = (short)(sU + sG + sO);
+				FsPermission perm = new FsPermission(mode);
+				fs.mkdirs(path, perm);
+			}	
+		}
+		catch (Exception ex){
+			LOG.error("Failed in creating a non existing dir on HDFS: " + ex.getStackTrace());
+			throw new IOException("Failed in creating a non existing dir on HDFS");
+		}
 		
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
 		//similarly setting dfs.datanode.data.dir.perm as no effect either.

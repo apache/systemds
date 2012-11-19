@@ -2,13 +2,14 @@ package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -43,12 +44,12 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 public class RunMRJobs {
 	public static boolean flagLocalModeOpt = false;
 	public enum ExecMode { LOCAL, CLUSTER, INVALID }; 
+	private static final Log LOG = LogFactory.getLog(RunMRJobs.class.getName());
 
 	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
 		JobReturn ret = new JobReturn();
 
-		if ( DMLScript.DEBUG  )
-			System.out.println(inst.toString());
+		LOG.trace("Instruction: " + inst.toString());
 
 		// Obtain references to all input matrices 
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(pb);

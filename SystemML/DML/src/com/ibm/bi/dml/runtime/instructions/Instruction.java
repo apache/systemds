@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.runtime.instructions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -8,7 +11,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 public abstract class Instruction 
 {
 	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB };
-	
+	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 	public static final String OPERAND_DELIM = Lops.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lops.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lops.VALUETYPE_PREFIX;
@@ -35,7 +38,7 @@ public abstract class Instruction
 	public abstract byte[] getAllIndexes() throws DMLRuntimeException;
 	
 	public void printMe() {
-		System.out.println(instString);
+		LOG.debug(instString);
 	}
 	public String toString() {
 		return instString;

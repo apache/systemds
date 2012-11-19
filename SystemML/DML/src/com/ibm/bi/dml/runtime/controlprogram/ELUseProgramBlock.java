@@ -1,10 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.CVStatement;
@@ -22,7 +19,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -51,22 +47,11 @@ public class ELUseProgramBlock extends ProgramBlock {
 
 
 	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
-		if ( DMLScript.DEBUG ) {
-			// print _variables map
-			
-			System.out.println ("____________________________________");
-			System.out.println ("___ Variables ____");
-			System.out.print   (_variables.toString ());
-
-			System.out.println("___ Matrices ____");
-			// TODO: Fix This
-			Iterator<Entry<String, MetaData>> mit = null; // _matrices.entrySet().iterator();
-			while (mit.hasNext()) {
-				Entry<String,MetaData> pairs = mit.next();
-			    System.out.println("  " + pairs.getKey() + " = " + pairs.getValue());
-			}
-			System.out.println("____________________________________");
+		if (LOG.isTraceEnabled()){
+			LOG.trace("Variables: " + _variables.toString ());
 		}
+		
+		
 		for (int i = 0; i < _inst.size(); i++) {
 			Instruction currInst = _inst.get(i);
 			if (currInst instanceof MRJobInstruction) {

@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
@@ -24,7 +27,6 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.utils.DMLException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -39,6 +41,7 @@ public class DMLProgram {
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
 	public static String DEFAULT_NAMESPACE = ".defaultNS";
+	private static final Log LOG = LogFactory.getLog(DMLProgram.class.getName());
 	
 	public DMLProgram(){
 		_blocks = new ArrayList<StatementBlock>();
@@ -104,16 +107,18 @@ public class DMLProgram {
 		// for each namespace, display all functions
 		for (String namespaceKey : this.getNamespaces().keySet()){
 			
-			sb.append("******** NAMESPACE : " + namespaceKey + " ******** \n ");
+			sb.append("NAMESPACE = " + namespaceKey + "\n");
 			DMLProgram namespaceProg = this.getNamespaces().get(namespaceKey);
 			
 			
-			sb.append("**** FUNCTIONS ***** \n");
-			sb.append("\n");
+			sb.append("FUNCTIONS = ");
+			
 			for (FunctionStatementBlock fsb : namespaceProg._functionBlocks.values()){
 				sb.append(fsb);
-				sb.append("\n");
+				sb.append(", ");
 			}
+			sb.append("\n");
+			sb.append("********************************** \n");
 		
 		}
 		
@@ -122,11 +127,12 @@ public class DMLProgram {
 			sb.append(b);
 			sb.append("\n");
 		}
+		sb.append("********************************** \n");
 		return sb.toString();
 	}
 	
 	
-	public Program getRuntimeProgram(boolean debug, DMLConfig config) throws DMLException, IOException {
+	public Program getRuntimeProgram(DMLConfig config) throws IOException, LanguageException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException {
 		
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
@@ -137,7 +143,7 @@ public class DMLProgram {
 			for (String fname : getFunctionStatementBlocks(namespace).keySet()){
 				// add program block to program
 				FunctionStatementBlock fsb = getFunctionStatementBlocks(namespace).get(fname);
-				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, debug, config);
+				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, config);
 				rtprog.addFunctionProgramBlock(namespace, fname,rtpb);
 			}
 		}
@@ -146,7 +152,7 @@ public class DMLProgram {
 		for (StatementBlock sb : _blocks) {
 		
 			// add program block to program
-			ProgramBlock rtpb = createRuntimeProgramBlock(rtprog, sb, debug, config);
+			ProgramBlock rtpb = createRuntimeProgramBlock(rtprog, sb, config);
 			rtprog.addProgramBlock(rtpb);
 
 		}
@@ -154,8 +160,8 @@ public class DMLProgram {
 	}
 	
 	
-	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, boolean debug, DMLConfig config) 
-		throws DMLException, IOException 
+	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
+		throws IOException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		Dag<Lops> dag = null; 
 		Dag<Lops> pred_dag = null;
@@ -174,7 +180,7 @@ public class DMLProgram {
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<Instruction>();
-			ArrayList<Instruction> pInst = pred_dag.getJobs(null, debug,config);
+			ArrayList<Instruction> pInst = pred_dag.getJobs(null, config);
 			for (Instruction i : pInst ) {
 				pred_instruct.add(i);
 			}
@@ -202,7 +208,7 @@ public class DMLProgram {
 			for (StatementBlock sblock : wstmt.getBody()){
 				
 				// process the body
-				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
+				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 				rtpb.addProgramBlock(childBlock);
 			}
 			
@@ -228,7 +234,7 @@ public class DMLProgram {
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<Instruction>();
-			ArrayList<Instruction> pInst = pred_dag.getJobs(null, debug,config);
+			ArrayList<Instruction> pInst = pred_dag.getJobs(null, config);
 			for (Instruction i : pInst ) {
 				pred_instruct.add(i);
 			}
@@ -255,13 +261,13 @@ public class DMLProgram {
 			
 			// process the if body
 			for (StatementBlock sblock : istmt.getIfBody()){
-				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
+				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 				rtpb.addProgramBlockIfBody(childBlock);
 			}
 			
 			// process the else body
 			for (StatementBlock sblock : istmt.getElseBody()){
-				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
+				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 				rtpb.addProgramBlockElseBody(childBlock); 
 			}
 			
@@ -297,9 +303,9 @@ public class DMLProgram {
 				fsb.getIncrementLops().addToDag(incrementDag);		
 				
 			// create instructions for loop predicates			
-			ArrayList<Instruction> fromInstructions = fromDag.getJobs(null, debug,config);
-			ArrayList<Instruction> toInstructions = toDag.getJobs(null, debug,config);
-			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(null, debug,config);		
+			ArrayList<Instruction> fromInstructions = fromDag.getJobs(null, config);
+			ArrayList<Instruction> toInstructions = toDag.getJobs(null, config);
+			ArrayList<Instruction> incrementInstructions = incrementDag.getJobs(null, config);		
 
 			// create for program block
 			String sbName = null;
@@ -334,7 +340,7 @@ public class DMLProgram {
 			
 			ForStatement fs = (ForStatement)fsb.getStatement(0);
 			for (StatementBlock sblock : fs.getBody()){
-				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
+				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 				rtpb.addProgramBlock(childBlock); 
 			}
 		
@@ -414,7 +420,7 @@ public class DMLProgram {
 				// process the function statement body
 				for (StatementBlock sblock : fstmt.getBody()){	
 					// process the body
-					ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, debug, config);
+					ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 					rtpb.addProgramBlock(childBlock);
 				}
 			}
@@ -446,7 +452,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, debug,config);
+				instruct = dag.getJobs(sb, config);
 				for (Instruction i : instruct) {
 					cvpb.addInstruction(i);
 				}
@@ -479,7 +485,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, debug,config);
+				instruct = dag.getJobs(sb, config);
 				for (Instruction i : instruct) {
 					epb.addInstruction(i);
 				}
@@ -512,7 +518,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, debug,config);
+				instruct = dag.getJobs(sb, config);
 				for (Instruction i : instruct) {
 					eupb.addInstruction(i);
 				}
@@ -535,7 +541,6 @@ public class DMLProgram {
 			// DAGs for Lops
 			dag = new Dag<Lops>();
 
-			// TODO: check with Doug
 			// add instruction for a function call
 			if (sb.getFunctionCallInst() != null){
 				rtpb.addInstruction(sb.getFunctionCallInst());
@@ -548,7 +553,7 @@ public class DMLProgram {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, debug,config);
+				instruct = dag.getJobs(sb, config);
 				for (Instruction i : instruct) {
 					rtpb.addInstruction(i);
 				}
@@ -623,9 +628,8 @@ public class DMLProgram {
 					//create RMVAR instruction and put it into the programblock
 					Instruction inst = createCleanupInstruction(varName);
 					addCleanupInstruction(pb, inst);
-					
-					if( DMLScript.DEBUG )
-						System.out.println("Adding instruction (r1) "+inst.toString());
+
+					LOG.trace("Adding instruction (r1) "+inst.toString());
 				}		
 			}
 
@@ -647,8 +651,7 @@ public class DMLProgram {
 					//System.out.println("add rvar rule2 "+inst.toString());
 					addCleanupInstruction(pb, inst);
 					
-					if( DMLScript.DEBUG )
-						System.out.println("Adding instruction (r2) "+inst.toString());
+					LOG.trace("Adding instruction (r2) "+inst.toString());
 				}		
 			}
 		

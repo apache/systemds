@@ -29,7 +29,6 @@ import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -80,13 +79,11 @@ public class ResultMergeLocalFile extends ResultMerge
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
-		Timing time = null;
-		if( LDEBUG )
-		{
-			System.out.println("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-			time = new Timing();
-			time.start();
-		}
+		//Timing time = null;
+		LOG.trace("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		//	time = new Timing();
+		//	time.start();
+
 		
 		try
 		{
@@ -128,8 +125,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			throw new DMLRuntimeException(ex);
 		}
 
-		if( LDEBUG )
-			System.out.println("ResultMerge (local, file): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
+		//LOG.trace("ResultMerge (local, file): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 		
 		return moNew;
 	}
@@ -242,8 +238,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					if( LDEBUG )
-						System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf();
 					Path tmpPath = new Path(in.getFileName());
@@ -305,15 +300,13 @@ public class ResultMergeLocalFile extends ResultMerge
 			cleanupDirectories(fnameNew, true);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			if( LDEBUG )
-				System.out.println("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
 			createTextCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				if( LDEBUG )
-					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createTextCellStagingFile( fnameStaging, in, ID );
@@ -362,8 +355,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				for( MatrixObject in : inMO ) //read/write all inputs
 				{
-					if( LDEBUG )
-						System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
+					LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via stream merge");
 					
 					JobConf tmpJob = new JobConf();
 					Path tmpPath = new Path(in.getFileName());
@@ -420,15 +412,13 @@ public class ResultMergeLocalFile extends ResultMerge
 			cleanupDirectories(fnameNew, true);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			if( LDEBUG )
-				System.out.println("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
+			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
 			createBinaryCellStagingFile(fnameStagingCompare, outMo, 0);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				if( LDEBUG )
-					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 				
 				long ID = _seq.getNextID();
 				createBinaryCellStagingFile( fnameStaging, in, ID );
@@ -463,8 +453,7 @@ public class ResultMergeLocalFile extends ResultMerge
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				if( LDEBUG )
-					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");				
+				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");				
 				
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
@@ -497,16 +486,14 @@ public class ResultMergeLocalFile extends ResultMerge
 			cleanupDirectories(fnameNew, true);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
-			if( LDEBUG )
-				System.out.println("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");			
+			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");			
 			
 			createBinaryBlockStagingFile(fnameStagingCompare, outMo);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
 			{
-				if( LDEBUG )
-					System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");		
+				LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");		
 				createBinaryBlockStagingFile( fnameStaging, in );
 			}
 	

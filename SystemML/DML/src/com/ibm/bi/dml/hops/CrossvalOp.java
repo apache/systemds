@@ -30,15 +30,16 @@ public class CrossvalOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.println("  CrossvalOp: " + "\n");
-			for (Hops h : getInput()) {
-				h.printMe();
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  CrossvalOp: ");
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
 			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	public Lops constructLops() throws HopsException, LopsException {

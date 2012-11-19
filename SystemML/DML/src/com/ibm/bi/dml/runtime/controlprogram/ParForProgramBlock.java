@@ -93,8 +93,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public class ParForProgramBlock extends ForProgramBlock 
 {
-	public static final boolean LDEBUG = DMLScript.DEBUG || false;
-	
 	// execution modes
 	public enum PExecMode{
 		LOCAL,      //local (master) multi-core execution mode
@@ -266,8 +264,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( USE_PB_CACHE ) 
 			_pbcache = new HashMap<Long, ArrayList<ProgramBlock>>();
 		
-		if( LDEBUG )
-			System.out.println("PARFOR: ParForProgramBlock created with mode="+_execMode+", optmode="+_optMode+", numThreads="+_numThreads);
+		LOG.trace("PARFOR: ParForProgramBlock created with mode = "+_execMode+", optmode = "+_optMode+", numThreads = "+_numThreads);
 	}
 	
 	public long getID()
@@ -418,8 +415,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					if( !moVar.isPartitioned() )
 					{
 						PDataPartitionFormat dpf = _sb.determineDataPartitionFormat( var );
-						if( LDEBUG )
-							System.out.println("INFO: PARFOR ID="+_ID+": Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
+						LOG.trace("PARFOR ID = "+_ID+", Partitioning read-only input variable "+var+" (format="+dpf+", mode="+_dataPartitioner+")");
 						if( dpf != PDataPartitionFormat.NONE )
 						{
 							Timing ltime = new Timing();
@@ -430,8 +426,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
-							if( LDEBUG )
-								System.out.println("Partitioning and recompilation done in "+ltime.stop()+" ms");
+							LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
 						}
 					}
 					else if( ALLOW_UNSCOPED_PARTITIONING ) //note: vars partitioned and not recompiled can only happen in case of unscoped partitioning over multiple top-level parfors.
@@ -440,8 +435,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						Timing ltime = new Timing();
 						ltime.start();
 						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);
-						if(LDEBUG)
-							System.out.println("Recompilation done in "+ltime.stop()+" ms");
+						LOG.trace("Recompilation done in "+ltime.stop()+" ms");
 					}
 				}
 			}
@@ -455,8 +449,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		//begin PARALLEL EXECUTION of (PAR)FOR body
 		///////
-		if( LDEBUG ) 
-			System.out.println("EXECUTE PARFOR ID="+_ID+" with mode="+_execMode+", numThreads="+_numThreads+", taskpartitioner="+_taskPartitioner);
+		LOG.trace("EXECUTE PARFOR ID = "+_ID+" with mode = "+_execMode+", numThreads = "+_numThreads+", taskpartitioner = "+_taskPartitioner);
 		
 		
 		if( MONITOR )
@@ -1181,7 +1174,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		//result merge
 		for( String var : _resultVars ) //foreach non-local write
 		{
-			//System.out.println("DEBUG: PARFOR("+_ID+"): Executing result merge for var: "+var);
 			
 			String varname = var;
 			MatrixObject out = (MatrixObject) getVariable(varname);

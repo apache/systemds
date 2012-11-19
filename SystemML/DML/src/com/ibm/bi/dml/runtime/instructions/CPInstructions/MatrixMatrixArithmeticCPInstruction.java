@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
@@ -49,8 +48,7 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
         twrite = System.currentTimeMillis()-st;
 		ttotal = System.currentTimeMillis()-begin;
 		
-		if( DMLScript.DEBUG )
-			System.out.println("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
+		LOG.trace("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
 	}
 
 }

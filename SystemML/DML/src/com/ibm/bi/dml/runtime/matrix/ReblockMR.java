@@ -2,12 +2,13 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -40,7 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
  */
 
 public class ReblockMR {
-
+	private static final Log LOG = LogFactory.getLog(ReblockMR.class.getName());
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String reblockInstructions, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
@@ -90,7 +91,7 @@ public class ReblockMR {
 		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"

@@ -1,15 +1,11 @@
 package com.ibm.bi.dml.api;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,8 +24,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nimble.configuration.NimbleConfig;
 import org.nimble.control.DAGQueue;
 import org.nimble.control.PMLDriver;
@@ -64,19 +63,19 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.DMLException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 import com.ibm.bi.dml.utils.visualize.DotGraph;
 
 
 public class DMLScript {
-	//TODO: Change these static variables to non-static, and create corresponding access methods
-	public enum EXECUTION_PROPERTIES {LOG, DEBUG, VISUALIZE, RUNTIME_PLATFORM, CONFIG};
-	public static boolean DEBUG = false;
+	//TODO: VISUALIZE option should be updated
+	public enum EXECUTION_PROPERTIES {VISUALIZE, RUNTIME_PLATFORM, CONFIG};
 	public static boolean VISUALIZE = false;
-	public static boolean LOG = false;	
 	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
 	// We should assume the default value is HYBRID
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
@@ -88,25 +87,20 @@ public class DMLScript {
 	// stores optional args to parameterize DML script 
 	private HashMap<String, String> _argVals;
 	
-	private Logger _mapredLogger;
-	private Logger _mmcjLogger;
+	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
-	private static final String DEFAULT_MAPRED_LOGGER = "org.apache.hadoop.mapred";
-	private static final String DEFAULT_MMCJMR_LOGGER = "dml.runtime.matrix.MMCJMR";
-	private static final String LOG_FILE_NAME = "SystemML.log";
+
 	// stores the path to the source
 	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " [-d | -debug]?" + " [-l | -log]?" + " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
 			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
 			+ " -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
-			+ " [-d | -debug]: (optional) output debug info \n"
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ " [-l | -log]: (optional) output log info \n"
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
 			+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
@@ -117,18 +111,13 @@ public class DMLScript {
 		
 	}
 	
-	public DMLScript(String dmlScript, boolean debug, boolean log, boolean visualize, RUNTIME_PLATFORM rt, String config, HashMap<String, String> argVals){
+	public DMLScript(String dmlScript, boolean visualize, RUNTIME_PLATFORM rt, String config, HashMap<String, String> argVals){
 		_dmlScriptString = dmlScript;
-		DEBUG = debug;
-		LOG = log;
 		VISUALIZE = visualize;
 		rtplatform = rt;
-		
 		_optConfig = config;
 		_argVals = argVals;
 		
-		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
-		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
 	}
 	
 	
@@ -137,40 +126,19 @@ public class DMLScript {
 	 * and customized parameters have been put into _argVals
 	 * @throws ParseException 
 	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
+	 * @throws LanguageException 
 	 * @throws DMLException 
 	 */
-	private boolean run()throws IOException, ParseException, DMLException {
-		boolean success = false;
-		/////////////// set logger level //////////////////////////////////////
-		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID){
-			if (DEBUG)
-				_mapredLogger.setLevel(Level.WARN);
-			else {
-				_mapredLogger.setLevel(Level.WARN);
-				_mmcjLogger.setLevel(Level.WARN);
-			}
-		}
-		////////////// handle log output //////////////////////////
-		BufferedWriter out = null;
-		if (LOG && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
-			// copy the input DML script to ./log folder
-			// TODO: define the default path to store SystemML.log
+	private void run()throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException {
+				
+		LOG.debug("BEGIN DML run " + getDateTime());
+		LOG.info("DML script: \n" + _dmlScriptString);
+		
+		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID) {
 			String hadoop_home = System.getenv("HADOOP_HOME");
-			System.out.println("HADOOP_HOME: " + hadoop_home);
-			File logfile = new File(hadoop_home + "/" + LOG_FILE_NAME);
-			if (!logfile.exists()) {
-				success = logfile.createNewFile(); // creates the file
-				if (success == false) 
-					System.err.println("ERROR: Failed to create log file: " + hadoop_home + "/" + LOG_FILE_NAME);	
-					return success;
-			}
-
-			out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile, true)));
-			out.write("BEGIN DMLRun " + getDateTime() + "\n");
-			out.write("BEGIN DMLScript\n");
-			// No need to reopen the dml script, just print out dmlScriptString
-			out.write(_dmlScriptString);
-			out.write("END DMLScript\n");
+			LOG.info("HADOOP_HOME: " + hadoop_home);
 		}
 		
 		// optional config specified overwrites/merge into the default config
@@ -182,23 +150,23 @@ public class DMLScript {
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			} catch (Exception e) { // it is ok to not have the default
 				defaultConfig = null;
-				System.err.println("INFO: default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
+				LOG.warn("Default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
 			}
 			try { // try to get the optional config next
 				optionalConfig = new DMLConfig(_optConfig);	
 			} 
-			catch (Exception e) { // it is not ok as the specification is wrong
+			catch (ParseException e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
-				System.err.println("ERROR:  Optional config file " +  _optConfig + " not found ");
-				//return false;
+				LOG.error("Optional config file " +  _optConfig + " not found ");
+				throw e;
 			}
 			if (defaultConfig != null) {
 				try {
 					defaultConfig.merge(optionalConfig);
 				}
-				catch(Exception e){
-					System.err.println("ERROR: failed to merge default ");
-					//return false;
+				catch(ParseException e){
+					LOG.error("Failed to merge default config file with optional config file ");
+					throw e;
 				}
 			}
 			else {
@@ -208,51 +176,66 @@ public class DMLScript {
 		else { // the optional config is not specified
 			try { // try to get the default config 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			} catch (Exception e) { // it is not OK to not have the default
+			} catch (ParseException e) { // it is not OK to not have the default
 				defaultConfig = null;
-				System.out.println("ERROR: Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-				//System.exit(1);
+				LOG.error("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+				throw e;
 			}
 		}
+		
 		ConfigurationManager.setConfig(defaultConfig);
 		
 		
 		////////////////print config file parameters /////////////////////////////
-		if (DEBUG){
-			System.out.println("INFO: ****** DMLConfig parameters *****");	
-			defaultConfig.printConfigInfo();
-		}
+		LOG.debug("\nDML config for this run: \n" + defaultConfig.getConfigInfo());
 		
 		
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(_dmlScriptString, _argVals);
-		prog = parser.parse();
+		try {
+			prog = parser.parse();
+		}
+		catch (Exception e){
+			LOG.error("DMLQLParser Parsing failed");
+			throw new ParseException("DMLQLParser parsing failed");
+		}
 
 		if (prog == null){
-			System.err.println("ERROR: Parsing failed");
-			success = false;
-			return success;
+			LOG.error("DMLQLParser parsing returns a NULL object");
+			throw new ParseException("DMLQLParser parsing returns a NULL object");
 		}
-
-		if (DEBUG) {
-			System.out.println("********************** PARSER *******************");
-			System.out.println(prog.toString());
-		}
-		///////////////////////////////////// construct HOPS ///////////////////////////////
 		
+		/////////////////////////// construct HOPS ///////////////////////////////
 		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.liveVariableAnalysis(prog);
-		dmlt.validateParseTree(prog);
-		
-
-		if (DEBUG) {
-			System.out.println("********************** COMPILER *******************");
-			System.out.println(prog.toString());
+		try {
+			dmlt.liveVariableAnalysis(prog);			
 		}
-		dmlt.constructHops(prog);
-
-		if (DEBUG) {
+		catch (Exception e){
+			LOG.error("DMLTranslator failed in live variable analysis");
+			throw new ParseException("DMLTranslator failed in live variable analysis");
+		}
+		
+		try {
+			dmlt.validateParseTree(prog);
+		}
+		catch (Exception e){
+			LOG.error("DMLTranslator failed in validating parse tree");
+			throw new ParseException("DMLTranslator failed in validating parse tree");
+		}
+		
+		//TODO: Doug will work on the format of prog.toString()
+		LOG.debug("\nCOMPILER: \n" + prog.toString());
+		try {
+			dmlt.constructHops(prog);
+		}
+		catch (Exception e){
+			LOG.error("DMLTranslator failed in constructing HOPs");
+			throw new HopsException("DMLTranslator failed in constructing HOPs");
+		}
+		
+		/*
+		if(LOG.isDebugEnabled()){
 			System.out.println("********************** HOPS DAG (Before Rewrite) *******************");
 			// print
 			dmlt.printHops(prog);
@@ -266,19 +249,21 @@ public class DMLScript {
 			//
 			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
-		}
-
+		}*/
+	
 		// rewrite HOPs DAGs
-		if (DEBUG) {
-			System.out.println("********************** Rewriting HOPS DAG *******************");
-		}
-
 		// defaultConfig contains reconciled information for config
-		dmlt.rewriteHopsDAG(prog, defaultConfig);
-		dmlt.resetHopsDAGVisitStatus(prog);
-
-		if (DEBUG) {
-			System.out.println("********************** HOPS DAG (After Rewrite) *******************");
+		try {
+			dmlt.rewriteHopsDAG(prog, defaultConfig);
+			dmlt.resetHopsDAGVisitStatus(prog);
+		}
+		catch (Exception e){
+			LOG.error("DMLTranslator failed in rewriting HOPs");
+			throw new HopsException("DMLTranslator failed in rewriting HOPs");
+		}
+		
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
 			// print
 			dmlt.printHops(prog);
 			dmlt.resetHopsDAGVisitStatus(prog);
@@ -289,11 +274,14 @@ public class DMLScript {
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
-		executeHadoop(dmlt, prog, defaultConfig, out);
-		
-		success = true;
-		return success;
-
+		try {
+			executeHadoop(dmlt, prog, defaultConfig);
+		}
+		catch (Exception e)
+		{
+			LOG.error("DMLTranslator failed in runtime");
+			throw new DMLRuntimeException("DMLTranslator failed in runtime");
+		}
 	}
 	
 	
@@ -306,10 +294,8 @@ public class DMLScript {
 	 * @throws DMLException 
 	 */
 	public boolean executeScript (String scriptPathName, String... scriptArguments) throws IOException, ParseException, DMLException{
-		boolean success = false;
-		success = executeScript(scriptPathName, (Properties)null, scriptArguments);
+		boolean success = executeScript(scriptPathName, new Configuration(), (Properties)null, scriptArguments);
 		return success;
-		
 	}
 	/**
 	 * executeScript: Execute a DML script, which is provided by the user as a file path to the script file.
@@ -318,82 +304,109 @@ public class DMLScript {
 	 * @param scriptArguments Variant arguments provided by the user to run with the DML Script
 	 * @throws ParseException 
 	 * @throws IOException 
-	 * @throws DMLException 
+	 * @throws HopsException 
+	 * @throws LanguageException 
+	 * @throws DMLRuntimeException 
 	 */
-	public boolean executeScript (String scriptPathName, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
-		boolean success = false;
-		DEBUG = false;
-		VISUALIZE = false;
-		LOG = false;	
+
+	public boolean executeScript (String scriptPathName, Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, HopsException, LanguageException, DMLRuntimeException{
 		
+		VISUALIZE = false;
+		
+		String debug = conf.get("systemml.logging");
+		
+		if (debug == null){
+			debug = System.getProperty("systemml.logging");
+		}
+		
+		if (debug != null){
+			if (debug.toLowerCase().equals("debug")){
+				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.DEBUG);
+			}
+			else if (debug.toLowerCase().equals("trace")){
+				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.TRACE);
+			}
+		}
+			
 		_dmlScriptString = null;
 		_optConfig = null;
 		_argVals = new HashMap<String, String>();
-		
-		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
-		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
 		
 		//Process the script path, get the content of the script
 		StringBuilder dmlScriptString = new StringBuilder();
 		
 		if (scriptPathName == null){
-			System.err.println("ERROR: script path must be provided!");
-			success = false;
-			return success;
+			LOG.error("DML script path was not provided by the user");
+			throw new LanguageException("DML script path was not provided by the user");
 		}
 		else {
 			String s1 = null;
 			BufferedReader in = null;
 			//TODO: update this hard coded line
-			if (scriptPathName.startsWith("hdfs:")){ 
-              FileSystem hdfs = FileSystem.get(new Configuration());
-              Path scriptPath = new Path(scriptPathName);
-              in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
+			try {
+				if (scriptPathName.startsWith("hdfs:")){ 
+					FileSystem hdfs = FileSystem.get(new Configuration());
+					Path scriptPath = new Path(scriptPathName);
+					in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
+				}
+				else { // from local file system
+					in = new BufferedReader(new FileReader(scriptPathName));
+				}
+				while ((s1 = in.readLine()) != null)
+					dmlScriptString.append(s1 + "\n");
 			}
-			else { // from local file system
-				in = new BufferedReader(new FileReader(scriptPathName));
+			catch (IOException ex){
+				LOG.error("Failed to read the script from the file system");
+				throw ex;
 			}
-			while ((s1 = in.readLine()) != null)
-				dmlScriptString.append(s1 + "\n");
-			in.close();	
+			finally {
+				in.close();
+			}
 		}
 		_dmlScriptString=dmlScriptString.toString();
 		
-		success = processExecutionProperties(executionProperties);
+		try {
+			processExecutionProperties(executionProperties);
+			processOptionalScriptArgs(scriptArguments);
 		
-		if (!success){
-			System.err.println("ERROR: There are invalid execution properties!");
-			return success;
+			LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + scriptPathName + "\n" 
+		                + "VISUALIZE: "  + VISUALIZE + "\n" 
+		                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+		                + "OPTIONAL CONFIG: " + _optConfig + "\n");
+		
+			if (_argVals.size() > 0) {
+				LOG.debug("Script arguments are: \n");
+				for (int i=1; i<= _argVals.size(); i++)
+					LOG.debug("Script argument $" + i + " = " + _argVals.get("$" + i) );
+			}
+		
+			run();
+		}
+		catch (IOException e){
+			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected");
+			throw e;
+		}
+		catch (ParseException e){
+			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected");
+			throw e;
+		}
+		catch (HopsException e){
+			LOG.error("Failed in executing DML script with SystemML engine, HOPs failure detected");
+			throw e;
+		}
+		catch (DMLRuntimeException e){
+			LOG.error("Failed in executing DML script with SystemML engine, runtime failure detected");
+			throw e;
+		}
+		catch (LanguageException e){
+			LOG.error("Failed in executing DML script with SystemML engine, script has language issues");
+			throw e;
+		}
+		finally{
+			resetExecutionOptions();	
 		}
 		
-		success = processOptionalScriptArgs(scriptArguments);
-		if (!success){
-			System.err.println("ERROR: There are invalid script arguments!");
-			return success;
-		}
-		
-		if (DEBUG)
-		{
-			System.out.println("INFO: ****** args to DML Script ****** ");
-			System.out.println("INFO: UUID: " + getUUID());
-			System.out.println("INFO: SCRIPT PATH: " + scriptPathName);
-			System.out.println("INFO: DEBUG: "  + DEBUG);
-			System.out.println("INFO: LOG: "  + LOG);
-			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
-			System.out.println("INFO: RUNTIME: " + rtplatform);
-			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			System.out.println("INFO: OPTIONAL CONFIG: " + _optConfig);
-
-			if (_argVals.size() > 0)
-				System.out.println("INFO: Value for script parameter args: ");
-			for (int i=1; i<= _argVals.size(); i++)
-				System.out.println("INFO: $" + i + " = " + _argVals.get("$" + i) );
-		}
-
-		
-		success = run();
-		resetExecutionOptions();
-		return success;
+		return true;
 	}
 	
 	
@@ -404,77 +417,91 @@ public class DMLScript {
 	 * @param scriptArguments Variant arguments provided by the user to run with the DML Script
 	 * @throws ParseException 
 	 * @throws IOException 
-	 * @throws DMLException 
+	 * @throws LanguageException 
+	 * @throws HopsException 
+	 * @throws DMLRuntimeException 
 	 */
-	public boolean executeScript (InputStream script, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
-		boolean success = false;
-		DEBUG = false;
+	public boolean executeScript (InputStream script,  Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, LanguageException, HopsException, DMLRuntimeException{
 		VISUALIZE = false;
-		LOG = false;	
+		
+		String debug = conf.get("systemml.logging");
+		
+		if (debug == null){
+			debug = System.getProperty("systemml.logging");
+		}
+		
+		if (debug != null){
+			if (debug.toLowerCase().equals("debug")){
+				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.DEBUG);
+			}
+			else if (debug.toLowerCase().equals("trace")){
+				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.TRACE);
+			}
+		}
 		
 		_dmlScriptString = null;
 		_optConfig = null;
 		_argVals = new HashMap<String, String>();
 		
-		_mapredLogger = Logger.getLogger(DEFAULT_MAPRED_LOGGER);
-		_mmcjLogger = Logger.getLogger(DEFAULT_MMCJMR_LOGGER);
-		
 		if (script == null){
-			System.err.println("ERROR: Script string must be provided!");
-			success = false;
-			return success;
+			LOG.error("DML script path was not provided by the user");
+			throw new LanguageException("DML script path was not provided by the user");
 		}
 		else {		
 			_dmlScriptString = new Scanner(script).useDelimiter("\\A").next();
 		}
 		
-		success = processExecutionProperties(executionProperties);
-		if (!success){
-			System.err.println("ERROR: There are invalid execution properties!");
-			//System.err.println(USAGE);
-			return success;
+		try {
+			processExecutionProperties(executionProperties);
+			processOptionalScriptArgs(scriptArguments);
+			LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + _dmlScriptString + "\n" 
+                + "VISUALIZE: "  + VISUALIZE + "\n" 
+                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+                + "OPTIONAL CONFIG: " + _optConfig + "\n");
+
+			if (_argVals.size() > 0) {
+				LOG.debug("Script arguments are: \n");
+				for (int i=1; i<= _argVals.size(); i++)
+					LOG.debug("Script argument $" + i + " = " + _argVals.get("$" + i) );
+			}
+
+			run();
+		}
+		catch (IOException e){
+			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected");
+			throw e;
+		}
+		catch (ParseException e){
+			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected");
+			throw e;
+		}
+		catch (HopsException e){
+			LOG.error("Failed in executing DML script with SystemML engine, HOPs failure detected");
+			throw e;
+		}
+		catch (DMLRuntimeException e){
+			LOG.error("Failed in executing DML script with SystemML engine, runtime failure detected");
+			throw e;
+		}
+		catch (LanguageException e){
+			LOG.error("Failed in executing DML script with SystemML engine, script has language issues");
+			throw e;
+		}
+		finally{
+			resetExecutionOptions();	
 		}
 		
-		success = processOptionalScriptArgs(scriptArguments);
-		if (!success){
-			System.err.println("ERROR: There are invalid script arguments!");
-			return success;
-		}
-		
-		if (DEBUG)
-		{
-			System.out.println("INFO: ****** args to DML Script ****** ");
-			System.out.println("INFO: UUID: " + getUUID());
-			System.out.println("INFO: SCRIPT: " + _dmlScriptString);
-			System.out.println("INFO: DEBUG: "  + DEBUG);
-			System.out.println("INFO: LOG: "  + LOG);
-			System.out.println("INFO: VISUALIZE: "  + VISUALIZE);
-			System.out.println("INFO: RUNTIME: " + rtplatform);
-			System.out.println("INFO: BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
-			System.out.println("INFO: OPTIONAL CONFIG: " + _optConfig);
-
-			if (_argVals.size() > 0)
-				System.out.println("INFO: Value for script parameter args: ");
-			for (int i=1; i<= _argVals.size(); i++)
-				System.out.println("INFO: $" + i + " = " + _argVals.get("$" + i) );
-		}
-
-		success = run();
-		resetExecutionOptions();
-		return success;
+		return true;
 	}
 	
 	private void resetExecutionOptions(){
-		DEBUG = false;
 		VISUALIZE = false;
-		LOG = false;	
 		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		_optConfig = null;
 	}
 	
 	//Process execution properties
-	private boolean processExecutionProperties(Properties executionProperties){
-		boolean success = false;
+	private void processExecutionProperties(Properties executionProperties) throws LanguageException {
 		
 		if (executionProperties != null){
 			//Make sure that the properties are in the defined property list that can be handled
@@ -491,17 +518,13 @@ public class DMLScript {
 					}
 				}
 				if (!validProperty){
-					System.err.println("ERROR: Unknown execution property: " + key);
+					LOG.error("Unknown execution property: " + key);
 					resetExecutionOptions();
-					success = false;
-					return success;
-
+					throw new LanguageException("Unknown execution property: " + key);
 				}
 
 			}
 
-			LOG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.LOG.toString(), "false"));
-			DEBUG = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.DEBUG.toString(), "false"));
 			VISUALIZE = Boolean.valueOf(executionProperties.getProperty(EXECUTION_PROPERTIES.VISUALIZE.toString(), "false"));
 
 			String runtime_pt = executionProperties.getProperty(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
@@ -519,34 +542,29 @@ public class DMLScript {
 		else {
 			resetExecutionOptions();
 		}
-		success = true;
-		return success;
+		
 	}
 	
 	//Process the optional script arguments provided by the user to run with the DML script
-	private boolean processOptionalScriptArgs(String... scriptArguments){
-		boolean success = false;
+	private void processOptionalScriptArgs(String... scriptArguments) throws LanguageException{
+		
 		if (scriptArguments != null){
 			int index = 1;
 			for (String arg : scriptArguments){
-				if (arg.equalsIgnoreCase("-d") || arg.equalsIgnoreCase("-debug")||
-						arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
-						arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
-						arg.equalsIgnoreCase("-exec") ||
-						arg.startsWith("-config=")){
-						System.err.println("ERROR: -args must be the final argument for DMLScript!");
-						resetExecutionOptions();
-						success = false;
-						return success;
-				}
+				if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
+					arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
+					arg.equalsIgnoreCase("-exec") ||
+					arg.startsWith("-config=")){
+					LOG.error("-args must be the final argument for DMLScript!");
+					resetExecutionOptions();
+					throw new LanguageException("-args must be the final argument for DMLScript!");
+			}
 						
 				_argVals.put("$"+index ,arg);
 				index++;
 			}
 
 		}
-		success = true;
-		return success;
 	}
 	
 	
@@ -561,72 +579,69 @@ public class DMLScript {
 		// This is a show case how to create a DMLScript object to accept a DML script provided by the user,
 		// and how to run it.
 		
+		 Configuration conf = new Configuration();
+		 String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		/////////// if the args is incorrect, print usage /////////////
-		if (args.length < 2){
+		if (otherArgs.length < 2){
 			//System.err.println(USAGE);
 			return;
 		}
 		////////////process -f | -s to set dmlScriptString ////////////////
-		else if (!(args[0].equals("-f") || args[0].equals("-s"))){
+		else if (!(otherArgs[0].equals("-f") || otherArgs[0].equals("-s"))){
 			System.err.println("ERROR: First argument must be either -f or -s");
 			//System.err.println(USAGE);
 			return;
 		}
 		
 		DMLScript d = new DMLScript();
-		boolean fromFile = (args[0].equals("-f")) ? true : false;
+		boolean fromFile = (otherArgs[0].equals("-f")) ? true : false;
 		boolean success = false;
-		String script = args[1];	
+		String script = otherArgs[1];	
 		Properties executionProperties = new Properties();
 		String[] scriptArgs = null;
 		int i = 2;
-		while (i<args.length){
-			if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("-debug")) {
-				executionProperties.put(EXECUTION_PROPERTIES.DEBUG.toString(), "true");
-			} else if (args[i].equalsIgnoreCase("-l") || args[i].equalsIgnoreCase("-log")) {
-				executionProperties.put(EXECUTION_PROPERTIES.LOG.toString(), "true");
-			} else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize")) {
+		while (i<otherArgs.length){
+			if (otherArgs[i].equalsIgnoreCase("-v") || otherArgs[i].equalsIgnoreCase("-visualize")) {
 				executionProperties.put(EXECUTION_PROPERTIES.VISUALIZE.toString(), "true");
-			} else if ( args[i].equalsIgnoreCase("-exec")) {
+			} else if ( otherArgs[i].equalsIgnoreCase("-exec")) {
 				i++;
-				if ( args[i].equalsIgnoreCase("hadoop")) 
+				if ( otherArgs[i].equalsIgnoreCase("hadoop")) 
 					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hadoop");
-				else if ( args[i].equalsIgnoreCase("singlenode"))
+				else if ( otherArgs[i].equalsIgnoreCase("singlenode"))
 					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "singlenode");
-				else if ( args[i].equalsIgnoreCase("hybrid"))
+				else if ( otherArgs[i].equalsIgnoreCase("hybrid"))
 					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "hybrid");
-				else if ( args[i].equalsIgnoreCase("nz"))
+				else if ( otherArgs[i].equalsIgnoreCase("nz"))
 					executionProperties.put(EXECUTION_PROPERTIES.RUNTIME_PLATFORM.toString(), "nz");
 				else {
-					System.err.println("ERROR: Unknown runtime platform: " + args[i]);
+					System.err.println("ERROR: Unknown runtime platform: " + otherArgs[i]);
 					return;
 				}
 			// handle config file
-			} else if (args[i].startsWith("-config=")){
-				executionProperties.put(EXECUTION_PROPERTIES.CONFIG.toString(), args[i].substring(8).replaceAll("\"", "")); 
+			} else if (otherArgs[i].startsWith("-config=")){
+				executionProperties.put(EXECUTION_PROPERTIES.CONFIG.toString(), otherArgs[i].substring(8).replaceAll("\"", "")); 
 			}
 			// handle the args to DML Script -- rest of args will be passed here to 
-			else if (args[i].startsWith("-args")) {
+			else if (otherArgs[i].startsWith("-args")) {
 				i++;
-				scriptArgs = new String[args.length - i];
+				scriptArgs = new String[otherArgs.length - i];
 				int j = 0;
-				while( i < args.length){
-					scriptArgs[j++]=args[i++];
+				while( i < otherArgs.length){
+					scriptArgs[j++]=otherArgs[i++];
 				}
 			} 
 			else {
-				System.err.println("ERROR: Unknown argument: " + args[i]);
-				//System.err.println(USAGE);
+				System.err.println("ERROR: Unknown argument: " + otherArgs[i]);
 				return;
 			}
 			i++;
 		}
 		if (fromFile){
-			success = d.executeScript(script, executionProperties, scriptArgs);
+			success = d.executeScript(script, conf, executionProperties, scriptArgs);
 		}
 		else {
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			success = d.executeScript(is, executionProperties, scriptArgs);
+			success = d.executeScript(is, conf, executionProperties, scriptArgs);
 		}
 		
 		if (!success){
@@ -644,25 +659,32 @@ public class DMLScript {
 	 * @param out writer for log output 
 	 * @throws ParseException 
 	 * @throws IOException 
-	 * @throws DMLException 
+	 * @throws LopsException 
+	 * @throws HopsException 
+	 * @throws LanguageException 
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
-	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, BufferedWriter out) throws ParseException, IOException, DMLException{
+	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig config) throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		if (DEBUG) {
-			System.out.println("********************** OPTIMIZER *******************");
-			System.out.println("Type = " + OptimizerUtils.getOptType());
-			System.out.println("Mode = " + OptimizerUtils.getOptMode());
-			System.out.println("Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB");
-			System.out.println("Memory Budget = " + ((double)Hops.getMemBudget(true)/1024/1024) + " MB");
-			System.out.println("Defaults: mem util " + OptimizerUtils.MEM_UTIL_FACTOR + ", sparsity " + OptimizerUtils.DEF_SPARSITY + ", def mem " +  + OptimizerUtils.DEF_MEM_FACTOR );
-		}
-		
+		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
+		          "Type = " + OptimizerUtils.getOptType() + "\n"
+				 +"Mode = " + OptimizerUtils.getOptMode() + "\nAvailable Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
+				 +"Memory Budget = " + ((double)Hops.getMemBudget(true)/1024/1024) + " MB" + "\n"
+				 +"Defaults: mem util " + OptimizerUtils.MEM_UTIL_FACTOR + ", sparsity " + OptimizerUtils.DEF_SPARSITY + ", def mem " +  + OptimizerUtils.DEF_MEM_FACTOR);
+			
 		/////////////////////// construct the lops ///////////////////////////////////
-		dmlt.constructLops(prog);
+		try {
+			dmlt.constructLops(prog);
+		}
+		catch (Exception e)
+		{
+			LOG.error("DMLTranslator failed in constructing LOPs");
+			throw new LopsException("DMLTranslator failed in constructing LOPs");
+		}
 
-		if (DEBUG) {
-			System.out.println("***************************************************");
-			System.out.println("********************** LOPS DAG *******************");
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("\n********************** LOPS DAG *******************");
 			dmlt.printLops(prog);
 			dmlt.resetLopsDAGVisitStatus(prog);
 
@@ -672,26 +694,20 @@ public class DMLScript {
 		}
 
 		////////////////////// generate runtime program ///////////////////////////////
-		Program rtprog = prog.getRuntimeProgram(DEBUG, config);
-		DAGQueue dagQueue = setupNIMBLEQueue(config);
-		if (DEBUG && config == null){
-			System.out.println("INFO: config is null -- you may need to verify config file path");
+		Program rtprog = null;
+		try {
+			rtprog = prog.getRuntimeProgram(config);
 		}
-		if (DEBUG && dagQueue == null){
-			System.out.println("INFO: dagQueue is not set");
+		catch (Exception e){
+			LOG.error("Failed to generate runtime program");
+			throw new DMLRuntimeException("Failed to generate runtime program");
+			
 		}
 		
-		/*
-		if (DEBUG) {
-			System.out.println("********************** PIGGYBACKING DAG *******************");
-			dmlt.printLops(prog);
-			dmlt.resetLopsDAGVisitStatus(prog);
+		DAGQueue dagQueue = setupNIMBLEQueue(config);
 
-			DotGraph gt = new DotGraph();
-			gt.drawLopsDAG(prog, "PiggybackingDAG", 200, 200, path_to_src, VISUALIZE);
-			dmlt.resetLopsDAGVisitStatus(prog);
-		}
-		*/
+		if (dagQueue == null)
+			LOG.warn("dagQueue is not set");
 		
 		rtprog.setDAGQueue(dagQueue);
 
@@ -703,9 +719,10 @@ public class DMLScript {
 		Statistics.setNoOfCompiledMRJobs(jobCount);
 
 		
-		// TODO: DRB --- graph is definitely broken; printMe() is okay
+		/*
 		if (DEBUG) {
 			System.out.println("********************** Instructions *******************");
+			//TODO: Leo this should be deleted
 			System.out.println(rtprog.toString());
 			rtprog.printMe();
 
@@ -715,10 +732,12 @@ public class DMLScript {
 
 			System.out.println("********************** Execute *******************");
 		}
-
-		if (LOG) 
-			out.write("Compile Status OK\n");
 		
+		LOG.info("********************** Instructions *******************");
+		rtprog.printMe();
+		LOG.info("*******************************************************");*/
+
+		LOG.trace("Compile Status for executeHadoop is OK ");
 
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
@@ -729,23 +748,20 @@ public class DMLScript {
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute (new LocalVariableMap (), null);  
 		}
-		catch(DMLException ex)
+		catch(Exception ex)
 		{
-			System.out.println(ex.toString());
-			throw ex;
+			LOG.error("Failed in exeucting runtime program: " + ex.toString());
+			throw new DMLRuntimeException("Failing in executing runtime program");
 		}
 		finally //ensure cleanup/shutdown
 		{			
+			//TODO: Should statistics being turned on at info level?
 			Statistics.stopRunTimer();
 	
-			//if (DEBUG) 
-				System.out.println(Statistics.display());
+			//TODO: Leo check what's this part
+			LOG.debug(Statistics.display());
 			
-			if (LOG) {
-				out.write("END DMLRun " + getDateTime() + "\n");
-				out.close();
-			}
-	
+			LOG.debug("END DML run " + getDateTime() );
 			//cleanup all nimble threads
 			if(rtprog.getDAGQueue() != null)
 		  	    rtprog.getDAGQueue().forceShutDown();
@@ -755,7 +771,6 @@ public class DMLScript {
 		}
 	} // end executeHadoop
 
-	
 	/**
 	 * executeNetezza: handles execution on Netezza runtime
 	 * @param dmlt DML Translator
@@ -829,9 +844,6 @@ public class DMLScript {
 		}*/
 
 	} // end executeNetezza
-	
-	
-	
 	/**
 	 * Method to setup the NIMBLE task queue. 
 	 * This will be used in future external function invocations
@@ -861,7 +873,7 @@ public class DMLScript {
 			((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
 			                .setTextContent( sb.toString() );						
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.error("Failed in setting up NIMBLE queue: " + e.getMessage());
 			throw new PackageRuntimeException ("Error parsing Nimble configuration files");
 		}
 
@@ -875,6 +887,7 @@ public class DMLScript {
 				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
 		
 		if (numSowThreads < 1 || numReapThreads < 1){
+			LOG.error("Illegal values for thread count (must be > 0)");
 			throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
 		}
 
@@ -884,7 +897,7 @@ public class DMLScript {
 			driver = new PMLDriver(numSowThreads, numReapThreads, config);
 			driver.startEmptyDriver(config);
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.error("Failed in initializing NIMBLE driver: " + e.getMessage());
 			throw new PackageRuntimeException("Problem starting nimble driver");
 		} 
 
@@ -895,34 +908,42 @@ public class DMLScript {
 	/**
 	 * @throws ParseException 
 	 * @throws IOException 
+	 * @throws DMLRuntimeException 
 	 * 
 	 */
 	private static void initHadoopExecution( DMLConfig config ) 
-		throws IOException, ParseException
+		throws IOException, ParseException, DMLRuntimeException
 	{
-		//check security aspects
-		checkSecuritySetup();
+		try {
+			//check security aspects
+			checkSecuritySetup();
 		
-		//create scratch space with appropriate permissions
-		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-		MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+			//create scratch space with appropriate permissions
+			String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+			MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
-		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
-		cleanupHadoopExecution(config); 
+			//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
+			cleanupHadoopExecution(config); 
 		
-		//init caching (incl set active)
-		CacheableData.initCaching();
+			//init caching (incl set active)
+			CacheableData.initCaching();
 		
-		//reset statistics (required if multiple scripts executed in one JVM)
-		Statistics.setNoOfExecutedMRJobs( 0 );
+			//reset statistics (required if multiple scripts executed in one JVM)
+			Statistics.setNoOfExecutedMRJobs( 0 );
+		}
+		catch (Exception ex){
+			LOG.error("Failed in initializing Hadoop execution: " + ex.getMessage());
+			throw new DMLRuntimeException("Failed in initializing Hadoop execution");
+		}
 	}
 	
 	/**
 	 * 
 	 * @throws IOException
+	 * @throws DMLRuntimeException 
 	 */
 	private static void checkSecuritySetup() 
-		throws IOException
+		throws IOException, DMLRuntimeException
 	{
 		//analyze local configuration
 		String userName = System.getProperty( "user.name" );
@@ -934,7 +955,10 @@ public class DMLScript {
 				for( String g : groups )
 					groupNames.add( g );
 			}
-		}catch(Exception ex){}
+		}catch(Exception ex){
+			LOG.error("Failed in checking current user and group security info: " + ex.getStackTrace());
+			throw new DMLRuntimeException("Failed in checking current user and group security info");
+		}
 		
 		//analyze hadoop configuration
 		JobConf job = new JobConf();
@@ -951,23 +975,15 @@ public class DMLScript {
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		
-		//print debug output
-		if( DEBUG )
-		{
-			System.out.println("SystemML security check:");
-			System.out.println(" local.user.name                     = " + userName );
-			System.out.println(" local.user.groups                   = " + ProgramConverter.serializeStringHashSet(groupNames) );		
-			System.out.println(" mapred.job.tracker                  = " + jobTracker ); 
-			System.out.println(" mapred.task.tracker.task-controller = " + taskController );
-			System.out.println(" mapreduce.tasktracker.group         = " + ttGroupName );		
-			System.out.println(" fs.default.name                     = " + fsURI.getScheme() );
-			System.out.println(" dfs.permissions                     = " + perm );
-		} 
+
+		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringHashSet(groupNames) + ", "
+				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
+				        + "fs.default.name = " + fsURI.getScheme() + ", " + "dfs.permissions = " + perm );
 
 		//print warning if permission issues possible
 		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )
 		{
-			System.out.println("Warning: Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
+			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
 		}
 	}
 	
@@ -1006,8 +1022,7 @@ public class DMLScript {
 		{
 			//we give only a warning because those directories are written by the mapred deamon 
 			//and hence, execution can still succeed
-			if( DEBUG )
-				System.out.println("Warning: Unable to cleanup hadoop working dirs: "+ex.getMessage());
+			LOG.warn("Unable to cleanup hadoop working dirs: "+ex.getMessage());
 		}
 			
 		//cleanup systemml-internal working dirs
@@ -1034,7 +1049,7 @@ public class DMLScript {
 			}
 
 			if (blk.getNumInstructions() > 0){
-				System.out.println("error:  while programBlock should not have instructions ");
+				LOG.error("While programBlock should not have instructions ");
 			}
 		}
 		else {

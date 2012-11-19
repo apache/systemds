@@ -201,7 +201,6 @@ public class BinaryOp extends Hops {
 					set_lops(unary1);
 				}
 				else {
-					//System.out.println("CM executing in CP...");
 					cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					set_lops(cm);
 				}
@@ -238,7 +237,6 @@ public class BinaryOp extends Hops {
 					set_lops(unary1);
 				}
 				else {
-					//System.out.println("COV executing in CP...");
 					CoVariance cov = new CoVariance(
 							getInput().get(0).constructLops(), 
 							getInput().get(1).constructLops(), 
@@ -418,15 +416,17 @@ public class BinaryOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.println("  Operation: " + op + "\n");
-			for (Hops h : getInput()) {
-				h.printMe();
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  Operation: " + op );
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
+				;
 			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	@Override

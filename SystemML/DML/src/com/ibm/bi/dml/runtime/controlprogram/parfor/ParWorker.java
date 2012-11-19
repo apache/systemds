@@ -3,7 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -31,6 +33,7 @@ public abstract class ParWorker
 	
 	protected int                       _numTasks    = -1;
 	protected int                       _numIters    = -1;
+	protected static final Log LOG = LogFactory.getLog(ParWorker.class.getName());
 	
 	public ParWorker()
 	{
@@ -94,8 +97,7 @@ public abstract class ParWorker
 	protected void executeTask( Task task ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		if(DMLScript.DEBUG)
-			System.out.println("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
+		LOG.trace("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
 		
 		switch( task.getType() )
 		{

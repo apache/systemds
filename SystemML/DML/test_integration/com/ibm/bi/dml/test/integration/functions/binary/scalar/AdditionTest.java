@@ -2,9 +2,9 @@ package com.ibm.bi.dml.test.integration.functions.binary.scalar;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 
@@ -228,7 +228,7 @@ public class AdditionTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("BooleanTest");
 		
-		runTest(true, LanguageException.class);
+		runTest(true, ParseException.class);
 	}
 
 }

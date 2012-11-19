@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.parser;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 
 
  
@@ -9,7 +12,8 @@ package com.ibm.bi.dml.parser;
  * we don't have to edit the java in the JavaCC file.
  */
 public abstract class DMLQLParserBase {
-
+	protected static final Log LOG = LogFactory.getLog(DMLQLParser.class.getName());
+	
 	/** File encoding to use if no other encoding is explicitly specified. */
 	protected static final String DEFAULT_ENCODING = "UTF-8";
 
@@ -159,12 +163,10 @@ public abstract class DMLQLParserBase {
 		try {
 			return __inputInternal();
 		} catch (ParseException e) {
-			e.printStackTrace();
-
+			LOG.error("Failed in DMLProgram parsing: " + e.getMessage());
 			return null;
 		} catch (TokenMgrError e) {
-
-			System.err.println("error " + e);
+			LOG.error("Error: " + e.getMessage());
 		}
 		tearDown();
 		return null;

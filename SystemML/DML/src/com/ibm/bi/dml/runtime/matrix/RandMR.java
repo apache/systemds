@@ -4,6 +4,8 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math.random.Well1024a;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -14,7 +16,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -60,7 +61,7 @@ public class RandMR
 	 * @return matrix characteristics for each random object
 	 * @throws Exception if an error occurres in the MapReduce phase
 	 */
-	
+	private static final Log LOG = LogFactory.getLog(RandMR.class.getName());
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] randInstructions, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
@@ -113,8 +114,7 @@ public class RandMR
 				seeds[s]=random.nextInt();
 			bigrand.setSeed(seeds);
 			
-			if( DMLScript.DEBUG )
-				System.out.println("process RandMR with seed="+lSeed+".");
+			LOG.trace("Processing RandMR with seed = "+lSeed+".");
 
 			rlens[i]=ins.rows;
 			clens[i]=ins.cols;
@@ -196,7 +196,7 @@ public class RandMR
 			MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 			
 			// print the complete MRJob instruction
-			if (DMLScript.DEBUG)
+			if (LOG.isTraceEnabled())
 				inst.printCompelteMRJobInstruction(stats);
 			
 			// Update resultDimsUnknown based on computed "stats"

@@ -71,7 +71,7 @@ public class ProgramRecompiler
 			}
 			
 			//construct new instructions
-			ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig());
+			ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig());
 			
 			
 			//exchange instructions
@@ -134,7 +134,7 @@ public class ProgramRecompiler
 				}
 				
 				//construct new instructions
-				ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig());
+				ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig());
 				
 				//exchange instructions
 				pbNew = new ProgramBlock(pbOld.getProgram());
@@ -307,7 +307,7 @@ public class ProgramRecompiler
 					}
 					
 					//construct new instructions
-					ArrayList<Instruction> newInst = dag.getJobs(false,ConfigurationManager.getConfig()); 
+					ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig()); 
 								
 					//exchange instructions
 					pb.getInstructions().clear();

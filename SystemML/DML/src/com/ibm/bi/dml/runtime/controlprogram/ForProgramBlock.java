@@ -155,9 +155,6 @@ public class ForProgramBlock extends ProgramBlock
 		{
 			_variables.put(iterVarName, iterVar); 
 			
-			//if( DMLScript.DEBUG )
-			//	System.out.println("FOR: start iteration for "+iterVarName+"="+iterVar.getIntValue());
-			
 			// for each program block
 			for (ProgramBlock pb : this._childBlocks)
 			{	

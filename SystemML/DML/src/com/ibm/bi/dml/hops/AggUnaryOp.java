@@ -130,16 +130,17 @@ public class AggUnaryOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.println("  Operation: " + _op);
-			System.out.println("  Direction: " + _direction + "\n");
-			for (Hops h : getInput()) {
-				h.printMe();
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  Operation: " + _op);
+				LOG.debug("  Direction: " + _direction);
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
 			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	@Override

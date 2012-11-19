@@ -231,20 +231,20 @@ public class DataOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.print("  DataOp: " + _dataop);
-			if (_fileName != null) {
-				System.out.print(" file: " + _fileName);
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  DataOp: " + _dataop);
+				if (_fileName != null) {
+					LOG.debug(" file: " + _fileName);
+				}
+				LOG.debug(" format: " + getFormatType());
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
 			}
-			System.out.println(" format: " + getFormatType());
-			System.out.print("\n");
-			for (Hops h : getInput()) {
-				h.printMe();
-			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	public DataOpTypes get_dataop() {

@@ -367,10 +367,6 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			else if ( refCount == 0 ) 
 				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
-			/*else {
-				if ( DMLScript.DEBUG )
-					System.out.println("  " + this.toString() + " -- skipping cleanup as refCount > 1");
-			}*/
 
 			// remove variable from the program block
 			pb.removeVariable(input1.get_name());

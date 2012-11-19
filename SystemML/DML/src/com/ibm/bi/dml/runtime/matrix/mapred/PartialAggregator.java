@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -14,10 +12,8 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -46,8 +42,7 @@ public class PartialAggregator {
 	private AggregateBinaryOperator operation;
 	private Class<? extends MatrixValue> valueClass;
 	private long elementSize;
-//	protected static final Log LOG = LogFactory.getLog(PartialAggregator.class);
-	
+
 	public PartialAggregator(JobConf conf, long memSize, long resultRlen, long resultClen, 
 			int blockRlen, int blockClen, String filePrefix, boolean inRowMajor, 
 			AggregateBinaryOperator op, Class<? extends MatrixValue> vCls) 

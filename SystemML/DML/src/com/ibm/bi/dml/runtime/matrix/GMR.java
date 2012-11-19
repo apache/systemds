@@ -2,6 +2,8 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobClient;
@@ -9,7 +11,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -50,6 +51,7 @@ public class GMR{
 	 * outputs: the names for the output directories, one for each result index
 	 * outputInfos: output format information for the output matrices
 	 */
+	private static final Log LOG = LogFactory.getLog(GMR.class.getName());
 	
 	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -171,7 +173,7 @@ public class GMR{
 		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"

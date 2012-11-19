@@ -3,6 +3,9 @@ package com.ibm.bi.dml.hops;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
@@ -20,7 +23,7 @@ import com.ibm.bi.dml.utils.LopsException;
 
 
 abstract public class Hops {
-
+	protected static final Log LOG =  LogFactory.getLog(Hops.class.getName());
 	
 	public static boolean BREAKONSCALARS = false;
 	public static boolean SPLITLARGEMATRIXMULT = true;
@@ -230,11 +233,13 @@ abstract public class Hops {
 			c = '*';
 		}
 		
-		if (DMLScript.DEBUG) {
-			System.out.printf("  %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
-			//System.out.println("  " + getHopID() + " " + getOpString() + " (" + OptimizerUtils.toMB(_outputMemEstimate) + ", " + OptimizerUtils.toMB(_memEstimate) + ")  " + et);
+		if (LOG.isDebugEnabled()){
+			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
+			LOG.debug(s);
 		}
-		
+		// This is the old format for reference
+		// %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
+				
 		return et;
 	}
 	
@@ -646,7 +651,7 @@ abstract public class Hops {
 			for (int i=0; i< dimArray.length; i++){
 				dimArray[i] = 1;
 			}	
-			System.out.println("short-circuit optimizeMMChain() for matrices with unknown size");
+			LOG.trace("short-circuit optimizeMMChain() for matrices with unknown size");
 			return dimArray;
 		}
 		
@@ -695,11 +700,9 @@ abstract public class Hops {
 	 */
 
 	private void optimizeMMChain() throws HopsException {
-		if (DMLScript.DEBUG) {
-			System.out.println("\nMM Chain Optimization for HOP: (" + " " + getKind() + ", " + getHopID() + ", "
+		LOG.trace("MM Chain Optimization for HOP: (" + " " + getKind() + ", " + getHopID() + ", "
 					+ get_name() + ")");
-		}
-
+		
 		ArrayList<Hops> mmChain = new ArrayList<Hops>();
 		ArrayList<Hops> mmOperators = new ArrayList<Hops>();
 		ArrayList<Hops> tempList;
@@ -762,13 +765,13 @@ abstract public class Hops {
 		}
 
 		// print the MMChain
-		if (DMLScript.DEBUG) {
-			System.out.println("Identified MM Chain: ");
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Identified MM Chain: ");
 			for (Hops h : mmChain) {
-				System.out.println("Hop " + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
+				LOG.trace("Hop " + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
 						+ h.get_dim1() + "x" + h.get_dim2());
 			}
-			System.out.println("--End of MM Chain--");
+			LOG.trace("--End of MM Chain--");
 		}
 
 		if (mmChain.size() == 2) {
@@ -795,27 +798,24 @@ abstract public class Hops {
 	}
 
 	public void printMe() throws HopsException {
-		System.out.print(_kind + " " + getHopID() + "\n");
-		System.out.print("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
-		//System.out.print(" Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
-		System.out.print("  Parent: ");
-		for (Hops h : getParent()) {
-			System.out.print(h.hashCode() + "; ");
+		if (LOG.isDebugEnabled()) {
+			StringBuilder s = new StringBuilder(""); 
+			s.append(_kind + " " + getHopID() + "\n");
+			s.append("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
+			s.append("  Parent: ");
+			for (Hops h : getParent()) {
+				s.append(h.hashCode() + "; ");
+			}
+			;
+			s.append("\n  Input: ");
+			for (Hops h : getInput()) {
+				s.append(h.getHopID() + "; ");
+			}
+			
+			s.append("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz " + _nnz);
+			s.append("  MemEstimate = Out " + (_outputMemEstimate/1024/1024) + " MB, In&Out " + (_memEstimate/1024/1024) + " MB" );
+			LOG.debug(s.toString());
 		}
-		;
-		System.out.print("\n  Input: ");
-		for (Hops h : getInput()) {
-			System.out.print(h.getHopID() + "; ");
-		}
-		;
-		System.out.println("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz " + _nnz);
-		/*System.out.print("\n  Dim1: " + get_dim1());
-		System.out.print(" Dim2: " + get_dim2());
-		System.out.print("\n nnz: " + getNnz());
-		System.out.print(" RowsInBlock: " + get_rows_in_block());
-		System.out.print(" ColsInBlock: " + get_cols_in_block());
-		System.out.print("\n");*/
-		System.out.println("  MemEstimate = Out " + (_outputMemEstimate/1024/1024) + " MB, In&Out " + (_memEstimate/1024/1024) + " MB" );
 	}
 
 	public long get_dim1() {

@@ -63,7 +63,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 
 		runTest(true, false, null, -1);
 
-		programArgs = new String[]{"-d", "-args", HOME + INPUT_DIR + "a" ,
+		programArgs = new String[]{"-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
 	                        "text",
@@ -71,7 +71,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 		
 		
-		programArgs = new String[]{"-d", "-exec", "hybrid",
+		programArgs = new String[]{"-exec", "hybrid",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -79,7 +79,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 	                        HOME + OUTPUT_DIR + "a"};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-d", "-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
+		programArgs = new String[]{"-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -116,7 +116,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-s", s, "-d",
+		programArgs = new String[]{"-s", s,
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -124,7 +124,7 @@ public class DMLScriptTest1 extends AutomatedTestBase {
 	                        HOME + OUTPUT_DIR + "a"};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-s", s, "-config=" + baseDirectory + "SystemML-config.xml", "-exec", "hybrid", "-d",
+		programArgs = new String[]{"-s", s, "-config=" + baseDirectory + "SystemML-config.xml", "-exec", "hybrid", 
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),

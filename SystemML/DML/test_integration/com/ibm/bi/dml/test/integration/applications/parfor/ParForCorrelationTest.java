@@ -145,7 +145,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 				                        Integer.toString(cols),
 				                        HOME + OUTPUT_DIR + "PearsonR" };
 		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".r" + " " + 
+		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".R" + " " + 
 		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 		
 		loadTestConfiguration(config);

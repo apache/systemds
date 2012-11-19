@@ -504,24 +504,24 @@ public class MRJobInstruction extends Instruction
 	public String toString()
 	{
 		String instruction = "";
-		instruction += "jobtype" + jobType + " \n";
-		instruction += "input labels " + Arrays.toString(inputVars) + " \n";
-		instruction += "recReader inst " + iv_recordReaderInstructions + " \n";
-		instruction += "rand inst " + iv_randInstructions + " \n";
-		instruction += "mapper inst " + iv_instructionsInMapper + " \n";
-		instruction += "shuffle inst " + iv_shuffleInstructions + " \n";
-		instruction += "agg inst " + iv_aggInstructions + " \n";
-		instruction += "other inst " + iv_otherInstructions + " \n";
-		instruction += "output labels " + Arrays.toString(outputVars) + " \n";
-		instruction += "result indices " + getString(iv_resultIndices) + " \n";
+		instruction += "jobtype = " + jobType + " \n";
+		instruction += "input labels = " + Arrays.toString(inputVars) + " \n";
+		instruction += "recReader inst = " + iv_recordReaderInstructions + " \n";
+		instruction += "rand inst = " + iv_randInstructions + " \n";
+		instruction += "mapper inst = " + iv_instructionsInMapper + " \n";
+		instruction += "shuffle inst = " + iv_shuffleInstructions + " \n";
+		instruction += "agg inst = " + iv_aggInstructions + " \n";
+		instruction += "other inst = " + iv_otherInstructions + " \n";
+		instruction += "output labels = " + Arrays.toString(outputVars) + " \n";
+		instruction += "result indices = " + getString(iv_resultIndices) + " \n";
 		//instruction += "result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
-		instruction += "num reducers " + iv_numReducers + " \n";
-		instruction += "replication " + iv_replication + " \n";
+		instruction += "num reducers = " + iv_numReducers + " \n";
+		instruction += "replication = " + iv_replication + " \n";
 		return instruction;
 	}
 	
 	public void printMe() {
-		System.out.println("MRInstructions: " + this.toString());
+		LOG.debug("\nMRInstructions: \n" + this.toString());
 	}
 
 	private String getOps(String inst) {
@@ -749,14 +749,14 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	public void printCompelteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {
-		System.out.println("jobtype" + jobType);
-		System.out.println("  Inputs:");
+		LOG.trace("jobtype" + jobType);
+		LOG.trace("Inputs: \n");
 		for(int i=0, mi=0; i < inputVars.length; i++ ) {
 			if(inputDataTypes[i] == DataType.SCALAR) {
-				System.out.println("    " + inputVars[i] + " - SCALAR input (replaced w/ value)");
+				LOG.trace("    " + inputVars[i] + " - SCALAR input (replaced w/ value)");
 			}
 			else if ( inputDataTypes[i] == DataType.MATRIX ) {
-				System.out.println("    " + inputVars[i] + 
+				LOG.trace("    " + inputVars[i] + 
 						" - [" + inputs[mi] + 
 						"]  [" + rlens[mi] + ", " + clens[mi] + 
 						"]  nnz[" + inputMatrices[mi].getNnz() +
@@ -766,26 +766,26 @@ public class MRJobInstruction extends Instruction
 				mi++;
 			}
 			else 
-				System.out.println("    " + inputVars[i] + " - " + inputDataTypes[i]);
+				LOG.trace("    " + inputVars[i] + " - " + inputDataTypes[i]);
 		}
 		
-		System.out.println("  Instructions:");
+		LOG.trace("  Instructions:");
 		if ( !iv_recordReaderInstructions.equals("")) 
-			System.out.println("    recReader inst - " + iv_recordReaderInstructions );
+			LOG.trace("    recReader inst - " + iv_recordReaderInstructions );
 		if ( !iv_randInstructions.equals("")) 
-			System.out.println("    rand inst - " + iv_randInstructions );
+			LOG.trace("    rand inst - " + iv_randInstructions );
 		if ( !iv_instructionsInMapper.equals("")) 
-			System.out.println("    mapper inst - " + iv_instructionsInMapper );
+			LOG.trace("    mapper inst - " + iv_instructionsInMapper );
 		if ( !iv_shuffleInstructions.equals("")) 
-			System.out.println("    shuffle inst - " + iv_shuffleInstructions );
+			LOG.trace("    shuffle inst - " + iv_shuffleInstructions );
 		if ( !iv_aggInstructions.equals("")) 
-			System.out.println("    agg inst - " + iv_aggInstructions );
+			LOG.trace("    agg inst - " + iv_aggInstructions );
 		if ( !iv_otherInstructions.equals("")) 
-			System.out.println("    other inst - " + iv_otherInstructions );
+			LOG.trace("    other inst - " + iv_otherInstructions );
 
-		System.out.println("  Outputs:");
+		LOG.trace("  Outputs:");
 		for(int i=0; i < outputVars.length; i++ ) {
-			System.out.println("    " + iv_resultIndices[i] + " : " + outputVars[i] + 
+			LOG.trace("    " + iv_resultIndices[i] + " : " + outputVars[i] + 
 					" - [" + outputs[i] + 
 					"]  [" + resultStats[i].get_rows() + ", " + resultStats[i].get_cols() + 
 					"]  nnz[" + outputMatrices[i].getNnz() +
@@ -793,8 +793,8 @@ public class MRJobInstruction extends Instruction
 					"]  [" + OutputInfo.outputInfoToString(outputInfos[i]) +
 					"]");
 		}
-		System.out.println("  #Reducers - " + iv_numReducers);
-		System.out.println("  Replication - " + iv_replication);
+		LOG.trace("  #Reducers - " + iv_numReducers);
+		LOG.trace("  Replication - " + iv_replication);
 	}
 	
 }

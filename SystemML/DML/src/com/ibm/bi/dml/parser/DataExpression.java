@@ -217,7 +217,7 @@ public class DataExpression extends Expression {
 				}
 	        }
 	        else {
-	        	System.out.println("INFO: metadata file: " + new Path(filename) + " not provided");
+	        	LOG.warn("Metadata file: " + new Path(filename) + " not provided");
 	        }
 			
 	        

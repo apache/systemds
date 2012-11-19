@@ -11,7 +11,6 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
@@ -58,8 +57,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	public void map(LongWritable key, Text value, OutputCollector<Writable, Writable> out, Reporter reporter) 
 		throws IOException
 	{
-		if( DMLScript.DEBUG )
-			System.out.println("execute RemoteParWorkerMapper "+_stringID+" ("+_workerID+")");
+		LOG.trace("execute RemoteParWorkerMapper "+_stringID+" ("+_workerID+")");
 		
 		int numIters = getExecutedIterations(); //for multiple iterations
 		
@@ -143,8 +141,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		
 		if( requiresConfigure )
 		{
-			if( DMLScript.DEBUG )
-				System.out.println("configure RemoteParWorkerMapper "+job.get("mapred.tip.id"));
+			LOG.trace("configure RemoteParWorkerMapper "+job.get("mapred.tip.id"));
 			
 			try
 			{
@@ -197,8 +194,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		} 
 		else
 		{
-			if( DMLScript.DEBUG )
-				System.out.println("reuse configuration RemoteParWorkerMapper "+_stringID);
+			LOG.trace("reuse configuration RemoteParWorkerMapper "+_stringID);
 		}
 	}
 	

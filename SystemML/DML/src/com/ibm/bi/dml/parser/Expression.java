@@ -2,6 +2,9 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -68,6 +71,7 @@ public abstract class Expression {
 	public enum FormatType {
 		TEXT, BINARY, UNKNOWN
 	};
+	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 
 	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
 		

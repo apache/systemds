@@ -88,32 +88,34 @@ public class LiteralOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			switch (get_valueType()) {
-			case DOUBLE:
-				System.out.println("  Value: " + value_double + "\n");
-				break;
-			case BOOLEAN:
-				System.out.println("  Value: " + value_boolean + "\n");
-				break;
-			case STRING:
-				System.out.println("  Value: " + value_string + "\n");
-				break;
-			case INT:
-				System.out.println("  Value: " + value_long + "\n");
-				break;
-			default:
-				throw new HopsException(this.printErrorLocation() +
-						"unexpected value type printing LiteralOp.\n");
-			}
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				switch (get_valueType()) {
+				case DOUBLE:
+					LOG.debug("  Value: " + value_double);
+					break;
+				case BOOLEAN:
+					LOG.debug("  Value: " + value_boolean);
+					break;
+				case STRING:
+					LOG.debug("  Value: " + value_string);
+					break;
+				case INT:
+					LOG.debug("  Value: " + value_long);
+					break;
+				default:
+					throw new HopsException(this.printErrorLocation() +
+							"unexpected value type printing LiteralOp.\n");
+				}
 
-			for (Hops h : getInput()) {
-				h.printMe();
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
+
 			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	@Override

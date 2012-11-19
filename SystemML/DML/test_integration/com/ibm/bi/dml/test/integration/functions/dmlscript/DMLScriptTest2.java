@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -55,7 +56,7 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 		
 		//Expect to print out an ERROR message. -f or -s must be the first argument.
 		fullDMLScriptName = baseDirectory + "DMLScriptTest.dml";
-		programArgs = new String[]{ "-d", "-exec", "hybrid", "-args", HOME + INPUT_DIR + "a" , 
+		programArgs = new String[]{ "-exec", "hybrid", "-args", HOME + INPUT_DIR + "a" , 
 		                       Integer.toString(rows),
 		                       Integer.toString(cols),
 		                       "text",
@@ -69,8 +70,8 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 	                        Integer.toString(cols),
 	                        "text",
 	                        HOME + OUTPUT_DIR + "a",
-	                        "-d", "-exec", "hybrid"};
-		runTest(true, false, null, -1);
+	                        "-exec", "hybrid"};
+		runTest(true, true, LanguageException.class, -1);
 		
 		//Expect to print out an ERROR message, -de is an unknown argument
 		programArgs = new String[]{"-de", "-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
@@ -82,7 +83,7 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 		
 		//Expect to print out an ERROR message, -config syntax is -config=<config file>
-		programArgs = new String[]{"-d", "-exec", "hybrid", "-config", baseDirectory + "SystemML-config.xml",
+		programArgs = new String[]{"-exec", "hybrid", "-config", baseDirectory + "SystemML-config.xml",
 			               "-args", HOME + INPUT_DIR + "a" ,
 			                        Integer.toString(rows),
 			                        Integer.toString(cols),
@@ -112,7 +113,7 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 
 		
 		//Expect to print out an ERROR message. -f or -s must be the first argument.
-		programArgs = new String[]{ "-d", "-s", s, 
+		programArgs = new String[]{ "-v", "-s", s, 
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
@@ -125,7 +126,7 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 		
 		//Expect to print out an ERROR message. -args should be the last argument.
 		programArgs = new String[]{"-s", s, 
-	               "-args", "-d", HOME + INPUT_DIR + "a" ,
+	               "-args", "-v", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),
 	                        "text",
@@ -144,7 +145,7 @@ public class DMLScriptTest2 extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 		
 		//Expect to print out an ERROR message, -config syntax is -config=<config file>
-		programArgs = new String[]{"-s", s, "-config", baseDirectory + "SystemML-config.xml", "-exec", "hybrid", "-d",
+		programArgs = new String[]{"-s", s, "-config", baseDirectory + "SystemML-config.xml", "-exec", "hybrid", 
 	               "-args", HOME + INPUT_DIR + "a" ,
 	                        Integer.toString(rows),
 	                        Integer.toString(cols),

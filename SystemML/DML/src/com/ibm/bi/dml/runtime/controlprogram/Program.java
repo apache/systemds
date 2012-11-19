@@ -12,7 +12,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 public class Program {
-	
 	public static final String KEY_DELIM = "::";
 	
 	public ArrayList<ProgramBlock> _programBlocks;

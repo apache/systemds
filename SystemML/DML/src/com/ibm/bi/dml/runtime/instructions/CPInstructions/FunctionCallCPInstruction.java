@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -80,9 +79,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 
 	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		if (DMLScript.DEBUG)
-			System.out.println("executing instruction : " + this.toString());
-
+		
+		LOG.trace("Executing instruction : " + this.toString());
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(this._namespace, this._functionName);
 		

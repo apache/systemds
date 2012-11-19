@@ -44,7 +44,7 @@
 //				                        IO_HOME + OUTPUT_DIR + "Aout-text.mtx", 
 //				                        IO_HOME + OUTPUT_DIR + "Aout-binary.mtx"};
 //		
-//		dmlArgsDebug = new String[]{"-f", GNMF_HOME + TEST_IO + "1.dml", "-d",
+//		dmlArgsDebug = new String[]{"-f", GNMF_HOME + TEST_IO + "1.dml", 
 //	                                "-args", GNMF_HOME + INPUT_DIR + "v", 
 //	                                         GNMF_HOME + INPUT_DIR + "w", 
 //	                                         GNMF_HOME + INPUT_DIR + "h", 

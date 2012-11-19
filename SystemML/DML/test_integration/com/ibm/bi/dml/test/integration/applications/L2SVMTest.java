@@ -63,7 +63,6 @@ public class L2SVMTest extends AutomatedTestBase {
 	
 		dmlArgsDebug = new String[]{"-f", 
 									L2SVM_HOME + TEST_L2SVM + ".dml", 
-									"-d",
 									"-args", 
 									L2SVM_HOME + INPUT_DIR + "X", 
                                     L2SVM_HOME + INPUT_DIR + "Y", 

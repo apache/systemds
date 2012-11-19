@@ -134,16 +134,18 @@ public class AggBinaryOp extends Hops {
 	}
 
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.println("  InnerOperation: " + innerOp);
-			System.out.println("  OuterOperation: " + outerOp + "\n");
-			for (Hops h : getInput()) {
-				h.printMe();
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  InnerOperation: " + innerOp);
+				LOG.debug("  OuterOperation: " + outerOp);
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
+				;
 			}
-			;
+			set_visited(VISIT_STATUS.DONE);
 		}
-		set_visited(VISIT_STATUS.DONE);
 	}
 
 	private boolean isOuterProduct() {
@@ -250,11 +252,9 @@ public class AggBinaryOp extends Hops {
 		cpmm_io = m1_size + m2_size + result_size + (2*r*result_size);
 		
 		if ( cpmm_shuffle + cpmm_io < rmm_shuffle + rmm_io ) {
-			//System.out.println("CPMM --> c(rmm)=" + (rmm_shuffle+rmm_io) + ", c(cpmm)=" + (cpmm_shuffle+cpmm_io) ); 
 			return MMultMethod.CPMM;
 		}
 		else {
-			//System.out.println("RMM --> c(rmm)=" + (rmm_shuffle+rmm_io) + ", c(cpmm)=" + (cpmm_shuffle+cpmm_io) ); 
 			return MMultMethod.RMM;
 		}
 	}

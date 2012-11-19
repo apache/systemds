@@ -2,7 +2,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * This class provides a way of dynamic task distribution to multiple workers
@@ -23,7 +24,8 @@ public class LocalTaskQueue
 	
 	private LinkedList<Task> _data        = null;
 	private boolean 		 _closedInput = false; 
-		
+	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
+	
 	public LocalTaskQueue()
 	{
 		_data        = new LinkedList<Task>();
@@ -41,8 +43,7 @@ public class LocalTaskQueue
 	{
 		while( _data.size() + 1 > MAX_SIZE )
 		{
-			if( DMLScript.DEBUG )
-				System.out.println("ParFOR: WARNING - MAX_SIZE of task queue reached.");
+			LOG.trace("ParFOR: WARNING - MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
 		

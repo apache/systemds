@@ -62,7 +62,6 @@ public abstract class AutomatedTestBase {
 
 	/* For testing in the new way */
 	//protected String[] dmlArgs;            /* program-independent arguments to SystemML (e.g., debug, execution mode) */
-	//protected String[] dmlArgsDebug;       /* args to DMLScript.main with -d option */
 	protected String[] programArgs;        /* program-specific arguments, which are passed to SystemML via -args option */
 	protected String rCmd;                 /* Rscript foo.R arg1, arg2 ...          */
 	
@@ -749,8 +748,6 @@ public abstract class AutomatedTestBase {
 		else
 			args.add(executionFile);
 		// program-independent parameters
-		if(DEBUG)
-			args.add("-d");
 		if(VISUALIZE)
 			args.add("-v");
 		args.add("-exec");
@@ -823,7 +820,7 @@ public abstract class AutomatedTestBase {
 		
 		try {
 		if(DEBUG)
-			DMLScript.main(new String[] { "-f" ,executionFile, "-d", "-nz" });
+			DMLScript.main(new String[] { "-f" ,executionFile, "-nz" });
 		else
 			DMLScript.main(new String[] { "-f" ,executionFile, "-nz" });
 		} catch (Exception e) {

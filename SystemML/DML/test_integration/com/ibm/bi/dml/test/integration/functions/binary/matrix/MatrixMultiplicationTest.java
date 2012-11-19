@@ -4,11 +4,11 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 public class MatrixMultiplicationTest extends AutomatedTestBase {
@@ -75,7 +75,7 @@ public class MatrixMultiplicationTest extends AutomatedTestBase {
 		createRandomMatrix("a", m, n1, -1, 1, 0.5, -1);
 		createRandomMatrix("b", n2, k, -1, 1, 0.5, -1);
 
-		runTest(true, LanguageException.class);
+		runTest(true, ParseException.class);
 	}
 
 	@Test

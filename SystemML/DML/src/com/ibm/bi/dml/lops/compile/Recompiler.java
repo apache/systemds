@@ -3,7 +3,9 @@ package com.ibm.bi.dml.lops.compile;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -25,6 +27,7 @@ import com.ibm.bi.dml.utils.LopsException;
  */
 public class Recompiler 
 {
+	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
 	/**
 	 * 	
 	 * @param hops
@@ -46,11 +49,8 @@ public class Recompiler
 		
 		synchronized( hops ) //need for synchronization as we do temp changes
 		{	
-			if( DMLScript.DEBUG )
-			{
-				System.out.println("**************** Optimizer (Recompile) *************");
-				System.out.println("Memory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");				
-			}
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
+			
 			
 			//Timing time = new Timing();
 			//time.start();
@@ -87,7 +87,7 @@ public class Recompiler
 			//System.out.println("Construct lops in "+time.stop()+"ms");
 			
 			// construct instructions
-			newInst = dag.getJobs(false,ConfigurationManager.getConfig());
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
 			
 			//System.out.println(newInst);
 			//System.out.println("Construct instructions in "+time.stop()+"ms");

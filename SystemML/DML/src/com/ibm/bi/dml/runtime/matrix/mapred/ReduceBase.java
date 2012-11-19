@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
@@ -28,8 +26,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 public class ReduceBase extends MRBaseForCommonInstructions{
-	
-	protected static final Log LOG = LogFactory.getLog(ReduceBase.class);
 	
 	//aggregate instructions
 	protected HashMap<Byte, Vector<AggregateInstruction>> 

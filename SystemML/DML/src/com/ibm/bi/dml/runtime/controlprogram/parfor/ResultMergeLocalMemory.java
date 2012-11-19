@@ -6,7 +6,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -38,13 +37,11 @@ public class ResultMergeLocalMemory extends ResultMerge
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
-		Timing time = null;
-		if( LDEBUG )
-		{
-			System.out.println("ResultMerge (local, in-memory): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-			time = new Timing();
-			time.start();
-		}
+		//Timing time = null;
+		LOG.trace("ResultMerge (local, in-memory): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		//	time = new Timing();
+		//	time.start();
+		
 		
 		try
 		{
@@ -66,8 +63,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 				//check for empty inputs (no iterations executed)
 				if( in !=null && in != _output ) 
 				{
-					if( LDEBUG )
-						System.out.println("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
+					LOG.trace("ResultMerge (local, in-memory): Merge input "+in.getVarName()+" (fname="+in.getFileName()+")");
 					
 					MatrixBlock inMB = in.acquireRead();	
 					
@@ -98,8 +94,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			throw new DMLRuntimeException(ex);
 		}
 
-		if( LDEBUG )
-			System.out.println("ResultMerge (local, in-memory): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
+		//LOG.trace("ResultMerge (local, in-memory): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 		
 		return moNew;
 	}
@@ -110,13 +105,11 @@ public class ResultMergeLocalMemory extends ResultMerge
 	{		
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 	
-		Timing time = null;
-		if( LDEBUG )
-		{
-			System.out.println("ResultMerge (local, in-memory): Execute parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-			time = new Timing();
-			time.start();
-		}
+		//Timing time = null;
+		LOG.trace("ResultMerge (local, in-memory): Execute parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		//	time = new Timing();
+		//	time.start();
+		
 
 		try
 		{
@@ -185,8 +178,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( LDEBUG )
-			System.out.println("ResultMerge (local, in-memory): Executed parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
+		//LOG.trace("ResultMerge (local, in-memory): Executed parallel (par="+par+") merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 
 		return moNew;		
 	}
@@ -291,8 +283,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 			//read each input if required
 			try
 			{
-				if( LDEBUG )
-					System.out.println("ResultMerge (local, in-memory): Merge input "+_inMO.getVarName()+" (fname="+_inMO.getFileName()+")");
+				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.getVarName()+" (fname="+_inMO.getFileName()+")");
 				
 				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
 				merge( _outMB, inMB );

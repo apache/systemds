@@ -207,7 +207,6 @@ public class OptimizerUtils {
 		}
 		long allocatedCells = (long)Math.pow(2, Math.ceil(Math.log(numCells)/Math.log(2)) );
 		long rowSize = basicSize +  allocatedCells * cellSize;
-		//System.out.println("Rowsize for clen " + clen + ", sp " + sp + " -> allocated " + allocatedCells + ", "+ rowSize + " bytes.");
 		return rowSize;
 	}
 

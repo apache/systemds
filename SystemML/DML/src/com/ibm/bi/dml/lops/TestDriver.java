@@ -38,7 +38,7 @@ public class TestDriver {
 
 		data3.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 
 		printInstructions(inst);
 
@@ -69,7 +69,7 @@ public class TestDriver {
 
 		data2.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 
 		printInstructions(inst);
 	}
@@ -97,7 +97,7 @@ public class TestDriver {
 		Dag<Lops> dag = new Dag<Lops>();
 		data3.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 
 		printInstructions(inst);
 
@@ -122,7 +122,7 @@ public class TestDriver {
 
 		data2.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 
 		printInstructions(inst);
 	}
@@ -159,7 +159,7 @@ public class TestDriver {
 
 		data2.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 
 		printInstructions(inst);
 	}
@@ -182,7 +182,7 @@ public class TestDriver {
 
 		Dag<Lops> dag = new Dag<Lops>();
 		data2.addToDag(dag);
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 		printInstructions(inst);
 		//((MRJobInstruction) (inst.get(0)))
 		//		.setInputLabelValueMapping (new LocalVariableMap ());
@@ -269,7 +269,7 @@ public class TestDriver {
 		data3.addToDag(dag);
 		var4.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 		printInstructions(inst);
 
 	}
@@ -319,7 +319,7 @@ public class TestDriver {
 
 		data3.addToDag(dag);
 
-		ArrayList<Instruction> inst = dag.getJobs(true, null);
+		ArrayList<Instruction> inst = dag.getJobs(null);
 		printInstructions(inst);
 
 	}

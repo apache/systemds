@@ -242,12 +242,14 @@ public class ParameterizedBuiltinOp extends Hops {
 
 	@Override
 	public void printMe() throws HopsException {
-		if (get_visited() != VISIT_STATUS.DONE) {
-			super.printMe();
-			System.out.println(" " + _op);
-		}
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug(" " + _op);
+			}
 
-		set_visited(VISIT_STATUS.DONE);
+			set_visited(VISIT_STATUS.DONE);
+		}
 	}
 
 	@Override

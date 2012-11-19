@@ -2,9 +2,6 @@ package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
@@ -25,8 +22,6 @@ public class OperationsOnMatrixValues {
 
 	private static IndexedCell tempCell1=new IndexedCell();
 	private static IndexedCell tempCell2=new IndexedCell();
-	private static Log LOG=LogFactory.getLog(OperationsOnMatrixValues.class);
-	//private static boolean sparseSafte=false;
 	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException

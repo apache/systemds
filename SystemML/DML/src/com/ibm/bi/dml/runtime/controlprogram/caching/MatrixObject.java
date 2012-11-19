@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -293,8 +292,7 @@ public class MatrixObject extends CacheableData
 	public synchronized MatrixBlock acquireRead()
 		throws CacheException
 	{
-		if( LDEBUG )
-			System.out.println("    acquire read "+_varName);
+		LOG.trace("Acquire read "+_varName);
 		
 		if ( !isAvailableToRead() )
 			throw new CacheStatusException ("MatrixObject not available to read.");
@@ -342,8 +340,7 @@ public class MatrixObject extends CacheableData
 	public synchronized MatrixBlock acquireModify() 
 		throws CacheException
 	{
-		if( LDEBUG )
-			System.out.println("acquire modify "+_varName);
+		LOG.trace("Acquire modify "+_varName);
 
 		if ( !isAvailableToModify() )
 			throw new CacheStatusException("MatrixObject not available to modify.");
@@ -392,8 +389,7 @@ public class MatrixObject extends CacheableData
 	public synchronized MatrixBlock acquireModify(MatrixBlock newData)
 		throws CacheException
 	{
-		if( LDEBUG )
-			System.out.println("    acquire modify newdata "+_varName);
+		LOG.trace("Acquire modify newdata "+_varName);
 		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
@@ -429,8 +425,7 @@ public class MatrixObject extends CacheableData
 	public synchronized void release() 
 		throws CacheException
 	{
-		if( LDEBUG )
-			System.out.println("    release "+_varName);
+		LOG.trace("Release "+_varName);
 		
 		boolean write = false;
 		if ( isModify() )
@@ -465,8 +460,9 @@ public class MatrixObject extends CacheableData
 			createCache();
 			_data = null;			
 		}
-		else if( LDEBUG )
-			System.out.println("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString()); 
+		else {
+			LOG.trace("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString());
+		}
 	}
 
 	/**
@@ -481,8 +477,7 @@ public class MatrixObject extends CacheableData
 	public synchronized void clearData() 
 		throws CacheException
 	{
-		if( LDEBUG )
-			System.out.println("    clear data "+_varName);
+		LOG.trace("Clear data "+_varName);
 		
 		if( !_cleanupFlag ) //if cleanup not enabled, do nothing
 			return;
@@ -537,15 +532,13 @@ public class MatrixObject extends CacheableData
 	public synchronized void exportData (String fName, String outputFormat)
 		throws CacheException
 	{
-		if( LDEBUG ) 
-			System.out.println("export data "+_varName+" "+fName);
+		LOG.trace("Export data "+_varName+" "+fName);
 			
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new CacheStatusException ("MatrixObject not available to read.");
 
-		if (DMLScript.DEBUG)
-			System.out.println("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {
@@ -612,10 +605,10 @@ public class MatrixObject extends CacheableData
 				throw new CacheIOException ("Export to " + fName + " failed.", e);
 			}
 		}
-		else if(DMLScript.DEBUG)  
+		else 
 		{
 			//CASE 3: data already in hdfs (do nothing, no need for export)
-			System.out.println(this.getDebugName() + ": Skip export to hdfs since data already exists.");
+			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
 	}
 
@@ -861,19 +854,13 @@ public class MatrixObject extends CacheableData
 	protected void restoreBlobIntoMemory () 
 		throws CacheIOException, CacheAssignmentException
 	{
-		if( LDEBUG ) 
-			System.out.println("RESTORE of Matrix "+_varName+", "+_hdfsFileName);
+		LOG.trace("RESTORE of Matrix "+_varName+", "+_hdfsFileName);
 		
 		String filePath = getCacheFilePathAndName();
-		long begin = 0;
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("\t CACHE: Restoring matrix...  " + _varName + "  HDFS path: " + 
-					(_hdfsFileName == null ? "null" : _hdfsFileName));
-			System.out.println ("\t        Restore from path: " + filePath);
-			begin = System.currentTimeMillis();
-		}
-		
+		long begin = System.currentTimeMillis();
+		LOG.trace ("CACHE: Restoring matrix...  " + _varName + "  HDFS path: " + 
+					(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + filePath);
+				
 		if (_data != null)
 			throw new CacheIOException (filePath + " : Cannot restore on top of existing in-memory data.");
 
@@ -890,25 +877,17 @@ public class MatrixObject extends CacheableData
 	    if (_data == null)
 			throw new CacheIOException (filePath + " : Restore failed.");
 	    
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("\t\tRestoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
-		}
+		LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
 	}		
 
 	@Override
 	protected void freeEvictedBlob()
 	{
 		String cacheFilePathAndName = getCacheFilePathAndName();
-		long begin = 0;
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("\t CACHE: Freeing evicted matrix...  " + _varName + "  HDFS path: " + 
-					(_hdfsFileName == null ? "null" : _hdfsFileName));
-			System.out.println ("\t        Eviction path: " + cacheFilePathAndName);
-			begin = System.currentTimeMillis();
-		}
-		
+		long begin = System.currentTimeMillis();
+		LOG.trace("CACHE: Freeing evicted matrix...  " + _varName + "  HDFS path: " + 
+					(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
+				
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
@@ -924,10 +903,8 @@ public class MatrixObject extends CacheableData
 				break;
 		}
 		
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("\t\tFreeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
-		}
+		LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
+		
 	}
 	
 	// *******************************************
@@ -1022,13 +999,9 @@ public class MatrixObject extends CacheableData
 		throws IOException
 	{
 
-		long begin = 0;
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("    Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName);
-			begin = System.currentTimeMillis();
-		}
-	
+		long begin = System.currentTimeMillis();;
+		LOG.trace("Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName);
+			
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		double sparsity = ((double)mc.nonZero)/(mc.numRows*mc.numColumns); //expected sparsity
@@ -1040,10 +1013,7 @@ public class MatrixObject extends CacheableData
 			throw new IOException("Unable to load matrix from file "+filePathAndName);
 		}
 		
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("    Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
-		}
+		LOG.trace("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
 		return newData;
 	}
 	
@@ -1084,13 +1054,9 @@ public class MatrixObject extends CacheableData
 	{
 		//System.out.println("write matrix "+_varName+" "+filePathAndName);
 		
-		long begin = 0;
-		if (DMLScript.DEBUG) 
-		{
-			System.out.println ("    Writing matrix to HDFS...  " + _varName + "  Path: " + filePathAndName + ", Format: " +
+		long begin = System.currentTimeMillis();
+		LOG.trace (" Writing matrix to HDFS...  " + _varName + "  Path: " + filePathAndName + ", Format: " +
 					(outputFormat != null ? outputFormat : "inferred from metadata"));
-			begin = System.currentTimeMillis();
-		}
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 
@@ -1111,14 +1077,11 @@ public class MatrixObject extends CacheableData
 				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
 			}
 
-			if (DMLScript.DEBUG) 
-			{
-				System.out.println ("    Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
-			}
+			LOG.trace("Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 		}
-		else if (DMLScript.DEBUG) 
+		else 
 		{
-			System.out.println ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
+			LOG.trace ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
 	}
 	

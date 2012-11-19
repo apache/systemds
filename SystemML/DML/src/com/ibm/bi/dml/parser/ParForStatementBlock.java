@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -29,8 +31,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
-	private static final boolean LDEBUG = DMLScript.DEBUG || false; //local debug flag
-	
+		
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
@@ -60,6 +61,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static IDSequence _idSeqfn = null;
 	
 	private static HashMap<String, LinearFunction> _fncache; //slower for most (small cases) cases
+	
+	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	
 	//instance members
 	private long 		      _ID         = -1;
@@ -103,8 +106,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( USE_FN_CACHE )
 			_fncache = new HashMap<String, LinearFunction>();
 		
-		if( LDEBUG )
-			System.out.println("PARFOR("+_ID+"): ParForStatementBlock instance created");
+		LOG.trace("PARFOR("+_ID+"): ParForStatementBlock instance created");
 	}
 	
 	public long getID()
@@ -128,16 +130,15 @@ public class ParForStatementBlock extends ForStatementBlock
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars)
 		throws LanguageException, ParseException, IOException 
 	{	
-		if( LDEBUG )
-			System.out.println("PARFOR("+_ID+"): validating ParForStatementBlock.");		
+		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");		
 		
 		//create parent variable set via cloning
 		_vsParent = new VariableSet();
 		_vsParent._variables = (HashMap<String, DataIdentifier>) ids.getVariables().clone();
 				
-		if(LDEBUG) //note: A is matrix, and A[i,1] is scalar  
+		if(LOG.isTraceEnabled()) //note: A is matrix, and A[i,1] is scalar  
 			for( DataIdentifier di : _vsParent._variables.values() )
-				System.out.println("PARFOR: non-local "+di._name+": "+di.getDataType().toString()+" with rowDim = "+di.getDim1()); 
+				LOG.trace("PARFOR: non-local "+di._name+": "+di.getDataType().toString()+" with rowDim = "+di.getDim1()); 
 		
 		//normal validate via ForStatement (sequential)
 		//NOTE: validate/dependency checking of nested parfor-loops happens at this point
@@ -209,8 +210,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 * NOTE: validity is only checked during compilation, i.e., for dynamic from, to, incr MIN MAX values assumed.        
 		 */ 
 		
-		if( LDEBUG )
-			System.out.println("PARFOR: running loop dependency analysis ...");
+		LOG.trace("PARFOR: running loop dependency analysis ...");
 
 		//### Step 1 ###: determine candidate set C
 		HashSet<Candidate> C = new HashSet<Candidate>(); 
@@ -235,11 +235,11 @@ public class ParForStatementBlock extends ForStatementBlock
 				rCheckCandidates(c, cdt, pfs.getBody(), sCount, dep);
 				
 
-				if( LDEBUG )
+				if (LOG.isTraceEnabled())
 				{
-					if( dep[0] ) System.out.println("PARFOR: output dependency detected for var '"+c._var+"'.");
-					if( dep[1] ) System.out.println("PARFOR: data dependency detected for var '"+c._var+"'.");
-					if( dep[2] ) System.out.println("PARFOR: anti dependency detected for var '"+c._var+"'.");
+					if( dep[0] ) LOG.trace("PARFOR: output dependency detected for var '"+c._var+"'.");
+					if( dep[1] ) LOG.trace("PARFOR: data dependency detected for var '"+c._var+"'.");
+					if( dep[2] ) LOG.trace("PARFOR: anti dependency detected for var '"+c._var+"'.");
 				}
 				
 				if( dep[0] || dep[1] || dep[2] )
@@ -254,8 +254,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			//### Step 3 ###: raise an exception / warning
 			if( C2.size() > 0 )
 			{
-				if( LDEBUG )
-					System.out.println("PARFOR: loop dependencies detected.");
+				LOG.trace("PARFOR: loop dependencies detected.");
 
 				StringBuilder depVars = new StringBuilder();
 				for( Candidate c : C2 )
@@ -269,12 +268,11 @@ public class ParForStatementBlock extends ForStatementBlock
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
 						                     depVars.toString() +".\n " +
 						                    // "in lines"+this.+"\n" +
-						                     "Please, ensure independence of iterations." + ((LDEBUG)? "\nDEBUG Context: \n"+this.toString():"") );				
+						                     "Please, ensure independence of iterations." );				
 			}
 			else
 			{
-				if( LDEBUG )
-					System.out.println("PARFOR: no loop dependencies detected.");
+				LOG.trace("PARFOR: no loop dependencies detected.");
 			}
 			
 		}
@@ -356,8 +354,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch (LanguageException e) 
 		{
-			if( LDEBUG )
-				e.printStackTrace();
+			LOG.trace("Language Exception Caught \n" + e.getStackTrace());
 			dpf = PDataPartitionFormat.NONE;
 		}
 		
@@ -420,8 +417,7 @@ public class ParForStatementBlock extends ForStatementBlock
 									C.add( c );
 								}
 								
-								if( LDEBUG )
-									System.out.println("PARFOR: dependency candidate: var '"+write+"'");
+								LOG.trace("PARFOR: dependency candidate: var '"+write+"'");
 							}
 						}
 				}
@@ -566,8 +562,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			if( runConstantCheck(c._dat) )
 			{
-				if( LDEBUG )
-					System.out.println("PARFOR: Possible output dependency detected via constant self-check: var '"+c._var+"'.");
+				LOG.trace("PARFOR: Possible output dependency detected via constant self-check: var '"+c._var+"'.");
 				dep[0] = true;
 				if( ABORT_ON_FIRST_DEPENDENCY )
 					return;
@@ -620,8 +615,7 @@ public class ParForStatementBlock extends ForStatementBlock
 										}
 										else if(runBanerjeeGCDTest( c._dat, dat2 ))
 										{
-											if( LDEBUG )
-												System.out.println("PARFOR: Possible output dependency detected via GCD/Banerjee: var '"+write+"'.");
+											LOG.trace("PARFOR: Possible output dependency detected via GCD/Banerjee: var '"+write+"'.");
 											dep[0] = true;
 											if( ABORT_ON_FIRST_DEPENDENCY )
 												return;
@@ -674,8 +668,7 @@ public class ParForStatementBlock extends ForStatementBlock
 									}
 									else if( runBanerjeeGCDTest( c._dat, dat2 ) )
 									{
-										if( LDEBUG )
-											System.out.println("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
+										LOG.trace("PARFOR: Possible data/anti dependency detected via GCD/Banerjee: var '"+read+"'.");
 										dep[1] = true;
 										dep[2] = true;
 										if( ABORT_ON_FIRST_DEPENDENCY )
@@ -1009,8 +1002,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		 *   non-linear functions) but this is a tradeoff between number of false positives and overhead
 		 */
 		
-		if( LDEBUG )
-			System.out.println("PARFOR: runBanerjeeGCDCheck.");
+		LOG.trace("PARFOR: runBanerjeeGCDCheck.");
 		
 		boolean ret = true; //anti or data dependency
 		
@@ -1019,12 +1011,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		LinearFunction f2 = getLinearFunction(dat2);		
 		forceConsistency(f1,f2);
 		
-		if( LDEBUG )
-		{
-			System.out.println("PARFOR: f1: "+f1.toString());
-			System.out.println("PARFOR: f2: "+f2.toString());
-		}
-			
+		LOG.trace("PARFOR: f1: "+f1.toString() + ", PARFOR: f2: " + f2.toString());
+					
 		///////
 		//Step 2: run GCD Test 
 		///////		
@@ -1040,8 +1028,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			ret = false;
 		}	
 		
-		if( LDEBUG )
-			System.out.println("PARFOR: GCD result: "+ret);
+		LOG.trace("PARFOR: GCD result: "+ret);
 
 		if( !CONSERVATIVE_CHECK && ret ) //only if not already no dependency
 		{
@@ -1061,12 +1048,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				f2p = getRowLinearFunction(dat2);
 			}
 			
-			if( LDEBUG )
-			{
-				System.out.println("PARFOR: f1p: "+f1p.toString());
-				System.out.println("PARFOR: f2p: "+f2p.toString());
-			}
-			
+			LOG.trace("PARFOR: f1p: "+f1p.toString() + ", PARFOR: f2p: "+f2p.toString());
+						
 			if( f1p!=null && f2p!=null )
 			{
 				forceConsistency(f1p, f2p);
@@ -1083,8 +1066,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					ret = false;
 				}	
 				
-				if( LDEBUG )
-					System.out.println("PARFOR: GCD result: "+ret);
+				LOG.trace("PARFOR: GCD result: "+ret);
 			}
 		}
 		
@@ -1135,12 +1117,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}			
 
-			if( LDEBUG )
-			{
-				System.out.println("PARFOR: Banerjee lintercept "+lintercept);
-				System.out.println("PARFOR: Banerjee lmax "+lmax);
-				System.out.println("PARFOR: Banerjee lmin "+lmin);
-			}
+			LOG.trace("PARFOR: Banerjee lintercept "+lintercept + ", PARFOR: Banerjee lmax "+lmax + ", PARFOR: Banerjee lmin "+lmin);
+		
 			
 			if( !(lmin <= lintercept && lintercept <= lmax) || lmin==lmax )
 			{
@@ -1148,8 +1126,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				ret = false;
 			}
 			
-			if( LDEBUG )
-				System.out.println("PARFOR: Banerjee result: "+ret);
+			LOG.trace("PARFOR: Banerjee result: "+ret);
 		}
 	
 		return ret;
@@ -1166,14 +1143,12 @@ public class ParForStatementBlock extends ForStatementBlock
 	private boolean runConstantCheck(DataIdentifier dat1) 
 		throws LanguageException 
 	{
-		if( LDEBUG )
-			System.out.println("PARFOR: runConstantCheck.");
+		LOG.trace("PARFOR: runConstantCheck.");
 		
 		boolean ret = true; //data dependency to itself		
 		LinearFunction f1 = getLinearFunction(dat1);
 
-		if( LDEBUG )
-			System.out.println("PARFOR: f1: "+f1.toString());
+		LOG.trace("PARFOR: f1: "+f1.toString());
 		
 		// no output dependency to itself if no index access will happen twice
 		// hence we check for: (all surrounding indexes are used by f1 and all intercepts != 0 )
@@ -1216,8 +1191,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	private boolean runEqualsCheck(DataIdentifier dat1, DataIdentifier dat2) 
 		throws LanguageException 
 	{
-		if( LDEBUG )
-			System.out.println("PARFOR: runEqualsCheck.");
+		LOG.trace("PARFOR: runEqualsCheck.");
 		
 		//general case function comparison
 		boolean ret = true; //true if equal index functions
@@ -1226,12 +1200,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		forceConsistency(f1, f2);
 		ret = f1.equals(f2);
 		
-		if( LDEBUG )
-		{
-			System.out.println("PARFOR: f1: "+f1.toString());
-			System.out.println("PARFOR: f2: "+f2.toString());
-			System.out.println("PARFOR: (f1==f2) = "+ret);
-		}
+		LOG.trace("PARFOR: f1: "+f1.toString() + ", f2: "+f2.toString() + ", (f1==f2) = "+ret);
+		
 		
 		//additional check if cols/rows could be ignored
 		if( !CONSERVATIVE_CHECK && !ret ) //only if not already equal
@@ -1257,12 +1227,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				forceConsistency(f1p, f2p);
 				ret = f1p.equals(f2p);
 				
-				if( LDEBUG )
-				{
-					System.out.println("PARFOR: f1p: "+f1p.toString());
-					System.out.println("PARFOR: f2p: "+f2p.toString());
-					System.out.println("PARFOR: (f1p==f2p) = "+ret);
-				}
+				LOG.trace("PARFOR: f1p: "+f1p.toString() + ", f2p: "+f2p.toString() + ", (f1p==f2p) = "+ret);
+				
 			}
 		}
 		
@@ -1386,11 +1352,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch(Exception ex)
 		{
-			if(LDEBUG)
-			{
-				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
-				//ex.printStackTrace();
-			}
+			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
 			
 			out = null; //let dependency analysis fail
 		}
@@ -1456,12 +1418,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 			catch(Exception ex)
 			{
-				if(LDEBUG)
-				{
-					System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub2)+"'.");
-					//ex.printStackTrace();
-				}
-				
+				LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub2)+"'.");
 				out = null; //let dependency analysis fail
 			}
 		}
@@ -1527,10 +1484,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch(Exception ex)
 		{
-			if(LDEBUG)
-			{
-				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
-			}			
+			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1570,10 +1524,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch(Exception ex)
 		{
-			if(LDEBUG)
-			{
-				System.out.println("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
-			}			
+			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1652,11 +1603,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		//check for required form of linear functions
 		if( f1 == null || f1._b.length != f1._vars.length )
 		{
-			if( LDEBUG )
-			{
-				if( f1!=null ) 
-					System.out.println("PARFOR: f1: "+f1.toString());
-			}
+			if( LOG.isTraceEnabled() && f1!=null ) 
+				LOG.trace("PARFOR: f1: "+f1.toString());
 			
 			throw new LanguageException("PARFOR loop dependency analysis: " +
 										"MATRIX subscripts are not in linear form (a0 + a1*x).");
@@ -1667,11 +1615,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			if( !_bounds._lower.containsKey(var) )
 			{
-				if( LDEBUG )
-				{
-					System.out.println("PARFOR: not allowed variable in matrix subscript: "+var);
-				}
-				
+				LOG.trace("PARFOR: not allowed variable in matrix subscript: "+var);
 				throw new LanguageException("PARFOR loop dependency analysis: " +
 						                    "MATRIX subscripts use non-index variables."); 
 			}
@@ -1720,8 +1664,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 
 		
-		if( warn && LDEBUG )
-			System.out.println( "PARFOR: WARNING - index functions f1 and f2 cannot be made consistent." );
+		if( warn && LOG.isTraceEnabled() )
+			LOG.trace( "PARFOR: WARNING - index functions f1 and f2 cannot be made consistent." );
 	}
 	
 	/**

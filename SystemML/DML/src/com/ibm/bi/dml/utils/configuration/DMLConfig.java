@@ -17,6 +17,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -53,6 +55,7 @@ public class DMLConfig
     private String config_file_name = null;
 	private Element xml_root = null;
 	
+	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
 	
 	static
 	{
@@ -87,6 +90,7 @@ public class DMLConfig
 			parseConfig();
 		}
 		catch (Exception e){
+			LOG.warn("Failed to parse DML config file " + e.getMessage());
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
 				
@@ -133,6 +137,7 @@ public class DMLConfig
 				}
 			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
 		} catch (Exception e){
+			LOG.error("Failed in merge default config file with optional config file" + e.getMessage());
 			new ParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + this.config_file_name);
 		}
 	}
@@ -264,7 +269,7 @@ public class DMLConfig
 	}
 
 
-	public void printConfigInfo() 
+	public String getConfigInfo() 
 	{
 		String[] tmpConfig = new String[]{ LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				                     NUM_REDUCERS,DEFAULT_BLOCK_SIZE, NUM_MERGE_TASKS, 
@@ -281,7 +286,7 @@ public class DMLConfig
 			sb.append("\n");
 		}
 		
-		System.out.println(sb.toString());
+		return sb.toString();
 	}
 	
 	/**

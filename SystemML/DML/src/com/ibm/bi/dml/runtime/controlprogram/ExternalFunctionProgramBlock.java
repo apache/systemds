@@ -385,13 +385,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				throw new PackageRuntimeException(this.printBlockErrorLocation() + "error generating instructions", e);
 			}
 			
-			//print instructions
-			if (DMLScript.DEBUG) {
-				System.out.println("--- Cell-2-Block Instructions ---");
+			//LOGGING instructions
+			if (LOG.isTraceEnabled()){
+				LOG.trace("\n--- Cell-2-Block Instructions ---");
 				for(Instruction i : c2binst) {
-					System.out.println(i.toString());
+					LOG.trace(i.toString());
 				}
+				LOG.trace("----------------------------------");
 			}
+			
 		}
 		
 		return c2binst; //null if no output matrices
@@ -488,13 +490,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				throw new PackageRuntimeException(e);
 			}
 		
-			//print instructions
-			if (DMLScript.DEBUG) {
-				System.out.println("--- Block-2-Cell Instructions ---");
+			//LOG instructions
+			if (LOG.isTraceEnabled()){
+				LOG.trace("\n--- Block-2-Cell Instructions ---");
 				for(Instruction i : b2cinst) {
-					System.out.println(i.toString());
+					LOG.trace(i.toString());
 				}
-			}
+				LOG.trace("----------------------------------");
+			}			
 		}
 		
 		return b2cinst; //null if no input matrices

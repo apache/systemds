@@ -45,6 +45,7 @@
 		<pathelement location="${build.sharedlib}/Jaql-0.5/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 	    <pathelement location="${build.sharedlib}/opencsv-1.8/opencsv-1.8.jar" /> <!-- for read/write csv -->
+		<pathelement location="${build.sharedlib}/commons-cli-2.0-SNAPSHOT.jar" /> <!-- for GenericOptionParser -->
 	</path>	
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->

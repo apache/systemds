@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -15,7 +16,6 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -292,7 +292,7 @@ public class ReadMMTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("a", a, false, mc);
 		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
 
-		runTest(true, LanguageException.class);
+		runTest(true, ParseException.class);
 	}
 
 	@Test

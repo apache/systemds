@@ -3,6 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -53,6 +56,7 @@ public abstract class Optimizer
 {
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;
+	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
 	
 	public enum PlanInputType {
 		ABSTRACT_PLAN,

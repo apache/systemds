@@ -30,7 +30,6 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -39,7 +38,6 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstructio
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -51,11 +49,10 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class SortMR {
-  private static final Log LOG = LogFactory.getLog(SortMR.class);
   public static final String NUM_VALUES_PREFIX="num.values.in";
   public static final String INSTRUCTION = "instruction.before.sort";
   static final String VALUE_IS_WEIGHT="value.is.weight";
-
+  private static final Log LOG = LogFactory.getLog(SortMR.class.getName());
   /**
    * A partitioner that splits text keys into roughly equal partitions
    * in a global sorted order.
@@ -272,10 +269,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		MatrixCharacteristics s[] = new MatrixCharacteristics[1];
 		s[0] = new MatrixCharacteristics(rlen, clen, brlen, bclen);
 		
-		// Print the complete instruction
-		if ( DMLScript.DEBUG )
-			inst.printCompelteMRJobInstruction(s);
-		
 	    // By default, the job executes in "cluster" mode.
 		// Determine if we can optimize and run it in "local" mode.
 	    ExecMode mode = RunMRJobs.getExecMode(JobType.SORT, s); 
@@ -285,7 +278,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		}
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(s);
 		
 		//set unique working dir
@@ -297,7 +290,6 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		numReducers=job.getNumReduceTasks();
 	//	System.out.println("num reducers: "+job.getNumReduceTasks());
 		
-		NumItemsByEachReducerMetaData metadata;
 		long[] counts=new long[numReducers];
 		long total=0;
 		for(int i=0; i<numReducers; i++)

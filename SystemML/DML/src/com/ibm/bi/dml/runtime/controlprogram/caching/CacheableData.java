@@ -3,6 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -36,7 +39,6 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
-	protected static final boolean LDEBUG = DMLScript.DEBUG || false;
 	protected static final long CACHING_THRESHOLD = 32; //obj not subject to caching if num values below threshold
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
@@ -55,6 +57,7 @@ public abstract class CacheableData extends Data
     public static String cacheEvictionHDFSFilePath = null; //prefix dir is set during runtime
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
+    protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	/**
 	 * Defines all possible cache status types for a data blob.
@@ -203,8 +206,7 @@ public abstract class CacheableData extends Data
 				throw new CacheStatusException ("MODIFY-MODIFY not allowed.");
 		}
 
-		if(DMLScript.DEBUG) 
-			System.out.println("    CACHE: acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
+		LOG.trace("Acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );
 		
 	}
 
@@ -240,9 +242,8 @@ public abstract class CacheableData extends Data
 			    break;
 		}
 		
-		if(DMLScript.DEBUG) {
-			System.out.println("    CACHE: released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
-		}
+		LOG.trace("Released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
+		
 	}
 
 	

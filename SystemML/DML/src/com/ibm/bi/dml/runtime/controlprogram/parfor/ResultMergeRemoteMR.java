@@ -18,7 +18,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -76,13 +75,11 @@ public class ResultMergeRemoteMR extends ResultMerge
 	{
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 
-		Timing time = null;
-		if( LDEBUG )
-		{
-			System.out.println("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
-			time = new Timing();
-			time.start();
-		}
+		//Timing time = null;
+		LOG.trace("ResultMerge (local, file): Execute serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+")");
+		//	time = new Timing();
+		//	time.start();
+		
 		
 		try
 		{
@@ -144,8 +141,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 			throw new DMLRuntimeException(ex);
 		}
 
-		if( LDEBUG )
-			System.out.println("ResultMerge (local, file): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
+		//LOG.trace("ResultMerge (local, file): Executed serial merge for output "+_output.getVarName()+" (fname="+_output.getFileName()+") in "+time.stop()+"ms");
 		
 		return moNew;		
 	}

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -29,7 +27,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 public abstract class MapperBase extends MRBaseForCommonInstructions{
-	protected static final Log LOG = LogFactory.getLog(MapperBase.class);
 	
 	//the indexes that this particular input matrix file represents
 	protected Vector<Byte> representativeMatrixes=null;

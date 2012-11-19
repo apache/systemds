@@ -3,6 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -42,6 +45,7 @@ public class ProgramBlock {
 	protected LocalVariableMap _variables;
 	
 	protected StatementBlock _sb;
+	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	
 	public ProgramBlock(Program prog) throws DMLRuntimeException {
 		
@@ -145,9 +149,8 @@ public class ProgramBlock {
 	}*/
 	
 	protected void execute(ArrayList<Instruction> inst, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		if ( DMLScript.DEBUG ) {
-			printSymbolTable();
-		}
+		LOG.trace("\n Variables: " + _variables.toString());
+
 		long st=0, duration=0;
 		
 		for (int i = 0; i < inst.size(); i++) 
@@ -159,8 +162,7 @@ public class ProgramBlock {
 			{
 				
 				try {
-					if ( DMLScript.DEBUG ) 
-						printSymbolTable();
+					LOG.trace("\n Variables: " + _variables.toString());
 					
 					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 						throw new DMLRuntimeException("MapReduce jobs can not be executed when execution mode = singlenode");
@@ -189,13 +191,11 @@ public class ProgramBlock {
 							}
 						}
 					}
-					if ( DMLScript.DEBUG ) 
-					{
+					if (LOG.isTraceEnabled()){
 						duration = System.currentTimeMillis()-st;
-						//instTimer.addTime(currMRInst.getID(), duration);
-						System.out.println("MRJob\t" + currMRInst.getJobType() + "\t" + (duration));
+						LOG.trace("MRJob: " + currMRInst.getJobType() + ", duration =" + (duration));
 					}
-					
+										
 					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 				}
 				catch (Exception e){
@@ -213,8 +213,7 @@ public class ProgramBlock {
 					{
 						String currInstStr = currInst.toString();
 						String updInst = RunMRJobs.updateLabels(currInstStr, _variables);
-						if ( DMLScript.DEBUG )
-							System.out.println("-- Processing CPInstruction: " + updInst);
+						LOG.trace("Processing CPInstruction: " + updInst);
 						
 						CPInstruction si = CPInstructionParser.parseSingleInstruction(updInst);
 						si.processInstruction(this);
@@ -223,16 +222,14 @@ public class ProgramBlock {
 					}
 					else 
 					{
-						if ( DMLScript.DEBUG )
-							System.out.println("-- Processing CPInstruction: " + currInst.toString());
+						LOG.trace("Processing CPInstruction: " + currInst.toString());
 						((CPInstruction) currInst).processInstruction(this); 
 					}
-					if (DMLScript.DEBUG) {
+					if (LOG.isTraceEnabled()){
 						duration = System.currentTimeMillis()-st;
-						//instTimer.addTime(currInst.getID(), duration);
-						System.out.println("  " + currInst.toString() + ":  " + (duration));
-						System.out.println("    memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "].");
-					}
+						LOG.trace("Current instruction: " + currInst.toString() + ", duration = " + (duration) 
+								+ ", memory stats = [" + (Runtime.getRuntime().freeMemory()/(double)(1024*1024)) + ", " + (Runtime.getRuntime().totalMemory()/(double)(1024*1024)) + "]");
+					}					
 				}
 				catch (Exception e){
 				

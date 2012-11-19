@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
@@ -62,6 +65,7 @@ public class DMLTranslator {
 	public static int DMLBlockSize = 1000;
 	
 	public DMLProgram _dmlProg;
+	private static final Log LOG = LogFactory.getLog(DMLTranslator.class.getName());
 		
 	public DMLTranslator(DMLProgram dmlp) 
 		throws DMLRuntimeException 
@@ -1012,260 +1016,265 @@ public class DMLTranslator {
 	}
 	
 	public void printLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
-
-		// for each namespace, handle function program blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				printLops(fsblock);
+		if (LOG.isDebugEnabled()){
+			// for each namespace, handle function program blocks
+			for (String namespaceKey : dmlp.getNamespaces().keySet()){
+				for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
+					FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+					printLops(fsblock);
+				}
 			}
-		}
-		
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {		
-			StatementBlock current = dmlp.getStatementBlock(i);
-			printLops(current);
+
+			for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {		
+				StatementBlock current = dmlp.getStatementBlock(i);
+				printLops(current);
+			}
 		}
 	}
 			
 	public void printLops(StatementBlock current) throws ParseException, HopsException, LopsException {
-	
-		ArrayList<Lops> lopsDAG = current.get_lops();
-		
-		System.out.println("********************** LOPS DAG FOR BLOCK *******************");
-		
-		if (current instanceof FunctionStatementBlock) {
-			if (current.getNumStatements() > 1)
-				System.out.println("error -- function stmt block has more than 1 stmt");
-			FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
-			for (StatementBlock child : fstmt.getBody()){
-				printLops(child);
-			}
-		}
-		
-		if (current instanceof WhileStatementBlock) {
-			
-			// print predicate lops 
-			WhileStatementBlock wstb = (WhileStatementBlock) current; 
-			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
-			System.out.println("********************** PREDICATE LOPS *******************");
-			Lops predicateLops = predicateHops.get_lops();
-			if (predicateLops == null)
-				predicateLops = predicateHops.constructLops();
-			predicateLops.printMe();
-			
-			if (wstb.getNumStatements() > 1)
-				throw new HopsException(wstb.printBlockErrorLocation() + "WhileStatementBlock has more than 1 statement");
-			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
-			
-			for (StatementBlock sb : ws.getBody()){
-				printLops(sb);
-			}
-		}
+		if (LOG.isDebugEnabled()){
+			ArrayList<Lops> lopsDAG = current.get_lops();
 
-		if (current instanceof IfStatementBlock) {
-			
-			// print predicate lops 
-			IfStatementBlock istb = (IfStatementBlock) current; 
-			Hops predicateHops = ((IfStatementBlock) current).getPredicateHops();
-			System.out.println("********************** PREDICATE LOPS *******************");
-			Lops predicateLops = predicateHops.get_lops();
-			if (predicateLops == null)
-				predicateLops = predicateHops.constructLops();
-			predicateLops.printMe();
-			
-			if (istb.getNumStatements() > 1)
-				throw new HopsException(istb.printBlockErrorLocation() + "IfStatmentBlock has more than 1 statement");
-			IfStatement is = (IfStatement)istb.getStatement(0);
-			
-			System.out.println("**** LOPS DAG FOR IF BODY ****");
-			for (StatementBlock sb : is.getIfBody()){
-				printLops(sb);
+			LOG.debug("\n********************** LOPS DAG FOR BLOCK *******************");
+
+			if (current instanceof FunctionStatementBlock) {
+				if (current.getNumStatements() > 1)
+					LOG.debug("Function statement block has more than 1 stmt");
+				FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
+				for (StatementBlock child : fstmt.getBody()){
+					printLops(child);
+				}
 			}
-			if (is.getElseBody().size() > 0){
-				System.out.println("**** LOPS DAG FOR IF BODY ****");
-				for (StatementBlock sb : is.getElseBody()){
+
+			if (current instanceof WhileStatementBlock) {
+
+				// print predicate lops 
+				WhileStatementBlock wstb = (WhileStatementBlock) current; 
+				Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
+				LOG.debug("\n********************** PREDICATE LOPS *******************");
+				Lops predicateLops = predicateHops.get_lops();
+				if (predicateLops == null)
+					predicateLops = predicateHops.constructLops();
+				predicateLops.printMe();
+
+				if (wstb.getNumStatements() > 1)
+					throw new HopsException(wstb.printBlockErrorLocation() + "WhileStatementBlock has more than 1 statement");
+				WhileStatement ws = (WhileStatement)wstb.getStatement(0);
+
+				for (StatementBlock sb : ws.getBody()){
 					printLops(sb);
 				}
 			}
-		}
-			
-		if (current instanceof ForStatementBlock) {
-			
-			// print predicate lops 
-			ForStatementBlock fsb = (ForStatementBlock) current; 
-			System.out.println("********************** PREDICATE LOPS *******************");
-			if( fsb.getFromHops() != null ){
-				System.out.println("FROM:");
-				Lops llops = fsb.getFromLops();
-				if( llops == null )
-					llops = fsb.getFromHops().constructLops();
-				llops.printMe();
-			}
-			if( fsb.getToHops() != null ){
-				System.out.println("TO:");
-				Lops llops = fsb.getToLops();
-				if( llops == null )
-					llops = fsb.getToHops().constructLops();
-				llops.printMe();
-			}
-			if( fsb.getIncrementHops() != null ){
-				System.out.println("INCREMENT:");
-				Lops llops = fsb.getIncrementLops();
-				if( llops == null )
-					llops = fsb.getIncrementHops().constructLops();
-				llops.printMe();
-			}
-			
-			if (fsb.getNumStatements() > 1)
-				throw new HopsException(fsb.printBlockErrorLocation() + "ForStatementBlock has more than 1 statement");
-			ForStatement ws = (ForStatement)fsb.getStatement(0);
-			
-			for (StatementBlock sb : ws.getBody()){
-				printLops(sb);
-			}
-		}
-		
-		if (current instanceof CVStatementBlock) {
-			System.out.println("********************** PARTITION LOPS *******************");
-			((CVStatementBlock) current).getPartitionHop().get_lops().printMe();
 
-		}
+			if (current instanceof IfStatementBlock) {
 
-		if (current instanceof ELStatementBlock) {
-			System.out.println("********************** PARTITION LOPS *******************");
-			((ELStatementBlock) current).getPartitionHop().get_lops().printMe();
+				// print predicate lops 
+				IfStatementBlock istb = (IfStatementBlock) current; 
+				Hops predicateHops = ((IfStatementBlock) current).getPredicateHops();
+				LOG.debug("\n********************** PREDICATE LOPS *******************");
+				Lops predicateLops = predicateHops.get_lops();
+				if (predicateLops == null)
+					predicateLops = predicateHops.constructLops();
+				predicateLops.printMe();
 
-		}
-		
-		if (current instanceof ELUseStatementBlock) {
-			System.out.println("********************** PARTITION LOPS *******************");
-			((ELUseStatementBlock) current).getPartitionHop().get_lops().printMe();
+				if (istb.getNumStatements() > 1)
+					throw new HopsException(istb.printBlockErrorLocation() + "IfStatmentBlock has more than 1 statement");
+				IfStatement is = (IfStatement)istb.getStatement(0);
 
-		}
-		
-		
-		if (lopsDAG != null && lopsDAG.size() > 0) {
-			Iterator<Lops> iter = lopsDAG.iterator();
-			while (iter.hasNext()) {
-				System.out.println("********************** OUTPUT LOPS *******************");
-				iter.next().printMe();
+				LOG.debug("\n**** LOPS DAG FOR IF BODY ****");
+				for (StatementBlock sb : is.getIfBody()){
+					printLops(sb);
+				}
+				if (is.getElseBody().size() > 0){
+					LOG.debug("\n**** LOPS DAG FOR IF BODY ****");
+					for (StatementBlock sb : is.getElseBody()){
+						printLops(sb);
+					}
+				}
+			}
+
+			if (current instanceof ForStatementBlock) {
+
+				// print predicate lops 
+				ForStatementBlock fsb = (ForStatementBlock) current; 
+				LOG.debug("\n********************** PREDICATE LOPS *******************");
+				if( fsb.getFromHops() != null ){
+					LOG.debug("FROM:");
+					Lops llops = fsb.getFromLops();
+					if( llops == null )
+						llops = fsb.getFromHops().constructLops();
+					llops.printMe();
+				}
+				if( fsb.getToHops() != null ){
+					LOG.debug("TO:");
+					Lops llops = fsb.getToLops();
+					if( llops == null )
+						llops = fsb.getToHops().constructLops();
+					llops.printMe();
+				}
+				if( fsb.getIncrementHops() != null ){
+					LOG.debug("INCREMENT:");
+					Lops llops = fsb.getIncrementLops();
+					if( llops == null )
+						llops = fsb.getIncrementHops().constructLops();
+					llops.printMe();
+				}
+
+				if (fsb.getNumStatements() > 1)
+					throw new HopsException(fsb.printBlockErrorLocation() + "ForStatementBlock has more than 1 statement");
+				ForStatement ws = (ForStatement)fsb.getStatement(0);
+
+				for (StatementBlock sb : ws.getBody()){
+					printLops(sb);
+				}
+			}
+
+			if (current instanceof CVStatementBlock) {
+				LOG.debug("\n********************** PARTITION LOPS *******************");
+				((CVStatementBlock) current).getPartitionHop().get_lops().printMe();
+
+			}
+
+			if (current instanceof ELStatementBlock) {
+				LOG.debug("\n********************** PARTITION LOPS *******************");
+				((ELStatementBlock) current).getPartitionHop().get_lops().printMe();
+
+			}
+
+			if (current instanceof ELUseStatementBlock) {
+				LOG.debug("\n********************** PARTITION LOPS *******************");
+				((ELUseStatementBlock) current).getPartitionHop().get_lops().printMe();
+
+			}
+
+
+			if (lopsDAG != null && lopsDAG.size() > 0) {
+				Iterator<Lops> iter = lopsDAG.iterator();
+				while (iter.hasNext()) {
+					LOG.debug("\n********************** OUTPUT LOPS *******************");
+					iter.next().printMe();
+				}
 			}
 		}
 	}
 	
 
 	public void printHops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException {
-
-		// for each namespace, handle function program blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				printHops(fsblock);
+		if (LOG.isDebugEnabled()) {
+			// for each namespace, handle function program blocks
+			for (String namespaceKey : dmlp.getNamespaces().keySet()){
+				for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
+					FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+					printHops(fsblock);
+				}
 			}
-		}
-		
-		// hand
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
-			printHops(current);
+
+			// hand
+			for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
+				StatementBlock current = dmlp.getStatementBlock(i);
+				printHops(current);
+			}
 		}
 	}
 	
 	public void printHops(StatementBlock current) throws ParseException, HopsException {
-		
-		ArrayList<Hops> hopsDAG = current.get_hops();
-		System.out.println("********************** HOPS DAG FOR BLOCK *******************");
-		
-		if (current instanceof FunctionStatementBlock) {
-			if (current.getNumStatements() > 1)
-				System.out.println("error -- function stmt block has more than 1 stmt");
-			FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
-			for (StatementBlock child : fstmt.getBody()){
-				printHops(child);
-			}
-		}
-	
-		if (current instanceof WhileStatementBlock) {
-			
-			// print predicate hops
-			WhileStatementBlock wstb = (WhileStatementBlock) current; 
-			Hops predicateHops = wstb.getPredicateHops();
-			System.out.println("********************** PREDICATE HOPS *******************");
-			predicateHops.printMe();
-		
-			if (wstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
-			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
-			
-			for (StatementBlock sb : ws.getBody()){
-				printHops(sb);
-			}
-		}
-	
-		if (current instanceof IfStatementBlock) {
-			
-			// print predicate hops
-			IfStatementBlock istb = (IfStatementBlock) current; 
-			Hops predicateHops = istb.getPredicateHops();
-			System.out.println("********************** PREDICATE HOPS *******************");
-			predicateHops.printMe();
-		
-			if (istb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
-			IfStatement is = (IfStatement)istb.getStatement(0);
-			
-			for (StatementBlock sb : is.getIfBody()){
-				printHops(sb);
-			}
-			
-			for (StatementBlock sb : is.getElseBody()){
-				printHops(sb);
-			}
-		}
-		
-		
-		if (current instanceof ForStatementBlock) {
-			
-			// print predicate hops
-			ForStatementBlock fsb = (ForStatementBlock) current; 
-			System.out.println("********************** PREDICATE HOPS *******************");
-			if (fsb.getFromHops() != null) fsb.getFromHops().printMe();
-			if (fsb.getToHops() != null) fsb.getToHops().printMe();
-			if (fsb.getIncrementHops() != null) fsb.getIncrementHops().printMe();
-			
-			if (fsb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
-			ForStatement ws = (ForStatement)fsb.getStatement(0);
-			
-			for (StatementBlock sb : ws.getBody()){
-				printHops(sb);
-			}
-		}
-		
-		if (current instanceof CVStatementBlock) {
-			System.out.println("********************** CROSSVAL HOPS *******************");
-			((CVStatementBlock) current).getPartitionHop().printMe();
+		if (LOG.isDebugEnabled()) {
+			ArrayList<Hops> hopsDAG = current.get_hops();
+			LOG.debug("\n********************** HOPS DAG FOR BLOCK *******************");
 
-		}
-		
-		if (current instanceof ELStatementBlock) {
-			System.out.println("********************** CROSSVAL HOPS *******************");
-			((ELStatementBlock) current).getPartitionHop().printMe();
+			if (current instanceof FunctionStatementBlock) {
+				if (current.getNumStatements() > 1)
+					LOG.debug("Function statement block has more than 1 stmt");
+				FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
+				for (StatementBlock child : fstmt.getBody()){
+					printHops(child);
+				}
+			}
 
-		}
-		
-		if (current instanceof ELUseStatementBlock) {
-			System.out.println("********************** CROSSVAL HOPS *******************");
-			((ELUseStatementBlock) current).getPartitionHop().printMe();
+			if (current instanceof WhileStatementBlock) {
 
-		}
-		
-		if (hopsDAG != null && hopsDAG.size() > 0) {
-			// hopsDAG.iterator().next().printMe();
-			Iterator<Hops> iter = hopsDAG.iterator();
-			while (iter.hasNext()) {
-				System.out.println("********************** OUTPUT HOPS *******************");
-				iter.next().printMe();
+				// print predicate hops
+				WhileStatementBlock wstb = (WhileStatementBlock) current; 
+				Hops predicateHops = wstb.getPredicateHops();
+				LOG.debug("\n********************** PREDICATE HOPS *******************");
+				predicateHops.printMe();
+				
+				if (wstb.getNumStatements() > 1)
+					LOG.debug("While statement block has more than 1 stmt");
+				WhileStatement ws = (WhileStatement)wstb.getStatement(0);
+
+				for (StatementBlock sb : ws.getBody()){
+					printHops(sb);
+				}
+			}
+
+			if (current instanceof IfStatementBlock) {
+
+				// print predicate hops
+				IfStatementBlock istb = (IfStatementBlock) current; 
+				Hops predicateHops = istb.getPredicateHops();
+				LOG.debug("\n********************** PREDICATE HOPS *******************");
+				predicateHops.printMe();
+				
+
+				if (istb.getNumStatements() > 1)
+					LOG.debug("If statement block has more than 1 stmt");
+				IfStatement is = (IfStatement)istb.getStatement(0);
+
+				for (StatementBlock sb : is.getIfBody()){
+					printHops(sb);
+				}
+
+				for (StatementBlock sb : is.getElseBody()){
+					printHops(sb);
+				}
+			}
+
+
+			if (current instanceof ForStatementBlock) {
+
+				// print predicate hops
+				ForStatementBlock fsb = (ForStatementBlock) current; 
+				LOG.debug("\n********************** PREDICATE HOPS *******************");
+				if (fsb.getFromHops() != null) fsb.getFromHops().printMe();
+				if (fsb.getToHops() != null) fsb.getToHops().printMe();
+				if (fsb.getIncrementHops() != null) fsb.getIncrementHops().printMe();
+				
+				if (fsb.getNumStatements() > 1)
+					LOG.debug("For statement block has more than 1 stmt");
+				ForStatement ws = (ForStatement)fsb.getStatement(0);
+
+				for (StatementBlock sb : ws.getBody()){
+					printHops(sb);
+				}
+			}
+
+			if (current instanceof CVStatementBlock) {
+				LOG.debug("\n********************** CROSSVAL HOPS *******************");
+				((CVStatementBlock) current).getPartitionHop().printMe();
+
+			}
+
+			if (current instanceof ELStatementBlock) {
+				LOG.debug("\n********************** CROSSVAL HOPS *******************");
+				((ELStatementBlock) current).getPartitionHop().printMe();
+
+			}
+
+			if (current instanceof ELUseStatementBlock) {
+				LOG.debug("********************** CROSSVAL HOPS *******************");
+				((ELUseStatementBlock) current).getPartitionHop().printMe();
+
+			}
+
+			if (hopsDAG != null && hopsDAG.size() > 0) {
+				// hopsDAG.iterator().next().printMe();
+				Iterator<Hops> iter = hopsDAG.iterator();
+				while (iter.hasNext()) {
+					LOG.debug("\n********************** OUTPUT HOPS *******************");
+					iter.next().printMe();
+				}
 			}
 		}
 	}
@@ -1322,7 +1331,7 @@ public class DMLTranslator {
 			wstb.getPredicateHops().refreshMemEstimates();
 		
 			if (wstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
+				LOG.debug("While statement block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1336,7 +1345,7 @@ public class DMLTranslator {
 			istb.getPredicateHops().refreshMemEstimates();
 		
 			if (istb.getNumStatements() > 1)
-				System.out.println("error -- if stmt block has more than 1 stmt");
+				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);
 			
 			for (StatementBlock sb : is.getIfBody()){
@@ -1358,7 +1367,7 @@ public class DMLTranslator {
 				fsb.getIncrementHops().refreshMemEstimates();
 		
 			if (fsb.getNumStatements() > 1)
-				System.out.println("error -- for stmt block has more than 1 stmt");
+				LOG.debug("For statement block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1408,7 +1417,7 @@ public class DMLTranslator {
 			wstb.getPredicateHops().resetVisitStatus();
 		
 			if (wstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
+				LOG.debug("While stmt block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1422,7 +1431,7 @@ public class DMLTranslator {
 			istb.getPredicateHops().resetVisitStatus();
 		
 			if (istb.getNumStatements() > 1)
-				System.out.println("error -- if stmt block has more than 1 stmt");
+				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);
 			
 			for (StatementBlock sb : is.getIfBody()){
@@ -1444,7 +1453,7 @@ public class DMLTranslator {
 				fsb.getIncrementHops().resetVisitStatus();
 		
 			if (fsb.getNumStatements() > 1)
-				System.out.println("error -- for stmt block has more than 1 stmt");
+				LOG.debug("For statment block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1493,7 +1502,7 @@ public class DMLTranslator {
 			wstb.getPredicateHops().get_sqllops().resetVisitStatus();
 		
 			if (wstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
+				LOG.debug("While stmt block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1507,7 +1516,7 @@ public class DMLTranslator {
 			istb.getPredicateHops().get_sqllops().resetVisitStatus();
 		
 			if (istb.getNumStatements() > 1)
-				System.out.println("error -- if stmt block has more than 1 stmt");
+				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);
 			
 			for (StatementBlock sb : is.getIfBody()){
@@ -1531,7 +1540,7 @@ public class DMLTranslator {
 			
 			
 			if (fsb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
+				LOG.debug("For statement block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1582,7 +1591,7 @@ public class DMLTranslator {
 			WhileStatementBlock wstb = (WhileStatementBlock) current;
 			wstb.get_predicateLops().resetVisitStatus();
 			if (wstb.getNumStatements() > 1)
-				System.out.println("error -- while stmt block has more than 1 stmt");
+				LOG.debug("While statement block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){
@@ -1594,7 +1603,7 @@ public class DMLTranslator {
 			IfStatementBlock istb = (IfStatementBlock) current;
 			istb.get_predicateLops().resetVisitStatus();
 			if (istb.getNumStatements() > 1)
-				System.out.println("error -- if stmt block has more than 1 stmt");
+				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);
 			
 			for (StatementBlock sb : is.getIfBody()){
@@ -1617,7 +1626,7 @@ public class DMLTranslator {
 				fsb.getIncrementLops().resetVisitStatus();
 			
 			if (fsb.getNumStatements() > 1)
-				System.out.println("error -- for stmt block has more than 1 stmt");
+				LOG.debug("For statement block has more than 1 stmt");
 			ForStatement ws = (ForStatement)fsb.getStatement(0);
 			
 			for (StatementBlock sb : ws.getBody()){

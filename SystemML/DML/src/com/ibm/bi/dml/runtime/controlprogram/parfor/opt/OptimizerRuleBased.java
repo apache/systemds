@@ -99,12 +99,10 @@ public class OptimizerRuleBased extends Optimizer
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("--- RULEBASED OPTIMIZER -------");
+		LOG.debug("--- RULEBASED OPTIMIZER -------");
 
 		//ANALYZE infrastructure properties
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: Analyze infrastructure properties." );
+		LOG.debug("RULEBASED OPTIMIZER: Analyze infrastructure properties." );
 		
 		OptNode pn = plan.getRoot();
 		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
@@ -118,16 +116,14 @@ public class OptimizerRuleBased extends Optimizer
 		_lm   = Hops.getMemBudget(true);
 		_rm   = OptimizerUtils.MEM_UTIL_FACTOR * InfrastructureAnalyzer.getRemoteMaxMemory(); //Hops.getMemBudget(false); 
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")" );
+		LOG.debug("RULEBASED OPTIMIZER: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")" );
 		
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
 		double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn);
 
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: estimated mem (serial exec) M="+toMB(M) );
+		LOG.debug("RULEBASED OPTIMIZER: estimated mem (serial exec) M="+toMB(M) );
 		
 		//OPTIMIZE PARFOR PLAN
 		
@@ -230,8 +226,7 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.DATA_PARTITIONER, pdp.toString());
 	
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set data partitioner' - result="+pdp.toString() );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set data partitioner' - result="+pdp.toString() );
 	}
 	
 	/**
@@ -357,8 +352,7 @@ public class OptimizerRuleBased extends Optimizer
 		PExecMode mode = (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
 		pfpb.setExecMode( mode );	
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set execution strategy' - result="+mode );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set execution strategy' - result="+mode );
 	}
 	
 	///////
@@ -405,8 +399,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( apply )
 			pfpb.enableColocatedPartitionedMatrix( varname );
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
 	}
 	
 	/**
@@ -517,8 +510,7 @@ public class OptimizerRuleBased extends Optimizer
 			nested = true;
 		}
 
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'enable nested parallelism' - result="+nested );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'enable nested parallelism' - result="+nested );
 		
 		return nested;
 	}
@@ -595,8 +587,7 @@ public class OptimizerRuleBased extends Optimizer
 			rAssignRemainingParallelism( n, kMax ); 
 		}		
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
 	}
 	
 	/**
@@ -657,8 +648,7 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.TASK_PARTITIONER, partitioner.toString());
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set task partitioner' - result="+partitioner );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set task partitioner' - result="+partitioner );
 	}
 	
 	
@@ -700,8 +690,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getChilds() != null )
 			rInvokeSetResultMerge(n.getChilds(), vars, appliedLeftIndexRewrite);
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set result merge' - result="+ret );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set result merge' - result="+ret );
 	}
 	
 	/**
@@ -812,8 +801,7 @@ public class OptimizerRuleBased extends Optimizer
 			pfpb.setRecompileMemoryBudget( newLocalMem );
 		}
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
 	}	
 	
 	
@@ -832,8 +820,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		int count = removeUnnecessaryParFor( n );
 		
-		if( OptimizationWrapper.LDEBUG )
-			System.out.println("RULEBASED OPTIMIZER: rewrite 'remove unnecessary parfor' - result="+count );
+		LOG.debug("RULEBASED OPTIMIZER: rewrite 'remove unnecessary parfor' - result="+count );
 	}
 	
 	/**

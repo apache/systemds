@@ -39,8 +39,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		
 		MatrixObject ret = _rm.executeSerialMerge();
 
-		if( LDEBUG )
-			System.out.println("Automatic result merge ("+_rm.getClass().getName()+") executed in "+time.stop()+"ms.");
+		LOG.trace("Automatic result merge ("+_rm.getClass().getName()+") executed in "+time.stop()+"ms.");
 
 		return ret;
 	}

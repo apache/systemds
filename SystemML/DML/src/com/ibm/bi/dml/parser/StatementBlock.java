@@ -6,6 +6,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -23,6 +26,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 	ArrayList<Lops> _lops = null;
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
+	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 	
 	// this stores the function call instruction 
 	private FunctionCallCPInstruction _functionCallInst;

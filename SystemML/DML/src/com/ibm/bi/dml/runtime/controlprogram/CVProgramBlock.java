@@ -3,7 +3,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.meta.PartitionParams;
@@ -50,13 +49,8 @@ public class CVProgramBlock extends ProgramBlock {
 	}
 
 	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
-		if ( DMLScript.DEBUG ) {
-			// print _variables map
-			System.out.println ("____________________________________");
-			System.out.println ("___ Variables ____");
-			System.out.print   (_variables.toString ());
-			System.out.println ("____________________________________");
-		}
+		LOG.trace("Variables: " + _variables.toString());
+
 		for (int i = 0; i < _inst.size(); i++) {	//only one itern occurs though
 			Instruction currInst = _inst.get(i);
 			if (currInst instanceof MRJobInstruction) {

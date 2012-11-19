@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -13,7 +15,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -39,6 +40,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class CombineMR {
 	
+	private static final Log LOG = LogFactory.getLog(CombineMR.class.getName());
 	public static class InnerReducer extends ReduceBase
 	implements Reducer<MatrixIndexes, TaggedMatrixValue, MatrixIndexes, WeightedPair>
 	{
@@ -336,7 +338,7 @@ public class CombineMR {
 		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 		
 		// By default, the job executes in "cluster" mode.

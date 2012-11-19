@@ -52,8 +52,6 @@ public abstract class Statement {
 	
 	public abstract Statement rewriteStatement(String prefix) throws LanguageException;
 	
-	public static boolean DEBUG = true;
-
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for statements
 	///////////////////////////////////////////////////////////////////////////

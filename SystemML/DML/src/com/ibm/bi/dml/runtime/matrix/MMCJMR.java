@@ -9,7 +9,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -44,7 +43,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
  */
 public class MMCJMR {
 
-	protected static final Log LOG = LogFactory.getLog(MMCJMR.class);
+	private static final Log LOG = LogFactory.getLog(MMCJMR.class);
 	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, 
@@ -65,7 +64,7 @@ public class MMCJMR {
 				replication, resultDimsUnknown, output, outputinfo);
 		
 		// Print the complete instruction
-		if ( DMLScript.DEBUG )
+		if (LOG.isTraceEnabled())
 			inst.printCompelteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"
@@ -111,8 +110,8 @@ public class MMCJMR {
 		if(dim2.numColumnsPerBlock>dim2.numColumns)
 			dim2.numColumnsPerBlock=(int) dim2.numColumns;
 		
-		LOG.info("dim1: "+dim1);
-		LOG.info("dim2: "+dim2);
+		LOG.trace("dim1: "+dim1);
+		LOG.trace("dim2: "+dim2);
 		
 		long blockSize1=77+8*dim1.numRowsPerBlock*dim1.numColumnsPerBlock;
 		long blockSize2=77+8*dim2.numRowsPerBlock*dim2.numColumnsPerBlock;

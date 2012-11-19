@@ -4,7 +4,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -130,11 +129,7 @@ public class WhileProgramBlock extends ProgramBlock {
 		}
 		catch(Exception e){
 			
-			if (DMLScript.DEBUG){
-				System.out.println();
-				System.out.println("****************************** WHILE PREDICATE VARIABLES ********************************************");
-				printSymbolTable();
-			}
+			LOG.trace("\nWhile predicate variables: "+ _variables.toString());
 			
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate ", e);
 		}
@@ -151,11 +146,7 @@ public class WhileProgramBlock extends ProgramBlock {
 				}
 				catch(Exception e){
 					
-					if (DMLScript.DEBUG){
-						System.out.println();
-						System.out.println("****************************** WHILE PROGRAM BLOCK VARIABLES ********************************************");
-						printSymbolTable();
-					}
+					LOG.trace("\nWhile predicate variables: "+ _variables.toString());
 					
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
 				}

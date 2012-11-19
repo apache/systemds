@@ -2,7 +2,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -22,8 +24,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class ResultMerge 
 {
-	protected static final boolean LDEBUG = DMLScript.DEBUG || false; //local debug flag
 	protected static final String NAME_SUFFIX = "_rm";
+	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
 	
 	protected static String STAGING_DIR = null;
 	

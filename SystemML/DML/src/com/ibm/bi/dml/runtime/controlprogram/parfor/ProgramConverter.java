@@ -160,7 +160,10 @@ public class ProgramConverter
 			else
 			{
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
-				tmpPB.setStatementBlock(pb.getStatementBlock()); //TODO generalize
+				
+				//for recompile in the master node JVM
+				tmpPB.setStatementBlock(pb.getStatementBlock()); 
+				tmpPB.setThreadID(pid);
 			}
 
 			//copy instructions

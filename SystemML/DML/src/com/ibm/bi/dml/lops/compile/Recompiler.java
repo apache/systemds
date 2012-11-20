@@ -13,6 +13,7 @@ import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -39,7 +40,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hops> hops, LocalVariableMap vars ) 
+	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hops> hops, LocalVariableMap vars, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -88,6 +89,10 @@ public class Recompiler
 			
 			// construct instructions
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			
+			// replace thread ids in new instructions
+			if( tid != 0 )
+				newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
 			
 			//System.out.println(newInst);
 			//System.out.println("Construct instructions in "+time.stop()+"ms");

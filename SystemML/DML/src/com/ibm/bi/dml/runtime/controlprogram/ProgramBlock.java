@@ -40,12 +40,15 @@ import com.ibm.bi.dml.utils.Statistics;
 
 public class ProgramBlock {
 	
+	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
+	
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
 	protected LocalVariableMap _variables;
 	
-	protected StatementBlock _sb;
-	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
+	//additional attributes for recompile
+	protected StatementBlock _sb = null;
+	protected long _tid = 0; //by default recompile with _t0
 	
 	public ProgramBlock(Program prog) throws DMLRuntimeException {
 		
@@ -77,6 +80,11 @@ public class ProgramBlock {
 		_sb = sb;
 	}
 	
+	public void setThreadID( long id )
+	{
+		_tid = id;
+	}
+	
 	public void setMetaData(String fname, MetaData md) throws DMLRuntimeException {
 		_variables.get(fname).setMetaData(md);
 	}
@@ -101,7 +109,11 @@ public class ProgramBlock {
 				&& Recompiler.requiresRecompilation(_sb.get_hops()) 
 				&& !Recompiler.containsNonRecompileInstructions(tmp) )
 			{
-				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables);
+				//System.out.println("OLD instructions:\n" + tmp);
+				
+				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables, _tid);
+		
+				//System.out.println("NEW instructions:\n" + tmp);
 			}
 		}
 		catch(Exception ex)
@@ -195,6 +207,7 @@ public class ProgramBlock {
 						duration = System.currentTimeMillis()-st;
 						LOG.trace("MRJob: " + currMRInst.getJobType() + ", duration =" + (duration));
 					}
+					//System.out.println("MRJob: " + currMRInst.getJobType() + ", duration =" + (System.currentTimeMillis()-st));
 										
 					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
 				}

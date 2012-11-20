@@ -1,0 +1,147 @@
+#
+# DML Script to compute univariate statistics for all attributes 
+# in a given data set
+#
+# Three inputs:
+#     $1) A - input data
+#     $2) K - row matrix that denotes the "kind" for each 
+#              attribute
+#             kind=1 for scale, kind=2 for nominal,
+#             kind=3 for ordinal
+#     $3) maxC - maximum number of categories in any categorical 
+#         attribute
+#
+# One output:
+#     $4) output directory in which following three statistics 
+#         files are created
+#         + base.stats - matrix with all 17 statistics (14 scale, 
+#         3 categorical) computed for all attributes
+#         + categorical.counts - matrix in which each column 
+#         gives the category-wise counts for all categories in 
+#         that attribute
+#
+#
+
+A = read($1); # data file
+K = read($2); # attribute kind file
+maxC = $3;  # max number of categories in any categorical attribute
+
+
+if (maxC < 0) {
+	print("ERROR: maximum number maxC of categories must be a positve value.");
+}
+else {
+	
+	
+	# number of features/attributes
+	n = ncol(A);
+
+	# number of data records
+	m = nrow(A);
+
+	# number of statistics
+	numBaseStats = 17; # (14 scale stats, 3 categorical stats)
+
+    max_kind = max(K);
+    
+	# matrices to store computed statistics
+	baseStats = Rand(rows=numBaseStats, cols=n, min=0.0, max=0.0);
+	
+	if (maxC > 0) {
+	  countsArray = Rand(rows=maxC, cols=n, min=0.0, max=0.0);
+    }
+    
+	dummy = Rand(rows=1, cols=1, min=1, max=1);
+	
+	parfor(i in 1:n, check=0) {
+
+		# project out the i^th column
+		F = A[,i];
+
+		kind = castAsScalar(K[1,i]);
+
+		if ( kind == 1 ) {
+			print("[" + i + "] Scale");
+			# compute SCALE statistics on the projected column
+			minimum = min(F);
+			maximum = max(F);
+			rng = maximum - minimum;
+
+			mu = mean(F);
+			m2 = centralMoment(F, 2);
+			m3 = centralMoment(F, 3);
+			m4 = centralMoment(F, 4);
+
+			var = m/(m-1.0)*m2;
+			std_dev = sqrt(var);
+			se = std_dev/sqrt(m);
+			cv = std_dev/mu;
+
+			g1 = m3/(std_dev^3);
+			g2 = m4/(std_dev^4) - 3;
+			#se_g1=sqrt( 6*m*(m-1.0) / ((m-2.0)*(m+1.0)*(m+3.0)) ); 
+			se_g1=sqrt( (6/(m-2.0)) * (m/(m+1.0)) * ((m-1.0)/(m+3.0)) ); 
+
+			#se_g2= sqrt( (4*(m^2-1)*se_g1^2)/((m+5.0)*(m-3.0)) );  
+			se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
+
+			md = quantile(F, 0.5);
+			iqm = interQuartileMean(F);
+
+			# place the computed statistics in output matrices
+			baseStats[1,i] = dummy * minimum;
+			baseStats[2,i] = dummy * maximum;
+			baseStats[3,i] = dummy * rng;
+
+			baseStats[4,i] = dummy * mu;
+			baseStats[5,i] = dummy * var;
+			baseStats[6,i] = dummy * std_dev;
+			baseStats[7,i] = dummy * se;
+			baseStats[8,i] = dummy * cv;
+
+			baseStats[9,i] = dummy * g1;
+			baseStats[10,i] = dummy * g2;
+			baseStats[11,i] = dummy * se_g1;
+			baseStats[12,i] = dummy * se_g2;
+
+			baseStats[13,i] = dummy * md;
+			baseStats[14,i] = dummy * iqm;
+		}
+		else {
+			if (kind == 2 | kind == 3) {
+				print("[" + i + "] Categorical");
+				
+				# check if the categorical column has valid values
+				minF = min(F);
+				if (minF <=0) {
+					print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
+				}
+				else {
+					# compute CATEGORICAL statistics on the projected column
+					cat_counts = ctable(F,1);  # counts for each category
+					num_cat = nrow(cat_counts); # number of categories
+
+					mode = rowIndexMax(t(cat_counts));
+					mx = max(cat_counts)
+					modeArr =  ppred(cat_counts, mx, "==")
+					numModes = sum(modeArr);
+
+					# place the computed statistics in output matrices
+					baseStats[15,i] = dummy * num_cat;
+					baseStats[16,i] = dummy * mode;
+					baseStats[17,i] = dummy * numModes;
+
+          if (max_kind > 1) {
+					  countsArray[,i] = cat_counts;
+					}
+				}
+			}
+		}
+	}
+
+	write(baseStats, $4+"/base.stats");
+	if (max_kind > 1) {
+		write(countsArray, $4+"/categorical.counts");
+	}
+
+}

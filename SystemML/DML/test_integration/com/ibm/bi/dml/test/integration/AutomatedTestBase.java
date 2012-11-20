@@ -273,7 +273,6 @@ public abstract class AutomatedTestBase {
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -290,13 +289,22 @@ public abstract class AutomatedTestBase {
 		return matrix;
 	}
 
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) 
+	{
 		writeInputMatrix(name, matrix, bIncludeR);
 		
 		// write metadata file
-		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-		MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
-		
+		try
+		{
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+	
 		return matrix;
 	}
 	
@@ -604,11 +612,11 @@ public abstract class AutomatedTestBase {
 				System.err.print((char) c);
 			}
 
-			/**
-			 * To give any stream enough time to print all data, otherwise there
-			 * are situations where the test case fails, even before everything
-			 * has been printed
-			 */
+			//
+			// To give any stream enough time to print all data, otherwise there
+			// are situations where the test case fails, even before everything
+			// has been printed
+			//
 			child.waitFor();
 	//		Thread.sleep(30000);
 
@@ -618,11 +626,11 @@ public abstract class AutomatedTestBase {
 							+ executionFile);
 				}
 			} catch (IllegalThreadStateException ie) {
-				/**
-				 * In UNIX JVM does not seem to be able to close threads
-				 * correctly. However, give it a try, since R processed the
-				 * script, therefore we can terminate the process.
-				 */
+				//
+				// In UNIX JVM does not seem to be able to close threads
+				// correctly. However, give it a try, since R processed the
+				// script, therefore we can terminate the process.
+				//
 				child.destroy();
 			}
 

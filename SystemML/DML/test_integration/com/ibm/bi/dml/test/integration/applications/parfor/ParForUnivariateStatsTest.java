@@ -7,21 +7,23 @@ import org.junit.Test;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class ParForBivariateStatsTest extends AutomatedTestBase 
+public class ParForUnivariateStatsTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "parfor_bivariate";
+	private final static String TEST_NAME = "parfor_univariate";
 	private final static String TEST_DIR = "applications/parfor/";
-	private final static double eps = 1e-10;
+	private final static double eps = 1e-10; 
 	
-	private final static int rows1 = 1000;  // # of rows in each vector (for CP instructions) 
+	//for test of sort_mr set optimizerutils mem to 0.00001 and decomment the following
+	//private final static int rows2 = 10000;//(int) (Hops.CPThreshold+1);  // # of rows in each vector (for MR instructions)
+	
 	private final static int rows2 = (int) (Hops.CPThreshold+1);  // # of rows in each vector (for MR instructions)
 	private final static int cols = 30;      // # of columns in each vector  
-	private final static int cols2 = 10;      // # of columns in each vector - initial test: 7 
 	
 	private final static double minVal=1;    // minimum value in each vector 
 	private final static double maxVal=5; // maximum value in each vector 
@@ -32,49 +34,26 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		addTestConfiguration(
 				TEST_NAME, 
 				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  //TODO MB: is this ever used???
-	}
-
-	
-	@Test
-	public void testForBivariateStatsSerialSerialMR() 
-	{
-		runParForBivariateStatsTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}
-
-	
-	/*
-	@Test 
-	public void testParForBivariateStatsLocalLocalCP() 
-	{
-		runParForBivariateStatsTest(PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP);
-	}
-	*/
-
-	@Test
-	public void testParForBivariateStatsLocalLocalMR() 
-	{
-		runParForBivariateStatsTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}
-
-	/*
-	@Test
-	public void testParForBivariateStatsLocalRemoteCP() 
-	{
-		runParForBivariateStatsTest(PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP);
+				new String[] { "Rout" })   );  
 	}
 	
 	@Test
-	public void testParForBivariateStatsRemoteLocalCP() 
+	public void testForUnivariateStatsSerialSerialMR() 
 	{
-		runParForBivariateStatsTest(PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
-	}*/
+		runParForUnivariateStatsTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
+	}
+
+	@Test
+	public void testParForUnivariateStatsLocalLocalMR() 
+	{
+		runParForUnivariateStatsTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
+	}
 	
 
 	@Test
-	public void testParForBivariateStatsDefaultMR() 
+	public void testParForUnivariateStatsDefaultMR() 
 	{
-		runParForBivariateStatsTest(true, null, null, ExecType.MR);
+		runParForUnivariateStatsTest(true, null, null, ExecType.MR);
 	}
 	
 	/**
@@ -83,12 +62,12 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	 * @param inner execution mode of inner parfor loop
 	 * @param instType execution mode of instructions
 	 */
-	private void runParForBivariateStatsTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType )
+	private void runParForUnivariateStatsTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType )
 	{
 		//inst exec type, influenced via rows
 		int rows = -1;
 		if( instType == ExecType.CP )
-			rows = rows1;
+			rows = rows2;
 		else //if type MR
 			rows = rows2;
 		
@@ -114,17 +93,9 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
 		programArgs = new String[]{"-args", HOME + INPUT_DIR + "D" ,
-				                        HOME + INPUT_DIR + "S1" ,
-				                        HOME + INPUT_DIR + "S2" ,
-				                        HOME + INPUT_DIR + "K1" ,
-				                        HOME + INPUT_DIR + "K2" ,
-				                        HOME + OUTPUT_DIR + "bivarstats",
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        Integer.toString(cols2),
-				                        Integer.toString(cols2*cols2),
-				                        Integer.toString((int)maxVal)
-				                         };
+				                        HOME + INPUT_DIR + "K",
+				                        Integer.toString((int)maxVal),
+				                        HOME + OUTPUT_DIR + "univarstats" };
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
@@ -140,26 +111,17 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 			if( Dkind[i]!=1 )
 				round(D,i); //for ordinal and categorical vars
 		}
-		writeInputMatrix("D", D, true);
-		
-		//generate attribute sets		
-        double[][] S1 = getRandomMatrix(1, cols2, 1, cols+1-eps, 1, 1112);
-        double[][] S2 = getRandomMatrix(1, cols2, 1, cols+1-eps, 1, 1113);
-        round(S1);
-        round(S2);
-		writeInputMatrix("S1", S1, true);
-		writeInputMatrix("S2", S2, true);	
+		MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,-1,-1);
+		writeInputMatrixWithMTD("D", D, true, mc1);
 
 		//generate kind for attributes (1,2,3)
-        double[][] K1 = new double[1][cols2];
-        double[][] K2 = new double[1][cols2];
-        for( int i=0; i<cols2; i++ )
+        double[][] K = new double[1][cols];
+        for( int i=0; i<cols; i++ )
         {
-        	K1[0][i] = Dkind[(int)S1[0][i]-1];
-        	K2[0][i] = Dkind[(int)S2[0][i]-1];
+        	K[0][i] = Dkind[i];
         }
-        writeInputMatrix("K1", K1, true);
-		writeInputMatrix("K2", K2, true);			
+        MatrixCharacteristics mc2 = new MatrixCharacteristics(1,cols,-1,-1);
+		writeInputMatrixWithMTD("K", K, true,mc2);		
 
 		
 		boolean exceptionExpected = false;
@@ -168,19 +130,13 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		runRScript(true); 
 		
 		//compare matrices 
-		for( String out : new String[]{"bivar.stats", "category.counts", "category.means",  "category.variances" } )
+		for( String out : new String[]{"base.stats", "categorical.counts" } )
 		{
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("bivarstats/"+out);
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("univarstats/"+out);
 			
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(out);
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-	}
-	
-	private void round(double[][] data) {
-		for(int i=0; i<data.length; i++)
-			for(int j=0; j<data[i].length; j++)
-				data[i][j]=Math.floor(data[i][j]);
 	}
 	
 	private void round(double[][] data, int col) {

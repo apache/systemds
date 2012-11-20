@@ -296,7 +296,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( USE_FN_CACHE )
 			_fncache.clear();
 		
-		System.out.println("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
+		LOG.debug("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
 		
 		return vs;
 	}
@@ -1048,7 +1048,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				f2p = getRowLinearFunction(dat2);
 			}
 			
-			LOG.trace("PARFOR: f1p: "+f1p.toString() + ", PARFOR: f2p: "+f2p.toString());
+			LOG.trace("PARFOR: f1p: "+((f1p==null)?"null":f1p.toString()) + ", PARFOR: f2p: "+((f2p==null)?"null":f2p.toString()));
 						
 			if( f1p!=null && f2p!=null )
 			{

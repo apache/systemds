@@ -24,7 +24,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AddDummyWeightConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
@@ -64,6 +63,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
+import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 
 public class MRJobConfiguration {
 	
@@ -115,6 +115,8 @@ public class MRJobConfiguration {
 	private static final String RESULTMERGE_INPUT_INFO_CONFIG="resultmerge.input.inputinfo";
 	private static final String RESULTMERGE_COMPARE_FILENAME_CONFIG="resultmerge.compare.filename";
 	private static final String RESULTMERGE_STAGING_DIR_CONFIG="resultmerge.staging.dir";
+	
+	private static final String SORT_PARTITION_FILENAME = "sort.partition.filename";
 	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
@@ -1000,6 +1002,29 @@ public class MRJobConfiguration {
 				outputInfos, inBlockRepresentation, false);
 	}
 	
+	/**
+	 * 
+	 * @param job
+	 * @return
+	 */
+	public static String setUpSortPartitionFilename( JobConf job ) 
+	{
+		String pfname = constructPartitionFilename();
+		job.set( SORT_PARTITION_FILENAME, pfname );
+		
+		return pfname;
+	}
+	
+	/**
+	 * 
+	 * @param job
+	 * @return
+	 */
+	public static String getSortPartitionFilename( JobConf job )
+	{
+		return job.get( SORT_PARTITION_FILENAME );
+	}
+	
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
 			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstructions, 
 			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -1421,7 +1446,6 @@ public class MRJobConfiguration {
 	}
 	
 	private static String constructTempOutputFilename() 
-		throws ParseException
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
@@ -1431,6 +1455,23 @@ public class MRJobConfiguration {
 		sb.append(Lops.FILE_SEPARATOR);
 		
 		sb.append("TmpOutput"+seq.getNextID());
+		
+		//old unique dir (no guarantees): 
+		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
+		
+		return sb.toString(); 
+	}
+	
+	private static String constructPartitionFilename() 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(Lops.FILE_SEPARATOR);
+		
+		sb.append(SamplingSortMRInputFormat.PARTITION_FILENAME+seq.getNextID());
 		
 		//old unique dir (no guarantees): 
 		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 

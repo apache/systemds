@@ -14,12 +14,15 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 abstract public class Hops {
@@ -239,7 +242,7 @@ abstract public class Hops {
 		}
 		// This is the old format for reference
 		// %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
-				
+		
 		return et;
 	}
 	
@@ -1266,6 +1269,25 @@ abstract public class Hops {
 	 * Update the output size information for this hop.
 	 */
 	public abstract void refreshSizeInformation();
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String constructBaseDir()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) );
+		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lops.PROCESS_PREFIX );
+		sb.append( DMLScript.getUUID() );
+		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( ProgramConverter.CP_ROOT_THREAD_ID );
+		sb.append( Lops.FILE_SEPARATOR );
+	
+		return sb.toString();
+	}
 	
 	
 	///////////////////////////////////////////////////////////////////////////

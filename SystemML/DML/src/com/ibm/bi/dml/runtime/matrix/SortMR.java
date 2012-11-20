@@ -102,7 +102,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     	  keyClass=(Class<? extends WritableComparable>) job.getOutputKeyClass();
           valueClass=(Class<? extends Writable>) job.getOutputValueClass();
         FileSystem fs = FileSystem.get(job);
-        Path partFile = new Path(SamplingSortMRInputFormat.PARTITION_FILENAME);
+        Path partFile = new Path(MRJobConfiguration.getSortPartitionFilename(job)); 
         splitPoints = readPartitions(fs, partFile, job);
      //   System.out.println("num reducers: "+job.getNumReduceTasks());
        } catch (IOException ie) {
@@ -230,9 +230,12 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    JobConf job = new JobConf(SortMR.class);
 	    Path inputDir = new Path(input);
 	    inputDir = inputDir.makeQualified(inputDir.getFileSystem(job));
-	    Path partitionFile = new Path(SamplingSortMRInputFormat.PARTITION_FILENAME);
-	    URI partitionUri = new URI(partitionFile.toString() +
-	                               "#" + SamplingSortMRInputFormat.PARTITION_FILENAME);
+	    
+	    //setup partition file
+	    String pfname = MRJobConfiguration.setUpSortPartitionFilename(job);
+	    Path partitionFile = new Path( pfname ); 
+	    URI partitionUri = new URI( partitionFile.toString() + "#" + pfname ); 
+	   
 	    SamplingSortMRInputFormat.setInputPaths(job, inputDir);
 	    Path outpath=new Path(output);
 	    FileOutputFormat.setOutputPath(job, outpath);
@@ -311,7 +314,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	//	runSelect(output, "some", counts, new double[]{0.4, 0.2, 0.41, 0.7});
 	//	runSelect(output, "some", counts, 0.25, 0.75);//new double[]{0.4, 0.2, 0.45, 0.7});
 	  //  LOG.info("done");
-	    MapReduceTool.deleteFileIfExistOnHDFS(SamplingSortMRInputFormat.PARTITION_FILENAME);
+	    MapReduceTool.deleteFileIfExistOnHDFS( pfname );
 	    return new JobReturn(s[0], counts, partitionWith0, missing0s, runjob.isSuccessful());
 	  }
 

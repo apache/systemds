@@ -1,0 +1,24 @@
+# Note this script is externalized to customer, please do not change w/o consulting component owner.
+# Assume rows, cols are in the mtd files associated with input data files
+# Invokation command
+# hadoop jar SystemML.jar -f LinearRegressionScore.dml -args X y_specified y intercept w predicted_y rmse
+# Arguments: 1.X 2.y_specified 3.y 4.intercept 5.w 6.predicted_y 7.rmse
+
+X = read($1);
+intercept = $4;
+w = read($5);
+b = 0.0;
+n = ncol(X)
+if (intercept == 1) {
+ b = castAsScalar(w[n+1,1]);
+}
+predicted_y = X %*% w[1:n,1] + b;
+write(predicted_y, $6, format="text");
+
+if ($2 == 1) {
+ y = read($3);
+ n = nrow(X);
+ rmse = sqrt(sum((y - predicted_y)^2)/n);
+ write(rmse, $7);
+}
+

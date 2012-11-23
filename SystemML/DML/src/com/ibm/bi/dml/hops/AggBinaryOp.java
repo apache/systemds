@@ -77,6 +77,7 @@ public class AggBinaryOp extends Hops {
 							getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
 							getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
 							getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block());
+					
 					if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(
 								getInput().get(0).constructLops(), getInput().get(1)
@@ -229,34 +230,47 @@ public class AggBinaryOp extends Hops {
 		// most robust plan -- which is CPMM
 		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
 			return MMultMethod.CPMM;
-		
+
 		int m1_nrb = (int) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
+		int m1_ncb = (int) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
 		int m2_ncb = (int) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
-		
-		double rmm_shuffle, rmm_io, cpmm_shuffle, cpmm_io;
-		rmm_shuffle = rmm_io = cpmm_shuffle = cpmm_io = 0;
-		
+
 		// TODO: we must factor in the "sparsity"
 		double m1_size = m1_rows * m1_cols;
 		double m2_size = m2_rows * m2_cols;
 		double result_size = m1_rows * m2_cols;
+
+		int numReducers = OptimizerUtils.getNumReducers(false);
 		
 		/* Estimate the cost of RMM */
-		rmm_shuffle = (m2_ncb*m1_size) + (m1_nrb*m2_size);
-		rmm_io = m1_size + m2_size + result_size;
-		
+		// RMM phase 1
+		double rmm_shuffle = (m2_ncb*m1_size) + (m1_nrb*m2_size);
+		double rmm_io = m1_size + m2_size + result_size;
+		double rmm_nred = Math.min( m1_nrb * m2_ncb, //max used reducers 
+				                    numReducers); //available reducers
+		// RMM total costs
+		double rmm_costs = (rmm_shuffle + rmm_io) / rmm_nred;
 		
 		/* Estimate the cost of CPMM */
-		int r = 5; // TODO: remove hard-coding to number of reducers
-		cpmm_shuffle = m1_size + m2_size + (r*result_size);
-		cpmm_io = m1_size + m2_size + result_size + (2*r*result_size);
+		// CPMM phase 1
+		double cpmm_shuffle1 = m1_size + m2_size;
+		double cpmm_nred1 = Math.min( m1_ncb, //max used reducers 
+                                      numReducers); //available reducers		
+		double cpmm_io1 = m1_size + m2_size + cpmm_nred1 * result_size;
+		// CPMM phase 2
+		double cpmm_shuffle2 = cpmm_nred1 * result_size;
+		double cpmm_io2 = cpmm_nred1 * result_size + result_size;			
+		double cpmm_nred2 = Math.min( m1_nrb * m2_ncb, //max used reducers 
+                                      numReducers); //available reducers		
+		// CPMM total costs
+		double cpmm_costs =  (cpmm_shuffle1+cpmm_io1)/cpmm_nred1  //cpmm phase1
+		                    +(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2
 		
-		if ( cpmm_shuffle + cpmm_io < rmm_shuffle + rmm_io ) {
+		//final mmult method decision 
+		if ( cpmm_costs < rmm_costs ) 
 			return MMultMethod.CPMM;
-		}
-		else {
+		else 
 			return MMultMethod.RMM;
-		}
 	}
 
 	@Override

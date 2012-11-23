@@ -456,6 +456,8 @@ public class DataOp extends Hops {
 		// Since a DATA hop does not represent any computation, 
 		// this function is not applicable. 
 		return null;
+		
+		//TODO MB> for pwrite it would indeed be useful to distinguish between local hadoop-cp and GMR/hadoop-distcp 
 	}
 	
 	@Override

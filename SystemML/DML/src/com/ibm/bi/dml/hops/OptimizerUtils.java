@@ -4,9 +4,11 @@ import java.text.DecimalFormat;
 
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class OptimizerUtils {
 
@@ -122,6 +124,23 @@ public class OptimizerUtils {
 	 * dyanmic recompilation is enabled as well.
 	 */
 	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
+		
+	/**
+	 * Returns the number of reducers that potentially run in parallel.
+	 * This is either just the configured value (SystemML config) or
+	 * the minimum of configured value and available reduce slots. 
+	 * 
+	 * @param configOnly
+	 * @return
+	 */
+	public static int getNumReducers( boolean configOnly )
+	{
+		int ret = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		if( !configOnly )
+			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
+		
+		return ret;
+	}
 	
 	
 	/**

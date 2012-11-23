@@ -247,6 +247,8 @@ abstract public class Hops {
 	}
 	
 	/**
+	 * TODO move to OptimizerUtils
+	 * 
 	 * Returns memory budget (according to util factor) in bytes
 	 * 
 	 * @param localOnly specifies if only budget of current JVM or also MR JVMs 
@@ -262,6 +264,7 @@ abstract public class Hops {
 		
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
+
 	
 	public ArrayList<Hops> getParent() {
 		return _parent;

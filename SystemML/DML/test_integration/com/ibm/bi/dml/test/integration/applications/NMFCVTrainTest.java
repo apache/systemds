@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.test.integration.applications;
 
-import org.junit.Test;
+//import org.junit.Test;
 
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -16,6 +16,7 @@ public class NMFCVTrainTest extends AutomatedTestBase {
 				new String[] { "nmf.wb.result", "nmf.hc.result" }));
 	}
 	
+	/*
 	@Test
 	public void testNMFCVTrain() {
 		loadTestConfiguration("NMFCVTrainTest");
@@ -28,5 +29,5 @@ public class NMFCVTrainTest extends AutomatedTestBase {
 		
 		checkForResultExistence();
 	}
-
+	*/
 }

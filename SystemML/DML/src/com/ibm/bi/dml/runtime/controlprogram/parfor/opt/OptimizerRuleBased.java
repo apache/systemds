@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
@@ -122,7 +124,6 @@ public class OptimizerRuleBased extends Optimizer
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
 		double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn);
-
 		LOG.debug("RULEBASED OPTIMIZER: estimated mem (serial exec) M="+toMB(M) );
 		
 		//OPTIMIZE PARFOR PLAN
@@ -137,7 +138,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// rewrite 2: execution strategy
 		rewriteSetExecutionStategy( pn, M );
-
+		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
 		{
@@ -207,15 +208,19 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
 		
 		//search for candidates
-		ArrayList<String> cand = pfsb.getReadOnlyParentVars();
-		HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
-		for( String c : cand )
+		boolean apply = false;
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ) //only if we are allowed to recompile
 		{
-			PDataPartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
-			if( dpf != PDataPartitionFormat.NONE )
-				cand2.put( c, dpf );
+			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
+			HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
+			for( String c : cand )
+			{
+				PDataPartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
+				if( dpf != PDataPartitionFormat.NONE )
+					cand2.put( c, dpf );
+			}
+			apply = rFindDataPartitioningCandidates(n, cand2, vars);
 		}
-		boolean apply = rFindDataPartitioningCandidates(n, cand2, vars);
 		PDataPartitioner pdp = (apply)? PDataPartitioner.REMOTE_MR : PDataPartitioner.NONE;		
 		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
 		//      matrix and hence always apply REMOTE_MR (the benefit for large matrices outweigths
@@ -659,15 +664,17 @@ public class OptimizerRuleBased extends Optimizer
 	/**
 	 * 
 	 * @param n
+	 * @throws DMLRuntimeException 
 	 */
-	private void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean appliedLeftIndexRewrite )
+	private void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean appliedLeftIndexRewrite ) 
+		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		//investigate details of current parfor node
 		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
-		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables() );
+		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
 		
 		//actual decision on result merge
@@ -734,8 +741,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @param resultVars
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars )
+	public boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
+		throws DMLRuntimeException
 	{
 		boolean ret = false;
 		
@@ -747,14 +756,26 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
-				if( resultVars.contains(hop.getInput().get(0).get_name()) )
+				String varName = hop.getInput().get(0).get_name();
+				if( resultVars.contains(varName) )
+				{
 					ret = true;
+					if( checkSize && vars.keySet().contains(varName) )
+					{
+						//dims of result vars must be known at this point in time
+						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
+						long rows = mo.getNumRows();
+						long cols = mo.getNumColumns();
+						if( rows*cols < Math.pow(Hops.CPThreshold, 2) )
+							ret = false;
+					}
+				}
 			}
 		}
 		else
 		{
 			for( OptNode c : n.getChilds() )
-				ret |= hasResultMRLeftIndexing(c, resultVars);
+				ret |= hasResultMRLeftIndexing(c, resultVars, vars, checkSize);
 		}
 		
 		return ret;
@@ -764,8 +785,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param nodes
 	 * @param vars
+	 * @throws DMLRuntimeException 
 	 */
-	private void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean flag )
+	private void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean flag ) 
+		throws DMLRuntimeException
 	{
 		for( OptNode n : nodes )
 			if( n.getNodeType() == NodeType.PARFOR )

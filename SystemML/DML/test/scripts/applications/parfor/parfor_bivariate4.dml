@@ -47,6 +47,9 @@ cat_counts = Rand(rows=maxC, cols=numPairs, min=0, max=0);
 cat_means = Rand(rows=maxC, cols=numPairs, min=0, max=0);
 cat_vars = Rand(rows=maxC, cols=numPairs, min=0, max=0);
 
+#for test rewrite result merge w/ unknown result var size
+#cat_vars = Rand(rows=maxC, cols=(numPairs+1-1), min=0, max=0);
+
 dummy = Rand(rows=1, cols=1, min=1, max=1);
 
 

@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.LanguageException;
@@ -782,6 +783,78 @@ public class DMLProgram {
 		{
 			pb.addInstruction(inst); //add inst at end of pb	
 		}
+	}
+	
+	/**
+	 * Counts the number of compiled MRJob instructions in the
+	 * given runtime program.
+	 * 
+	 * @param rtprog
+	 * @return
+	 */
+	public static int countCompiledMRJobs( Program rtprog )
+	{
+		int ret = 0;
+		
+		//analyze DML-bodied functions
+		for( FunctionProgramBlock fpb : rtprog.getFunctionProgramBlocks().values() )
+			for( ProgramBlock pb : fpb.getChildBlocks() ) 
+				ret += countCompiledJobs( pb );
+			
+		//analyze main program
+		for( ProgramBlock pb : rtprog.getProgramBlocks() ) 
+			ret += countCompiledJobs( pb ); 
+		
+		return ret;
+	}
+	
+	/**
+	 * Recursively counts the number of compiled MRJob instructions in the
+	 * given runtime program block. 
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	public static int countCompiledJobs(ProgramBlock pb) 
+	{
+		int ret = 0;
+
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			for (ProgramBlock pb2 : tmp.getChildBlocks())
+				ret += countCompiledJobs(pb2);
+		}
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+				ret += countCompiledJobs(pb2);
+			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
+				ret += countCompiledJobs(pb2);
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{ 
+			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+				ret += countCompiledJobs(pb2);
+			//additional parfor jobs counted during runtime
+		}		
+		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			    || pb instanceof CVProgramBlock
+				|| pb instanceof ELProgramBlock
+				|| pb instanceof ELUseProgramBlock)
+		{
+			//do nothing
+		}
+		else 
+		{
+			for( Instruction inst : pb.getInstructions() )
+				if( inst instanceof MRJobInstruction ) //INSTRUCTION_TYPE.MAPREDUCE_JOB
+					ret++;	
+		}
+		
+		return ret;
 	}
 }
 

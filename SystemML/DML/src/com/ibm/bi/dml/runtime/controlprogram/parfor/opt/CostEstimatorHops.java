@@ -57,6 +57,11 @@ public class CostEstimatorHops extends CostEstimator
 			}
 		}
 		
+		if( h.getForcedExecType()==ExecType.MR ) //forced runtime platform
+		{
+			value = DEFAULT_MEM_MR;
+		}
+		
 		if( value <= 0 ) //no mem estimate
 		{
 			System.out.println("ParFOR Opt: Warning cannot get memory estimate for hop (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
@@ -65,7 +70,7 @@ public class CostEstimatorHops extends CostEstimator
 		
 		
 		//if( OptimizationWrapper.LDEBUG )
-		//	System.out.println("ParFOR Opt: Mem estimate "+h.get_name()+", "+h.getOpString()+"="+OptimizerRuleBased.toMB(value));
+		//	System.out.println("ParFOR Opt: Mem estimate "+h.get_name()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
 		
 		return value;
 	}

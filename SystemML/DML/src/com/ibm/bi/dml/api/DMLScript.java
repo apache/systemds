@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -45,8 +44,6 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
@@ -54,7 +51,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
-import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -704,20 +700,15 @@ public class DMLScript {
 			
 		}
 		
+		//setup nimble queue (external package support)
 		DAGQueue dagQueue = setupNIMBLEQueue(config);
-
 		if (dagQueue == null)
 			LOG.warn("dagQueue is not set");
-		
 		rtprog.setDAGQueue(dagQueue);
-
 		
-		// Count number compiled MR jobs
-		int jobCount = 0;
-		for (ProgramBlock blk : rtprog.getProgramBlocks()) 
-			jobCount += countCompiledJobs(blk); 		
-		Statistics.setNoOfCompiledMRJobs(jobCount);
-
+		//count number compiled MR jobs	
+		int jobCount = DMLProgram.countCompiledMRJobs(rtprog);
+		Statistics.setNoOfCompiledMRJobs( jobCount );
 		
 		/*
 		if (DEBUG) {
@@ -1003,29 +994,34 @@ public class DMLScript {
 		sb.append(DMLScript.getUUID());
 		String dirSuffix = sb.toString();
 		
-		//cleanup scratch space (everything for current uuid) 
+		//1) cleanup scratch space (everything for current uuid) 
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
 		
-		//cleanup hadoop working dirs
-		try {
-			LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
-				                                   dirSuffix  );
-			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
-					                               dirSuffix  );
-			LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
-	                                               dirSuffix );
-			MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
-												   dirSuffix  );
-		}
-		catch(Exception ex)
-		{
-			//we give only a warning because those directories are written by the mapred deamon 
-			//and hence, execution can still succeed
-			LOG.warn("Unable to cleanup hadoop working dirs: "+ex.getMessage());
-		}
+		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
+		//this implementation does not create job specific sub directories)
+		if( MRJobConfiguration.isLocalJobTracker() ) {
+			try 
+			{
+				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
+					                                   dirSuffix  );	
+				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+		                                               dirSuffix );
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+													   dirSuffix  );
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+								                       dirSuffix  );
+			}
+			catch(Exception ex)
+			{
+				//we give only a warning because those directories are written by the mapred deamon 
+				//and hence, execution can still succeed
+				LOG.warn("Unable to cleanup hadoop working dirs: "+ex.getMessage());
+			}
+		}			
 			
-		//cleanup systemml-internal working dirs
+		//3) cleanup systemml-internal working dirs
+		//TODO consolidate cleanup: "cache", "staging" 
 		CacheableData.cleanupCacheDir();
 		DataPartitionerLocal.cleanupWorkingDirectory();
 		ResultMergeLocalFile.cleanupWorkingDirectory();
@@ -1038,29 +1034,7 @@ public class DMLScript {
 		return dateFormat.format(date);
 	}
 
-	private static int countCompiledJobs(ProgramBlock blk) {
-
-		int jobCount = 0;
-
-		if (blk instanceof WhileProgramBlock){	
-			ArrayList<ProgramBlock> childBlocks = ((WhileProgramBlock) blk).getChildBlocks();
-			for (ProgramBlock pb : childBlocks){
-				jobCount += countCompiledJobs(pb);
-			}
-
-			if (blk.getNumInstructions() > 0){
-				LOG.error("While programBlock should not have instructions ");
-			}
-		}
-		else {
-
-			for (int i = 0; i < blk.getNumInstructions(); i++)
-				if (blk.getInstruction(i).getType() == INSTRUCTION_TYPE.MAPREDUCE_JOB)
-					jobCount++;
-		}
-		return jobCount;
-	}
-	
+		
 	public void setDMLScriptString(String dmlScriptString){
 		_dmlScriptString = dmlScriptString;
 	}

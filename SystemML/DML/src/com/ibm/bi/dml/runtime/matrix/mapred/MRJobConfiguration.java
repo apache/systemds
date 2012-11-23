@@ -298,24 +298,40 @@ public class MRJobConfiguration {
 	
 	/**
 	 * Unique working dirs required for thread-safe submission of parallel jobs;
-	 * otherwise job.xml might be overridden.
+	 * otherwise job.xml and other files might be overridden (in local mode).
 	 * 
 	 * @param job
 	 * @param mode
 	 */
 	public static void setUniqueWorkingDir( JobConf job, ExecMode mode )
 	{
-		String uniqueSubdir =   Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID()
-							  + Lops.FILE_SEPARATOR + seq.getNextID();
-		
-		//unique LocalJobTracker directory for each submitted job (local mode)
-		job.set("mapred.local.dir", job.get("mapred.local.dir") + uniqueSubdir );			
-		
-		//unique system dir for each submitted job (cluster mode); e.g., job.xml is placed there
-		job.set("mapred.system.dir", job.get("mapred.system.dir") + uniqueSubdir);
-		
-		//unique staging dir for each submitted job  
-		job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
+		if( isLocalJobTracker(job) )
+		{
+			StringBuilder tmp = new StringBuilder();
+			tmp.append( Lops.FILE_SEPARATOR );
+			tmp.append( Lops.PROCESS_PREFIX );
+			tmp.append( DMLScript.getUUID() );
+			tmp.append( Lops.FILE_SEPARATOR );
+			tmp.append( seq.getNextID() );
+			String uniqueSubdir = tmp.toString();
+			
+			//unique local dir
+			String[] dirlist = job.get("mapred.local.dir","/tmp").split(",");
+			StringBuilder sb2 = new StringBuilder();
+			for( String dir : dirlist ) {
+				if( sb2.length()>0 )
+					sb2.append(",");
+				sb2.append(dir);
+				sb2.append( uniqueSubdir );
+			}
+			job.set("mapred.local.dir", sb2.toString() );			
+			
+			//unique system dir 
+			job.set("mapred.system.dir", job.get("mapred.system.dir") + uniqueSubdir);
+			
+			//unique staging dir 
+			job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
+		}
 	}
 	
 	public static String getLocalWorkingDirPrefix()
@@ -334,6 +350,17 @@ public class MRJobConfiguration {
 	{
 		JobConf job = new JobConf();
 		return job.get("mapreduce.jobtracker.staging.root.dir");
+	}
+	
+	public static boolean isLocalJobTracker()
+	{
+		return isLocalJobTracker(new JobConf());
+	}
+	
+	public static boolean isLocalJobTracker(JobConf job)
+	{
+		String jobTracker = job.get("mapred.job.tracker", "local");
+		return jobTracker.equals("local");
 	}
 	
 	/**

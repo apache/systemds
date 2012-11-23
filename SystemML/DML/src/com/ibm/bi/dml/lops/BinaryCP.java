@@ -141,12 +141,28 @@ public class BinaryCP extends Lops
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for BinaryScalar operator: " + operation);
 		}
 		
-		String inst = opString + OPERAND_DELIMITOR + 
-				input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + vtype_input1 + OPERAND_DELIMITOR + 
-				input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
+		StringBuilder sb = new StringBuilder();
+		sb.append( opString );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( vtype_input1 );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType());
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() ); 
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 
-		return inst;
+		return sb.toString();
 		
 	}
 	

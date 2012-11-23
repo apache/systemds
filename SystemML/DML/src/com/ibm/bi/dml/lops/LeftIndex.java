@@ -68,17 +68,57 @@ public class LeftIndex extends Lops {
 	}
 	
 	@Override
-	public String getInstructions(String lhsInput, String rhsInput, String rowl, String rowu, String coll, String colu, String output) throws LopsException {
-		String opcode = getOpcode(); 
-		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
-        		lhsInput + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-        		rhsInput + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        rowl + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-		        rowu + DATATYPE_PREFIX + getInputs().get(3).get_dataType() + VALUETYPE_PREFIX + getInputs().get(3).get_valueType() + OPERAND_DELIMITOR + 
-		        coll + DATATYPE_PREFIX + getInputs().get(4).get_dataType() + VALUETYPE_PREFIX + getInputs().get(4).get_valueType() + OPERAND_DELIMITOR + 
-		        colu + DATATYPE_PREFIX + getInputs().get(5).get_dataType() + VALUETYPE_PREFIX + getInputs().get(5).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-		return inst;
+	public String getInstructions(String lhsInput, String rhsInput, String rowl, String rowu, String coll, String colu, String output) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( lhsInput );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rhsInput );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rowl );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(2).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rowu );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(3).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(3).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( coll );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(4).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(4).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( colu );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(5).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(5).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 
 /*	@Override

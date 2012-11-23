@@ -80,12 +80,32 @@ public class Append extends Lops{
 		else {
 			offsetString = "" + offsetLabel;
 		}
+	
+		StringBuilder sb = new StringBuilder();
+		sb.append( this.lps.execType );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( "append" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() ); 
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() ); 
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() ); 
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( offsetString );
 		
-		return this.lps.execType 
-					 + OPERAND_DELIMITOR + "append" 
-					 + OPERAND_DELIMITOR + input_index1 + DATATYPE_PREFIX + this.getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() 
-					 + OPERAND_DELIMITOR + input_index2 + DATATYPE_PREFIX + this.getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() 
-					 + OPERAND_DELIMITOR + output_index + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType() 
-					 + OPERAND_DELIMITOR + offsetString;	
+		return sb.toString();
 	}
 }

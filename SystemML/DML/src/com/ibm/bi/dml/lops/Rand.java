@@ -78,7 +78,9 @@ public class Rand extends Lops
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) throws LopsException {
 		
-		StringBuilder inst = new StringBuilder(getExecType() + Lops.OPERAND_DELIMITOR);
+		StringBuilder sb = new StringBuilder( );
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
 		String in1 = new String(""), in2 = new String("");
 		
 		if (this.getInputs().size() == RandStatement.RAND_VALID_PARAM_NAMES.length) {
@@ -137,22 +139,39 @@ public class Rand extends Lops
 				throw new LopsException(this.printErrorLocation() + "Parameter " 
 						+ RandStatement.RAND_PDF + " must be a literal for a Rand operation.");
 			
-			inst.append("Rand");
-			inst.append(OPERAND_DELIMITOR + in1);
-			inst.append(OPERAND_DELIMITOR + in2);
-			inst.append(OPERAND_DELIMITOR + rowsString);
-			inst.append(OPERAND_DELIMITOR + colsString);
-			inst.append(OPERAND_DELIMITOR + rowsInBlockString);
-			inst.append(OPERAND_DELIMITOR + colsInBlockString);
-			inst.append(OPERAND_DELIMITOR + minString);
-			inst.append(OPERAND_DELIMITOR + maxString);
-			inst.append(OPERAND_DELIMITOR + sparsityString);
-			inst.append(OPERAND_DELIMITOR + seedString);
-			inst.append(OPERAND_DELIMITOR + pdfString);
-			inst.append(OPERAND_DELIMITOR + baseDir);
-			inst.append(OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType());
+			sb.append( "Rand" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( in1 );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( in2 );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( rowsString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( colsString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( rowsInBlockString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( colsInBlockString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( minString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( maxString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( sparsityString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( seedString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( pdfString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( baseDir );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
 
-			return inst.toString();
+			return sb.toString();
 			
 		}
 		 else {
@@ -219,23 +238,36 @@ public class Rand extends Lops
 				throw new LopsException(this.printErrorLocation() + "Parameter " 
 						+ RandStatement.RAND_PDF + " must be a literal for a Rand operation.");
 			
-			StringBuilder inst = new StringBuilder();
-			inst.append(getExecType() + Lops.OPERAND_DELIMITOR);
-			inst.append("Rand");
-			inst.append(OPERAND_DELIMITOR + inputIndex);
-			inst.append(OPERAND_DELIMITOR + outputIndex);
-			inst.append(OPERAND_DELIMITOR + rowsString);
-			inst.append(OPERAND_DELIMITOR + colsString);
-			inst.append(OPERAND_DELIMITOR + rowsInBlockString);
-			inst.append(OPERAND_DELIMITOR + colsInBlockString);
-			inst.append(OPERAND_DELIMITOR + minString);
-			inst.append(OPERAND_DELIMITOR + maxString);
-			inst.append(OPERAND_DELIMITOR + sparsityString);
-			inst.append(OPERAND_DELIMITOR + seedString);
-			inst.append(OPERAND_DELIMITOR + pdfString);
-			inst.append(OPERAND_DELIMITOR + baseDir);
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lops.OPERAND_DELIMITOR );
+			sb.append( "Rand" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( inputIndex );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( outputIndex );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( rowsString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( colsString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( rowsInBlockString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( colsInBlockString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( minString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( maxString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( sparsityString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( seedString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( pdfString );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( baseDir );
 
-			return inst.toString();
+			return sb.toString();
 			
 		}
 		 else {

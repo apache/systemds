@@ -100,9 +100,13 @@ public class GroupedAggregate extends Lops {
 
 	@Override
 	// This version of getInstructions() is invoked when groupedAgg is executed in CP
-	public String getInstructions(String output) throws LopsException {
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		inst += "groupedagg";
+	public String getInstructions(String output) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "groupedagg" );
 		
 		if ( _inputParams.get("target") == null || _inputParams.get("groups") == null || _inputParams.get("fn") == null ) 
 			throw new LopsException(this.printErrorLocation() + "Invalid parameters to groupedAggregate -- \"target\", \"groups\", \"fn\" must be provided");
@@ -110,10 +114,21 @@ public class GroupedAggregate extends Lops {
 		String targetVar = _inputParams.get("target").getOutputParameters().getLabel();
 		String groupsVar = _inputParams.get("groups").getOutputParameters().getLabel();
 		
-		inst += Lops.OPERAND_DELIMITOR + "target" + Lops.NAME_VALUE_SEPARATOR + targetVar;
-		inst += Lops.OPERAND_DELIMITOR + "groups" + Lops.NAME_VALUE_SEPARATOR + groupsVar;
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "target" );
+		sb.append( Lops.NAME_VALUE_SEPARATOR );
+		sb.append( targetVar );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "groups" );
+		sb.append( Lops.NAME_VALUE_SEPARATOR );
+		sb.append( groupsVar );
 		if ( _inputParams.get("weights") != null )
-			inst += Lops.OPERAND_DELIMITOR + "weights" + Lops.NAME_VALUE_SEPARATOR + _inputParams.get("weights").getOutputParameters().getLabel();
+		{
+			sb.append( Lops.OPERAND_DELIMITOR );
+			sb.append( "weights" );
+			sb.append( Lops.NAME_VALUE_SEPARATOR );
+			sb.append( _inputParams.get("weights").getOutputParameters().getLabel() );
+		}
 		
 		// Process all the other parameters, which are scalars
 		String name, valueString;
@@ -130,32 +145,63 @@ public class GroupedAggregate extends Lops {
 				else {
 					valueString = "##" + value.getOutputParameters().getLabel() + "##";
 				}
-				inst += OPERAND_DELIMITOR + name + Lops.NAME_VALUE_SEPARATOR + valueString;
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( name );
+				sb.append( Lops.NAME_VALUE_SEPARATOR );
+				sb.append( valueString );
 			}
 		}
 		
-		inst += OPERAND_DELIMITOR + output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
-		return inst;
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String output) {
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		inst += "groupedagg" + OPERAND_DELIMITOR
-		+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
-		+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType();
+	public String getInstructions(String input1, String input2, String output) 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "groupedagg" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
-		inst += output + DATATYPE_PREFIX + this.get_dataType() + VALUETYPE_PREFIX + this.get_valueType();
-		return inst;
+		return sb.toString();
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index) {
-
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+	public String getInstructions(int input_index, int output_index) 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		
 		// value type for "order" is INT
-		inst += "groupedagg" + OPERAND_DELIMITOR + input_index + VALUETYPE_PREFIX
-				+ this.getInputs().get(0).get_valueType();
+		sb.append( "groupedagg" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
 				
 		// get the aggregate function
 		Lops funcLop = _inputParams.get("fn"); 
@@ -168,8 +214,10 @@ public class GroupedAggregate extends Lops {
 		else {
 			func = "##" + funcLop.getOutputParameters().getLabel() + "##";
 		}
-		inst += OPERAND_DELIMITOR + func + VALUETYPE_PREFIX + funcLop.get_valueType();
-		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( func );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( funcLop.get_valueType() );
 		
 		// get the "optional" parameters
 		String order = null;
@@ -182,13 +230,19 @@ public class GroupedAggregate extends Lops {
 			else {
 				order = "##" + orderLop.getOutputParameters().getLabel() + "##";
 			}
-			inst += OPERAND_DELIMITOR + order + VALUETYPE_PREFIX + orderLop.get_valueType();
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( order );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( orderLop.get_valueType() );
 		}
 		
 		// add output_index to instruction
-		inst += OPERAND_DELIMITOR + output_index + VALUETYPE_PREFIX + get_valueType();
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
-		return inst;
+		return sb.toString();
 	}
 	
 

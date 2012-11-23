@@ -111,29 +111,73 @@ public class Tertiary extends Lops
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException
 	{
-		String inst = getExecType() + Lops.OPERAND_DELIMITOR;
-		inst += "ctable" + OPERAND_DELIMITOR + 
-		input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		input3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + this.getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "ctable" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input3 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(2).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
-		return inst;
+		return sb.toString();
 	}
 
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException
 	{
-		String inst = getExecType() + Lops.OPERAND_DELIMITOR;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
 		switch(operation) {
 		/* Arithmetic */
 		case CTABLE_TRANSFORM:
 			// F = ctable(A,B,W)
-			inst += "ctabletransform" + OPERAND_DELIMITOR + 
-					input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-					input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-					input_index3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-			        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+			sb.append( "ctabletransform" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(0).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index2 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(1).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(1).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index3 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(2).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(2).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output_index );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
 			
 			break;
 		
@@ -156,11 +200,32 @@ public class Tertiary extends Lops
 			else
 				valueLabel = "##" + getInputs().get(scalarIndex).getOutputParameters().getLabel() + "##";
 			
-			inst += "ctabletransformscalarweight" + OPERAND_DELIMITOR + 
-			input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			valueLabel   + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-	        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+			sb.append( "ctabletransformscalarweight" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(0).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index2 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(1).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(1).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( valueLabel );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(2).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(2).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output_index );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
+			
 			break;
 			
 		case CTABLE_TRANSFORM_HISTOGRAM:
@@ -183,11 +248,31 @@ public class Tertiary extends Lops
 			else
 				scalar3 = "##" + getInputs().get(2).getOutputParameters().getLabel() + "##";
 			
-			inst += "ctabletransformhistogram" + OPERAND_DELIMITOR + 
-			input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			scalar2      + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-			scalar3      + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-	        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+			sb.append( "ctabletransformhistogram" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(0).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( scalar2 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(1).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(1).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( scalar3 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(2).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(2).get_valueType());
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output_index );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
 			
 			break;
 		
@@ -202,11 +287,32 @@ public class Tertiary extends Lops
 				scalarInput2 = getInputs().get(1).getOutputParameters().getLabel();
 			else
 				scalarInput2 = "##" + getInputs().get(1).getOutputParameters().getLabel() + "##";
-			inst += "ctabletransformweightedhistogram" + OPERAND_DELIMITOR + 
-					input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-					scalarInput2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-					input_index3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-					output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+			
+			sb.append( "ctabletransformweightedhistogram" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(0).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( scalarInput2 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(1).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(1).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input_index3 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(2).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(2).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output_index );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
 			
 			break;
 			
@@ -214,7 +320,7 @@ public class Tertiary extends Lops
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Tertiary operation: " + operation);
 		}
 		
-		return inst;
+		return sb.toString();
 	}
 
  

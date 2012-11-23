@@ -105,6 +105,7 @@ public class ProgramBlock {
 		//dynamically recompile instructions if enabled and required
 		try {
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& _sb != null 
 				&& Recompiler.requiresRecompilation(_sb.get_hops()) 
 				&& !Recompiler.containsNonRecompileInstructions(tmp) )

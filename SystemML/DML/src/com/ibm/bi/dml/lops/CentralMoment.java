@@ -67,31 +67,66 @@ public class CentralMoment extends Lops {
 
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
-		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		opString += "cm";
-
-		String inst = new String("");
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "cm" );
 		// value type for "order" is INT
-		inst += opString + OPERAND_DELIMITOR 
-				+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-				+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR
-				+ input3 + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.INT + OPERAND_DELIMITOR
-				+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-		return inst;
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input3 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( DataType.SCALAR );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( ValueType.INT );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		opString += "cm";
-
-		String inst = new String("");
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "cm" );
 		// value type for "order" is INT
-		inst += opString + OPERAND_DELIMITOR 
-				+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-				+ input2 + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.INT + OPERAND_DELIMITOR
-				+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-		return inst;
+		sb.append( OPERAND_DELIMITOR ); 
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( DataType.SCALAR );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( ValueType.INT );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 	
 	@Override

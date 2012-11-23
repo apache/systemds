@@ -48,7 +48,7 @@ public class Recompiler
 		//Timing timeOut = new Timing();
 		//timeOut.start();
 		
-		synchronized( hops ) //need for synchronization as we do temp changes
+		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
 			
@@ -73,8 +73,7 @@ public class Recompiler
 				
 				hopRoot.resetVisitStatus();
 				hopRoot.refreshMemEstimates(); 
-			}
-			
+			}			
 			//System.out.println("Update hop statistics in "+time.stop()+"ms");
 			
 			// construct lops
@@ -83,20 +82,17 @@ public class Recompiler
 			{
 				Lops lops = hopRoot.constructLops();
 				lops.addToDag(dag);
-			}
-			
+			}		
 			//System.out.println("Construct lops in "+time.stop()+"ms");
 			
 			// construct instructions
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
-			
-			// replace thread ids in new instructions
-			if( tid != 0 )
-				newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
-			
-			//System.out.println(newInst);
 			//System.out.println("Construct instructions in "+time.stop()+"ms");
 		}
+		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
 		
 		//System.out.println("Program block recompiled in "+timeOut.stop()+"ms.");
 		

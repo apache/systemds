@@ -125,10 +125,22 @@ public class UnaryCP extends Lops {
 							+ operation);
 		}
 
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + vtype
-				+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-		return inst;
+		StringBuilder sb = new StringBuilder();
+		sb.append( opString );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( vtype );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 
 	}
 }

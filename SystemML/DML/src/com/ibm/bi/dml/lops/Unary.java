@@ -204,16 +204,30 @@ public class Unary extends Lops {
 					"Instruction not defined for Unary operation: " + operation);
 		}
 	}
-	public String getInstructions(String input1, String output) throws LopsException {
-
+	public String getInstructions(String input1, String output) 
+		throws LopsException 
+	{
 		// Unary operators with one input
 		if (this.getInputs().size() == 1) {
 			
-			String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-			inst += getOpcode() 
-					+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
-					+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + get_dataType() +  VALUETYPE_PREFIX + get_valueType();
-			return inst;
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lops.OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(0).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( output );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
+			
+			return sb.toString();
 
 		} else {
 			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
@@ -222,15 +236,33 @@ public class Unary extends Lops {
 		}
 	}
 	
-	public String getInstructions(String input1, String input2, String output) throws LopsException {
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+	public String getInstructions(String input1, String input2, String output) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
-		inst += getOpcode() 
-				+ OPERAND_DELIMITOR + input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(0).get_valueType()
-				+ OPERAND_DELIMITOR + input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() +  VALUETYPE_PREFIX + getInputs().get(1).get_valueType()
-				+ OPERAND_DELIMITOR + output + DATATYPE_PREFIX + get_dataType() +  VALUETYPE_PREFIX + get_valueType();
-		
-		return inst;
+		return sb.toString();
 	}
 	
 	public String getInstructions(int input_index, int output_index)

@@ -257,49 +257,59 @@ public class Data extends Lops
 	 * In case of MR, Reads/Writes of matrices is done through inputs/outputs fields.
 	 */
 	@Override
-	public String getInstructions(String input1, String input2) throws LopsException {
-		
-		
-		if ( getOutputParameters().getFile_name() != null) {
-			String str = "CP" + OPERAND_DELIMITOR;
+	public String getInstructions(String input1, String input2) 
+		throws LopsException 
+	{	
+		if ( getOutputParameters().getFile_name() != null) 
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append( "CP" );
+			sb.append( OPERAND_DELIMITOR );
 			if ( operation == OperationTypes.READ ) 
-				str += "read";
+				sb.append( "read" );
 			else if ( operation == OperationTypes.WRITE)
-				str += "write";
+				sb.append( "write" );
 			else
 				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 			
-			str += OPERAND_DELIMITOR + 
-					input1 +  
-					DATATYPE_PREFIX + get_dataType() + 
-					VALUETYPE_PREFIX + get_valueType() + 
-					OPERAND_DELIMITOR +
-					input2 + 
-					DATATYPE_PREFIX + DataType.SCALAR + 
-					VALUETYPE_PREFIX + ValueType.STRING;
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input1 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( input2 );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( DataType.SCALAR );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( ValueType.STRING );
 
 			// attach outputInfo in case of matrices
 			if ( operation == OperationTypes.WRITE ) {
-				str += OPERAND_DELIMITOR;
+				sb.append( OPERAND_DELIMITOR );
 				if ( get_dataType() == DataType.MATRIX ) {
 					OutputParameters oparams = getOutputParameters();
 					if ( oparams.getFormat() == Format.TEXT )
-						str += "textcell";
+						sb.append( "textcell" );
 					else {
 						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
-							str += "binaryblock";
+							sb.append( "binaryblock" );
 						else
-							str += "binarycell";
+							sb.append( "binarycell" );
 					}
 				}
 				else {
 					// scalars will always be written in text format
-					str += "textcell";
+					sb.append( "textcell" );
 				}
-				str += DATATYPE_PREFIX + DataType.SCALAR + 
-						VALUETYPE_PREFIX + ValueType.STRING;
+				
+				sb.append( DATATYPE_PREFIX );
+				sb.append( DataType.SCALAR );
+				sb.append( VALUETYPE_PREFIX );
+				sb.append( ValueType.STRING );
 			}
-			return str;
+			return sb.toString();
 		}
 		throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());
 	}
@@ -327,18 +337,30 @@ public class Data extends Lops
 					fmt = "binarycell";
 			}
 			
-			String inst = "CP" + OPERAND_DELIMITOR + "createvar";
-			inst +=  OPERAND_DELIMITOR 
-					+ oparams.getLabel() + OPERAND_DELIMITOR 
-					+ oparams.getFile_name() + OPERAND_DELIMITOR
-					+ false + OPERAND_DELIMITOR  // only persistent reads come here!
-					+ fmt + OPERAND_DELIMITOR
-			        + oparams.getNum_rows() + OPERAND_DELIMITOR
-			        + oparams.getNum_cols() + OPERAND_DELIMITOR
-			        + oparams.get_rows_in_block() + OPERAND_DELIMITOR
-			        + oparams.get_cols_in_block() + OPERAND_DELIMITOR
-	        		+ oparams.getNnz(); 
-			return inst;
+			StringBuilder sb = new StringBuilder();
+			sb.append( "CP" );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( "createvar" );
+			sb.append( OPERAND_DELIMITOR ); 
+			sb.append( oparams.getLabel() );
+			sb.append( OPERAND_DELIMITOR ); 
+			sb.append( oparams.getFile_name() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( false );
+			sb.append( OPERAND_DELIMITOR ); // only persistent reads come here!
+			sb.append( fmt );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.getNum_rows() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.getNum_cols() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.get_rows_in_block() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.get_cols_in_block() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.getNnz() );
+			
+			return sb.toString();
 		}
 		else {
 			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unexpected data type " + get_dataType());

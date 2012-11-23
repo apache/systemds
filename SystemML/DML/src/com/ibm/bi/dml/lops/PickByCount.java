@@ -80,9 +80,9 @@ public class PickByCount extends Lops {
 	 * rangepick:::0:DOUBLE:::Var3:DOUBLE:::1:DOUBLE
 	 */
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int output_index) 
+		throws LopsException
 	{
-		
 		if ( operation == OperationTypes.RANGEPICK ) {
 			// check the scalar input
 			if ( this.getInputs().get(1).get_dataType() == DataType.SCALAR ) {
@@ -115,8 +115,10 @@ public class PickByCount extends Lops {
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
 		
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
 		String opString = new String ("");
 		if ( operation == OperationTypes.VALUEPICK)
 			opString = (inMemoryInput ? "inmem-valuepick" : "valuepick");
@@ -135,12 +137,27 @@ public class PickByCount extends Lops {
 		else
 			throw new LopsException(this.printErrorLocation() + "Invalid operation specified for PickByCount: " + operation);
 		
-		inst += opString + OPERAND_DELIMITOR
-					+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-					+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR
-					+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
+		sb.append( opString );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 
-		return inst;
+		return sb.toString();
 	}
 	
 	/**
@@ -151,11 +168,23 @@ public class PickByCount extends Lops {
 	 */
 	@Override
 	public String getInstructions(String input, String output) throws LopsException {
-		String inst = "";
-		inst = getExecType() + Lops.OPERAND_DELIMITOR 
-				+ "inmem-iqm" + Lops.OPERAND_DELIMITOR
-				+ input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR
-				+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
-		return inst;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "inmem-iqm" );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( input );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 }

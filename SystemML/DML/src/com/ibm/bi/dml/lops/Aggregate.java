@@ -115,10 +115,25 @@ public class Aggregate extends Lops
 	@Override
 	public String getInstructions(String input1, String output) throws LopsException {
 		String opcode = getOpcode(); 
-		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
-		        input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
-		return inst;
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( opcode );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 	
 	@Override
@@ -130,15 +145,33 @@ public class Aggregate extends Lops
 		if (operation == OperationTypes.Mean || operation == OperationTypes.KahanSum || operation == OperationTypes.KahanTrace ) 
 			isCorrectionApplicable = true;
 		
-		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
-		        input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( opcode );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX);
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
 		if ( isCorrectionApplicable )
+		{
 			// add correction information to the instruction
-			inst += OPERAND_DELIMITOR + isCorrectionUsed + OPERAND_DELIMITOR + correctionLocation;
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( isCorrectionUsed );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( correctionLocation );
+		}
 		
-		return inst;
+		return sb.toString();
 	}
 
  

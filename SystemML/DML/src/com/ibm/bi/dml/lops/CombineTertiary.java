@@ -59,16 +59,39 @@ public class CombineTertiary extends Lops {
 
 	@Override
 	public String getInstructions(int input_index1, int input_index2,
-			int input_index3, int output_index) throws LopsException {
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
+			int input_index3, int output_index) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "combinetertiary" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index3 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(2).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 
-		inst += "combinetertiary" + OPERAND_DELIMITOR + 
-				input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-				input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-				input_index3 + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-				output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-
-		return inst;
+		return sb.toString();
 	}
 
 	public OperationTypes getOperation() {

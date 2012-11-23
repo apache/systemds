@@ -86,54 +86,68 @@ public class ParameterizedBuiltin extends Lops {
 	}
 
 	//@Override
-	public String getInstructions(String output) throws LopsException {
-		StringBuilder inst = new StringBuilder(getExecType() + Lops.OPERAND_DELIMITOR);
+	public String getInstructions(String output) 
+		throws LopsException 
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
 
 		switch(operation) {
 		case CDF:
-			inst.append("cdf").append(OPERAND_DELIMITOR);
+			sb.append( "cdf" );
+			sb.append( OPERAND_DELIMITOR );
 			
-			for ( String s : _inputParams.keySet() ) {
-				
-				inst.append(s).append(NAME_VALUE_SEPARATOR);
+			for ( String s : _inputParams.keySet() ) 
+			{	
+				sb.append( s );
+				sb.append( NAME_VALUE_SEPARATOR );
 				
 				// get the value/label of the scalar input associated with name "s"
 				Lops iLop = _inputParams.get(s);
 				if ( iLop.getExecLocation() == ExecLocation.Data 
 						&& ((Data)iLop).isLiteral() ) {
-					inst.append(iLop.getOutputParameters().getLabel());
+					sb.append( iLop.getOutputParameters().getLabel() );
 				}
 				else {
-					inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");
+					sb.append( "##" );
+					sb.append( iLop.getOutputParameters().getLabel() );
+					sb.append( "##" );
 				}
-				inst.append(OPERAND_DELIMITOR);
+				sb.append( OPERAND_DELIMITOR );
 			}
 			break;
 			
 		case RMEMPTY:
-			inst.append("rmempty").append(OPERAND_DELIMITOR);
+			sb.append("rmempty");
+			sb.append(OPERAND_DELIMITOR);
 			
 			for ( String s : _inputParams.keySet() ) {
 				
-				inst.append(s).append(NAME_VALUE_SEPARATOR);
+				sb.append(s);
+				sb.append(NAME_VALUE_SEPARATOR);
 				
 				// instruction patching not required because rmEmpty always executed as CP/CP_FILE
 				Lops iLop = _inputParams.get(s);
 				//if ( iLop.getExecLocation() == ExecLocation.Data 
 				//		&& ((Data)iLop).isLiteral() ) 
-					inst.append(iLop.getOutputParameters().getLabel());
+					sb.append(iLop.getOutputParameters().getLabel());
 				//else 
 				//	inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");
-				inst.append(OPERAND_DELIMITOR);
+				sb.append(OPERAND_DELIMITOR);
 			}
 			break;
 		default:
 			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + operation);
 		}
 		
-		inst.append(output).append(DATATYPE_PREFIX).append(get_dataType()).append(VALUETYPE_PREFIX).append(get_valueType());
+		sb.append(output);
+		sb.append(DATATYPE_PREFIX);
+		sb.append(get_dataType());
+		sb.append(VALUETYPE_PREFIX);
+		sb.append(get_valueType());
 		
-		return inst.toString();
+		return sb.toString();
 	}
 
 	@Override

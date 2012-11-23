@@ -54,25 +54,46 @@ public class CombineBinary extends Lops
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int output_index) 
+		throws LopsException
 	{
-		String inst = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		
-		/* 
-		 * Determine whether or not the second input denotes weights vector.
-		 * CombineBinary can be used to combine (data,weights) vectors or (data1,data2) vectors  
-		 */
+		// Determine whether or not the second input denotes weights vector.
+		// CombineBinary can be used to combine (data,weights) vectors or (data1,data2) vectors  
 		boolean isSecondInputIsWeight = true;
 		if ( operation == OperationTypes.PreCovUnweighted || operation == OperationTypes.PreGroupedAggUnweighted ) {
 			isSecondInputIsWeight = false;
 		}
-		inst += "combinebinary" + OPERAND_DELIMITOR + 
-		        isSecondInputIsWeight + DATATYPE_PREFIX + DataType.SCALAR + VALUETYPE_PREFIX + ValueType.BOOLEAN + OPERAND_DELIMITOR +
-				input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
 		
-		return inst;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "combinebinary" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( isSecondInputIsWeight );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( DataType.SCALAR );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( ValueType.BOOLEAN );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 
 	public OperationTypes getOperation() { 

@@ -98,22 +98,64 @@ public class RangeBasedReIndex extends Lops {
 	@Override
 	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String leftRowDim, String leftColDim, String output) 
 	throws LopsException {
-		String opcode = getOpcode(); 
-		String inst = getExecType() + OPERAND_DELIMITOR + opcode + OPERAND_DELIMITOR + 
-		        input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        rowl + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        rowu + DATATYPE_PREFIX + getInputs().get(2).get_dataType() + VALUETYPE_PREFIX + getInputs().get(2).get_valueType() + OPERAND_DELIMITOR + 
-		        coll + DATATYPE_PREFIX + getInputs().get(3).get_dataType() + VALUETYPE_PREFIX + getInputs().get(3).get_valueType() + OPERAND_DELIMITOR + 
-		        colu + DATATYPE_PREFIX + getInputs().get(4).get_dataType() + VALUETYPE_PREFIX + getInputs().get(4).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rowl );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rowu );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(2).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( coll );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(3).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(3).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( colu );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(4).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(4).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
 		if(getExecType() == ExecType.MR) {
 			// following fields are added only when this lop is executed in MR (both for left & right indexing) 
-			inst += OPERAND_DELIMITOR +
-			leftRowDim + DATATYPE_PREFIX + getInputs().get(5).get_dataType() + VALUETYPE_PREFIX + getInputs().get(5).get_valueType() + OPERAND_DELIMITOR+
-			leftColDim + DATATYPE_PREFIX + getInputs().get(6).get_dataType() + VALUETYPE_PREFIX + getInputs().get(6).get_valueType();
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( leftRowDim );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(5).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(5).get_valueType() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( leftColDim );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( getInputs().get(6).get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( getInputs().get(6).get_valueType() );
 		}
-		return inst;
+		
+		return sb.toString();
 	}
 
 	@Override

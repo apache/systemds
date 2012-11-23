@@ -55,16 +55,28 @@ public class ReBlock extends Lops
 	@Override
 	public String getInstructions(int input_index, int output_index) throws LopsException
 	{
-		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		opString += "rblk";
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "rblk" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rows_per_block );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( cols_per_block );
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-				input_index + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR +
-		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() + OPERAND_DELIMITOR +
-				rows_per_block + OPERAND_DELIMITOR + cols_per_block;
-		
-		return inst;
+		return sb.toString();
 	}
 	
 	// This function is replicated in Dag.java

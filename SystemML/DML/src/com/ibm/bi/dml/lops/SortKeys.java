@@ -69,24 +69,52 @@ public class SortKeys extends Lops
 	@Override
 	public String getInstructions(String input, String output)
 	{
-		String opString = new String(getExecType() + Lops.OPERAND_DELIMITOR);
-		opString += "sort";
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "sort" );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-				input + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-		        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + this.get_valueType() ;
-		return inst;
+		return sb.toString();
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		String inst = getExecType() + Lops.OPERAND_DELIMITOR 
-						+ "sort" + Lops.OPERAND_DELIMITOR
-						+ input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + Lops.OPERAND_DELIMITOR
-						+ input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + Lops.OPERAND_DELIMITOR
-						+ output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType();
-		return inst;
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( "sort" );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( input2 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(1).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
 	}
 	
 	// This method is invoked in two cases:

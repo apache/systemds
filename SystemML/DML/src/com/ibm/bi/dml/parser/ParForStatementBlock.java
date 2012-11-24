@@ -152,6 +152,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		HashMap<String, String> params = predicate.getParForParams();
 		if( params != null ) //if parameter specified
 		{
+			//check for valid parameter types
 			for( String key : params.keySet() )
 				if( !_paramNames.contains(key) )
 					throw new LanguageException("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.");
@@ -170,7 +171,18 @@ public class ParForStatementBlock extends ForStatementBlock
 						params.put(key, _paramDefaults.get(key));
 				}
 			
-		 
+			//check for disabled parameters values
+			if( params.containsKey( OPT_MODE ) )
+			{
+				String optStr = params.get( OPT_MODE );
+				if(    optStr.equals(POptMode.HEURISTIC.toString()) 
+					|| optStr.equals(POptMode.GREEDY.toString()) 
+					|| optStr.equals(POptMode.FULL_DP.toString())   )
+				{
+					throw new LanguageException("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.");
+				}
+			}
+			
 		}
 		else
 		{

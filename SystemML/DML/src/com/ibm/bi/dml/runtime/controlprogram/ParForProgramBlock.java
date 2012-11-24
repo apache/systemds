@@ -47,7 +47,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimator;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
@@ -1150,10 +1149,13 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		else
 		{
-			if( t.getType() == TaskType.RANGE && isFactoringTaskpartitioner() )
-				ret = t.toCompactString(maxDigits) + "\n";
-			else
-				ret = t.toCompactString() + "\n";
+			//always pad to max digits in order to preserve task order	
+			ret = t.toCompactString(maxDigits) + "\n";
+			
+			//if( t.getType() == TaskType.RANGE && isFactoringTaskpartitioner() )
+			//	ret = t.toCompactString(maxDigits) + "\n";
+			//else
+			//	ret = t.toCompactString() + "\n";
 		}
 		
 		return ret;

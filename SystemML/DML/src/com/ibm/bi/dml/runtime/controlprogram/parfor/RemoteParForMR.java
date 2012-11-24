@@ -3,19 +3,19 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
@@ -103,7 +103,7 @@ public class RemoteParForMR
 		    
 			//set the output key, value schema
 			job.setMapOutputKeyClass(LongWritable.class);
-			job.setMapOutputValueClass(Text.class);
+			job.setMapOutputValueClass(Text.class);			
 			job.setOutputKeyClass(LongWritable.class);
 			job.setOutputValueClass(Text.class);
 			
@@ -155,7 +155,6 @@ public class RemoteParForMR
 				job.set("mapred.job.tracker", "local");	
 				MRJobConfiguration.setStagingDir( job );
 			}
-
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job, mode);
@@ -206,56 +205,41 @@ public class RemoteParForMR
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static LocalVariableMap [] readResultFile(String fname)
+	public static LocalVariableMap [] readResultFile( String fname )
 		throws DMLRuntimeException, IOException
 	{
-		LocalVariableMap [] ret = null;
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
 
-		SequenceFile.Reader reader = null;
-		
+		JobConf job = new JobConf();
 		Path path = new Path(fname);
-		Configuration conf = new Configuration();
-		FileSystem fs = FileSystem.get(conf);
+		FileInputFormat.addInputPath(job, path); 
 		
-		//foreach file in path
-		FileStatus[] status = fs.listStatus(path);
-		for( FileStatus f : status )
+		SequenceFileInputFormat<LongWritable,Text> informat = new SequenceFileInputFormat<LongWritable,Text>();
+		InputSplit[] splits = informat.getSplits(job, 1);
+		LongWritable key = new LongWritable();
+		Text value = new Text();
+		
+		for(InputSplit split: splits)
 		{
-			//System.out.println("Result filepath: "+f.getPath().getName());
-			if( f.getPath().getName().startsWith("_") ) //reject system-internal filenames
-				continue;
-				
+			RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 			try
 			{
-				reader = new SequenceFile.Reader(fs, f.getPath(), conf);
-				
-				LongWritable key = new LongWritable();
-		        Text value = new Text();
-		
-		        while( reader.next(key, value) ) 
-		        {
-		        	if( !tmp.containsKey( key.get() ) )
-		        		tmp.put(key.get(), new LocalVariableMap ());	        	
-		        	Object[] dat = ProgramConverter.parseDataObject( value.toString() );
+				while( reader.next(key, value) )
+				{
+					if( !tmp.containsKey( key.get() ) )
+		        		tmp.put(key.get(), new LocalVariableMap ());	   
+					Object[] dat = ProgramConverter.parseDataObject( value.toString() );
 		        	tmp.get( key.get() ).put((String)dat[0], (Data)dat[1]);
-		        }
-			}
-			catch(Exception ex)
-			{
-				throw new DMLRuntimeException("Error reading results from resultfile "+fname, ex);
-			}
+				}
+			}	
 			finally
 			{
-		        if(reader!=null)
-		        	reader.close();				
+				if( reader != null )
+					reader.close();
 			}
-		}
+		}		
 
-		
-		//create return
-		ret = tmp.values().toArray(new LocalVariableMap[0]);	
-			
-		return ret;
+		//create return array
+		return tmp.values().toArray(new LocalVariableMap[0]);	
 	}
 }

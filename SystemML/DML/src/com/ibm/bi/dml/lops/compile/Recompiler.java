@@ -11,7 +11,16 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
@@ -29,6 +38,7 @@ import com.ibm.bi.dml.utils.LopsException;
 public class Recompiler 
 {
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
+	
 	/**
 	 * 	
 	 * @param hops
@@ -101,6 +111,30 @@ public class Recompiler
 
 	/**
 	 * 
+	 * @param pbs
+	 * @param vars
+	 * @param tid
+	 * @throws DMLRuntimeException 
+	 */
+	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException
+	{
+		try 
+		{
+			synchronized( pbs )
+			{
+				for( ProgramBlock pb : pbs )
+					rRecompileProgramBlock(pb, vars, tid);
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to recompile program block hierarchy.", ex);
+		}
+	}	
+	
+	/**
+	 * 
 	 * @param hops
 	 * @return
 	 */
@@ -143,6 +177,63 @@ public class Recompiler
 	//////////////////////////////
 	// private helper functions //
 	//////////////////////////////
+	
+	
+	/**
+	 * 
+	 * @param pb
+	 * @param vars
+	 * @param tid
+	 * @throws IOException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
+	 */
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, long tid ) throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			for (ProgramBlock pb2 : tmp.getChildBlocks())
+				rRecompileProgramBlock(pb2, vars, tid);
+		}
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+				rRecompileProgramBlock(pb2, vars, tid);
+			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
+				rRecompileProgramBlock(pb2, vars, tid);
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{ 
+			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+				rRecompileProgramBlock(pb2, vars, tid);
+		}		
+		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			    || pb instanceof CVProgramBlock
+				|| pb instanceof ELProgramBlock
+				|| pb instanceof ELUseProgramBlock)
+		{
+			//do nothing
+		}
+		else 
+		{	
+			StatementBlock sb = pb.getStatementBlock();
+			ArrayList<Instruction> tmp = pb.getInstructions();
+
+			if(	sb != null 
+				&& Recompiler.requiresRecompilation( sb.get_hops() ) 
+				&& !Recompiler.containsNonRecompileInstructions(tmp) )
+			{
+				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, tid);
+				pb.setInstructions( tmp );
+			}
+		}
+		
+	}
 	
 	/**
 	 * 

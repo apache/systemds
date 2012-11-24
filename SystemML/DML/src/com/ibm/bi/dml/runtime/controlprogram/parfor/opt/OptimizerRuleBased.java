@@ -679,7 +679,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//actual decision on result merge
 		PResultMerge ret = null;
-		if(    ((flagMRParFOR && appliedLeftIndexRewrite) || flagMRLeftIndexing) 
+		if(    ( flagMRParFOR || flagMRLeftIndexing) 
 			&& !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
 			ret = PResultMerge.REMOTE_MR;
 		else

@@ -200,11 +200,17 @@ public class ProgramRecompiler
 		}
 	}
 	
-	
-	
 	///////
 	// additional general-purpose functionalities
 	
+	/**
+	 * 
+	 * @param iterVar
+	 * @param offset
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
 	public static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
@@ -226,7 +232,14 @@ public class ProgramRecompiler
 		return tmp;
 	}
 	
-
+	/**
+	 * 
+	 * @param sb
+	 * @param pb
+	 * @param var
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -296,22 +309,9 @@ public class ProgramRecompiler
 				//recompilation on-demand
 				if( ret )
 				{
-					//get all hops of statement and construct new instructions
-					Dag<Lops> dag = new Dag<Lops>();
-					for( Hops hops : sb.get_hops() )
-					{
-						hops.resetVisitStatus();
-						Recompiler.rClearLops(hops);
-						Lops lops = hops.constructLops();
-						lops.addToDag(dag);
-					}
-					
 					//construct new instructions
-					ArrayList<Instruction> newInst = dag.getJobs(ConfigurationManager.getConfig()); 
-								
-					//exchange instructions
-					pb.getInstructions().clear();
-					pb.getInstructions().addAll(newInst);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), pb.getVariables(), 0);
+					pb.setInstructions( newInst );   
 				}
 			}
 			catch(Exception ex)
@@ -336,7 +336,6 @@ public class ProgramRecompiler
 			if( inMatrix.equals(var) )
 			{
 				hop.setForcedExecType(LopProperties.ExecType.CP);
-				hop.set_lops(null); //for fresh reconstruction
 				ret = true;
 			}
 		}

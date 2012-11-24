@@ -319,7 +319,7 @@ public class OptNode
 		if( _ntype == NodeType.PARFOR )
 		{
 			if( _etype==ExecType.CP )
-				k = _k + _k * k;
+				k = _k * k;
 			else //MR
 				k = 1;
 		}

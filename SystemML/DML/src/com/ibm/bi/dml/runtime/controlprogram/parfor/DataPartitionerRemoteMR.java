@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -72,8 +71,9 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			if( oi == OutputInfo.TextCellOutputInfo )
 			{
+				//binary cell intermediates for reduced IO 
 				job.setMapOutputKeyClass(LongWritable.class);
-				job.setMapOutputValueClass(Text.class);	
+				job.setMapOutputValueClass(PairWritableCell.class);	
 			}
 			else if( oi == OutputInfo.BinaryCellOutputInfo )
 			{

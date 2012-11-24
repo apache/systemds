@@ -9,7 +9,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -95,9 +94,14 @@ public class DataPartitionerRemoteReducer
 
 	private class DataPartitionerReducerTextcell extends DataPartitionerReducer
 	{
+		private StringBuilder _sb = null;
+		
 		protected DataPartitionerReducerTextcell( JobConf job, String fnameNew )
 		{
 			super(job, fnameNew);
+			
+			//for obj reuse and preventing repeated buffer re-allocations
+			_sb = new StringBuilder();
 		}
 
 		@Override
@@ -114,8 +118,17 @@ public class DataPartitionerRemoteReducer
 		        
 				while( valueList.hasNext() )
 				{
-					String textValue = ((Text)valueList.next()).toString();
-					writer.write(textValue + "\n");
+					PairWritableCell pairValue = (PairWritableCell)valueList.next();
+					
+					_sb.append(pairValue.indexes.getRowIndex());
+					_sb.append(' ');
+					_sb.append(pairValue.indexes.getColumnIndex());
+					_sb.append(' ');
+					_sb.append(pairValue.cell.getValue());
+					_sb.append('\n');	
+					writer.write(_sb.toString());
+					
+					_sb.setLength(0);
 				}
 			} 
 			finally

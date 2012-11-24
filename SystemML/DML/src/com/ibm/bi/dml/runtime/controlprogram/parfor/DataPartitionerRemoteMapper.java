@@ -109,14 +109,9 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
-		private StringBuilder _sb = null;
-		
 		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
 		{
 			super(rlen, clen, brlen, bclen, pdf);
-			
-			//for obj reuse and preventing repeated buffer re-allocations
-			_sb = new StringBuilder();
 		}
 
 		@Override
@@ -135,6 +130,10 @@ public class DataPartitionerRemoteMapper
 				double lvalue = Double.parseDouble( st.nextToken() );
 				
 				LongWritable longKey = new LongWritable();
+				PairWritableCell pairValue = new PairWritableCell();
+				MatrixIndexes key2 = new MatrixIndexes();
+				MatrixCell value2 = new MatrixCell();
+				
 				switch( _pdf )
 				{
 					case ROW_WISE:
@@ -154,16 +153,12 @@ public class DataPartitionerRemoteMapper
 						col = (col-1)%_bclen+1;
 						break;
 				}
-				
-				_sb.append(row);
-				_sb.append(' ');
-				_sb.append(col);
-				_sb.append(' ');
-				_sb.append(lvalue);
-				Text outValue = new Text(_sb.toString());
-				_sb.setLength(0);	
-				
-				out.collect(longKey, outValue);	
+
+				key2.setIndexes(row, col);	
+				value2.setValue( lvalue );
+				pairValue.indexes = key2;
+				pairValue.cell = value2;
+				out.collect(longKey, pairValue);
 			} 
 			catch (Exception e) 
 			{

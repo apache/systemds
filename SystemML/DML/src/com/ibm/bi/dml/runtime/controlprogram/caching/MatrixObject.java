@@ -751,7 +751,7 @@ public class MatrixObject extends CacheableData
 	 * @return
 	 * @throws CacheStatusException 
 	 */
-	private String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
+	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
 		throws CacheStatusException
 	{
 		if ( !_partitioned )

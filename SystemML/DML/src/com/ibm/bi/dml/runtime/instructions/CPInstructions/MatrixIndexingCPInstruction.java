@@ -27,7 +27,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 	 *         the result is stored in mVar7
 	 *  
 	 */
-	CPOperand rowLower, rowUpper, colLower, colUpper;
+	protected CPOperand rowLower, rowUpper, colLower, colUpper;
 	
 	public MatrixIndexingCPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String istr){
 		super(op, in, out, istr);

@@ -59,7 +59,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  */
 public class OptimizerRuleBased extends Optimizer
 {
-	public static final double PROB_SIZE_THRESHOLD = 100; //wrt # top-level iterations
+	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
+	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
@@ -209,7 +210,8 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//search for candidates
 		boolean apply = false;
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ) //only if we are allowed to recompile
+		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID  //only if we are allowed to recompile
+			&& _N >= PROB_SIZE_THRESHOLD_PARTITIONING         ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
 			HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
@@ -262,12 +264,12 @@ public class OptimizerRuleBased extends Optimizer
 				PDataPartitionFormat dpf = cand.get(inMatrix);
 				double mnew = getNewMemoryEstimate( n, inMatrix, dpf, vars );
 				if( mnew < _lm ) //apply rewrite if partitions fit into memory
-				{
 					n.setExecType(ExecType.CP);
-					n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
-					h.setMemEstimate( mnew );
-					ret = true;
-				}
+				else
+					n.setExecType(ExecType.CP); //CP_FILE, but no need because hop still in MR 
+				n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
+				h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
+				ret = true;
 			}
 		}
 		
@@ -335,7 +337,7 @@ public class OptimizerRuleBased extends Optimizer
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
 			//MR if problem is large enough and remote parallelism is larger than local   
-			else if( _lk < _N && _lk < _rk && (_N >= PROB_SIZE_THRESHOLD || _Nmax >= 10 * PROB_SIZE_THRESHOLD ) )
+			else if( _lk < _N && _lk < _rk && (_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE ) )
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
 			}

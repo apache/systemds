@@ -335,7 +335,14 @@ public class ProgramRecompiler
 			String inMatrix = hop.getInput().get(0).get_name();
 			if( inMatrix.equals(var) )
 			{
-				hop.setForcedExecType(LopProperties.ExecType.CP);
+				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
+				//(rowblock/colblock only applied if in total less than two blocks,
+				// hence always mem_est<mem_budget)
+				if( hop.getMemEstimate() < Hops.getMemBudget(true) )
+					hop.setForcedExecType( LopProperties.ExecType.CP );
+				else
+					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );
+				
 				ret = true;
 			}
 		}

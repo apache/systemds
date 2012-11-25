@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.MatrixIndexingCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.ParameterizedBuiltinCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.AggregateBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.AggregateUnaryCPInstruction;
@@ -162,6 +163,8 @@ public class CPInstructionParser extends InstructionParser {
 	}
 	
 	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+		ExecType execType = null; 
+		
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		switch(cptype) {
@@ -212,7 +215,7 @@ public class CPInstructionParser extends InstructionParser {
 			return (CPInstruction) FunctionCallCPInstruction.parseInstruction(str);
 			
 		case ParameterizedBuiltin: 
-			ExecType execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
+			execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
 			if( execType == ExecType.CP )
 				return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
 			else //exectype CP_FILE
@@ -222,8 +225,11 @@ public class CPInstructionParser extends InstructionParser {
 			return (CPInstruction) SortCPInstruction.parseInstruction(str);
 		
 		case MatrixIndexing: 
-			return (CPInstruction) MatrixIndexingCPInstruction.parseInstruction(str);
-		
+			execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
+			if( execType == ExecType.CP )
+				return (CPInstruction) MatrixIndexingCPInstruction.parseInstruction(str);
+			else //exectype CP_FILE
+				return (CPInstruction) MatrixIndexingCPFileInstruction.parseInstruction(str);
 		case Builtin: 
 			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			if ( parts[0].equals("log") ) {

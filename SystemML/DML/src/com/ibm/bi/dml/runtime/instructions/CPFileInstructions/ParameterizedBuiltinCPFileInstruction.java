@@ -28,9 +28,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-//import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
@@ -53,7 +51,6 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * File-based (out-of-core) realization of remove empty for robustness because there is no
@@ -160,7 +157,9 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			InputInfo ii = ((MatrixFormatMetaData)_src.getMetaData()).getInputInfo();
 			MatrixCharacteristics mc = ((MatrixFormatMetaData)_src.getMetaData()).getMatrixCharacteristics();
 			
-			String stagingDir = setupStagingFile( fnameNew );
+			String stagingDir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_WORK);
+			LocalFileUtils.createLocalFileIfNotExist(stagingDir);
+			
 			long ret = -1;
 			try
 			{
@@ -199,39 +198,13 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			}
 			
 			//final cleanup
-			StagingFileUtils.cleanupStagingDir( stagingDir );
+			LocalFileUtils.cleanupWorkingDirectory(stagingDir);
 			
 			//create and return new output object
 			if( _margin.equals("rows") )
 				return createNewOutputObject(_src, _out, ret, mc.get_cols());
 			else
 				return createNewOutputObject(_src, _out, mc.get_rows(), ret );
-		}
-
-		/**
-		 * 
-		 * @param fname
-		 * @return
-		 */
-		private String setupStagingFile( String fname )
-		{
-			String stagingDir = null;
-			
-			//configure staging dir root
-			DMLConfig conf = ConfigurationManager.getConfig();
-			if( conf != null )
-				stagingDir = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/work/";
-			else
-				stagingDir = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/work/";
-			LocalFileUtils.createLocalFileIfNotExist(stagingDir, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-			
-			//create specific staging dir
-			stagingDir = stagingDir + "/" + fname;
-			
-			StagingFileUtils.cleanupStagingDir(stagingDir);
-			LocalFileUtils.createLocalFileIfNotExist(stagingDir);
-					
-			return stagingDir;
 		}
 		
 		/**

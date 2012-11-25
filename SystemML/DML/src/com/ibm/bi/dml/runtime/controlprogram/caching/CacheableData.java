@@ -402,23 +402,14 @@ public abstract class CacheableData extends Data
 		throws IOException
 	{
 		//get directory name
-		String dirRoot = null, dir = null;
+		String dir = null;
 		DMLConfig conf = ConfigurationManager.getConfig();
 		
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				//get directory
-				if( conf != null ) 
-					dirRoot = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
-				else 
-					dirRoot = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR);
-				LocalFileUtils.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-				LocalFileUtils.createLocalFileIfNotExist(dirRoot+"/cache/", DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-				dir = dirRoot + "/cache/" + Lops.PROCESS_PREFIX + uuid + Lops.FILE_SEPARATOR;
-				//create own local dir with default permission
-				File fdir = new File(dir);
-				fdir.mkdirs();
+			    dir = LocalFileUtils.getWorkingDir( LocalFileUtils.CATEGORY_CACHE );
+				LocalFileUtils.createLocalFileIfNotExist(dir);
 				cacheEvictionLocalFilePath = dir;
 				
 				break;

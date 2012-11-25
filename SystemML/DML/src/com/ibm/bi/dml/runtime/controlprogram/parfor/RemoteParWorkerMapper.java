@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 /**
  * Remote ParWorker implementation, realized as MR mapper.
@@ -160,7 +161,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		
 				//init local cache manager 
 				if( !CacheableData.isCachingActive() ) 
-					CacheableData.initCaching( IDHandler.createDistributedUniqueID() ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
+				{
+					String uuid = IDHandler.createDistributedUniqueID();
+					LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
+					CacheableData.initCaching( uuid ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
+				}
 				
 				if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
 				{
@@ -221,9 +226,9 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		boolean isLocal = InfrastructureAnalyzer.isLocalMode();
 		if( !isLocal && !ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
 		{
-			//no cleanup
 			CacheableData.cleanupCacheDir();
 			CacheableData.disableCaching();
+			LocalFileUtils.cleanupWorkingDirectory();
 		}
 	}
 	

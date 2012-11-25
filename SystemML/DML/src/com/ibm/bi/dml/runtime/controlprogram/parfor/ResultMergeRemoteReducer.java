@@ -14,7 +14,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
@@ -348,7 +347,7 @@ public class ResultMergeRemoteReducer
 					}
 					
 					//cleanup working dir
-					StagingFileUtils.cleanupStagingDir( _stagingDir );
+					LocalFileUtils.cleanupWorkingDirectory( _stagingDir );
 				}
 				//without compare
 				else

@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
@@ -439,7 +440,7 @@ public class ParForResultMergeTest
 			MapReduceTool.deleteFileIfExistOnHDFS(_fname+k);
 		MapReduceTool.deleteFileIfExistOnHDFS(_fname+"out");
 
-		ResultMergeLocalFile.cleanupWorkingDirectory( true );
+		LocalFileUtils.cleanupWorkingDirectory();
 	}
 	
 	

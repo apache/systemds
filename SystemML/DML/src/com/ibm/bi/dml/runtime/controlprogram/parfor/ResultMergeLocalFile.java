@@ -23,14 +23,10 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -47,7 +43,6 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * 
@@ -60,7 +55,6 @@ public class ResultMergeLocalFile extends ResultMerge
 {
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
 	public static final boolean ALLOW_COPY_CELLFILES = false;	
-	private static final String COMPARE_NAME_SUFFIX = "_compare";
 	
 	//internal comparison matrix
 	private IDSequence _seq = null;
@@ -217,8 +211,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	{
 		try
 		{
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, false);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			if( ALLOW_COPY_CELLFILES )
 			{
@@ -291,13 +285,13 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void mergeTextCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		String fnameStaging = STAGING_DIR+"/"+fnameNew;
-		String fnameStagingCompare = STAGING_DIR+"/"+fnameNew+COMPARE_NAME_SUFFIX;
+		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
+		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		
 		try
 		{
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, true);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
@@ -319,6 +313,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		{
 			throw new DMLRuntimeException("Unable to merge text cell results.", ex);
 		}
+		
+		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
+		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
 	
 	/**
@@ -333,8 +330,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	{
 		try
 		{	
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, false);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			if( ALLOW_COPY_CELLFILES )
 			{
@@ -403,13 +400,13 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void mergeBinaryCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		String fnameStaging = STAGING_DIR+"/"+fnameNew;
-		String fnameStagingCompare = STAGING_DIR+"/"+fnameNew+COMPARE_NAME_SUFFIX;
+		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
+		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		
 		try
 		{
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, true);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");
@@ -431,6 +428,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		{
 			throw new DMLRuntimeException("Unable to merge binary cell results.", ex);
 		}
+		
+		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
+		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
 	
 	/**
@@ -443,12 +443,12 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void mergeBinaryBlockWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		String fnameStaging = STAGING_DIR+"/"+fnameNew;
+		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		
 		try
 		{
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, true);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
@@ -465,6 +465,8 @@ public class ResultMergeLocalFile extends ResultMerge
 		{
 			throw new DMLRuntimeException("Unable to merge binary block results.", ex);
 		}	
+		
+		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 	}
 	
 	/**
@@ -477,13 +479,13 @@ public class ResultMergeLocalFile extends ResultMerge
 	private void mergeBinaryBlockWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 		throws DMLRuntimeException
 	{
-		String fnameStaging = STAGING_DIR+"/"+fnameNew;
-		String fnameStagingCompare = STAGING_DIR+"/"+fnameNew+COMPARE_NAME_SUFFIX;
+		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
+		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		
 		try
 		{
-			//cleanup files if exist
-			cleanupDirectories(fnameNew, true);
+			//delete target file if already exists
+			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "+outMo.getVarName()+" (fname="+outMo.getFileName()+")");			
@@ -504,6 +506,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		{
 			throw new DMLRuntimeException("Unable to merge binary block results.", ex);
 		}	
+		
+		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
+		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
 	}
 	
 	/**
@@ -535,7 +540,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					String dir = fnameStaging+"/"+lname;
 					if( value.getNonZeros()>0 ) //write only non-empty blocks
 					{
-						StagingFileUtils.checkAndCreateStagingDir( dir );
+						LocalFileUtils.checkAndCreateStagingDir( dir );
 						LocalFileUtils.writeMatrixBlockToLocal(dir+"/"+_seq.getNextID(), value);
 					}
 				}
@@ -719,7 +724,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				bcol = e2.getKey();
 				String lname = brow+"_"+bcol;
 				String dir = fnameStaging+"/"+lname;
-				StagingFileUtils.checkAndCreateStagingDir( dir );
+				LocalFileUtils.checkAndCreateStagingDir( dir );
 				StagingFileUtils.writeCellListToLocal(dir+"/"+ID, e2.getValue());
 			}
 		}
@@ -1092,63 +1097,5 @@ public class ResultMergeLocalFile extends ResultMerge
 			fs.rename(tmpPath, new Path(fnameNew+"/"+lname+seq.getNextID()));
 		}
 	}
-	
-	/**
-	 * 
-	 * @param fnameNew
-	 * @param delLocal
-	 * @throws IOException
-	 */
-	public void cleanupDirectories( String fnameNew, boolean delLocal ) 
-		throws IOException
-	{		
-		//delete target file if already exists
-		MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
-		
-		if( delLocal )
-		{
-			File fnameStaging = new File( STAGING_DIR+"/"+fnameNew );
-			File fnameStagingCompare = new File( STAGING_DIR+"/"+fnameNew+COMPARE_NAME_SUFFIX );
-			
-			if( fnameStaging.exists() )
-				StagingFileUtils.rDelete( fnameStaging );
-			if( fnameStagingCompare.exists() )
-				StagingFileUtils.rDelete( fnameStagingCompare );
-		}
-	}
 
-	/**
-	 * 
-	 * @throws ParseException
-	 */
-	public static void cleanupWorkingDirectory( ) 
-		throws ParseException
-	{
-		cleanupWorkingDirectory(false);
-	}
-	
-	/**
-	 * @throws ParseException 
-	 * 
-	 */
-	public static void cleanupWorkingDirectory( boolean forceAll ) 
-		throws ParseException
-	{
-		//build dir name to be cleaned up
-		StringBuilder sb = new StringBuilder();
-		sb.append(STAGING_DIR);
-		if( !forceAll )
-		{
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append(Lops.PROCESS_PREFIX);
-			sb.append(DMLScript.getUUID());
-		}
-		String dir = sb.toString();
-		
-		//cleanup
-		File fdir = new File(dir);		
-		StagingFileUtils.rDelete( fdir );
-	}
 }

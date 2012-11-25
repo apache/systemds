@@ -45,8 +45,8 @@ public class DMLConfig
 	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
 
 	//internal config
+	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and hdfs
 	public static String LOCAL_MR_MODE_STAGING_DIR = null;
-	public static String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and hdfs
 	
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;

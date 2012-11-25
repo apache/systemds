@@ -22,13 +22,9 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -40,7 +36,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Partitions a given matrix into row or column partitions with a two pass-approach.
@@ -78,8 +73,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	protected void partitionMatrix(String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
-		String fnameStaging = STAGING_DIR+"/"+fname;
-		StagingFileUtils.cleanupStagingDir(fnameStaging);
+		String fnameStaging = LocalFileUtils.getUniqueWorkingDir( LocalFileUtils.CATEGORY_PARTITIONING );
 		
 		//reblock input matrix
 		if( ii == InputInfo.TextCellInputInfo )
@@ -95,6 +89,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 		else	
 			throw new DMLRuntimeException("Cannot create data partitions of format: "+ii.toString());
+	
+		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 	}
 
 
@@ -536,7 +532,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			for( int i=0; i<rows; i++ )
 			{
-				String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
+				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
 				if( sparse )
 				{
@@ -563,7 +559,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 		else if( _format == PDataPartitionFormat.ROW_BLOCK_WISE )
 		{
-			String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset/brlen+1));
+			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset/brlen+1));
 			String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
@@ -575,7 +571,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						
 			for( int i=0; i<cols; i++ )
 			{
-				String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
+				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(row_offset/brlen+1); 			
 				if( sparse )
 				{
@@ -602,7 +598,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 		{
-			String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset/bclen+1));
+			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset/bclen+1));
 			String pfname = pdir+"/"+"block_"+(row_offset/brlen+1);
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
@@ -654,7 +650,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		//write lists of cells to local files
 		for( Entry<Long,LinkedList<Cell>> e : sortedBuffer.entrySet() )
 		{
-			String pdir = StagingFileUtils.checkAndCreateStagingDir(dir+"/"+e.getKey());
+			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+e.getKey());
 			String pfname = pdir+"/"+"block_"+_seq.getNextID();
 			StagingFileUtils.writeCellListToLocal(pfname, e.getValue());
 		}
@@ -795,37 +791,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		return Long.parseLong( fname.split("_")[1] );
 	}
 
-	public static void cleanupWorkingDirectory( ) 
-		throws ParseException
-	{
-		cleanupWorkingDirectory(false);
-	}
-	
-	/**
-	 * @throws ParseException 
-	 * 
-	 */
-	public static void cleanupWorkingDirectory(boolean forceAll) 
-		throws ParseException
-	{
-		//build dir name to be cleaned up
-		StringBuilder sb = new StringBuilder();
-		sb.append(STAGING_DIR);
-		if( !forceAll )
-		{
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
-			sb.append(Lops.FILE_SEPARATOR);
-			sb.append(Lops.PROCESS_PREFIX);
-			sb.append(DMLScript.getUUID());
-		}
-		String dir = sb.toString();
-		
-		//cleanup
-		File fdir = new File(dir);		
-		StagingFileUtils.rDelete( fdir );
-	}
-	
 	private abstract class DataPartitionerWorker implements Runnable
 	{
 		private JobConf _job = null;

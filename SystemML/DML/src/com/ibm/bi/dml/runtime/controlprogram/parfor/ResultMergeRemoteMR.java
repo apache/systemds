@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
@@ -183,10 +184,10 @@ public class ResultMergeRemoteMR extends ResultMerge
 			//configure the MR job
 			if( withCompare ) {
 				pathCompare = new Path(fname).makeQualified(FileSystem.get(job));
-				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), ii, STAGING_DIR);
+				MRJobConfiguration.setResultMergeInfo(job, pathCompare.toString(), ii, LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE));
 			}
 			else
-				MRJobConfiguration.setResultMergeInfo(job, "null", ii, STAGING_DIR);
+				MRJobConfiguration.setResultMergeInfo(job, "null", ii, LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE));
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(ResultMergeRemoteMapper.class); 

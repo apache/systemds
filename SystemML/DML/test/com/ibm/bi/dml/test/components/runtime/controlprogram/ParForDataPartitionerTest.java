@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
@@ -33,7 +34,7 @@ public class ParForDataPartitionerTest
 	private String _fname = "./scratch_space/A3";
 	
 	//internal switches
-	private boolean _runLocal = false;
+	private boolean _runLocal = true;
 	private boolean _runRemote = true;
 	
 	@Test
@@ -406,7 +407,7 @@ public class ParForDataPartitionerTest
 			//cleanup
 			MapReduceTool.deleteFileIfExistOnHDFS(_fname);
 			MapReduceTool.deleteFileIfExistOnHDFS(mo2.getFileName());
-			DataPartitionerLocal.cleanupWorkingDirectory(true);
+			LocalFileUtils.cleanupWorkingDirectory();
 		} 
 		catch (Exception e) 
 		{

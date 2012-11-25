@@ -5,15 +5,12 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -28,7 +25,6 @@ public abstract class DataPartitioner
 	protected static final double SPARSITY_CELL_THRESHOLD = 0.1d; 
 	
 	protected static final String NAME_SUFFIX = "_dp";
-	protected static String STAGING_DIR = null;	
 	
 	//instance variables
 	protected PDataPartitionFormat _format = null;
@@ -37,16 +33,6 @@ public abstract class DataPartitioner
 	protected DataPartitioner( PDataPartitionFormat dpf )
 	{
 		_format = dpf;
-		
-		//configure staging dir root
-		DMLConfig conf = ConfigurationManager.getConfig();
-		if( conf != null )
-			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
-		else
-			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/partitioning/";
-		
-		//create shared staging dir if not existing
-		LocalFileUtils.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**

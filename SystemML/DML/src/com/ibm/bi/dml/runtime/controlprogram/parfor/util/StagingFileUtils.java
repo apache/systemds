@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -238,56 +237,4 @@ public class StagingFileUtils
 		return tmp;
 	}
 	
-	
-	/**
-	 * 
-	 * @param dir
-	 * @return
-	 */
-	public static String checkAndCreateStagingDir(String dir) 
-	{
-		File f =  new File(dir);		
-		if( !f.exists() )
-			f.mkdirs();
-		
-		return dir;
-	}
-	
-	/**
-	 * 
-	 * @param dir
-	 * @return
-	 */
-	public static String cleanupStagingDir(String dir) 
-	{
-		File f =  new File(dir);
-		if( f.exists() )
-			rDelete(f);
-		
-		return dir;
-	}
-	
-	
-	////////////////////////////
-	// private helper functions
-	////////////////////////////
-
-	
-	/**
-	 * 
-	 * @param dir
-	 */
-	public static void rDelete(File dir)
-	{
-		//recursively delete files if required
-		if( dir.isDirectory() )
-		{
-			File[] files = dir.listFiles();
-			for( File f : files )
-				rDelete( f );	
-		}
-		
-		//delete file itself
-		dir.delete();
-	}
 }

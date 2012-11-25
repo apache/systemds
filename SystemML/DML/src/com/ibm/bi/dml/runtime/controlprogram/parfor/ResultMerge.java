@@ -6,15 +6,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -26,8 +23,6 @@ public abstract class ResultMerge
 {
 	protected static final String NAME_SUFFIX = "_rm";
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
-	
-	protected static String STAGING_DIR = null;
 	
 	//inputs to result merge
 	protected MatrixObject   _output      = null;
@@ -44,17 +39,6 @@ public abstract class ResultMerge
 		_output = out;
 		_inputs = in;
 		_outputFName = outputFilename;
-		
-		
-		//configure staging dir root
-		DMLConfig conf = ConfigurationManager.getConfig();
-		if( conf != null )
-			STAGING_DIR = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
-		else
-			STAGING_DIR = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR) + "/resultmerge/";
-		
-		//create shared staging dir if not existing
-		LocalFileUtils.createLocalFileIfNotExist(STAGING_DIR, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 	
 	/**

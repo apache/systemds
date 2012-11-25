@@ -45,9 +45,7 @@ import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -275,6 +273,7 @@ public class DMLScript {
 		}
 		catch (Exception e)
 		{
+			//FIXME: MB> by not re-throwing 'e', all useful message are truncated and replaced by those generic statements - please resolve this everywhere.
 			LOG.error("DMLTranslator failed in runtime");
 			throw new DMLRuntimeException("DMLTranslator failed in runtime");
 		}
@@ -772,7 +771,7 @@ public class DMLScript {
 	 * @throws DMLRuntimeException 
 	 */
 	private static void executeNetezza(DMLTranslator dmlt, DMLProgram prog, DMLConfig config, String fileName)
-	throws HopsException, LanguageException, ParseException, DMLRuntimeException
+		throws HopsException, LanguageException, ParseException, DMLRuntimeException
 	{
 	
 		dmlt.constructSQLLops(prog);
@@ -917,8 +916,9 @@ public class DMLScript {
 			cleanupHadoopExecution(config); 
 		
 			//init caching (incl set active)
+			LocalFileUtils.createWorkingDirectory();
 			CacheableData.initCaching();
-		
+						
 			//reset statistics (required if multiple scripts executed in one JVM)
 			Statistics.setNoOfExecutedMRJobs( 0 );
 		}
@@ -966,7 +966,7 @@ public class DMLScript {
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		
-
+		//TODO format should stay the same
 		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringHashSet(groupNames) + ", "
 				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
 				        + "fs.default.name = " + fsURI.getScheme() + ", " + "dfs.permissions = " + perm );
@@ -1021,10 +1021,8 @@ public class DMLScript {
 		}			
 			
 		//3) cleanup systemml-internal working dirs
-		//TODO consolidate cleanup: "cache", "staging" 
-		CacheableData.cleanupCacheDir();
-		DataPartitionerLocal.cleanupWorkingDirectory();
-		ResultMergeLocalFile.cleanupWorkingDirectory();
+		CacheableData.cleanupCacheDir(); //might be local/hdfs
+		LocalFileUtils.cleanupWorkingDirectory();
 	}
 	
 	

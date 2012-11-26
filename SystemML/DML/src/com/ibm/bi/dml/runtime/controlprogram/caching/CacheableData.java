@@ -39,6 +39,8 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
+	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
+    
 	protected static final long CACHING_THRESHOLD = 32; //obj not subject to caching if num values below threshold
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
@@ -57,7 +59,6 @@ public abstract class CacheableData extends Data
     public static String cacheEvictionHDFSFilePath = null; //prefix dir is set during runtime
     public static String cacheEvictionHDFSFilePrefix = "cache";
     public static final String cacheEvictionHDFSFileExtension = ".dat";
-    protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	/**
 	 * Defines all possible cache status types for a data blob.

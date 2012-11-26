@@ -715,7 +715,7 @@ public class MatrixObject extends CacheableData
 				else
 				{
 					mb = new MatrixBlock((int)rows, (int)cols, true);
-					System.out.println("Warning: Reading empty matrix partition "+fname);
+					LOG.warn("Reading empty matrix partition "+fname);
 				}
 			}
 			

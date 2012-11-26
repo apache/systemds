@@ -3,6 +3,8 @@ package com.ibm.bi.dml.packagesupport;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nimble.control.DAGQueue;
 
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -14,6 +16,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
  */
 public abstract class PackageFunction implements Serializable 
 {
+	protected static final Log LOG = LogFactory.getLog(PackageFunction.class.getName());
+	
 	private static final long serialVersionUID = 3274150928865462856L;
 	
 	private ArrayList<FIO> _function_inputs; // function inputs

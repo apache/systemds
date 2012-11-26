@@ -50,9 +50,6 @@ public class RemoveEmptyRows extends PackageFunction
 	@Override
 	public void execute() 
 	{
-		//Timing time = new Timing();
-		//time.start();
-		
 		Matrix mat = (Matrix) this.getFunctionInput(0);
 		String fnameOld = mat.getFilePath(); 
 		
@@ -133,7 +130,5 @@ public class RemoveEmptyRows extends PackageFunction
 		{
 			throw new RuntimeException( "Unable to execute external function.", ex );
 		}
-		
-		//System.out.println("Executed external function in "+time.stop()+"ms");
 	}
 }

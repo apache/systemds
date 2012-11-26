@@ -102,8 +102,7 @@ public class kMeansWrapper extends PackageFunction {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing kMeans clustering");
+			throw new PackageRuntimeException("Error executing kMeans clustering",e);
 		}
 
 

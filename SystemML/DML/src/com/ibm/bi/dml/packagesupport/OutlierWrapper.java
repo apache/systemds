@@ -121,8 +121,7 @@ public class OutlierWrapper extends PackageFunction {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing outlier detection");
+			throw new PackageRuntimeException("Error executing outlier detection",e);
 		}
 
 

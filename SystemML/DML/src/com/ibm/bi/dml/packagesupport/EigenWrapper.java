@@ -68,7 +68,7 @@ public class EigenWrapper extends PackageFunction {
 		}
 		catch(Exception e)
 		{
-			throw new PackageRuntimeException("Error performing eigen");
+			throw new PackageRuntimeException("Error performing eigen",e);
 		}
 	}
 

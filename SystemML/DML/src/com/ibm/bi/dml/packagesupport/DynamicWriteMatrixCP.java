@@ -61,8 +61,7 @@ public class DynamicWriteMatrixCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing dynamic write of matrix");
+			throw new PackageRuntimeException("Error executing dynamic write of matrix",e);
 		}
 		
 		_success = new Scalar(ScalarType.Boolean,String.valueOf(success));

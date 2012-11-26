@@ -328,12 +328,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			byte[] resultIndex = new byte[matrices.size()];
 			String reblock = "";
 	
-			String scratchSpaceLoc = null;
-			try {
-				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-			}
+			String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
 			
 			try {
 				// create a RBLK job that transforms each output matrix from cell to block
@@ -432,12 +427,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 	
-			String scratchSpaceLoc = null;
-			try {
-				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				System.out.println("ERROR: could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
-			}
+			String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			
 			
 			try {
 				// create a GMR job that transforms each of these matrices from block to cell

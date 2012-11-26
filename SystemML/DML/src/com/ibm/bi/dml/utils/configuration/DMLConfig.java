@@ -30,6 +30,8 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig 
 {
+	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
+	
 	// external names of configuration properties 
 	// (single point of change for all internal refs)
 	public static final String LOCAL_TMP_DIR        = "localtmpdir";
@@ -54,8 +56,6 @@ public class DMLConfig
 
     private String config_file_name = null;
 	private Element xml_root = null;
-	
-	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
 	
 	static
 	{
@@ -90,7 +90,8 @@ public class DMLConfig
 			parseConfig();
 		}
 		catch (Exception e){
-			LOG.warn("Failed to parse DML config file " + e.getMessage());
+		    //log error, since signature of generated ParseException doesn't allow to pass it 
+			LOG.error("Failed to parse DML config file ",e);
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
 				
@@ -137,8 +138,8 @@ public class DMLConfig
 				}
 			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
 		} catch (Exception e){
-			LOG.error("Failed in merge default config file with optional config file" + e.getMessage());
-			new ParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + this.config_file_name);
+			LOG.error("Failed in merge default config file with optional config file",e);
+			new ParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + config_file_name);
 		}
 	}
 	
@@ -161,7 +162,6 @@ public class DMLConfig
 			domTree = builder.parse(config_file_name);
 		}
 		xml_root = domTree.getDocumentElement();		
-		
 	}
 	
 	/**
@@ -180,9 +180,8 @@ public class DMLConfig
 			if( _defaultVals.containsKey(tagName) )
 				retVal = _defaultVals.get(tagName);
 			else
-				System.out.println("Error: requested dml configuration property '"+tagName+"' is invalid.");
+				LOG.error("Error: requested dml configuration property '"+tagName+"' is invalid.");
 		}
-	
 		
 		return retVal;
 	}
@@ -225,6 +224,11 @@ public class DMLConfig
 		}
 	}
 	
+	/**
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public synchronized String serializeDMLConfig() 
 		throws DMLRuntimeException
 	{
@@ -247,6 +251,12 @@ public class DMLConfig
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param content
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public static DMLConfig parseDMLConfig( String content ) 
 		throws DMLRuntimeException
 	{
@@ -268,7 +278,10 @@ public class DMLConfig
 		return ret;
 	}
 
-
+	/**
+	 * 
+	 * @return
+	 */
 	public String getConfigInfo() 
 	{
 		String[] tmpConfig = new String[]{ LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,

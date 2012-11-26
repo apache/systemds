@@ -63,7 +63,7 @@ public class LinearSolverWrapperCP extends PackageFunction
 						  "The factorization has been completed, but the factor U is exactly singular, " +
 						  "so the solution could not be computed.";
 				}											
-				System.out.println("Warning: "+msg);
+				LOG.warn( msg );
 			}
 
 			//create and copy output data 

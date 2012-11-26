@@ -66,8 +66,7 @@ public class SGDWrapper extends PackageFunction {
 		}
 		catch(Exception e1)
 		{
-			e1.printStackTrace();
-			throw new PackageRuntimeException("Eror converting to CSV");
+			throw new PackageRuntimeException("Eror converting to CSV",e1);
 		}
 
 		//invoke sgd code
@@ -79,8 +78,7 @@ public class SGDWrapper extends PackageFunction {
 			ToolRunner.run(new Configuration(), new TestDist(),args);
 		} catch (Exception e1) {
 			 
-			e1.printStackTrace();
-			throw new PackageRuntimeException("Error executing sgd");
+			throw new PackageRuntimeException("Error executing sgd",e1);
 		}
 		
 		//convert output to matrices
@@ -100,8 +98,7 @@ public class SGDWrapper extends PackageFunction {
 		}
 		catch(Exception e1)
 		{
-			e1.printStackTrace();
-			throw new PackageRuntimeException("Eror converting to CSV");
+			throw new PackageRuntimeException("Eror converting to CSV", e1);
 		}
 		
 		d = new FixedWidthDataset();
@@ -119,8 +116,7 @@ public class SGDWrapper extends PackageFunction {
 		}
 		catch(Exception e1)
 		{
-			e1.printStackTrace();
-			throw new PackageRuntimeException("Eror converting to CSV");
+			throw new PackageRuntimeException("Eror converting to CSV", e1);
 		}
 
 

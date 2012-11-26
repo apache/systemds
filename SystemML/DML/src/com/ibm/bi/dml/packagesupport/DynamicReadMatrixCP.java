@@ -60,8 +60,7 @@ public class DynamicReadMatrixCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing dynamic read of matrix");
+			throw new PackageRuntimeException("Error executing dynamic read of matrix",e);
 		}
 	}
 }

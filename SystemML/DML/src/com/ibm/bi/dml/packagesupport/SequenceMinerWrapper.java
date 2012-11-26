@@ -175,8 +175,7 @@ public class SequenceMinerWrapper extends PackageFunction {
 				seq_support = new Matrix(fnameSeq, seq_id-1, 2, ValueType.Double);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error execution sequence miner");
+			throw new PackageRuntimeException("Error execution sequence miner",e);
 		}
 
 	}

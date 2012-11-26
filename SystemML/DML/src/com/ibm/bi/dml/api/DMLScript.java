@@ -127,8 +127,8 @@ public class DMLScript {
 	 */
 	private void run()throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException {
 				
-		LOG.debug("BEGIN DML run " + getDateTime());
-		LOG.info("DML script: \n" + _dmlScriptString);
+		LOG.info("BEGIN DML run " + getDateTime());
+		LOG.debug("DML script: \n" + _dmlScriptString);
 		
 		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID) {
 			String hadoop_home = System.getenv("HADOOP_HOME");
@@ -749,9 +749,9 @@ public class DMLScript {
 			Statistics.stopRunTimer();
 	
 			//TODO: Leo check what's this part
-			LOG.debug(Statistics.display());
+			LOG.info(Statistics.display());
 			
-			LOG.debug("END DML run " + getDateTime() );
+			LOG.info("END DML run " + getDateTime() );
 			//cleanup all nimble threads
 			if(rtprog.getDAGQueue() != null)
 		  	    rtprog.getDAGQueue().forceShutDown();

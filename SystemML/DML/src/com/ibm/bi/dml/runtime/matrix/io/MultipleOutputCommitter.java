@@ -74,7 +74,7 @@ public class MultipleOutputCommitter extends FileOutputCommitter {
 				moveFinalTaskOutputs(context, fs, taskOutputPath);
 				// Delete the temporary task-specific output directory
 				if (!fs.delete(taskOutputPath, true)) {
-					LOG.info("Failed to delete the temporary output" + " directory of task: " + attemptId + " - "
+					LOG.debug("Failed to delete the temporary output" + " directory of task: " + attemptId + " - "
 							+ taskOutputPath);
 				}
 			}

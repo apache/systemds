@@ -151,7 +151,7 @@ public class MMCJMR {
 		
 		MRJobConfiguration.setPartialAggCacheSize(job, partialAggCacheSize);
 		
-		LOG.info("aggregator buffer size: "+partialAggCacheSize);
+		LOG.trace("aggregator buffer size: "+partialAggCacheSize);
 		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 

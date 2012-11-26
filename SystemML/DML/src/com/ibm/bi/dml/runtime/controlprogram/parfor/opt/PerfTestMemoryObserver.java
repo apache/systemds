@@ -42,7 +42,6 @@ public class PerfTestMemoryObserver implements Runnable
 	 */
 	public long getMaxMemConsumption()
 	{
-		//System.out.println(_maxMem/(1024*1024));
 		long val = _maxMem - _startMem;
 		return (val < 0) ? 0 : val; 
 	}
@@ -65,8 +64,6 @@ public class PerfTestMemoryObserver implements Runnable
 				forceGC( true );
 				long value =   Runtime.getRuntime().totalMemory()
 		                     - Runtime.getRuntime().freeMemory(); 
-				
-				//System.out.println("CURRENT MEM:"+value);
 				
 				_maxMem = Math.max(value, _maxMem);
 				

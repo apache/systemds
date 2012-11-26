@@ -54,9 +54,10 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  */
 public abstract class Optimizer 
 {
+	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
+	
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;
-	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
 	
 	public enum PlanInputType {
 		ABSTRACT_PLAN,

@@ -21,7 +21,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
@@ -41,8 +40,6 @@ public class ProgramRecompiler
 	public static void recompilePartialPlan( OptNode n ) 
 		throws DMLRuntimeException 
 	{
-		System.out.println("recompiling "+n.getParam(ParamType.OPSTRING));
-		
 		//NOTE: need to recompile complete programblock because (1) many to many relationships
 		//between hops and instructions and (2) due to changed internal variable names 
 		
@@ -75,13 +72,8 @@ public class ProgramRecompiler
 			
 			
 			//exchange instructions
-			System.out.println("OLD");
-			System.out.println(pbOld.getInstructions());
 			pbOld.getInstructions().clear();
-			
 			pbOld.getInstructions().addAll(newInst);
-			System.out.println("NEW");
-			System.out.println(pbOld.getInstructions());
 		}
 		catch(Exception ex)
 		{
@@ -101,9 +93,6 @@ public class ProgramRecompiler
 	public static ProgramBlock recompile( OptNode n ) 
 		throws DMLRuntimeException 
 	{
-		//System.out.println("recompiling "+n.getParam(ParamType.OPSTRING));
-		
-		
 		ProgramBlock pbNew = null;
 		
 		try

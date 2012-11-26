@@ -31,7 +31,8 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
-		
+	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
+	
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
@@ -61,8 +62,6 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static IDSequence _idSeqfn = null;
 	
 	private static HashMap<String, LinearFunction> _fncache; //slower for most (small cases) cases
-	
-	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	
 	//instance members
 	private long 		      _ID         = -1;
@@ -290,7 +289,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		else
 		{
-			System.out.println("INFO: PARFOR("+_ID+"): loop dependency analysis skipped.");
+			LOG.debug("INFO: PARFOR("+_ID+"): loop dependency analysis skipped.");
 		}
 		
 		//if successful, prepare result variables (all distinct vars in all candidates)
@@ -366,7 +365,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch (LanguageException e) 
 		{
-			LOG.trace("Language Exception Caught \n" + e.getStackTrace());
+			LOG.trace( "Unable to determine partitioning candidates.", e );
 			dpf = PDataPartitionFormat.NONE;
 		}
 		
@@ -1023,7 +1022,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		LinearFunction f2 = getLinearFunction(dat2);		
 		forceConsistency(f1,f2);
 		
-		LOG.trace("PARFOR: f1: "+f1.toString() + ", PARFOR: f2: " + f2.toString());
+		LOG.trace("PARFOR: f1: " + f1.toString());
+		LOG.trace("PARFOR: f2: " + f2.toString());
 					
 		///////
 		//Step 2: run GCD Test 
@@ -1060,7 +1060,8 @@ public class ParForStatementBlock extends ForStatementBlock
 				f2p = getRowLinearFunction(dat2);
 			}
 			
-			LOG.trace("PARFOR: f1p: "+((f1p==null)?"null":f1p.toString()) + ", PARFOR: f2p: "+((f2p==null)?"null":f2p.toString()));
+			LOG.trace("PARFOR: f1p: "+((f1p==null)?"null":f1p.toString()));
+			LOG.trace("PARFOR: f2p: "+((f2p==null)?"null":f2p.toString()));
 						
 			if( f1p!=null && f2p!=null )
 			{
@@ -1129,7 +1130,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				}
 			}			
 
-			LOG.trace("PARFOR: Banerjee lintercept "+lintercept + ", PARFOR: Banerjee lmax "+lmax + ", PARFOR: Banerjee lmin "+lmin);
+			LOG.trace("PARFOR: Banerjee lintercept " + lintercept);
+			LOG.trace("PARFOR: Banerjee lmax " + lmax);
+			LOG.trace("PARFOR: Banerjee lmin " + lmin);
 		
 			
 			if( !(lmin <= lintercept && lintercept <= lmax) || lmin==lmax )
@@ -1212,8 +1215,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		forceConsistency(f1, f2);
 		ret = f1.equals(f2);
 		
-		LOG.trace("PARFOR: f1: "+f1.toString() + ", f2: "+f2.toString() + ", (f1==f2) = "+ret);
-		
+		LOG.trace("PARFOR: f1: " + f1.toString());
+		LOG.trace("PARFOR: f2: " + f2.toString());
+		LOG.trace("PARFOR: (f1==f2): " + ret);
 		
 		//additional check if cols/rows could be ignored
 		if( !CONSERVATIVE_CHECK && !ret ) //only if not already equal
@@ -1239,8 +1243,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				forceConsistency(f1p, f2p);
 				ret = f1p.equals(f2p);
 				
-				LOG.trace("PARFOR: f1p: "+f1p.toString() + ", f2p: "+f2p.toString() + ", (f1p==f2p) = "+ret);
-				
+				LOG.trace("PARFOR: f1p: " + f1p.toString());
+				LOG.trace("PARFOR: f2p: " + f2p.toString());
+				LOG.trace("PARFOR: (f1p==f2p): " + ret);
 			}
 		}
 		
@@ -1359,13 +1364,12 @@ public class ParForStatementBlock extends ForStatementBlock
 			else
 			{
 				//NOTE: we could mark sb for deferred validation and evaluate on execute (see ParForProgramBlock)
-				System.out.println("PARFOR: WARNING - matrix dimensionality unknown, cannot scale linear functions.");				
+				LOG.trace("PARFOR: Warning - matrix dimensionality unknown, cannot scale linear functions.");				
 			}
 		}
 		catch(Exception ex)
 		{
 			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
-			
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1677,7 +1681,7 @@ public class ParForStatementBlock extends ForStatementBlock
 
 		
 		if( warn && LOG.isTraceEnabled() )
-			LOG.trace( "PARFOR: WARNING - index functions f1 and f2 cannot be made consistent." );
+			LOG.trace( "PARFOR: Warning - index functions f1 and f2 cannot be made consistent." );
 	}
 	
 	/**

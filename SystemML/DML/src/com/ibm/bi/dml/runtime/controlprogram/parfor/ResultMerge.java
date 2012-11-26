@@ -21,8 +21,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public abstract class ResultMerge 
 {
-	protected static final String NAME_SUFFIX = "_rm";
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
+	
+	protected static final String NAME_SUFFIX = "_rm";
 	
 	//inputs to result merge
 	protected MatrixObject   _output      = null;

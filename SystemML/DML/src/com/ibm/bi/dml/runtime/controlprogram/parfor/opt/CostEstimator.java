@@ -2,6 +2,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
@@ -13,6 +16,9 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public abstract class CostEstimator 
 {
+	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
+    
+	
 	//default parameters
 	public static final double DEFAULT_EST_PARALLELISM = 1.0; //default degree of parallelism: serial
 	public static final int    FACTOR_NUM_ITERATIONS   = 10; //default problem size

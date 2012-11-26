@@ -84,7 +84,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				//export output variable to HDFS (see RunMRJobs)
 				if ( dat.getDataType() == DataType.MATRIX ) {
 					MatrixObject inputObj = (MatrixObject) dat;
-					//System.out.println("exporting "+inputObj.getFileName());
 					inputObj.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
 				}
 				
@@ -113,7 +112,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		boolean requiresConfigure = true;
 		String jobID = job.get("mapred.job.id");
 		
-		//System.out.println(jobID);
 		//probe cache for existing worker (parfor body, symbol table, etc)
 		if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
 		{
@@ -199,7 +197,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		} 
 		else
 		{
-			LOG.trace("reuse configuration RemoteParWorkerMapper "+_stringID);
+			LOG.trace("reuse configured RemoteParWorkerMapper "+_stringID);
 		}
 	}
 	

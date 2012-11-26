@@ -347,7 +347,6 @@ public class OptTreeConverter
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
 			{
-				//FIXME System.out.println("process else path");
 				OptNode efn = new OptNode(NodeType.GENERIC);
 				efn.setExecType(ExecType.CP);
 				node.addChild( efn );
@@ -357,7 +356,6 @@ public class OptTreeConverter
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
 					efn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
-					//FIXME System.out.println("after adding nodes, with size "+lsb.get_hops().size());
 				}
 			}				
 		}
@@ -527,8 +525,6 @@ public class OptTreeConverter
 	 */
 	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<Long> memo) 
 	{
-		//System.out.println(hop.getOpString());
-		
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hops> in = hop.getInput();
 		
@@ -546,20 +542,13 @@ public class OptTreeConverter
 			
 				memo.add(hop.getHopID());
 			}
-		}
-		//else
-		//	if( OptimizationWrapper.LDEBUG )
-		//		System.out.println("ParFOR Opt: Mem estimate name="+hop.get_name()+" "+hop.getOpString()+"="+OptimizerRuleBased.toMB(hop.getMemEstimate()));
-			
+		}	
 
 		if( in != null )
 			for( Hops hin : in ) 
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
 					ret.addAll(rCreateAbstractOptNodes(hin,vars, memo));
-				//else
-				//	if( OptimizationWrapper.LDEBUG )
-				//		System.out.println("ParFOR Opt: Mem estimate name="+hin.get_name()+" "+hin.getOpString()+"="+OptimizerRuleBased.toMB(hin.getMemEstimate()));
-			
+
 		return ret;
 	}
 
@@ -793,11 +782,10 @@ public class OptTreeConverter
 			long pid2 = _rtMap.getMappedParentID(rtNode1.getID());
 			OptNode rtNode2 = _rtMap.getOptNode(pid2);
 			
-			System.out.println("exchanging "+rtNode1.getNodeType()+" "+rtNode1.getID());
 			_tmpParent = rtNode2;
 			_tmpChildOld = rtNode1;		
 			_tmpChildNew = newRtNode;
-			System.out.println(_tmpParent.exchangeChild(_tmpChildOld, _tmpChildNew));
+			_tmpParent.exchangeChild(_tmpChildOld, _tmpChildNew);
 		}
 		else
 		{
@@ -826,7 +814,7 @@ public class OptTreeConverter
 		else if( node.getNodeType() == NodeType.HOP )
 		{
 			//revert change (overwrite tmp child)
-			System.out.println( _tmpParent.exchangeChild(_tmpChildNew,_tmpChildOld) );	
+			_tmpParent.exchangeChild(_tmpChildNew,_tmpChildOld);	
 		}
 		else
 		{
@@ -867,8 +855,7 @@ public class OptTreeConverter
 			long pid2 = _rtMap.getMappedParentID(rtNode1.getID());
 			OptNode rtNode2 = _rtMap.getOptNode(pid2);
 			
-			System.out.println("exchanging "+rtNode1.getNodeType()+" "+rtNode1.getID());
-			System.out.println(rtNode2.exchangeChild(rtNode1, newRtNode));
+			rtNode2.exchangeChild(rtNode1, newRtNode);
 			
 			//finally update mapping (all internal repositories)
 			newRtNode.setID(rtNode1.getID());

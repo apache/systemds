@@ -43,7 +43,7 @@ public class LocalTaskQueue
 	{
 		while( _data.size() + 1 > MAX_SIZE )
 		{
-			LOG.trace("ParFOR: WARNING - MAX_SIZE of task queue reached.");
+			LOG.warn("MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
 		

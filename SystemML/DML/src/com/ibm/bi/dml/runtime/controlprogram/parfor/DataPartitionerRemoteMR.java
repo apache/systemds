@@ -112,7 +112,6 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
 			//use FLEX scheduler configuration properties
-			//System.out.println("numMappers="+numMappers);
 			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
 				job.setInt("flex.map.min", 0);

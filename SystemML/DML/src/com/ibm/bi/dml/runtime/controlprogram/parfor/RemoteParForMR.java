@@ -3,6 +3,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -40,6 +42,8 @@ import com.ibm.bi.dml.utils.Statistics;
  */
 public class RemoteParForMR
 {
+	protected static final Log LOG = LogFactory.getLog(RemoteParForMR.class.getName());
+	
 	/**
 	 * 
 	 * @param pfid
@@ -118,7 +122,6 @@ public class RemoteParForMR
 			//job.setInt("mapred.jobtracker.maxtasks.per.job",1); //system property
 
 			//use FLEX scheduler configuration properties
-			//System.out.println("numMappers="+numMappers);
 			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
 				job.setInt("flex.map.min", 0);
@@ -132,7 +135,7 @@ public class RemoteParForMR
 			if( minMem > 0 && minMem > InfrastructureAnalyzer.extractMaxMemoryOpt(job.get(memKey)) )
 			{
 				InfrastructureAnalyzer.setMaxMemoryOpt(job, memKey, minMem);
-				System.out.println("Warning: Forcing '"+memKey+"' to -Xmx"+minMem/(1024*1024)+"M." );
+				LOG.warn("Forcing '"+memKey+"' to -Xmx"+minMem/(1024*1024)+"M." );
 			}
 			
 			//disable automatic tasks timeouts and speculative task exec

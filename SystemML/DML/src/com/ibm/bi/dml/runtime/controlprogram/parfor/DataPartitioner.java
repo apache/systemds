@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -19,6 +22,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public abstract class DataPartitioner 
 {	
+	protected static final Log LOG = LogFactory.getLog(DataPartitioner.class.getName());
+	
 	//note: the following value has been empirically determined but might change in the future,
 	//MatrixBlockDSM.SPARCITY_TURN_POINT (with 0.4) was too high because we create 3-4 values per nnz and 
 	//have some computation overhead for binary cell.
@@ -95,12 +100,12 @@ public abstract class DataPartitioner
 			//check for changing to blockwise representations
 			if( _format == PDataPartitionFormat.ROW_WISE && cols < Hops.CPThreshold )
 			{
-				System.out.println("INFO: DataPartitioner: Changing format from "+PDataPartitionFormat.ROW_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
+				LOG.warn("Changing format from "+PDataPartitionFormat.ROW_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.ROW_BLOCK_WISE;
 			}
 			if( _format == PDataPartitionFormat.COLUMN_WISE && rows < Hops.CPThreshold )
 			{
-				System.out.println("INFO: DataPartitioner: Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
+				LOG.warn("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;
 			}
 		}

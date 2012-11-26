@@ -105,8 +105,6 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug("--- RULEBASED OPTIMIZER -------");
 
 		//ANALYZE infrastructure properties
-		LOG.debug("RULEBASED OPTIMIZER: Analyze infrastructure properties." );
-		
 		OptNode pn = plan.getRoot();
 		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
 		_Nmax  = pn.getMaxProblemSize(); 
@@ -119,13 +117,13 @@ public class OptimizerRuleBased extends Optimizer
 		_lm   = Hops.getMemBudget(true);
 		_rm   = OptimizerUtils.MEM_UTIL_FACTOR * InfrastructureAnalyzer.getRemoteMaxMemory(); //Hops.getMemBudget(false); 
 		
-		LOG.debug("RULEBASED OPTIMIZER: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")" );
+		LOG.debug("RULEBASED OPT: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")" );
 		
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
 		double M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn);
-		LOG.debug("RULEBASED OPTIMIZER: estimated mem (serial exec) M="+toMB(M) );
+		LOG.debug("RULEBASED OPT: estimated mem (serial exec) M="+toMB(M) );
 		
 		//OPTIMIZE PARFOR PLAN
 		
@@ -200,7 +198,7 @@ public class OptimizerRuleBased extends Optimizer
 		throws DMLRuntimeException
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
-			System.out.println("Warning: Data partitioner can only be set for a ParFor node.");
+			LOG.warn("RULEBASED OPT: Data partitioner can only be set for a ParFor node.");
 		
 		//preparations
 		long id = n.getID();
@@ -233,7 +231,7 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.DATA_PARTITIONER, pdp.toString());
 	
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set data partitioner' - result="+pdp.toString() );
+		LOG.debug("RULEBASED OPT: rewrite 'set data partitioner' - result="+pdp.toString() );
 	}
 	
 	/**
@@ -359,7 +357,7 @@ public class OptimizerRuleBased extends Optimizer
 		PExecMode mode = (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
 		pfpb.setExecMode( mode );	
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set execution strategy' - result="+mode );
+		LOG.debug("RULEBASED OPT: rewrite 'set execution strategy' - result="+mode );
 	}
 	
 	///////
@@ -406,7 +404,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( apply )
 			pfpb.enableColocatedPartitionedMatrix( varname );
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
+		LOG.debug("RULEBASED OPT: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
 	}
 	
 	/**
@@ -517,7 +515,7 @@ public class OptimizerRuleBased extends Optimizer
 			nested = true;
 		}
 
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'enable nested parallelism' - result="+nested );
+		LOG.debug("RULEBASED OPT: rewrite 'enable nested parallelism' - result="+nested );
 		
 		return nested;
 	}
@@ -594,7 +592,7 @@ public class OptimizerRuleBased extends Optimizer
 			rAssignRemainingParallelism( n, kMax ); 
 		}		
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
+		LOG.debug("RULEBASED OPT: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
 	}
 	
 	/**
@@ -643,7 +641,7 @@ public class OptimizerRuleBased extends Optimizer
 	private void rewriteSetTaskPartitioner(OptNode n, PTaskPartitioner partitioner) 
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
-			System.out.println("Warning: Task partitioner can only be set for a ParFor node.");
+			LOG.warn("RULEBASED OPT: Task partitioner can only be set for a ParFor node.");
 		
 		long id = n.getID();
 		
@@ -655,7 +653,7 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.TASK_PARTITIONER, partitioner.toString());
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set task partitioner' - result="+partitioner );
+		LOG.debug("RULEBASED OPT: rewrite 'set task partitioner' - result="+partitioner );
 	}
 	
 	
@@ -699,7 +697,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getChilds() != null )
 			rInvokeSetResultMerge(n.getChilds(), vars, appliedLeftIndexRewrite);
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set result merge' - result="+ret );
+		LOG.debug("RULEBASED OPT: rewrite 'set result merge' - result="+ret );
 	}
 	
 	/**
@@ -826,7 +824,7 @@ public class OptimizerRuleBased extends Optimizer
 			pfpb.setRecompileMemoryBudget( newLocalMem );
 		}
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
+		LOG.debug("RULEBASED OPT: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
 	}	
 	
 	
@@ -845,7 +843,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		int count = removeUnnecessaryParFor( n );
 		
-		LOG.debug("RULEBASED OPTIMIZER: rewrite 'remove unnecessary parfor' - result="+count );
+		LOG.debug("RULEBASED OPT: rewrite 'remove unnecessary parfor' - result="+count );
 	}
 	
 	/**

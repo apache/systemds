@@ -24,6 +24,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  */
 public abstract class ParWorker
 {
+	protected static final Log LOG = LogFactory.getLog(ParWorker.class.getName());
+	
 	protected long                      _workerID    = -1;
 	
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
@@ -33,7 +35,6 @@ public abstract class ParWorker
 	
 	protected int                       _numTasks    = -1;
 	protected int                       _numIters    = -1;
-	protected static final Log LOG = LogFactory.getLog(ParWorker.class.getName());
 	
 	public ParWorker()
 	{
@@ -122,8 +123,6 @@ public abstract class ParWorker
 	private void executeSetTask( Task task ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		//System.out.println(task.toCompactString());
-		
 		//monitoring start
 		Timing time1, time2;		
 		if( ParForProgramBlock.MONITOR )
@@ -198,24 +197,8 @@ public abstract class ParWorker
 			_variables.put(lVarName, new IntObject(lVarName,i)); 
 			
 			// for each program block
-			//System.out.println(" EXECUTE ITERATION: "+lVarName+"="+i);
 			for (ProgramBlock pb : _childBlocks)
-			{	
-				/*System.out.println(" EXECUTE PB ------- ");
-				for( String var : _variables.keySet() )
-				{
-					Data dat = _variables.get(var);
-					if( dat instanceof MatrixObject )
-					{
-						MatrixObject mo = (MatrixObject)dat;
-						long rows = mo.getNumRows();
-						long cols = mo.getNumColumns();
-						long nnz = mo.getNnz();
-						boolean isInMem = mo.isBlobPresent();
-						System.out.println("Var '"+var+"' (rlen="+rows+", clen="+cols+", nnz="+nnz+", inMem="+isInMem+") in state "+mo.getStatusAsString());
-					}
-				}*/
-				
+			{					
 				pb.setVariables(_variables);
 				pb.execute(_ec);
 

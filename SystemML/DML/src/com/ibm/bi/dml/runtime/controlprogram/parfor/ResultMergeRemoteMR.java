@@ -173,7 +173,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 		//warning for textcell/binarycell without compare
 		boolean withCompare = (fname!=null);
 		if( (oi == OutputInfo.TextCellOutputInfo || oi == OutputInfo.BinaryCellOutputInfo) && !withCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES )
-			System.out.println("Warning: Result merge for "+OutputInfo.outputInfoToString(oi)+" without compare can be realized more efficiently with LOCAL_FILE than REMOTE_MR.");
+			LOG.warn("Result merge for "+OutputInfo.outputInfoToString(oi)+" without compare can be realized more efficiently with LOCAL_FILE than REMOTE_MR.");
 			
 		try
 		{
@@ -254,7 +254,6 @@ public class ResultMergeRemoteMR extends ResultMerge
 			job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
 			//use FLEX scheduler configuration properties
-			//System.out.println("numMappers="+numMappers);
 			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
 				job.setInt("flex.map.min", 0);

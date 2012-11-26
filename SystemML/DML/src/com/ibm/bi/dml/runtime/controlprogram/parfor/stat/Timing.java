@@ -26,7 +26,7 @@ public class Timing
 	public double stop()
 	{
 		if( _start == -1 )
-			throw new RuntimeException("Time measurement sotp without prior start not applicable.");
+			throw new RuntimeException("Stop time measurement without prior start is invalid.");
 	
 		long end = System.nanoTime();		
 		double duration = ((double)(end-_start))/1000000;
@@ -44,7 +44,7 @@ public class Timing
 	{
 		double tmp = stop();
 		
-		System.out.println("PARFOR: generic time measurement >>> "+tmp+"ms.");
+		System.out.println("PARFOR: time = "+tmp+"ms");
 	}
 	
 }

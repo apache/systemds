@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 
 /**
  * Generic cost function of the form <code>y = f( X )</code>, where y is a TestMeasure 
@@ -12,6 +15,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
  */
 public class CostFunction 
 {
+	protected static final Log LOG = LogFactory.getLog(CostFunction.class.getName());
+    
 	public static final boolean PREVENT_NEGATIVE_ESTIMATES = true;
 	
 	private double[] _params    = null;
@@ -50,7 +55,7 @@ public class CostFunction
 				double v2 = Math.pow(in, i);
 				if( i>1 && Math.abs(Math.sqrt( v2 ) - v1) > 1.0 ) //issue if larger than 1ms or 1byte
 				{
-					System.out.println(" NUMERICAL STABILITY ISSUE " + v1 + " vs " + v2 );
+					LOG.error("Numerical stability issue: " + v1 + " vs " + v2 );
 					continue;
 				}
 				//end test

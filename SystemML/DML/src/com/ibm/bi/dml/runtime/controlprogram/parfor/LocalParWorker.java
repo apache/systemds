@@ -88,17 +88,15 @@ public class LocalParWorker extends ParWorker implements Runnable
 				} 
 				catch (Exception ex) 
 				{
-					ex.printStackTrace();
-					
-					System.out.println("ParFOR: Failed to execute "+lTask.toString()+", retry:"+retrys+" ("+ex.getMessage()+")");
+					LOG.error("Failed to execute "+lTask.toString()+", retry:"+retrys, ex);
 					
 					if( retrys > 0 )
 						retrys--; //retry on task error
 					else
 					{
 						// abort on no remaining retrys
-						System.err.println("Error executing task: "+ex.getMessage());
-						System.err.println("Stopping LocalParWorker.");
+						LOG.error("Error executing task: ",ex);
+						LOG.error("Stopping LocalParWorker.");
 						break; //no exception thrown to prevent blocking on join 
 					}
 				}

@@ -1089,7 +1089,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		IDSequence seq = new IDSequence();
 		for( MatrixObject in : inMO )
 		{			
-			System.out.println("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via file rename.");
+			LOG.trace("ResultMerge (local, file): Merge input "+in.getVarName()+" (fname="+in.getFileName()+") via file rename.");
 			
 			//copy over files (just rename file or entire dir)
 			Path tmpPath = new Path(in.getFileName());

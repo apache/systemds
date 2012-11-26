@@ -223,8 +223,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		super(prog, iterPredVars);
 	
-		//System.out.println("ParFOR PrefixID = "+ID);
-		
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
 		_resultVarsIDSeq = new IDSequence();
@@ -730,8 +728,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 			{
-				//System.out.println("pin ("+_ID+") "+var);
-				
 				MatrixObject mo = (MatrixObject)dat;
 				_resultVarsState.add( mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
@@ -746,8 +742,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		for( int i=0; i<_resultVars.size(); i++ )
 		{
-			//System.out.println("unpin ("+_ID+") "+var);
-			
 			String var = _resultVars.get(i);
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )

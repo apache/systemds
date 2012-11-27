@@ -48,19 +48,16 @@ public abstract class IOStatement extends Statement{
 	
 	public void addExprParam(String name, Expression value, boolean fromMTDFile) throws ParseException
 	{
-		if (_paramsExpr.getVarParam(name) != null){
-			LOG.error(value.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once");
+		if (_paramsExpr.getVarParam(name) != null)
 			throw new ParseException(value.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once");
-		}
+		
 		// verify parameter names for InputStatement
-		if (this instanceof InputStatement && !InputStatement.isValidParamName(name, fromMTDFile)){
-			LOG.error(value.printErrorLocation() + "attempted to add invalid read statement parameter " + name);
+		if (this instanceof InputStatement && !InputStatement.isValidParamName(name, fromMTDFile))
 			throw new ParseException(value.printErrorLocation() + "attempted to add invalid read statement parameter " + name);
-		}
-		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name)){
-			LOG.error(value.printErrorLocation() + "attempted to add invalid write statement parameter: " + name);
+		
+		else if (this instanceof OutputStatement && !OutputStatement.isValidParamName(name))
 			throw new ParseException(value.printErrorLocation() + "attempted to add invalid write statement parameter: " + name);
-		}
+		
 		_paramsExpr.addVarParam(name, value);
 	}
 	

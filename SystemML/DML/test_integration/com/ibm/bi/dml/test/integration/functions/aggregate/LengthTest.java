@@ -2,9 +2,9 @@ package com.ibm.bi.dml.test.integration.functions.aggregate;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -73,7 +73,7 @@ public class LengthTest extends AutomatedTestBase {
 
         loadTestConfiguration(TEST_SCALAR);
 
-        runTest(true, ParseException.class);
+        runTest(true, LanguageException.class);
     }
 
 }

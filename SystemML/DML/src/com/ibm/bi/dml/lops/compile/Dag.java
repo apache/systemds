@@ -727,9 +727,9 @@ public class Dag<N extends Lops> {
 						String inst_string = n.getInstructions();
 						inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
 					} catch (DMLUnsupportedOperationException e) {
-						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n" + e);
+						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
 					} catch (DMLRuntimeException e) {
-						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n" + e);
+						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
 					}
 				}
 			}
@@ -2200,7 +2200,7 @@ public class Dag<N extends Lops> {
 				try {
 					oparams.setDimensions(oparams.getNum_rows(), oparams.getNum_cols(), -1, -1, oparams.getNnz());
 				} catch(HopsException e) {
-					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag " + e);
+					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag ", e);
 				}
 			}
 		} else {

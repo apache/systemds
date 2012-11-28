@@ -47,8 +47,8 @@ public class SequenceMiner extends AutomatedTestBase {
 		
 		writeInputMatrix("M", M);
 		
-		HashMap<CellIndex, Double> fseq = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/freqSeqFile");
-		HashMap<CellIndex, Double> sup = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/freqSeqSupportFile");
+		HashMap<CellIndex, Double> fseq = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/FreqSeqFile");
+		HashMap<CellIndex, Double> sup = TestUtils.readDMLMatrixFromHDFS(baseDirectory + "seqMiner/FreqSeqSupportFile");
 		
 		
 		double [][] expected_fseq = TestUtils.convertHashMapToDoubleArray(fseq);

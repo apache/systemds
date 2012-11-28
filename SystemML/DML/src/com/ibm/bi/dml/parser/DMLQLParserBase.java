@@ -163,10 +163,10 @@ public abstract class DMLQLParserBase {
 		try {
 			return __inputInternal();
 		} catch (ParseException e) {
-			LOG.error("Failed in DMLProgram parsing: " + e.getMessage());
+			LOG.error("Failed in DMLProgram parsing ", e);
 			return null;
 		} catch (TokenMgrError e) {
-			LOG.error("Error: " + e.getMessage());
+			LOG.error("Token manager error ", e);
 		}
 		tearDown();
 		return null;

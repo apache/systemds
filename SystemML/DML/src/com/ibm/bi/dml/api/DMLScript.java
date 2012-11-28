@@ -123,9 +123,11 @@ public class DMLScript {
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 * @throws LanguageException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
-	private void run()throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException {
+	private void run()throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException {
 				
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + _dmlScriptString);
@@ -151,7 +153,6 @@ public class DMLScript {
 			} 
 			catch (ParseException e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
-				LOG.error("Optional config file " +  _optConfig + " not found ");
 				throw e;
 			}
 			if (defaultConfig != null) {
@@ -159,7 +160,7 @@ public class DMLScript {
 					defaultConfig.merge(optionalConfig);
 				}
 				catch(ParseException e){
-					LOG.error("Failed to merge default config file with optional config file ");
+					defaultConfig = null;
 					throw e;
 				}
 			}
@@ -172,7 +173,6 @@ public class DMLScript {
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			} catch (ParseException e) { // it is not OK to not have the default
 				defaultConfig = null;
-				LOG.error("Error parsing default configuration file: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 				throw e;
 			}
 		}
@@ -187,46 +187,26 @@ public class DMLScript {
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(_dmlScriptString, _argVals);
-		try {
-			prog = parser.parse();
-		}
-		catch (Exception e){
-			LOG.error("DMLQLParser Parsing failed");
-			throw new ParseException("DMLQLParser parsing failed");
-		}
+	
+		prog = parser.parse();
+
 
 		if (prog == null){
-			LOG.error("DMLQLParser parsing returns a NULL object");
 			throw new ParseException("DMLQLParser parsing returns a NULL object");
 		}
 		
 		/////////////////////////// construct HOPS ///////////////////////////////
 		DMLTranslator dmlt = new DMLTranslator(prog);
-		try {
-			dmlt.liveVariableAnalysis(prog);			
-		}
-		catch (Exception e){
-			LOG.error("DMLTranslator failed in live variable analysis");
-			throw new ParseException("DMLTranslator failed in live variable analysis");
-		}
+
+		dmlt.liveVariableAnalysis(prog);			
+
 		
-		try {
-			dmlt.validateParseTree(prog);
-		}
-		catch (Exception e){
-			LOG.error("DMLTranslator failed in validating parse tree");
-			throw new ParseException("DMLTranslator failed in validating parse tree");
-		}
-		
+		dmlt.validateParseTree(prog);
+	
 		//TODO: Doug will work on the format of prog.toString()
 		LOG.debug("\nCOMPILER: \n" + prog.toString());
-		try {
-			dmlt.constructHops(prog);
-		}
-		catch (Exception e){
-			LOG.error("DMLTranslator failed in constructing HOPs");
-			throw new HopsException("DMLTranslator failed in constructing HOPs");
-		}
+
+		dmlt.constructHops(prog);
 		
 		/*
 		if(LOG.isDebugEnabled()){
@@ -247,14 +227,8 @@ public class DMLScript {
 	
 		// rewrite HOPs DAGs
 		// defaultConfig contains reconciled information for config
-		try {
-			dmlt.rewriteHopsDAG(prog, defaultConfig);
-			dmlt.resetHopsDAGVisitStatus(prog);
-		}
-		catch (Exception e){
-			LOG.error("DMLTranslator failed in rewriting HOPs");
-			throw new HopsException("DMLTranslator failed in rewriting HOPs");
-		}
+		dmlt.rewriteHopsDAG(prog, defaultConfig);
+		dmlt.resetHopsDAGVisitStatus(prog);
 		
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
@@ -268,15 +242,7 @@ public class DMLScript {
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
 
-		try {
-			executeHadoop(dmlt, prog, defaultConfig);
-		}
-		catch (Exception e)
-		{
-			//FIXME: MB> by not re-throwing 'e', all useful message are truncated and replaced by those generic statements - please resolve this everywhere.
-			LOG.error("DMLTranslator failed in runtime");
-			throw new DMLRuntimeException("DMLTranslator failed in runtime");
-		}
+		executeHadoop(dmlt, prog, defaultConfig);
 	}
 	
 	
@@ -302,9 +268,11 @@ public class DMLScript {
 	 * @throws HopsException 
 	 * @throws LanguageException 
 	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
 	 */
 
-	public boolean executeScript (String scriptPathName, Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, HopsException, LanguageException, DMLRuntimeException{
+	public boolean executeScript (String scriptPathName, Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
 		
 		VISUALIZE = false;
 		
@@ -331,7 +299,6 @@ public class DMLScript {
 		StringBuilder dmlScriptString = new StringBuilder();
 		
 		if (scriptPathName == null){
-			LOG.error("DML script path was not provided by the user");
 			throw new LanguageException("DML script path was not provided by the user");
 		}
 		else {
@@ -351,7 +318,7 @@ public class DMLScript {
 					dmlScriptString.append(s1 + "\n");
 			}
 			catch (IOException ex){
-				LOG.error("Failed to read the script from the file system");
+				LOG.error("Failed to read the script from the file system", ex);
 				throw ex;
 			}
 			finally {
@@ -378,23 +345,15 @@ public class DMLScript {
 			run();
 		}
 		catch (IOException e){
-			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected");
+			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected", e);
 			throw e;
 		}
 		catch (ParseException e){
-			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected");
+			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected", e);
 			throw e;
 		}
-		catch (HopsException e){
-			LOG.error("Failed in executing DML script with SystemML engine, HOPs failure detected");
-			throw e;
-		}
-		catch (DMLRuntimeException e){
-			LOG.error("Failed in executing DML script with SystemML engine, runtime failure detected");
-			throw e;
-		}
-		catch (LanguageException e){
-			LOG.error("Failed in executing DML script with SystemML engine, script has language issues");
+		catch (DMLException e){
+			LOG.error("Failed in executing DML script with SystemML engine, DML exception detected", e);
 			throw e;
 		}
 		finally{
@@ -415,8 +374,10 @@ public class DMLScript {
 	 * @throws LanguageException 
 	 * @throws HopsException 
 	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws LopsException 
 	 */
-	public boolean executeScript (InputStream script,  Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, LanguageException, HopsException, DMLRuntimeException{
+	public boolean executeScript (InputStream script,  Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
 		VISUALIZE = false;
 		
 		String debug = conf.get("systemml.logging");
@@ -463,23 +424,15 @@ public class DMLScript {
 			run();
 		}
 		catch (IOException e){
-			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected");
+			LOG.error("Failed in executing DML script with SystemML engine, IO failure detected", e);
 			throw e;
 		}
 		catch (ParseException e){
-			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected");
+			LOG.error("Failed in executing DML script with SystemML engine, parsing failure detected", e);
 			throw e;
 		}
-		catch (HopsException e){
-			LOG.error("Failed in executing DML script with SystemML engine, HOPs failure detected");
-			throw e;
-		}
-		catch (DMLRuntimeException e){
-			LOG.error("Failed in executing DML script with SystemML engine, runtime failure detected");
-			throw e;
-		}
-		catch (LanguageException e){
-			LOG.error("Failed in executing DML script with SystemML engine, script has language issues");
+		catch (DMLException e){
+			LOG.error("Failed in executing DML script with SystemML engine, DML exception detected", e);
 			throw e;
 		}
 		finally{
@@ -513,7 +466,6 @@ public class DMLScript {
 					}
 				}
 				if (!validProperty){
-					LOG.error("Unknown execution property: " + key);
 					resetExecutionOptions();
 					throw new LanguageException("Unknown execution property: " + key);
 				}
@@ -550,7 +502,6 @@ public class DMLScript {
 					arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
 					arg.equalsIgnoreCase("-exec") ||
 					arg.startsWith("-config=")){
-					LOG.error("-args must be the final argument for DMLScript!");
 					resetExecutionOptions();
 					throw new LanguageException("-args must be the final argument for DMLScript!");
 			}
@@ -657,8 +608,9 @@ public class DMLScript {
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 * @throws LanguageException 
-	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 * @throws DMLException 
 	 */
 	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig config) throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException {
 		
@@ -669,14 +621,7 @@ public class DMLScript {
 				 +"Defaults: mem util " + OptimizerUtils.MEM_UTIL_FACTOR + ", sparsity " + OptimizerUtils.DEF_SPARSITY + ", def mem " +  + OptimizerUtils.DEF_MEM_FACTOR);
 			
 		/////////////////////// construct the lops ///////////////////////////////////
-		try {
-			dmlt.constructLops(prog);
-		}
-		catch (Exception e)
-		{
-			LOG.error("DMLTranslator failed in constructing LOPs");
-			throw new LopsException("DMLTranslator failed in constructing LOPs");
-		}
+		dmlt.constructLops(prog);
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("\n********************** LOPS DAG *******************");
@@ -690,14 +635,8 @@ public class DMLScript {
 
 		////////////////////// generate runtime program ///////////////////////////////
 		Program rtprog = null;
-		try {
+
 			rtprog = prog.getRuntimeProgram(config);
-		}
-		catch (Exception e){
-			LOG.error("Failed to generate runtime program");
-			throw new DMLRuntimeException("Failed to generate runtime program");
-			
-		}
 		
 		//setup nimble queue (external package support)
 		DAGQueue dagQueue = setupNIMBLEQueue(config);
@@ -738,18 +677,15 @@ public class DMLScript {
 			//run execute (w/ exception handling to ensure proper shutdown)
 			rtprog.execute (new LocalVariableMap (), null);  
 		}
-		catch(Exception ex)
-		{
-			LOG.error("Failed in exeucting runtime program: " + ex.toString());
-			throw new DMLRuntimeException("Failing in executing runtime program");
-		}
 		finally //ensure cleanup/shutdown
 		{			
 			//TODO: Should statistics being turned on at info level?
 			Statistics.stopRunTimer();
 	
-			//TODO: Leo check what's this part
+			//TODO: System.out is for running with JAQL shell, eventually we hope JAQL shell will not use
+			// its own log4j.properties
 			LOG.info(Statistics.display());
+			System.out.println(Statistics.display());
 			
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup all nimble threads
@@ -863,8 +799,7 @@ public class DMLScript {
 			((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
 			                .setTextContent( sb.toString() );						
 		} catch (Exception e) {
-			LOG.error("Failed in setting up NIMBLE queue: " + e.getMessage());
-			throw new PackageRuntimeException ("Error parsing Nimble configuration files");
+			throw new PackageRuntimeException ("Error parsing Nimble configuration files", e);
 		}
 
 		// get threads configuration and validate
@@ -877,7 +812,6 @@ public class DMLScript {
 				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
 		
 		if (numSowThreads < 1 || numReapThreads < 1){
-			LOG.error("Illegal values for thread count (must be > 0)");
 			throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
 		}
 
@@ -887,8 +821,7 @@ public class DMLScript {
 			driver = new PMLDriver(numSowThreads, numReapThreads, config);
 			driver.startEmptyDriver(config);
 		} catch (Exception e) {
-			LOG.error("Failed in initializing NIMBLE driver: " + e.getMessage());
-			throw new PackageRuntimeException("Problem starting nimble driver");
+			throw new PackageRuntimeException("Problem starting nimble driver", e);
 		} 
 
 		return driver.getDAGQueue();
@@ -904,28 +837,23 @@ public class DMLScript {
 	private static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{
-		try {
-			//check security aspects
-			checkSecuritySetup();
+		//check security aspects
+		checkSecuritySetup();
 		
-			//create scratch space with appropriate permissions
-			String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-			MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		//create scratch space with appropriate permissions
+		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
+		MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
-			//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
-			cleanupHadoopExecution(config); 
+		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
+		cleanupHadoopExecution(config); 
 		
-			//init caching (incl set active)
-			LocalFileUtils.createWorkingDirectory();
-			CacheableData.initCaching();
+		//init caching (incl set active)
+		LocalFileUtils.createWorkingDirectory();
+		CacheableData.initCaching();
 						
-			//reset statistics (required if multiple scripts executed in one JVM)
-			Statistics.setNoOfExecutedMRJobs( 0 );
-		}
-		catch (Exception ex){
-			LOG.error("Failed in initializing Hadoop execution: " + ex.getMessage());
-			throw new DMLRuntimeException("Failed in initializing Hadoop execution");
-		}
+		//reset statistics (required if multiple scripts executed in one JVM)
+		Statistics.setNoOfExecutedMRJobs( 0 );
+	
 	}
 	
 	/**
@@ -947,8 +875,7 @@ public class DMLScript {
 					groupNames.add( g );
 			}
 		}catch(Exception ex){
-			LOG.error("Failed in checking current user and group security info: " + ex.getStackTrace());
-			throw new DMLRuntimeException("Failed in checking current user and group security info");
+			LOG.warn("Failed in checking current user and group security info: " + ex.getStackTrace());
 		}
 		
 		//analyze hadoop configuration

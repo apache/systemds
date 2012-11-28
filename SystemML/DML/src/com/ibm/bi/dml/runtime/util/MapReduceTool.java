@@ -677,8 +677,7 @@ public class MapReduceTool {
 			}	
 		}
 		catch (Exception ex){
-			LOG.error("Failed in creating a non existing dir on HDFS: " + ex.getStackTrace());
-			throw new IOException("Failed in creating a non existing dir on HDFS");
+			throw new IOException("Failed in creating a non existing dir on HDFS", ex);
 		}
 		
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect

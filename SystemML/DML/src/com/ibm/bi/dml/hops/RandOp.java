@@ -92,8 +92,7 @@ public class RandOp extends Hops
 			try {
 				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
 			} catch (Exception e){
-				LOG.error("Could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig" + e.getStackTrace());
-				throw new LopsException("Could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+				throw new LopsException("Could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig", e);
 			}
 			
 			HashMap<String, Lops> inputLops = new HashMap<String, Lops>();

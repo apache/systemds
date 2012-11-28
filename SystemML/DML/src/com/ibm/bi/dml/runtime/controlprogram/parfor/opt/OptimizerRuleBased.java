@@ -209,7 +209,7 @@ public class OptimizerRuleBased extends Optimizer
 		//search for candidates
 		boolean apply = false;
 		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID  //only if we are allowed to recompile
-			&& _N >= PROB_SIZE_THRESHOLD_PARTITIONING         ) //only if beneficial wrt problem size
+				&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
 			HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();

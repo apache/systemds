@@ -120,9 +120,8 @@ public class BinaryExpression extends Expression {
 					&& this.getRight().getOutput().getDim1() != -1
 					&& this.getLeft().getOutput().getDim2() != this.getRight()
 							.getOutput().getDim1()) {
-				throw new LanguageException(this.printErrorLocation() +
-						"invalid dimensions for matrix multiplication",
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				LOG.error(this.printErrorLocation() + "invalid dimensions for matrix multiplication");
+				throw new LanguageException(this.printErrorLocation() + "invalid dimensions for matrix multiplication", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDimensions(this.getLeft().getOutput().getDim1(), this
 					.getRight().getOutput().getDim2());
@@ -130,10 +129,8 @@ public class BinaryExpression extends Expression {
 
 		if (this.getOpCode() == Expression.BinaryOp.POW) {
 			if (this.getRight().getOutput().getDataType() != DataType.SCALAR) {
-				throw new LanguageException(this.printErrorLocation() +
-						"Second operand to ^ should be a scalar in "
-								+ this.toString(),
-						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				LOG.error(this.printErrorLocation() + "Second operand to ^ should be a scalar in " + this.toString());
+				throw new LanguageException(this.printErrorLocation() + "Second operand to ^ should be a scalar in " + this.toString(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		this.setOutput(output);

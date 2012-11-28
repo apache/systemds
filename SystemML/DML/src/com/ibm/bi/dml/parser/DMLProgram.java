@@ -79,9 +79,10 @@ public class DMLProgram {
 	
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) throws LanguageException{
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
-		if (namespaceProgram == null)
+		if (namespaceProgram == null){
+			LOG.error("ERROR: namespace " + namespaceKey + " is underfined");
 			throw new LanguageException("ERROR: namespace " + namespaceKey + " is underfined");
-			
+		}
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;
 	}
@@ -195,16 +196,19 @@ public class DMLProgram {
 					String resultVar = ((WhileStatementBlock) sb).get_predicateLops().getOutputParameters().getLabel();
 					rtpb.setPredicateResultVar( resultVar );
 				}
-				else
+				else {
+					LOG.error(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
 					throw new LopsException(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
-			}
 			
+				}
+			}			
 			//// process the body of the while statement block ////
 			
 			WhileStatementBlock wsb = (WhileStatementBlock)sb;
-			if (wsb.getNumStatements() > 1)
+			if (wsb.getNumStatements() > 1){
+				LOG.error(wsb.printBlockErrorLocation() + "WhileStatementBlock should only have 1 statement");
 				throw new LopsException(wsb.printBlockErrorLocation() + "WhileStatementBlock should only have 1 statement");
-			
+			}
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
 			for (StatementBlock sblock : wstmt.getBody()){
 				
@@ -215,6 +219,7 @@ public class DMLProgram {
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (wsb.get_lops() != null && wsb.get_lops().size() > 0){
+				LOG.error(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 				throw new LopsException(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 			}
 			
@@ -249,15 +254,18 @@ public class DMLProgram {
 					String resultVar = ((IfStatementBlock) sb).get_predicateLops().getOutputParameters().getLabel();
 					rtpb.setPredicateResultVar( resultVar );
 				}
-				else
+				else {
+					LOG.error(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
 					throw new LopsException(sb.printBlockErrorLocation() + "Error in translating the WHILE predicate."); 
+				}
 			}
 			
 			// process the body of the if statement block
 			IfStatementBlock isb = (IfStatementBlock)sb;
-			if (isb.getNumStatements() > 1)
+			if (isb.getNumStatements() > 1){
+				LOG.error(isb.printBlockErrorLocation() + "IfStatementBlock should have only 1 statement");
 				throw new LopsException(isb.printBlockErrorLocation() + "IfStatementBlock should have only 1 statement");
-			
+			}
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
 			
 			// process the if body
@@ -274,6 +282,7 @@ public class DMLProgram {
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (isb.get_lops() != null && isb.get_lops().size() > 0){
+				LOG.error(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 				throw new LopsException(isb.printBlockErrorLocation() + "IfStatementBlock should have no Lops");
 			}
 			
@@ -336,9 +345,10 @@ public class DMLProgram {
 			rtpb.setIterablePredicateVars( iterPredData );
 			
 			// process the body of the for statement block
-			if (fsb.getNumStatements() > 1)
+			if (fsb.getNumStatements() > 1){
+				LOG.error(fsb.printBlockErrorLocation() + " "  + sbName + " should have 1 statement" );
 				throw new LopsException(fsb.printBlockErrorLocation() + " "  + sbName + " should have 1 statement" );
-			
+			}
 			ForStatement fs = (ForStatement)fsb.getStatement(0);
 			for (StatementBlock sblock : fs.getBody()){
 				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
@@ -347,6 +357,7 @@ public class DMLProgram {
 		
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (fsb.get_lops() != null && fsb.get_lops().size() > 0){
+				LOG.error(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 				throw new LopsException(fsb.printBlockErrorLocation() + sbName + " should have no Lops" );
 			}
 			
@@ -363,8 +374,10 @@ public class DMLProgram {
 		else if (sb instanceof FunctionStatementBlock){
 			
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
-			if (fsb.getNumStatements() > 1)
+			if (fsb.getNumStatements() > 1){
+				LOG.error(fsb.printBlockErrorLocation() + "FunctionStatementBlock should only have 1 statement");
 				throw new LopsException(fsb.printBlockErrorLocation() + "FunctionStatementBlock should only have 1 statement");
+			}
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			FunctionProgramBlock rtpb = null;
 			
@@ -379,7 +392,7 @@ public class DMLProgram {
 				try {
 					scratchSpaceLoc = config.getTextValue(DMLConfig.SCRATCH_SPACE);
 				} catch (Exception e){
-					System.out.println(fsb.printBlockErrorLocation() + "could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
+					LOG.error(fsb.printBlockErrorLocation() + "could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig");
 				}				
 				StringBuffer buff = new StringBuffer();
 				buff.append(scratchSpaceLoc);
@@ -410,6 +423,7 @@ public class DMLProgram {
 				}
 				
 				if (fstmt.getBody().size() > 0){
+					LOG.error(fstmt.printErrorLocation() + "ExternalFunctionStatementBlock should have no statement blocks in body");
 					throw new LopsException(fstmt.printErrorLocation() + "ExternalFunctionStatementBlock should have no statement blocks in body");
 				}
 			}
@@ -428,6 +442,7 @@ public class DMLProgram {
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (fsb.get_lops() != null && fsb.get_lops().size() > 0){
+				LOG.error(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 				throw new LopsException(fsb.printBlockErrorLocation() + "FunctionStatementBlock should have no Lops");
 			}
 			

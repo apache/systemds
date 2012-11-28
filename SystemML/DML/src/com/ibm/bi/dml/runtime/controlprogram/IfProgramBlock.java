@@ -170,7 +170,7 @@ public class IfProgramBlock extends ProgramBlock {
 				}
 				catch(Exception e){
 					
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statmement body ", e);
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement body ", e);
 				}
 				
 				_variables = pb._variables;
@@ -188,7 +188,7 @@ public class IfProgramBlock extends ProgramBlock {
 				}
 				catch (Exception e){
 					
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statmement body ", e);
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statement body ", e);
 				}
 				_variables = pb._variables;
 			}

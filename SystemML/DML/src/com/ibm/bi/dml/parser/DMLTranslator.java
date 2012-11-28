@@ -100,6 +100,7 @@ public class DMLTranslator {
 				// add the input variables for the function to input variable list
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				if (fblock.getNumStatements() > 1){
+					LOG.error(fstmt.printErrorLocation() + "FunctionStatementBlock can only have 1 FunctionStatement");
 					throw new LanguageException(fstmt.printErrorLocation() + "FunctionStatementBlock can only have 1 FunctionStatement");
 				}
 			
@@ -251,9 +252,10 @@ public class DMLTranslator {
 			WhileStatement whileStmt = (WhileStatement)sb.getStatement(0);
 			ArrayList<StatementBlock> body = whileStmt.getBody();
 				
-			if (sb.get_hops() != null && sb.get_hops().size() != 0) 
+			if (sb.get_hops() != null && sb.get_hops().size() != 0) {
+				LOG.error(sb.printBlockErrorLocation() + "WhileStatementBlock should not have hops");
 				throw new HopsException(sb.printBlockErrorLocation() + "WhileStatementBlock should not have hops");
-			
+			}
 			// step through stmt blocks in while stmt body
 			for (StatementBlock stmtBlock : body){
 				constructLops(stmtBlock);
@@ -270,9 +272,10 @@ public class DMLTranslator {
 			ArrayList<StatementBlock> ifBody = ifStmt.getIfBody();
 			ArrayList<StatementBlock> elseBody = ifStmt.getElseBody();
 				
-			if (sb.get_hops() != null && sb.get_hops().size() != 0)
+			if (sb.get_hops() != null && sb.get_hops().size() != 0){
+				LOG.error(sb.printBlockErrorLocation() + "IfStatementBlock should not have hops");
 				throw new HopsException(sb.printBlockErrorLocation() + "IfStatementBlock should not have hops");
-			
+			}
 			// step through stmt blocks in if stmt ifBody
 			for (StatementBlock stmtBlock : ifBody)
 				constructLops(stmtBlock);
@@ -292,9 +295,10 @@ public class DMLTranslator {
 			ForStatement fs = (ForStatement)sb.getStatement(0);
 			ArrayList<StatementBlock> body = fs.getBody();
 						
-			if (sb.get_hops() != null && sb.get_hops().size() != 0) 
+			if (sb.get_hops() != null && sb.get_hops().size() != 0) {
+				LOG.error(sb.printBlockErrorLocation() + "ForStatementBlock should not have hops");
 				throw new HopsException(sb.printBlockErrorLocation() + "ForStatementBlock should not have hops");
-			
+			}
 			// step through stmt blocks in FOR stmt body
 			for (StatementBlock stmtBlock : body)
 				constructLops(stmtBlock);
@@ -317,9 +321,10 @@ public class DMLTranslator {
 			FunctionStatement functStmt = (FunctionStatement)sb.getStatement(0);
 			ArrayList<StatementBlock> body = functStmt.getBody();
 			
-			if (sb.get_hops() != null && sb.get_hops().size() != 0) 
+			if (sb.get_hops() != null && sb.get_hops().size() != 0) {
+				LOG.error(sb.printBlockErrorLocation() + "FunctionStatementBlock should not have hops");
 				throw new HopsException(sb.printBlockErrorLocation() + "FunctionStatementBlock should not have hops");
-			
+			}
 			// step through stmt blocks in while stmt body
 			for (StatementBlock stmtBlock : body){
 				constructLops(stmtBlock);
@@ -663,7 +668,7 @@ public class DMLTranslator {
 		}
 		
 		lops.set_visited(VISIT_STATUS.DONE);
-		System.out.println(indendation + lops.get_tableName() + ": " + lops.get_sql());
+		LOG.debug(indendation + lops.get_tableName() + ": " + lops.get_sql());
 	}
 	
 	public void printClusteredSQLLops(SQLLops lops, String indendation)
@@ -671,7 +676,7 @@ public class DMLTranslator {
 		if(lops.get_visited() != VISIT_STATUS.NOTVISITED)
 			return;
 		
-		System.out.println(indendation + lops.get_tableName() + ": " + lops.get_sql());
+		LOG.debug(indendation + lops.get_tableName() + ": " + lops.get_sql());
 		lops.set_visited(VISIT_STATUS.DONE);
 		
 		for(SQLLops l : lops.getInputs())
@@ -1058,8 +1063,10 @@ public class DMLTranslator {
 					predicateLops = predicateHops.constructLops();
 				predicateLops.printMe();
 
-				if (wstb.getNumStatements() > 1)
+				if (wstb.getNumStatements() > 1){
+					LOG.error(wstb.printBlockErrorLocation() + "WhileStatementBlock has more than 1 statement");
 					throw new HopsException(wstb.printBlockErrorLocation() + "WhileStatementBlock has more than 1 statement");
+				}
 				WhileStatement ws = (WhileStatement)wstb.getStatement(0);
 
 				for (StatementBlock sb : ws.getBody()){
@@ -1078,8 +1085,10 @@ public class DMLTranslator {
 					predicateLops = predicateHops.constructLops();
 				predicateLops.printMe();
 
-				if (istb.getNumStatements() > 1)
+				if (istb.getNumStatements() > 1){
+					LOG.error(istb.printBlockErrorLocation() + "IfStatmentBlock has more than 1 statement");
 					throw new HopsException(istb.printBlockErrorLocation() + "IfStatmentBlock has more than 1 statement");
+				}
 				IfStatement is = (IfStatement)istb.getStatement(0);
 
 				LOG.debug("\n**** LOPS DAG FOR IF BODY ****");
@@ -1121,8 +1130,10 @@ public class DMLTranslator {
 					llops.printMe();
 				}
 
-				if (fsb.getNumStatements() > 1)
+				if (fsb.getNumStatements() > 1){
+					LOG.error(fsb.printBlockErrorLocation() + "ForStatementBlock has more than 1 statement");
 					throw new HopsException(fsb.printBlockErrorLocation() + "ForStatementBlock has more than 1 statement");
+				}
 				ForStatement ws = (ForStatement)fsb.getStatement(0);
 
 				for (StatementBlock sb : ws.getBody()){
@@ -1314,6 +1325,7 @@ public class DMLTranslator {
 			}
 		}
 		if ( checkFlag == false) {
+			LOG.error("Memory estimate for one or more Hops is not computed!!");
 			throw new HopsException("Memory estimate for one or more Hops is not computed!!");
 		}
 		
@@ -1748,7 +1760,6 @@ public class DMLTranslator {
 				InputStatement is = (InputStatement) current;
 				
 				DataExpression source = is.getSource();
-				
 				DataIdentifier target = is.getIdentifier();
 
 				DataOp ae = (DataOp)processExpression(source, target, _ids);
@@ -1873,9 +1884,10 @@ public class DMLTranslator {
 
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-					if (fstmt == null)
+					if (fstmt == null){
+						LOG.error(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
 						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
-					
+					}
 					StringBuilder inst = new StringBuilder();
 
 					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
@@ -1960,7 +1972,7 @@ public class DMLTranslator {
 				DataExpression source = rs.getSource();
 				DataIdentifier target = rs.getIdentifier();
 				
-				// CASE: rand statement -- result of validate reset due to not propogating sizes for loops.  Need to re-update here 
+				// CASE: rand statement -- result of validate reset due to not propogating sizes for loops / if-statements.  Need to re-update here 
 				Expression rowsExpr = rs.getSource().getVarParam(RandStatement.RAND_ROWS);
 				if ( rowsExpr instanceof IntIdentifier && ((IntIdentifier)rowsExpr).getValue() > 0){
 					rs.getSource().getOutput()._dim1 = ((IntIdentifier)rowsExpr).getValue();
@@ -2089,6 +2101,7 @@ public class DMLTranslator {
 			DataOp read = null;
 			
 			if (var == null) {
+				LOG.error(var.printErrorLocation() + "variable " + varName + " not live variable for conditional predicate");
 				throw new ParseException(var.printErrorLocation() + "variable " + varName + " not live variable for conditional predicate");
 			} else {
 				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
@@ -2149,6 +2162,7 @@ public class DMLTranslator {
 			DataIdentifier var = passedSB.liveIn().getVariable(varName);
 			DataOp read = null;
 			if (var == null) {
+				LOG.error(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
 				throw new ParseException(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
 			}
 			else {
@@ -2294,6 +2308,7 @@ public class DMLTranslator {
 					rowUpperHops.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 				} catch (HopsException e) {
 					e.printStackTrace();
+					LOG.error(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
 					throw new RuntimeException(target.printErrorLocation() + "error processing row upper index for indexed expression " + target.toString());
 				}
 			}
@@ -2315,6 +2330,7 @@ public class DMLTranslator {
 					colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(target.getName()));
 				} catch (HopsException e) {
 					e.printStackTrace();
+					LOG.error(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
 					throw new RuntimeException(target.printErrorLocation() + " error processing column upper index for indexed expression " + target.toString());
 				}
 			}
@@ -2329,9 +2345,10 @@ public class DMLTranslator {
 		
 		// process the target to get targetHops
 		Hops targetOp = hops.get(target.getName());
-		if (targetOp == null)
+		if (targetOp == null){
+			LOG.error(target.printErrorLocation() + " must define matrix " + target.getName() + " before indexing operations are allowed ");
 			throw new ParseException(target.printErrorLocation() + " must define matrix " + target.getName() + " before indexing operations are allowed ");
-		
+		}
 		Hops leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
 		
@@ -2369,6 +2386,7 @@ public class DMLTranslator {
 					rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NROW, hops.get(source.getName()));
 					rowUpperHops.setAllPositions(source.getBeginLine(),source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 				} catch (HopsException e) {
+					LOG.error(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString());
 					throw new RuntimeException(source.printErrorLocation() + "error processing row upper index for indexed identifier " + source.toString() + e);
 				}
 			}
@@ -2389,6 +2407,7 @@ public class DMLTranslator {
 				try {
 					colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hops.OpOp1.NCOL, hops.get(source.getName()));
 				} catch (HopsException e) {
+					LOG.error(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
 					throw new RuntimeException(source.printErrorLocation() + "error processing column upper index for indexed indentifier " + source.toString(), e);
 				}
 			}
@@ -2495,6 +2514,7 @@ public class DMLTranslator {
 		}
 
 		if (constLeft || constRight) {
+			LOG.error(source.printErrorLocation() + "Boolean expression with constant unsupported");
 			throw new RuntimeException(source.printErrorLocation() + "Boolean expression with constant unsupported");
 		}
 
@@ -2527,8 +2547,10 @@ public class DMLTranslator {
 				op = OpOp2.AND;
 			} else if (source.getOpCode() == Expression.BooleanOp.LOGICALOR) {
 				op = OpOp2.OR;
-			} else
+			} else {
+				LOG.error(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
 				throw new RuntimeException(source.printErrorLocation() + "Unknown boolean operation " + source.getOpCode());
+			}
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, left, right);
 			currBop.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 			// setIdentifierParams(currBop,source.getOutput());
@@ -2581,6 +2603,11 @@ public class DMLTranslator {
 			break;
 			
 		default:
+			
+			LOG.error(source.printErrorLocation() + 
+					"processParameterizedBuiltinFunctionExpression() -- Unknown operation:  "
+							+ source.getOpCode());
+			
 			throw new ParseException(source.printErrorLocation() + 
 					"processParameterizedBuiltinFunctionExpression() -- Unknown operation:  "
 							+ source.getOpCode());
@@ -2623,8 +2650,7 @@ public class DMLTranslator {
 		// construct hop based on opcode
 		switch(source.getOpCode()) {
 		case READ:
-			currBuiltinOp = new DataOp(
-					target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTREAD, paramHops);
+			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTREAD, paramHops);
 			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(Statement.IO_FILENAME)).getValue());
 			break;
 			
@@ -2641,6 +2667,10 @@ public class DMLTranslator {
 			break;
 			
 		default:
+			LOG.error(source.printErrorLocation() + 
+					"processDataExpression():: Unknown operation:  "
+							+ source.getOpCode());
+			
 			throw new ParseException(source.printErrorLocation() + 
 					"processDataExpression():: Unknown operation:  "
 							+ source.getOpCode());
@@ -2836,9 +2866,10 @@ public class DMLTranslator {
 				operation = OpOp2.EQUAL;
 			else if ( sop.equalsIgnoreCase("!=") )
 				operation = OpOp2.NOTEQUAL;
-			else
+			else {
+				LOG.error(source.printErrorLocation() + "Unknown argument (" + sop + ") for PPRED.");
 				throw new ParseException(source.printErrorLocation() + "Unknown argument (" + sop + ") for PPRED.");
-			
+			}
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), operation, expr, expr2);
 			break;
 			
@@ -2940,6 +2971,11 @@ public class DMLTranslator {
 				mathOp1 = Hops.OpOp1.EXP;
 				break;
 			default:
+				
+				LOG.error(source.printErrorLocation() +
+						"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
+								+ source.getOpCode());
+				
 				throw new ParseException(source.printErrorLocation() +
 						"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
 								+ source.getOpCode());
@@ -2954,6 +2990,11 @@ public class DMLTranslator {
 						mathOp2 = Hops.OpOp1.LOG;
 						break;
 					default:
+						
+						LOG.error(source.printErrorLocation() +
+								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
+										+ source.getOpCode());
+						
 						throw new ParseException(source.printErrorLocation() +
 								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
 										+ source.getOpCode());
@@ -2967,6 +3008,11 @@ public class DMLTranslator {
 						mathOp3 = Hops.OpOp2.LOG;
 						break;
 					default:
+						
+						LOG.error(source.printErrorLocation() +
+								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
+										+ source.getOpCode());
+						
 						throw new ParseException(source.printErrorLocation() +
 								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
 										+ source.getOpCode());

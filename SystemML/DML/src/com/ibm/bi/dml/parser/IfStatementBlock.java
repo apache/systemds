@@ -18,15 +18,12 @@ public class IfStatementBlock extends StatementBlock {
 		
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
-		
+		}
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
-		
-		// merge function calls if possible
-		//ifstmt.setIfBody(StatementBlock.mergeFunctionCalls(ifstmt.getIfBody(), dmlProg));
-		//ifstmt.setElseBody(StatementBlock.mergeFunctionCalls(ifstmt.getElseBody(), dmlProg));
-		
+			
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
 		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
 			
@@ -153,30 +150,49 @@ public class IfStatementBlock extends StatementBlock {
 		for (String updatedVar : this._updated.getVariableNames()){
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			
 			if (ifVersion != null && elseVersion != null) {
 				long updatedDim1 = -1, updatedDim2 = -1;
-				if (ifVersion.getDim1() == elseVersion.getDim1())
-					updatedDim1 = ifVersion.getDim1();
-				if (ifVersion.getDim2() == elseVersion.getDim2())
-					updatedDim2 = ifVersion.getDim2();
+				 
+				long ifVersionDim1 		= (ifVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)ifVersion).getOrigDim1() : ifVersion.getDim1(); 
+				long elseVersionDim1	= (elseVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)elseVersion).getOrigDim1() : elseVersion.getDim1(); 
 				
-				ifVersion.setDimensions(updatedDim1, updatedDim2);
-			
-				recVars.addVariable(updatedVar, ifVersion);
+				long ifVersionDim2 		= (ifVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)ifVersion).getOrigDim2() : ifVersion.getDim2(); 
+				long elseVersionDim2	= (elseVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)elseVersion).getOrigDim2() : elseVersion.getDim2(); 
+				
+				if (ifVersionDim1 == elseVersionDim1){
+					updatedDim1 = ifVersionDim1;
+				}
+				if (ifVersionDim2 == elseVersionDim2){
+					updatedDim2 = ifVersionDim2;
+				}
+				
+				// add reconsiled version (deep copy of ifVersion, cast as DataIdentifier)
+				DataIdentifier recVersion = new DataIdentifier(ifVersion);
+				recVersion.setDimensions(updatedDim1, updatedDim2);
+				recVars.addVariable(updatedVar, recVersion);
 			}
 			else {
+				// CASE: defined only if branch
 				if (ifVersion != null){
-					// update dimensions to unknown
-					ifVersion.setDimensions(-1, -1);
-					recVars.addVariable(updatedVar, ifVersion);
+					// add reconciled version (deep copy of ifVersion, cast as DataIdentifier)
+					DataIdentifier recVersion = new DataIdentifier(ifVersion);
+					recVersion.setDimensions(-1, -1);
+					recVars.addVariable(updatedVar, recVersion);
 				}
+				// CASE: defined only else branch
 				else if (elseVersion != null){
-					elseVersion.setDimensions(-1, -1);
-					recVars.addVariable(updatedVar, elseVersion);
+					// add reconciled version (deep copy of elseVersion, cast as DataIdentifier)
+					DataIdentifier recVersion = new DataIdentifier(elseVersion);
+					recVersion.setDimensions(-1, -1);
+					recVars.addVariable(updatedVar, recVersion);
 				}
+				// CASE: updated, but not in either if or else branch
 				else {
-					_updated.getVariable(updatedVar).setDimensions(-1,-1);
-					recVars.addVariable(updatedVar, _updated.getVariable(updatedVar));
+					// add reconciled version (deep copy of elseVersion, cast as DataIdentifier)
+					DataIdentifier recVersion = new DataIdentifier(_updated.getVariable(updatedVar));
+					recVersion.setDimensions(-1, -1);
+					recVars.addVariable(updatedVar, recVersion);
 				}
 			}
 		}
@@ -194,9 +210,10 @@ public class IfStatementBlock extends StatementBlock {
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
-		
+		}
 		_read = new VariableSet();
 		_gen = new VariableSet();
 		_kill = new VariableSet();
@@ -327,9 +344,10 @@ public class IfStatementBlock extends StatementBlock {
 	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
-		
+		}
 		VariableSet currentLiveOutIf = new VariableSet();
 		currentLiveOutIf.addVariables(loPassed);
 		VariableSet currentLiveOutElse = new VariableSet();
@@ -361,6 +379,7 @@ public class IfStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException{
 	
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 		}
 			
@@ -411,7 +430,7 @@ public class IfStatementBlock extends StatementBlock {
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			System.out.println(_warnSet.getVariable(varName).printWarningLocation() + "Initialization of " + varName + " depends on if-else execution");
+			LOG.warn(_warnSet.getVariable(varName).printWarningLocation() + "Initialization of " + varName + " depends on if-else execution");
 		}
 		
 		_liveIn = new VariableSet();

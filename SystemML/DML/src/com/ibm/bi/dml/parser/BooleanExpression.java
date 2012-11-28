@@ -89,8 +89,8 @@ public class BooleanExpression extends Expression{
 		this.setOutput(output);
 		if ((_opcode == Expression.BooleanOp.CONDITIONALAND) ||
 				(_opcode == Expression.BooleanOp.CONDITIONALOR)) {
-			throw new LanguageException(this.printErrorLocation() + "Unsupported boolean operation " + _opcode.toString(),
-					LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			LOG.error(this.printErrorLocation() + "Unsupported boolean operation " + _opcode.toString());
+			throw new LanguageException(this.printErrorLocation() + "Unsupported boolean operation " + _opcode.toString(), LanguageException.LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}		
 	

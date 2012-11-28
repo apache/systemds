@@ -14,6 +14,7 @@ public class FunctionStatement extends Statement{
 	protected Vector <DataIdentifier> _inputParams, _outputParams;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
 	}
 	
@@ -94,23 +95,25 @@ public class FunctionStatement extends Statement{
 	}
 
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 	}
 	
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		
 	}
 	
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println(this.printWarningLocation() + " -- should not call variablesRead from FunctionStatement ");
+		LOG.warn(this.printWarningLocation() + " -- should not call variablesRead from FunctionStatement ");
 		return new VariableSet();
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println(this.printWarningLocation() + " -- should not call variablesRead from FunctionStatement ");
+		LOG.warn(this.printWarningLocation() + " -- should not call variablesRead from FunctionStatement ");
 		return new VariableSet();
 	}
 	

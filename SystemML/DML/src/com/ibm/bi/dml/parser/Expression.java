@@ -98,6 +98,7 @@ public abstract class Expression {
 	}
 	
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+		LOG.error(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
 		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
 	};
 	
@@ -194,6 +195,8 @@ public abstract class Expression {
 				return DataType.MATRIX;
 		}
 
+		LOG.error(id1.printErrorLocation() + "Invalid Datatypes for operation");
+		
 		throw new LanguageException(id1.printErrorLocation() + "Invalid Datatypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}
@@ -221,6 +224,8 @@ public abstract class Expression {
 				return ValueType.STRING;
 		}
 
+		LOG.error(id1.printErrorLocation() + "Invalid Valuetypes for operation");
+		
 		throw new LanguageException(id1.printErrorLocation() + "Invalid Valuetypes for operation",
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 	}

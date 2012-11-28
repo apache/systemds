@@ -12,7 +12,7 @@ import org.apache.commons.logging.LogFactory;
  * we don't have to edit the java in the JavaCC file.
  */
 public abstract class DMLQLParserBase {
-	protected static final Log LOG = LogFactory.getLog(DMLQLParser.class.getName());
+	protected static final Log LOG = LogFactory.getLog(DMLQLParserBase.class.getName());
 	
 	/** File encoding to use if no other encoding is explicitly specified. */
 	protected static final String DEFAULT_ENCODING = "UTF-8";
@@ -116,8 +116,8 @@ public abstract class DMLQLParserBase {
 	public static final String dequoteStr(char quotechar, String str) {
 		if (str.charAt(0) != quotechar
 				|| str.charAt(str.length() - 1) != quotechar) {
-			throw new IllegalArgumentException("Can't dequote string '" + str
-					+ "'");
+			LOG.error("Can't dequote string '" + str + "'");
+			throw new IllegalArgumentException("Can't dequote string '" + str + "'");
 		}
 
 		StringBuilder sb = new StringBuilder();
@@ -130,8 +130,8 @@ public abstract class DMLQLParserBase {
 				// When we find ESCAPE followed by the quote char, skip the
 				// escape; the quote character will be passed through.
 				if (str.length() - 1 == pos) {
-					throw new IllegalArgumentException(
-					"Escape character at end of string");
+					LOG.error("Escape character at end of string");
+					throw new IllegalArgumentException("Escape character at end of string");
 				}
 			} else {
 				// All other characters just get passed through.
@@ -163,10 +163,10 @@ public abstract class DMLQLParserBase {
 		try {
 			return __inputInternal();
 		} catch (ParseException e) {
-			LOG.error("Failed in DMLProgram parsing ", e);
+			LOG.error("Failed in DMLProgram parsing: " + e.getMessage());
 			return null;
 		} catch (TokenMgrError e) {
-			LOG.error("Token manager error ", e);
+			LOG.error("Error: " + e.getMessage());
 		}
 		tearDown();
 		return null;

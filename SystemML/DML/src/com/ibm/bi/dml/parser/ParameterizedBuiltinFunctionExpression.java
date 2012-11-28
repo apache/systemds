@@ -107,9 +107,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 		
 		case GROUPEDAGG:
 			
-			if (getVarParam("target")  == null || getVarParam("groups") == null)
+			if (getVarParam("target")  == null || getVarParam("groups") == null){
+				LOG.error(this.printErrorLocation() + "Must define both target and groups and both must have same dimensions");
 				throw new LanguageException(this.printErrorLocation() + "Must define both target and groups and both must have same dimensions");
-			
+			}
 			if (getVarParam("target") instanceof DataIdentifier && getVarParam("groups") instanceof DataIdentifier && (getVarParam("weights") == null || getVarParam("weights") instanceof DataIdentifier))
 			{
 				
@@ -119,19 +120,28 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 				
 			
 				if (targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2() ){
+					
+					LOG.error(this.printErrorLocation() + "target and groups must have same dimensions -- " 
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
+					
 					throw new LanguageException(this.printErrorLocation() + "target and groups must have same dimensions -- " 
 							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
 				}
 				if (weightsid != null && (targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() )){
+					
+					LOG.error(this.printErrorLocation() + "target and weights must have same dimensions -- "
+							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols " );
+					
 					throw new LanguageException(this.printErrorLocation() + "target and weights must have same dimensions -- "
 							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols " );
 				}
 			}
 			
 			
-			if (getVarParam("fn") == null)
-					throw new LanguageException(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");
-				 
+			if (getVarParam("fn") == null){
+				LOG.error(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");	
+				throw new LanguageException(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");
+			}
 			
 			Expression functParam = getVarParam("fn");
 			
@@ -145,15 +155,19 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 				// check ELSE IF fname is allowed
 				if(fnameStr.equals("centralmoment")){
 					String orderStr = getVarParam("order") == null ? null : getVarParam("order").toString();
-					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4")))
+					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4"))){
+						LOG.error(this.printErrorLocation() + "for centralmoment, must define order.  Order must be equal to 2,3, or 4");
 						throw new LanguageException(this.printErrorLocation() + "for centralmoment, must define order.  Order must be equal to 2,3, or 4");
-				}	
+					}
+				}
 				else if (fnameStr.equals("count") 
 						|| fnameStr.equals("sum") 
 						|| fnameStr.equals("mean")
 						|| fnameStr.equals("variance")){}
-				else
+				else {
+					LOG.error(this.printErrorLocation() + "fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
 					throw new LanguageException(this.printErrorLocation() + "fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
+				}
 			}
 			
 			// Output is a matrix with unknown dims
@@ -174,6 +188,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			
 			// check if quantile is of type SCALAR
 			if ( getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
+				LOG.error(this.printErrorLocation() + "Quantile to cumulativeProbability() must be a scalar value.");
+				
 				throw new LanguageException(this.printErrorLocation() + "Quantile to cumulativeProbability() must be a scalar value.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -190,20 +206,26 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			//check existence and correctness of arguments
 			Expression target = getVarParam("target");
 			if( target==null ) {
+				
+				LOG.error(this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.");
 				throw new LanguageException(this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( target.getOutput().getDataType() != DataType.MATRIX ){
+				
+				LOG.error(this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.");	
 				throw new LanguageException(this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
 			}			
 			Expression margin = getVarParam("margin");
 			if( margin==null )
 			{
+				LOG.error(this.printErrorLocation() + "Named parameter 'margin' missing. Please specify 'rows' or 'cols'.");
 				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' missing. Please specify 'rows' or 'cols'.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			else if( !margin.toString().equals("rows") && !margin.toString().equals("cols") ){
+				LOG.error(this.printErrorLocation() + "Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.");
 				throw new LanguageException(this.printErrorLocation() + "Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
 			}
@@ -216,6 +238,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			break;
 
 		default:
+			
+			LOG.error(this.printErrorLocation() + "Unsupported parameterized function "
+					+ this.getOpCode());
+			
 			throw new LanguageException(this.printErrorLocation() + "Unsupported parameterized function "
 						+ this.getOpCode(),
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);

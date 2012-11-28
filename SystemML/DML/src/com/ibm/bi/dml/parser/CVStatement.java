@@ -15,6 +15,7 @@ public class CVStatement extends Statement {
 	private AGG _agg;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 	}
 	
@@ -40,11 +41,11 @@ public class CVStatement extends Statement {
 	public void initializePartitionParams(HashMap<String, String> map) {
 		// Initialize _pp using map; //TODO: handle column sampling 
 		if(map.containsKey("method") == false || map.containsKey("element") == false) {
-			System.out.println("Error in cv statement: Need to specify both method and element!");
+			LOG.error("Error in cv statement: Need to specify both method and element!");
 			System.exit(1);
 		}
 		String element = map.get("element");
-		System.out.println("$$$$$$$ cv element is " + element + ", type is " + map.get("method") + " $$$$$$$$$$");
+		LOG.debug("$$$$$$$ cv element is " + element + ", type is " + map.get("method") + " $$$$$$$$$$");
 		
 		// case: k-fold
 		if (map.get("method").equals("kfold")) {
@@ -62,11 +63,11 @@ public class CVStatement extends Statement {
 						PartitionParams.PartitionType.submatrix, numRowGroups, numColGroups);
 			} 
 			else if (element.equals("cell")) {
-				System.out.println("Partitioning method currently unsupported in the framework");
+				LOG.error("Partitioning method currently unsupported in the framework");
 				System.exit(-1);
 			}
 			else {
-				System.out.println("kfold with column not supported!");
+				LOG.error("kfold with column not supported!");
 				System.exit(1);
 			}
 		}//end if kfold
@@ -82,7 +83,7 @@ public class CVStatement extends Statement {
 				_pp.numIterations = numIterations;
 			}			
 			else if (element.equals("column")) {
-				System.out.println("Column sampling for CV doesn't make sense; not supported!");
+				LOG.error("Column sampling for CV doesn't make sense; not supported!");
 				System.exit(1);
 				/*frac = new Double(map.get("frac")).doubleValue();
 				numIterations = new Integer(map.get("numiterations")).intValue();
@@ -107,7 +108,7 @@ public class CVStatement extends Statement {
 				}*/
 			}
 			else if (element.equals("submatrix")) {
-				System.out.println("Partitioning method currently unsupported in the framework");
+				LOG.error("Partitioning method currently unsupported in the framework");
 				System.exit(-1);
 			}
 			else if (element.equals("cell")) {
@@ -127,14 +128,14 @@ public class CVStatement extends Statement {
 				_pp.numIterations = numIterations;
 			} 
 			else {
-				System.out.println("Bootstrapping supported only for row partitions");
+				LOG.error("Bootstrapping supported only for row partitions");
 				System.exit(-1);
 			}
 		}
 		if(map.containsKey("replicate")) {
 			if(map.get("replicate").equals("true")) {
 				_pp.toReplicate = true;
-				System.out.println ("$$$$$$$$ Replication set to true $$$$$$$$");
+				LOG.debug ("$$$$$$$$ Replication set to true $$$$$$$$");
 			}
 		}
 		_pp.partitionOutputs = new ArrayList<String>();
@@ -153,7 +154,7 @@ public class CVStatement extends Statement {
 		_inputNames = inputs;
 		_params = params;			
 		initializePartitionParams(map);
-		System.out.println("Input[0] is " + inputs.get(0));
+		LOG.debug("Input[0] is " + inputs.get(0));
 	}
 
 	public PartitionParams getPartitionParams() {

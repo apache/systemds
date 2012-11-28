@@ -54,21 +54,27 @@ public class ExternalFunctionStatement extends FunctionStatement{
 		for( String varName : _otherParams.keySet() )
 			if( !(   varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) || varName.equals(EXEC_LOCATION) 
 				  || varName.equals(CONFIG_FILE) ) )                                                  
-				System.out.println("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " -- External function specifies undefined attribute type '"+varName+"'.");
+				LOG.warn("WARNING: line " + this.getBeginLine() + ", column " + this.getBeginColumn() + " -- External function specifies undefined attribute type '"+varName+"'.");
 		
 		//class name (required)
-		if( !_otherParams.containsKey(CLASS_NAME) )
+		if( !_otherParams.containsKey(CLASS_NAME) ){
+			LOG.error(this.printErrorLocation() + "External function does not specify the required attribute '"+CLASS_NAME+"'.");
 			throw new LanguageException(this.printErrorLocation() + "External function does not specify the required attribute '"+CLASS_NAME+"'.");
-		else if ( _otherParams.get(CLASS_NAME)==null )
+		}
+		else if ( _otherParams.get(CLASS_NAME)==null ) {
+			LOG.error(this.printErrorLocation() + "External function specifies empty '"+CLASS_NAME+"'.");
 			throw new LanguageException(this.printErrorLocation() + "External function specifies empty '"+CLASS_NAME+"'.");
+		}
 		
 		//exec type (optional, default: file)
 		if( _otherParams.containsKey( EXEC_TYPE ) )
 		{
 			//check specified values
 			String execType = _otherParams.get(EXEC_TYPE);
-			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) )
+			if( !(execType.equals(FILE_BASED) || execType.equals(IN_MEMORY)) ) {
+				LOG.error(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").");
 				throw new LanguageException(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_TYPE+"' (valid values: "+FILE_BASED+","+IN_MEMORY+").");
+			}
 		}
 		else
 		{
@@ -81,8 +87,11 @@ public class ExternalFunctionStatement extends FunctionStatement{
 		{
 			//check specified values
 			String execLocation = _otherParams.get(EXEC_LOCATION);
-			if( !(execLocation.equals(MASTER) || execLocation.equals(WORKER)) )
+			if( !(execLocation.equals(MASTER) || execLocation.equals(WORKER)) ){
+				LOG.error(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_LOCATION+"' (valid values: "+MASTER+","+WORKER+").");
 				throw new LanguageException(this.printErrorLocation() + "External function specifies invalid value for (optional) attribute '"+EXEC_LOCATION+"' (valid values: "+MASTER+","+WORKER+").");
+		
+			}
 		}
 		else
 		{
@@ -130,24 +139,26 @@ public class ExternalFunctionStatement extends FunctionStatement{
 
 	@Override
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 	}
 	
 	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		
 	}
 	
 	@Override
 	public VariableSet variablesRead() {
-		System.out.println(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
+		LOG.warn(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
 		return new VariableSet();
 	}
 
 	@Override
 	public VariableSet variablesUpdated() {
-		System.out.println(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
+		LOG.warn(this.printWarningLocation() + "should not call variablesRead from ExternalFunctionStatement ");
 		return new VariableSet();
 	}
 }

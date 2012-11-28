@@ -18,14 +18,12 @@ public class WhileStatementBlock extends StatementBlock {
 	
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
-		
+		}
 		WhileStatement wstmt = (WhileStatement) _statements.get(0);
 		ConditionalPredicate predicate = wstmt.getConditionalPredicate();
-		
-		// merge function calls if possible
-		//wstmt.setBody(StatementBlock.mergeFunctionCalls(wstmt.getBody(), dmlProg));
 		
 		//remove updated vars from constants
 		HashSet<String> updatedVars = new HashSet<String>();
@@ -43,7 +41,7 @@ public class WhileStatementBlock extends StatementBlock {
 			ids = sb.validate(dmlProg, ids, constVars);
 			constVars = sb.getConstOut();
 		}
-		
+				
 		if (body.size() > 0) {
 			_constVarsIn.putAll(body.get(0).getConstIn());
 			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
@@ -55,9 +53,10 @@ public class WhileStatementBlock extends StatementBlock {
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
-		
+		}
 		
 		_read = new VariableSet();
 		_read.addVariables(wstmt.getConditionalPredicate().variablesRead());
@@ -136,6 +135,7 @@ public class WhileStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 			throw new HopsException(this._statements.get(0).printErrorLocation() + "there should be no HOPs associated with the WhileStatementBlock");
 		}
 		
@@ -190,7 +190,7 @@ public class WhileStatementBlock extends StatementBlock {
 		
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
-			System.out.println(   "***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on while execution");
+			LOG.warn(   "***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on while execution");
 		}
 		
 		// Cannot remove kill variables

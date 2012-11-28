@@ -1,10 +1,15 @@
 package com.ibm.bi.dml.parser;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.utils.LanguageException;
 
 
 public abstract class Statement {
 
+	protected static final Log LOG = LogFactory.getLog(Statement.class.getName());
+	
 	public static final String INPUTSTATEMENT = "read";
 	public static final String OUTPUTSTATEMENT = "write";
 	public static final String PRINTSTATEMENT = "print";

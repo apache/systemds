@@ -40,34 +40,40 @@ public class ELUseStatementBlock extends StatementBlock {
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
-		if (this.getNumStatements() > 1)
+		if (this.getNumStatements() > 1){
+			LOG.error(this.printBlockErrorLocation() + "Use Ensemble statement block can only have single statement");
 			throw new LanguageException(this.printBlockErrorLocation() + "Use Ensemble statement block can only have single statement");
+		}
 		ELUseStatement eustmt = (ELUseStatement) this.getStatement(0);
 		
 		// check the ensemble is available
 		if (!ids.containsVariable(eustmt.getEnsembleName())){
+			LOG.error(eustmt.printErrorLocation() + "Ensemble " + eustmt.getEnsembleName() + " in Use Ensemble statement not available");
 			throw new LanguageException(eustmt.printErrorLocation() + "Ensemble " + eustmt.getEnsembleName() + " in Use Ensemble statement not available");
 		}
 		
 		// check the input datasets are available
 		for (String input : eustmt.getInputNames()){
 			if (!ids.containsVariable(input)){
+				LOG.error(eustmt.printErrorLocation() + "Use Ensemble statement input dataset " + input + " is not available ");
 				throw new LanguageException(eustmt.printErrorLocation() + "Use Ensemble statement input dataset " + input + " is not available ");
 			}
 		}
 		
 		// check the test function is available
-		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(eustmt.getFunctionParameters().getTestFunctionName()))
+		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(eustmt.getFunctionParameters().getTestFunctionName())) {
+			LOG.error(eustmt.printErrorLocation() + "use ensemble test function " + eustmt.getFunctionParameters().getTestFunctionName() + " is not available ");
 			throw new LanguageException(eustmt.printErrorLocation() + "use ensemble test function " + eustmt.getFunctionParameters().getTestFunctionName() + " is not available ");
-							
+		}
 		
 		// check the test function parameters are available
 		for (String input : eustmt.getFunctionParameters().getErrorAggFormalParams()){
 			
 			// check if the parameter already exists as variable
-			if (!ids.containsVariable(input)) 
+			if (!ids.containsVariable(input)) {
+				LOG.error(eustmt.printErrorLocation() + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
 				throw new LanguageException(eustmt.printErrorLocation() + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
-			
+			}
 		}
 		
 		// check the agg function inputs are either generated as test outputs or available as variables
@@ -82,9 +88,10 @@ public class ELUseStatementBlock extends StatementBlock {
 			
 			if (ids.containsVariable(input)) found = true;
 			
-			if (found == false)
+			if (found == false) {
+				LOG.error(eustmt.printErrorLocation() + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
 				throw new LanguageException(eustmt.printErrorLocation() + "In Use Ensemble statement, variable " + input + " is not available but required by error aggregation function");
-			
+			}
 		}
 		
 		// add aggrFunction outputs to set of available variables

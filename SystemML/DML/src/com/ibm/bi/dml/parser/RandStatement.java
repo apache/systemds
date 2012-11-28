@@ -135,15 +135,24 @@ public class RandStatement extends Statement
 				break;
 			}			
 		}
-		if (!found)
+		if (!found){
+			
+			LOG.error(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for Rand statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
+					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
+			
 			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
 					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
-		
-		if (_paramsExpr.getVarParam(paramName) != null)
+		}
+		if (_paramsExpr.getVarParam(paramName) != null){
+			LOG.error(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
 			throw new ParseException(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
+		}
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
 			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
@@ -164,205 +173,6 @@ public class RandStatement extends Statement
 		
 	}
 
-	//TODO: Leo validate this piece of code
-/*	// performs basic constant propagation by replacing DataIdentifier with ConstIdentifier 
-	// perform "best-effort" validation of exprParams.  If exprParam is a ConstIdentifier expression
-	//	(has constant value), then perform static validation.
-	public void validateStatement(VariableSet ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException{
-		
-		//////////////////////////////////////////////////////////////////////////
-		// handle exprParam for rows
-		//////////////////////////////////////////////////////////////////////////
-		Expression rowsExpr = _exprParams.get(RAND_ROWS);
-		if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)rowsExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-				else{
-					rowsExpr = new IntIdentifier((IntIdentifier)constValue);
-					rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					_exprParams.put(RAND_ROWS, rowsExpr);
-				}
-			}
-			else {
-				throw new LanguageException(this.printErrorLocation() + "In rand statement, must assign constant value to rows dimension");
-			}
-		}	
-		else {
-			// handle general expression
-			rowsExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for cols
-		///////////////////////////////////////////////////////////////////////
-		Expression colsExpr = _exprParams.get(RAND_COLS);
-		if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)colsExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier && ((IntIdentifier)constValue).getValue() >= 1))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
-							"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
-				else{
-					colsExpr = new IntIdentifier((IntIdentifier)constValue);
-					colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					_exprParams.put(RAND_COLS, colsExpr);
-				}
-			}
-			else {
-				throw new LanguageException(this.printErrorLocation() + "In rand statement, must assign constant value to cols dimension");
-			}
-		}
-		else {
-			// handle general expression
-			colsExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for min value
-		///////////////////////////////////////////////////////////////////////
-		Expression minValueExpr = _exprParams.get(RAND_MIN);
-		if (minValueExpr instanceof DataIdentifier && !(minValueExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)minValueExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign min a double " +
-							"value -- attempted to assign value: " + constValue.toString());
-				else {
-					minValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
-					minValueExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					_exprParams.put(RAND_MIN, minValueExpr);
-				}
-			}
-			else {
-				throw new LanguageException(this.printErrorLocation() + "In rand statement, must assign constant value to min parameter");
-			}
-		}
-		else {
-			// handle general expression
-			minValueExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for max value
-		///////////////////////////////////////////////////////////////////////
-		Expression maxValueExpr = _exprParams.get(RAND_MAX);
-		if (maxValueExpr instanceof DataIdentifier && !(maxValueExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)maxValueExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign max a double " +
-							"value -- attempted to assign value: " + constValue.toString());
-				else {
-					maxValueExpr = new DoubleIdentifier(new Double(constValue.toString()));
-					maxValueExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					_exprParams.put(RAND_MAX, maxValueExpr);
-				}
-			}
-			else {
-				throw new LanguageException(this.printErrorLocation() + "In rand statement, must assign constant value to max parameter");
-			}
-		}
-		else {
-			// handle general expression
-			maxValueExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for seed
-		///////////////////////////////////////////////////////////////////////
-		Expression seedExpr = _exprParams.get(RAND_SEED);
-		if (seedExpr instanceof DataIdentifier && !(seedExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)seedExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof IntIdentifier))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign seed a long " +
-							"value -- attempted to assign value: " + constValue.toString());
-				else {
-					seedExpr = new IntIdentifier((IntIdentifier)constValue);
-					seedExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					_exprParams.put(RAND_SEED, seedExpr);
-				}
-			}
-		}
-		else {
-			// handle general expression
-			seedExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for sparsity
-		///////////////////////////////////////////////////////////////////////
-		Expression sparsityExpr = _exprParams.get(RAND_SPARSITY);
-		if (sparsityExpr instanceof DataIdentifier && !(sparsityExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)sparsityExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof DoubleIdentifier))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign sparsity a double " +
-							"value -- attempted to assign value: " + constValue.toString());
-				else {
-					sparsityExpr = new IntIdentifier((IntIdentifier)constValue);
-					sparsityExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					_exprParams.put(RAND_SPARSITY, sparsityExpr);
-				}
-			}
-		}
-		else {
-			// handle general expression
-			sparsityExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-		///////////////////////////////////////////////////////////////////////
-		// handle exprParam for pdf (probability density function)
-		///////////////////////////////////////////////////////////////////////
-		Expression pdfExpr = _exprParams.get(RAND_PDF);
-		if (pdfExpr instanceof DataIdentifier && !(pdfExpr instanceof IndexedIdentifier)) {
-			
-			// check if the DataIdentifier variable is a ConstIdentifier
-			String identifierName = ((DataIdentifier)pdfExpr).getName();
-			if (currConstVars.containsKey(identifierName)){
-				ConstIdentifier constValue = currConstVars.get(identifierName);
-				if (!(constValue instanceof StringIdentifier && (constValue.toString().equals(""))))
-					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign pdf " +
-							"following one of following string values (capitalization-sensitive): uniform. " +
-							"Attempted to assign value: " + constValue.toString());
-				else {
-					pdfExpr = new IntIdentifier((IntIdentifier)constValue);	
-					pdfExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					_exprParams.put(RAND_PDF, pdfExpr);
-				}
-			}
-		}
-		else {
-			pdfExpr.validateExpression(ids.getVariables(), currConstVars);
-		}
-		
-	} // end method performConstantPropagation
-*/	
-		
 	@Override
 	public boolean controlStatement() { return false; }
 

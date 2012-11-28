@@ -29,6 +29,7 @@ public class ELStatement extends Statement {
 	}
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for ELStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for ELStatement");
 	}
 	
@@ -50,7 +51,7 @@ public class ELStatement extends Statement {
 	public void initializePartitionParams(HashMap<String, String> map) {
 		// Initialize _pp using map; //TODO error catching handling
 		String elmethod = map.get("method");
-		System.out.println("$$$$$$$ el method is " + elmethod + " $$$$$$$$$$");
+		LOG.debug("$$$$$$$ el method is " + elmethod + " $$$$$$$$$$");
 		
 		if (elmethod.equals("bagging") || elmethod.equals("rsm") || elmethod.equals("rowholdout")) {	//new el method rowholdout
 			//numiterations and frac expected
@@ -64,30 +65,17 @@ public class ELStatement extends Statement {
 			if(elmethod.equals("rsm")) {
 				_pp.isColumn = true;		//el rsm is implicitly colwise
 				_pp.isSupervised = true;	//el rsm is implicitly supervised (last col labels), so never used; if not, change this!
-				//since it is columnar, check if it is supervised or not (default is yes)
-				/*if(map.containsKey("supervised")) {
-					if(map.get("supervised").equals("yes"))
-						_pp.isSupervised = true;
-					else if(map.get("supervised").equals("no"))
-						_pp.isSupervised = 	false;
-					else {
-						System.out.println("Unrecognized value for supervised!");
-						System.exit(1);
-					}
-				}*/
 			}
 		}
 		else if (elmethod.equals("adaboost")) { 
-			System.out.println("Adaboost not yet implemented!");
+			LOG.error("Adaboost not yet implemented!");
 			System.exit(1);
-			//int numiter = (new Integer(map.get("numiterations"))).intValue();
-			//_pp = new PartitionParams(_inputNames, PartitionParams.EnsembleType.adaboost, numiter, -1);
 		}
 		
 		if(map.containsKey("replicate") == true) {
 			if(map.get("replicate").equals("true")) {
 				_pp.toReplicate = true;
-				System.out.println ("$$$$$$$$ Replication set to true! $$$$$$$$");
+				LOG.debug ("$$$$$$$$ Replication set to true! $$$$$$$$");
 			}
 		}
 		_pp.partitionOutputs = new ArrayList<String>();
@@ -110,7 +98,7 @@ public class ELStatement extends Statement {
 		_inputNames = inputs;
 		_params = params;			
 		initializePartitionParams(map);
-		System.out.println("Input[0] is " + inputs.get(0));
+		LOG.debug("Input[0] is " + inputs.get(0));
 	}
 
 	public PartitionParams getPartitionParams() {

@@ -16,6 +16,7 @@ public class ELUseStatement extends Statement {
 	private AGG _agg;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 	}
 	
@@ -70,7 +71,7 @@ public class ELUseStatement extends Statement {
 			//	if (map.get("columns_in_block") != null)
 			//		_pp.columns_in_block = (new Integer(map.get("columns_in_block"))).intValue();
 			} else if (element.equals("cell")) {
-				System.out.println("Partitioning method currently unsupported in the framework");
+				LOG.error("Partitioning method currently unsupported in the framework");
 				System.exit(-1);
 			}
 		}
@@ -87,7 +88,7 @@ public class ELUseStatement extends Statement {
 			}
 
 			else if (element.equals("submatrix")) {
-				System.out.println("Partitioning method currently unsupported in the framework");
+				LOG.error("Partitioning method currently unsupported in the framework");
 				System.exit(-1);
 			}
 
@@ -107,7 +108,7 @@ public class ELUseStatement extends Statement {
 						PartitionParams.PartitionType.row, -1, -1);
 				_pp.numIterations = numIterations;
 			} else {
-				System.out.println("Bootstrapping supported only for row partitions");
+				LOG.error("Bootstrapping supported only for row partitions");
 				System.exit(-1);
 			}
 		}

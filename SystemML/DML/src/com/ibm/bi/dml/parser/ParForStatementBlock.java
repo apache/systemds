@@ -153,9 +153,10 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			//check for valid parameter types
 			for( String key : params.keySet() )
-				if( !_paramNames.contains(key) )
+				if( !_paramNames.contains(key) ){
+					LOG.error("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.");
 					throw new LanguageException("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.");
-			
+				}
 			//set defaults for all non-specified values
 			for( String key : _paramNames )
 				if( !params.containsKey(key) )
@@ -178,6 +179,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					|| optStr.equals(POptMode.GREEDY.toString()) 
 					|| optStr.equals(POptMode.FULL_DP.toString())   )
 				{
+					LOG.error("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.");
 					throw new LanguageException("Sorry, parfor optimization mode '"+optStr+"' is disabled for external usage.");
 				}
 			}
@@ -274,6 +276,12 @@ public class ParForStatementBlock extends ForStatementBlock
 						depVars.append(", ");
 					depVars.append(c._var);
 				}
+				
+				LOG.error( "PARFOR loop dependency analysis: " +
+	                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
+	                     depVars.toString() +".\n " +
+	                    // "in lines"+this.+"\n" +
+	                     "Please, ensure independence of iterations." );	
 				
 				throw new LanguageException( "PARFOR loop dependency analysis: " +
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
@@ -636,6 +644,8 @@ public class ParForStatementBlock extends ForStatementBlock
 								else // at least one type UNKNOWN
 								{
 									//cannot infer type, need to exit (conservative approach)
+									LOG.error("PARFOR loop dependency analysis: cannot check for dependencies " +
+											   "due to unknown datatype of var '"+c._var+"'.");
 									throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
 															   "due to unknown datatype of var '"+c._var+"'.");
 								}
@@ -689,6 +699,9 @@ public class ParForStatementBlock extends ForStatementBlock
 								else //if( c._dat.getDataType() == DataType.UNKNOWN )
 								{
 									//cannot infer type, need to exit (conservative approach)
+									LOG.error("PARFOR loop dependency analysis: cannot check for dependencies " +
+											   "due to unknown datatype of var '"+c._var+"'.");
+									
 									throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
 															   "due to unknown datatype of var '"+c._var+"'.");
 								}
@@ -859,6 +872,9 @@ public class ParForStatementBlock extends ForStatementBlock
 						if(   ip.getIterVar()._name.equals( INTERAL_FN_INDEX_ROW )
 						   || ip.getIterVar()._name.equals( INTERAL_FN_INDEX_COL ))
 						{
+							
+							LOG.error(" The iteration variable must not use the " +
+									"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
 							throw new LanguageException(" The iteration variable must not use the " +
 									"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
 						}
@@ -1621,6 +1637,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		{
 			if( LOG.isTraceEnabled() && f1!=null ) 
 				LOG.trace("PARFOR: f1: "+f1.toString());
+			
+			LOG.error("PARFOR loop dependency analysis: " +
+			"MATRIX subscripts are not in linear form (a0 + a1*x).");
 			
 			throw new LanguageException("PARFOR loop dependency analysis: " +
 										"MATRIX subscripts are not in linear form (a0 + a1*x).");

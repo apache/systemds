@@ -27,12 +27,11 @@ public class ForStatementBlock extends StatementBlock {
 
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
-		
+		}
 		ForStatement fs = (ForStatement) _statements.get(0);
-		//fs.setBody(StatementBlock.mergeFunctionCalls(fs.getBody(), dmlProg));
-		
 		IterablePredicate predicate = fs.getIterablePredicate();
 		
 		// process the statement blocks in the body of the for statement
@@ -67,9 +66,10 @@ public class ForStatementBlock extends StatementBlock {
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
-		if (_statements.size() > 1)
+		if (_statements.size() > 1){
+			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
-		
+		}
 		
 		_read = new VariableSet();
 		_read.addVariables(fstmt.getIterablePredicate().variablesRead());
@@ -149,6 +149,7 @@ public class ForStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 		}
 		
@@ -214,7 +215,7 @@ public class ForStatementBlock extends StatementBlock {
 		// for now just print the warn set
 		for (String varName : _warnSet.getVariableNames()){
 			if( !ip.getIterVar().getName().equals( varName)  )
-				System.out.println("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on for execution");
+				LOG.warn("***** WARNING: Initialization of " + varName + " on line " + _warnSet.getVariable(varName).getBeginLine() + " depends on for execution");
 		}
 		
 		// Cannot remove kill variables
@@ -262,8 +263,6 @@ public class ForStatementBlock extends StatementBlock {
 			{
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				ret = new IntIdentifier((IntIdentifier)constValue);
-				
-				//System.out.println("ForStatement constant propagation: repacing "+expr.toString()+" with "+ret.toString());
 			}
 		}
 		else

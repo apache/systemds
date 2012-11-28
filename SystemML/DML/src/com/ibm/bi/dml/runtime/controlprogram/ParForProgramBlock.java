@@ -1358,8 +1358,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		if( _recompileMemoryBudget > 0 )
 		{
+			// store old budget for reset after exec
 			_oldMemoryBudget = (double)InfrastructureAnalyzer.getLocalMaxMemory();
-			InfrastructureAnalyzer.setLocalMaxMemory((long)_recompileMemoryBudget);
+			
+			// scale budget with applied mem util factor (inverted during getMemBudget() )
+			long newMaxMem = (long) (_recompileMemoryBudget / OptimizerUtils.MEM_UTIL_FACTOR);
+			InfrastructureAnalyzer.setLocalMaxMemory( newMaxMem );
 		}
 	}
 	

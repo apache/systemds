@@ -685,7 +685,6 @@ public class DMLScript {
 			//TODO: System.out is for running with JAQL shell, eventually we hope JAQL shell will not use
 			// its own log4j.properties
 			LOG.info(Statistics.display());
-			System.out.println(Statistics.display());
 			
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup all nimble threads

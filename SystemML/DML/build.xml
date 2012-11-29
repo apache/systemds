@@ -45,7 +45,6 @@
 		<pathelement location="${build.sharedlib}/Jaql-0.5/jaql.jar" />  <!-- for com.ibm.bi.dml.api.JaqlUdf -->
 		<pathelement location="${build.sharedlib}/JSON4J.jar" />  <!-- for JSONObject used in com.ibm.bi.dml.parser.IOStatement.java -->
 	    <pathelement location="${build.sharedlib}/opencsv-1.8/opencsv-1.8.jar" /> <!-- for read/write csv -->
-		<pathelement location="${build.sharedlib}/commons-cli-2.0-SNAPSHOT.jar" /> <!-- for GenericOptionParser -->
 	</path>	
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
@@ -58,6 +57,7 @@
 		<pathelement location="${hadoop.local.path}/lib/jackson-mapper-asl-1.8.8.jar" />
 		<pathelement location="${hadoop.local.path}/lib/commons-logging-1.1.1.jar" />  <!-- for LogFactory used by com.ibm.bi.dml.sgd.Summit.java -->
 		<pathelement location="${hadoop.local.path}/lib/commons-httpclient-3.0.1.jar" /> <!-- for running "auto" in local mode -->
+		<pathelement location="${hadoop.local.path}/lib/commons-cli-1.2.jar" /> <!-- for GenericOptionParser -->
 	</path>
 	
 	<path id="DML.classpath">

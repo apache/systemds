@@ -214,16 +214,14 @@ public class DMLScript {
 			// print
 			dmlt.printHops(prog);
 			dmlt.resetHopsDAGVisitStatus(prog);
-
-			// visualize
+		}*/
+		
+		// plan visualization (hops before rewrite)
+		if( VISUALIZE ) {
 			DotGraph gt = new DotGraph();
-			//
-			// last parameter: the path of DML source directory. If dml source
-			// is at /path/to/dml/src then it should be /path/to/dml.
-			//
 			gt.drawHopsDAG(prog, "HopsDAG Before Rewrite", 50, 50, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
-		}*/
+		}
 	
 		// rewrite HOPs DAGs
 		// defaultConfig contains reconciled information for config
@@ -235,12 +233,15 @@ public class DMLScript {
 			// print
 			dmlt.printHops(prog);
 			dmlt.resetHopsDAGVisitStatus(prog);
-
-			// visualize
+		}
+		
+		// plan visualization (hops after rewrite)
+		if( VISUALIZE ) {
 			DotGraph gt = new DotGraph();
 			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
+		
 
 		executeHadoop(dmlt, prog, defaultConfig);
 	}
@@ -627,11 +628,15 @@ public class DMLScript {
 			LOG.debug("\n********************** LOPS DAG *******************");
 			dmlt.printLops(prog);
 			dmlt.resetLopsDAGVisitStatus(prog);
+		}
 
+		// plan visualization (hops after rewrite)
+		if(VISUALIZE){
 			DotGraph gt = new DotGraph();
 			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
+		
 
 		////////////////////// generate runtime program ///////////////////////////////
 		Program rtprog = null;
@@ -656,8 +661,8 @@ public class DMLScript {
 			rtprog.printMe();
 
 			// visualize
-			//DotGraph gt = new DotGraph();
-			//gt.drawInstructionsDAG(rtprog, "InstructionsDAG", 200, 200, path_to_src);
+			DotGraph gt = new DotGraph();
+         	gt.drawInstructionsDAG(rtprog, "InstructionsDAG", 200, 200, PATH_TO_SRC, VISUALIZE);
 
 			System.out.println("********************** Execute *******************");
 		}
@@ -715,11 +720,14 @@ public class DMLScript {
 		String[] split = fileName.split("/");
 		String name = split[split.length-1].split("\\.")[0];
 		sqlprog.set_name(name);
-	
 		dmlt.resetSQLLopsDAGVisitStatus(prog);
-		DotGraph g = new DotGraph();
-		g.drawSQLLopsDAG(prog, "SQLLops DAG", 100, 100, PATH_TO_SRC, VISUALIZE);
-		dmlt.resetSQLLopsDAGVisitStatus(prog);
+
+		// plan visualization (hops after rewrite)
+		if(VISUALIZE){
+			DotGraph g = new DotGraph();
+			g.drawSQLLopsDAG(prog, "SQLLopsDAG", 100, 100, PATH_TO_SRC, VISUALIZE);
+			dmlt.resetSQLLopsDAGVisitStatus(prog);
+		}
 	
 		String sql = sqlprog.generateSQLString();
 	

@@ -12,7 +12,6 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * </p>
  * <ul>
  * <li>random matrix generation (rows, cols, min, max)</li>
- * <li>random scalar generation (min, max)</li>
  * </ul>
  * <p>
  * <b>Negative tests:</b>
@@ -20,16 +19,15 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  * 
  * 
  */
-public class RandTest extends AutomatedTestBase {
+public class RandTest4 extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/data/";
 
 		// positive tests
-		availableTestConfigurations.put("MatrixTest", new TestConfiguration("RandTest", new String[] { "rand" }));
-		availableTestConfigurations.put("ScalarTest", new TestConfiguration("RandScalarTest", new String[] { "rand" }));
-
+		availableTestConfigurations.put("MatrixTest", new TestConfiguration("RandTest4", new String[] { "rand" }));
+		
 		// negative tests
 	}
 
@@ -45,30 +43,22 @@ public class RandTest extends AutomatedTestBase {
 		config.addVariable("cols", cols);
 		config.addVariable("min", min);
 		config.addVariable("max", max);
+		config.addVariable("format", "text");
 
-		loadTestConfiguration("MatrixTest");
+		loadTestConfiguration(config);
 
+		double[][] a = getRandomMatrix(rows, cols, 0, 1, 0.5, 7);
+		writeInputMatrix("a", a);
+		double sum = 0;
+		for (int i = 0; i< rows; i++){
+			for (int j = 0; j < cols; j++){
+				sum += a[i][j];
+			}
+		}
 		runTest();
 
-		checkResults(rows, cols, min, max);
+		checkResults((int)sum, cols, min, max);
 	}
 
-	@Test
-	public void testScalar() {
-		int min = -1;
-		int max = 1;
-
-		TestConfiguration config = availableTestConfigurations.get("ScalarTest");
-		config.addVariable("min", min);
-		config.addVariable("max", max);
-
-		loadTestConfiguration("ScalarTest");
-
-		createHelperMatrix();
-
-		runTest();
-
-		checkResults(1, 1, min, max);
-	}
 
 }

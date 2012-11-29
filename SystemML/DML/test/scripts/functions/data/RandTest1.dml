@@ -2,3 +2,4 @@
 
 A = Rand(rows=$$rows$$, cols=$$cols$$, min=$$min$$, max=$$max$$);
 write(A, "$$outdir$$rand", format="text");
+

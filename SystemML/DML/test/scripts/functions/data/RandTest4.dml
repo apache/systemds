@@ -1,0 +1,8 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.data.RandTest.java
+
+A = read("$$indir$$"+"a", rows=$$rows$$, cols=$$cols$$, format="$$format$$");
+
+C = Rand(rows=sum(A), cols=$$cols$$, min=$$min$$, max=$$max$$);
+write(C, "$$outdir$$rand", format="text");
+
+

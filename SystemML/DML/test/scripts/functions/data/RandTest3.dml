@@ -1,0 +1,6 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.data.RandTest.java
+
+C = Rand(rows=$$rows$$+ 0.5, cols=$$cols$$, min=$$min$$, max=$$max$$);
+write(C, "$$outdir$$rand", format="text");
+
+

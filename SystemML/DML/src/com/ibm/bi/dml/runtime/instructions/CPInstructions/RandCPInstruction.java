@@ -63,10 +63,10 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		
 		long rows = -1, cols = -1;
         if (!s[3].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
-		   	rows = Long.parseLong(s[3]);
+		   	rows = Double.valueOf(s[3]).longValue();
         }
         if (!s[4].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
-        	cols = Long.parseLong(s[4]);
+        	cols = Double.valueOf(s[4]).longValue();
         }
 		
 		int rpb = Integer.parseInt(s[5]);

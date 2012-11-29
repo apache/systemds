@@ -48,8 +48,8 @@ public class RandInstruction extends UnaryMRInstructionBase
 		Operator op = null;
 		byte input = Byte.parseByte(parts[1]);
 		byte output = Byte.parseByte(parts[2]);
-		long rows = Long.parseLong(parts[3]);
-		long cols = Long.parseLong(parts[4]);
+		long rows = Double.valueOf(parts[3]).longValue();
+		long cols = Double.valueOf(parts[4]).longValue();
 		int rpb = Integer.parseInt(parts[5]);
 		int cpb = Integer.parseInt(parts[6]);
 		double minValue = Double.parseDouble(parts[7]);

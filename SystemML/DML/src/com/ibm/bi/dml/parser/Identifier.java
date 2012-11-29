@@ -148,8 +148,6 @@ public abstract class Identifier extends Expression{
 			if ( id == null ){
 				//LiveVariableAnalysis.throwUndefinedVar(name, null);
 				
-				LOG.error(this.printErrorLocation() + "Undefined Variable (" + name + ") used in statement");
-				
 				throw new LanguageException(this.printErrorLocation() + "Undefined Variable (" + name + ") used in statement",
 						LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}

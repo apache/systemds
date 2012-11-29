@@ -67,8 +67,7 @@ public class PerfTestExtFunctCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
-			throw new PackageRuntimeException("Error executing generic test extfunct.");
+			throw new PackageRuntimeException("Error executing generic test extfunct.", e);
 		}
 	}
 

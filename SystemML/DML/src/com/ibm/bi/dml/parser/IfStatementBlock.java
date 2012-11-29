@@ -19,7 +19,6 @@ public class IfStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1){
-			LOG.error(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
 		}
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
@@ -211,7 +210,6 @@ public class IfStatementBlock extends StatementBlock {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		_read = new VariableSet();
@@ -345,7 +343,6 @@ public class IfStatementBlock extends StatementBlock {
 		
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		VariableSet currentLiveOutIf = new VariableSet();
@@ -379,7 +376,6 @@ public class IfStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException{
 	
 		if (_hops != null && _hops.size() > 0){
-			LOG.error(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
 		}
 			

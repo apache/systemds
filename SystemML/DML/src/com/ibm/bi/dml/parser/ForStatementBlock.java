@@ -28,7 +28,6 @@ public class ForStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1){
-			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		}
 		ForStatement fs = (ForStatement) _statements.get(0);
@@ -67,7 +66,6 @@ public class ForStatementBlock extends StatementBlock {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		}
 		
@@ -149,7 +147,6 @@ public class ForStatementBlock extends StatementBlock {
 	public ArrayList<Hops> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
-			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
 		}
 		

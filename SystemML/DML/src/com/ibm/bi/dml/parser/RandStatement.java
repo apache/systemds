@@ -137,12 +137,6 @@ public class RandStatement extends Statement
 		}
 		if (!found){
 			
-			LOG.error(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
-					"\". Legal parameters for Rand statement are " 
-					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
-					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
-			
 			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
@@ -150,7 +144,6 @@ public class RandStatement extends Statement
 					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
 		}
 		if (_paramsExpr.getVarParam(paramName) != null){
-			LOG.error(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
 			throw new ParseException(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
 		}
 		// Process the case where user provides double values to rows or cols

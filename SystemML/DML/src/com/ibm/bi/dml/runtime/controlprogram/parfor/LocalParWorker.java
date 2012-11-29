@@ -68,8 +68,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 				//ex.printStackTrace();
 				
 				// abort on taskqueue error
-				System.err.println("Error reading from task queue: "+ex.getMessage());
-				System.err.println("Stopping LocalParWorker.");
+				LOG.warn("Error reading from task queue: "+ex.getMessage());
+				LOG.warn("Stopping LocalParWorker.");
 				break; //no exception thrown to prevent blocking on join
 			}
 			

@@ -103,12 +103,10 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		
 		// check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null){
-			LOG.error(this.printErrorLocation() + "namespace " + _namespace + " is not defined ");
 			throw new LanguageException(this.printErrorLocation() + "namespace " + _namespace + " is not defined ");
 		}
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 		if (fblock == null){
-			LOG.error(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + _namespace );
 			throw new LanguageException(this.printErrorLocation() + "function " + _name + " is undefined in namespace " + _namespace );
 		}
 		// set opcode (whether internal or external function) -- based on whether FunctionStatement
@@ -120,10 +118,6 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		
 		// force all parameters to be either unnammed or named
 		if (_inputParamExpressions.size() > 0 && _namedInputParamExpressions.size() > 0){
-			
-			LOG.error(this.printErrorLocation() + " In DML, functions can only have named parameters " +
-					"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
-					_name + " has both parameter types.");
 			
 			throw new LanguageException(this.printErrorLocation() + " In DML, functions can only have named parameters " +
 						"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
@@ -146,10 +140,6 @@ public class FunctionCallIdentifier extends DataIdentifier {
 		// check correctness of number of arguments and their types 
 		if (fstmt.getInputParams().size() < _inputParamExpressions.size()){ 
 			
-			LOG.error(this.printErrorLocation() + "function " + _name 
-					+ " has incorrect number of parameters. Function requires " 
-					+ fstmt.getInputParams().size() + " but was called with " + _inputParamExpressions.size());
-			
 			throw new LanguageException(this.printErrorLocation() + "function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
 					+ fstmt.getInputParams().size() + " but was called with " + _inputParamExpressions.size());
@@ -161,7 +151,6 @@ public class FunctionCallIdentifier extends DataIdentifier {
 			if (i >= _inputParamExpressions.size()){
 				// check a default value is provided for this variable
 				if (fstmt.getInputParams().get(i).getDefaultValue() == null){
-					LOG.error(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
 					throw new LanguageException(this.printErrorLocation() + "parameter " + fstmt.getInputParams().get(i) + " must have default value");
 				}
 			}
@@ -170,12 +159,10 @@ public class FunctionCallIdentifier extends DataIdentifier {
 				Expression param = _inputParamExpressions.get(i);
 				boolean sameDataType = param._output.getDataType().equals(fstmt.getInputParams().get(i).getDataType());
 				if (!sameDataType){
-					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 				}
 				boolean sameValueType = param._output.getValueType().equals(fstmt.getInputParams().get(i).getValueType());
 				if (!sameValueType){
-					LOG.error(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
 					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
 				}
 			}

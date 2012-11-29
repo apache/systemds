@@ -102,7 +102,7 @@ public class MapReduceTool {
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
+			LOG.error("Exception caught in existsFileOnHDFS", ex);
 			ret = false;
 		}
 		return ret;

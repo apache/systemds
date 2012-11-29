@@ -179,8 +179,7 @@ public class PartialAggregate extends Lops {
 		else
 			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, Unknown aggregate direction " + direction);
 		} catch (HopsException e) {
-			e.printStackTrace();
-			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, error setting dimensions based on direction");
+			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, error setting dimensions based on direction", e);
 		}
 	}
 

@@ -41,7 +41,6 @@ public class CVStatementBlock extends StatementBlock {
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException {
 
 		if (this.getNumStatements() > 1){
-			LOG.error(this.printBlockErrorLocation() + "CV statement block can only have single statement");
 			throw new LanguageException(this.printBlockErrorLocation() + "CV statement block can only have single statement");
 		}
 		CVStatement cvs = (CVStatement) this.getStatement(0);
@@ -49,14 +48,12 @@ public class CVStatementBlock extends StatementBlock {
 		// check the input datasets are available
 		for (String input : cvs.getInputNames()){
 			if (!ids.containsVariable(input)){
-				LOG.error(this.printBlockErrorLocation() + "CV statement input dataset " + input + " is not available ");
 				throw new LanguageException(this.printBlockErrorLocation() + "CV statement input dataset " + input + " is not available ");
 			}
 		}	
 		
 		// check train function exists and train function inputs are available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(cvs.getFunctionParameters().getTrainFunctionName())){
-			LOG.error(this.printBlockErrorLocation() + "CV training function " + cvs.getFunctionParameters().getTrainFunctionName() + " is not available ");
 			throw new LanguageException(this.printBlockErrorLocation() + "CV training function " + cvs.getFunctionParameters().getTrainFunctionName() + " is not available ");
 		}
 		for (String input : cvs.getFunctionParameters().getTrainFunctionFormalParams()){
@@ -69,7 +66,6 @@ public class CVStatementBlock extends StatementBlock {
 			}
 			
 			if (found == false){
-				LOG.error(this.printBlockErrorLocation() + "In CV Statement, variable " + input + " is not available");
 				throw new LanguageException(this.printBlockErrorLocation() + "In CV Statement, variable " + input + " is not available");
 			}
 		}
@@ -77,7 +73,6 @@ public class CVStatementBlock extends StatementBlock {
 			
 		// check test function exists and test function inputs are available
 		if (!dmlProg.getFunctionStatementBlocks(null).containsKey(cvs.getFunctionParameters().getTestFunctionName())){
-			LOG.error(this.printBlockErrorLocation() + "CV test function " + cvs.getFunctionParameters().getTestFunctionName() + " is not available ");
 			throw new LanguageException(this.printBlockErrorLocation() + "CV test function " + cvs.getFunctionParameters().getTestFunctionName() + " is not available ");
 		}
 		for (String input : cvs.getFunctionParameters().getTestFunctionFormalParams()){
@@ -94,7 +89,6 @@ public class CVStatementBlock extends StatementBlock {
 			}
 			
 			if (found == false){
-				LOG.error(this.printBlockErrorLocation() + "In CV Statement, variable " + input + " is not available");
 				throw new LanguageException(this.printBlockErrorLocation() + "In CV Statement, variable " + input + " is not available");
 		
 			}

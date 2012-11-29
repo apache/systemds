@@ -116,7 +116,6 @@ public abstract class DMLQLParserBase {
 	public static final String dequoteStr(char quotechar, String str) {
 		if (str.charAt(0) != quotechar
 				|| str.charAt(str.length() - 1) != quotechar) {
-			LOG.error("Can't dequote string '" + str + "'");
 			throw new IllegalArgumentException("Can't dequote string '" + str + "'");
 		}
 
@@ -130,7 +129,6 @@ public abstract class DMLQLParserBase {
 				// When we find ESCAPE followed by the quote char, skip the
 				// escape; the quote character will be passed through.
 				if (str.length() - 1 == pos) {
-					LOG.error("Escape character at end of string");
 					throw new IllegalArgumentException("Escape character at end of string");
 				}
 			} else {

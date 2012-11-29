@@ -1375,9 +1375,8 @@ public class Dag<N extends Lops> {
 					inst.add(CPInstructionParser
 							.parseSingleInstruction(inst_string));
 				} catch (Exception e) {
-					e.printStackTrace();
 					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
-							+ inst_string);
+							+ inst_string, e);
 				}
 
 				markedNodes.add(node);

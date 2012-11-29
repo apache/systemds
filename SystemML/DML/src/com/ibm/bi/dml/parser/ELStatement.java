@@ -29,7 +29,6 @@ public class ELStatement extends Statement {
 	}
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
-		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for ELStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for ELStatement");
 	}
 	

@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -52,6 +53,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -420,6 +422,8 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
+							if( OptimizerRuleBased.getRIXExecType(moVar, dpf) == LopProperties.ExecType.CP_FILE )
+								dp.disableBinaryCell();
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
 							_variables.put(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var);

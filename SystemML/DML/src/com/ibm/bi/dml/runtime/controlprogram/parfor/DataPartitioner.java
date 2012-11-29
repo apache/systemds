@@ -33,6 +33,7 @@ public abstract class DataPartitioner
 	
 	//instance variables
 	protected PDataPartitionFormat _format = null;
+	protected boolean _allowBinarycell = true;
 	
 	
 	protected DataPartitioner( PDataPartitionFormat dpf )
@@ -100,12 +101,12 @@ public abstract class DataPartitioner
 			//check for changing to blockwise representations
 			if( _format == PDataPartitionFormat.ROW_WISE && cols < Hops.CPThreshold )
 			{
-				LOG.warn("Changing format from "+PDataPartitionFormat.ROW_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
+				LOG.debug("Changing format from "+PDataPartitionFormat.ROW_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.ROW_BLOCK_WISE;
 			}
 			if( _format == PDataPartitionFormat.COLUMN_WISE && rows < Hops.CPThreshold )
 			{
-				LOG.warn("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
+				LOG.debug("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;
 			}
 		}
@@ -113,9 +114,11 @@ public abstract class DataPartitioner
 		//check changing to binarycell in case of sparse cols (robustness)
 		boolean convertBlock2Cell = false;
 		if(    ii == InputInfo.BinaryBlockInputInfo 
+			&& _allowBinarycell
 			&& _format == PDataPartitionFormat.COLUMN_WISE	
 			&& sparsity < SPARSITY_CELL_THRESHOLD )
 		{
+			LOG.debug("Changing partition outputinfo from binaryblock to binarycell due to sparsity="+sparsity);
 			oi = OutputInfo.BinaryCellOutputInfo;
 			convertBlock2Cell = true;
 		}
@@ -152,7 +155,15 @@ public abstract class DataPartitioner
 		
 		return mobj;
 	}
-
+	
+	/**
+	 * 
+	 */
+	public void disableBinaryCell()
+	{
+		_allowBinarycell = false;
+	}
+	
 	/**
 	 * 
 	 * @param fname

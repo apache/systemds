@@ -12,6 +12,7 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -209,7 +210,7 @@ public class OptimizerRuleBased extends Optimizer
 		//search for candidates
 		boolean apply = false;
 		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID  //only if we are allowed to recompile
-				&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
+			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			ArrayList<String> cand = pfsb.getReadOnlyParentVars();
 			HashMap<String, PDataPartitionFormat> cand2 = new HashMap<String, PDataPartitionFormat>();
@@ -259,12 +260,14 @@ public class OptimizerRuleBased extends Optimizer
 			String inMatrix = h.getInput().get(0).get_name();
 			if( cand.containsKey(inMatrix) )
 			{
+				//NOTE: subsequent rewrites will still use the MR mem estimate
+				//(guarded by subsequent operations that have at least the memory req of one partition)
 				PDataPartitionFormat dpf = cand.get(inMatrix);
-				double mnew = getNewMemoryEstimate( n, inMatrix, dpf, vars );
+				double mnew = getNewRIXMemoryEstimate( n, inMatrix, dpf, vars );
 				if( mnew < _lm ) //apply rewrite if partitions fit into memory
 					n.setExecType(ExecType.CP);
 				else
-					n.setExecType(ExecType.CP); //CP_FILE, but no need because hop still in MR 
+					n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
 				n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
 				h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
 				ret = true;
@@ -285,7 +288,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	private double getNewMemoryEstimate( OptNode n, String varName, PDataPartitionFormat dpf, LocalVariableMap vars ) 
+	private double getNewRIXMemoryEstimate( OptNode n, String varName, PDataPartitionFormat dpf, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		double mem = -1;
@@ -304,6 +307,33 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		return mem;
+	}
+	
+	/**
+	 * 
+	 * @param mo
+	 * @param dpf
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf ) 
+		throws DMLRuntimeException
+	{
+		double mem = -1;
+		switch( dpf )
+		{
+			case COLUMN_WISE:
+				mem = mo.getNumRows() * 8; 
+				break;
+			case ROW_WISE:
+				mem = mo.getNumColumns() * 8;
+				break;
+		}
+		
+		if( mem < Hops.getMemBudget(true) )
+			return LopProperties.ExecType.CP;
+		else
+			return LopProperties.ExecType.CP_FILE;
 	}
 	
 

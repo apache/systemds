@@ -15,6 +15,7 @@ public class CVStatement extends Statement {
 	private AGG _agg;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 	}
 	

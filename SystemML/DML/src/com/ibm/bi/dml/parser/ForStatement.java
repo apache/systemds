@@ -11,6 +11,7 @@ public class ForStatement extends Statement
 	protected ArrayList<StatementBlock> _body;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for ForStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for ForStatement");
 	}
 	
@@ -63,10 +64,12 @@ public class ForStatement extends Statement
 	}
 
 	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ForStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ForStatement");
 	}
 	
 	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
+		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ForStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ForStatement");
 		
 	}

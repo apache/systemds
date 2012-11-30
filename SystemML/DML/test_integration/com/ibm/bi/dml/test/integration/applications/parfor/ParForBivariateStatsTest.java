@@ -163,7 +163,7 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 
 		
 		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, -1);
+		runTest(true, exceptionExpected, null, 92); 
 
 		runRScript(true); 
 		

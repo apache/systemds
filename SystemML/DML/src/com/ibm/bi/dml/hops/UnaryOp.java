@@ -468,7 +468,12 @@ public class UnaryOp extends Hops {
 			else 
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}
-		_memEstimate = getInputOutputSize();
+		
+		if( _op == Hops.OpOp1.NROW || _op == Hops.OpOp1.NCOL ) //specific case for meta data ops
+			_memEstimate = OptimizerUtils.INT_SIZE;
+		else
+			_memEstimate = getInputOutputSize();
+		
 		return _memEstimate;
 	}
 

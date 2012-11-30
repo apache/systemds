@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -145,6 +146,8 @@ public class DataOp extends Hops {
 		if (get_lops() == null) {
 			Lops l = null;
 
+			ExecType et = optFindExecType();
+			
 			//TODO: need to remove this if statement
 			/*if (!(_fileName==null)){
 				
@@ -193,6 +196,7 @@ public class DataOp extends Hops {
 							HopsData2Lops.get(_dataop), this
 							.getInput().get(0).constructLops(),inputLops, 
 							get_name(), null, get_dataType(), get_valueType(), false);
+					((Data)l).setExecType( et );
 				} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
 					l = new Data(
 							HopsData2Lops.get(_dataop), this
@@ -433,11 +437,17 @@ public class DataOp extends Hops {
 		}
 		else {
 			if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
-				if ( getNnz() > 0 ) {
-					_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+				if( dimsKnown() )
+				{
+					if ( getNnz() > 0 ) {
+						_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+					}
+					else {
+						_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEF_SPARSITY);
+					}
 				}
 				else {
-					_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEF_SPARSITY);
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				}
 			}
 			else {
@@ -452,12 +462,54 @@ public class DataOp extends Hops {
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() 
+		throws HopsException 
+	{
 		// Since a DATA hop does not represent any computation, 
 		// this function is not applicable. 
-		return null;
+		//return null;
 		
-		//TODO MB> for pwrite it would indeed be useful to distinguish between local hadoop-cp and GMR/hadoop-distcp 
+		//MB: changed to account for persistent write
+		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
+		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
+		{
+			checkAndSetForcedPlatform();
+
+			if( _etypeForced != null ) 			
+			{
+				_etype = _etypeForced;
+			}
+			else 
+			{
+				//mark for recompile (forever)
+				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+					setRequiresRecompile();
+				
+				if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+				{
+					_etype = findExecTypeByMemEstimate();
+				}
+				else if (    getInput().get(0).areDimsBelowThreshold() 
+						  && getInput().get(1).areDimsBelowThreshold())
+				{
+					_etype = ExecType.CP;
+				}
+				else
+				{
+					_etype = ExecType.MR;
+				}
+			}
+		}
+		else
+		{
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+				setRequiresRecompile();
+			
+			_etype = null;
+		}
+		
+		return _etype;
 	}
 	
 	@Override

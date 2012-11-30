@@ -82,17 +82,13 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			//check expected number of compiled and executed MR jobs
 			if( recompile )
 			{
-				//Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-			    //        2, Statistics.getNoOfCompiledMRJobs()); //reblock, GMR write //TODO 
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						  2, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write			
+						  1, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write			
 			}
 			else
 			{
-				//Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-				//		            2, Statistics.getNoOfCompiledMRJobs()); //reblock, GMR write //TODO
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						            32, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write
+						            41, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write
 			}
 			
 			//compare matrices

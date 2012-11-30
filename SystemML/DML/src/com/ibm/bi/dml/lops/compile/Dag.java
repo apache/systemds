@@ -762,11 +762,12 @@ public class Dag<N extends Lops> {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 			return false;
 		N in = (N) node.getInputs().get(0);
-		if( in.getExecType() == ExecType.MR 
-				|| (in.getExecLocation() == ExecLocation.Data 
-						&& in.get_dataType() == DataType.MATRIX) 
-						&& !getOutputFormat((Data)node).equalsIgnoreCase( getOutputFormat((Data)in) ))
+		if(    in.getExecType() == ExecType.MR  	
+			|| ( (node.getExecType() == ExecType.MR  ) && 
+				 in.getExecLocation() == ExecLocation.Data && in.get_dataType() == DataType.MATRIX ) )
+		{
 			return true;
+		}
 		else
 			return false;
 	}

@@ -473,10 +473,17 @@ public class ParForStatementBlock extends ForStatementBlock
 						for(DataIdentifier read : datsRead)
 						{ 
 							String readStr = read.getName();							
-							if( var.equals( readStr ) && read instanceof IndexedIdentifier  ) 
+							if( var.equals( readStr ) ) 
 							{
-								IndexedIdentifier idat = (IndexedIdentifier) read;
-								C.add( determineAccessPattern(idat) );
+								if( read instanceof IndexedIdentifier )
+								{
+									IndexedIdentifier idat = (IndexedIdentifier) read;
+									C.add( determineAccessPattern(idat) );
+								}
+								else if( read instanceof DataIdentifier )
+								{
+									C.add( PDataPartitionFormat.NONE );
+								}
 							}
 						}
 				}

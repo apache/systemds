@@ -218,7 +218,11 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				PDataPartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
 				if( dpf != PDataPartitionFormat.NONE )
+				{
 					cand2.put( c, dpf );
+					//System.out.println("Candidate "+c+": "+dpf);
+				}
+					
 			}
 			apply = rFindDataPartitioningCandidates(n, cand2, vars);
 		}
@@ -250,7 +254,8 @@ public class OptimizerRuleBased extends Optimizer
 		if( !n.isLeaf() )
 		{
 			for( OptNode cn : n.getChilds() )
-				ret |= rFindDataPartitioningCandidates( cn, cand, vars );
+				if( cn.getNodeType() != NodeType.FUNCCALL ) //prevent conflicts with aliases
+					ret |= rFindDataPartitioningCandidates( cn, cand, vars );
 		}
 		else if( n.getNodeType()== NodeType.HOP
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) 

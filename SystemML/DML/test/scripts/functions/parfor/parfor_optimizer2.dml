@@ -251,9 +251,7 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
 
     covXY = 0.0;
     for(i in 1:catA) {
-        for(j in 1:catB) {
-            covXY = covXY + ((castAsScalar(F[i,j])/(W-1)) * (castAsScalar(C[i,1])-meanX) * (castAsScalar(D[j,1])-meanY));
-        }
+        covXY = covXY + sum((F[i,]/(W-1)) * (castAsScalar(C[i,1])-meanX) * (t(D[,1])-meanY));
     }
 
     sp = covXY/(sqrt(varX)*sqrt(varY));

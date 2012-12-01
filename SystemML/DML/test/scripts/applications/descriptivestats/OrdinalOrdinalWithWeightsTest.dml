@@ -37,9 +37,7 @@ varY = centralMoment(D,columnS,2)*(W/(W-1.0));
 
 covXY = 0.0;
 for(i in 1:catA) {
-    for(j in 1:catB) {
-        covXY = covXY + ((castAsScalar(F[i,j])/(W-1)) * (castAsScalar(C[i,1])-meanX) * (castAsScalar(D[j,1])-meanY));
-    }
+    covXY = covXY + sum((F[i,]/(W-1)) * (castAsScalar(C[i,1])-meanX) * (t(D[,1])-meanY));
 }
 
 sp = covXY/(sqrt(varX)*sqrt(varY));
@@ -62,8 +60,8 @@ computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
     size = nrow(X);
     for(i in 1:size) {
         prefixSum = 0.0;
-        for(j in 1:(i-1)) {
-            prefixSum = prefixSum + castAsScalar(X[j,1]);
+        if( i>1 ){
+           prefixSum = sum(X[1:(i-1),1]);
         }
         Rks[i,1] = dummy * (prefixSum + ((castAsScalar(X[i,1])+1)/2));
     }

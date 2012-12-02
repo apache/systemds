@@ -83,7 +83,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			if( recompile )
 			{
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						  1, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write			
+						  0, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write			
 			}
 			else
 			{

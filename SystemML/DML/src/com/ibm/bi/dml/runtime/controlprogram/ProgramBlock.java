@@ -210,7 +210,7 @@ public class ProgramBlock {
 					}
 					//System.out.println("MRJob: " + currMRInst.getJobType() + ", duration =" + (System.currentTimeMillis()-st));
 										
-					Statistics.setNoOfExecutedMRJobs(Statistics.getNoOfExecutedMRJobs() + 1);
+					Statistics.incrementNoOfExecutedMRJobs();
 				}
 				catch (Exception e){
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in ProgramBlock (an MRJobInstruction). inst: " + currInst.toString() , e);

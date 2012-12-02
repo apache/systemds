@@ -10,17 +10,23 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
 import com.ibm.bi.dml.runtime.matrix.GMR;
@@ -34,11 +40,13 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.RandMR;
 import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 public class RunMRJobs {
@@ -77,6 +85,8 @@ public class RunMRJobs {
 			}
 		}
 
+		boolean execCP = false;
+		
 		// Spawn MapReduce Jobs
 		try {
 			// replace all placeholders in all instructions with appropriate values
@@ -122,11 +132,38 @@ public class RunMRJobs {
 			
 			case REBLOCK_TEXT:
 			case REBLOCK_BINARY:
-				ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
-						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
-						mapInst, shuffleInst, otherInst,
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
-						inst.getOutputs(), inst.getOutputInfos() );
+				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
+					&& Recompiler.checkCPReblock( inst, inputMatrices ) ) 
+				{
+					MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
+					ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
+					byte[] results = inst.getIv_resultIndices();
+					for( ReblockInstruction rblk : rblkSet )
+					{
+						//CP Reblock through caching framework (no copy required: same data, next op copies) 
+						MatrixBlock mb = inputMatrices[rblk.input].acquireRead();
+						for( int i=0; i<results.length; i++ )
+							if( rblk.output == results[i] )
+							{
+								outputMatrices[i].acquireModify( mb );
+								outputMatrices[i].release();
+								mc[i] = new MatrixCharacteristics(mb.getNumRows(),mb.getNumColumns(), rblk.brlen, rblk.bclen, mb.getNonZeros());
+							}
+						inputMatrices[rblk.input].release();
+					}
+					ret = new JobReturn( mc, inst.getOutputInfos(), true);
+					Statistics.decrementNoOfExecutedMRJobs();
+					execCP = true;
+				}
+				else 
+				{
+					ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+							inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+							mapInst, shuffleInst, otherInst,
+							inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
+							inst.getOutputs(), inst.getOutputInfos() );
+				}
 				break;
 
 			case MMCJ:
@@ -247,44 +284,47 @@ public class RunMRJobs {
 		if (ret.checkReturnStatus()) {
 			/*
 			 * Check if any output is empty. If yes, create a dummy file. Needs
-			 * to be done only in case of CellOutputInfo.
+			 * to be done only in case of CellOutputInfo and if not CP.
 			 */
 			try {
-				for (int i = 0; i < outputMatrices.length; i++) {
-					OutputInfo outinfo = ((MatrixFormatMetaData)outputMatrices[i].getMetaData()).getOutputInfo();
-					String fname = outputMatrices[i].getFileName();
-					if (outinfo == OutputInfo.TextCellOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo) {
-						if (MapReduceTool.isHDFSFileEmpty(fname)) {
-							// createNewFile(Path f)
-							if (outinfo == OutputInfo.TextCellOutputInfo) {
-								FileSystem fs = FileSystem
-										.get(new Configuration());
-								Path filepath = new Path(fname, "0-m-00000");
-								FSDataOutputStream writer = fs.create(filepath);
-								writer.writeBytes("1 1 0");
-								writer.sync();
-								writer.flush();
-								writer.close();
-							} else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
-								Configuration conf = new Configuration();
-								FileSystem fs = FileSystem.get(conf);
-								Path filepath = new Path(fname, "0-r-00000");
-								SequenceFile.Writer writer = new SequenceFile.Writer(
-										fs, conf, filepath,
-										MatrixIndexes.class, MatrixCell.class);
-								MatrixIndexes index = new MatrixIndexes(1, 1);
-								MatrixCell cell = new MatrixCell(0);
-								writer.append(index, cell);
-								writer.close();
+				if( !execCP )
+				{
+					for (int i = 0; i < outputMatrices.length; i++) {
+						OutputInfo outinfo = ((MatrixFormatMetaData)outputMatrices[i].getMetaData()).getOutputInfo();
+						String fname = outputMatrices[i].getFileName();
+						if (outinfo == OutputInfo.TextCellOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo) {
+							if (MapReduceTool.isHDFSFileEmpty(fname)) {
+								// createNewFile(Path f)
+								if (outinfo == OutputInfo.TextCellOutputInfo) {
+									FileSystem fs = FileSystem
+											.get(new Configuration());
+									Path filepath = new Path(fname, "0-m-00000");
+									FSDataOutputStream writer = fs.create(filepath);
+									writer.writeBytes("1 1 0");
+									writer.sync();
+									writer.flush();
+									writer.close();
+								} else if (outinfo == OutputInfo.BinaryCellOutputInfo) {
+									Configuration conf = new Configuration();
+									FileSystem fs = FileSystem.get(conf);
+									Path filepath = new Path(fname, "0-r-00000");
+									SequenceFile.Writer writer = new SequenceFile.Writer(
+											fs, conf, filepath,
+											MatrixIndexes.class, MatrixCell.class);
+									MatrixIndexes index = new MatrixIndexes(1, 1);
+									MatrixCell cell = new MatrixCell(0);
+									writer.append(index, cell);
+									writer.close();
+								}
 							}
 						}
+						outputMatrices[i].setFileExists(true);
+						
+						// write out metadata file
+						// Currently, valueType information in not stored in MR instruction, 
+						// since only DOUBLE matrices are supported ==> hard coded the value type information for now
+						MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 					}
-					outputMatrices[i].setFileExists(true);
-					
-					// write out metadata file
-					// Currently, valueType information in not stored in MR instruction, 
-					// since only DOUBLE matrices are supported ==> hard coded the value type information for now
-					MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE,  ((MatrixDimensionsMetaData)ret.getMetaData(i)).getMatrixCharacteristics(), outinfo);
 				}
 				return ret;
 			} catch (IOException e) {

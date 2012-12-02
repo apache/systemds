@@ -13,6 +13,7 @@ import com.ibm.bi.dml.utils.LopsException;
  */
 public class ReBlock extends Lops 
 {
+	public static final String OPCODE = "rblk"; 
 	
 	/**
 	 * Constructor to perform a reblock operation. 
@@ -58,7 +59,7 @@ public class ReBlock extends Lops
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lops.OPERAND_DELIMITOR );
-		sb.append( "rblk" );
+		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index );
 		sb.append( DATATYPE_PREFIX );

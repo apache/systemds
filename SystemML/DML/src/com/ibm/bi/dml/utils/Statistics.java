@@ -24,6 +24,10 @@ public class Statistics {
 	public static synchronized void incrementNoOfExecutedMRJobs() {
 		iNoOfExecutedMRJobs ++;
 	}
+	
+	public static synchronized void decrementNoOfExecutedMRJobs() {
+		iNoOfExecutedMRJobs --;
+	}
 
 	public static synchronized void setNoOfCompiledMRJobs(int iNoOfCompiledMRJobs) {
 		Statistics.iNoOfCompiledMRJobs = iNoOfCompiledMRJobs;

@@ -11,6 +11,7 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
@@ -25,8 +26,11 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.HopsException;
@@ -322,5 +326,65 @@ public class Recompiler
 		//	System.out.println("HOP with exec type MR after recompilation "+hop.getOpString());
 		
 		hop.set_visited(VISIT_STATUS.DONE);
+	}
+
+	/**
+	 * Returns true iff (1) all instruction are reblock instructions and (2) all
+	 * individual reblock operations fit in the current memory budget.
+	 * 
+	 * @param inst
+	 * @param pb
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static boolean checkCPReblock(MRJobInstruction inst, MatrixObject[] inputs) 
+		throws DMLRuntimeException 
+	{
+		boolean ret = true;
+		
+		//check only shuffle inst
+		String rdInst = inst.getIv_randInstructions();
+		String rrInst = inst.getIv_recordReaderInstructions();
+		String mapInst = inst.getIv_instructionsInMapper();
+		String aggInst = inst.getIv_aggInstructions();
+		String otherInst = inst.getIv_otherInstructions();
+		if(    (rdInst != null && rdInst.length()>0)
+			|| (rrInst != null && rrInst.length()>0)
+			|| (mapInst != null && mapInst.length()>0)
+			|| (aggInst != null && aggInst.length()>0)
+			|| (otherInst != null && otherInst.length()>0)  )
+		{
+			ret = false;
+		}
+		
+		//check only reblock inst
+		if( ret ) {
+			String shuffleInst = inst.getIv_shuffleInstructions();
+			String[] instParts = shuffleInst.split( Lops.INSTRUCTION_DELIMITOR );
+			for( String rblk : instParts )
+				if( !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) )
+				{
+					ret = false;
+					break;
+				}
+		}
+		
+		//check recompile memory budget
+		if( ret ) {
+			for( MatrixObject mo : inputs )
+			{
+				long rows = mo.getNumRows();
+				long cols = mo.getNumColumns();
+				long nnz = mo.getNnz();
+				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? nnz/(rows*cols) : 1.0d);
+				if( mem >= Hops.getMemBudget(true) )
+				{
+					ret = false;
+					break;
+				}
+			}
+		}
+
+		return ret;
 	}
 }

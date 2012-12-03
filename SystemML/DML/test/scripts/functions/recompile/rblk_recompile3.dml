@@ -1,0 +1,4 @@
+V = read($1, rows=$2, cols=1, format="text");
+W = V*1;
+X = groupedAggregate(target=V,groups=W,fn="count");
+write(X, $3, format="binary");     

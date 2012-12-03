@@ -65,7 +65,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
-	public static final double PAR_K_MR_FACTOR     = 2.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
+	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 
 	//problem and infrastructure properties
 	private int _N    = -1; //problemsize

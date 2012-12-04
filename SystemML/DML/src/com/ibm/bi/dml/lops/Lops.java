@@ -28,7 +28,7 @@ public abstract class Lops {
 	public enum Type {
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
-		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, Append, RangeReIndex, LeftIndex, ZeroOut
+		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, Append, RangeReIndex, LeftIndex, ZeroOut, MVMult
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
@@ -122,6 +122,15 @@ public abstract class Lops {
 
 	ArrayList<Lops> inputs;
 	ArrayList<Lops> outputs;
+	
+	/**
+	 * refers to #lops whose input is equal to the output produced by this lop.
+	 * This is used in generating rmvar instructions as soon as the output produced
+	 * by this lop is consumed. Otherwise, such rmvar instructions are added 
+	 * at the end of program blocks. 
+	 * 
+	 */
+	int consumerCount;
 
 	/**
 	 * handle to output parameters, dimensions, blocking, etc.
@@ -194,6 +203,19 @@ public abstract class Lops {
 
 	public void addOutput(Lops op) {
 		outputs.add(op);
+	}
+	
+	public int getConsumerCount() {
+		return consumerCount;
+	}
+	
+	public void setConsumerCount(int cc) {
+		consumerCount = cc;
+	}
+	
+	public int removeConsumer() {
+		consumerCount--;
+		return consumerCount;
 	}
 
 	/**

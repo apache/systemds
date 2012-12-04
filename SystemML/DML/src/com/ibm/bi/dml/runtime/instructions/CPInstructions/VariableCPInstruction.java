@@ -104,7 +104,20 @@ public class VariableCPInstruction extends CPInstruction {
 		else
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
-		
+	
+	/*public VariableOperationCode getVariableOpCode() {
+		return opcode;
+	}*/
+	
+	// Checks if this instructon is a remove instruction for varName
+	public boolean isRemoveVariable(String varName) {
+		if ( opcode == VariableOperationCode.RemoveVariable || opcode == VariableOperationCode.RemoveVariableAndFile) {
+			if ( input1.get_name().equalsIgnoreCase(varName))
+				return true;
+		}
+		return false;
+	}
+	
 	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String istr )
 	{
 		super();

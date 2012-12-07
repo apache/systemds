@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -1202,8 +1203,10 @@ public class ProgramConverter
 		
 		//handle DML config (NOTE: set directly in ConfigurationManager)
 		String confStr = st.nextToken();
-		DMLConfig config = DMLConfig.parseDMLConfig(confStr);
-		ConfigurationManager.setConfig(config);
+		if( !InfrastructureAnalyzer.isLocalMode() ) {
+			DMLConfig config = DMLConfig.parseDMLConfig(confStr);
+			ConfigurationManager.setConfig(config);
+		}
 		
 		//handle program
 		String progStr = st.nextToken();

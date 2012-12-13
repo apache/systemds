@@ -115,7 +115,9 @@ public class ReblockRecompileTest extends AutomatedTestBase
 					dmlfile.put(new CellIndex(i+1,j+1), mo.getValue(i, j));
 				
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
+			boolean flag = TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
+			if( !flag )
+				System.out.println("Matrix compare found differences for input data generated with seed="+seed);
 		} 
 		catch (IOException e) {
 			Assert.fail(e.getMessage());

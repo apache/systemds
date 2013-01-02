@@ -12,12 +12,33 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 	private Pair<MatrixIndexes, MatrixCell> pair=
 		new Pair<MatrixIndexes, MatrixCell>(indexes, value);
 	private boolean hasValue=false;
+	private boolean toIgnore=false;
 
 	@Override
 	public void convert(LongWritable k1, Text v1) {
-		String[] strs=v1.toString().split(" ");
+		
+		String str=v1.toString();
+		//added to support matrix market format
+		if(str.startsWith("%%"))
+		{
+			toIgnore=true;
+			hasValue=false;
+			return;
+		}
+		else if(str.startsWith("%"))
+		{
+			hasValue=false;
+			return;
+		}else if(toIgnore)
+		{
+			toIgnore=false;
+			hasValue=false;
+			return;
+		}
+		
+		String[] strs=str.split(" ");
 		if(strs.length==1)
-			strs=v1.toString().split(",");
+			strs=str.split(",");
 		indexes.setIndexes(Long.parseLong(strs[0]), Long.parseLong(strs[1]));
 		value.setValue(Double.parseDouble(strs[2]));
 		hasValue=true;
@@ -39,11 +60,17 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 	
 	public static void main(String[] args) throws Exception {
 		TextToBinaryCellConverter conv=new TextToBinaryCellConverter();
-		conv.convert(new LongWritable(1), new Text("1 2 10.0"));
-		while(conv.hasNext())
+		LongWritable lw=new LongWritable(1);
+		Text[] texts=new Text[]{new Text("%%ksdjl"), new Text("%ksalfk"), new Text("1 1 1"), new Text("1 2 10.0"), new Text("%ksalfk")};
+		
+		for(Text text: texts)
 		{
-			Pair pair=conv.next();
-			System.out.println(pair.getKey()+": "+pair.getValue());
+			conv.convert(lw, text);
+			while(conv.hasNext())
+			{
+				Pair pair=conv.next();
+				System.out.println(pair.getKey()+": "+pair.getValue());
+			}
 		}
 	}
 

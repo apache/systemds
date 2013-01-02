@@ -141,4 +141,19 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>{
 		}
 	  }
 
+	  public static void main(String[] args)
+	  {
+		  FirstTwoIndexesPartitioner part=new FirstTwoIndexesPartitioner();
+		  TripleIndexes key=new TripleIndexes();
+		  int[] num=new int[10];
+		  for(int i=1; i<=1000000; i++)
+		  {
+			  key.setIndexes(i, 1, 0);
+			  //System.out.println(part.getPartition(key, null, 10));
+			  num[part.getPartition(key, null, 10)]++;
+		  }
+		  
+		  for(int i=0; i<10; i++)
+			  System.out.println(i+": "+num[i]);
+	  }
 }

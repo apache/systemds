@@ -183,6 +183,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
 	protected String           _colocatedDPMatrix   = null;
+	protected boolean          _jvmReuse            = true;
 	//specifics used for robustness
 	protected double           _oldMemoryBudget = -1;
 	protected double           _recompileMemoryBudget = -1;
@@ -325,6 +326,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		_params.put(ParForStatementBlock.TASK_PARTITIONER, String.valueOf(_taskPartitioner)); //kept up-to-date for copies
 	}
 	
+	public void setTaskSize( int tasksize )
+	{
+		_taskSize = tasksize;
+		_params.put(ParForStatementBlock.TASK_SIZE, String.valueOf(_taskSize)); //kept up-to-date for copies
+	}
+	
 	public void setDataPartitioner(PDataPartitioner partitioner) 
 	{
 		_dataPartitioner = partitioner;
@@ -335,6 +342,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		//only enabled though optimizer
 		_colocatedDPMatrix = varname;
+	}
+	
+	public void disableJVMReuse() 
+	{
+		_jvmReuse = false;
 	}
 	
 	public void setResultMerge(PResultMerge merge) 
@@ -698,7 +710,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 3) submit MR job (wait for finished work)
 		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)_variables.get(_colocatedDPMatrix) : null;
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj,
-				                      ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory());
+				                                          ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(),
+				                                          (ALLOW_REUSE_MR_JVMS & _jvmReuse) );
 		
 		if( MONITOR ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -883,7 +896,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		String resultFile = constructResultFileName();
 		
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, null,
-				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory()); 	
+				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(),
+				                                (ALLOW_REUSE_MR_JVMS & _jvmReuse) ); 	
 		
 		// Step 4) collecting results from each parallel worker
 

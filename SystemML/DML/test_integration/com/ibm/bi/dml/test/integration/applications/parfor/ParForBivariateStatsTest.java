@@ -107,8 +107,8 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		}
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
+		//config.addVariable("rows", rows);
+		//config.addVariable("cols", cols);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;

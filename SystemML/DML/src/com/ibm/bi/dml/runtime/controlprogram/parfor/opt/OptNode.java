@@ -46,6 +46,7 @@ public class OptNode
 		OPTYPE,
 		OPSTRING,
 		TASK_PARTITIONER,
+		TASK_SIZE,
 		DATA_PARTITIONER,
 		DATA_PARTITION_FORMAT,
 		RESULT_MERGE,
@@ -126,7 +127,10 @@ public class OptNode
 	
 	public String getParam( ParamType type )
 	{
-		return _params.get(type);
+		String ret = null;
+		if( _params != null )
+			ret = _params.get(type);
+		return ret;
 	}
 	
 	public void addChild( OptNode child )
@@ -240,6 +244,24 @@ public class OptNode
 	 * 
 	 * @return
 	 */
+	public Collection<OptNode> getNodeList( ExecType et )
+	{
+		Collection<OptNode> nodes = new LinkedList<OptNode>();
+		
+		if(!isLeaf())
+			for( OptNode n : _childs )
+				nodes.addAll( n.getNodeList( et ) );
+		
+		if( _etype == et )
+			nodes.add(this);
+		
+		return nodes;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
 	public Collection<OptNode> getRelevantNodeList()
 	{
 		Collection<OptNode> nodes = new LinkedList<OptNode>();
@@ -309,6 +331,10 @@ public class OptNode
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public int getTotalK()
 	{
 		int k = 1;		
@@ -325,6 +351,34 @@ public class OptNode
 		}
 		
 		return k;
+	}
+	
+	/**
+	 * 
+	 * @param N
+	 * @return
+	 */
+	public int getMaxC( int N )
+	{
+		int maxc = N;
+		if( _childs != null )
+			for( OptNode n : _childs )
+				maxc = Math.min(maxc, n.getMaxC( N ) );
+		
+		if( _ntype == NodeType.HOP )
+		{
+			String ts = getParam( ParamType.TASK_SIZE );
+			if( ts != null )
+				maxc = Math.min(maxc, Integer.parseInt(ts) );
+		}
+		
+		if(    _ntype == NodeType.PARFOR 
+		    && _etype == ExecType.CP    )
+		{
+			maxc = (int)Math.floor(maxc / _k);
+		}
+		
+		return maxc;
 	}
 	
 	/**
@@ -347,7 +401,9 @@ public class OptNode
 		return ret;
 	}
 	
-
+	/**
+	 * 
+	 */
 	public void checkAndCleanup() 
 	{
 		if( _childs != null )

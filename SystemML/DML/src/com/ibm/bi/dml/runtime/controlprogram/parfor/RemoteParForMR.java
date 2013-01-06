@@ -57,7 +57,7 @@ public class RemoteParForMR
 	 * @throws DMLRuntimeException
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
-			                       ExecMode mode, int numMappers, int replication, int max_retry, long minMem)  //opt params
+			                                   ExecMode mode, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
 		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
@@ -143,7 +143,7 @@ public class RemoteParForMR
 			job.setMapSpeculativeExecution(false);
 			
 			//enables the reuse of JVMs (multiple tasks per MR task)
-			if( ParForProgramBlock.ALLOW_REUSE_MR_JVMS )
+			if( jvmReuse )
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
 			//set the replication factor for the results

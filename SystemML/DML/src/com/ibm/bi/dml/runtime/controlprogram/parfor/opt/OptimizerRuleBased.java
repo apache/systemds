@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,7 +14,9 @@ import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -36,26 +39,29 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
  * 
  * Applied rule-based rewrites
- * - 1) rewrite set data partitioner (incl. recompile rightindexing)
- * - 2) rewrite set execution strategy
- * - 3) rewrite use data colocation		 
- * - 4) rewrite use nested parallelism 
- * - 5) rewrite set degree of parallelism
- * - 6) rewrite set task partitioner
- * - 7) rewrite set result merge 		 		 
- * - 8) rewrite set recompile memory budget
- * - 9) remove unnecessary parfor		
+ * - 1) rewrite set data partitioner (incl. recompile RIX)
+ * - 2) rewrite result partitioning (incl. recompile LIX)
+ * - 3) rewrite set execution strategy
+ * - 4) rewrite use data colocation		 
+ * - 5) rewrite use nested parallelism 
+ * - 6) rewrite set degree of parallelism
+ * - 7) rewrite set task partitioner
+ * - 8) rewrite set result merge 		 		 
+ * - 9) rewrite set recompile memory budget
+ * - 10) remove unnecessary parfor		
  * 
  * 	 
  * TODO blockwise partitioning
- * TODO result partitioning 
  *  
  */
 public class OptimizerRuleBased extends Optimizer
@@ -128,56 +134,51 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//OPTIMIZE PARFOR PLAN
 		
-		// rewrite 1: data partitioning
-		// (needs to be before exec type rewrite for taking recompilation into account)
+		// rewrite 1: data partitioning (incl. log. recompile RIX)
 		rewriteSetDataPartitioner( pn, pb.getVariables() );
-		M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate due to potential recompile in rewrite data partitioner
+		M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
-		boolean flagLeftIndexRewrite = false;
-		//TODO rewrite leftindexing 
+		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
+		boolean flagLIX = rewriteSetResultPartitioning( pn, M );
+		M = est.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		
-		// rewrite 2: execution strategy
-		rewriteSetExecutionStategy( pn, M );
+		// rewrite 3: execution strategy
+		rewriteSetExecutionStategy( pn, M, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
 		{
-			// rewrite 3: data colocation
+			// rewrite 4: data colocation
 			rewriteDataColocation( pn, pb.getVariables() );
 			
-			// rewrite 4: nested parallelism (incl exec types)	
-			boolean nested = rewriteNestedParallelism( pn, M );
+			// rewrite 5: nested parallelism (incl exec types)	
+			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
 			
-			// rewrite 5: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M, nested );
+			// rewrite 6: determine parallelism
+			rewriteSetDegreeOfParallelism( pn, M, flagNested );
 			
-			// rewrite 6: task partitioning
-			if( nested ){
-				rewriteSetTaskPartitioner( pn, PTaskPartitioner.STATIC );
-				rewriteSetTaskPartitioner( pn.getChilds().get(0), PTaskPartitioner.FACTORING );
-			}
-			else
-				rewriteSetTaskPartitioner( pn, PTaskPartitioner.FACTORING );
+			// rewrite 7: task partitioning 
+			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 5: determine parallelism
+			// rewrite 6: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 6: task partitioning
-			rewriteSetTaskPartitioner( pn, PTaskPartitioner.FACTORING );
+			// rewrite 7: task partitioning
+			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 7: set result merge
-		rewriteSetResultMerge( pn, pb.getVariables(), flagLeftIndexRewrite );
+		//rewrite 8: set result merge
+		rewriteSetResultMerge( pn, pb.getVariables() );
 		
-		//rewrite 8: set local recompile memory budget
+		//rewrite 9: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 9: parfor (par=1) to for 
+		// rewrite 10: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -341,7 +342,160 @@ public class OptimizerRuleBased extends Optimizer
 			return LopProperties.ExecType.CP_FILE;
 	}
 	
+	///////
+	//REWRITE set result partitioning
+	///
 
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 */
+	private boolean rewriteSetResultPartitioning(OptNode n, double M) 
+		throws DMLRuntimeException
+	{
+		//preparations
+		long id = n.getID();
+		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+		ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
+		
+		//search for candidates
+		Collection<OptNode> cand = n.getNodeList(ExecType.MR);
+		
+		//determine if applicable
+		boolean apply =    M < _rm         //ops fit in remote memory budget
+			            && cand.size() > 0 //at least one MR
+		                && isResultPartitionableAll(cand,pfpb.getResultVariables(),pfpb.getVariables(), pfpb.getIterablePredicateVars()[0]); // check candidates
+			
+		//recompile LIX
+		if( apply )
+		{
+			try
+			{
+				for(OptNode lix : cand)
+					recompileLIX( lix );
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException("Unable to recompile LIX.", ex);
+			}
+		}
+		
+		LOG.debug("RULEBASED OPT: rewrite 'set result partitioning' - result="+apply );
+	
+		return apply;
+	}
+	
+	private boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		for( OptNode n : nlist )
+		{
+			ret &= isResultPartitionable(n, resultVars, vars, iterVarname);
+			if(!ret) //early abort
+				break;
+		}
+		
+		return ret;
+	}
+	
+	private boolean isResultPartitionable( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		
+		//check left indexing operator
+		String opStr = n.getParam(ParamType.OPSTRING);
+		if( opStr==null || !opStr.equals(LeftIndexingOp.OPSTRING) )
+			ret = false;
+
+		Hops h = null;
+		Hops base = null;
+		
+		if( ret ) {
+			h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			base = h.getInput().get(0);
+			
+			//check result variable
+			if( !resultVars.contains(base.get_name()) )
+				ret = false;
+		}
+
+		//check access pattern, memory budget
+		if( ret ) {
+			int dpf = 0;
+			Hops inpRowL = h.getInput().get(2);
+			Hops inpRowU = h.getInput().get(3);
+			Hops inpColL = h.getInput().get(4);
+			Hops inpColU = h.getInput().get(5);
+			if( (inpRowL.get_name().equals(iterVarname) && inpRowU.get_name().equals(iterVarname)) )
+				dpf = 1; //rowwise
+			if( (inpColL.get_name().equals(iterVarname) && inpColU.get_name().equals(iterVarname)) )
+				dpf = (dpf==0) ? 2 : 3; //colwise or cellwise
+			
+			if( dpf == 0 )
+				ret = false;
+			else
+			{
+				//check memory budget
+				MatrixObject mo = (MatrixObject)vars.get(base.get_name());
+				if( mo.getNnz() != 0 ) //0 or -1 valid because result var known during opt
+					ret = false;
+				
+				double memTask1 = -1;
+				int taskN = -1;
+				switch(dpf) { //check tasksize = 1
+					case 1:
+						memTask1 = base.get_dim2()*8;
+						taskN = (int) (_rm / memTask1); 
+						break;
+					case 2:
+						memTask1 = base.get_dim1()*Math.min(SparseRow.initialCapacity, base.get_dim2())*8;
+						taskN = (int) (_rm / (base.get_dim1()*8));
+						break;
+					case 3:
+						memTask1 = Math.min(SparseRow.initialCapacity, base.get_dim2())*8;
+						taskN = (int) (_rm / memTask1);
+						break;	
+				}
+
+				if( memTask1>_rm )
+					ret = false;
+				else
+					n.addParam(ParamType.TASK_SIZE, String.valueOf(taskN));
+			}
+		}
+				
+		//if(ret)
+		//	System.out.println("isResultPartitioning: "+base.get_name()+" - "+ret);
+		
+		return ret;
+	}
+	
+	private void recompileLIX( OptNode n ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+		
+		//set forced exec type
+		h.setForcedExecType(LopProperties.ExecType.CP);
+		n.setExecType(ExecType.CP);
+		
+		//recompile parent pb
+		long pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
+		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid);
+		StatementBlock sb = (StatementBlock) o[0];
+		ProgramBlock pb = (ProgramBlock) o[1];
+		
+		//construct new instructions
+		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), pb.getVariables(), 0);
+		pb.setInstructions( newInst );   
+		
+		//set new mem estimate (last, otherwise overwritten from recompile)
+		h.setMemEstimate(_rm-1);
+	}
+	
 	///////
 	//REWRITE set execution strategy
 	///
@@ -355,7 +509,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @param M
 	 */
-	private void rewriteSetExecutionStategy(OptNode n, double M)
+	private void rewriteSetExecutionStategy(OptNode n, double M, boolean flagLIX)
 	{
 		//deciding on the execution strategy
 		if(    n.isCPOnly()   //Required: all instruction can be be executed in CP
@@ -373,6 +527,11 @@ public class OptimizerRuleBased extends Optimizer
 			else if( _lk < _N && _lk < _rk && (_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE ) )
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
+			}
+			//MR if necessary for LIX rewrite (LIX true iff cp only and rm valid)
+			else if( flagLIX )
+			{
+				n.setExecType( ExecType.MR );  //remote parfor
 			}
 			//otherwise CP
 			else
@@ -497,12 +656,13 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("all")
-	private boolean rewriteNestedParallelism(OptNode n, double M ) 
+	private boolean rewriteNestedParallelism(OptNode n, double M, boolean flagLIX ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		boolean nested = false;
 	
 		if( APPLY_REWRITE_NESTED_PARALLELISM
+			&& !flagLIX                      // if not applied left indexing rewrite	
 			&& _N >= _rnk 					 // at least exploit all nodes
 			&& !n.hasNestedParallelism()     // only for 1D problems, otherwise potentially bad load balance
 			&& M * _lkmaxCP <= _rm  )        // only if we can exploit full local parallelism in the map task JVM memory
@@ -568,7 +728,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param mMax  (per node)
 	 * @param nested
 	 */
-	private void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean nested) 
+	private void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
 	{
 		ExecType type = n.getExecType();
 		long id = n.getID();
@@ -600,7 +760,7 @@ public class OptimizerRuleBased extends Optimizer
 		else // ExecType.MR
 		{
 			int kMax = -1;
-			if( nested )
+			if( flagNested )
 			{
 				//determine remote max parallelism constraint
 				pfpb.setDegreeOfParallelism( _rnk ); //guaranteed <= _N (see nested)
@@ -631,10 +791,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 	/**
-	 * TODO assign remaining parallelism according to mem in order 
-	 *      to exploit higher degree of parallelism
-	 *      (currently conservative because total max par determined 
-	 *       by max mem operation of entire tree)
 	 * 
 	 * @param n
 	 * @param par
@@ -673,11 +829,39 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @param partitioner
 	 */
-	private void rewriteSetTaskPartitioner(OptNode n, PTaskPartitioner partitioner) 
+	private void rewriteSetTaskPartitioner(OptNode pn, boolean flagNested, boolean flagLIX) 
 	{
-		if( n.getNodeType() != NodeType.PARFOR )
+		//assertions (warnings of corrupt optimizer decisions)
+		if( pn.getNodeType() != NodeType.PARFOR )
 			LOG.warn("RULEBASED OPT: Task partitioner can only be set for a ParFor node.");
+		if( flagNested && flagLIX )
+			LOG.warn("RULEBASED OPT: Task partitioner decision has conflicting input from rewrites 'nested parallelism' and 'result partitioning'.");
 		
+		
+		//set task partitioner
+		if( flagNested )
+		{
+			setTaskPartitioner( pn, PTaskPartitioner.STATIC );
+			setTaskPartitioner( pn.getChilds().get(0), PTaskPartitioner.FACTORING );
+		}
+		else if( flagLIX )
+		{
+			setTaskPartitioner( pn, PTaskPartitioner.FACTORING_CMAX );
+		}
+		else
+		{
+			setTaskPartitioner( pn, PTaskPartitioner.FACTORING );
+		}
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param partitioner
+	 * @param flagLIX
+	 */
+	private void setTaskPartitioner( OptNode n, PTaskPartitioner partitioner )
+	{
 		long id = n.getID();
 		
 		// modify rtprog
@@ -688,7 +872,17 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.TASK_PARTITIONER, partitioner.toString());
 		
-		LOG.debug("RULEBASED OPT: rewrite 'set task partitioner' - result="+partitioner );
+		//handle specific case of LIX recompile
+		boolean flagLIX = (partitioner == PTaskPartitioner.FACTORING_CMAX);
+		if( flagLIX ) 
+		{
+			int maxc = n.getMaxC( _N );
+			pfpb.setTaskSize( maxc ); //used as constraint 
+			pfpb.disableJVMReuse();
+			n.addParam(ParamType.TASK_SIZE, String.valueOf(maxc));
+		}
+		
+		LOG.debug("RULEBASED OPT: rewrite 'set task partitioner' - result="+partitioner+((flagLIX) ? ","+n.getParam(ParamType.TASK_SIZE) : "") );	
 	}
 	
 	
@@ -701,7 +895,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @throws DMLRuntimeException 
 	 */
-	private void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean appliedLeftIndexRewrite ) 
+	private void rewriteSetResultMerge( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
@@ -730,7 +924,7 @@ public class OptimizerRuleBased extends Optimizer
 
 		//recursively apply rewrite for parfor nodes
 		if( n.getChilds() != null )
-			rInvokeSetResultMerge(n.getChilds(), vars, appliedLeftIndexRewrite);
+			rInvokeSetResultMerge(n.getChilds(), vars);
 		
 		LOG.debug("RULEBASED OPT: rewrite 'set result merge' - result="+ret );
 	}
@@ -822,14 +1016,14 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param vars
 	 * @throws DMLRuntimeException 
 	 */
-	private void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean flag ) 
+	private void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
 		for( OptNode n : nodes )
 			if( n.getNodeType() == NodeType.PARFOR )
-				rewriteSetResultMerge(n, vars, flag);
+				rewriteSetResultMerge(n, vars);
 			else if( n.getChilds()!=null )  
-				rInvokeSetResultMerge(n.getChilds(), vars, flag);
+				rInvokeSetResultMerge(n.getChilds(), vars);
 	}
 
 	

@@ -9,6 +9,8 @@ import java.util.LinkedList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -31,6 +33,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
+	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	
 	//external parameter names 
@@ -95,6 +98,12 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();
+
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("com.ibm.bi.dml.parser.ParForStatementBlock")
+				  .setLevel((Level) Level.TRACE);
+		}
 	}
 	
 	public ParForStatementBlock()

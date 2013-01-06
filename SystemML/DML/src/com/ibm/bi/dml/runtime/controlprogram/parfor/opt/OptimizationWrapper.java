@@ -6,6 +6,8 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -53,11 +55,21 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class OptimizationWrapper 
 {
+	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(OptimizationWrapper.class.getName());
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
 	private static final boolean ALLOW_RUNTIME_COSTMODEL = false;
+	
+	static
+	{
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
+				  .setLevel((Level) Level.DEBUG);
+		}
+	}
 	
 	/**
 	 * Called once per DML script (during program compile time) 

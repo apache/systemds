@@ -44,7 +44,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
  */
 public class MMRJMR {
 	
-	//TODO public static double SORT_IO_MEM = -1;
 	private static final Log LOG = LogFactory.getLog(MMRJMR.class.getName());
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, 
 			long[] rlens, long[] clens, int[] brlens, int[] bclens, String instructionsInMapper, 
@@ -91,13 +90,7 @@ public class MMRJMR {
 		
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
-		
-		/* TODO
-		if( SORT_IO_MEM != -1 )
-		{
-			job.setInt("io.sort.mb", (int)SORT_IO_MEM);
-		}*/
-		
+
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		

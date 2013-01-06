@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
@@ -12,6 +13,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -171,12 +173,21 @@ public class MatrixCharacteristics{
 			dim_out.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen);
 		}else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
-				|| ins instanceof UnaryInstruction
+				||(ins instanceof UnaryInstruction && !(ins instanceof MMTSJMRInstruction))
 				|| ins instanceof RandInstruction
 				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;
 			dim_out.set(dims.get(realIns.input));
+		}
+		else if (ins instanceof MMTSJMRInstruction)
+		{
+			MMTSJMRInstruction mmtsj = (MMTSJMRInstruction)ins;
+			MMTSJType tstype = mmtsj.getMMTSJType();
+			MatrixCharacteristics mc = dims.get(mmtsj.input);
+			dim_out.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
+					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
+					     mc.numRowsPerBlock, mc.numColumnsPerBlock, mc.nonZero );
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof CombineBinaryInstruction )
 		{

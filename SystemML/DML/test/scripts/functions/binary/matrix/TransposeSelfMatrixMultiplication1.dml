@@ -1,0 +1,6 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.TransposeSelfMatrixMultiplicationTest.java
+
+A = read($1, rows=$2, cols=$3, format="text");
+B = t(A) %*% A;
+
+write(B, $4, format="text");

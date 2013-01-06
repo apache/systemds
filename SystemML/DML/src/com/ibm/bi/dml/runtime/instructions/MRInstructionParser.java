@@ -12,6 +12,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstructi
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
@@ -44,7 +45,7 @@ public class MRInstructionParser extends InstructionParser {
 		// AGG_BINARY Instruction Opcodes 
 		String2MRInstructionType.put( "cpmm" , MRINSTRUCTION_TYPE.AggregateBinary);
 		String2MRInstructionType.put( "rmm"  , MRINSTRUCTION_TYPE.AggregateBinary);
-
+		
 		// AGG_UNARY Instruction Opcodes 
 		String2MRInstructionType.put( "ua+"   , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uar+"  , MRINSTRUCTION_TYPE.AggregateUnary);
@@ -79,6 +80,9 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "pow"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "round", MRINSTRUCTION_TYPE.Unary);
 
+		// Specific UNARY Instruction Opcodes
+		String2MRInstructionType.put( "tsmm" , MRINSTRUCTION_TYPE.MMTSJ);
+		
 		// BINARY and SCALAR Instruction Opcodes 
 		String2MRInstructionType.put( "+"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "-"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
@@ -192,6 +196,9 @@ public class MRInstructionParser extends InstructionParser {
 		
 		case Unary:
 			return (MRInstruction) UnaryInstruction.parseInstruction(str);
+			
+		case MMTSJ:
+			return (MRInstruction) MMTSJMRInstruction.parseInstruction(str);
 			
 		case CombineTertiary:
 			return (MRInstruction) CombineTertiaryInstruction.parseInstruction(str);

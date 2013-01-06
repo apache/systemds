@@ -30,7 +30,7 @@ public class MMRJ extends Lops
 		 * This lop can be executed only in RMM job.
 		 */
 		
-		boolean breaksAlignment = false;
+		boolean breaksAlignment = true;
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.MMRJ);

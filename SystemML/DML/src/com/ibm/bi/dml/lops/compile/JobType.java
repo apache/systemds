@@ -111,6 +111,8 @@ public enum JobType {
 		
 		case MMRJ: 			return JobType.MMRJ;
 		
+		case MMTSJ: 		return JobType.GMR;
+		
 		case PartitionLop: 	return JobType.PARTITION;
 		
 		case SortKeys: 		return JobType.SORT;

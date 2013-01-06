@@ -1063,7 +1063,9 @@ public class Dag<N extends Lops> {
 
 				// aligned reduce, make sure a parent that is reduce exists
 				if (node.getExecLocation() == ExecLocation.Reduce) {
-					if (hasChildNode(node, execNodes, ExecLocation.MapAndReduce)) {
+					if (   hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
+						|| hasChildNode(node, execNodes, ExecLocation.Map)) 
+					{ 
 						LOG.trace(indent + "Adding -"
 									+ node.toString());
 						execNodes.add(node);

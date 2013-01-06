@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
+import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
@@ -1956,6 +1957,242 @@ public class MatrixBlockDSM extends MatrixValue{
 		return result;
 	}
 
+	/**
+	 * 
+	 * @param out
+	 * @param tstype
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue transposeSelfMatrixMult( MatrixBlockDSM out, MMTSJType tstype ) 	
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//check for transpose type
+		if( !(tstype == MMTSJType.LEFT || tstype == MMTSJType.RIGHT) )
+			throw new DMLRuntimeException("Invalid MMTSJ type '"+tstype+"'.");
+		
+		boolean leftTranspose = ( tstype == MMTSJType.LEFT );
+		if( sparse )
+			transposeSelfMatrixMultSparse(out, leftTranspose);
+		else 
+			transposeSelfMatrixMultDense(out, leftTranspose);
+		out.recomputeNonZeros();
+		out.examSparsity();
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @param leftTranspose
+	 */
+	private void transposeSelfMatrixMultDense( MatrixBlockDSM out, boolean leftTranspose )
+	{
+		//1) allocate output block
+		out.rlen = leftTranspose ? clen : rlen;
+		out.clen = leftTranspose ? clen : rlen;
+		out.sparse = false;
+		out.denseBlock = new double[out.rlen * out.clen]; 
+		Arrays.fill(out.denseBlock, 0, out.denseBlock.length, 0);
+		if( denseBlock == null )
+			return;
+		
+		//2) transpose self matrix multiply dense
+		// (compute only upper-triangular matrix due to symmetry)
+		double[] a = denseBlock;
+		double[] c = out.denseBlock;
+		int m = rlen;
+		int n = clen;
+		
+		double val;
+		if( leftTranspose ) // t(X)%*%X
+		{
+			if( n==1 ) //specific case: vector 
+			{
+				for( int i = 0; i < m; i++ )
+					c[0] += a[i] * a[i];
+			}
+			else //general case: matrix
+			{
+				//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
+				for(int k = 0, ix1 = 0, ix2 = 0; k < m; k++, ix2+=n)
+					for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+					{
+						val = a[ ix1++ ];
+						if( val != 0 )
+							for(int j = i; j < n; j++) //from i due to symmetry
+								c[ ix3+j ]  += val * a[ ix2+j ];
+					}
+			}
+		}
+		else // X%*%t(X)
+		{
+			if( m==1 ) //specific case: vector 
+			{
+				for( int i = 0; i < n; i++ )
+					c[0] += a[i] * a[i];
+			}
+			else //general case: matrix
+			{
+				//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
+				for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
+					for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
+					{
+						val = 0;
+						for(int k = 0; k < n; k++)
+							val += a[ ix1+k ] * a[ix2+k];
+						c[ ix3+j ] = val;	
+					}
+			}
+		}
+
+		//3) copy symmetric values
+		for( int i=0; i<out.rlen; i++)
+			for( int j=i+1; j<out.clen; j++ )
+			{
+				val = c[i*out.clen+j];
+				if( val != 0 ) 
+					c[ j*out.clen+i ] = val;
+			}
+	}
+	
+	/**
+	 * 
+	 * @param out
+	 * @param leftTranspose
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private void transposeSelfMatrixMultSparse( MatrixBlockDSM out, boolean leftTranspose ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//1) allocate output block
+		out.rlen = leftTranspose ? clen : rlen;
+		out.clen = leftTranspose ? clen : rlen;
+		out.sparse = false;  //assumption dense output
+		out.denseBlock = new double[out.rlen * out.clen];
+		Arrays.fill(out.denseBlock, 0, out.denseBlock.length, 0);
+		if( sparseRows == null )
+			return;
+		
+		//2) transpose self matrix multiply sparse
+		// (compute only upper-triangular matrix due to symmetry)		
+		double[] c = out.denseBlock;
+		int m = rlen;
+		
+		double val;
+		int alen;
+		int[] aix;
+		double[] avals;
+
+		if( leftTranspose ) // t(X)%*%X 
+		{
+			//only general case (because vectors always dense)
+			//algorithm: scan rows, foreach row self join (KIJ)
+			for( SparseRow arow : sparseRows )
+				if( arow != null && arow.size() > 0 ) 
+				{
+					alen = arow.size();
+					aix = arow.getIndexContainer();
+					avals = arow.getValueContainer();					
+					
+					for(int i = 0; i < alen; i++) 
+						for(int j = i, ix2 = aix[i]*clen; j < alen; j++)
+							c[ix2+aix[j]] += avals[i] * avals[j];
+				}
+		}
+		else // X%*%t(X)
+		{
+			if( m==1 ) //specific case: vector 
+			{
+				SparseRow arow = sparseRows[0];
+				alen = arow.size();
+				avals = arow.getValueContainer();	
+				for( int i = 0; i < alen; i++ )
+					c[0] += avals[i] * avals[i];
+			}
+			else //general case: matrix
+			{	
+				//faster than direct computation with IJK (no dependencies/branches)
+				MatrixBlockDSM tmpBlock = new MatrixBlock(clen,rlen,sparse);
+				reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
+						       tmpBlock, 0, 0, -1);
+			
+				//algorithm: scan rows, foreach row self join (KIJ)
+				for( SparseRow arow : tmpBlock.sparseRows )
+					if( arow != null && arow.size() > 0 ) 
+					{
+						alen = arow.size();
+						aix = arow.getIndexContainer();
+						avals = arow.getValueContainer();					
+						
+						for(int i = 0; i < alen; i++) 
+							for(int j = i, ix2 = aix[i]*tmpBlock.clen; j < alen; j++)
+								c[ix2+aix[j]] += avals[i] * avals[j];
+					}
+								
+				/*
+				//OLD VERSION: direct computation (without transpose, IJK) 
+				//             but slower due to dependencies/branches in inner loop
+				int blen;
+				int[] bix;
+				double[] bvals;		
+				double tmp = 0; 
+				
+				SparseRow arow = null, brow = null;
+				for(int i = 0, ix3 = 0; i < m; i++, ix3+=m)
+				{
+					arow = sparseRows[i];
+					if( arow != null && arow.size()>0 )
+					{
+						alen = arow.size();
+						aix = arow.getIndexContainer();
+						avals = arow.getValueContainer();
+
+						for(int j = i; j < m; j++) //from i due to symmetry
+						{
+							brow = sparseRows[j];							
+							if( brow != null && brow.size()>0 )
+							{
+								blen = brow.size();
+								bix = brow.getIndexContainer();
+								bvals = brow.getValueContainer();								
+								val = 0;
+								for(int k1=0, k2=0, ix1=0, ix2=0; k1 < alen && k2 < blen; )
+								{
+									ix1 = aix[k1];
+									ix2 = bix[k2];
+									
+									if( ix1 == ix2 ) 
+										val += avals[k1++] * bvals[k2++];
+									else if( ix1 < ix2 )
+										k1++;
+									else //ix1 > ix2
+										k2++;		
+								}
+								
+								if( val != 0 )
+									c[ ix3+j ] = val;			
+							}
+						}
+					}
+				}
+				*/
+			}
+		}
+	
+		//3) copy symmetric values
+		for( int i=0; i<out.rlen; i++)
+			for( int j=i+1; j<out.clen; j++ )
+			{
+				val = c[i*out.clen+j];
+				if( val != 0 ) 
+					c[ j*out.clen+i ] = val;
+			}
+	}
+	
 	private void slideHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
 	{
 	//	if(left==null || right==null)
@@ -2387,6 +2624,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 	}*/
+	
 
 	private void traceHelp(AggregateUnaryOperator op, MatrixBlockDSM result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) 

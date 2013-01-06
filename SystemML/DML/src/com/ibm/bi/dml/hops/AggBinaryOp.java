@@ -7,7 +7,9 @@ import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
+import com.ibm.bi.dml.lops.MMTSJ;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -39,7 +41,7 @@ public class AggBinaryOp extends Hops {
 	OpOp2 innerOp;
 	AggOp outerOp;
 
-	private enum MMultMethod { CPMM, RMM, CP };
+	private enum MMultMethod { CPMM, RMM, TSMM, CP };
 	
 	public AggBinaryOp(String l, DataType dt, ValueType vt, OpOp2 innOp,
 			AggOp outOp, Hops in1, Hops in2) {
@@ -56,19 +58,31 @@ public class AggBinaryOp extends Hops {
 		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
 	}
 	
+	/**
+	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
+	 *       and existing mem estimate advantageous in terms of consistency hops/lops 
+	 */
 	public Lops constructLops() throws HopsException, LopsException {
 
 		if (get_lops() == null) {
 			if ( isMatrixMultiply() ) {
 				ExecType et = optFindExecType();
+				MMTSJType mmtsj = checkTransposeSelf();
+				
 				if ( et == ExecType.CP ) {
-					BinaryCP bcp = new BinaryCP(getInput().get(0).constructLops(), 
-							getInput().get(1).constructLops(), BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
-					bcp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					Lops matmultCP = null;
+					if( mmtsj == MMTSJType.NONE ) {
+						matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+												 BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
+					}
+					else {
+						matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
+								              get_dataType(), get_valueType(),et, mmtsj);
+					}
 					
-					bcp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					set_lops(bcp);
+					matmultCP.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+					matmultCP.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					set_lops(matmultCP);
 				}
 				else if ( et == ExecType.MR ) {
 				
@@ -76,7 +90,8 @@ public class AggBinaryOp extends Hops {
 							getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 							getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
 							getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
-							getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block());
+							getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block(),
+							mmtsj );
 					
 					if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(
@@ -117,6 +132,23 @@ public class AggBinaryOp extends Hops {
 						rmm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
 						set_lops(rmm);
+					}
+					else if( method == MMultMethod.TSMM )
+					{
+						MMTSJ tsmm = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
+								              get_dataType(), get_valueType(),et, mmtsj);
+						tsmm.getOutputParameters().setDimensions(get_dim1(), get_dim2(),
+								get_rows_in_block(), get_cols_in_block(), getNnz());
+						tsmm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						Aggregate agg1 = new Aggregate(
+								tsmm, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
+								get_rows_in_block(), get_cols_in_block(), getNnz());
+						agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
+						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						set_lops(agg1);
 					}
 				}
 			} 
@@ -218,13 +250,47 @@ public class AggBinaryOp extends Hops {
 		return _etype;
 	}
 	
+	private MMTSJType checkTransposeSelf()
+	{
+		MMTSJType ret = MMTSJType.NONE;
+		
+		Hops in1 = getInput().get(0);
+		Hops in2 = getInput().get(1);
+		
+		if(    in1 instanceof com.ibm.bi.dml.hops.ReorgOp 
+			&& ((com.ibm.bi.dml.hops.ReorgOp)in1).op == Hops.ReorgOp.TRANSPOSE 
+			&& in1.getInput().get(0) == in2 )
+		{
+			ret = MMTSJType.LEFT;
+		}
+		
+		if(    in2 instanceof com.ibm.bi.dml.hops.ReorgOp 
+			&& ((com.ibm.bi.dml.hops.ReorgOp)in2).op == Hops.ReorgOp.TRANSPOSE 
+			&& in2.getInput().get(0) == in1 )
+		{
+			ret = MMTSJType.RIGHT;
+		}
+		
+		
+		return ret;
+	}
+	
 	/*
 	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce -- CPMM or RMM.
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
 	 */
-	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb ) {
+	private static MMultMethod optFindMMultMethod ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj ) {
 		
+		// If transpose self pattern and result is single block:
+		// use specialized TSMM method (always better than generic jobs)
+		if(    ( mmtsj == MMTSJType.LEFT && m2_cols <= m2_cpb )
+			|| ( mmtsj == MMTSJType.RIGHT && m1_rows <= m1_rpb ) )
+		{
+			//return MMultMethod.RMM;
+			return MMultMethod.TSMM;
+		}
+			
 		// If the dimensions are unknown at compilation time, 
 		// simply assume the worst-case scenario and produce the 
 		// most robust plan -- which is CPMM

@@ -209,7 +209,9 @@ public class GMR{
 		//set up combiner
 		if(numReducers!=0 && aggInstructionsInReducer!=null 
 				&& !aggInstructionsInReducer.isEmpty())
+		{
 			job.setCombinerClass(GMRCombiner.class);
+		}
 	
 		//configure reducer
 		job.setReducerClass(GMRReducer.class);

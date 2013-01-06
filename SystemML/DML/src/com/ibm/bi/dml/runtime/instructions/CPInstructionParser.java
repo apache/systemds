@@ -16,6 +16,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BuiltinUnaryCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstruction;
@@ -142,6 +143,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
 	
+		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
+			
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -244,7 +247,8 @@ public class CPInstructionParser extends InstructionParser {
 			else {
 				throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
 			}
-		
+		case MMTSJ:
+			return (CPInstruction) MMTSJCPInstruction.parseInstruction(str);
 		case INVALID:
 		default: 
 			throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

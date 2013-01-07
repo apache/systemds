@@ -181,11 +181,33 @@ public class Task
 	}
 	
 	/**
-	 * Binary encoding useful for (1) reducing serialization, transfer, and parsing time,
-	 * as well as (2) for preventing unwanted split sorting (according to size) by Hadoop
-	 *  
+	 * 
+	 * @param stask
 	 * @return
 	 */
+	public static Task parseCompactString( String stask )
+	{
+		StringTokenizer st = new StringTokenizer( stask.trim(), "." );		
+		
+		Task newTask = new Task( TaskType.valueOf(st.nextToken()) );
+		String meta = st.nextToken();
+		
+		//iteration data
+		String sdata = st.nextToken();
+		sdata = sdata.substring(1,sdata.length()-1); // remove brackets
+		StringTokenizer st2 = new StringTokenizer(sdata, ",");
+		while( st2.hasMoreTokens() )
+		{
+			//create new iteration
+			String lsdata = st2.nextToken();
+			IntObject ldata = new IntObject(meta,Integer.parseInt( lsdata ) );
+			newTask.addIteration(ldata);
+		}
+		
+		return newTask;
+	}
+	
+	/*
 	@Deprecated
 	public byte[] toBinary()
 	{
@@ -228,39 +250,9 @@ public class Task
 			
 		return ret;
 	}
+	*/
 	
-	/**
-	 * 
-	 * @param stask
-	 * @return
-	 */
-	public static Task parseCompactString( String stask )
-	{
-		StringTokenizer st = new StringTokenizer( stask,"." );		
-		
-		Task newTask = new Task( TaskType.valueOf(st.nextToken()) );
-		String meta = st.nextToken();
-		
-		//iteration data
-		String sdata = st.nextToken();
-		sdata = sdata.substring(1,sdata.length()-1); // remove brackets
-		StringTokenizer st2 = new StringTokenizer(sdata, ",");
-		while( st2.hasMoreTokens() )
-		{
-			//create new iteration
-			String lsdata = st2.nextToken();
-			IntObject ldata = new IntObject(meta,Integer.parseInt( lsdata ) );
-			newTask.addIteration(ldata);
-		}
-		
-		return newTask;
-	}
-	
-	/**
-	 * 
-	 * @param btask
-	 * @return
-	 */
+	/*
 	@Deprecated
 	public static Task parseBinary( byte[] btask )
 	{
@@ -298,5 +290,5 @@ public class Task
 		}
 			
 		return lTask;
-	}
+	}*/
 }

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -146,7 +145,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_PB_CACHE                = true;  	// reuse copied program blocks whenever possible
 	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = true;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
-	public static final boolean USE_BINARY_MR_TASK_REP	    = false;    // serialize tasks to binary representation for remote communication
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
 	public static final boolean ALLOW_REUSE_MR_JVMS         = false;     // potential benefits: less setup costs per task
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
@@ -852,59 +850,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 	}
-
-	/**
-	 * 
-	 * @param q
-	 * @param ec
-	 * @param itervar
-	 * @param from
-	 * @param to
-	 * @param incr
-	 * @throws InterruptedException
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
-	 */
-	public void migrateExecutionFromLocalToRemote(LocalTaskQueue q, ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, InterruptedException, IOException
-	{
-		// Step 1) create remote ParWorkers
-		ParForBody body= new ParForBody(_childBlocks, _variables, _resultVars, ec);
-		String program = ProgramConverter.serializeParForBody( body );
-		
-		// Step 2) obtain remaining tasks
-		String taskFile = constructTaskFileName();
-		int maxDigits = (int)Math.log10(to.getIntValue()) + 1;
-		if( USE_STREAMING_TASK_CREATION )
-		{
-			//write available tasks to task file
-			taskFile = writeTasksToFile( taskFile, q, maxDigits );	
-		}
-		else
-		{
-			//grab all remaining tasks
-			Collection<Task> tasks = new LinkedList<Task>();
-			Task lTask = null;
-			while( (lTask = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS )
-				tasks.add( lTask );
-			//write task file
-			taskFile = writeTasksToFile( taskFile, tasks, maxDigits );		
-		}
-		
-		// Step 3) submit MR job (wait for finished work)
-		String resultFile = constructResultFileName();
-		
-		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, null,
-				                                ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(),
-				                                (ALLOW_REUSE_MR_JVMS & _jvmReuse) ); 	
-		
-		// Step 4) collecting results from each parallel worker
-
-		//concolidate results into global symbol table
-		consolidateAndCheckResults( -1, -1, -1 , -1, //distributed over local and remote  
-				                    ret.getVariables() );
-	}
 	
 	/**
 	 * Creates an new or partially recycled instance of a parallel worker. Therefore the symbol table, and child
@@ -1098,9 +1043,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			FileSystem fs = FileSystem.get(new Configuration());
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
+			boolean flagFirst = true; //workaround for keeping gen order
 			for( Task t : tasks )
 			{
-				br.write( createTaskFileLine( t, maxDigits ) );
+				br.write( createTaskFileLine( t, maxDigits, flagFirst ) );
+				if( flagFirst )
+					flagFirst = false;
 			}
 		}
 		catch(Exception ex)
@@ -1134,9 +1082,12 @@ public class ParForProgramBlock extends ForProgramBlock
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			Task t = null;
+			boolean flagFirst = true; //workaround for keeping gen order
 			while( (t = queue.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS )
 			{
-				br.write( createTaskFileLine( t, maxDigits ) );
+				br.write( createTaskFileLine( t, maxDigits, flagFirst ) );
+				if( flagFirst )
+					flagFirst = false;
 			}
 		}
 		catch(Exception ex)
@@ -1151,25 +1102,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		return fname;
 	}
 	
-	private String createTaskFileLine( Task t, int maxDigits ) 
+	private String createTaskFileLine( Task t, int maxDigits, boolean flagFirst ) 
 	{
-		String ret = null;
-		
-		if( USE_BINARY_MR_TASK_REP )
-		{
-			ret = t.toBinary() + "\n";
-		}
-		else
-		{
-			//always pad to max digits in order to preserve task order	
-			ret = t.toCompactString(maxDigits) + "\n";
-			
-			//if( t.getType() == TaskType.RANGE && isFactoringTaskpartitioner() )
-			//	ret = t.toCompactString(maxDigits) + "\n";
-			//else
-			//	ret = t.toCompactString() + "\n";
-		}
-		
+		//always pad to max digits in order to preserve task order	
+		String ret = t.toCompactString(maxDigits) + (flagFirst?" ":"") + "\n";
 		return ret;
 	}
 	
@@ -1364,14 +1300,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return ret;
 	}
-	
-	private boolean isFactoringTaskpartitioner()
-	{
-		return (   _taskPartitioner==PTaskPartitioner.FACTORING 
-				|| _taskPartitioner==PTaskPartitioner.FACTORING_CMIN
-				|| _taskPartitioner==PTaskPartitioner.FACTORING_CMAX );
-	}
-	
+
 	private void setMemoryBudget()
 	{
 		if( _recompileMemoryBudget > 0 )

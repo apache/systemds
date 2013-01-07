@@ -37,8 +37,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	
 	//MR ParWorker attributes  
 	protected String  _stringID       = null; 
-	protected boolean _binaryTasks    = false;
-
 	
 	static
 	{
@@ -65,11 +63,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		try 
 		{
 			//parse input task
-			Task lTask = null;
-			if( _binaryTasks )
-				lTask = Task.parseBinary( value.getBytes() );
-			else
-				lTask = Task.parseCompactString( value.toString() );
+			Task lTask = Task.parseCompactString( value.toString() );
 			
 			//execute task (on error: re-try via Hadoop)
 			executeTask( lTask );
@@ -123,7 +117,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 					
 					_stringID       = tmp._stringID;
 					_workerID       = tmp._workerID;
-					_binaryTasks    = tmp._binaryTasks;
 					
 					_childBlocks    = tmp._childBlocks;
 					_variables      = tmp._variables;
@@ -182,9 +175,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			{
 				throw new RuntimeException(ex);
 			}
-	
-			//set task encoding
-			_binaryTasks = ParForProgramBlock.USE_BINARY_MR_TASK_REP;
 			
 			//disable stat monitoring, reporting execution times via counters not useful 
 			StatisticMonitor.disableStatMonitoring();

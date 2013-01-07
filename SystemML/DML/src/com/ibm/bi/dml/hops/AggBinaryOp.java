@@ -100,19 +100,13 @@ public class AggBinaryOp extends Hops {
 				}
 				else if ( et == ExecType.MR ) {
 				
-					MMultMethod method = null;
-					if ( isMatrixVectorMultiply() ) {
-						method  = MMultMethod.DIST_MVMULT;
-					}
-					else {
-						method = optFindMMultMethod ( 
+					MMultMethod method = optFindMMultMethod ( 
 								getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
 								getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
 								getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
 								getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block(),
 								mmtsj);
-					}
-					System.out.println("Method = " + method);
+					//System.out.println("Method = " + method);
 					
 					if ( method == MMultMethod.DIST_MVMULT) {
 						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), get_dataType(), get_valueType());
@@ -327,7 +321,15 @@ public class AggBinaryOp extends Hops {
 			//return MMultMethod.RMM;
 			return MMultMethod.TSMM;
 		}
-			
+
+		if ( m2_cols == 1 ) {
+			// matrix-vector multiplication. 
+			// Choose DIST_MVMULT if the "dense" vector fits in memory.
+			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+			if ( vec_size < 0.9 * getMemBudget(true) )
+				return MMultMethod.DIST_MVMULT;
+		}
+		
 		// If the dimensions are unknown at compilation time, 
 		// simply assume the worst-case scenario and produce the 
 		// most robust plan -- which is CPMM

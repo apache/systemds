@@ -312,4 +312,13 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable{
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
+
+	@Override
+	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
+			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
+			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

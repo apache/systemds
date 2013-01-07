@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -113,13 +114,28 @@ public class DataConverter
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+			int brlen, int bclen, boolean localFS) 
+	throws IOException
+	{	
+		//expected matrix is sparse (default SystemML usecase)
+		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, localFS);
+	}
+	
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
 			int brlen, int bclen) 
 	throws IOException
 	{	
 		//expected matrix is sparse (default SystemML usecase)
-		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d);
+		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, false);
 	}
-	
+
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+			int brlen, int bclen, double expectedSparsity) 
+	throws IOException
+	{	
+		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, expectedSparsity, false);
+	}
+
 	/**
 	 * NOTE: providing an exact estimate of 'expected sparsity' can prevent a full copy of the result
 	 * matrix block (required for changing sparse->dense, or vice versa)
@@ -135,7 +151,7 @@ public class DataConverter
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, double expectedSparsity) 
+			int brlen, int bclen, double expectedSparsity, boolean localFS) 
 	throws IOException
 	{	
 		boolean sparse = expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT;
@@ -154,10 +170,20 @@ public class DataConverter
 		
 		//prepare file access
 		JobConf job = new JobConf();	
-		Path path = new Path(dir);
-		FileSystem fs = FileSystem.get(job);
+		Path path = null; 
+		FileSystem fs = null;
+		if ( localFS ) {
+			path = new Path("file:///" + dir);
+			//System.out.println("local file system path ..." + path.toUri() + ", " + path.toString());
+			fs = new LocalFileSystem();
+		}
+		else {
+			path = new Path(dir);
+			fs = FileSystem.get(job);
+		}
 		if( !fs.exists(path) )	
-			throw new IOException("File "+dir+" does not exist on HDFS.");
+			throw new IOException("File "+dir+" does not exist on HDFS/LFS.");
+		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
 		FileInputFormat.addInputPath(job, path); 
 		
 		try 

@@ -4,10 +4,12 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -36,7 +38,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 		in2 = Byte.parseByte(parts[2]);
 		out = Byte.parseByte(parts[3]);
 		
-		if ( opcode.equalsIgnoreCase("cpmm") || opcode.equalsIgnoreCase("rmm") ) {
+		if ( opcode.equalsIgnoreCase("cpmm") || opcode.equalsIgnoreCase("rmm") || opcode.equalsIgnoreCase("mvmult") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			return new AggregateBinaryInstruction(aggbin, in1, in2, out, str);
@@ -56,9 +58,18 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 		
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
-		if(in1==null || in2==null)
-			return;
+
+		MatrixValue vector=null;
+		if ( in2 == null ) {
+			vector = MRBaseForCommonInstructions.distCacheValues.get(input2);
+			if ( vector == null )
+				throw new DMLRuntimeException("Unexpected: vector read from distcache is null!");
+			in2 = new IndexedMatrixValue(new MatrixIndexes(1,1), vector);
+		}
 		
+		if(in1==null || (in2==null && vector==null))
+			return;
+
 		//allocate space for the output value
 		IndexedMatrixValue out;
 		if(output==input1 || output==input2)
@@ -67,9 +78,17 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 			out=cachedValues.holdPlace(output, valueClass);
 		
 		//process instruction
-		OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-				in2.getIndexes(), in2.getValue(), out.getIndexes(), out.getValue(), 
-				((AggregateBinaryOperator)optr));
+		if ( instString.contains("mvmult") ) {
+			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
+					new MatrixIndexes(1,1), vector, out.getIndexes(), out.getValue(), 
+					((AggregateBinaryOperator)optr), true);
+		}
+		else {
+			//System.out.println("matmult: [" + in1.getIndexes() + "] x [" + in2.getIndexes() +"]");
+			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
+					in2.getIndexes(), in2.getValue(), out.getIndexes(), out.getValue(), 
+					((AggregateBinaryOperator)optr), false);
+		}
 		
 		//put the output value in the cache
 		if(out==tempValue)

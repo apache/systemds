@@ -45,6 +45,7 @@ public class MRInstructionParser extends InstructionParser {
 		// AGG_BINARY Instruction Opcodes 
 		String2MRInstructionType.put( "cpmm" , MRINSTRUCTION_TYPE.AggregateBinary);
 		String2MRInstructionType.put( "rmm"  , MRINSTRUCTION_TYPE.AggregateBinary);
+		String2MRInstructionType.put( "mvmult", MRINSTRUCTION_TYPE.AggregateBinary);
 		
 		// AGG_UNARY Instruction Opcodes 
 		String2MRInstructionType.put( "ua+"   , MRINSTRUCTION_TYPE.AggregateUnary);

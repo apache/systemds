@@ -28,6 +28,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	//a cache to hold the intermediate results
 	protected CachedValueMap cachedValues=new CachedValueMap();
 	
+	public static HashMap<Byte, MatrixValue> distCacheValues = new HashMap<Byte,MatrixValue>();
+ 	
 	protected HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
 	
 	//temporary variables

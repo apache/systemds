@@ -20,9 +20,6 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class OperationsOnMatrixValues {
 
-	private static IndexedCell tempCell1=new IndexedCell();
-	private static IndexedCell tempCell2=new IndexedCell();
-	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -276,7 +273,7 @@ public class OperationsOnMatrixValues {
 	}
 	
 	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
-			MatrixIndexes indexes_out, MatrixValue value_out, AggregateBinaryOperator op)
+			MatrixIndexes indexes_out, MatrixValue value_out, AggregateBinaryOperator op, boolean partialMult)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//operate on the value indexes first
@@ -286,7 +283,7 @@ public class OperationsOnMatrixValues {
 		indexes_out.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		
 		//perform on the value
-		value_out=value1.aggregateBinaryOperations(value1, value2, value_out, op);
+		value_out=value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, value_out, op, partialMult);
 	}
 	
 	//including scalar, reorg and aggregateUnary operations

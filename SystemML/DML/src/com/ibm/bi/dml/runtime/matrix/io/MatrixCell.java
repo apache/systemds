@@ -403,4 +403,13 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 		return aggregateUnaryOperations(op,	result, blockingFactorRow, blockingFactorCol,indexesIn);
 	}
 
+	@Override
+	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
+			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
+			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -5,15 +5,21 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -21,12 +27,14 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 public abstract class MapperBase extends MRBaseForCommonInstructions{
+	protected static final Log LOG = LogFactory.getLog(MapperBase.class);
 	
 	//the indexes that this particular input matrix file represents
 	protected Vector<Byte> representativeMatrixes=null;
@@ -127,6 +135,53 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			throw new IOException("boundary block with "+value.getNumColumns()+" columns exceeds the size "+lastblockclens[rep]);
 		}
 	}
+
+	private void loadDistCacheFiles(JobConf job, long[] rlens, long[] clens) throws IOException {
+		
+		if ( MRJobConfiguration.getDistCacheInputIndices(job) == null )
+			return;
+		
+		boolean isJobLocal = false;
+		if(job.get("mapred.job.tracker").equalsIgnoreCase("local"))
+			isJobLocal = true;
+
+		String[] indices = MRJobConfiguration.getDistCacheInputIndices(job).split(Instruction.INSTRUCTION_DELIM);
+		Path [] cacheFiles = DistributedCache.getLocalCacheFiles(job);
+		
+		if ( isJobLocal ) {
+			// When the job is in local mode, files can be read from HDFS directly -- use 
+			// input paths as opposed to "local" paths prepared by DistributedCache. 
+			String[] inputs = MRJobConfiguration.getInputPaths(job);
+			for(int i=0; i < indices.length; i++) {
+				cacheFiles[i] = new Path(inputs[ Byte.parseByte(indices[i]) ]);
+			}
+		}
+		
+		if ( cacheFiles.length != indices.length ) {
+			throw new IOException("Unexpected error in loadDistCacheFiles(). #Cachefiles (" + cacheFiles.length + ") != #indices (" + indices.length + ")");
+		}
+		
+		if (null != cacheFiles && cacheFiles.length > 0 ) {
+	        for(int i=0; i < cacheFiles.length; i++) {
+	        	Path cachePath = cacheFiles[i];
+	        	byte index = Byte.parseByte(indices[i]);
+	        	
+	        	LOG.trace("Reading cached file " + cachePath.getName() + ", " + cachePath.toString() + " from " + (isJobLocal ? "HDFS" : "LOCAL-FS"));
+	        	//System.out.println("Reading cached file " + cachePath.getName() + ", " + cachePath.toString() + " from " + (isJobLocal ? "HDFS" : "LOCAL-FS"));
+	        	long st = System.currentTimeMillis();
+	        	MatrixBlock data = DataConverter.readMatrixFromHDFS(
+	        			cachePath.toString(), InputInfo.BinaryBlockInputInfo, 
+	        			MRJobConfiguration.getNumRows(job, index), // use rlens 
+	        			MRJobConfiguration.getNumColumns(job, index), 
+	        			MRJobConfiguration.getNumRowsPerBlock(job, index), 
+	        			MRJobConfiguration.getNumColumnsPerBlock(job, index), 1.0, !isJobLocal);
+	        	LOG.trace("reading from dist cache complete.." + data.getNumRows() + ", "+ data.getNumColumns() + ": " + (System.currentTimeMillis()-st) + " msec");
+	        	//System.out.println("reading from dist cache complete.." + data.getNumRows() + ", "+ data.getNumColumns() + ": " + (System.currentTimeMillis()-st) + " msec");
+	        	distCacheValues.put(index, data);
+	        }
+	    }
+	}
+
 	public void configure(JobConf job)
 	{
 		super.configure(job);
@@ -221,6 +276,12 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			}
 		}
 				
+		try {
+			loadDistCacheFiles(job, rlens, clens);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		//collect unary instructions for each representative matrix
 		HashSet<Byte> set=new HashSet<Byte>();
 		for(int i=0; i<representativeMatrixes.size(); i++)

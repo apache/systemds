@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.matrix;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
@@ -11,9 +12,15 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -30,6 +37,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
  
 public class GMR{
@@ -52,6 +60,45 @@ public class GMR{
 	 * outputInfos: output format information for the output matrices
 	 */
 	private static final Log LOG = LogFactory.getLog(GMR.class.getName());
+	
+	private static void setupDistributedCache(JobConf job, String instructionsInMapper, String[] inputs, long[] rlens, long[] clens) {
+		if ( instructionsInMapper != null && instructionsInMapper != "" && InstructionUtils.isDistributedCacheUsed(instructionsInMapper) ) {
+			String indexString = ""; // input indices to be placed in Distributed Cache (concatenated) 
+			String pathString = "";  // input paths to be placed in Distributed Cache (concatenated) 
+			ArrayList<String> pathList = new ArrayList<String>(); // list of paths to be placed in Distributed cache
+			
+			byte index;
+			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
+			for(int i=0; i < inst.length; i++) {
+				if ( inst[i].contains("mvmult") ) {
+					// example: MR.mvmult.0.1.2
+					
+					// Determine the index that points to a vector
+					byte in1 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[2].split(Instruction.DATATYPE_PREFIX)[0]);
+					byte in2 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					//if ( rlens[in1] == 1 || clens[in1] == 1 )
+					//	index = in1; // input1 is a vector
+					//else 
+						index = in2; // input2 is a vector
+					//index = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					
+					if ( !pathList.contains(index) ) {
+						pathList.add(inputs[index]);
+						if ( indexString.equalsIgnoreCase("") ) {
+							indexString += index;
+							pathString += inputs[index];
+						} 
+						else {
+							indexString += Instruction.INSTRUCTION_DELIM + index;
+							pathString += Instruction.INSTRUCTION_DELIM + inputs[index];
+						}
+					}
+				}
+			}
+			
+			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
+		}
+	}
 	
 	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
@@ -138,6 +185,8 @@ public class GMR{
 			}
 		}
 		
+		setupDistributedCache(job, instructionsInMapper, realinputs, realrlens, realclens);
+
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, inBlockRepresentation, realbrlens, realbclens);
 		
@@ -283,4 +332,67 @@ public class GMR{
 		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
+
+	private static String prepMVMult(byte in1, byte in2, byte out) {
+		return "MR" + Instruction.OPERAND_DELIM 
+						+ "mvmult" + Instruction.OPERAND_DELIM 
+						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
+						+ in2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
+						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM;  
+	}
+	
+	private static String prepPartialAgg(byte in1, byte out) {
+		return "MR" + Instruction.OPERAND_DELIM 
+						+ "uak+" + Instruction.OPERAND_DELIM 
+						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
+						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM;  
+	}
+	
+	private static String prepAgg(byte in1, byte out) {
+		return "MR" + Instruction.OPERAND_DELIM 
+						+ "ak+" + Instruction.OPERAND_DELIM 
+						+ in1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
+						+ out + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
+						+ "true" + Instruction.OPERAND_DELIM + CorrectionLocationType.NONE;
+	}
+	
+	public static void main(String[] args) throws Exception {
+		/*runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
+				int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
+				String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
+				String[] outputs, OutputInfo[] outputInfos)*/
+		
+		ConfigurationManager.setConfig(new DMLConfig("SystemML-config.xml"));
+		
+		/*MatrixBlock data = LocalFileUtils.readMatrixBlockFromLocal("data/mvmult/w.mtx");
+		System.out.println(data.getNumRows() + ", " + data.getNumColumns() + ", " + data.isInSparseFormat());
+		*/
+		String[] inputs = {"data/mvmult/X.mtx", "data/mvmult/ones.mtx", "data/mvmult/X.mtx", "data/mvmult/ones.mtx"};
+		InputInfo[] inputInfos = {InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo};
+		long[] rlens = { 4000, 2500, 4000, 2500 };
+		long[] clens = { 2500, 1, 2500, 1 };
+		int[] brlens = { 1000, 1000, 1000, 1000 };
+		int[] bclens = { 1000, 1000, 1000, 1000 };
+		String recordReaderInstruction = null;
+		String otherInstructionsInReducer = "";
+		int numReducers = 10;
+		int replication = 1;
+		String dimsUnknownFilePrefix = "data/mvmult/unknownPrefix";
+		String[] outputs = {"data/mvmult/out1.mtx", "data/mvmult/out2.mtx"};
+		OutputInfo[] outputInfos = {OutputInfo.TextCellOutputInfo, OutputInfo.TextCellOutputInfo};
+		
+        String instructionsInMapper = prepMVMult((byte)0, (byte)1, (byte)4) + Instruction.INSTRUCTION_DELIM + prepMVMult( (byte)2, (byte)3, (byte)5);
+        //String instructionsInMapper = prepPartialAgg((byte)0, (byte)1);
+        String aggInstructionsInReducer = prepAgg((byte)4, (byte)6) + Instruction.INSTRUCTION_DELIM + prepAgg((byte)5, (byte)7);
+		System.out.println("Mapper Instructions: " + instructionsInMapper);
+		System.out.println("Reduce Instructions: " + aggInstructionsInReducer);
+
+		byte[] resultIndexes = { 6, 7 };
+		
+		JobReturn ret = runJob(new MRJobInstruction(JobType.GMR), inputs, inputInfos, rlens, clens, brlens, bclens, null, 
+				instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
+				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
+		
+	}
+
 }

@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
@@ -165,6 +166,8 @@ public class MRJobConfiguration {
 	
 	private static final String PARTIAL_AGG_CACHE_SIZE="partial.aggregate.cache.size";
 	
+	private static final String DISTCACHE_INPUT_INDICES="distcache.input.indices";
+	private static final String DISTCACHE_INPUT_PATHS = "distcache.input.paths";
 	
 	/*
 	 * SystemML Counter Group names
@@ -794,6 +797,11 @@ public class MRJobConfiguration {
 		//System.out.println("matrix "+matrixIndex+" with dimension: "+rlen+", "+clen);
 	}
 	
+	public static String[] getInputPaths(JobConf job)
+	{
+		return job.getStrings(INPUT_MATRICIES_DIRS_CONFIG);
+	}
+	
 	public static long getNumRows(JobConf job, byte matrixIndex)
 	{
 		return job.getLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+matrixIndex, 0);
@@ -920,6 +928,27 @@ public class MRJobConfiguration {
 	public static void handleRecordReaderInstrucion(JobConf job, String recordReaderInstruction, String[] inputs, InputInfo[] inputInfos)
 	{
 		//TODO
+	}
+	
+	public static void setupDistCacheInputs(JobConf job, String indices, String pathsString, ArrayList<String> paths) {
+		job.set(DISTCACHE_INPUT_INDICES, indices);
+		job.set(DISTCACHE_INPUT_PATHS, pathsString);
+		Path p = null;
+		for(String spath : paths) {
+			p = new Path(spath);
+			System.out.println("Adding file DistCache: " + p.toString());
+			DistributedCache.addCacheFile(p.toUri(), job);
+			DistributedCache.createSymlink(job);
+		}
+		//createAllSymlink(job, jobCacheDir, workDir)
+	}
+	
+	public static String getDistCacheInputIndices(JobConf job) {
+		return job.get(DISTCACHE_INPUT_INDICES);
+	}
+	
+	public static String getDistCacheInputPaths(JobConf job) {
+		return job.get(DISTCACHE_INPUT_PATHS);
 	}
 	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
@@ -1444,6 +1473,16 @@ public class MRJobConfiguration {
 	}
 	
 	private static String getIndexesString(byte[] indexes)
+	{
+		if(indexes==null)
+			return "";
+		String str="";
+		for(byte ind: indexes)
+			str+=(ind+Instruction.INSTRUCTION_DELIM);
+		return str.substring(0, str.length()-1);//remove the last delim
+	}
+
+	private static String getIndexesString(ArrayList<Byte> indexes)
 	{
 		if(indexes==null)
 			return "";

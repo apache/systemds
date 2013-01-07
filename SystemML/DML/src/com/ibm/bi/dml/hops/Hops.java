@@ -330,7 +330,7 @@ abstract public class Hops {
 	abstract public String getOpString();
 
 	protected boolean isVector() {
-		return (_dim1 == 1 || _dim2 == 1 );
+		return (dimsKnown() && (_dim1 == 1 || _dim2 == 1) );
 	}
 	
 	protected boolean areDimsBelowThreshold() {

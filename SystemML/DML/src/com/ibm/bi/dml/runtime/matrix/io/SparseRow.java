@@ -52,12 +52,12 @@ public class SparseRow {
 		maxNzs=maxnns;
 		if(estnns<initialCapacity && estnns>0)
 		{
-			LOG.trace("Allocating 1 .. " + estnns);
+			//LOG.trace("Allocating 1 .. " + estnns);
 			values=new double[estnns];
 			indexes=new int[estnns];
 		}else
 		{
-			LOG.trace("Allocating 2 .. " + estnns);
+			//LOG.trace("Allocating 2 .. " + estnns);
 			values=new double[initialCapacity];
 			indexes=new int[initialCapacity];
 		}

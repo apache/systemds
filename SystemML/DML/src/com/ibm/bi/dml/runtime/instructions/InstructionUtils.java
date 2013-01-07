@@ -94,4 +94,13 @@ public class InstructionUtils {
 		}
 	}
 	
+	public static boolean isDistributedCacheUsed(String str) {
+		for(String inst : str.split(Instruction.INSTRUCTION_DELIM)) {
+			String opcode = InstructionUtils.getOpCode(inst);
+			if(opcode.equalsIgnoreCase("mvmult")) // || opcode.equalsIgnoreCase("vmmult"))
+				return true;
+		}
+		return false;
+	}
+	
 }

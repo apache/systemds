@@ -8,6 +8,7 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
+import com.ibm.bi.dml.lops.PartialMVMult;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
@@ -41,7 +42,7 @@ public class AggBinaryOp extends Hops {
 	OpOp2 innerOp;
 	AggOp outerOp;
 
-	private enum MMultMethod { CPMM, RMM, TSMM, CP };
+	private enum MMultMethod { CPMM, RMM, DIST_MVMULT, TSMM, CP };
 	
 	public AggBinaryOp(String l, DataType dt, ValueType vt, OpOp2 innOp,
 			AggOp outOp, Hops in1, Hops in2) {
@@ -59,6 +60,18 @@ public class AggBinaryOp extends Hops {
 	}
 	
 	/**
+	 * Returns true if the operation is a matrix-vector or vector-matrix multiplication.
+	 * 
+	 * @return
+	 */
+	private boolean isMatrixVectorMultiply() {
+		if ( //(getInput().get(0).isVector() && !getInput().get(1).isVector()) || 
+				(!getInput().get(0).isVector() && getInput().get(1).isVector()) )
+			return true;
+		return false;
+	}
+	
+	/**
 	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
 	 *       and existing mem estimate advantageous in terms of consistency hops/lops 
 	 */
@@ -70,6 +83,7 @@ public class AggBinaryOp extends Hops {
 				MMTSJType mmtsj = checkTransposeSelf();
 				
 				if ( et == ExecType.CP ) {
+					System.out.println("Method = CP");
 					Lops matmultCP = null;
 					if( mmtsj == MMTSJType.NONE ) {
 						matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
@@ -86,14 +100,37 @@ public class AggBinaryOp extends Hops {
 				}
 				else if ( et == ExecType.MR ) {
 				
-					MMultMethod method = optFindMMultMethod ( 
-							getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
-							getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
-							getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
-							getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block(),
-							mmtsj );
+					MMultMethod method = null;
+					if ( isMatrixVectorMultiply() ) {
+						method  = MMultMethod.DIST_MVMULT;
+					}
+					else {
+						method = optFindMMultMethod ( 
+								getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 
+								getInput().get(0).get_rows_in_block(), getInput().get(0).get_cols_in_block(),    
+								getInput().get(1).get_dim1(), getInput().get(1).get_dim2(), 
+								getInput().get(1).get_rows_in_block(), getInput().get(1).get_cols_in_block(),
+								mmtsj);
+					}
+					System.out.println("Method = " + method);
 					
-					if ( method == MMultMethod.CPMM ) {
+					if ( method == MMultMethod.DIST_MVMULT) {
+						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), get_dataType(), get_valueType());
+						Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+						Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+						
+						mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						
+						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						// aggregation uses kahanSum but the inputs do not have correction values
+						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+						
+						set_lops(agg1);
+					}
+					else if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(
 								getInput().get(0).constructLops(), getInput().get(1)
 										.constructLops(), get_dataType(), get_valueType());

@@ -1013,8 +1013,9 @@ public class BinaryOp extends Hops {
 	@Override
 	public double computeMemEstimate() {
 		
-		if (get_dataType() == DataType.SCALAR)
+		if (get_dataType() == DataType.SCALAR) {
 			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+		}
 		else {
 			Hops input1 = getInput().get(0);
 			Hops input2 = getInput().get(1);
@@ -1026,6 +1027,10 @@ public class BinaryOp extends Hops {
 			else {
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			}
+		}
+		
+		if ( op == OpOp2.QUANTILE || op == OpOp2.IQM ) {
+			_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation 
 		}
 		_memEstimate = getInputOutputSize();
 		

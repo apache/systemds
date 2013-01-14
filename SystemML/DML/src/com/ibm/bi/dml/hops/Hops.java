@@ -70,7 +70,9 @@ abstract public class Hops {
 	
 	// Estimated size for the entire operation represented by this Hop
 	// It includes the memory required for all inputs as well as the output 
-	protected double _memEstimate = OptimizerUtils.INVALID_SIZE; 
+	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
+	
+	protected double _processingMemEstimate = 0;
 	
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
@@ -140,6 +142,7 @@ abstract public class Hops {
 	
 	protected double getInputOutputSize() {
 		double sum = this._outputMemEstimate;
+		sum += this._processingMemEstimate;
 		for(Hops h : _input ) {
 			sum += h._outputMemEstimate;
 		}
@@ -236,10 +239,11 @@ abstract public class Hops {
 			c = '*';
 		}
 		
-		if (LOG.isDebugEnabled()){
+		//if (LOG.isDebugEnabled()){
 			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
+			System.out.println(s);
 			LOG.debug(s);
-		}
+		//}
 		// This is the old format for reference
 		// %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
 		

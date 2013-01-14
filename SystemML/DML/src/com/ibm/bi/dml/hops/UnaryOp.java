@@ -469,6 +469,10 @@ public class UnaryOp extends Hops {
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}
 		
+		if ( _op == OpOp1.IQM ) {
+			_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation
+		}
+		
 		if( _op == Hops.OpOp1.NROW || _op == Hops.OpOp1.NCOL ) //specific case for meta data ops
 			_memEstimate = OptimizerUtils.INT_SIZE;
 		else

@@ -325,8 +325,8 @@ public class AggBinaryOp extends Hops {
 		if ( m2_cols == 1 ) {
 			// matrix-vector multiplication. 
 			// Choose DIST_MVMULT if the "dense" vector fits in memory.
-			//double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-			//if ( vec_size < 0.9 * getMemBudget(false) )
+			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+			if ( vec_size < 0.9 * getMemBudget(false) )
 				return MMultMethod.DIST_MVMULT;
 		}
 		

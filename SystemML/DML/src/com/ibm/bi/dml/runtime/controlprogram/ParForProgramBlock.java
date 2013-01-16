@@ -113,8 +113,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		NONE,
 		ROW_WISE,
 		ROW_BLOCK_WISE,
+		ROW_BLOCK_WISE_N,
 		COLUMN_WISE,
-		COLUMN_BLOCK_WISE
+		COLUMN_BLOCK_WISE,
+		COLUMN_BLOCK_WISE_N
 	}
 	
 	public enum PDataPartitioner {
@@ -975,12 +977,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		switch( dataPartitioner )
 		{
 			case LOCAL:
-				dp = new DataPartitionerLocal(dpf);
+				dp = new DataPartitionerLocal(dpf, -1);
 				break;
 			case REMOTE_MR:
 				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
-				dp = new DataPartitionerRemoteMR( dpf, _ID, 
-						                          Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
+				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, 
+						                          //Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
 						                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
 						                          WRITE_REPLICATION_FACTOR, 
 						                          MAX_RETRYS_ON_ERROR, 

@@ -1822,7 +1822,7 @@ public class ProgramConverter
 				mo.setMetaData( md );
 				mo.setVarName( name );
 				if( partFormat!=PDataPartitionFormat.NONE )
-					mo.setPartitioned( partFormat );
+					mo.setPartitioned( partFormat, -1 ); //TODO once we support BLOCKWISE_N we should support it here as well
 				dat = mo;
 				break;
 			}

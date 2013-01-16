@@ -62,9 +62,13 @@ public class DataPartitionerLocal extends DataPartitioner
 	
 	private IDSequence _seq = null;
 	
-	public DataPartitionerLocal(PDataPartitionFormat dpf) 
+	public DataPartitionerLocal(PDataPartitionFormat dpf, int n) 
+		throws DMLRuntimeException 
 	{
-		super(dpf);
+		super(dpf, n);
+		
+		if( dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N || dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N  )
+			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
 		
 		_seq = new IDSequence();
 	}

@@ -33,12 +33,14 @@ public abstract class DataPartitioner
 	
 	//instance variables
 	protected PDataPartitionFormat _format = null;
+	protected int _n = -1; //blocksize if applicable
 	protected boolean _allowBinarycell = true;
 	
 	
-	protected DataPartitioner( PDataPartitionFormat dpf )
+	protected DataPartitioner( PDataPartitionFormat dpf, int n )
 	{
 		_format = dpf;
+		_n = n;
 	}
 	
 	/**
@@ -92,8 +94,7 @@ public abstract class DataPartitioner
 		if( !force ) //try to optimize, if format not forced
 		{
 			//check lower bound of useful data partitioning
-			if( ( rows == 1 || cols == 1 ) ||                            //is vector
-				( rows < Hops.CPThreshold && cols < Hops.CPThreshold) )  //or matrix already fits in mem
+			if( rows < Hops.CPThreshold && cols < Hops.CPThreshold )  //or matrix already fits in mem
 			{
 				return in;
 			}
@@ -109,6 +110,10 @@ public abstract class DataPartitioner
 				LOG.debug("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;
 			}
+			
+			//FIXME: just for test
+			//_n = 16000000; //16000
+			//_format = PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
 		
 		//check changing to binarycell in case of sparse cols (robustness)
@@ -143,7 +148,7 @@ public abstract class DataPartitioner
 		MatrixObject mobj = new MatrixObject(vt, fnameNew );
 		mobj.setDataType(DataType.MATRIX);
 		mobj.setVarName( varname+NAME_SUFFIX );
-		mobj.setPartitioned( _format ); 
+		mobj.setPartitioned( _format, _n ); 
 		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols,
 				                           (_format==PDataPartitionFormat.ROW_WISE)? 1 : (int)brlen, //for blockwise brlen anyway
 				                           (_format==PDataPartitionFormat.COLUMN_WISE)? 1 : (int)bclen ); //for blockwise bclen anyway

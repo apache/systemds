@@ -83,7 +83,7 @@ public class AggBinaryOp extends Hops {
 				MMTSJType mmtsj = checkTransposeSelf();
 				
 				if ( et == ExecType.CP ) {
-					System.out.println("Method = CP");
+					//System.out.println("Method = CP");
 					Lops matmultCP = null;
 					if( mmtsj == MMTSJType.NONE ) {
 						matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
@@ -318,7 +318,6 @@ public class AggBinaryOp extends Hops {
 		if(    ( mmtsj == MMTSJType.LEFT && m2_cols <= m2_cpb )
 			|| ( mmtsj == MMTSJType.RIGHT && m1_rows <= m1_rpb ) )
 		{
-			//return MMultMethod.RMM;
 			return MMultMethod.TSMM;
 		}
 

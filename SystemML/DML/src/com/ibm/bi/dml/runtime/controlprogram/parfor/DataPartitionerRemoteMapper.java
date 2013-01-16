@@ -59,17 +59,18 @@ public class DataPartitionerRemoteMapper
 		InputInfo ii = MRJobConfiguration.getPartitioningInputInfo( job );
 		OutputInfo oi = MRJobConfiguration.getPartitioningOutputInfo( job );
 		PDataPartitionFormat pdf = MRJobConfiguration.getPartitioningFormat( job );
+		int n = MRJobConfiguration.getPartitioningSizeN( job );
 		
 		if( ii == InputInfo.TextCellInputInfo )
-			_mapper = new DataPartitionerMapperTextcell(rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperTextcell(rlen, clen, brlen, bclen, pdf, n);
 		else if( ii == InputInfo.BinaryCellInputInfo )
-			_mapper = new DataPartitionerMapperBinarycell(rlen, clen, brlen, bclen, pdf);
+			_mapper = new DataPartitionerMapperBinarycell(rlen, clen, brlen, bclen, pdf, n);
 		else if( ii == InputInfo.BinaryBlockInputInfo )
 		{
 			if( oi == OutputInfo.BinaryBlockOutputInfo )
-				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf);
+				_mapper = new DataPartitionerMapperBinaryblock(rlen, clen, brlen, bclen, pdf, n);
 			else if( oi == OutputInfo.BinaryCellOutputInfo )
-				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(rlen, clen, brlen, bclen, pdf); 
+				_mapper = new DataPartitionerMapperBinaryblock2Binarycell(rlen, clen, brlen, bclen, pdf, n); 
 			else
 				throw new RuntimeException("Paritioning from '"+ii+"' to '"+oi+"' not supported");
 		}
@@ -93,14 +94,16 @@ public class DataPartitionerRemoteMapper
 		protected int _brlen = -1;
 		protected int _bclen = -1;
 		protected PDataPartitionFormat _pdf = null;
+		protected int _n = -1;
 	
-		protected DataPartitionerMapper( long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf )
+		protected DataPartitionerMapper( long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n )
 		{
 			_rlen = rlen;
 			_clen = clen;
 			_brlen = brlen;
 			_bclen = bclen;
 			_pdf = pdf;
+			_n = n;
 		}
 		
 		protected abstract void processKeyValue( Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter ) 
@@ -109,9 +112,9 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
-			super(rlen, clen, brlen, bclen, pdf);
+			super(rlen, clen, brlen, bclen, pdf, n);
 		}
 
 		@Override
@@ -144,6 +147,10 @@ public class DataPartitionerRemoteMapper
 						longKey.set( (row-1)/_brlen+1 );
 						row = (row-1)%_brlen+1;
 						break;
+					case ROW_BLOCK_WISE_N:
+						longKey.set( (row-1)/_n+1 );
+						row = (row-1)%_n+1;
+						break;	
 					case COLUMN_WISE:
 						longKey.set( col );
 						col = 1;
@@ -152,6 +159,10 @@ public class DataPartitionerRemoteMapper
 						longKey.set( (col-1)/_bclen+1 );
 						col = (col-1)%_bclen+1;
 						break;
+					case COLUMN_BLOCK_WISE_N:
+						longKey.set( (col-1)/_n+1 );
+						col = (col-1)%_n+1;
+						break;	
 				}
 
 				key2.setIndexes(row, col);	
@@ -176,9 +187,9 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperBinarycell extends DataPartitionerMapper
 	{
-		protected DataPartitionerMapperBinarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
-			super(rlen, clen, brlen, bclen, pdf);
+			super(rlen, clen, brlen, bclen, pdf, n);
 		}
 
 		@Override
@@ -207,6 +218,10 @@ public class DataPartitionerRemoteMapper
 						longKey.set( (row-1)/_brlen+1 );
 						row = (row-1)%_brlen+1; 
 						break;
+					case ROW_BLOCK_WISE_N:
+						longKey.set( (row-1)/_n+1 );
+						row = (row-1)%_n+1; 
+						break;	
 					case COLUMN_WISE:
 						longKey.set(col);
 						col = 1;
@@ -215,6 +230,10 @@ public class DataPartitionerRemoteMapper
 						longKey.set( (col-1)/_bclen+1 );
 						col = (col-1)%_bclen+1; 
 						break;
+					case COLUMN_BLOCK_WISE_N:
+						longKey.set( (col-1)/_n+1 );
+						col = (col-1)%_n+1; 
+						break;	
 				}
 				key2.setIndexes(row, col);	
 				pairValue.indexes = key2;
@@ -238,9 +257,9 @@ public class DataPartitionerRemoteMapper
 	private class DataPartitionerMapperBinaryblock extends DataPartitionerMapper
 	{
 		
-		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
-			super(rlen, clen, brlen, bclen, pdf);
+			super(rlen, clen, brlen, bclen, pdf, n);
 		}
 		
 		@Override
@@ -313,6 +332,13 @@ public class DataPartitionerRemoteMapper
 						pairValue.block = value2;
 						out.collect(longKey, pairValue);
 						break;
+					case ROW_BLOCK_WISE_N:
+						longKey.set((row_offset/_n+1));
+						key2.setIndexes(((row_offset%_n)/_brlen)+1, (col_offset/_bclen+1) );
+						pairValue.indexes = key2;
+						pairValue.block = value2;
+						out.collect(longKey, pairValue);
+						break;
 					case COLUMN_WISE:
 						tmp = new MatrixBlock( (int)rows, 1, false ); //cols always dense
 						tmp.spaceAllocForDenseUnsafe((int)rows, 1);
@@ -352,6 +378,13 @@ public class DataPartitionerRemoteMapper
 						pairValue.block = value2;
 						out.collect(longKey, pairValue);
 						break;
+					case COLUMN_BLOCK_WISE_N:
+						longKey.set(col_offset/_n+1);
+						key2.setIndexes( row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1 );
+						pairValue.indexes = key2;
+						pairValue.block = value2;
+						out.collect(longKey, pairValue);
+						break;	
 				}
 			} 
 			catch (Exception e) 
@@ -367,9 +400,9 @@ public class DataPartitionerRemoteMapper
 	private class DataPartitionerMapperBinaryblock2Binarycell extends DataPartitionerMapper
 	{
 		
-		protected DataPartitionerMapperBinaryblock2Binarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf) 
+		protected DataPartitionerMapperBinaryblock2Binarycell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
-			super(rlen, clen, brlen, bclen, pdf);
+			super(rlen, clen, brlen, bclen, pdf, n);
 		}
 		
 		@Override
@@ -399,6 +432,8 @@ public class DataPartitionerRemoteMapper
 							              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
 				}
 							
+				long rowBlockIndex = -1;
+				long colBlockIndex = -1;
 				switch( _pdf )
 				{
 					case ROW_WISE:
@@ -464,6 +499,37 @@ public class DataPartitionerRemoteMapper
 									}	
 								}	
 						break;
+					case ROW_BLOCK_WISE_N:
+						longKey.set((row_offset/_n+1));
+						rowBlockIndex = ((row_offset%_n)/_brlen)+1;
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								cellkey2.setIndexes( rowBlockIndex, col_offset + lcell.j + 1 );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int i=0; i<rows; i++ )
+								for( int j=0; j<cols; j++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( rowBlockIndex, col_offset + j + 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}	
+						break;
 					case COLUMN_WISE:
 						if( sparse )
 						{
@@ -520,6 +586,37 @@ public class DataPartitionerRemoteMapper
 									if( lvalue != 0 ) //only for nnz
 									{
 										cellkey2.setIndexes( row_offset + i + 1, 1 );	
+										cellvalue2.setValue( lvalue );
+										pairValue.indexes = cellkey2;
+										pairValue.cell = cellvalue2;
+										out.collect(longKey, pairValue);
+									}	
+								}
+						break;
+					case COLUMN_BLOCK_WISE_N:
+						longKey.set(col_offset/_n+1);
+						colBlockIndex = ((col_offset%_n)/_bclen)+1;
+						if( sparse )
+						{
+							SparseCellIterator iter = value2.getSparseCellIterator();
+							while( iter.hasNext() )
+							{
+								IJV lcell = iter.next();
+								cellkey2.setIndexes( row_offset + lcell.i + 1, colBlockIndex );	
+								cellvalue2.setValue( lcell.v );
+								pairValue.indexes = cellkey2;
+								pairValue.cell = cellvalue2;
+								out.collect(longKey, pairValue);
+							}
+						}
+						else
+							for( int j=0; j<cols; j++ )
+								for( int i=0; i<rows; i++ )
+								{
+									double lvalue = value2.getValueDenseUnsafe(i, j);
+									if( lvalue != 0 ) //only for nnz
+									{
+										cellkey2.setIndexes( row_offset + i + 1, colBlockIndex );	
 										cellvalue2.setValue( lvalue );
 										pairValue.indexes = cellkey2;
 										pairValue.cell = cellvalue2;

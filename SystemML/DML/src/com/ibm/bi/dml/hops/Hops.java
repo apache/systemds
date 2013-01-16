@@ -239,11 +239,11 @@ abstract public class Hops {
 			c = '*';
 		}
 		
-		//if (LOG.isDebugEnabled()){
+		if (LOG.isDebugEnabled()){
 			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
-			System.out.println(s);
+			//System.out.println(s);
 			LOG.debug(s);
-		//}
+		}
 		// This is the old format for reference
 		// %c %-5s %-8s (%s,%s)  %s\n", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
 		

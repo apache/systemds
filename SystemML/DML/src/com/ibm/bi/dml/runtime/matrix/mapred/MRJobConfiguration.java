@@ -108,6 +108,7 @@ public class MRJobConfiguration {
 	private static final String PARTITIONING_INPUT_INFO_CONFIG="partitioning.input.inputinfo";
 	private static final String PARTITIONING_OUTPUT_INFO_CONFIG="partitioning.output.outputinfo";
 	private static final String PARTITIONING_OUTPUT_FORMAT_CONFIG="partitioning.output.format";
+	private static final String PARTITIONING_OUTPUT_N_CONFIG="partitioning.output.n";
 	private static final String PARTITIONING_OUTPUT_FILENAME_CONFIG="partitioning.output.filename";
 	
 	//result merge info
@@ -515,7 +516,7 @@ public class MRJobConfiguration {
 	}
 	
 	//partitioning configurations
-	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, String fnameNew )
+	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew )
 	{
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
@@ -524,6 +525,7 @@ public class MRJobConfiguration {
 		job.set(PARTITIONING_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
 		job.set(PARTITIONING_OUTPUT_INFO_CONFIG, OutputInfo.outputInfoToString(oi));
 		job.set(PARTITIONING_OUTPUT_FORMAT_CONFIG, dpf.toString());
+		job.set(PARTITIONING_OUTPUT_N_CONFIG, String.valueOf(n));
 		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
 	}
 	
@@ -575,6 +577,11 @@ public class MRJobConfiguration {
 	public static PDataPartitionFormat getPartitioningFormat( JobConf job )
 	{
 		return PDataPartitionFormat.valueOf(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
+	}
+	
+	public static int getPartitioningSizeN( JobConf job )
+	{
+		return Integer.parseInt(job.get(PARTITIONING_OUTPUT_N_CONFIG));
 	}
 	
 	public static void setPartitioningFilename( JobConf job, String fname )

@@ -91,6 +91,7 @@ public class MatrixObject extends CacheableData
 	//partitioning information
 	private boolean _partitioned = false; //indicates if obj partitioned
 	private PDataPartitionFormat _partitionFormat = null; //indicates how obj partitioned
+	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 
 
@@ -622,12 +623,14 @@ public class MatrixObject extends CacheableData
 	// *********************************************
 	
 	/**
+	 * @param n 
 	 * 
 	 */
-	public void setPartitioned( PDataPartitionFormat format )
+	public void setPartitioned( PDataPartitionFormat format, int n )
 	{
 		_partitioned = true;
 		_partitionFormat = format;
+		_partitionSize = n;
 	}
 	
 	/**
@@ -642,6 +645,11 @@ public class MatrixObject extends CacheableData
 	public PDataPartitionFormat getPartitionFormat()
 	{
 		return _partitionFormat;
+	}
+	
+	public int getPartitionSize()
+	{
+		return _partitionSize;
 	}
 	
 	/**

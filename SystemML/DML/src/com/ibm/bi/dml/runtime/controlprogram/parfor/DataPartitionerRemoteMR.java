@@ -8,8 +8,9 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
@@ -18,6 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * MR job class for submitting parfor remote partitioning MR jobs.
@@ -26,18 +28,25 @@ import com.ibm.bi.dml.utils.Statistics;
 public class DataPartitionerRemoteMR extends DataPartitioner
 {	
 	private long _pfid = -1;
-	private int  _numMappers = -1;
+	//private int  _numMappers = -1;
 	private int  _numReducers = -1;
 	private int  _replication = -1;
 	private int  _max_retry = -1;
 	private boolean _jvmReuse = false;
 
-	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, long pfid, int numMappers, int numReducers, int replication, int max_retry, boolean jvmReuse) 
+	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n) 
 	{
-		super(dpf);
+		this( dpf, n, -1, 
+			  Math.min( ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS),
+						InfrastructureAnalyzer.getRemoteParallelReduceTasks() ),
+		      1, 3, false );
+	}
+	
+	public DataPartitionerRemoteMR(PDataPartitionFormat dpf, int n, long pfid, int numReducers, int replication, int max_retry, boolean jvmReuse) 
+	{
+		super(dpf, n);
 		
 		_pfid = pfid;
-		_numMappers = numMappers;
 		_numReducers = numReducers;
 		_replication = replication;
 		_max_retry = max_retry;
@@ -51,8 +60,11 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	{
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
-		job.setJobName("ParFor_Partition-MR"+_pfid);
-
+		if( _pfid >= 0 ) //use in parfor
+			job.setJobName("ParFor_Partition-MR"+_pfid);
+		else //use for partition instruction
+			job.setJobName("Partition-MR");
+			
 		//maintain dml script counters
 		Statistics.incrementNoOfCompiledMRJobs();
 		
@@ -63,7 +75,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			/////
 			//configure the MR job
-			MRJobConfiguration.setPartitioningInfoInMapper(job, rlen, clen, brlen, bclen, ii, oi, _format, fnameNew);
+			MRJobConfiguration.setPartitioningInfoInMapper(job, rlen, clen, brlen, bclen, ii, oi, _format, _n, fnameNew);
 			
 			//set mappers, reducers, combiners
 			job.setMapperClass(DataPartitionerRemoteMapper.class); 
@@ -84,6 +96,13 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			{
 				job.setMapOutputKeyClass(LongWritable.class);
 				job.setMapOutputValueClass(PairWritableBlock.class);
+				
+				//check Alignment
+				if(   (_format == PDataPartitionFormat.ROW_BLOCK_WISE_N && rlen>_n && _n % brlen !=0)
+        			|| (_format == PDataPartitionFormat.COLUMN_BLOCK_WISE_N && clen>_n && _n % bclen !=0) )
+				{
+					throw new DMLRuntimeException("Data partitioning format "+_format+" requires aligned blocks.");
+				}
 			}
 			
 			//set input format 
@@ -108,17 +127,19 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			    case COLUMN_WISE: reducerGroups = clen; break;
 			    case ROW_BLOCK_WISE: reducerGroups = (rlen/brlen)+((rlen%brlen==0)?0:1); break;
 			    case COLUMN_BLOCK_WISE: reducerGroups = (clen/bclen)+((clen%bclen==0)?0:1); break;
+			    case ROW_BLOCK_WISE_N: reducerGroups = (rlen/_n)+((rlen%_n==0)?0:1); break;
+			    case COLUMN_BLOCK_WISE_N: reducerGroups = (clen/_n)+((clen%_n==0)?0:1); break;
 		    }
-			job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
+		    job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
 			//use FLEX scheduler configuration properties
-			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
+			/*if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
 				job.setInt("flex.map.min", 0);
 				job.setInt("flex.map.max", _numMappers);
 				job.setInt("flex.reduce.min", 0);
 				job.setInt("flex.reduce.max", _numMappers);
-			}
+			}*/
 			
 			//disable automatic tasks timeouts and speculative task exec
 			job.setInt("mapred.task.timeout", 0);			
@@ -144,7 +165,6 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 			/////
 			// execute the MR job	
-			
 			JobClient.runJob(job);
 		
 			//maintain dml script counters

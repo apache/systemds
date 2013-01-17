@@ -921,7 +921,7 @@ abstract public class Hops {
 	};
 
 	public enum FileFormatTypes {
-		TEXT, BINARY
+		TEXT, BINARY, DELIM, MM
 	};
 
 	public enum DataOpTypes {
@@ -1107,7 +1107,7 @@ abstract public class Hops {
 		HopsFileFormatTypes2Lops = new HashMap<Hops.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format>();
 		HopsFileFormatTypes2Lops.put(FileFormatTypes.BINARY, com.ibm.bi.dml.lops.OutputParameters.Format.BINARY);
 		HopsFileFormatTypes2Lops.put(FileFormatTypes.TEXT, com.ibm.bi.dml.lops.OutputParameters.Format.TEXT);
-
+		
 	}
 
 	static public HashMap<Hops.OpOp2, String> HopsOpOp2String;

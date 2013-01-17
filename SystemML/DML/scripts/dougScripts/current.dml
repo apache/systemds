@@ -1,20 +1,19 @@
-execSum = function(Matrix[Double] X) return (Double sx) 
+execSum = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] Z, Matrix[Double] V) 
 {
-   sx = sum(X);    
+   Z = X + Y;
+   V = X + Y;    
 }
 
-#V = read($1, rows=$2, cols=$3);
-V = Rand( rows=5,cols=5);
 
-R = Rand(rows=5,cols=1,min=0,max=0); 
-dummy = Rand(rows=1, cols=1, min=1, max=1);
+A = Rand(rows=10,cols=1,min=0,max=0);
+B = Rand(rows=10,cols=1);
+i = 10;
 
-i = 1
-#while( i in 1:5 ) 
-#{
-   X = V[,i];
-   sumx = execSum(X);
-   R[i,1] = dummy * sumx; 
-#}  
+parfor( i in 2:10 )
+{ 
+   #[A[i-1,1],A[i,1]] = execSum( B[i,1], A[i,1] );
+   [C,D] = execSum( B[i,1], A[i,1] );
+} 
 
-write(R, "dollar_4");       
+sumA = sum(C) + sum(D);
+print("sumA : " + sumA);

@@ -197,6 +197,11 @@ TOKEN :
 	| <PRINT 		: "print">
 	| <READMATRIX 	: "read">
 	| <WRITEMATRIX 	: "write">
+	| <READMM		: "readmMM" >
+	| <WRITEMM		: "writeMM" >
+	| <READ_MATRIX	: "read.matrix" >
+	| <WRITE_MATRIX	: "write.matrix" >
+
 
 	// RESERVED KEYWORDS -- required for meta-learning
  	| <BUILD_ENSEMBLE	: "build ensemble" >
@@ -2137,6 +2142,7 @@ InputStatement InputStatement() :
 	Expression t2 = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 	Token tEnd = null;
+	Token tRead = null;
 }
 {
 	  	id = Identifier()
@@ -2146,7 +2152,7 @@ InputStatement InputStatement() :
 				throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
 			}
   	  	}
-	  	<ASSIGN> <READMATRIX> <LEFTPAREN>
+	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_MATRIX> ) <LEFTPAREN>
 		t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
 				
 		//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
@@ -2159,6 +2165,15 @@ InputStatement InputStatement() :
 		)*
 		tEnd = <RIGHTPAREN> [<SEMICOLON>]
 	{
+
+		if (tRead.image.equals("readMM")){
+			is.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.MATRIXMARKET_FORMAT_TYPE), false);
+		}
+		else if (tRead.image.equals("read.matrix")){
+			is.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.DELIMITED_FORMAT_TYPE), false);			
+		}
+
+		
  		is.setIdentifier(id);
  		id.setDimensions(is);
  		id.computeDataType();
@@ -2182,10 +2197,11 @@ OutputStatement OutputStatement() :
 	OutputStatement os = null;
 
 	Token tStart = null, tEnd = null;
+	Token tWrite = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	tStart = <WRITEMATRIX> <LEFTPAREN>
+	(tStart = <WRITEMATRIX> | tStart = <WRITEMM> | tStart = <WRITE_MATRIX> ) <LEFTPAREN>
 		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
     	t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
      	(
@@ -2199,6 +2215,12 @@ OutputStatement OutputStatement() :
 		)*
 		tEnd = <RIGHTPAREN>  [<SEMICOLON>]
 	{
+
+		if (tWrite.image.equals("writeMM")){			os.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.MATRIXMARKET_FORMAT_TYPE),false);
+		}
+		else if (tWrite.image.equals("write.matrix")){
+			os.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.DELIMITED_FORMAT_TYPE), false);
+		}	
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;
 		elp = tEnd.beginLine;

@@ -1,9 +1,10 @@
 A = Rand(rows=10,cols=10,min=0,max=0);
+dummy = Rand(rows=1,cols=1,min=1,max=1);
 
 parfor( i in 2:10 )
 { 
-   A[i,1] = castAsScalar(i); 
-   A[i-1,1] = castAsScalar(i);  
+   A[i,1] = dummy*i; 
+   A[i-1,1] = dummy*i;  
 }
 
 #print(A);

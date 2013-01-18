@@ -1,9 +1,16 @@
+execSum = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] Z, Matrix[Double] V) 
+{
+   Z = X + Y;
+   V = X + Y;    
+}
+
+
 A = Rand(rows=10,cols=1,min=0,max=0);
 B = Rand(rows=10,cols=1);
 
 parfor( i in 2:10 )
 { 
-   [A[i,1],A[i-1,1]] = B[i,1] + A[i,1];
+   [A[i,1],A[i-1,1]] = execSum( B[i,1], A[i,1] );
 }
 
 #print(A);

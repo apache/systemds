@@ -47,7 +47,10 @@ public class MultiAssignmentStatement extends Statement{
 		_targetList = new ArrayList<DataIdentifier>();
 		for (ArrayList<Expression> exprList : exprListList){
 			Expression expr = exprList.get(0);
-			_targetList.add(new DataIdentifier(expr.toString()));
+			if( expr instanceof IndexedIdentifier )
+				_targetList.add((IndexedIdentifier)expr);
+			else
+				_targetList.add(new DataIdentifier(expr.toString()));
 		}
 	}
 	

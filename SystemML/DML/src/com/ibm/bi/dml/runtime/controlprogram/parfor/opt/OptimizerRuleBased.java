@@ -905,11 +905,14 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
 		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
+		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars );
 		
 		//actual decision on result merge
 		PResultMerge ret = null;
-		if(    ( flagMRParFOR || flagMRLeftIndexing) 
-			&& !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
+		if( flagOnlyInMemResults )
+			ret = PResultMerge.LOCAL_MEM;
+		else if(    ( flagMRParFOR || flagMRLeftIndexing) 
+			    && !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
 			ret = PResultMerge.REMOTE_MR;
 		else
 			ret = PResultMerge.LOCAL_AUTOMATIC;
@@ -995,8 +998,7 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						if( rows*cols < Math.pow(Hops.CPThreshold, 2) )
-							ret = false;
+						ret = !isInMemoryResultMerge(rows, cols);
 					}
 				}
 			}
@@ -1005,6 +1007,39 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			for( OptNode c : n.getChilds() )
 				ret |= hasResultMRLeftIndexing(c, resultVars, vars, checkSize);
+		}
+		
+		return ret;
+	}
+	
+	public boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars ) 
+		throws DMLRuntimeException
+	{
+		boolean ret = true;
+		
+		if( n.isLeaf() )
+		{
+			String opName = n.getParam(ParamType.OPSTRING);
+			//check opstring and exec type
+			if( opName.equals(LeftIndexingOp.OPSTRING) )
+			{
+				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				//check agains set of varname
+				String varName = hop.getInput().get(0).get_name();
+				if( resultVars.contains(varName) && vars.keySet().contains(varName) )
+				{
+					//dims of result vars must be known at this point in time
+					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
+					long rows = mo.getNumRows();
+					long cols = mo.getNumColumns();
+					ret &= isInMemoryResultMerge(rows, cols);
+				}
+			}
+		}
+		else
+		{
+			for( OptNode c : n.getChilds() )
+				ret &= hasOnlyInMemoryResults(c, resultVars, vars);
 		}
 		
 		return ret;
@@ -1024,6 +1059,11 @@ public class OptimizerRuleBased extends Optimizer
 				rewriteSetResultMerge(n, vars);
 			else if( n.getChilds()!=null )  
 				rInvokeSetResultMerge(n.getChilds(), vars);
+	}
+	
+	public static boolean isInMemoryResultMerge( long rows, long cols )
+	{
+		return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hops.CPThreshold, 2) );
 	}
 
 	

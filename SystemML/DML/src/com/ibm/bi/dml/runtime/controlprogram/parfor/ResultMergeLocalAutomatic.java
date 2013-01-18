@@ -1,8 +1,8 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 
-import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -32,7 +32,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( rows*cols < Math.pow(Hops.CPThreshold,2) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
@@ -53,7 +53,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( par*(rows*cols) < Math.pow(Hops.CPThreshold,2) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );

@@ -10,6 +10,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -40,7 +41,8 @@ public class CM_N_COVInstruction extends UnaryMRInstructionBase {
 			if(cst>4 || cst<0 || cst==1)
 				throw new DMLRuntimeException("constant for central moment has to be 0, 2, 3, or 4");
 			
-			CMOperator cm = new CMOperator(CM.getCMFnObject(), CMOperator.getCMAggOpType(cst));
+			AggregateOperationTypes opType = CMOperator.getCMAggOpType(cst);
+			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
 			return new CM_N_COVInstruction(cm, in, out, str);
 		}else if(opcode.equalsIgnoreCase("cov"))
 		{

@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -31,7 +32,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 	private CM_N_COVInstruction[] cmNcovInstructions=null;
 	private CM_N_COVCell cmNcovCell=new CM_N_COVCell(); 
 	private COV covFn=COV.getCOMFnObject();
-	private CM cmFn=CM.getCMFnObject();
+	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
 	private MatrixCell outCell=new MatrixCell();
 	private HashMap<Byte, Vector<Integer>> outputIndexesMapping=new HashMap<Byte, Vector<Integer>>();
@@ -50,7 +51,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 			throws IOException {
 		commonSetup(report);
 		cmNcovCell.setCM_N_COVObject(0, 0, 0);
-		ValueFunction fn=cmFn;
+		ValueFunction fn=cmFn.get(index.getTag());
 		if(covTags.contains(index.getTag()))
 			fn=covFn;
 		while(values.hasNext())
@@ -121,6 +122,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, MatrixIndexes, MatrixV
 		{
 			if(ins.getOperator() instanceof COVOperator)
 				covTags.add(ins.input);
+			else //CMOperator
+				cmFn.put(ins.input, CM.getCMFnObject(((CMOperator)ins.getOperator()).getAggOpType()));
 			outputIndexesMapping.put(ins.output, getOutputIndexes(ins.output));
 			rlens.put(ins.input, MRJobConfiguration.getNumRows(job, ins.input));
 			clens.put(ins.input, MRJobConfiguration.getNumColumns(job, ins.input));

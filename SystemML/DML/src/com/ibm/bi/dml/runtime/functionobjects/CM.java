@@ -3,35 +3,57 @@ package com.ibm.bi.dml.runtime.functionobjects;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
-public class CM extends ValueFunction {
-
-	private static CM singleObj = null;
-	private static KahanPlus plus=KahanPlus.getKahanPlusFnObject();
-	KahanObject buff2=new KahanObject(0, 0);
-	KahanObject buff3=new KahanObject(0, 0);
+public class CM extends ValueFunction 
+{
+	private AggregateOperationTypes _type = null;
 	
-	private CM() {
-		// nothing to do here
+	//helper function objects for specific types
+	private KahanPlus _plus = null;
+	private KahanObject _buff2 = null;
+	private KahanObject _buff3 = null;
+	
+	
+	private CM( AggregateOperationTypes type ) 
+	{
+		_type = type;
+		
+		switch( _type ) //helper obj on demand
+		{
+			case COUNT:		
+				break;
+			case CM4:
+			case CM3:
+				_buff3 = new KahanObject(0, 0);
+			case CM2:		
+			case VARIANCE:	
+				_buff2 = new KahanObject(0, 0);
+			case MEAN:
+				_plus = KahanPlus.getKahanPlusFnObject();
+				break;
+		}
 	}
 	
-	public static CM getCMFnObject() {
-		return singleObj = new CM(); //changed for multi-threaded exec  
-		// if ( singleObj == null ) 
-		//	return singleObj = new CM();
-		//return singleObj;
+	public static CM getCMFnObject( AggregateOperationTypes type ) {
+		//return new obj, required for correctness in multi-threaded
+		//execution due to state in cm object	
+		return new CM( type ); 
 	}
 	
 	public Object clone() throws CloneNotSupportedException {
 		// cloning is not supported for singleton classes
 		throw new CloneNotSupportedException();
 	}
-	
-	//overwride in1
-	public Data execute(Data in1, double in2, double w2) throws DMLRuntimeException {
+
+	@Override
+	public Data execute(Data in1, double in2, double w2) 
+		throws DMLRuntimeException 
+	{
 		CM_COV_Object cm1=(CM_COV_Object) in1;
+		
 		if(cm1.isCMAllZeros())
 		{
 			cm1.w=w2;
@@ -41,29 +63,90 @@ public class CM extends ValueFunction {
 			cm1.m4.set(0,0);
 			return cm1;
 		}
-		double w=(long)cm1.w+(long)w2;
-		double d=in2-cm1.mean._sum;
-		cm1.mean=(KahanObject) plus.execute(cm1.mean, w2*d/w);
-		double t1=cm1.w*w2/w*d;
-		double t2=-1/cm1.w;
-		double lt1=t1*d;
-		double lt2=Math.pow(t1, 3)*(1/Math.pow(w2, 2)-Math.pow(t2, 2));
-		double lt3=Math.pow(t1, 4)*(1/Math.pow(w2, 3)-Math.pow(t2, 3));
-		double f1=cm1.w/w;
-		double f2=w2/w;
-	//	double m2=cm1.m2 + lt1;
-	//	double m3=cm1.m3 - 3*cm1.m2*f2*d + lt2;
-	//	double m4=cm1.m4 - 4*cm1.m3*f2*d + 6*cm1.m2*Math.pow(-f2*d, 2) + lt3;
-		buff2.set(cm1.m2);
-		buff2=(KahanObject) plus.execute(buff2, lt1);
-		buff3.set(cm1.m3);
-		buff3=(KahanObject) plus.execute(buff3, lt2-3*cm1.m2._sum*f2*d);
-		cm1.m4=(KahanObject) plus.execute(cm1.m4, 6*cm1.m2._sum*Math.pow(-f2*d, 2) + lt3-4*cm1.m3._sum*f2*d);
-	//	cm1.mean=mean;
-	//	cm1.mean_correction=kahan._correction;
-		cm1.m2.set(buff2);
-		cm1.m3.set(buff3);
-		cm1.w=w;
+		
+		switch( _type )
+		{
+			case COUNT:
+			{
+				cm1.w = (long)cm1.w + (long)w2;
+				break;
+			}
+			case MEAN:
+			{
+				double w=(long)cm1.w+(long)w2;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
+				cm1.w=w;			
+				break;
+			}
+			case CM2:
+			{
+				double w=(long)cm1.w+(long)w2;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
+				double t1=cm1.w*w2/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;				
+				break;
+			}
+			case CM3:
+			{
+				double w=(long)cm1.w+(long)w2;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
+				double t1=cm1.w*w2/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1/Math.pow(w2, 2)-Math.pow(t2, 2));
+				double f2=w2/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, lt2-3*cm1.m2._sum*f2*d);
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case CM4:
+			{
+				double w=(long)cm1.w+(long)w2;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
+				double t1=cm1.w*w2/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1/Math.pow(w2, 2)-Math.pow(t2, 2));
+				double lt3=Math.pow(t1, 4)*(1/Math.pow(w2, 3)-Math.pow(t2, 3));
+				double f2=w2/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, lt2-3*cm1.m2._sum*f2*d);
+				cm1.m4=(KahanObject) _plus.execute(cm1.m4, 6*cm1.m2._sum*Math.pow(-f2*d, 2) + lt3-4*cm1.m3._sum*f2*d);
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case VARIANCE:
+			{
+				double w=(long)cm1.w+(long)w2;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
+				double t1=cm1.w*w2/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;
+				break;
+			}
+		}
+		
 		return cm1;
 	}
 	
@@ -87,11 +170,12 @@ public class CM extends ValueFunction {
 		return cm;
 	}*/
 
-	//overwride in1
+	@Override
 	public Data execute(Data in1, Data in2) throws DMLRuntimeException 
 	{
 		CM_COV_Object cm1=(CM_COV_Object) in1;
 		CM_COV_Object cm2=(CM_COV_Object) in2;
+		
 		if(cm1.isCMAllZeros())
 		{
 			cm1.w=cm2.w;
@@ -101,38 +185,102 @@ public class CM extends ValueFunction {
 			cm1.m4.set(cm2.m4);
 			return cm1;
 		}
-		
 		if(cm2.isCMAllZeros())
 			return cm1;
 		
-		double w=(long)cm1.w+(long)cm2.w;
-		double d=cm2.mean._sum-cm1.mean._sum;
-		cm1.mean=(KahanObject) plus.execute(cm1.mean, cm2.w*d/w);
-		//double mean=cm1.mean+cm2.w*d/w;
-		double t1=cm1.w*cm2.w/w*d;
-		double t2=-1/cm1.w;
-		double lt1=t1*d;
-		double lt2=Math.pow(t1, 3)*(1/Math.pow(cm2.w, 2)-Math.pow(t2, 2));
-		double lt3=Math.pow(t1, 4)*(1/Math.pow(cm2.w, 3)-Math.pow(t2, 3));
-		double f1=cm1.w/w;
-		double f2=cm2.w/w;
-		buff2.set(cm1.m2);
-		buff2=(KahanObject) plus.execute(buff2, cm2.m2._sum, cm2.m2._correction);
-		buff2=(KahanObject) plus.execute(buff2, lt1);
-		buff3.set(cm1.m3);
-		buff3=(KahanObject) plus.execute(buff3, cm2.m3._sum, cm2.m3._correction);
-		buff3=(KahanObject) plus.execute(buff3, 3*(-f2*cm1.m2._sum+f1*cm2.m2._sum)*d + lt2);
-		cm1.m4=(KahanObject) plus.execute(cm1.m4, cm2.m4._sum, cm2.m4._correction);
-		cm1.m4=(KahanObject) plus.execute(cm1.m4, 4*(-f2*cm1.m3._sum+f1*cm2.m3._sum)*d 
-				+ 6*(Math.pow(-f2, 2)*cm1.m2._sum+Math.pow(f1, 2)*cm2.m2._sum)*Math.pow(d, 2) + lt3);
+		switch( _type )
+		{
+			case COUNT:
+			{
+				cm1.w=(long)cm1.w+(long)cm2.w;				
+				break;
+			}
+			case MEAN:
+			{
+				double w=(long)cm1.w+(long)cm2.w;
+				double d=cm2.mean._sum-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
+				cm1.w=w;
+				break;
+			}
+			case CM2:
+			{
+				double w=(long)cm1.w+(long)cm2.w;
+				double d=cm2.mean._sum-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
+				double t1=cm1.w*cm2.w/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, cm2.m2._sum, cm2.m2._correction);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;
+				break;
+			}
+			case CM3:
+			{
+				double w=(long)cm1.w+(long)cm2.w;
+				double d=cm2.mean._sum-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
+				double t1=cm1.w*cm2.w/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1/Math.pow(cm2.w, 2)-Math.pow(t2, 2));
+				double f1=cm1.w/w;
+				double f2=cm2.w/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, cm2.m2._sum, cm2.m2._correction);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, cm2.m3._sum, cm2.m3._correction);
+				_buff3=(KahanObject) _plus.execute(_buff3, 3*(-f2*cm1.m2._sum+f1*cm2.m2._sum)*d + lt2);
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case CM4:
+			{
+				double w=(long)cm1.w+(long)cm2.w;
+				double d=cm2.mean._sum-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
+				double t1=cm1.w*cm2.w/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1/Math.pow(cm2.w, 2)-Math.pow(t2, 2));
+				double lt3=Math.pow(t1, 4)*(1/Math.pow(cm2.w, 3)-Math.pow(t2, 3));
+				double f1=cm1.w/w;
+				double f2=cm2.w/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, cm2.m2._sum, cm2.m2._correction);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, cm2.m3._sum, cm2.m3._correction);
+				_buff3=(KahanObject) _plus.execute(_buff3, 3*(-f2*cm1.m2._sum+f1*cm2.m2._sum)*d + lt2);
+				cm1.m4=(KahanObject) _plus.execute(cm1.m4, cm2.m4._sum, cm2.m4._correction);
+				cm1.m4=(KahanObject) _plus.execute(cm1.m4, 4*(-f2*cm1.m3._sum+f1*cm2.m3._sum)*d 
+						+ 6*(Math.pow(-f2, 2)*cm1.m2._sum+Math.pow(f1, 2)*cm2.m2._sum)*Math.pow(d, 2) + lt3);				
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case VARIANCE:
+			{
+				double w=(long)cm1.w+(long)cm2.w;
+				double d=cm2.mean._sum-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
+				double t1=cm1.w*cm2.w/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, cm2.m2._sum, cm2.m2._correction);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;
+				break;
+			}
+		}
 		
-	/*	double m2=cm1.m2+cm2.m2 + lt1;
-		double m3=cm1.m3+cm2.m3 + 3*(-f2*cm1.m2+f1*cm2.m2)*d + lt2;
-		double m4=cm1.m4+cm2.m4 + 4*(-f2*cm1.m3+f1*cm2.m3)*d 
-		+ 6*(Math.pow(-f2, 2)*cm1.m2+Math.pow(f1, 2)*cm2.m2)*Math.pow(d, 2) + lt3;*/
-		cm1.m2.set(buff2);
-		cm1.m3.set(buff3);
-		cm1.w=w;
 		return cm1;
 	}
 	/*
@@ -168,4 +316,5 @@ public class CM extends ValueFunction {
 		cm1._weight=w;
 		return cm1;
 	}*/
+
 }

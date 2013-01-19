@@ -29,9 +29,9 @@ implements Reducer<TaggedInt, WeightedCell, MatrixIndexes, MatrixCell >{
 
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
 	private MatrixCell outCell=new MatrixCell();
-	private HashMap<Byte, GroupedAggregateInstruction> grpaggInsructions=new HashMap<Byte, GroupedAggregateInstruction>();
+	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions=new HashMap<Byte, GroupedAggregateInstruction>();
 	private CM_COV_Object cmObj=new CM_COV_Object(); 
-	private CM cmFn=CM.getCMFnObject();
+	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
 	private HashMap<Byte, Vector<Integer>> outputIndexesMapping=new HashMap<Byte, Vector<Integer>>();
 	@Override
 	public void reduce(TaggedInt key,
@@ -39,16 +39,17 @@ implements Reducer<TaggedInt, WeightedCell, MatrixIndexes, MatrixCell >{
 			OutputCollector<MatrixIndexes, MatrixCell> out, Reporter report)
 			throws IOException {
 		commonSetup(report);
-		GroupedAggregateInstruction ins=grpaggInsructions.get(key.getTag());
+		GroupedAggregateInstruction ins=grpaggInstructions.get(key.getTag());
 		Operator op=ins.getOperator();
 		if(op instanceof CMOperator)
 		{
 			cmObj.reset();
+			CM lcmFn = cmFn.get(key.getTag());
 			while(values.hasNext())
 			{
 				WeightedCell value=values.next();
 				try {
-					cmFn.execute(cmObj, value.getValue(), value.getWeight());
+					lcmFn.execute(cmObj, value.getValue(), value.getWeight());
 				} catch (DMLRuntimeException e) {
 					throw new IOException(e);
 				}
@@ -122,7 +123,9 @@ implements Reducer<TaggedInt, WeightedCell, MatrixIndexes, MatrixCell >{
 				throw new RuntimeException("no GroupAggregate Instructions found!");
 			for(GroupedAggregateInstruction ins: grpaggIns)
 			{
-				grpaggInsructions.put(ins.output, ins);
+				grpaggInstructions.put(ins.output, ins);	
+				if( ins.getOperator() instanceof CMOperator )
+					cmFn.put(ins.output, CM.getCMFnObject(((CMOperator)ins.getOperator()).getAggOpType()));
 				outputIndexesMapping.put(ins.output, getOutputIndexes(ins.output));
 			}
 		} catch (Exception e) {

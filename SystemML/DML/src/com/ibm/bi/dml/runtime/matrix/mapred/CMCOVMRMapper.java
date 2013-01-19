@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -14,6 +15,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.CM_N_COVCell;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
+import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -22,7 +24,7 @@ public class CMCOVMRMapper extends MapperBase
 implements Mapper<Writable, Writable, Writable, Writable>{
 
 	private boolean firsttime=true;
-	private CM cmFn=CM.getCMFnObject();
+	private HashMap<Byte, CM> cmFn = new HashMap<Byte, CM>();
 	private COV covFn=COV.getCOMFnObject();
 	private OutputCollector<Writable, Writable> cachedCollector=null;
 	private CachedValueMap cmNcovCache=new CachedValueMap();
@@ -51,6 +53,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		for(byte tag: cmTags)
 		{
+			CM lcmFn = cmFn.get(tag);
 			IndexedMatrixValue input = cachedValues.getFirst(tag);
 			if(input==null)
 				continue;
@@ -60,7 +63,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 				
 			//	System.out.println("~~~~~\nold: "+cmValue.getCM_N_COVObject());
 			//	System.out.println("add: "+inputPair);
-				cmFn.execute(cmValue.getCM_N_COVObject(), inputPair.getValue(), inputPair.getWeight());
+				lcmFn.execute(cmValue.getCM_N_COVObject(), inputPair.getValue(), inputPair.getWeight());
 			//	System.out.println("new: "+cmValue.getCM_N_COVObject());
 			} catch (DMLRuntimeException e) {
 				throw new IOException(e);
@@ -116,8 +119,11 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			{
 				if(ins.getOperator() instanceof COVOperator)
 					covTags.add(ins.input);
-				else
+				else //CMOperator
+				{
 					cmTags.add(ins.input);
+					cmFn.put(ins.input, CM.getCMFnObject(((CMOperator)ins.getOperator()).getAggOpType()));
+				}
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);

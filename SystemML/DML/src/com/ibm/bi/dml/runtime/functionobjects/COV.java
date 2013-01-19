@@ -8,20 +8,17 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class COV extends ValueFunction{
 
-	private static COV singleObj = null;
-//	private KahanObject kahan=new KahanObject(0, 0);
-	private static KahanPlus plus=KahanPlus.getKahanPlusFnObject();
+	private KahanPlus _plus = null; 
 	
 	public static COV getCOMFnObject() {
-		return singleObj = new COV(); //changed for multi-threaded exec
-		// if ( singleObj == null ) 
-		//	return singleObj = new COV();
-		//return singleObj;
+		//return new obj, required for correctness in multi-threaded
+		//execution due to state in cm object
+		return new COV(); 
 	}
 	
 	private COV()
 	{
-		//Nothing to do
+		_plus = KahanPlus.getKahanPlusFnObject();
 	}
 	
 	public Object clone() throws CloneNotSupportedException {
@@ -44,12 +41,11 @@ public class COV extends ValueFunction{
 		double w=(long)cov1.w+(long)w2;
 		double du=u-cov1.mean._sum;
 		double dv=v-cov1.mean_v._sum;
-		cov1.mean=(KahanObject) plus.execute(cov1.mean, w2*du/w);
-		cov1.mean_v=(KahanObject) plus.execute(cov1.mean_v, w2*dv/w);
-		cov1.c2=(KahanObject) plus.execute(cov1.c2, cov1.w*w2/w*du*dv);
-		//double mean_u=cov1.mean+w2*du/w;
-		//double mean_v=cov1.mean_v+w2*dv/w;
+		cov1.mean=(KahanObject) _plus.execute(cov1.mean, w2*du/w);
+		cov1.mean_v=(KahanObject) _plus.execute(cov1.mean_v, w2*dv/w);
+		cov1.c2=(KahanObject) _plus.execute(cov1.c2, cov1.w*w2/w*du*dv);
 		cov1.w=w;
+		
 		return cov1;
 	}
 	
@@ -71,14 +67,13 @@ public class COV extends ValueFunction{
 		
 		double w=(long)cov1.w+(long)cov2.w;
 		double du=cov2.mean._sum-cov1.mean._sum;
-		double dv=cov2.mean_v._sum-cov1.mean_v._sum;
-		
-		cov1.mean=(KahanObject) plus.execute(cov1.mean, cov2.w*du/w);
-		cov1.mean_v=(KahanObject) plus.execute(cov1.mean_v, cov2.w*dv/w);
-		cov1.c2=(KahanObject) plus.execute(cov1.c2, cov2.c2._sum, cov2.c2._correction);
-		cov1.c2=(KahanObject) plus.execute(cov1.c2, cov1.w*cov2.w/w*du*dv);
-		
+		double dv=cov2.mean_v._sum-cov1.mean_v._sum;		
+		cov1.mean=(KahanObject) _plus.execute(cov1.mean, cov2.w*du/w);
+		cov1.mean_v=(KahanObject) _plus.execute(cov1.mean_v, cov2.w*dv/w);
+		cov1.c2=(KahanObject) _plus.execute(cov1.c2, cov2.c2._sum, cov2.c2._correction);
+		cov1.c2=(KahanObject) _plus.execute(cov1.c2, cov1.w*cov2.w/w*du*dv);		
 		cov1.w=w;
+		
 		return cov1;
 	}
 }

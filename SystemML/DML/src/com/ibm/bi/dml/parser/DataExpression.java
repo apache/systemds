@@ -122,6 +122,7 @@ public class DataExpression extends Expression {
 		for ( String s : getVarParams().keySet() ) {
 			getVarParam(s).validateExpression(ids, currConstVars);
 			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
+				LOG.error(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.");
 				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}	
@@ -134,6 +135,9 @@ public class DataExpression extends Expression {
 			
 			
 			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier)){
+				
+				LOG.error(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
+						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
 				
 				throw new LanguageException(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.MATRIX_DATA_TYPE +", " + Statement.SCALAR_DATA_TYPE);
@@ -150,6 +154,9 @@ public class DataExpression extends Expression {
 						|| getVarParam(Statement.FORMAT_TYPE) != null
 						|| getVarParam(Statement.FORMAT_DELIMITER) != null	
 						|| getVarParam(Statement.HAS_HEADER_ROW) != null) {
+					
+					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
+							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.");
 					
 					throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -186,11 +193,13 @@ public class DataExpression extends Expression {
 												
 						break;
 					default:
+						LOG.error(this.printErrorLocation()  + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
 						throw new LanguageException(this.printErrorLocation()  + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be const string concatenations. ");
 					}
 				}
 			}
 			else {
+				LOG.error(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
 			
@@ -372,12 +381,16 @@ public class DataExpression extends Expression {
 	        	for (Object key : configObject.keySet()){
 					
 					if (!InputStatement.isValidParamName(key.toString(),true)){
+						LOG.error(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 						throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
 					}
 					
 					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
 					if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
 							&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+						
+						LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
 						
 						throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
 								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
@@ -418,6 +431,7 @@ public class DataExpression extends Expression {
 				_output.setDimensions(-1, -1);
 				
 				if ( getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null){
+					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
 					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
 				}
@@ -428,12 +442,14 @@ public class DataExpression extends Expression {
 					Long dim2 = (getVarParam(Statement.READCOLPARAM) == null) ? null : new Long(getVarParam(Statement.READCOLPARAM).toString());
 					
 					if ( dim1 <= 0 || dim2 <= 0 ) {
+						LOG.error(this.printErrorLocation() + "Invalid dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Invalid dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
 						_output.setDimensions(dim1, dim2);
 					} else if ((dim1 != null) || (dim2 != null)) {
+						LOG.error(this.printErrorLocation() + "Partial dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
 				}
@@ -452,6 +468,7 @@ public class DataExpression extends Expression {
 				{
 					format = 1;
 				} else {
+					LOG.error(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 					throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 				}
 				
@@ -463,6 +480,7 @@ public class DataExpression extends Expression {
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
 						_output.setBlockDimensions(rowBlockCount, columnBlockCount);
 					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
+						LOG.error(this.printErrorLocation() + "Partial block dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					} else {
 						 _output.setBlockDimensions(-1, -1);
@@ -474,6 +492,7 @@ public class DataExpression extends Expression {
 				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))
 						|| (format == 2 && (_output.getRowsInBlock() != DMLTranslator.DMLBlockSize || _output.getColumnsInBlock() != DMLTranslator.DMLBlockSize))){
 					
+					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 				}
 			
@@ -485,12 +504,15 @@ public class DataExpression extends Expression {
 			}
 			
 			else{		
+				LOG.error(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE);
 				throw new LanguageException(this.printErrorLocation() + "Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// handle value type parameter
 			if (getVarParam(Statement.VALUETYPEPARAM) != null && !(getVarParam(Statement.VALUETYPEPARAM) instanceof StringIdentifier)){
 				
+				LOG.error(this.printErrorLocation() + "for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
+						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE);
 				
 				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.VALUETYPEPARAM + " can only be a string. " +
 						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
@@ -509,6 +531,9 @@ public class DataExpression extends Expression {
 					_output.setValueType(ValueType.BOOLEAN);
 				} else {
 					
+					LOG.error(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
+							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE);
+					
 					throw new LanguageException(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
 							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE,
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -522,7 +547,7 @@ public class DataExpression extends Expression {
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
+			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
 				if (getVarParam(Statement.FORMAT_DELIMITER) == null){
 					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
 				}
@@ -546,6 +571,7 @@ public class DataExpression extends Expression {
 												
 							break;
 						default:
+							LOG.error(this.printErrorLocation() + "for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 							throw new LanguageException(this.printErrorLocation() + "for OutputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 					}
 				}
@@ -559,6 +585,7 @@ public class DataExpression extends Expression {
 				_output.setBlockDimensions(-1, -1);
 			
 			else{
+				LOG.error(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 				throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
 			}
 			break;
@@ -573,6 +600,12 @@ public class DataExpression extends Expression {
 				}
 				if (!found){
 					
+					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
+							"\". Legal parameters for Rand statement are " 
+							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_ROWS 	
+							+ ", " + RandStatement.RAND_COLS		+ ", " + RandStatement.RAND_MIN + ", " + RandStatement.RAND_MAX  	
+							+ ", " + RandStatement.RAND_SPARSITY + ", " + RandStatement.RAND_SEED     + ", " + RandStatement.RAND_PDF);
+					
 					
 					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
 						"\". Legal parameters for Rand statement are " 
@@ -584,30 +617,37 @@ public class DataExpression extends Expression {
 			//TODO: Leo Need to check with Doug about the data types
 			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
 			if (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier){
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_ROWS + " has incorrect data type");
 			}
 				
 			if (getVarParam(RandStatement.RAND_COLS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BooleanIdentifier){
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_COLS + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_COLS + " has incorrect data type");
 			}
 				
 			if (getVarParam(RandStatement.RAND_MAX) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MAX) instanceof BooleanIdentifier) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MAX + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MAX + " has incorrect data type");
 			}
 			
 			if (getVarParam(RandStatement.RAND_MIN) instanceof StringIdentifier || getVarParam(RandStatement.RAND_MIN) instanceof BooleanIdentifier) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MIN + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_MIN + " has incorrect data type");
 			}
 			
 			if (!(getVarParam(RandStatement.RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RandStatement.RAND_SPARSITY) instanceof IntIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SPARSITY + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SPARSITY + " has incorrect data type");
 			}
 			
 			if (!(getVarParam(RandStatement.RAND_SEED) instanceof IntIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SEED + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_SEED + " has incorrect data type");
 			}
 			
 			if (!(getVarParam(RandStatement.RAND_PDF) instanceof StringIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_PDF + " has incorrect data type");
 				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_PDF + " has incorrect data type");
 			}
 	
@@ -623,6 +663,9 @@ public class DataExpression extends Expression {
 				}
 				else {
 					
+					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+					
 					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
 				}
@@ -632,6 +675,9 @@ public class DataExpression extends Expression {
 					rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
 				}
 				else {
+					
+					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
 					
 					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
@@ -649,6 +695,9 @@ public class DataExpression extends Expression {
 						
 						// check rows is >= 1 --- throw exception
 						if (((IntIdentifier)constValue).getValue() < 1){
+							LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							
 							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 						}
@@ -663,6 +712,8 @@ public class DataExpression extends Expression {
 					else if (constValue instanceof DoubleIdentifier){
 						
 						if (((DoubleIdentifier)constValue).getValue() < 1.0){
+							LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 							
 							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
@@ -677,6 +728,8 @@ public class DataExpression extends Expression {
 					}
 					else {
 						// exception -- rows must be integer or double constant
+						LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 						
 						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
@@ -703,6 +756,8 @@ public class DataExpression extends Expression {
 					colsLong = ((IntIdentifier)colsExpr).getValue();
 				}
 				else {
+					LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
 					
 					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
@@ -713,6 +768,8 @@ public class DataExpression extends Expression {
 					colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
 				}
 				else {
+					LOG.error(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
+							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
 					
 					throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign rows a long " +
 							"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
@@ -730,6 +787,8 @@ public class DataExpression extends Expression {
 						
 						// check cols is >= 1 --- throw exception
 						if (((IntIdentifier)constValue).getValue() < 1){
+							LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 						}
@@ -744,6 +803,9 @@ public class DataExpression extends Expression {
 					else if (constValue instanceof DoubleIdentifier){
 						
 						if (((DoubleIdentifier)constValue).getValue() < 1){
+							LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							
 							throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
 									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 						}
@@ -757,6 +819,9 @@ public class DataExpression extends Expression {
 					}
 					else {
 						// exception -- rows must be integer or double constant
+						LOG.error(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						
 						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign cols a long " +
 								"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
 					}
@@ -806,6 +871,9 @@ public class DataExpression extends Expression {
 					}
 					else {
 						// exception -- rows must be integer or double constant
+						LOG.error(this.printErrorLocation() + "In rand statement, can only assign min a numerical " +
+								"value -- attempted to assign: " + constValue.toString());
+						
 						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign min a numerical " +
 								"value -- attempted to assign: " + constValue.toString());
 					}
@@ -856,6 +924,9 @@ public class DataExpression extends Expression {
 					}
 					else {
 						// exception -- rows must be integer or double constant
+						LOG.error(this.printErrorLocation() + "In rand statement, can only assign max a numerical " +
+								"value -- attempted to assign: " + constValue.toString());
+						
 						throw new LanguageException(this.printErrorLocation() + "In rand statement, can only assign max a numerical " +
 								"value -- attempted to assign: " + constValue.toString());
 					}
@@ -886,6 +957,9 @@ public class DataExpression extends Expression {
 			
 			break;
 		default:
+			LOG.error(this.printErrorLocation() + "Unsupported Data expression"
+					+ this.getOpCode());
+			
 			
 			throw new LanguageException(this.printErrorLocation() + "Unsupported Data expression"
 						+ this.getOpCode(),
@@ -912,6 +986,7 @@ public class DataExpression extends Expression {
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
 		else {
+			LOG.error(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		// Now process the right node
@@ -931,6 +1006,7 @@ public class DataExpression extends Expression {
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}
 		else {
+			LOG.error(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 			throw new LanguageException(this.printErrorLocation() + "Parameter " + Statement.IO_FILENAME + " only supports a const string or const string concatenations.");
 		}
 		return filename;
@@ -976,7 +1052,9 @@ public class DataExpression extends Expression {
 		try {
 			fs = FileSystem.get(new Configuration());
 		} catch (Exception e){
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.", e);
+			e.printStackTrace();
+			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
 		}
 		
 		Path pt = new Path(filename);
@@ -1016,7 +1094,8 @@ public class DataExpression extends Expression {
 			return retVal;
 			
 		} catch (Exception e){
-			throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString(), e);
+			LOG.error(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString());
+        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MTD file with path " + pt.toString());
         }
 	}
 	

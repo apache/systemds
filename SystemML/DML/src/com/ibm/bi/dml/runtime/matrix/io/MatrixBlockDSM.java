@@ -3883,7 +3883,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		double w = 1; // default weight
 		if(op instanceof CMOperator) {
 			// initialize required objects for storing the result of CM operations
-			CM cmFn = CM.getCMFnObject();
+			CM cmFn = CM.getCMFnObject(((CMOperator) op).getAggOpType());
 			CM_COV_Object[] cmValues = new CM_COV_Object[numGroups];
 			for ( int i=0; i < numGroups; i++ )
 				cmValues[i] = new CM_COV_Object();

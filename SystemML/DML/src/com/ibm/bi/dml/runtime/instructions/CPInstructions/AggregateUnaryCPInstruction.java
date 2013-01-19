@@ -216,7 +216,9 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 			} catch(NumberFormatException e) {
 				cmOrder = -1; // unknown at compilation time
 			}
-			CMOperator cm = new CMOperator(CM.getCMFnObject(), CMOperator.getCMAggOpType(cmOrder));
+			
+			AggregateOperationTypes opType = CMOperator.getCMAggOpType(cmOrder);
+			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
 			return new AggregateUnaryCPInstruction(cm, in1, in2, in3, out, str);
 		}
 		

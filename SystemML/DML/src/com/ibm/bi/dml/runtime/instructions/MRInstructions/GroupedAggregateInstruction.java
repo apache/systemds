@@ -71,7 +71,7 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase{
 		case CM2:
 		case CM3:
 		case CM4:
-			return new CMOperator(CM.getCMFnObject(), op);
+			return new CMOperator(CM.getCMFnObject(op), op);
 		case INVALID:
 		default:
 			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);

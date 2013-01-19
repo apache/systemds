@@ -522,7 +522,7 @@ public class DataExpression extends Expression {
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(Statement.DELIMITED_FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
+			if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
 				if (getVarParam(Statement.FORMAT_DELIMITER) == null){
 					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
 				}

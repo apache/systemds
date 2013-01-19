@@ -2215,7 +2215,7 @@ OutputStatement OutputStatement() :
 		)*
 		tEnd = <RIGHTPAREN>  [<SEMICOLON>]
 	{
-
+		tWrite = tStart;
 		if (tWrite.image.equals("writeMM")){			os.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.MATRIXMARKET_FORMAT_TYPE),false);
 		}
 		else if (tWrite.image.equals("write.matrix")){

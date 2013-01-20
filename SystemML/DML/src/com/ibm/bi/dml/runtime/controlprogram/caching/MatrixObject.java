@@ -1040,6 +1040,12 @@ public class MatrixObject extends CacheableData
 		{
 			case LOCAL:
 				LocalFileUtils.writeMatrixBlockToLocal(filePathAndName, _data);
+				
+				//TODO just NIO read/write, but our test is still experimental
+				//if( _data.isInSparseFormat() || _data.getDenseArray()==null )
+				//	LocalFileUtils.writeMatrixBlockToLocal(filePathAndName, _data);
+				//else
+				//	LocalFileUtils.writeMatrixBlockToLocal2(filePathAndName, _data);
 				break;			
 			case HDFS:
 				writeMatrixToHDFS (filePathAndName, null);

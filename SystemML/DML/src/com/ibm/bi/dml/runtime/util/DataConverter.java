@@ -39,6 +39,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 /**
@@ -165,7 +166,7 @@ public class DataConverter
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(expectedSparsity*rlen*clen));
-		if( !sparse )
+		if( !sparse && inputinfo!=InputInfo.BinaryBlockInputInfo )
 			ret.spaceAllocForDenseUnsafe((int)rlen, (int)clen);
 		
 		//prepare file access
@@ -206,7 +207,7 @@ public class DataConverter
 			}
 			
 			//finally check if change of sparse/dense block representation required
-			if( !sparse )
+			if( !sparse || inputinfo==InputInfo.BinaryBlockInputInfo )
 				ret.recomputeNonZeros();
 			if(clen != 1) //prevent conversion to sparse vector
 				ret.examSparsity();	
@@ -390,9 +391,11 @@ public class DataConverter
 	 * @param brlen
 	 * @param bclen
 	 * @throws IOException
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	private static void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
-		throws IOException
+		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
@@ -411,6 +414,8 @@ public class DataConverter
 		//reblock and write
 		try
 		{
+			MatrixIndexes indexes = new MatrixIndexes();
+
 			for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
 				for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
 				{
@@ -423,33 +428,14 @@ public class DataConverter
 					//get reuse matrix block
 					MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 
-					if(sparse) //SPARSE<-SPARSE
-					{
-						//NOTE: cannot use sparse iterator since only subset required
-						for(int i = 0; i < maxRow; i++) 
-							for(int j = 0; j < maxCol; j++)
-							{
-								double value = src.getValueSparseUnsafe( row_offset + i, col_offset + j);
-								if( value != 0 )
-									block.quickSetValue(i, j, value);
-							}
-					}
-					else //DENSE<-DENSE
-					{
-						for(int i = 0; i < maxRow; i++) 
-							for(int j = 0; j < maxCol; j++)
-							{
-								double value = src.getValueDenseUnsafe( row_offset + i, col_offset + j);
-								if( value != 0 )
-									block.setValueDenseUnsafe(i, j, value);
-							}
-						
-						//recompute nonzeros due to use of unsafe methods
-						block.recomputeNonZeros();
-					}	
+					//copy submatrix to block TODO rename to slice!
+					src.slideOperations( row_offset+1, row_offset+maxRow, 
+							             col_offset+1, col_offset+maxCol, 
+							             block );
 					
 					//append block to sequence file
-					writer.append(new MatrixIndexes(blockRow+1, blockCol+1), block);
+					indexes.setIndexes(blockRow+1, blockCol+1);
+					writer.append(indexes, block);
 					
 					//reset block for later reuse
 					block.reset();
@@ -707,7 +693,6 @@ public class DataConverter
 		throws IOException, IllegalAccessException, InstantiationException
 	{
 	//	long time=System.currentTimeMillis();
-		boolean sparse = dest.isInSparseFormat();
 		SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
 		InputSplit[] splits = informat.getSplits(job, 1);				
 		MatrixIndexes key = new MatrixIndexes(); 
@@ -735,51 +720,9 @@ public class DataConverter
 					}
 					
 					//copy block to result
-					if( value.isInSparseFormat() ) //sparse input format
-					{					
-						if( sparse ) //SPARSE<-SPARSE
-						{
-							SparseCellIterator iter = value.getSparseCellIterator();
-							while( iter.hasNext() )
-							{
-								IJV cell = iter.next();
-								dest.quickSetValue(row_offset+cell.i, col_offset+cell.j, cell.v);
-							}
-						}
-						else //DENSE<-SPARSE
-						{
-							SparseCellIterator iter = value.getSparseCellIterator();
-							while( iter.hasNext() )
-							{
-								IJV cell = iter.next();
-								dest.setValueDenseUnsafe(row_offset+cell.i, col_offset+cell.j, cell.v);
-							}
-						}
-						
-					}
-					else //dense input format
-					{
-						if( sparse ) //SPARSE<-DENSE
-						{
-							for( int i=0; i<rows; i++ )
-								for( int j=0; j<cols; j++ )
-								{
-								    double lvalue = value.getValueDenseUnsafe(i, j);  //input value
-									if( lvalue != 0  ) 					//for all nnz
-										dest.quickSetValue(row_offset+i, col_offset+j, lvalue );	
-								}
-						}
-						else //DENSE<-DENSE
-						{
-							for( int i=0; i<rows; i++ )
-								for( int j=0; j<cols; j++ )
-								{
-									double lvalue = value.getValueDenseUnsafe(i, j);  //input value
-									if( lvalue != 0  ) 					//for all nnz
-										dest.setValueDenseUnsafe(row_offset+i, col_offset+j, lvalue );	
-								}
-						}
-					}
+					dest.copy( row_offset, row_offset+rows-1, 
+							   col_offset, col_offset+cols-1,
+							   value, false );
 				}
 			}
 			finally
@@ -788,6 +731,8 @@ public class DataConverter
 					reader.close();
 			}
 		}
+		
+		
 	//	time=System.currentTimeMillis()-time;
 	//	System.out.println("------------- read ------------");
 	//	System.out.println(time+"\t"+dest.getCapacity()+"\t"+dest.getNonZeros());

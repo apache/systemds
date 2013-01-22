@@ -83,7 +83,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 			else
 				ii = InputInfo.TextCellInputInfo;
 			
-			MatrixBlock mb = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR + "V", ii, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			MatrixBlock mb = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR + "V", ii, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex)
@@ -96,6 +96,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		for( int i=0; i<rows; i++ )
 			for( int j=0; j<cols; j++ )
 				if( V[i][j]!=Vp[i][j] )
+					//System.out.println("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
 					Assert.fail("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
 	}
 }

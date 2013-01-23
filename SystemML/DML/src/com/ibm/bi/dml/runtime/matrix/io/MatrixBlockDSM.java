@@ -607,13 +607,13 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ ) 
 	{	
 		if(sparse && src.sparse)
-			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ); //TODO
+			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ);
 		else if(sparse && !src.sparse)
-			copyDenseToSparse(rl, ru, cl, cu, src, awareDestNZ); //TODO
+			copyDenseToSparse(rl, ru, cl, cu, src, awareDestNZ);
 		else if(!sparse && src.sparse)
-			copySparseToDense(rl, ru, cl, cu, src, awareDestNZ); //TODO OK
+			copySparseToDense(rl, ru, cl, cu, src, awareDestNZ);
 		else
-			copyDenseToDense(rl, ru, cl, cu, src, awareDestNZ); //TODO ok
+			copyDenseToDense(rl, ru, cl, cu, src, awareDestNZ);
 	}
 
 	private void copySparseToSparse(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ)
@@ -768,18 +768,24 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private void copyEmptyToSparse(int rl, int ru, int cl, int cu)
 	{
-		int blen;
+		int blen, bstart;
 		int[] bix;
 		
 		for( int i=rl; i<=ru; i++ )
-			if( sparseRows[i] == null && sparseRows[i].size()>0 )
+			if( sparseRows[i] != null && sparseRows[i].size()>0 )
 			{
 				SparseRow brow = sparseRows[i];
 				blen = brow.size();
 				bix = brow.getIndexContainer();
-				for( int j=0; j<blen; j++ )
-					if( bix[j]>= cl && bix[j]<= cu )
-						brow.set(bix[j], 0.0d);
+				bstart = brow.searchIndexesFirstGTE(cl);
+				if( bstart != -1 )
+					for( int j=bstart; j<blen; j++ )
+					{
+						if( bix[j]<= cu )
+							brow.set(bix[j], 0.0d);
+						else
+							break;
+					}
 			}		
 	}
 	
@@ -1583,9 +1589,11 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 	}
 	
+	@Deprecated //see recomputeNonZeros 
 	public void updateNonZeros() {
 		nonZeros = (int)computeNonZeros();
 	}
+	@Deprecated //see recomputeNonZeros 
 	public long computeNonZeros() {
 		long nnz = 0;
 		if ( sparse ) {
@@ -2467,13 +2475,35 @@ public class MatrixBlockDSM extends MatrixValue{
 			result.copy(this);
 		}
 		
-		// TODO: following implementation can be significantly improved by looking at the representations of "this" and "rhsmatrix"
+		/*
 		double d = 0;
 		for ( int i=0, res_i=(int)rowLower-1; i < rhsMatrix.getNumRows(); i++, res_i++ ) {
 			for ( int j=0, res_j=(int)colLower-1; j < rhsMatrix.getNumColumns(); j++, res_j++ ) {
 				d = ((MatrixBlockDSM) rhsMatrix).quickGetValue(i,j);
 				result.quickSetValue(res_i, res_j, d);
 			}
+		}
+		*/
+		
+		int rl = (int)rowLower-1;
+		int ru = (int)rowUpper-1;
+		int cl = (int)colLower-1;
+		int cu = (int)colUpper-1;
+		MatrixBlockDSM src = (MatrixBlockDSM)rhsMatrix;
+		
+		if(rl==ru && cl==cu) //specific case of cell update
+		{
+			//copy single value and update nnz
+			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
+		}
+		else //general case
+		{
+			//compute new non-zeros (before modify result)
+			int nnz = nonZeros - (int)result.computeNonZeros(rl, ru, cl, cu) + src.nonZeros;
+			
+			//copy submatrix into result
+			result.copy(rl, ru, cl, cu, src, true);
+			result.nonZeros = nnz;
 		}
 		
 		return result;
@@ -4765,8 +4795,16 @@ public class MatrixBlockDSM extends MatrixValue{
 			sparse=false;
 		this.reset(rows, cols, sparse);
 		
-		if ( min == 0.0 && max == 0.0 ) {
+		//specific cases for efficiency
+		if ( min == 0.0 && max == 0.0 ) { //all zeros
 			// nothing to do here
+			return this;
+		} 
+		else if( !sparse && sparsity==1.0d && min == max ) //equal values
+		{
+			allocateDenseBlock();
+			Arrays.fill(denseBlock, 0, rlen*clen, min);
+			nonZeros = rlen*clen;
 			return this;
 		}
 
@@ -4808,7 +4846,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 		
-		this.updateNonZeros();
+		recomputeNonZeros();
 		return this;
 	}
 	
@@ -4872,7 +4910,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			}
 		}
 		
-		this.updateNonZeros();
+		recomputeNonZeros();
 		return this;
 	}
 
@@ -4895,7 +4933,7 @@ public class MatrixBlockDSM extends MatrixValue{
 				//	m.nonZeros++;
 			}
 		}
-		m.updateNonZeros();
+		m.recomputeNonZeros();
 		return m;
 	}
 	
@@ -4990,6 +5028,56 @@ public class MatrixBlockDSM extends MatrixValue{
 						nonZeros++;
 			}
 		}
+	}
+	
+
+	public long computeNonZeros(int rl, int ru, int cl, int cu)
+	{
+		long nnz = 0;
+		if(sparse)
+		{
+			if(sparseRows!=null)
+			{
+				int rlimit = Math.min( ru+1, Math.min(rlen, sparseRows.length) );
+				if( cl==0 && cu==clen-1 )
+				{
+					for(int i=rl; i<rlimit; i++)
+						if(sparseRows[i]!=null)
+							nnz+=sparseRows[i].size();	
+				}
+				else
+				{
+					int alen, astart;
+					int[] aix;
+					for(int i=rl; i<rlimit; i++)
+						if(sparseRows[i]!=null)
+						{
+							SparseRow arow = sparseRows[i];
+							alen = arow.size();
+							aix = arow.getIndexContainer();		
+							astart = arow.searchIndexesFirstGTE(cl);
+							if( astart != -1 )
+								for( int j=astart; j<alen; j++ )
+								{
+									if( aix[j]<=cu )
+										nnz++;
+									else 
+										break;
+								}
+						}
+				}
+			}
+		}else
+		{
+			if(denseBlock!=null)
+			{
+				for( int i=rl, ix=rl*clen; i<=ru; i++, ix+=clen )
+					for( int j=cl; j<=cu; j++ )
+						if( denseBlock[ix+j]!=0 )
+							nnz++;
+			}
+		}
+		return nnz;
 	}
 	
 	/*

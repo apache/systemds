@@ -347,7 +347,7 @@ public class ParForResultMergeTest
 			
 			//create and write original matrix
 			MatrixBlock retOld = DataConverter.convertToMatrixBlock(matrixOld);
-			retOld.computeNonZeros();
+			retOld.recomputeNonZeros();
 			retOld.examSparsity();
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, retOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);

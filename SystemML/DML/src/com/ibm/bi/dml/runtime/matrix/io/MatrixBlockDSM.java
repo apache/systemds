@@ -594,15 +594,20 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	/**
-	 * Note: nnz are not maintained, invoking algorithm should call
-	 * recomputeNonZeros after (potentially many) copy operations.
+	 * In-place copy of matrix src into the index range of the existing current matrix.
+	 * Note that removal of existing nnz in the index range and nnz maintenance is 
+	 * only done if 'awareDestNZ=true', 
 	 * 
 	 * @param rl
 	 * @param ru
 	 * @param cl
 	 * @param cu
 	 * @param src
-	 * @param awareDestNZ, if false we assume the destination subblock to be empty
+	 * @param awareDestNZ
+	 *           true, forces (1) to remove existing non-zeros in the index range of the 
+	 *                 destination if not present in src and (2) to internally maintain nnz
+	 *           false, assume empty index range in destination and do not maintain nnz
+	 *                  (the invoker is reponsible to recompute nnz after all copies are done) 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ ) 
 	{	
@@ -621,15 +626,19 @@ public class MatrixBlockDSM extends MatrixValue{
 		//handle empty src and dest
 		if(src.sparseRows==null)
 		{
-			if( sparseRows != null )
-				copyEmptyToSparse(rl, ru, cl, cu);
+			if( awareDestNZ && sparseRows != null )
+				copyEmptyToSparse(rl, ru, cl, cu, true);
 			return;		
 		}
 		if(sparseRows==null)
 			sparseRows=new SparseRow[rlen];
 		else if( awareDestNZ )
-			copyEmptyToSparse(rl, ru, cl, cu);
-	
+		{
+			copyEmptyToSparse(rl, ru, cl, cu, true);
+			//explicit clear if awareDestNZ because more efficient since
+			//src will have multiple columns and only few overwriting values
+		}
+		
 		//copy values
 		int alen;
 		int[] aix;
@@ -644,20 +653,41 @@ public class MatrixBlockDSM extends MatrixValue{
 				aix = arow.getIndexContainer();
 				avals = arow.getValueContainer();		
 				
-				if( sparseRows[rl+i] == null )
+				if( sparseRows[rl+i] == null || sparseRows[rl+i].size()==0  )
 				{
 					sparseRows[rl+i] = new SparseRow(estimatedNNzsPerRow, clen); 
 					SparseRow brow = sparseRows[rl+i];
 					for( int j=0; j<alen; j++ )
 						brow.append(cl+aix[j], avals[j]);
+					
+					if( awareDestNZ )
+						nonZeros += brow.size();
 				}
-				else
+				else if( awareDestNZ ) //general case (w/ awareness NNZ)
+				{
+					SparseRow brow = sparseRows[rl+i];
+					int lnnz = brow.size();
+					if( cl==cu && cl==aix[0] ) 
+					{
+						if (avals[0]==0)
+							brow.deleteIndex(cl);
+						else
+							brow.set(cl, avals[0] );
+					}
+					else
+					{
+						brow.deleteIndexRange(cl, cu);
+						for( int j=0; j<alen; j++ )
+							brow.set(cl+aix[j], avals[j]);
+					}
+					nonZeros += (brow.size() - lnnz);
+				}	
+				else //general case (w/o awareness NNZ)
 				{		
 					SparseRow brow = sparseRows[rl+i];
 					for( int j=0; j<alen; j++ )
 						brow.set(cl+aix[j], avals[j]);
-				}
-				
+				}				
 			}
 		}
 	}
@@ -667,14 +697,19 @@ public class MatrixBlockDSM extends MatrixValue{
 		//handle empty src and dest
 		if(src.sparseRows==null)
 		{
-			if( denseBlock != null )
+			if( awareDestNZ && denseBlock != null ) {
+				nonZeros -= (int)computeNonZeros(rl, ru, cl, cu);
 				copyEmptyToDense(rl, ru, cl, cu);
+			}
 			return;		
 		}
 		if(denseBlock==null)
 			allocateDenseBlock();
 		else if( awareDestNZ )
+		{
+			nonZeros -= (int)computeNonZeros(rl, ru, cl, cu);
 			copyEmptyToDense(rl, ru, cl, cu);
+		}
 
 		//copy values
 		int alen;
@@ -692,6 +727,9 @@ public class MatrixBlockDSM extends MatrixValue{
 				
 				for( int j=0; j<alen; j++ )
 					denseBlock[ix+cl+aix[j]] = avals[j];
+				
+				if(awareDestNZ)
+					nonZeros += alen;
 			}
 		}
 	}
@@ -701,47 +739,56 @@ public class MatrixBlockDSM extends MatrixValue{
 		//handle empty src and dest
 		if(src.denseBlock==null)
 		{
-			if( sparseRows != null && awareDestNZ )
-				copyEmptyToSparse(rl, ru, cl, cu);
+			if( awareDestNZ && sparseRows != null )
+				copyEmptyToSparse(rl, ru, cl, cu, true);
 			return;		
 		}
 		if(sparseRows==null)
 			sparseRows=new SparseRow[rlen];
-		else if( awareDestNZ )
-			copyEmptyToSparse(rl, ru, cl, cu);
-	
-		//copy values
-		double val;
+		//no need to clear for awareDestNZ since overwritten  
 		
+		//copy values
+		double val;		
 		for( int i=0, ix=0; i<src.rlen; i++, ix+=src.clen )
-			for( int j=0; j<src.clen; j++ ) 
+			if( sparseRows[rl+i] == null || sparseRows[rl+i].size()==0 )
 			{
-				val = src.denseBlock[ix+j]; //if row has at least 1 nz
-				if( val != 0 )
-				{
-					if( sparseRows[rl+i] == null )
-					{
-						sparseRows[rl+i] = new SparseRow(estimatedNNzsPerRow, clen);
-						SparseRow brow = sparseRows[rl+i];
-						for( ; j<src.clen; j++ )
-						{
-							val = src.denseBlock[ix+j];
-							if( val != 0 )
-								brow.append(cl+j, val); 
-						}
-					}
-					else
-					{
-						SparseRow brow = sparseRows[rl+i];
-						for( ; j<src.clen; j++ )
-						{
-							val = src.denseBlock[ix+j];
-							if( val != 0 )
-								brow.set(cl+j, val);
-						}
-					}
-				}
+				if( sparseRows[rl+i]==null )
+					sparseRows[rl+i] = new SparseRow(estimatedNNzsPerRow, clen); 
+				SparseRow brow = sparseRows[rl+i];
+				for( int j=0; j<src.clen; j++ )
+					if( (val = src.denseBlock[ix+j]) != 0 )
+						brow.append(cl+j, val); 
+				
+				if( awareDestNZ )
+					nonZeros += brow.size();
 			}
+			else if( awareDestNZ ) //general case (w/ awareness NNZ)
+			{
+				SparseRow brow = sparseRows[rl+i];
+				int lnnz = brow.size();
+				if( cl==cu ) 
+				{
+					if ((val = src.denseBlock[ix])==0)
+						brow.deleteIndex(cl);
+					else
+						brow.set(cl, val);
+				}
+				else
+				{
+					brow.deleteIndexRange(cl, cu);
+					for( int j=0; j<src.clen; j++ )
+						if( (val = src.denseBlock[ix+j]) != 0 ) 
+							brow.set(cl+j, val);	
+				}
+				nonZeros += (brow.size() - lnnz);
+			}	
+			else //general case (w/o awareness NNZ)
+			{
+				SparseRow brow = sparseRows[rl+i];
+				for( int j=0; j<src.clen; j++ )
+					if( (val = src.denseBlock[ix+j]) != 0 ) 
+						brow.set(cl+j, val);
+			}		
 	}
 	
 	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ)
@@ -749,14 +796,19 @@ public class MatrixBlockDSM extends MatrixValue{
 		//handle empty src and dest
 		if(src.denseBlock==null)
 		{
-			if( denseBlock != null && awareDestNZ )
+			if( awareDestNZ && denseBlock != null ) {
+				nonZeros -= (int)computeNonZeros(rl, ru, cl, cu);
 				copyEmptyToDense(rl, ru, cl, cu);
+			}
 			return;		
 		}
 		if(denseBlock==null)
 			allocateDenseBlock();
 		//no need to clear for awareDestNZ since overwritten 
 	
+		if( awareDestNZ )
+			nonZeros = nonZeros - (int)computeNonZeros(rl, ru, cl, cu) + src.nonZeros;
+		
 		//copy values
 		int rowLen = cu-cl+1;				
 		if(clen == src.clen) //optimization for equal width
@@ -766,27 +818,46 @@ public class MatrixBlockDSM extends MatrixValue{
 				System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
 	}
 	
-	private void copyEmptyToSparse(int rl, int ru, int cl, int cu)
+	private void copyEmptyToSparse(int rl, int ru, int cl, int cu, boolean updateNNZ ) 
 	{
-		int blen, bstart;
-		int[] bix;
-		
-		for( int i=rl; i<=ru; i++ )
-			if( sparseRows[i] != null && sparseRows[i].size()>0 )
+		if( cl==cu ) //specific case: column vector
+		{
+			if( updateNNZ )
 			{
-				SparseRow brow = sparseRows[i];
-				blen = brow.size();
-				bix = brow.getIndexContainer();
-				bstart = brow.searchIndexesFirstGTE(cl);
-				if( bstart != -1 )
-					for( int j=bstart; j<blen; j++ )
+				for( int i=rl; i<=ru; i++ )
+					if( sparseRows[i] != null && sparseRows[i].size()>0 )
 					{
-						if( bix[j]<= cu )
-							brow.set(bix[j], 0.0d);
-						else
-							break;
+						int lnnz = sparseRows[i].size();
+						sparseRows[i].deleteIndex(cl);
+						nonZeros += (sparseRows[i].size()-lnnz);
 					}
-			}		
+			}
+			else
+			{
+				for( int i=rl; i<=ru; i++ )
+					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+						sparseRows[i].deleteIndex(cl);
+			}
+		}
+		else
+		{
+			if( updateNNZ )
+			{
+				for( int i=rl; i<=ru; i++ )
+					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					{
+						int lnnz = sparseRows[i].size();
+						sparseRows[i].deleteIndexRange(cl, cu);
+						nonZeros += (sparseRows[i].size()-lnnz);
+					}						
+			}
+			else
+			{
+				for( int i=rl; i<=ru; i++ )
+					if( sparseRows[i] != null && sparseRows[i].size()>0 )
+						sparseRows[i].deleteIndexRange(cl, cu);
+			}
+		}
 	}
 	
 	private void copyEmptyToDense(int rl, int ru, int cl, int cu)
@@ -2113,7 +2184,6 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
-	//TODO MB: remove row, col, len because not used (after MatrixObject is removed)
 	public MatrixValue appendOperations(ReorgOperator op, MatrixValue ret, 
 										int startRow, int startColumn, int length) 	
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
@@ -2471,19 +2541,14 @@ public class MatrixBlockDSM extends MatrixValue{
 		if(result==null)
 			result=new MatrixBlockDSM(this);
 		else {
-			//result.reset(ru-rl+1, cu-cl+1, result_sparsity);
-			result.copy(this);
+			//result.reset(ru-rl+1, cu-cl+1, result_sparsity);			
+			 result.copy(this);
 		}
-		
-		/*
-		double d = 0;
-		for ( int i=0, res_i=(int)rowLower-1; i < rhsMatrix.getNumRows(); i++, res_i++ ) {
-			for ( int j=0, res_j=(int)colLower-1; j < rhsMatrix.getNumColumns(); j++, res_j++ ) {
-				d = ((MatrixBlockDSM) rhsMatrix).quickGetValue(i,j);
-				result.quickSetValue(res_i, res_j, d);
-			}
-		}
-		*/
+		//NOTE conceptually we could directly use a zeroout and copy(..., false) but
+		//     since this was factors slower, we still use a full copy and subsequently
+		//     copy(..., true) - however, this can be changed in the future once we 
+		//     improved the performance of zeroout.
+		//result = (MatrixBlockDSM) zeroOutOperations(result, new IndexRange(rowLower,rowUpper, colLower, colUpper ), false);
 		
 		int rl = (int)rowLower-1;
 		int ru = (int)rowUpper-1;
@@ -2491,21 +2556,18 @@ public class MatrixBlockDSM extends MatrixValue{
 		int cu = (int)colUpper-1;
 		MatrixBlockDSM src = (MatrixBlockDSM)rhsMatrix;
 		
-		if(rl==ru && cl==cu) //specific case of cell update
+
+		if(rl==ru && cl==cu) //specific case: cell update			
 		{
 			//copy single value and update nnz
 			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
-		}
+		}		
 		else //general case
 		{
-			//compute new non-zeros (before modify result)
-			int nnz = nonZeros - (int)result.computeNonZeros(rl, ru, cl, cu) + src.nonZeros;
-			
 			//copy submatrix into result
 			result.copy(rl, ru, cl, cu, src, true);
-			result.nonZeros = nnz;
 		}
-		
+
 		return result;
 	}
 	
@@ -2533,7 +2595,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		//System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
-		boolean result_sparsity = this.sparse;
+		boolean result_sparsity = this.sparse && ((cu-cl+1)>SKINNY_MATRIX_TURN_POINT);
 		MatrixBlockDSM result=checkType(ret);
 		int estnnzs=(int) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		if(result==null)
@@ -2541,38 +2603,89 @@ public class MatrixBlockDSM extends MatrixValue{
 		else
 			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
 		
-		if (sparse) {
-			if ( sparseRows != null ) {
-				for(int r=rl; r <= Math.min(ru,getNumRows()); r++) {
-					if(sparseRows[r] != null) {
-						int[] cols=sparseRows[r].getIndexContainer();
-						double[] values=sparseRows[r].getValueContainer();
-						int j=0;
-						while(j < sparseRows[r].size() && cols[j] < cl )
-							j++;
-						while(j < sparseRows[r].size() && cols[j] <= Math.min(cu,getNumColumns())) {
-							((MatrixBlockDSM)result).appendValue(r-rl, cols[j]-cl, values[j]);
-							j++;
-						}
-					}
-				}
-			}
-		}
-		else {
-			if(denseBlock!=null)
-			{
-				int i = rl*clen;
-				for(int r = rl; r <= Math.min(ru,getNumRows()); r++) {
-					for(int c = cl; c <= Math.min(cu, getNumColumns()); c++) {
-						result.quickSetValue(r-rl, c-cl, denseBlock[i+c]);
-					}
-					i+=clen;
-				}
-			}
-		}
+		//core slicing operation (nnz maintained internally)
+		if (sparse) 
+			sliceSparse(rl, ru, cl, cu, result);
+		else 
+			sliceDense(rl, ru, cl, cu, result);
+		
 		return result;
 	}
 	
+	/**
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param dest
+	 */
+	private void sliceSparse(int rl, int ru, int cl, int cu, MatrixBlockDSM dest)
+	{
+		if ( sparseRows == null ) 
+			return;
+		
+		if( cl==cu ) //specific case: column vector (always dense)
+		{
+			dest.allocateDenseBlock();
+			double val;
+			for( int i=rl, ix=0; i<=ru; i++, ix++ )
+				if( sparseRows[i] != null && sparseRows[i].size()>0 )
+					if( (val = sparseRows[i].get(cl)) != 0 )
+					{
+						dest.denseBlock[ix] = val;
+						dest.nonZeros++;
+					}
+		}
+		else //general case (sparse and dense)
+		{
+			for(int i=rl; i <= ru; i++) 
+				if(sparseRows[i] != null && sparseRows[i].size()>0) 
+				{
+					SparseRow arow = sparseRows[i];
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();
+					int astart = (cl>0)?arow.searchIndexesFirstGTE(cl):0;
+					if( astart != -1 )
+						for( int j=astart; j<alen && aix[j] <= cu; j++ )
+							dest.appendValue(i-rl, aix[j]-cl, avals[j]);	
+				}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param dest
+	 */
+	private void sliceDense(int rl, int ru, int cl, int cu, MatrixBlockDSM dest)
+	{
+		if( denseBlock == null )
+			return;
+		
+		if( cl==cu ) //specific case: column vector 
+		{
+			dest.allocateDenseBlock();
+			double val;
+			for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
+				if( (val = denseBlock[i]) != 0 )
+				{
+					dest.denseBlock[ix] = val;
+					dest.nonZeros++;
+				}
+		}
+		else //general case (dense)
+		{
+			dest.allocateDenseBlock();
+			for(int i = rl, ix1 = rl*clen+cl, ix2=0; i <= ru; i++, ix1+=clen, ix2+=dest.clen) 
+				System.arraycopy(denseBlock, ix1, dest.denseBlock, ix2, dest.clen);
+			dest.recomputeNonZeros();
+		}	
+	}
 	
 	
 	public void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
@@ -5039,31 +5152,28 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows!=null)
 			{
 				int rlimit = Math.min( ru+1, Math.min(rlen, sparseRows.length) );
-				if( cl==0 && cu==clen-1 )
+				if( cl==0 && cu==clen-1 ) //specific case: all cols
 				{
 					for(int i=rl; i<rlimit; i++)
-						if(sparseRows[i]!=null)
+						if(sparseRows[i]!=null && sparseRows[i].size()>0)
 							nnz+=sparseRows[i].size();	
 				}
-				else
+				else if( cl==cu ) //specific case: one column
 				{
-					int alen, astart;
-					int[] aix;
 					for(int i=rl; i<rlimit; i++)
-						if(sparseRows[i]!=null)
+						if(sparseRows[i]!=null && sparseRows[i].size()>0)
+							nnz += (sparseRows[i].get(cl)!=0) ? 1 : 0;
+				}
+				else //general case
+				{
+					int astart,aend;
+					for(int i=rl; i<rlimit; i++)
+						if(sparseRows[i]!=null && sparseRows[i].size()>0)
 						{
 							SparseRow arow = sparseRows[i];
-							alen = arow.size();
-							aix = arow.getIndexContainer();		
 							astart = arow.searchIndexesFirstGTE(cl);
-							if( astart != -1 )
-								for( int j=astart; j<alen; j++ )
-								{
-									if( aix[j]<=cu )
-										nnz++;
-									else 
-										break;
-								}
+							aend = arow.searchIndexesFirstGTE(cu);
+							nnz += (astart!=-1) ? (aend-astart+1) : 0;
 						}
 				}
 			}
@@ -5073,10 +5183,10 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for( int i=rl, ix=rl*clen; i<=ru; i++, ix+=clen )
 					for( int j=cl; j<=cu; j++ )
-						if( denseBlock[ix+j]!=0 )
-							nnz++;
+						nnz += (denseBlock[ix+j]!=0) ? 1 : 0;
 			}
 		}
+
 		return nnz;
 	}
 	

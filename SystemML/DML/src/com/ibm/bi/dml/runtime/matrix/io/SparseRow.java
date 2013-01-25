@@ -304,6 +304,20 @@ public class SparseRow {
 		size-=(end-start);
 	}
 	
+	public void deleteIndex( int index )
+	{
+		int pos=binarySearch(index);
+		if(pos<size && index==indexes[pos])
+		{
+			for(int i=pos; i<size-1; i++)
+			{
+				indexes[i]=indexes[i+1];
+				values[i]=values[i+1];
+			}		
+			size--;	
+		}
+	}
+	
 	public void deleteIndexComplementaryRange(int lowerIndex, int upperIndex)
 	{
 		int start=searchIndexesFirstGTE(lowerIndex);

@@ -2,6 +2,7 @@ package com.ibm.bi.dml.test.integration.functions.data;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
@@ -32,11 +33,12 @@ public class ReblockTest extends AutomatedTestBase {
 	@Test
 	public void testReblock() {
 		loadTestConfiguration("ReblockTest");
-		
-		double[][] a = getRandomMatrix(10, 10, 1, 1, 1, 1);
-		//TestUtils.writeBinaryTestMatrixBlocks(baseDirectory + INPUT_DIR + "a/in", a, 1000, 1000, false);
-		//inputDirectories.add(baseDirectory + INPUT_DIR + "a");
-		
+
+		int rows = 10;
+		int cols = 10;
+
+		double[][] a = getRandomMatrix(rows, cols, 1, 1, 1, System.currentTimeMillis());
+		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
 		writeExpectedMatrix("a", a);
 		
 		runTest();

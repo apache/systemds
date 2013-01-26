@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.BinaryMatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -47,12 +48,11 @@ public class WriteMMTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("TextTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		config.addVariable("format", "text");
-		
+		config.addVariable("format", "text");	
 		loadTestConfiguration("TextTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, 0, 0, 1, 1);
-		writeInputMatrix("a", a);
+		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
+		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
 		writeExpectedMatrix("a", a);
 		
 		runTest();
@@ -68,16 +68,17 @@ public class WriteMMTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("BinaryTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		config.addVariable("format", "binary");
 		loadTestConfiguration("BinaryTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, 1, 1, 1, 1);
-		writeInputMatrix("a", a);
+		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
+		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
 				
 		runTest();
 		
 		//compareResults();
 		
-		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a-writeMM",1000,1000);
+		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,1000);
 		//BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
 		assertEquals(rows, matrix.getRows());
 		assertEquals(cols, matrix.getCols());
@@ -100,14 +101,17 @@ public class WriteMMTest extends AutomatedTestBase {
 		
 		loadTestConfiguration("WriteTwiceTest");
 		
-		double[][] a = getRandomMatrix(rows, cols, 1, 1, 1, 1);
-		writeInputMatrix("a", a);
+		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
+		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
 		writeExpectedMatrix("b", a);
 		writeExpectedMatrix("c", a);
 		
-		runTest();
 		
+		runTest();
+
+			
 		compareResults();
+
 	}
 
 }

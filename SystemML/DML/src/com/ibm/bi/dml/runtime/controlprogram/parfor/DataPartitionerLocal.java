@@ -36,6 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * Partitions a given matrix into row or column partitions with a two pass-approach.
@@ -61,12 +62,14 @@ public class DataPartitionerLocal extends DataPartitioner
 	private static final boolean PARALLEL = true; 
 	
 	private IDSequence _seq = null;
+	private MatrixBlock _reuseBlk = null;
 	
 	public DataPartitionerLocal(PDataPartitionFormat dpf, int n) 
 		throws DMLRuntimeException 
 	{
 		super(dpf, n);
 		
+		//TODO
 		if( dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N || dpf == PDataPartitionFormat.COLUMN_BLOCK_WISE_N  )
 			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
 		
@@ -317,7 +320,10 @@ public class DataPartitionerLocal extends DataPartitioner
 		throws DMLRuntimeException
 	{
 		try 
-		{		
+		{	
+			//create reuse object
+			_reuseBlk = DataPartitioner.createReuseMatrixBlock(_format, brlen, bclen);
+			
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
 			JobConf job = new JobConf();
@@ -380,7 +386,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			else
 			{
 				for( String pdir : fnamesPartitions  )
-					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );		
+					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir, false );		
 			}
 		} 
 		catch (Exception e) 
@@ -517,9 +523,10 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 * @throws IOException
+	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long brlen, long bclen ) 
-		throws DMLRuntimeException, IOException
+		throws DMLRuntimeException, IOException, DMLUnsupportedOperationException
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();
@@ -530,35 +537,14 @@ public class DataPartitionerLocal extends DataPartitioner
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			MatrixBlock tmp = new MatrixBlock( 1, (int)cols, sparse, (int) (cols*sparsity) ); 
-			if(!sparse)
-				tmp.spaceAllocForDenseUnsafe(1, (int)cols);
-			
+			_reuseBlk.reset( 1, (int)cols, sparse, (int) (cols*sparsity) ); 			
 			for( int i=0; i<rows; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
-				if( sparse )
-				{
-					for( int j=0; j<cols; j++ )
-					{
-						double value = mb.getValueSparseUnsafe(i, j);
-						if( value != 0 )
-							tmp.quickSetValue(0, j, value);
-					}
-				}
-				else
-				{
-					for( int j=0; j<cols; j++ )
-					{
-						double value = mb.getValueDenseUnsafe(i, j);
-						if( value != 0 )
-							tmp.setValueDenseUnsafe(0, j, value);
-					}
-					tmp.recomputeNonZeros();
-				}
-				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
-				tmp.reset();
+				mb.slideOperations(i+1, i+1, 1, cols, _reuseBlk);
+				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
+				_reuseBlk.reset();
 			}
 		}
 		else if( _format == PDataPartitionFormat.ROW_BLOCK_WISE )
@@ -570,34 +556,15 @@ public class DataPartitionerLocal extends DataPartitioner
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
 		{
 			//create object for reuse
-			MatrixBlock tmp = new MatrixBlock( (int)rows, 1, false ); //cols always dense
-			tmp.spaceAllocForDenseUnsafe((int)rows, 1);
-						
+			_reuseBlk.reset( (int)rows, 1, false );
+			
 			for( int i=0; i<cols; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(row_offset/brlen+1); 			
-				if( sparse )
-				{
-					for( int j=0; j<rows; j++ )
-					{
-						double value = mb.getValueSparseUnsafe(j, i);
-						if( value != 0 )
-							tmp.setValueDenseUnsafe(j, 0, value);
-					}
-				}
-				else
-				{
-					for( int j=0; j<rows; j++ )
-					{
-						double value = mb.getValueDenseUnsafe(j, i);
-						if( value != 0 )
-							tmp.setValueDenseUnsafe(j, 0, value);
-					}					
-				}
-				tmp.recomputeNonZeros();
-				LocalFileUtils.writeMatrixBlockToLocal(pfname, tmp);
-				tmp.reset();
+				mb.slideOperations(1, rows, i+1, i+1, _reuseBlk);
+				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
+				_reuseBlk.reset();
 			}				
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_BLOCK_WISE )
@@ -666,7 +633,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	// read/write in different formats //
 	/////////////////////////////////////
 	
-	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
+	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir, boolean threadsafe ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
@@ -679,8 +646,12 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
-				MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(lpdir+"/"+fnameBlock);
 				long key2 = getKey2FromFileName(fnameBlock);
+				MatrixBlock tmp = null;
+				if( threadsafe )
+					tmp = LocalFileUtils.readMatrixBlockFromLocal(lpdir+"/"+fnameBlock);
+				else
+					tmp = LocalFileUtils.readMatrixBlockFromLocal(lpdir+"/"+fnameBlock, _reuseBlk);
 				
 				if( _format == PDataPartitionFormat.ROW_WISE || _format == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{
@@ -877,7 +848,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		public void writeFileToHDFS(JobConf job, String fnameNew, String stagingDir) 
 			throws IOException 
 		{
-			writeBinaryBlockSequenceFileToHDFS( job, fnameNew, stagingDir );	
+			writeBinaryBlockSequenceFileToHDFS( job, fnameNew, stagingDir, true );	
 		}	
 	}
 

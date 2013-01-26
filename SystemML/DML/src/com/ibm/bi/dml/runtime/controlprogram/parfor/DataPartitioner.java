@@ -11,6 +11,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -35,7 +36,6 @@ public abstract class DataPartitioner
 	protected PDataPartitionFormat _format = null;
 	protected int _n = -1; //blocksize if applicable
 	protected boolean _allowBinarycell = true;
-	
 	
 	protected DataPartitioner( PDataPartitionFormat dpf, int n )
 	{
@@ -184,4 +184,23 @@ public abstract class DataPartitioner
 	protected abstract void partitionMatrix( String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException;
 
+	
+	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) 
+	{
+		MatrixBlock tmp = null;
+		
+		switch( dpf )
+		{
+			case ROW_WISE:
+				//default assumption sparse, but reset per input block anyway
+				tmp = new MatrixBlock( 1, (int)cols, true, (int)(cols*0.1) );
+				break;
+			case COLUMN_WISE:
+				//default dense because single column alwyas below SKINNY_MATRIX_TURN_POINT
+				tmp = new MatrixBlock( (int)rows, 1, false );
+				break;
+		}
+		
+		return tmp;
+	}
 }

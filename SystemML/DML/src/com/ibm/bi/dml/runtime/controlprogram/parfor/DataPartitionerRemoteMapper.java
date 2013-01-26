@@ -256,10 +256,14 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperBinaryblock extends DataPartitionerMapper
 	{
+		private MatrixBlock _reuseBlk = null;
 		
 		protected DataPartitionerMapperBinaryblock(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
+		
+			//create reuse block
+			_reuseBlk = DataPartitioner.createReuseMatrixBlock(pdf, brlen, bclen);
 		}
 		
 		@Override
@@ -287,42 +291,20 @@ public class DataPartitionerRemoteMapper
 					throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
 							              "out of overall matrix range [1:"+_rlen+",1:"+_clen+"].");
 				}
-				
-				MatrixBlock tmp = null;				
+						
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						tmp = new MatrixBlock( 1, (int)cols, sparse, (int)(cols*sparsity) );
-						if(!sparse)
-							tmp.spaceAllocForDenseUnsafe(1, (int)cols);				
+						_reuseBlk.reset(1, (int)cols, sparse, (int)(cols*sparsity));								
 						for( int i=0; i<rows; i++ )
 						{
 							longKey.set(row_offset+1+i);
 							key2.setIndexes(1, (col_offset/_bclen+1) );	
-							if( sparse )
-							{
-								for( int j=0; j<cols; j++ )
-								{
-									double lvalue = value2.getValueSparseUnsafe(i, j);
-									if( lvalue != 0 )
-										tmp.quickSetValue(0, j, lvalue);
-								}
-							}
-							else
-							{
-								for( int j=0; j<cols; j++ )
-								{
-									double lvalue = value2.getValueDenseUnsafe(i, j);
-									if( lvalue != 0 )
-										tmp.setValueDenseUnsafe(0, j, lvalue);
-								}
-
-								tmp.recomputeNonZeros();
-							}
+							value2.slideOperations(i+1, i+1, 1, cols, _reuseBlk);		
 							pairValue.indexes = key2;
-							pairValue.block = tmp;
+							pairValue.block = _reuseBlk;
 							out.collect(longKey, pairValue);
-							tmp.reset();
+							_reuseBlk.reset();
 						}
 						break;
 					case ROW_BLOCK_WISE:
@@ -340,35 +322,16 @@ public class DataPartitionerRemoteMapper
 						out.collect(longKey, pairValue);
 						break;
 					case COLUMN_WISE:
-						tmp = new MatrixBlock( (int)rows, 1, false ); //cols always dense
-						tmp.spaceAllocForDenseUnsafe((int)rows, 1);
+						_reuseBlk.reset((int)rows, 1, false);
 						for( int i=0; i<cols; i++ )
 						{
 							longKey.set(col_offset+1+i);
-							key2.setIndexes(row_offset/_brlen+1, 1);
-							if( sparse )
-							{
-								for( int j=0; j<rows; j++ )
-								{
-									double lvalue = value2.getValueSparseUnsafe(j, i);
-									if( lvalue != 0 )
-										tmp.setValueDenseUnsafe(j, 0, lvalue);
-								}
-							}
-							else
-							{
-								for( int j=0; j<rows; j++ )
-								{
-									double lvalue = value2.getValueDenseUnsafe(j, i);
-									if( lvalue != 0 )
-										tmp.setValueDenseUnsafe(j, 0, lvalue);
-								}					
-							}
-							tmp.recomputeNonZeros();
+							key2.setIndexes(row_offset/_brlen+1, 1);							
+							value2.slideOperations(1, rows, i+1, i+1, _reuseBlk);							
 							pairValue.indexes = key2;
-							pairValue.block = tmp;
+							pairValue.block = _reuseBlk;
 							out.collect(longKey, pairValue );
-							tmp.reset();
+							_reuseBlk.reset();
 						}	
 						break;
 					case COLUMN_BLOCK_WISE:

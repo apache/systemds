@@ -38,6 +38,12 @@ public class LocalFileUtils
 		_seq = new IDSequence();
 	}
 	
+	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName)
+		throws FileNotFoundException, IOException
+	{
+		return readMatrixBlockFromLocal(filePathAndName, new MatrixBlock());
+	}
+	
 	/**
 	 * 
 	 * @param filePathAndName
@@ -45,17 +51,16 @@ public class LocalFileUtils
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName)
+	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock ret)
 		throws FileNotFoundException, IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
 		BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
 		DataInputStream in = new DataInputStream( bis );
 	
-		MatrixBlock mb = new MatrixBlock ();
 		try
 		{
-			mb.readFields(in);
+			ret.readFields(in);
 		}
 		finally
 		{
@@ -63,7 +68,7 @@ public class LocalFileUtils
 				in.close();
 		}
 			
-		return mb;
+		return ret;
 	}
 	
 	/**

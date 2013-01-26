@@ -53,14 +53,17 @@ import com.ibm.bi.dml.utils.LopsException;
  * - 2) rewrite result partitioning (incl. recompile LIX)
  * - 3) rewrite set execution strategy
  * - 4) rewrite use data colocation		 
- * - 5) rewrite use nested parallelism 
- * - 6) rewrite set degree of parallelism
- * - 7) rewrite set task partitioner
- * - 8) rewrite set result merge 		 		 
- * - 9) rewrite set recompile memory budget
- * - 10) remove unnecessary parfor		
+ * - 5) rewrite set partition replication factor 
+ * - 6) rewrite use nested parallelism 
+ * - 7) rewrite set degree of parallelism
+ * - 8) rewrite set task partitioner
+ * - 9) rewrite set result merge 		 		 
+ * - 10) rewrite set recompile memory budget
+ * - 11) remove unnecessary parfor		
  * 
  * 	 
+ * 
+ * 
  * TODO blockwise partitioning
  *  
  */
@@ -68,11 +71,12 @@ public class OptimizerRuleBased extends Optimizer
 {
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
+	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 4;    
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
-
+	
 	//problem and infrastructure properties
 	private int _N    = -1; //problemsize
 	private int _Nmax = -1; //max problemsize (including subproblems)
@@ -151,34 +155,37 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 4: data colocation
 			rewriteDataColocation( pn, pb.getVariables() );
 			
-			// rewrite 5: nested parallelism (incl exec types)	
+			// rewrite 5: rewrite set partition replication factor
+			rewriteSetPartitionReplicationFactor( pn, pb.getVariables() );
+			
+			// rewrite 6: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
 			
-			// rewrite 6: determine parallelism
+			// rewrite 7: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, flagNested );
 			
-			// rewrite 7: task partitioning 
+			// rewrite 8: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 6: determine parallelism
+			// rewrite 7: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 7: task partitioning
+			// rewrite 8: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 8: set result merge
+		//rewrite 9: set result merge
 		rewriteSetResultMerge( pn, pb.getVariables() );
 		
-		//rewrite 9: set local recompile memory budget
+		//rewrite 10: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 10: parfor (par=1) to for 
+		// rewrite 11: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -640,6 +647,48 @@ public class OptimizerRuleBased extends Optimizer
 			if( indexAccess != null && indexAccess.equals(iterVarname) )
 				cand.add( inMatrix );
 		}
+	}
+	
+	
+	///////
+	//REWRITE set partition replication factor
+	///
+
+	/**
+	 * Increasing the partition replication factor is beneficial if partitions are
+	 * read multiple times (e.g., in nested loops) because partitioning (done once)
+	 * gets slightly slower but there is a higher probability for local access
+	 * 
+	 * NOTE: this rewrite requires 'set data partitioner' to be executed in order to
+	 * leverage the partitioning information in the plan tree. 
+	 *  
+	 * @param n
+	 * @throws DMLRuntimeException 
+	 */
+	private void rewriteSetPartitionReplicationFactor( OptNode n, LocalVariableMap vars ) 
+		throws DMLRuntimeException
+	{
+		boolean apply = false;
+		int replication = ParForProgramBlock.WRITE_REPLICATION_FACTOR;
+		
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		
+		if(    n.getExecType()==ExecType.MR
+			&& n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+		    && n.hasNestedParallelism() 
+		    && n.hasNestedPartitionReads(false) )		
+		{
+			apply = true;
+			replication = Math.max( ParForProgramBlock.WRITE_REPLICATION_FACTOR,
+					                Math.min(_rnk, MAX_REPLICATION_FACTOR_PARTITIONING) );
+		}
+		
+		//modify the runtime plan 
+		if( apply )
+			pfpb.setPartitionReplicationFactor( replication );
+		
+		LOG.debug("RULEBASED OPT: rewrite 'set partition replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
 	
 	

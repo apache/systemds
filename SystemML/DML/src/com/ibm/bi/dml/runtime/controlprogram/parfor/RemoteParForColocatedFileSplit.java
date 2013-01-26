@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.BlockLocation;
@@ -99,10 +100,10 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 			}
 		}
 
-		//System.out.println("Get locations in "+time.stop()+"ms.");
+		//System.out.println("Get locations "+time.stop()+"");
 		
 		//majority consensus on top host
-		return new String[]{getTopHost(hosts)};
+		return getTopHosts(hosts);
 	}
 
 	
@@ -128,18 +129,21 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 	 * @param hosts
 	 * @return
 	 */
-	private String getTopHost( HashMap<String,Integer> hosts )
+	private String[] getTopHosts( HashMap<String,Integer> hosts )
 	{
 		int max = Integer.MIN_VALUE;
-		String maxName = null;
+		HashSet<String> maxName = new HashSet<String>();
 		
 		for( Entry<String,Integer> e : hosts.entrySet() )
-			if( e.getValue() > max )
-			{
+			if( e.getValue() > max ) {
+				maxName.clear();
 				max = e.getValue();
-				maxName = e.getKey();
+				maxName.add(e.getKey());
 			}
+			else if( e.getValue() == max )
+				maxName.add(e.getKey());
 		
-		return maxName;
+		//System.out.println("HOSTS: "+ProgramConverter.serializeStringHashSet(maxName));
+		return maxName.toArray(new String[0]);
 	}
 }

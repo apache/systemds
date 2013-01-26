@@ -82,12 +82,9 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * 
  * TODO currently it seams that there is a general issue with JVM reuse in Hadoop 1.0.3
  * (Error Task log directory for task attempt_201209251949_2586_m_000014_0 does not exist. May be cleaned up by Task Tracker, if older logs.)      
- *       
- * TODO: leftindexing recompile/partitioning
  * 
  * NEW FUNCTIONALITIES (not for BI 2.0 release)
  * TODO: reduction variables (operations: +=, -=, /=, *=, min, max)
- * TODO: deferred dependency checking during runtime (for unknown matrix dimensionality)
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository => modules OK, but second-order functions required
  *
  */
@@ -128,7 +125,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public enum PResultMerge {
 		LOCAL_MEM,  // in-core (in-memory) result merge (output and one input at a time)
 		LOCAL_FILE, // out-of-core result merge (file format dependent)
-		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix //TODO move to optimizer
+		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix 
 		REMOTE_MR // remote parallel result merge
 	}
 	
@@ -183,8 +180,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics used for data partitioning
 	protected LocalVariableMap _variablesDPOriginal = null;
 	protected String           _colocatedDPMatrix   = null;
+	protected int              _replicationDP       = WRITE_REPLICATION_FACTOR;
+	//specifics used for result partitioning
 	protected boolean          _jvmReuse            = true;
-	//specifics used for robustness
+	//specifics used for recompilation 
 	protected double           _oldMemoryBudget = -1;
 	protected double           _recompileMemoryBudget = -1;
 	
@@ -342,6 +341,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		//only enabled though optimizer
 		_colocatedDPMatrix = varname;
+	}
+	
+	public void setPartitionReplicationFactor( int rep )
+	{
+		_replicationDP = rep;
 	}
 	
 	public void disableJVMReuse() 
@@ -984,7 +988,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				dp = new DataPartitionerRemoteMR( dpf, -1, _ID, 
 						                          //Math.max(_numThreads,InfrastructureAnalyzer.getRemoteParallelMapTasks()), 
 						                          Math.min(numReducers,InfrastructureAnalyzer.getRemoteParallelReduceTasks()),
-						                          WRITE_REPLICATION_FACTOR, 
+						                          _replicationDP, 
 						                          MAX_RETRYS_ON_ERROR, 
 						                          ALLOW_REUSE_MR_JVMS );
 				break;

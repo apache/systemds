@@ -9,6 +9,7 @@ import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 
 /**
  * Internal representation of a plan alternative for program blocks and instructions 
@@ -400,6 +401,39 @@ public class OptNode
 			
 		return ret;
 	}
+	
+
+	/**
+	 * 
+	 * @param flagNested
+	 * @return
+	 */
+	public boolean hasNestedPartitionReads( boolean flagNested )
+	{
+		boolean ret = false;
+		if( isLeaf() )
+		{
+			//partitioned read identified by selected partition format
+			String tmp = getParam(ParamType.DATA_PARTITION_FORMAT);
+			ret = ( tmp !=null 
+					&& PDataPartitionFormat.valueOf(tmp)!=PDataPartitionFormat.NONE 
+					&& flagNested );
+		}
+		else
+		{
+			for( OptNode n : _childs )
+			{
+				if( _ntype == NodeType.PARFOR || _ntype == NodeType.FOR || _ntype == NodeType.WHILE )
+					flagNested = true;
+				
+				ret |= n.hasNestedPartitionReads( flagNested );
+				if( ret ) break; //early abort if already true
+			}
+		}
+		
+		return ret;
+	}
+
 	
 	/**
 	 * 

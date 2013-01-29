@@ -1,9 +1,7 @@
 package com.ibm.bi.dml.runtime.util;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -82,8 +80,9 @@ public class LocalFileUtils
 		throws FileNotFoundException, IOException
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
-		BufferedOutputStream bos = new BufferedOutputStream( fos, BUFFER_SIZE );
-		DataOutputStream out = new DataOutputStream( bos );
+		//BufferedOutputStream bos = new BufferedOutputStream( fos, BUFFER_SIZE );
+		//DataOutputStream out = new DataOutputStream( bos );
+		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
 		
 		try 
 		{

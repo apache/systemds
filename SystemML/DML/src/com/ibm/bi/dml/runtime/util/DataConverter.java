@@ -401,45 +401,54 @@ public class DataConverter
 		FileSystem fs = FileSystem.get(job);
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		
-		//initialize blocks for reuse (at most 4 different blocks required)
-		MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
-		
 		//bound check for src block
 		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
 		{
 			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
 					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 		}
-		
 		//reblock and write
 		try
 		{
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
-				for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
-				{
-					int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-					int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
-			
-					int row_offset = blockRow*brlen;
-					int col_offset = blockCol*bclen;
-					
-					//get reuse matrix block
-					MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
-
-					//copy submatrix to block TODO rename to slice!
-					src.slideOperations( row_offset+1, row_offset+maxRow, 
-							             col_offset+1, col_offset+maxCol, 
-							             block );
-					
-					//append block to sequence file
-					indexes.setIndexes(blockRow+1, blockCol+1);
-					writer.append(indexes, block);
-					
-					//reset block for later reuse
-					block.reset();
-				}
+			if( rlen <= brlen && clen <= bclen ) //opt for single block
+			{
+				//directly write single block
+				indexes.setIndexes(1, 1);
+				writer.append(indexes, src);
+			}
+			else //general case
+			{
+				//initialize blocks for reuse (at most 4 different blocks required)
+				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
+				
+				//create and write subblocks of matrix
+				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
+					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
+					{
+						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
+						int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+				
+						int row_offset = blockRow*brlen;
+						int col_offset = blockCol*bclen;
+						
+						//get reuse matrix block
+						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+	
+						//copy submatrix to block TODO rename to slice!
+						src.slideOperations( row_offset+1, row_offset+maxRow, 
+								             col_offset+1, col_offset+maxCol, 
+								             block );
+						
+						//append block to sequence file
+						indexes.setIndexes(blockRow+1, blockCol+1);
+						writer.append(indexes, block);
+						
+						//reset block for later reuse
+						block.reset();
+					}
+			}
 		}
 		finally
 		{

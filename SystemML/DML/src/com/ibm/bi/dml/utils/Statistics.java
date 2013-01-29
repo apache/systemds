@@ -1,5 +1,8 @@
 package com.ibm.bi.dml.utils;
 
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
+
 /**
  * This class captures all statistics.
  */
@@ -78,7 +81,11 @@ public class Statistics {
 		sb.append("Total time:\t\t" + totalT + " sec.\n");
 		sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
-
+		if( CacheableData.CACHING_STATS )
+		{
+			sb.append("Cache hits (Mem, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
+			sb.append("Cache writes (FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
+		}
 		return sb.toString();
 	}
 }

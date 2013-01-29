@@ -13,6 +13,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -96,6 +97,15 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		//statistic maintenance
 		reporter.incrCounter(Stat.PARFOR_NUMITERS, getExecutedIterations()-numIters);
 		reporter.incrCounter(Stat.PARFOR_NUMTASKS, 1);
+		
+		if( CacheableData.CACHING_STATS  && !InfrastructureAnalyzer.isLocalMode() )
+		{
+			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_MEM, CacheStatistics.getMemHits());
+			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_FS, CacheStatistics.getFSHits());
+			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_HDFS, CacheStatistics.getHDFSHits());
+			reporter.incrCounter( CacheStatistics.Stat.CACHE_WRITES_FS, CacheStatistics.getFSWrites());
+			reporter.incrCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS, CacheStatistics.getHDFSWrites());
+		}
 	}
 
 	/**
@@ -189,6 +199,10 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		{
 			LOG.trace("reuse configured RemoteParWorkerMapper "+_stringID);
 		}
+		
+		//always reset cache stats because counters per map task
+		if( CacheableData.CACHING_STATS && !InfrastructureAnalyzer.isLocalMode() )
+			CacheStatistics.reset();
 	}
 	
 	private void pinResultVariables()

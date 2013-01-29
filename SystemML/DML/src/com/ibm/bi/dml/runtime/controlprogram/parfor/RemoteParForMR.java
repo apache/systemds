@@ -24,6 +24,8 @@ import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
@@ -172,6 +174,14 @@ public class RemoteParForMR
 			Counters group = runjob.getCounters();
 			int numTasks = (int)group.getCounter( Stat.PARFOR_NUMTASKS );
 			int numIters = (int)group.getCounter( Stat.PARFOR_NUMITERS );
+			if( CacheableData.CACHING_STATS && !InfrastructureAnalyzer.isLocalMode() )
+			{
+				CacheStatistics.incrementMemHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_MEM ));
+				CacheStatistics.incrementFSHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_FS ));
+				CacheStatistics.incrementHDFSHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_HDFS ));
+				CacheStatistics.incrementFSWrites((int)group.getCounter( CacheStatistics.Stat.CACHE_WRITES_FS ));
+				CacheStatistics.incrementHDFSWrites((int)group.getCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS ));
+			}
 				
 			// read all files of result variables and prepare for return
 			LocalVariableMap[] results = readResultFile(resultFile); 

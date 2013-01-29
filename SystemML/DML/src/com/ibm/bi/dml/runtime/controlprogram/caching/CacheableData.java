@@ -41,7 +41,8 @@ public abstract class CacheableData extends Data
 {
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
-	protected static final long CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
+	public static final long CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
+	public static final boolean CACHING_STATS = false;
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
 	private static boolean _activeFlag = false;
@@ -154,6 +155,11 @@ public abstract class CacheableData extends Data
 	 */
 	protected abstract void freeEvictedBlob();
 		
+	/**
+	 * 
+	 */
+	protected abstract boolean isBelowCachingThreshold();
+	
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
 	

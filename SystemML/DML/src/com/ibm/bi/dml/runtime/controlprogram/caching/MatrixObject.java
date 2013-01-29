@@ -294,6 +294,7 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Acquire read "+_varName);
+		//CacheStatistics.incrementTotalHits();
 		
 		if ( !isAvailableToRead() )
 			throw new CacheStatusException ("MatrixObject not available to read.");
@@ -311,6 +312,8 @@ public class MatrixObject extends CacheableData
 			
 			try
 			{
+				if(CACHING_STATS)
+					CacheStatistics.incrementHDFSHits();
 				_data = readMatrixFromHDFS( _hdfsFileName );
 				_dirtyFlag = false;
 			}
@@ -322,8 +325,15 @@ public class MatrixObject extends CacheableData
 			//mark for initial local write despite read operation
 			_requiresLocalWrite = true;
 		}
-		acquire( false, _data==null );
-
+		else if( CACHING_STATS )
+		{
+			if( _data==null )
+				CacheStatistics.incrementFSHits();
+			else 
+				CacheStatistics.incrementMemHits();
+		}
+		acquire( false, _data==null );	
+		
 		return _data;
 	}
 	
@@ -440,7 +450,7 @@ public class MatrixObject extends CacheableData
 
 		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem) //TODO
 			&& isCached() //not empty and not read/modify
-		    && (((long)_data.getNumRows())*((long)_data.getNumColumns()) > CACHING_THRESHOLD) ) //min size for caching
+		    && !isBelowCachingThreshold() ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) 
 			{
@@ -915,6 +925,23 @@ public class MatrixObject extends CacheableData
 		
 	}
 	
+	@Override
+	protected boolean isBelowCachingThreshold()
+	{
+		boolean ret = false;
+		
+		if( _data.getNonZeros() != -1 ) //nnz known
+		{
+			ret = ( _data.getNonZeros() <= CACHING_THRESHOLD );
+		}
+		else //nnz unknown, use dimensions
+		{
+			ret = (((long)_data.getNumRows())*((long)_data.getNumColumns()) <= CACHING_THRESHOLD ); 
+		}
+		
+		return ret;
+	}
+	
 	// *******************************************
 	// ***                                     ***
 	// ***      LOW-LEVEL PRIVATE METHODS      ***
@@ -1055,6 +1082,8 @@ public class MatrixObject extends CacheableData
 						" : Cannot write matrix to unsupported storage type \""
 						+ CacheableData.cacheEvictionStorageType + "\"");				
 		}
+		
+		CacheStatistics.incrementFSWrites();
 	}
 
 	/**
@@ -1097,6 +1126,8 @@ public class MatrixObject extends CacheableData
 		{
 			LOG.trace ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
+		
+		CacheStatistics.incrementHDFSWrites();
 	}
 	
 	/**

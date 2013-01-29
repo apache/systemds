@@ -44,6 +44,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -860,7 +861,7 @@ public class DMLScript {
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.setNoOfExecutedMRJobs( 0 );
-	
+		CacheStatistics.reset();
 	}
 	
 	/**

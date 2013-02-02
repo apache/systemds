@@ -749,8 +749,14 @@ public class ParForStatementBlock extends ForStatementBlock
 			else
 				ret = rGetDataIdentifiers(s2.getSource());
 		}
+		else if (s instanceof PrintStatement)
+		{
+			PrintStatement s2 = (PrintStatement)s;
+			ret = rGetDataIdentifiers(s2.getExpression());
+		}
+		
 		//potentially extend this list with other Statements if required
-		//(e.g., IOStatement, PrintStatement, RandStatement)
+		//(e.g., IOStatement, RandStatement)
 		
 		return ret;
 	}

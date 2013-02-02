@@ -3,9 +3,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -71,7 +71,6 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		try
 		{
 			Path path = new Path(fname);
-			Path pathNew = new Path(fnameNew);
 			
 			/////
 			//configure the MR job
@@ -113,8 +112,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			
 		    //set output path
 		    MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
-		    FileOutputFormat.setOutputPath(job, pathNew);
-
+		    //FileOutputFormat.setOutputPath(job, pathNew);
+		    job.setOutputFormat(NullOutputFormat.class);
+		    
+		    
 			//////
 			//set optimization parameters
 

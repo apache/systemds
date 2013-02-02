@@ -80,12 +80,19 @@ public class DataPartitionerRemoteReducer
 	private abstract class DataPartitionerReducer //NOTE: could also be refactored as three different reducers
 	{
 		protected JobConf _job = null;
+		protected FileSystem _fs = null;
 		protected String _fnameNew = null;
 		
-		protected DataPartitionerReducer( JobConf job, String fnameNew )
+		protected DataPartitionerReducer( JobConf job, String fnameNew ) 
 		{
 			_job = job;
 			_fnameNew = fnameNew;
+			
+			try {
+				_fs = FileSystem.get(_job);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		protected abstract void processKeyValueList( LongWritable key, Iterator<Writable> valueList, OutputCollector<Writable, Writable> out, Reporter reporter ) 
@@ -112,9 +119,8 @@ public class DataPartitionerRemoteReducer
 			BufferedWriter writer = null;
 			try
 			{			
-				FileSystem fs = FileSystem.get(_job);
 				Path path = new Path(_fnameNew+"/"+key.get());
-				writer = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+				writer = new BufferedWriter(new OutputStreamWriter(_fs.create(path,true)));		
 		        
 				while( valueList.hasNext() )
 				{
@@ -155,9 +161,8 @@ public class DataPartitionerRemoteReducer
 			SequenceFile.Writer writer = null;
 			try
 			{			
-				FileSystem fs = FileSystem.get(_job);
 				Path path = new Path(_fnameNew+"/"+key.get());
-				writer = new SequenceFile.Writer(fs, _job, path, MatrixIndexes.class, MatrixCell.class);
+				writer = new SequenceFile.Writer(_fs, _job, path, MatrixIndexes.class, MatrixCell.class);
 				while( valueList.hasNext() )
 				{
 					PairWritableCell pairValue = (PairWritableCell)valueList.next();
@@ -187,9 +192,8 @@ public class DataPartitionerRemoteReducer
 			SequenceFile.Writer writer = null;
 			try
 			{			
-				FileSystem fs = FileSystem.get(_job);
 				Path path = new Path(_fnameNew+"/"+key.get());
-				writer = new SequenceFile.Writer(fs, _job, path, MatrixIndexes.class, MatrixBlock.class);
+				writer = new SequenceFile.Writer(_fs, _job, path, MatrixIndexes.class, MatrixBlock.class);
 				while( valueList.hasNext() )
 				{
 					PairWritableBlock pairValue = (PairWritableBlock)valueList.next();

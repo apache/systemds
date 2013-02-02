@@ -20,7 +20,6 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -356,13 +355,10 @@ public class ResultMergeLocalFile extends ResultMerge
 					
 					JobConf tmpJob = new JobConf();
 					Path tmpPath = new Path(in.getFileName());
-					FileInputFormat.addInputPath(tmpJob, tmpPath);
-					SequenceFileInputFormat<MatrixIndexes,MatrixCell> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixCell>();
-					InputSplit[] splits = informat.getSplits(tmpJob, 1);
-			
-					for(InputSplit split: splits)
+					
+					for(Path lpath : DataConverter.getSequenceFilePaths(fs, tmpPath) )
 					{
-						RecordReader<MatrixIndexes,MatrixCell> reader = informat.getRecordReader(split, tmpJob, Reporter.NULL);
+						SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 						try
 						{
 							while(reader.next(key, value))
@@ -524,14 +520,12 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixBlock value = new MatrixBlock();
 		
 		JobConf tmpJob = new JobConf();
+		FileSystem fs = FileSystem.get(tmpJob);
 		Path tmpPath = new Path(mo.getFileName());
-		FileInputFormat.addInputPath(tmpJob, tmpPath);
-		SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
-		InputSplit[] splits = informat.getSplits(tmpJob, 1);				
 		
-		for(InputSplit split : splits)
+		for(Path lpath : DataConverter.getSequenceFilePaths(fs, tmpPath))
 		{
-			RecordReader<MatrixIndexes,MatrixBlock> reader=informat.getRecordReader(split, tmpJob, Reporter.NULL);
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
 			try
 			{
 				while(reader.next(key, value)) //for each block
@@ -638,10 +632,8 @@ public class ResultMergeLocalFile extends ResultMerge
 	{		
 		JobConf job = new JobConf();
 		Path path = new Path(mo.getFileName());
-		FileInputFormat.addInputPath(job, path);
-		SequenceFileInputFormat<MatrixIndexes,MatrixCell> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixCell>();
-		InputSplit[] splits = informat.getSplits(job, 1);
-
+		FileSystem fs = FileSystem.get(job);
+		
 		LinkedList<Cell> buffer = new LinkedList<Cell>();
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
@@ -651,9 +643,9 @@ public class ResultMergeLocalFile extends ResultMerge
 		int brlen = mc.get_rows_per_block();
 		int bclen = mc.get_cols_per_block();
 		
-		for(InputSplit split: splits)
+		for(Path lpath: DataConverter.getSequenceFilePaths(fs, path))
 		{
-			RecordReader<MatrixIndexes,MatrixCell> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			try
 			{
 				while(reader.next(key, value))

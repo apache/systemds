@@ -20,7 +20,6 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -316,18 +315,15 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
-			FileInputFormat.addInputPath(job, path); 
-			SequenceFileInputFormat<MatrixIndexes,MatrixCell> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixCell>();
-			InputSplit[] splits = informat.getSplits(job, 1);
 			
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
 			
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 
-			for(InputSplit split: splits)
+			for(Path lpath: DataConverter.getSequenceFilePaths(fs, path))
 			{
-				RecordReader<MatrixIndexes,MatrixCell> reader = informat.getRecordReader(split, job, Reporter.NULL);
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
 				{
 					while(reader.next(key, value))
@@ -375,16 +371,13 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	
 				throw new IOException("File "+fnameOld+" does not exist on HDFS.");
-			FileInputFormat.addInputPath(job, path); 
-			SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
-			InputSplit[] splits = informat.getSplits(job, 1);				
 			
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
-			for(InputSplit split: splits)
+			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path))
 			{
-				RecordReader<MatrixIndexes,MatrixBlock> reader = informat.getRecordReader(split, job, Reporter.NULL);
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				
 				try
 				{

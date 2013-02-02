@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -34,6 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -227,19 +227,16 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf();
 			Path path = new Path(fname);
-			FileInputFormat.addInputPath(job, path);
+			FileSystem fs = FileSystem.get(job);
 			
-			//prepare sequence file reader, and write to local staging area
-			SequenceFileInputFormat<MatrixIndexes,MatrixCell> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixCell>();
-			InputSplit[] splits = informat.getSplits(job, 1);
-	
+			//prepare sequence file reader, and write to local staging area	
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 	
-			for(InputSplit split: splits)
+			for( Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
 			{
-				RecordReader<MatrixIndexes,MatrixCell> reader = informat.getRecordReader(split, job, Reporter.NULL);
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
 				{
 					while(reader.next(key, value))
@@ -328,17 +325,15 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf();
 			Path path = new Path(fname);
-			FileInputFormat.addInputPath(job, path);
+			FileSystem fs = FileSystem.get(job);
 			
 			//prepare sequence file reader, and write to local staging area
-			SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
-			InputSplit[] splits = informat.getSplits(job, 1);				
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
-			for(InputSplit split : splits)
+			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
 			{
-				RecordReader<MatrixIndexes,MatrixBlock> reader=informat.getRecordReader(split, job, Reporter.NULL);
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
 				{
 					while(reader.next(key, value)) //for each block
@@ -413,19 +408,17 @@ public class DataPartitionerLocal extends DataPartitioner
 			//check and add input path
 			JobConf job = new JobConf();
 			Path path = new Path(fname);
-			FileInputFormat.addInputPath(job, path);
+			FileSystem fs = FileSystem.get(job);
 			
 			//prepare sequence file reader, and write to local staging area
-			SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
-			InputSplit[] splits = informat.getSplits(job, 1);				
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
 			
 			LinkedList<Cell> buffer = new LinkedList<Cell>();
 			
-			for(InputSplit split : splits)
+			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
 			{
-				RecordReader<MatrixIndexes,MatrixBlock> reader=informat.getRecordReader(split, job, Reporter.NULL);
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 				try
 				{
 					while(reader.next(key, value)) //for each block

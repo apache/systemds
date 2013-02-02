@@ -5,11 +5,12 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -22,7 +23,6 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
@@ -72,7 +72,7 @@ public class DataConverter
 	{
 		JobConf job = new JobConf();
 		Path path = new Path(dir);
-		FileOutputFormat.setOutputPath(job, path);
+		//FileOutputFormat.setOutputPath(job, path); FIXME
 
 		//System.out.println("write matrix (sparse="+mat.isInSparseFormat()+") to HDFS: "+dir);
 		
@@ -114,25 +114,45 @@ public class DataConverter
 	 * @return
 	 * @throws IOException
 	 */
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, boolean localFS) 
-	throws IOException
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
+		throws IOException
 	{	
 		//expected matrix is sparse (default SystemML usecase)
 		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, localFS);
 	}
 	
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen) 
-	throws IOException
+	/**
+	 * 
+	 * @param dir
+	 * @param inputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @return
+	 * @throws IOException
+	 */
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
+		throws IOException
 	{	
 		//expected matrix is sparse (default SystemML usecase)
 		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, false);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, double expectedSparsity) 
-	throws IOException
+	/**
+	 * 
+	 * @param dir
+	 * @param inputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param expectedSparsity
+	 * @return
+	 * @throws IOException
+	 */
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, double expectedSparsity) 
+		throws IOException
 	{	
 		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, expectedSparsity, false);
 	}
@@ -176,7 +196,7 @@ public class DataConverter
 		if ( localFS ) {
 			path = new Path("file:///" + dir);
 			//System.out.println("local file system path ..." + path.toUri() + ", " + path.toString());
-			fs = new LocalFileSystem();
+			fs = FileSystem.getLocal(job);
 		}
 		else {
 			path = new Path(dir);
@@ -185,7 +205,7 @@ public class DataConverter
 		if( !fs.exists(path) )	
 			throw new IOException("File "+dir+" does not exist on HDFS/LFS.");
 		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
-		FileInputFormat.addInputPath(job, path); 
+		//FileInputFormat.addInputPath(job, path); //FIXME 
 		
 		try 
 		{
@@ -199,18 +219,17 @@ public class DataConverter
 			}
 			else if( inputinfo == InputInfo.BinaryCellInputInfo )
 			{
-				readBinaryCellMatrixFromHDFS( path, job, ret, rlen, clen, brlen, bclen );
+				readBinaryCellMatrixFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
 			}
 			else if( inputinfo == InputInfo.BinaryBlockInputInfo )
 			{
-				readBinaryBlockMatrixFromHDFS( path, job, ret, rlen, clen, brlen, bclen );
+				readBinaryBlockMatrixFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
 			}
 			
 			//finally check if change of sparse/dense block representation required
 			if( !sparse || inputinfo==InputInfo.BinaryBlockInputInfo )
 				ret.recomputeNonZeros();
-			if(clen != 1) //prevent conversion to sparse vector
-				ret.examSparsity();	
+			ret.examSparsity();	
 		} 
 		catch (Exception e) 
 		{
@@ -475,6 +494,7 @@ public class DataConverter
 		throws IOException, IllegalAccessException, InstantiationException
 	{
 		boolean sparse = dest.isInSparseFormat();
+		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
@@ -611,9 +631,11 @@ public class DataConverter
 	}
 	
 	/**
+	 * Note: see readBinaryBlockMatrixFromHDFS for why we directly use SequenceFile.Reader.
 	 * 
 	 * @param path
 	 * @param job
+	 * @param fs 
 	 * @param dest
 	 * @param rlen
 	 * @param clen
@@ -623,13 +645,10 @@ public class DataConverter
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private static void readBinaryCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
-		boolean sparse = dest.isInSparseFormat();
-		SequenceFileInputFormat<MatrixIndexes,MatrixCell> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixCell>();
-		InputSplit[] splits = informat.getSplits(job, 1);
-		
+		boolean sparse = dest.isInSparseFormat();		
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
 		int row = -1;
@@ -637,9 +656,11 @@ public class DataConverter
 		
 		try
 		{
-			for(InputSplit split: splits)
+			for( Path lpath : getSequenceFilePaths(fs,path) ) //1..N files 
 			{
-				RecordReader<MatrixIndexes,MatrixCell> reader = informat.getRecordReader(split, job, Reporter.NULL);
+				//directly read from sequence files (individual partfiles)
+				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
+				
 				try
 				{
 					if( sparse )
@@ -686,9 +707,18 @@ public class DataConverter
 	}
 	
 	/**
+	 * Note: For efficiency, we directly use SequenceFile.Reader instead of SequenceFileInputFormat-
+	 * InputSplits-RecordReader (SequenceFileRecordReader). First, this has no drawbacks since the
+	 * SequenceFileRecordReader internally uses SequenceFile.Reader as well. Second, it is 
+	 * advantageous if the actual sequence files are larger than the file splits created by   
+	 * informat.getSplits (which is usually aligned to the HDFS block size) because then there is 
+	 * overhead for finding the actual split between our 1k-1k blocks. This case happens
+	 * if the read matrix was create by CP or when jobs directly write to large output files 
+	 * (e.g., parfor matrix partitioning).
 	 * 
 	 * @param path
 	 * @param job
+	 * @param fs 
 	 * @param dest
 	 * @param rlen
 	 * @param clen
@@ -698,18 +728,16 @@ public class DataConverter
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
-	//	long time=System.currentTimeMillis();
-		SequenceFileInputFormat<MatrixIndexes,MatrixBlock> informat = new SequenceFileInputFormat<MatrixIndexes,MatrixBlock>();
-		InputSplit[] splits = informat.getSplits(job, 1);				
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
 		
-		for(InputSplit split: splits)
+		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 		{
-			RecordReader<MatrixIndexes,MatrixBlock> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			//directly read from sequence files (individual partfiles)
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
 			
 			try
 			{
@@ -740,11 +768,6 @@ public class DataConverter
 					reader.close();
 			}
 		}
-		
-		
-	//	time=System.currentTimeMillis()-time;
-	//	System.out.println("------------- read ------------");
-	//	System.out.println(time+"\t"+dest.getCapacity()+"\t"+dest.getNonZeros());
 	}
 	
 	
@@ -891,6 +914,34 @@ public class DataConverter
 		return blocks[ index ];
 	}
 
+	/**
+	 * 
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
+	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
+		throws IOException
+	{
+		FileStatus fStatus = fs.getFileStatus(file);
+		Path[] ret = null;
+		
+		if( fStatus.isDir() )
+		{
+			LinkedList<Path> tmp = new LinkedList<Path>();
+			FileStatus[] dStatus = fs.listStatus(file);
+			for( FileStatus fdStatus : dStatus )
+				if( !fdStatus.getPath().getName().startsWith("_") ) //skip internal files
+					tmp.add(fdStatus.getPath());
+			ret = tmp.toArray(new Path[0]);
+		}
+		else
+		{
+			ret = new Path[]{ file };
+		}
+		
+		return ret;
+	}
 	
 	
 	//////////////

@@ -5,19 +5,17 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
@@ -33,6 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
@@ -126,6 +125,8 @@ public class RemoteParForMR
 			//use FLEX scheduler configuration properties
 			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
 			{
+				job.setInt("flex.priority",0); //highest
+				
 				job.setInt("flex.map.min", 0);
 				job.setInt("flex.map.max", numMappers);
 				job.setInt("flex.reduce.min", 0);
@@ -184,7 +185,7 @@ public class RemoteParForMR
 			}
 				
 			// read all files of result variables and prepare for return
-			LocalVariableMap[] results = readResultFile(resultFile); 
+			LocalVariableMap[] results = readResultFile(job, resultFile); 
 
 			ret = new RemoteParForJobReturn(runjob.isSuccessful(), 
 					                        numTasks, numIters, 
@@ -214,27 +215,24 @@ public class RemoteParForMR
 
 	/**
 	 * 
+	 * @param job 
 	 * @param fname
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static LocalVariableMap [] readResultFile( String fname )
+	public static LocalVariableMap [] readResultFile( JobConf job, String fname )
 		throws DMLRuntimeException, IOException
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<Long,LocalVariableMap>();
 
-		JobConf job = new JobConf();
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path(fname);
-		FileInputFormat.addInputPath(job, path); 
-		
-		SequenceFileInputFormat<LongWritable,Text> informat = new SequenceFileInputFormat<LongWritable,Text>();
-		InputSplit[] splits = informat.getSplits(job, 1);
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 		
-		for(InputSplit split: splits)
+		for( Path lpath : DataConverter.getSequenceFilePaths(fs, path) )
 		{
-			RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(job),lpath,job);
 			try
 			{
 				while( reader.next(key, value) )

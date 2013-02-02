@@ -676,7 +676,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		if(    n.getExecType()==ExecType.MR
 			&& n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
-		    && n.hasNestedParallelism() 
+		    && n.hasNestedParallelism(false) 
 		    && n.hasNestedPartitionReads(false) )		
 		{
 			apply = true;
@@ -713,7 +713,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( APPLY_REWRITE_NESTED_PARALLELISM
 			&& !flagLIX                      // if not applied left indexing rewrite	
 			&& _N >= _rnk 					 // at least exploit all nodes
-			&& !n.hasNestedParallelism()     // only for 1D problems, otherwise potentially bad load balance
+			&& !n.hasNestedParallelism(false)// only for 1D problems, otherwise potentially bad load balance
 			&& M * _lkmaxCP <= _rm  )        // only if we can exploit full local parallelism in the map task JVM memory
 		{
 			//modify tree

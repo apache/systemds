@@ -381,27 +381,35 @@ public class OptNode
 		
 		return maxc;
 	}
+
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public boolean hasNestedParallelism()
+	public boolean hasNestedParallelism( boolean flagNested )
 	{
 		boolean ret = false;
+		
+		if( _ntype == NodeType.PARFOR )
+		{
+			if( flagNested ) 
+				return true;
+			flagNested = true;
+		}
+		
 		if( _childs != null )
 			for( OptNode n : _childs )
 			{
 				if( ret ) break; //early abort if already true
-				ret |= n.hasNestedParallelism();
+				ret |= n.hasNestedParallelism( flagNested );
 			}
 		
-		if( _ntype == NodeType.PARFOR )
 			ret = true;
 			
 		return ret;
 	}
-	
+
 
 	/**
 	 * 
@@ -423,7 +431,7 @@ public class OptNode
 		{
 			for( OptNode n : _childs )
 			{
-				if( _ntype == NodeType.PARFOR || _ntype == NodeType.FOR || _ntype == NodeType.WHILE )
+				if( n._ntype == NodeType.PARFOR || n._ntype == NodeType.FOR || n._ntype == NodeType.WHILE )
 					flagNested = true;
 				
 				ret |= n.hasNestedPartitionReads( flagNested );

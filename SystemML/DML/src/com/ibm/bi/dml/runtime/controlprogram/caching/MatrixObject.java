@@ -745,11 +745,16 @@ public class MatrixObject extends CacheableData
 				_cache = new SoftReference<MatrixBlock>(mb);
 				
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
-					mb = projectRow(mb, brlen, (int)pred.rowStart);
+				{
+					long rix = (pred.rowStart-1)%brlen+1;
+					mb = (MatrixBlock) mb.slideOperations(rix, rix, pred.colStart, pred.colEnd, new MatrixBlock());
+				}
 				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
-					mb = projectColumn(mb, bclen, (int)pred.colStart);
+				{
+					long cix = (pred.colStart-1)%bclen+1;
+					mb = (MatrixBlock) mb.slideOperations(pred.rowStart, pred.rowEnd, cix, cix, new MatrixBlock());
+				}
 			}
-			
 			
 			//NOTE: currently no special treatment of non-existing partitions necessary 
 			//      because empty blocks are written anyway
@@ -786,7 +791,7 @@ public class MatrixObject extends CacheableData
 				break;
 			case ROW_BLOCK_WISE:
 				sb.append(Lops.FILE_SEPARATOR);
-				sb.append(pred.rowStart/brlen+1);
+				sb.append((pred.rowStart-1)/brlen+1);
 				break;
 			case COLUMN_WISE:
 				sb.append(Lops.FILE_SEPARATOR);
@@ -794,7 +799,7 @@ public class MatrixObject extends CacheableData
 				break;
 			case COLUMN_BLOCK_WISE:
 				sb.append(Lops.FILE_SEPARATOR);
-				sb.append(pred.colStart/bclen+1);
+				sb.append((pred.colStart-1)/bclen+1);
 				break;
 			default:
 				throw new CacheStatusException ("MatrixObject not available to indexed read.");
@@ -803,47 +808,6 @@ public class MatrixObject extends CacheableData
 		return sb.toString();
 	}	
 	
-	/**
-	 * 
-	 * @param mb
-	 * @param brlen
-	 * @param rindex
-	 * @return
-	 */
-	private MatrixBlock projectRow( MatrixBlock mb, int brlen, int rindex )
-	{
-		int brindex = rindex%brlen-1;
-		int clen = mb.getNumColumns();
-		
-		MatrixBlock tmp = new MatrixBlock( 1, clen, false );
-		tmp.spaceAllocForDenseUnsafe(1, clen);
-		for( int j=0; j<clen; j++ ) //see DataPartitioniner, mb always dense
-			tmp.setValueDenseUnsafe(0, j, mb.getValueDenseUnsafe(brindex, j));
-		tmp.recomputeNonZeros();
-		
-		return tmp;
-	}
-	
-	/**
-	 * 
-	 * @param mb
-	 * @param bclen
-	 * @param cindex
-	 * @return
-	 */
-	private MatrixBlock projectColumn( MatrixBlock mb, int bclen, int cindex )
-	{
-		int bcindex = cindex%bclen-1;
-		int rlen = mb.getNumRows();
-		
-		MatrixBlock tmp = new MatrixBlock( rlen, 1, false );
-		tmp.spaceAllocForDenseUnsafe(rlen, 1);
-		for( int i=0; i<rlen; i++ ) //see DataPartitioniner, mb always dense
-			tmp.setValueDenseUnsafe(i, 0, mb.getValueDenseUnsafe(i, bcindex));
-		tmp.recomputeNonZeros();
-		
-		return tmp;
-	}
 	
 
 	// *********************************************

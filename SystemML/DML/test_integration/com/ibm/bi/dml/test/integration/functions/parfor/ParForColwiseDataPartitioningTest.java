@@ -18,10 +18,12 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows1 = (int)Hops.CPThreshold;
-	private final static int rows2 = 10*(int)Hops.CPThreshold;
-	private final static int cols = 50;      // # of columns 
-	private final static double sparsity1 = 1.0;
+	private final static int rows1 = 50; 
+	private final static int cols1 = (int)Hops.CPThreshold+1;  
+	private final static int rows2 = (int)Hops.CPThreshold+1; 
+	private final static int cols2 = 50;  
+	
+	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1d;
 	
 	
@@ -34,6 +36,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 				new String[] { "Rout" })   ); //TODO this specification is not intuitive
 	}
 
+	//colwise partitioning
 	
 	@Test
 	public void testParForDataPartitioningNoneLocalLargeDense() 
@@ -95,6 +98,70 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, true);
 	}
 
+	//colblockwise partitioning
+	
+
+	@Test
+	public void testParForDataPartitioningNoneLocalSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.NONE, null, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningNoneLocalSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.NONE, PExecMode.LOCAL, true, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningLocalLocalSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningLocalLocalSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, true, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningLocalRemoteSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningLocalRemoteSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, true, true);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteLocalSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteLocalSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, true, true);
+	}
+	
+	@Test
+	public void testParForDataPartitioningRemoteRemoteSmallDense() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, false);
+	}
+
+	@Test
+	public void testParForDataPartitioningRemoteRemoteSmallSparse() 
+	{
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, true);
+	}
+
+	
 	
 	/**
 	 * 
@@ -105,7 +172,17 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse )
 	{
 		//inst exec type, influenced via rows
-		int rows = rows2; //always large to test 
+		int rows = -1, cols = -1;
+		if( small )
+		{
+			rows = rows1;
+			cols = cols1;
+		}
+		else
+		{
+			rows = rows2;
+			cols = cols2;
+		}
 			
 		//script
 		int scriptNum = -1;

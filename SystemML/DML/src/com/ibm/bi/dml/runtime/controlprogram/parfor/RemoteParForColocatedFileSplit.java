@@ -76,7 +76,7 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		{
 			for( IntObject val : t.getIterations() )
 			{
-				String fname = _fname+"/"+String.valueOf((val.getIntValue()/_blen));
+				String fname = _fname+"/"+String.valueOf(((val.getIntValue()-1)/_blen+1));
 				FileSystem fs = FileSystem.get(job);
 				FileStatus status = fs.getFileStatus(new Path(fname)); 
 				BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
@@ -86,18 +86,29 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		}
 		else //TaskType.RANGE
 		{
+			//since this is a serial process, we use just the first iteration
+			//as a heuristic for location information
+			int lFrom  = t.getIterations().get(0).getIntValue();
+			String fname = _fname+"/"+String.valueOf( ((lFrom-1)/_blen+1) );
+			FileSystem fs = FileSystem.get(job);
+			FileStatus status = fs.getFileStatus(new Path(fname)); 
+			BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
+			for( BlockLocation bl : tmp1 )
+				countHosts(hosts, bl.getHosts());
+			
+			/*
 			int lFrom  = t.getIterations().get(0).getIntValue();
 			int lTo    = t.getIterations().get(1).getIntValue();
 			int lIncr  = t.getIterations().get(2).getIntValue();				
 			for( int i=lFrom; i<=lTo; i+=lIncr )
 			{
-				String fname = _fname+"/"+String.valueOf( (i/_blen) );
+				String fname = _fname+"/"+String.valueOf( ((i-_offset)/_blen+_offset) );
 				FileSystem fs = FileSystem.get(job);
 				FileStatus status = fs.getFileStatus(new Path(fname)); 
 				BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
 				for( BlockLocation bl : tmp1 )
 					countHosts(hosts, bl.getHosts());
-			}
+			}*/
 		}
 
 		//System.out.println("Get locations "+time.stop()+"");

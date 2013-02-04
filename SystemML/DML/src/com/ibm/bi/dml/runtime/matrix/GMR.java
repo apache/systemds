@@ -18,6 +18,7 @@ import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -76,6 +77,7 @@ public class GMR{
 					// Determine the index that points to a vector
 					byte in1 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[2].split(Instruction.DATATYPE_PREFIX)[0]);
 					byte in2 = Byte.parseByte(inst[i].split(Instruction.OPERAND_DELIM)[3].split(Instruction.DATATYPE_PREFIX)[0]);
+					//TODO: need to handle vector-matrix case!
 					//if ( rlens[in1] == 1 || clens[in1] == 1 )
 					//	index = in1; // input1 is a vector
 					//else 
@@ -102,7 +104,9 @@ public class GMR{
 	
 	@SuppressWarnings("unchecked")
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
-			int[] brlens, int[] bclens, String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
+			int[] brlens, int[] bclens, 
+			boolean[] partitioned, PDataPartitionFormat[] pformats, int[] psizes,
+			String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
@@ -189,6 +193,7 @@ public class GMR{
 
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, inBlockRepresentation, realbrlens, realbclens);
+		MRJobConfiguration.setInputPartitioningInfo(job, partitioned, pformats, psizes);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);
@@ -373,6 +378,11 @@ public class GMR{
 		long[] clens = { 2500, 1, 2500, 1 };
 		int[] brlens = { 1000, 1000, 1000, 1000 };
 		int[] bclens = { 1000, 1000, 1000, 1000 };
+		
+		boolean[] partitioned = { false, false, false, false };
+		PDataPartitionFormat[] pformats = { PDataPartitionFormat.NONE, PDataPartitionFormat.NONE, PDataPartitionFormat.NONE, PDataPartitionFormat.NONE };
+		int[] psizes = { -1, -1, -1, -1 };
+		
 		String recordReaderInstruction = null;
 		String otherInstructionsInReducer = "";
 		int numReducers = 10;
@@ -389,8 +399,9 @@ public class GMR{
 
 		byte[] resultIndexes = { 6, 7 };
 		
-		JobReturn ret = runJob(new MRJobInstruction(JobType.GMR), inputs, inputInfos, rlens, clens, brlens, bclens, null, 
-				instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
+		JobReturn ret = runJob(new MRJobInstruction(JobType.GMR), inputs, inputInfos, rlens, clens, brlens, bclens, 
+				partitioned, pformats, psizes, 
+				null, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
 				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
 		
 	}

@@ -113,7 +113,24 @@ public class ParForProgramBlock extends ForProgramBlock
 		ROW_BLOCK_WISE_N,
 		COLUMN_WISE,
 		COLUMN_BLOCK_WISE,
-		COLUMN_BLOCK_WISE_N
+		COLUMN_BLOCK_WISE_N;
+		
+		public static PDataPartitionFormat parsePDataPartitionFormat(String s) {
+			if (s.equalsIgnoreCase("ROW_WISE"))
+				return ROW_WISE;
+			if (s.equalsIgnoreCase("ROW_BLOCK_WISE"))
+				return ROW_BLOCK_WISE;
+			if (s.equalsIgnoreCase("ROW_BLOCK_WISE_N"))
+				return ROW_BLOCK_WISE_N;
+			if (s.equalsIgnoreCase("COLUMN_WISE"))
+				return COLUMN_WISE;
+			if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE"))
+				return COLUMN_BLOCK_WISE;
+			if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE_N"))
+				return COLUMN_BLOCK_WISE_N;
+			else
+				return NONE;
+		}
 	}
 	
 	public enum PDataPartitioner {

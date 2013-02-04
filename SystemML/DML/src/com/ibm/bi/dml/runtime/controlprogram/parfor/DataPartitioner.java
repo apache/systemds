@@ -54,7 +54,19 @@ public abstract class DataPartitioner
 	public MatrixObject createPartitionedMatrixObject( MatrixObject in )
 		throws DMLRuntimeException
 	{
-		return createPartitionedMatrixObject(in, false);
+		return createPartitionedMatrixObject(in, null, false);
+	}
+
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out)
+	throws DMLRuntimeException 
+	{
+		return createPartitionedMatrixObject(in, out, false);
+	}
+	
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, boolean force)
+	throws DMLRuntimeException 
+	{
+		return createPartitionedMatrixObject(in, null, force);
 	}
 
 	/**
@@ -69,7 +81,7 @@ public abstract class DataPartitioner
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, boolean force )
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out, boolean force )
 		throws DMLRuntimeException
 	{
 		//check for naive partitioning
@@ -132,7 +144,11 @@ public abstract class DataPartitioner
 		in.exportData(); //written to disk iff dirty
 		
 		//prepare filenames and cleanup if required
-		String fnameNew = fname + NAME_SUFFIX;
+		String fnameNew = null;
+		if ( out == null )
+			fnameNew = fname + NAME_SUFFIX;
+		else
+			fnameNew = out.getFileName();
 		
 		try{
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
@@ -144,21 +160,25 @@ public abstract class DataPartitioner
 		//core partitioning (depending on subclass)
 		partitionMatrix( fname, fnameNew, ii, oi, rows, cols, brlen, bclen );
 		
-		//create output matrix object
-		MatrixObject mobj = new MatrixObject(vt, fnameNew );
-		mobj.setDataType(DataType.MATRIX);
-		mobj.setVarName( varname+NAME_SUFFIX );
-		mobj.setPartitioned( _format, _n ); 
+		if ( out == null ) {
+			//create output matrix object
+			out = new MatrixObject(vt, fnameNew );
+			out.setDataType(DataType.MATRIX);
+			out.setVarName( varname+NAME_SUFFIX );
+		}
+		
+		out.setPartitioned( _format, _n ); 
 		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols,
-				                           (_format==PDataPartitionFormat.ROW_WISE)? 1 : (int)brlen, //for blockwise brlen anyway
-				                           (_format==PDataPartitionFormat.COLUMN_WISE)? 1 : (int)bclen ); //for blockwise bclen anyway
+				                           (_format==PDataPartitionFormat.ROW_WISE || _format==PDataPartitionFormat.ROW_BLOCK_WISE_N)? 1 : (int)brlen, //for blockwise brlen anyway
+				                           (_format==PDataPartitionFormat.COLUMN_WISE || _format==PDataPartitionFormat.COLUMN_BLOCK_WISE_N)? 1 : (int)bclen ); //for blockwise bclen anyway
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
 		MatrixFormatMetaData metaNew = new MatrixFormatMetaData(mcNew,oi,ii);
-		mobj.setMetaData(metaNew);	 
+		out.setMetaData(metaNew);	 
 		
-		return mobj;
+		return out;
+		
 	}
 	
 	/**

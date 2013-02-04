@@ -45,8 +45,8 @@ public enum JobType {
 	SORT			(8, "SORT", true, false, true), 
 	CM_COV			(9, "CM_COV", false, false, false), 
 	GROUPED_AGG		(10, "GROUPED_AGG", false, false, false), 
-	PARTITION		(11, "PARTITION", false, false, false);
-	//REBLOCK		(12, "REBLOCK", true, false);
+	PARTITION		(11, "PARTITION", false, false, false),
+	DATA_PARTITION	(12, "DATAPARTITION", false, false, false);
 
 	/* Following code should not be edited when adding a new job type */
 
@@ -127,6 +127,8 @@ public enum JobType {
 		case CombineTertiary: 			
 							return JobType.COMBINE;
 		
+		case DataPartition:
+							return JobType.DATA_PARTITION;
 		default:
 			return null;
 		}

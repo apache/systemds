@@ -61,10 +61,11 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 
 		MatrixValue vector=null;
 		if ( in2 == null ) {
-			vector = MRBaseForCommonInstructions.distCacheValues.get(input2);
+			//vector = MRBaseForCommonInstructions.loadDataFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1); // MRBaseForCommonInstructions.distCacheValues.get(input2);
+			vector = MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1); // MRBaseForCommonInstructions.distCacheValues.get(input2);
 			if ( vector == null )
 				throw new DMLRuntimeException("Unexpected: vector read from distcache is null!");
-			in2 = new IndexedMatrixValue(new MatrixIndexes(1,1), vector);
+			in2 = new IndexedMatrixValue(new MatrixIndexes(in1.getIndexes().getColumnIndex(),1), vector);
 		}
 		
 		if(in1==null || (in2==null && vector==null))
@@ -78,22 +79,22 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 			out=cachedValues.holdPlace(output, valueClass);
 		
 		//process instruction
-		if ( instString.contains("mvmult") ) {
-			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-					new MatrixIndexes(1,1), vector, out.getIndexes(), out.getValue(), 
-					((AggregateBinaryOperator)optr), true);
-		}
-		else {
+		//if ( instString.contains("mvmult") ) {
+		//	OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
+		//			new MatrixIndexes(1,1), vector, out.getIndexes(), out.getValue(), 
+		//			((AggregateBinaryOperator)optr), true);
+		//}
+		//else {
 			//System.out.println("matmult: [" + in1.getIndexes() + "] x [" + in2.getIndexes() +"]");
 			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
 					in2.getIndexes(), in2.getValue(), out.getIndexes(), out.getValue(), 
 					((AggregateBinaryOperator)optr), false);
-		}
+		//}
 		
 		//put the output value in the cache
 		if(out==tempValue)
 			cachedValues.add(output, out);
-		
+		//System.out.println("--> " + in1.getIndexes() + " x " + in2.getIndexes() + " = " + out.getIndexes());
 	}
 
 }

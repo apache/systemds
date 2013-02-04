@@ -25,6 +25,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
@@ -239,6 +240,37 @@ public class DataConverter
 		//System.out.println("read matrix (after exec sparse="+ret.isInSparseFormat()+") from HDFS: "+dir);
 		
 		return ret;
+	}
+
+	/**
+	 * Reads a partition that contains the given block index (rowBlockIndex, colBlockIndex)
+	 * from a file on HDFS/LocalFS as specified by <code>dir</code>, which is partitioned using 
+	 * <code>pformat</code> and <code>psize</code>.
+	 * 
+	 * @param dir
+	 * @param localFS
+	 * @param rows
+	 * @param cols
+	 * @param pformat
+	 * @param psize
+	 * @param rowBlockIndex
+	 * @param colBlockIndex
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock readPartitionFromDistCache(String dir, boolean localFS, 
+			long rows, long cols,
+			int partID, int partSize) throws DMLRuntimeException {
+		
+		dir = dir + "/" + partID;
+		
+		try {
+			MatrixBlock partition = readMatrixFromHDFS(dir, InputInfo.BinaryBlockInputInfo, partSize, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, localFS);
+			System.out.println("Reading complete...");
+			return partition;
+		} catch (IOException e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	/**

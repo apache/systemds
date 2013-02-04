@@ -167,6 +167,10 @@ public class MRJobConfiguration {
 	
 	private static final String PARTIAL_AGG_CACHE_SIZE="partial.aggregate.cache.size";
 	
+	private static final String PARTITION_FLAGS   = "partition.flags";
+	private static final String PARTITION_FORMATS = "partition.formats";
+	private static final String PARTITION_SIZES   = "partition.sizes";
+	
 	private static final String DISTCACHE_INPUT_INDICES="distcache.input.indices";
 	private static final String DISTCACHE_INPUT_PATHS = "distcache.input.paths";
 	
@@ -956,6 +960,92 @@ public class MRJobConfiguration {
 	
 	public static String getDistCacheInputPaths(JobConf job) {
 		return job.get(DISTCACHE_INPUT_PATHS);
+	}
+	
+	private static String getCSVString(boolean[] flags) {
+		if ( flags == null || flags.length == 0 )
+			return "";
+		
+		StringBuilder s = new StringBuilder();
+		s.append(flags[0]);
+		for(int i=1; i < flags.length; i++) { 
+			s.append(",");
+			s.append(flags[i]);
+		}
+		
+		return s.toString();
+	}
+	
+	private static String getCSVString(PDataPartitionFormat[] formats) {
+		if ( formats == null || formats.length == 0 )
+			return "";
+		
+		StringBuilder s = new StringBuilder();
+		s.append(formats[0]);
+		for(int i=1; i < formats.length; i++) { 
+			s.append(",");
+			s.append(formats[i]);
+		}
+		
+		return s.toString();
+	}
+	
+	private static String getCSVString(int[] arr) {
+		if ( arr == null || arr.length == 0 )
+			return "";
+		
+		StringBuilder s = new StringBuilder();
+		s.append(arr[0]);
+		for(int i=1; i < arr.length; i++) { 
+			s.append(",");
+			s.append(arr[i]);
+		}
+		
+		return s.toString();
+	}
+	
+	public static void setInputPartitioningInfo(JobConf job, boolean[] partitioned, PDataPartitionFormat[] pformats, int[] psizes) {
+		job.set(PARTITION_FLAGS,  MRJobConfiguration.getCSVString(partitioned));
+		job.set(PARTITION_FORMATS, MRJobConfiguration.getCSVString(pformats));
+		job.set(PARTITION_SIZES, MRJobConfiguration.getCSVString(psizes));
+	}
+	
+	private static boolean[] csv2boolean(String s) {
+		String[] parts = s.split(",");
+		boolean[] b = new boolean[parts.length];
+		for(int i=0; i < parts.length; i++)
+			b[i] = Boolean.parseBoolean(parts[i]);
+		return b;
+	}
+
+	private static PDataPartitionFormat[] csv2PFormat(String s) {
+		String[] parts = s.split(",");
+		PDataPartitionFormat[] pformats = new PDataPartitionFormat[parts.length];
+		for(int i=0; i < parts.length; i++) {
+			pformats[i] = PDataPartitionFormat.parsePDataPartitionFormat(parts[i]);
+		}
+		return pformats;
+	}
+
+	private static int[] csv2int(String s) {
+		String[] parts = s.split(",");
+		int[] arr = new int[parts.length];
+		for(int i=0; i < parts.length; i++) {
+			arr[i] = Integer.parseInt(parts[i]);
+		}
+		return arr;
+	}
+
+	public static boolean[] getInputPartitionFlags(JobConf job) {
+		return MRJobConfiguration.csv2boolean(job.get(PARTITION_FLAGS));
+	}
+	
+	public static PDataPartitionFormat[] getInputPartitionFormats(JobConf job) {
+		return MRJobConfiguration.csv2PFormat(job.get(PARTITION_FORMATS));
+	}
+	
+	public static int[] getInputPartitionSizes(JobConf job) {
+		return MRJobConfiguration.csv2int(job.get(PARTITION_SIZES));
 	}
 	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 

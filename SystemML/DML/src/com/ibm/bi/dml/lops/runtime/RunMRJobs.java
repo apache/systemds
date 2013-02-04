@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
+import com.ibm.bi.dml.runtime.matrix.DataPartitionMR;
 import com.ibm.bi.dml.runtime.matrix.GMR;
 import com.ibm.bi.dml.runtime.matrix.GroupedAggMR;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
@@ -102,6 +103,7 @@ public class RunMRJobs {
 			case GMR: 
 				ret = GMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
 						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+						inst.getPartitioned(), inst.getPformats(), inst.getPsizes(),
 						rrInst, mapInst, aggInst, otherInst,
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos() );
@@ -201,6 +203,10 @@ public class RunMRJobs {
 						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 			
+			case DATA_PARTITION:
+				ret = DataPartitionMR.runJob(inst, inputMatrices, shuffleInst, inst.getIv_resultIndices(), outputMatrices, inst.getIv_numReducers(), inst.getIv_replication());
+				break;
+				
 			default:
 				throw new DMLRuntimeException("Invalid jobtype: " + inst.getJobType());
 			}

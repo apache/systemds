@@ -10,6 +10,7 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -575,6 +576,11 @@ public class MRJobInstruction extends Instruction
 	private int[] bclens;
 	private String[] outputs;
 	private OutputInfo[] outputInfos;
+
+	// Member variables to store partitioning-related information for all input matrices 
+	private boolean[] partitioned;
+	private PDataPartitionFormat[] pformats;
+	private int[] psizes;
 	
 	/*
 	 * These members store references to MatrixObjects corresponding to different 
@@ -622,6 +628,30 @@ public class MRJobInstruction extends Instruction
 
 	public MatrixObject[] getInputMatrices() {
 		return inputMatrices;
+	}
+	
+	public boolean[] getPartitioned() {
+		return partitioned;
+	}
+
+	public void setPartitioned(boolean[] partitioned) {
+		this.partitioned = partitioned;
+	}
+
+	public PDataPartitionFormat[] getPformats() {
+		return pformats;
+	}
+
+	public void setPformats(PDataPartitionFormat[] pformats) {
+		this.pformats = pformats;
+	}
+
+	public int[] getPsizes() {
+		return psizes;
+	}
+
+	public void setPsizes(int[] psizes) {
+		this.psizes = psizes;
 	}
 
 	/*public void setInputMatrices(MatrixObjectNew[] inputMatrices) {
@@ -710,6 +740,11 @@ public class MRJobInstruction extends Instruction
 		clens = new long[inputMatrices.length];
 		brlens = new int[inputMatrices.length];
 		bclens = new int[inputMatrices.length];
+
+		partitioned = new boolean[inputMatrices.length];
+		pformats = new PDataPartitionFormat[inputMatrices.length];
+		psizes = new int[inputMatrices.length];
+
 		
 		// populate information
 		for ( int i=0; i < inputMatrices.length; i++ ) {
@@ -726,6 +761,10 @@ public class MRJobInstruction extends Instruction
 				inputInfos[i] = InputInfo.InputInfoForSortOutput;
 				inputInfos[i].metadata = inputMatrices[i].getMetaData();
 			}
+			
+			partitioned[i] = inputMatrices[i].isPartitioned();
+			pformats[i] = inputMatrices[i].getPartitionFormat();
+			psizes[i] = inputMatrices[i].getPartitionSize();
 		}
 	}
 

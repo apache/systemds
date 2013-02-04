@@ -3,6 +3,7 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
+import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.MMCJ;
@@ -109,7 +110,13 @@ public class AggBinaryOp extends Hops {
 					// System.out.println("Method = " + method);
 					
 					if ( method == MMultMethod.DIST_MVMULT) {
-						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), getInput().get(1).constructLops(), get_dataType(), get_valueType());
+						Lops vector_in = getInput().get(1).constructLops();
+						
+						if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
+							vector_in = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
+						}
+						
+						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), vector_in, get_dataType(), get_valueType());
 						Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
 						Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
 						
@@ -302,8 +309,19 @@ public class AggBinaryOp extends Hops {
 			ret = MMTSJType.RIGHT;
 		}
 		
-		
 		return ret;
+	}
+	
+	/**
+	 * Function that determines whether or not to partition the vector that 
+	 * is in distributed cache. Returns <code>true</code> if the estimated 
+	 * size of the vector is greater than 80% of remote mapper's memory, and 
+	 * returns <code>false</code> otherwise. 
+	 */
+	private static boolean partitionVectorInDistCache(long rows, long cols) {
+		//return true;
+		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
+		return ( vec_size > 0.8 * getMemBudget(false) );
 	}
 	
 	/*
@@ -321,13 +339,13 @@ public class AggBinaryOp extends Hops {
 			return MMultMethod.TSMM;
 		}
 
-		if ( m2_cols == 1 ) {
+		/*if ( m2_cols == 1 ) {
 			// matrix-vector multiplication. 
 			// Choose DIST_MVMULT if the "dense" vector fits in memory.
-			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-			if ( vec_size < 0.9 * getMemBudget(false) )
+			//double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
+			//if ( vec_size < 0.9 * getMemBudget(false) )
 				return MMultMethod.DIST_MVMULT;
-		}
+		}*/
 		
 		// If the dimensions are unknown at compilation time, 
 		// simply assume the worst-case scenario and produce the 

@@ -2911,6 +2911,7 @@ public class Dag<N extends Lops> {
 			case CentralMoment:
 			case CoVariance:
 			case GroupedAgg:
+			case DataPartition:
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
 				break;
 				

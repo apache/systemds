@@ -71,6 +71,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		try
 		{
 			Path path = new Path(fname);
+			Path pathNew = new Path(fnameNew);
 			
 			/////
 			//configure the MR job
@@ -114,8 +115,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		    MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 		    //FileOutputFormat.setOutputPath(job, pathNew);
 		    job.setOutputFormat(NullOutputFormat.class);
-		    
-		    
+
 			//////
 			//set optimization parameters
 

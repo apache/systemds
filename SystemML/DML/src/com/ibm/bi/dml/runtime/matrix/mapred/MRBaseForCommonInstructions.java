@@ -4,18 +4,25 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Vector;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -28,7 +35,18 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	//a cache to hold the intermediate results
 	protected CachedValueMap cachedValues=new CachedValueMap();
 	
-	public static HashMap<Byte, MatrixValue> distCacheValues = new HashMap<Byte,MatrixValue>();
+	//public static HashMap<Byte, MatrixValue> distCacheValues = new HashMap<Byte,MatrixValue>();
+	public static HashMap<Byte, IndexedMatrixValue> distCacheValues = new HashMap<Byte,IndexedMatrixValue>();
+	
+	public static boolean isJobLocal = false; // TODO: remove this!!!!!!
+	public static byte[] distCacheIndices = null;
+	public static Path[] distCacheFiles = null;
+	public static long[] distCacheNumRows = null;
+	public static long[] distCacheNumColumns = null;
+	
+	public static boolean[] inputPartitionFlags = null;
+	public static PDataPartitionFormat[] inputPartitionFormats = null;
+	public static int[] inputPartitionSizes = null;
  	
 	protected HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
 	
@@ -36,6 +54,93 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	protected IndexedMatrixValue tempValue=null;
 	protected IndexedMatrixValue zeroInput=null;
 
+	public static int computePartitionID(long rowBlockIndex, long colBlockIndex, PDataPartitionFormat pformat, int psize) throws DMLRuntimeException {
+		int pfile = -1; // partition file ID
+		switch(pformat) {
+		case ROW_BLOCK_WISE_N:
+			pfile = (int) (((rowBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1; // TODO: remove hardcoding of 1000
+			break;
+		
+		case COLUMN_BLOCK_WISE_N:
+			pfile = (int) (((colBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1;
+			break;
+		
+		default:
+			throw new DMLRuntimeException("Unexpected partitioning format (" + pformat + ") in readPartitionFromDistCache");
+		}
+		
+		return pfile;
+	}
+	public static MatrixValue getDataFromDistributedCache(byte input, int distCache_index, long rowBlockIndex, long colBlockIndex) throws DMLRuntimeException {
+		
+		IndexedMatrixValue imv = distCacheValues.get(input);
+
+		if(imv == null) {
+			MatrixValue data = null;
+			MatrixIndexes idx = null;
+
+			// If the input data is not partitioned, read the entire matrix from HDFS.
+			// Otherwise, read the required partition
+			if(inputPartitionFlags[input] == false) {
+				try {
+					data = DataConverter.readMatrixFromHDFS(
+			    			distCacheFiles[distCache_index].toString(), InputInfo.BinaryBlockInputInfo, 
+			    			distCacheNumRows[distCache_index], // use rlens 
+			    			distCacheNumColumns[distCache_index], 
+			    			DMLTranslator.DMLBlockSize, 
+			    			DMLTranslator.DMLBlockSize, 1.0, !MRBaseForCommonInstructions.isJobLocal );
+				} catch (IOException e) {
+					throw new DMLRuntimeException(e);
+				}
+				idx = new MatrixIndexes(1,1);
+			}
+			else { 
+				int partID = computePartitionID(rowBlockIndex, colBlockIndex, inputPartitionFormats[input], inputPartitionSizes[input]);
+				data = DataConverter.readPartitionFromDistCache(
+						distCacheFiles[distCache_index].toString(), 
+						!MRBaseForCommonInstructions.isJobLocal, 
+						distCacheNumRows[distCache_index], distCacheNumColumns[distCache_index], 
+						partID, inputPartitionSizes[input]);
+				idx = new MatrixIndexes(partID,1);
+			}
+			System.out.println(".... READ " + idx.toString());
+			imv = new IndexedMatrixValue(idx, data);
+			distCacheValues.put(input, imv);
+		}
+		
+		return imv.getValue();
+	}
+	
+	public static MatrixValue readBlockFromDistributedCache(byte input, long rowBlockIndex, long colBlockIndex) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		
+		int distCache_index = 0;
+		while(distCache_index < distCacheIndices.length)
+			if(distCacheIndices[distCache_index] == input)
+				break;
+		if(distCache_index == distCacheIndices.length)
+			return null;
+
+		MatrixValue mv = getDataFromDistributedCache(input, distCache_index, rowBlockIndex, colBlockIndex);
+		
+		int part_rl = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input])*inputPartitionSizes[input];
+		//int part_ru = (int) Math.min(inputPartitionSizes[input], distCacheNumRows[index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)-1;
+		//int part_cl = 0; //(int) ((colBlockIndex-1)*DMLTranslator.DMLBlockSize); // /inputPartitionSizes[input]);  TODO: FIX IT BASED ON PFORMAT
+		//int part_cu = 0; //(int) Math.min((rowBlockIndex)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input], distCacheNumColumns[index]);
+			
+		int st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize - part_rl);
+		int end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-part_rl-1;
+
+		MatrixBlock mb = new MatrixBlock(
+				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumRows[distCache_index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)), 
+				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumColumns[distCache_index]-(colBlockIndex-1)*DMLTranslator.DMLBlockSize)), false);
+		mb = (MatrixBlock) ((MatrixBlockDSM)mv).slideOperations(st+1, end+1, 1, 1, mb);
+
+			
+		System.out.println("readBlock() " + mv.getValue(DMLTranslator.DMLBlockSize-1,0) + ", " + mv.getValue(DMLTranslator.DMLBlockSize, 0) + ", " + mv.getValue(DMLTranslator.DMLBlockSize+1,0));
+		
+		return mb;
+	}
+	
 	public void configure(JobConf job)
 	{	
 		//whether to use the cell representation or the block representation

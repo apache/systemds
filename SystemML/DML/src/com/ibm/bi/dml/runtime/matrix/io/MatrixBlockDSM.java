@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
@@ -42,7 +43,6 @@ import com.ibm.bi.dml.runtime.util.RandNPair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.And;
 
 
 public class MatrixBlockDSM extends MatrixValue{
@@ -3264,7 +3264,7 @@ public class MatrixBlockDSM extends MatrixValue{
 
 		return cmobj;
 	}
-	
+		
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlockDSM weights) throws DMLRuntimeException {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || weights.getNumColumns() != 1) {
@@ -3703,12 +3703,22 @@ public class MatrixBlockDSM extends MatrixValue{
 			MatrixBlockDSM result, AggregateBinaryOperator op, boolean partialMult) throws DMLRuntimeException 
 	{
 		//long start = System.currentTimeMillis();
-		if(!m1.sparse && !m2.sparse)
+		if(!m1.sparse && m2 != null && !m2.sparse )
 			aggBinDense(m1, m2, result, op);
-		else if(m1.sparse && m2.sparse)
+		else if(m1.sparse && m2 != null && m2.sparse)
 			aggBinSparse(m1, m2, result, op);
-		else if(m1.sparse)
+		else if(m1.sparse) {
+			/*if ( MRBaseForCommonInstructions.inputPartitionFlags[1] == true ) {
+				m2Index = new MatrixIndexes(1,1);
+				System.out.println("READ from distcacheFile: " + MRBaseForCommonInstructions.distCacheFiles[0]);
+				m2 = DataConverter.readPartitionFromDistCache(
+						MRBaseForCommonInstructions.distCacheFiles[0].toString(), !MRBaseForCommonInstructions.isJobLocal, 
+						MRBaseForCommonInstructions.distCacheNumRows[0], MRBaseForCommonInstructions.distCacheNumColumns[0],
+						MRBaseForCommonInstructions.inputPartitionFormats[1], MRBaseForCommonInstructions.inputPartitionSizes[1],
+						m1Index.getColumnIndex(), 1);
+			}*/
 			aggBinSparseDense(m1Index, m1, m2Index, m2, result, op, partialMult);
+		}
 		else
 			aggBinDenseSparse(m1, m2, result, op);
 		//mmultTime = (System.currentTimeMillis()-start);
@@ -3766,9 +3776,20 @@ public class MatrixBlockDSM extends MatrixValue{
 		else if(m1.clen!=m2.rlen)
 			throw new RuntimeException("dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+")");
 
-		int rl=m1.rlen;
-		int cl=m2.clen;
-		SparsityEstimate sp=checkSparcityOnAggBinary(m1, m2, op);
+		int rl, cl;
+		SparsityEstimate sp;
+		if ( partialMult ) {
+			// TODO: avoid this code!!
+			rl = m1.rlen;
+			cl = 1;
+			sp = new SparsityEstimate(false,m1.rlen);
+		}
+		else {
+			rl=m1.rlen;
+			cl=m2.clen;
+			sp = checkSparcityOnAggBinary(m1, m2, op);
+		}
+		
 		if(result==null)
 			result=new MatrixBlockDSM(rl, cl, sp.sparse, sp.estimatedNonZeros);//m1.sparse&&m2.sparse);
 		else

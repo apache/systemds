@@ -57,8 +57,10 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	public static int computePartitionID(long rowBlockIndex, long colBlockIndex, PDataPartitionFormat pformat, int psize) throws DMLRuntimeException {
 		int pfile = -1; // partition file ID
 		switch(pformat) {
+		case NONE:
+			return -1;
 		case ROW_BLOCK_WISE_N:
-			pfile = (int) (((rowBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1; // TODO: remove hardcoding of 1000
+			pfile = (int) (((rowBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1;
 			break;
 		
 		case COLUMN_BLOCK_WISE_N:
@@ -75,7 +77,30 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		
 		IndexedMatrixValue imv = distCacheValues.get(input);
 
-		if(imv == null) {
+		int partID = computePartitionID(rowBlockIndex, colBlockIndex, inputPartitionFormats[input], inputPartitionSizes[input]);
+		//int cachedPartID = 
+		boolean readNewPartition = true;
+		if ( imv != null ) {
+			MatrixIndexes partIdx = imv.getIndexes();
+			
+			// cached partition's range (from distCacheValues)
+			int part_st = (int) (partID-1)*inputPartitionSizes[input];
+			int part_end = part_st + (int) Math.min(partID*inputPartitionSizes[input], distCacheNumRows[distCache_index]-part_st)-1;
+			
+			// requested range
+			int req_st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize);
+			int req_end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-1;
+			//if ( req_st < req_end && req_st >= part_st && req_end <= part_end ) {
+			//	// requested range can be served from distCacheValues, and no need to load a new partition
+			//	readNewPartition = false; 
+			//}
+			
+			int cachedPartID = (int) partIdx.getRowIndex();
+			if(partID == cachedPartID || inputPartitionFlags[input] == false)
+				readNewPartition = false;
+			System.out.println("reqIndex ["+rowBlockIndex+","+colBlockIndex+"] reqRange [" + req_st + "," + req_end +"]  partRange [" + part_st + "," + part_end + "] ... cachedPart " + cachedPartID + " reqPartID " + partID + " --> " + (readNewPartition ? "ReadNew" : "UseCached"));
+		}
+		if(imv == null || readNewPartition) {
 			MatrixValue data = null;
 			MatrixIndexes idx = null;
 
@@ -95,7 +120,6 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 				idx = new MatrixIndexes(1,1);
 			}
 			else { 
-				int partID = computePartitionID(rowBlockIndex, colBlockIndex, inputPartitionFormats[input], inputPartitionSizes[input]);
 				data = DataConverter.readPartitionFromDistCache(
 						distCacheFiles[distCache_index].toString(), 
 						!MRBaseForCommonInstructions.isJobLocal, 
@@ -136,7 +160,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		mb = (MatrixBlock) ((MatrixBlockDSM)mv).slideOperations(st+1, end+1, 1, 1, mb);
 
 			
-		System.out.println("readBlock() " + mv.getValue(DMLTranslator.DMLBlockSize-1,0) + ", " + mv.getValue(DMLTranslator.DMLBlockSize, 0) + ", " + mv.getValue(DMLTranslator.DMLBlockSize+1,0));
+		//System.out.println("readBlock(): [" + rowBlockIndex + "," + colBlockIndex + "] part_rl " + part_rl + ", (" + st + "," + end +")");
 		
 		return mb;
 	}

@@ -14,7 +14,7 @@ public class DataPartitionMR {
 
 	public static boolean partitioned = false;
 	public static PDataPartitionFormat pformat = PDataPartitionFormat.ROW_BLOCK_WISE_N;
-	public static int N = DMLTranslator.DMLBlockSize*2;
+	public static int N = DMLTranslator.DMLBlockSize*4;
 	
 	public static JobReturn runJob(MRJobInstruction jobinst, MatrixObject[] inputMatrices, String shuffleInst, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication) throws DMLRuntimeException {
 		MatrixCharacteristics[] sts = new MatrixCharacteristics[outputMatrices.length];
@@ -29,6 +29,7 @@ public class DataPartitionMR {
 		int i=0;
 		for(String inst : shuffleInst.split(Instruction.INSTRUCTION_DELIM)) {
 			if( InstructionUtils.getOpCode(inst).equalsIgnoreCase("partition") ) {
+				//long begin = System.currentTimeMillis();
 				String[] parts = InstructionUtils.getInstructionParts(inst);
 				int input_index = Integer.parseInt(parts[1]);
 				int output_index = Integer.parseInt(parts[2]);
@@ -45,10 +46,10 @@ public class DataPartitionMR {
 				//else if( dp == PDataPartitioner.REMOTE_MR )
 				dpart = new DataPartitionerRemoteMR(format, _n, 4, numReducers, replication, 1, false);
 				
-				out = dpart.createPartitionedMatrixObject(in, out);
+				out = dpart.createPartitionedMatrixObject(in, out, true);
 				
 				sts[i] = ((MatrixDimensionsMetaData)out.getMetaData()).getMatrixCharacteristics();
-				System.out.println("Partioning complete!!");
+				//System.out.println("Partioning complete: " + (System.currentTimeMillis()-begin)/1000 + " sec");
 				i++;
 				partitioned = true;
 			}

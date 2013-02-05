@@ -167,8 +167,11 @@ public class RandOp extends Hops
 	@Override
 	public double computeMemEstimate() {
 		
-		_outputMemEstimate = OptimizerUtils.estimate(get_dim1(), get_dim2(), sparsity);
-		
+		if( dimsKnown() )
+			_outputMemEstimate = OptimizerUtils.estimate(get_dim1(), get_dim2(), sparsity);
+		else
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
 		_memEstimate = getInputOutputSize();
 		
 		return _memEstimate;

@@ -1,0 +1,13 @@
+n = $1;
+s = 0;
+
+x1= n+5;
+x2= n+7;
+
+if( 1==1 )
+{
+  D = Rand(rows=x1, cols=x2);
+  s = s + sum(D);
+}
+
+print(s);    

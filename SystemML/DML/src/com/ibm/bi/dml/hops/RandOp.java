@@ -201,14 +201,21 @@ public class RandOp extends Hops
 		return _etype;
 	}
 	
+	@Override
+	public void refreshSizeInformation()
+	{
+		//do nothing always set from outside
+	}
+	
+
+	public HashMap<String, Integer> getParamIndexMap()
+	{
+		return _paramIndexMap;
+	}
+	
 	public static long generateRandomSeed()
 	{
 		return System.nanoTime();
 	}
 	
-	@Override
-	public void refreshSizeInformation()
-	{
-		//do nothing always known (TODO modify whenever we take expressions for rows/cols)
-	}
 }

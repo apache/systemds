@@ -2,6 +2,7 @@ package com.ibm.bi.dml.lops.compile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -9,9 +10,11 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
@@ -30,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -317,6 +321,22 @@ public class Recompiler
 					d.set_dim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
 				}
+			}
+		}
+		else if ( hop instanceof RandOp )
+		{
+			RandOp d = (RandOp) hop;
+			HashMap<String,Integer> params = d.getParamIndexMap();
+			int ix1 = params.get(RandStatement.RAND_ROWS);
+			int ix2 = params.get(RandStatement.RAND_COLS);
+			String name1 = d.getInput().get(ix1).get_name();
+			String name2 = d.getInput().get(ix2).get_name();
+			Data dat1 = vars.get(name1);
+			Data dat2 = vars.get(name2);
+			if( dat1!=null && dat2!=null && dat1 instanceof ScalarObject && dat2 instanceof ScalarObject)
+			{
+				d.set_dim1( ((ScalarObject)dat1).getLongValue() );
+				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
 			}
 		}
 		

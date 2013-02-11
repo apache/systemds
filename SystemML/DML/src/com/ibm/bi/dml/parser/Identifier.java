@@ -217,4 +217,8 @@ public abstract class Identifier extends Expression{
 	public boolean isScalarBoolean(){
 		return (_valueType == ValueType.BOOLEAN) && (_dataType == DataType.SCALAR);
 	}
+	
+	public boolean dimsKnown(){
+		return ( _dim1 > 0 && _dim2 > 0);
+	}
 }

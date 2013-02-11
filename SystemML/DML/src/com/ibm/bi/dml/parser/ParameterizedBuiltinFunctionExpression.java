@@ -117,13 +117,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 				DataIdentifier groupsid = (DataIdentifier)getVarParam("groups");
 				DataIdentifier weightsid = (DataIdentifier)getVarParam("weights");
 				
-			
-				if (targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2() ){
+				if( targetid.dimsKnown() && groupsid.dimsKnown() &&
+					(targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2()) )
+				{
 					
 					throw new LanguageException(this.printErrorLocation() + "target and groups must have same dimensions -- " 
 							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols " );
 				}
-				if (weightsid != null && (targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() )){
+				if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
+					(targetid.getDim1() != weightsid.getDim1() || targetid.getDim2() != weightsid.getDim2() ))
+				{
 					
 					throw new LanguageException(this.printErrorLocation() + "target and weights must have same dimensions -- "
 							+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols " );

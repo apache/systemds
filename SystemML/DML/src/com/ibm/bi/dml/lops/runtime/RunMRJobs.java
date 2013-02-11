@@ -58,8 +58,6 @@ public class RunMRJobs {
 	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
 		JobReturn ret = new JobReturn();
 
-		LOG.trace("Instruction: " + inst.toString());
-
 		// Obtain references to all input matrices 
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(pb);
 		

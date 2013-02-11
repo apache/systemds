@@ -194,6 +194,8 @@ public class ProgramConverter
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
+		tmpPB.setStatementBlock( wpb.getStatementBlock() );
+		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog));
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix));
@@ -216,6 +218,8 @@ public class ProgramConverter
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
+		tmpPB.setStatementBlock( ipb.getStatementBlock() );
+		tmpPB.setThreadID(pid);
 		
 		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog));
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix));
@@ -238,6 +242,9 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterablePredicateVars());
+		tmpPB.setStatementBlock(fpb.getStatementBlock());
+		tmpPB.setThreadID(pid);
+		
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog) );
@@ -248,7 +255,8 @@ public class ProgramConverter
 	}
 	
 	/**
-	 * 
+	 * TODO pass pid to shallow blocks as well?
+	 *  
 	 * @param fpb
 	 * @param prog
 	 * @return
@@ -315,6 +323,8 @@ public class ProgramConverter
 			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
 		tmpPB.setStatementBlock( pfpb.getStatementBlock() );
+		tmpPB.setThreadID(pid);
+		
 		tmpPB.disableOptimization(); //already done in top-level parfor
 		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		

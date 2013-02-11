@@ -118,6 +118,13 @@ public class VariableCPInstruction extends CPInstruction {
 		return false;
 	}
 	
+	public boolean isRemoveVariable() {
+		if ( opcode == VariableOperationCode.RemoveVariable || opcode == VariableOperationCode.RemoveVariableAndFile) {
+			return true;
+		}
+		return false;
+	}
+	
 	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String istr )
 	{
 		super();
@@ -136,6 +143,13 @@ public class VariableCPInstruction extends CPInstruction {
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
 		metadata = md;
+	}
+	
+	public String getOutputVariableName(){
+		String ret = null;
+		if( output != null )
+			ret = output.get_name();
+		return ret;
 	}
 
 	private static int getArity(VariableOperationCode op) {

@@ -62,17 +62,10 @@ public class Recompiler
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
-		
-		//Timing timeOut = new Timing();
-		//timeOut.start();
-		
+
 		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
-			
-			
-			//Timing time = new Timing();
-			//time.start();
 			
 			// clear existing lops
 			for( Hops hopRoot : hops )
@@ -80,9 +73,7 @@ public class Recompiler
 				hopRoot.resetVisitStatus();
 				rClearLops( hopRoot );
 			}
-			
-			//System.out.println("Clear existing lops in "+time.stop()+"ms");
-			
+
 			// update statistics if unknown
 			for( Hops hopRoot : hops )
 			{
@@ -92,7 +83,6 @@ public class Recompiler
 				hopRoot.resetVisitStatus();
 				hopRoot.refreshMemEstimates(); 
 			}			
-			//System.out.println("Update hop statistics in "+time.stop()+"ms");
 			
 			// construct lops
 			Dag<Lops> dag = new Dag<Lops>();
@@ -101,19 +91,66 @@ public class Recompiler
 				Lops lops = hopRoot.constructLops();
 				lops.addToDag(dag);
 			}		
-			//System.out.println("Construct lops in "+time.stop()+"ms");
-			
+
 			// construct instructions
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
-			//System.out.println("Construct instructions in "+time.stop()+"ms");
 		}
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
+
+		return newInst;
+	}
+	
+	/**
+	 * Note: This overloaded method is required for predicate instructions because
+	 * they have only a single hops DAG and we need to synchronize on the original 
+	 * (shared) hops object. Hence, we cannot create any wrapper arraylist for each
+	 * recompilation - this would result in race conditions for concurrent recompilation 
+	 * in a parfor body. 	
+	 * 
+	 * @param hops
+	 * @param vars
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static ArrayList<Instruction> recompileHopsDag( Hops hops, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<Instruction> newInst = null;
+
+		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
+			
+			// clear existing lops
+			hops.resetVisitStatus();
+			rClearLops( hops );
+
+			// update statistics if unknown
+			hops.resetVisitStatus();
+			rUpdateStatistics( hops, vars );
+			hops.resetVisitStatus();
+			hops.refreshMemEstimates(); 		
+			
+			// construct lops
+			Dag<Lops> dag = new Dag<Lops>();
+			Lops lops = hops.constructLops();
+			lops.addToDag(dag);		
+
+			// construct instructions
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
+		}
 		
-		//System.out.println("Program block recompiled in "+timeOut.stop()+"ms.");
-		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
+
 		return newInst;
 	}
 
@@ -157,6 +194,21 @@ public class Recompiler
 				if( ret ) break; // early abort
 			}
 		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param hops
+	 * @return
+	 */
+	public static boolean requiresRecompilation( Hops hops )
+	{
+		boolean ret = false;
+		
+		if( hops != null )
+			ret = rRequiresRecompile(hops);
+	
 		return ret;
 	}
 	
@@ -333,11 +385,10 @@ public class Recompiler
 			String name2 = d.getInput().get(ix2).get_name();
 			Data dat1 = vars.get(name1);
 			Data dat2 = vars.get(name2);
-			if( dat1!=null && dat2!=null && dat1 instanceof ScalarObject && dat2 instanceof ScalarObject)
-			{
+			if( dat1!=null && dat1 instanceof ScalarObject )
 				d.set_dim1( ((ScalarObject)dat1).getLongValue() );
+			if( dat2!=null && dat2 instanceof ScalarObject )
 				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
-			}
 		}
 		
 		hop.refreshSizeInformation();

@@ -173,7 +173,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			ArrayList<Instruction> tempInst = new ArrayList<Instruction>();
 			tempInst.addAll(block2CellInst);
 			try {
-				this.execute(tempInst,ec);
+				this.executeInstructions(tempInst,ec);
 			} catch (Exception e) {
 				
 				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error executing "
@@ -206,7 +206,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 			try {
 				tempInst.clear();
 				tempInst.addAll(cell2BlockInst);
-				this.execute(tempInst, ec);
+				this.executeInstructions(tempInst, ec);
 			} catch (Exception e) {
 				
 				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Failed to execute instruction "

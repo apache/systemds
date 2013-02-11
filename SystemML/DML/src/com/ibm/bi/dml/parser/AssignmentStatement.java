@@ -86,12 +86,18 @@ public class AssignmentStatement extends Statement{
 		
 		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
 		{
+			//TODO
+			//if( _source.toString().contains(Expression.DataOp.RAND.toString()) )
+			//	ret = true;	
+			
 			//TODO enable this for groupedAggregate after resolved reblock issue
 			//if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG.toString()) )
-			//	ret = true;		
+			//	ret = true;	
 			
 			if( _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
 				ret = true;
+			
+
 		}
 		//System.out.println(_source +": "+ret);
 		

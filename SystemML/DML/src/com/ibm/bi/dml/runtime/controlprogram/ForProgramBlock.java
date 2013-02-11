@@ -2,15 +2,12 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -178,7 +175,7 @@ public class ForProgramBlock extends ProgramBlock
 			iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
 		}
 		try {
-			execute(_exitInstructions, ec);	
+			executeInstructions(_exitInstructions, ec);	
 		}
 		catch (Exception e){
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating for program block exit instructions", e);
@@ -200,42 +197,17 @@ public class ForProgramBlock extends ProgramBlock
 			}		
 			else
 			{
-				if( instructions != null && instructions.size()>0 )
+				if( _sb!=null )
 				{
-					String retName = null;
-					boolean isSQL = false;
-					
-					// Execute all scalar simple instructions (relational expressions, etc.)
-					for (Instruction si : instructions ) {
-						
-						if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable )
-						{
-							((CPInstruction)si).processInstruction(this);
-							retName = ((ComputationCPInstruction) si).getOutputVariableName();  
-						}
-						else if(si instanceof SQLScalarAssignInstruction)
-						{
-							((SQLScalarAssignInstruction) si).execute(ec);
-							retName = ((SQLScalarAssignInstruction) si).getVariableName();
-							isSQL = true;
-						}
-					}
-					
-					if(!isSQL)
-						tmp = (ScalarObject) getScalarInput(retName, ValueType.INT);
-					else {
-						try {
-							tmp = (ScalarObject) ec.getVariable(retName, ValueType.INT);
-						} catch (Exception e) {
-							throw new DMLRuntimeException(this.printBlockErrorLocation() + "error" , e);
-						}
-					}
-					// Execute all other instructions in the predicate (variableCPInstruction, etc.)
-					for (Instruction si : instructions ) {
-						if ( !(si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable))
-							((CPInstruction)si).processInstruction(this);
-					}
+					ForStatementBlock fsb = (ForStatementBlock)_sb;
+					Hops predHops = null;
+					if 		(pos == 1) predHops = fsb.getFromHops();
+					else if (pos == 2) predHops = fsb.getToHops();
+					else if (pos == 3) predHops = fsb.getIncrementHops();
+					tmp = (IntObject) executePredicate(instructions, predHops, ValueType.INT, ec);
 				}
+				else
+					tmp = (IntObject) executePredicate(instructions, null, ValueType.INT, ec);
 			}
 		}
 		catch(Exception ex)
@@ -245,7 +217,7 @@ public class ForProgramBlock extends ProgramBlock
 			else if (pos == 2) predNameStr = "to";
 			else if (pos == 3) predNameStr = "increment";
 			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating " + predNameStr + " predicate", ex);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating '" + predNameStr + "' predicate", ex);
 		}
 		
 		//final check of resulting int object
@@ -265,6 +237,6 @@ public class ForProgramBlock extends ProgramBlock
 	}
 	
 	public String printBlockErrorLocation(){
-		return "ERROR: Runtime error in function program block generated from function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+		return "ERROR: Runtime error in for program block generated from for statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}
 }

@@ -544,7 +544,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//end PARALLEL EXECUTION of (PAR)FOR body
 		///////
 			
-		execute(_exitInstructions, ec);			
+		executeInstructions(_exitInstructions, ec);			
 	}
 
 
@@ -1289,11 +1289,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return sb.toString();   		
 	}
-	
-	public String printBlockErrorLocation(){
-		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
-	}
-	
+
 	/**
 	 * 
 	 * @return
@@ -1344,4 +1340,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			InfrastructureAnalyzer.setLocalMaxMemory((long)_oldMemoryBudget);
 		}
 	}
+	
+	
+	public String printBlockErrorLocation(){
+		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
 }

@@ -219,10 +219,15 @@ public class DMLProgram {
 				throw new LopsException(wsb.printBlockErrorLocation() + "WhileStatementBlock should have no Lops");
 			}
 			
+			
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
 			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			
+			// add statement block
+			retPB.setStatementBlock(sb);
+			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
@@ -283,6 +288,9 @@ public class DMLProgram {
 			
 			//post processing for generating missing instructions
 			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			
+			// add statement block
+			retPB.setStatementBlock(sb);
 			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
@@ -356,6 +364,9 @@ public class DMLProgram {
 			
 			//post processing for generating missing instructions
 			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			
+			// add statement block
+			retPB.setStatementBlock(sb);
 			
 			// add location information
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());

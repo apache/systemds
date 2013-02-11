@@ -1,9 +1,8 @@
-
-
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -17,13 +16,20 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class WhileProgramBlock extends ProgramBlock {
-
+public class WhileProgramBlock extends ProgramBlock 
+{
 	private ArrayList<Instruction> _predicate;
 	private String _predicateResultVar;
 	private ArrayList <Instruction> _exitInstructions ;
 	private ArrayList<ProgramBlock> _childBlocks;
-	
+
+	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) throws DMLRuntimeException{
+		super(prog);
+		_predicate = predicate;
+		_predicateResultVar = findPredicateResultVar ();
+		_exitInstructions = new ArrayList<Instruction>();
+		_childBlocks = new ArrayList<ProgramBlock>(); 
+	}
 	
 	public void printMe() {
 		
@@ -43,13 +49,7 @@ public class WhileProgramBlock extends ProgramBlock {
 	}
 	
 	
-	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) throws DMLRuntimeException{
-		super(prog);
-		_predicate = predicate;
-		_predicateResultVar = findPredicateResultVar ();
-		_exitInstructions = new ArrayList<Instruction>();
-		_childBlocks = new ArrayList<ProgramBlock>(); 
-	}
+
 	
 	public void addProgramBlock(ProgramBlock childBlock) {
 		_childBlocks.add(childBlock);
@@ -75,64 +75,41 @@ public class WhileProgramBlock extends ProgramBlock {
 	
 	public ArrayList<Instruction> getExitInstructions()
 		{ return _exitInstructions; }
-
-	private String findPredicateResultVar ( ) {
-		String result = null;
-		for ( Instruction si : _predicate ) {
-			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable ) {
-				result = ((ComputationCPInstruction) si).getOutputVariableName();  
-			}
-			else if(si instanceof SQLScalarAssignInstruction)
-				result = ((SQLScalarAssignInstruction) si).getVariableName();
-		}
-		return result;
-	}
 	
-	private BooleanObject executePredicate(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	private BooleanObject executePredicate(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		BooleanObject result = null;
-		
-		//TODO this has to be changed
-		boolean isSQL = false;
-		// Execute all scalar simple instructions (relational expressions, etc.)
-		for (Instruction si : _predicate ) {
-			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable )
-				((CPInstruction)si).processInstruction(this);
-			else if(si instanceof SQLScalarAssignInstruction)
+		try
+		{
+			if( _predicate!=null && _predicate.size()>0 )
 			{
-				((SQLScalarAssignInstruction) si).execute(ec);
-				isSQL = true;
+				if( _sb!=null )
+				{
+					WhileStatementBlock wsb = (WhileStatementBlock)_sb;
+					result = (BooleanObject) executePredicate(_predicate, wsb.getPredicateHops(), ValueType.BOOLEAN, ec);
+				}
+				else
+					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
+			else
+				result = (BooleanObject)getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 		}
-		
-		if(!isSQL)
-			result = (BooleanObject) getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
-		else
-			result = (BooleanObject) ec.getVariable(_predicateResultVar, ValueType.BOOLEAN);
-		
-		// Execute all other instructions in the predicate (variableCPInstruction, etc.)
-		for (Instruction si : _predicate ) {
-			if ( !(si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable))
-				((CPInstruction)si).processInstruction(this);
+		catch(Exception ex)
+		{
+			LOG.trace("\nWhile predicate variables: "+ _variables.toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.", ex);
 		}
 		
 		if ( result == null )
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.");
+		
 		return result;
 	}
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
 
-		BooleanObject predResult = null;
-		
-		try {
-			predResult = executePredicate(ec); 
-		}
-		catch(Exception e){
-			
-			LOG.trace("\nWhile predicate variables: "+ _variables.toString());
-			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while loop predicate ", e);
-		}
+		BooleanObject predResult = executePredicate(ec); 
 		
 		while(predResult.getBooleanValue()){
 				
@@ -157,7 +134,7 @@ public class WhileProgramBlock extends ProgramBlock {
 		}
 		
 		try {
-			execute(_exitInstructions, ec);
+			executeInstructions(_exitInstructions, ec);
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing exit instructions ", e);
@@ -172,6 +149,19 @@ public class WhileProgramBlock extends ProgramBlock {
 	public void setChildBlocks(ArrayList<ProgramBlock> childs) 
 	{
 		_childBlocks = childs;
+	}
+	
+
+	private String findPredicateResultVar ( ) {
+		String result = null;
+		for ( Instruction si : _predicate ) {
+			if ( si.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM && ((CPInstruction)si).getCPInstructionType() != CPINSTRUCTION_TYPE.Variable ) {
+				result = ((ComputationCPInstruction) si).getOutputVariableName();  
+			}
+			else if(si instanceof SQLScalarAssignInstruction)
+				result = ((SQLScalarAssignInstruction) si).getVariableName();
+		}
+		return result;
 	}
 	
 	public String printBlockErrorLocation(){

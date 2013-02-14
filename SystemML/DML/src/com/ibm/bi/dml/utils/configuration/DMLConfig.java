@@ -153,7 +153,8 @@ public class DMLConfig
 	{
 		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		Document domTree = null;
-		if (config_file_name.startsWith("hdfs:")) { // config file from hdfs
+		if (config_file_name.startsWith("hdfs:") | 
+		    config_file_name.startsWith("gpfs:") ) { // config file from DFS
 			FileSystem hdfs = FileSystem.get(new Configuration());
             Path configFilePath = new Path(config_file_name);
             domTree = builder.parse(hdfs.open(configFilePath));

@@ -92,12 +92,12 @@ public class DMLScript {
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
 			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? (-args)? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
-			+ "     <filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n" 
+			+ "     <filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
 			+ " -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
-			+ "          <config_filename> prefixed with hdfs: is hdfs file, otherwise it is local file + \n"
+			+ "          <config_filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n"
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
 			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
 			+ "<args-list>: (optional) args to DML script \n" ;
@@ -306,12 +306,13 @@ public class DMLScript {
 		else {
 			String s1 = null;
 			BufferedReader in = null;
-			//TODO: update this hard coded line
+			// we need to consider HDFS and GPFS prefixes
 			try {
-				if (scriptPathName.startsWith("hdfs:")){ 
-					FileSystem hdfs = FileSystem.get(new Configuration());
+				if (scriptPathName.startsWith("hdfs:") |
+					scriptPathName.startsWith("gpfs:") ) { 
+					FileSystem DFS = FileSystem.get(new Configuration());
 					Path scriptPath = new Path(scriptPathName);
-					in = new BufferedReader(new InputStreamReader(hdfs.open(scriptPath)));
+					in = new BufferedReader(new InputStreamReader(DFS.open(scriptPath)));
 				}
 				else { // from local file system
 					in = new BufferedReader(new FileReader(scriptPathName));

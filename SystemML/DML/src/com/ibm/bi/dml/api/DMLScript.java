@@ -308,7 +308,7 @@ public class DMLScript {
 			BufferedReader in = null;
 			// we need to consider HDFS and GPFS prefixes
 			try {
-				if (scriptPathName.startsWith("hdfs:") |
+				if (scriptPathName.startsWith("hdfs:") ||
 					scriptPathName.startsWith("gpfs:") ) { 
 					FileSystem DFS = FileSystem.get(new Configuration());
 					Path scriptPath = new Path(scriptPathName);

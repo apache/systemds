@@ -47,7 +47,7 @@ public class DMLConfig
 	public static final String NIMBLE_SCRATCH       = "NimbleScratch";
 
 	//internal config
-	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and hdfs
+	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	public static String LOCAL_MR_MODE_STAGING_DIR = null;
 	
 	//configuration default values
@@ -153,11 +153,11 @@ public class DMLConfig
 	{
 		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		Document domTree = null;
-		if (config_file_name.startsWith("hdfs:") | 
+		if (config_file_name.startsWith("hdfs:") ||
 		    config_file_name.startsWith("gpfs:") ) { // config file from DFS
-			FileSystem hdfs = FileSystem.get(new Configuration());
+			FileSystem DFS = FileSystem.get(new Configuration());
             Path configFilePath = new Path(config_file_name);
-            domTree = builder.parse(hdfs.open(configFilePath));
+            domTree = builder.parse(DFS.open(configFilePath));
 		}
 		else { // config from local file system
 			domTree = builder.parse(config_file_name);

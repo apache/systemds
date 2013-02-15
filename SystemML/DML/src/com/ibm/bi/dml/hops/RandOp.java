@@ -168,7 +168,7 @@ public class RandOp extends Hops
 	public double computeMemEstimate() {
 		
 		if( dimsKnown() )
-			_outputMemEstimate = OptimizerUtils.estimate(get_dim1(), get_dim2(), sparsity);
+			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), sparsity);
 		else
 			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			

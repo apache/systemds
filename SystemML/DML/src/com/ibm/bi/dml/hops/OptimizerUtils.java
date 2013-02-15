@@ -158,27 +158,9 @@ public class OptimizerUtils {
 	 * @param sp
 	 * @return
 	 */
-	public static long estimate(long nrows, long ncols, double sp) {
+	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
+	{
 		return MatrixBlockDSM.estimateSize(nrows,ncols,sp);
-		/*boolean sparse_rep = true; // type of representation
-		if (ncols == 1) {
-		
-		boolean sparse_rep = true; // type of representation
-		if (ncols<=MatrixBlock.SKINNY_MATRIX_TURN_POINT) {
-			sparse_rep = false;
-		}
-		else {
-			sparse_rep = sp < MatrixBlockDSM.SPARCITY_TURN_POINT;
-		}
-		
-		long size = 44;// the basic variables and references sizes
-		if (sparse_rep) {
-			//size += (Math.floor(sp * ncols) * 12 + 28) * nrows;
-			size += estimateRowSize(ncols, sp) * nrows;
-		} else
-			size += nrows * ncols * 8;
-
-		return size;*/
 	}
 	
 	/**
@@ -190,13 +172,15 @@ public class OptimizerUtils {
 	 * @param sp
 	 * @return
 	 */
-	public static long estimateSize(long nrows, long ncols, double sp) {
+	public static long estimateSize(long nrows, long ncols, double expectedSparsity) 
+	{
 		if (_optMode == OptimizationMode.ROBUST  ) {
 			// In case of ROBUST, ignore the value given for <code>sp</code>, 
 			// and provide a worst-case estimate i.e., a dense representation
-			sp = 1.0;
+			expectedSparsity = 1.0;
 		}
-		return estimate(nrows, ncols, sp);
+		
+		return estimateSizeExactSparsity(nrows, ncols, expectedSparsity);
 	}
 	
 	/**

@@ -440,7 +440,7 @@ public class DataOp extends Hops {
 				if( dimsKnown() )
 				{
 					if ( getNnz() > 0 ) {
-						_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
+						_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
 					}
 					else {
 						_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEF_SPARSITY);

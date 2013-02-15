@@ -625,7 +625,7 @@ public class TertiaryOp extends Hops {
 					// C=ctable(A,B)
 					//   worst case dimensions of C = [m,m]
 					//   worst case #nnz in C = m => sparsity = 1/m
-					_outputMemEstimate = OptimizerUtils.estimate(m, m, (double)1/m);
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(m, m, (double)1/m); 
 				}
 				else {
 					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
@@ -636,7 +636,7 @@ public class TertiaryOp extends Hops {
 				// This part of the code is executed only when a vector of quantiles are computed
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 				if ( dimsKnown() ) {
-					_outputMemEstimate = OptimizerUtils.estimate(_dim1, _dim2, 1);
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, 1);
 					_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation
 				}
 				else { 

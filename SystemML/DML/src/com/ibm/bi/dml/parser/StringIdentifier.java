@@ -15,6 +15,7 @@ public class StringIdentifier extends ConstIdentifier {
 		super();
 		 _val = val;
 		_kind = Kind.Data;
+		
 	}
 	
 	public StringIdentifier(StringIdentifier s){

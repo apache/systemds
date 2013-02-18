@@ -197,7 +197,7 @@ TOKEN :
 	| <PRINT 		: "print">
 	| <READMATRIX 	: "read">
 	| <WRITEMATRIX 	: "write">
-	| <READMM		: "readmMM" >
+	| <READMM		: "readMM" >
 	| <WRITEMM		: "writeMM" >
 	| <READ_MATRIX	: "read.matrix" >
 	| <WRITE_MATRIX	: "write.matrix" >
@@ -1468,8 +1468,12 @@ IterablePredicate IterablePredicate() :
   			}
     		else {
      			fromExpr = seqExprs.get(0);
-     			toExpr   = seqExprs.get(1); 
-     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : new IntIdentifier(1);  
+     			toExpr   = seqExprs.get(1);
+     			IntIdentifier oneExpr = new IntIdentifier(1);
+     			((IntIdentifier)oneExpr).setDimensions(0,0);
+				((IntIdentifier)oneExpr).computeDataType();
+				((IntIdentifier)oneExpr).setValueType(ValueType.INT);
+     			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : oneExpr;  
     		} 
     
    		}
@@ -1478,6 +1482,10 @@ IterablePredicate IterablePredicate() :
     		fromExpr = exprParams.get(0);
     		toExpr   = exprParams.get(1);
     		incrementExpr = new IntIdentifier(1);
+    		((IntIdentifier)incrementExpr).setDimensions(0,0);
+			((IntIdentifier)incrementExpr).computeDataType();
+			((IntIdentifier)incrementExpr).setValueType(ValueType.INT);
+    		
    		}
     	// if (params.size() > 2)
   	}
@@ -2167,10 +2175,18 @@ InputStatement InputStatement() :
 	{
 
 		if (tRead.image.equals("readMM")){
-			is.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.MATRIXMARKET_FORMAT_TYPE), false);
+		    StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+		    readMMExpr.setDimensions(0,0);
+	    	readMMExpr.computeDataType();
+	    	readMMExpr.setValueType(ValueType.STRING);
+			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
 		}
 		else if (tRead.image.equals("read.matrix")){
-			is.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.DELIMITED_FORMAT_TYPE), false);			
+		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED);
+		    readMMExpr.setDimensions(0,0);
+	    	readMMExpr.computeDataType();
+	    	readMMExpr.setValueType(ValueType.STRING);
+			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
 		}
 
 		
@@ -2216,10 +2232,19 @@ OutputStatement OutputStatement() :
 		tEnd = <RIGHTPAREN>  [<SEMICOLON>]
 	{
 		tWrite = tStart;
-		if (tWrite.image.equals("writeMM")){			os.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.MATRIXMARKET_FORMAT_TYPE),false);
+		if (tWrite.image.equals("writeMM")){
+
+			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+		  	writeMMExpr.setDimensions(0,0);
+	    	writeMMExpr.computeDataType();
+	    	writeMMExpr.setValueType(ValueType.STRING);			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
 		}
 		else if (tWrite.image.equals("write.matrix")){
-			os.addExprParam(Statement.FORMAT_TYPE, new StringIdentifier(Statement.DELIMITED_FORMAT_TYPE), false);
+			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+		  	delimitedExpr.setDimensions(0,0);
+	    	delimitedExpr.computeDataType();
+	    	delimitedExpr.setValueType(ValueType.STRING);
+			os.addExprParam(Statement.FORMAT_TYPE, delimitedExpr, false);
 		}	
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;

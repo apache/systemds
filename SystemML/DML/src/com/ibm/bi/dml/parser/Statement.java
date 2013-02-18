@@ -18,9 +18,17 @@ public abstract class Statement {
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNUMNONZEROPARAM = "nnz";
-	public static final String FORMAT_TYPE = "format";
-	public static final String FORMAT_DELIMITER = ",";
-	public static final String HAS_HEADER_ROW = "false";
+	
+	public static final String FORMAT_TYPE 						= "format";
+	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
+	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
+	public static final String FORMAT_TYPE_VALUE_DELIMITED		= "delimited";
+	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
+	
+	public static final String FORMAT_DELIMITER = "delimiter";
+	public static final String HAS_HEADER_ROW = "hasHeader";
+	
+	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
 	public static final String DATATYPEPARAM = "data_type";
@@ -38,10 +46,7 @@ public abstract class Statement {
 	public static final String IMPORT  = "import";
 	public static final  String DMLPATH = "dml-path";
 	
-	public static final String TEXT_FORMAT_TYPE 			= "text";
-	public static final String BINARY_FORMAT_TYPE 			= "binary";
-	public static final String DELIMITED_FORMAT_TYPE		= "delimited";
-	public static final String MATRIXMARKET_FORMAT_TYPE		= "matrixMarket";
+	
 	
 	
 	public static final String MATRIX_DATA_TYPE = "matrix";

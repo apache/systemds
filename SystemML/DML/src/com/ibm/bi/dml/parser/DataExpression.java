@@ -203,14 +203,45 @@ public class DataExpression extends Expression {
 				throw new LanguageException(this.printErrorLocation() + "for InputStatement, parameter " + Statement.IO_FILENAME + " can only be a const string or const string concatenations. ");
 			}
 			
-			
-			// TODO: DRB FIX -- only read MTD file if FORMAT_TYPE = Statement.DELIMITED_FORMAT_TYPE 
-			//											OR FORMAT_TYPE = Statement.MATRIXMARKET_FORMAT_TYPE  
-			
+			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = true;
-			String formatType = (getVarParam(Statement.FORMAT_TYPE) == null) ? null : getVarParam(Statement.FORMAT_TYPE).toString();
 			
-			if (formatType != null && formatType.equalsIgnoreCase(Statement.MATRIXMARKET_FORMAT_TYPE)){
+			// track whether format type has been inferred 
+			boolean inferredFormatType = false;
+			
+			// get format type string
+			String formatTypeString = (getVarParam(Statement.FORMAT_TYPE) == null) ? null : getVarParam(Statement.FORMAT_TYPE).toString();
+			
+			// check if file is matrix market format
+			if (formatTypeString == null){
+				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
+				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(origFilename); 
+				if (isMatrixMarketFormat){
+					
+					formatTypeString = Statement.FORMAT_TYPE_VALUE_MATRIXMARKET;
+					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET));
+					inferredFormatType = true;
+					shouldReadMTD = false;
+				}
+			}
+			
+			// check if file is delimited format
+			if (formatTypeString == null) { //  && getVarParam(Statement.READROWPARAM) != null  && getVarParam(Statement.READCOLPARAM) != null ){
+			
+				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
+				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
+				
+				if (isDelimitedFormat){
+					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED));
+					formatTypeString = Statement.FORMAT_TYPE_VALUE_DELIMITED;
+					inferredFormatType = true;
+					shouldReadMTD = false;
+				}
+				
+			}
+			
+				
+			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
 				/*
 				 *  handle Statement.MATRIXMARKET_FORMAT_TYPE format
 				 *
@@ -222,9 +253,8 @@ public class DataExpression extends Expression {
 				 * 		C) get size information from sizing info line --- M N L
 				 */
 				
-				// only allow IO_FILENAME as ONLY valid parameter
 				for (String key : _varParams.keySet()){
-					if (!key.equals(Statement.IO_FILENAME)){
+					if ( !(key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) ) ){
 						
 						LOG.error(this.printErrorLocation() + "Invalid parameters in readMM statement: " +
 								toString() + ". Only " + Statement.IO_FILENAME + " is allowed.");
@@ -234,96 +264,98 @@ public class DataExpression extends Expression {
 					}
 				}
 				
+				
 				// should NOT attempt to read MTD file for MatrixMarket format
 				shouldReadMTD = false;
 				
 				// get metadata from MatrixMarket format file
-				String[] headerLines = readMatrixMarketFile(Statement.IO_FILENAME);
+				String[] headerLines = readMatrixMarketFile(getVarParam(Statement.IO_FILENAME).toString());
 				
 				// process 1st line of MatrixMarket format -- must be identical to legal header
 				String legalHeaderMM = "%%MatrixMarket matrix coordinate real general";
-				String firstLine = headerLines[0].trim();
-				if (!firstLine.equals(legalHeaderMM)){
-					
-					LOG.error(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-							headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM);
-					
-					throw new LanguageException(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-							headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-				}
 				
-				// process 2nd line of MatrixMarket format -- must have size information
-				String secondLine = headerLines[1];
-				String[] sizeInfo = secondLine.trim().split("\\s+");
-				if (sizeInfo.length != 3){
-					
-					LOG.error(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-							headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM);
-					
-					throw new LanguageException(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
-							headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
-				}
+				if (headerLines != null && headerLines.length >= 2){
+					String firstLine = headerLines[0].trim();
+					if (!firstLine.equals(legalHeaderMM)){
+						
+						LOG.error(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
+								headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM);
+						
+						throw new LanguageException(this.printErrorLocation() + "Unsupported format in MatrixMarket file: " +
+								headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					}
 				
-				long rowsCount = -1, colsCount = -1, nnzCount = -1;
-				try {
-					rowsCount = Long.parseLong(sizeInfo[0]);
-					if (rowsCount < 1)
-						throw new Exception("invalid rows count");
-					addVarParam(Statement.READROWPARAM, new IntIdentifier(rowsCount));
-				}
-				catch(Exception e){
-					
-					LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
-					
-					throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-				}
+					// process 2nd line of MatrixMarket format -- must have size information
 				
-				try {
-					colsCount = Long.parseLong(sizeInfo[1]);
-					if (colsCount < 1)
-						throw new Exception("invalid cols count");
-					addVarParam(Statement.READCOLPARAM, new IntIdentifier(colsCount));
-				}
-				catch(Exception e){
-					
-					LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
-					
-					throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-				}
 				
-				try {
-					nnzCount = Long.parseLong(sizeInfo[2]);
-					if (nnzCount < 1)
-						throw new Exception("invalid nnz count");
-					addVarParam("nnz", new IntIdentifier(nnzCount));
-				}
-				catch(Exception e){
+					String secondLine = headerLines[1];
+					String[] sizeInfo = secondLine.trim().split("\\s+");
+					if (sizeInfo.length != 3){
+						
+						LOG.error(this.printErrorLocation() + "Unsupported size line in MatrixMarket file: " +
+								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.");
+						
+						throw new LanguageException(this.printErrorLocation() + "Unsupported size line in MatrixMarket file: " +
+								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.");
+					}
 				
-					LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
+					long rowsCount = -1, colsCount = -1, nnzCount = -1;
+					try {
+						rowsCount = Long.parseLong(sizeInfo[0]);
+						if (rowsCount < 1)
+							throw new Exception("invalid rows count");
+						addVarParam(Statement.READROWPARAM, new IntIdentifier(rowsCount));
+					}
+					catch(Exception e){
+						
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
+						
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid row count " + sizeInfo[0] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
+								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+				
+					try {
+						colsCount = Long.parseLong(sizeInfo[1]);
+						if (colsCount < 1)
+							throw new Exception("invalid cols count");
+						addVarParam(Statement.READCOLPARAM, new IntIdentifier(colsCount));
+					}
+					catch(Exception e){
+						
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
+						
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid column count " + sizeInfo[1] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
+								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					}
 					
-					throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
-							+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
-							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
-				}	
+					try {
+						nnzCount = Long.parseLong(sizeInfo[2]);
+						if (nnzCount < 1)
+							throw new Exception("invalid nnz count");
+						addVarParam("nnz", new IntIdentifier(nnzCount));
+					}
+					catch(Exception e){
+					
+						LOG.error(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1]);
+						
+						throw new LanguageException(this.printErrorLocation() + "In MatrixMarket file " + getVarParam(Statement.IO_FILENAME) 
+								+  " invalid number non-zeros " + sizeInfo[2] + " (must be long value >= 1). Sizing info line from file: " + headerLines[1],
+								LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);	
+					}	
+				}
 			}
-			
-			else if (formatType != null && formatType.equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
+			else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
 			
 				/* Handle delimited file format
 				 * 
 				 * 1) only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
 				 *  
 				 * 2) open the file
-				 * 		A) verify header line (1st line) equals "%%MatrixMarket matrix coordinate real general"
-				 * 		B) read and discard comment lines
-				 * 		C) get size information from 
 				 */
 				
 				// there should be no MTD file for delimited file format
@@ -331,23 +363,25 @@ public class DataExpression extends Expression {
 				
 				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
 				//		as ONLY valid parameters
-				for (String key : _varParams.keySet()){
-					if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.HAS_HEADER_ROW) || key.equals(Statement.FORMAT_DELIMITER) || key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM))){
-						
-						LOG.error(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
-								toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																			   + Statement.HAS_HEADER_ROW   + "," 
-																			   + Statement.FORMAT_DELIMITER + "," 
-																			   + Statement.READROWPARAM     + "," 
-																			   + Statement.READCOLPARAM);
-						
-						throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
-								toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																			   + Statement.HAS_HEADER_ROW   + "," 
-																			   + Statement.FORMAT_DELIMITER + "," 
-																			   + Statement.READROWPARAM     + "," 
-																			   + Statement.READCOLPARAM,
-																			   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				if (inferredFormatType == false){
+					for (String key : _varParams.keySet()){
+						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) || key.equals(Statement.HAS_HEADER_ROW) || key.equals(Statement.FORMAT_DELIMITER) || key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM))){
+							
+							LOG.error(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
+									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
+																				   + Statement.HAS_HEADER_ROW   + "," 
+																				   + Statement.FORMAT_DELIMITER + "," 
+																				   + Statement.READROWPARAM     + "," 
+																				   + Statement.READCOLPARAM);
+							
+							throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
+									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
+																				   + Statement.HAS_HEADER_ROW   + "," 
+																				   + Statement.FORMAT_DELIMITER + "," 
+																				   + Statement.READROWPARAM     + "," 
+																				   + Statement.READCOLPARAM,
+																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						}
 					}
 				}
 				
@@ -356,8 +390,9 @@ public class DataExpression extends Expression {
 					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
 				}
 				
+				// deafult, assume no  header row present
 				if (getVarParam(Statement.HAS_HEADER_ROW) == null){
-					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier("false"));
+					addVarParam(Statement.HAS_HEADER_ROW, new StringIdentifier("false"));
 				}
 				
 				if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
@@ -372,43 +407,43 @@ public class DataExpression extends Expression {
 			
 			configObject = null;
 			
-			if (shouldReadMTD)
+			if (shouldReadMTD){
 				configObject = readMetadataFile(filename);
 		        		    
-	        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
-	        if (configObject != null){
-	        		    
-	        	for (Object key : configObject.keySet()){
-					
-					if (!InputStatement.isValidParamName(key.toString(),true)){
-						LOG.error(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
-						throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
-					}
-					
-					// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
-					if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
-							&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
+		        if (configObject != null){
+		        		    
+		        	for (Object key : configObject.keySet()){
 						
-						LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
+						if (!InputStatement.isValidParamName(key.toString(),true)){
+							LOG.error(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
+							throw new LanguageException(this.printErrorLocation() + "MTD file " + filename + " contains invalid parameter name: " + key);
+						}
 						
-						throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-								"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
-					}
-					else {
-						// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
-						if (getVarParam(key.toString()) == null){
-							StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
-							strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							addVarParam(key.toString(), strId);
+						// if the InputStatement parameter is a constant, then verify value matches MTD metadata file
+						if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
+								&& !getVarParam(key.toString()).toString().equalsIgnoreCase(configObject.get(key).toString()) ){
+							
+							LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
+							
+							throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+									"Config file value: " + configObject.get(key).toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
+						}
+						else {
+							// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
+							if (getVarParam(key.toString()) == null){
+								StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
+								strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+								addVarParam(key.toString(), strId);
+							}
 						}
 					}
-				}
-	        }
-	        else {
-	        	LOG.warn("Metadata file: " + new Path(filename) + " not provided");
-	        }
-			
+		        }
+		        else {
+		        	LOG.warn("Metadata file: " + new Path(filename) + " not provided");
+		        }
+			}
 	        
 	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
 			
@@ -463,13 +498,13 @@ public class DataExpression extends Expression {
 					format = 1;
 				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
 					format = 2;
-				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.MATRIXMARKET_FORMAT_TYPE) 
-						|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)) 
+				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) 
+						|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)) 
 				{
 					format = 1;
 				} else {
 					LOG.error(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
-					throw new LanguageException(this.printErrorLocation() + "Invalid format in statement: " + this.toString());
+					throw new LanguageException(this.printErrorLocation() + "Invalid format " + getVarParam(Statement.FORMAT_TYPE)+ " in statement: " + this.toString());
 				}
 				
 				if (getVarParam(Statement.ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -547,7 +582,7 @@ public class DataExpression extends Expression {
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE)){
+			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
 				if (getVarParam(Statement.FORMAT_DELIMITER) == null){
 					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
 				}
@@ -581,7 +616,7 @@ public class DataExpression extends Expression {
 				_output.setBlockDimensions(-1, -1);
 			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				_output.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.DELIMITED_FORMAT_TYPE) || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.MATRIXMARKET_FORMAT_TYPE))
+			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED) || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET))
 				_output.setBlockDimensions(-1, -1);
 			
 			else{
@@ -1122,7 +1157,8 @@ public class DataExpression extends Expression {
 				exists = true;
 			}
 		} catch (Exception e){
-			exists = false;
+			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
+			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
 		}
 	
 		try {
@@ -1160,19 +1196,20 @@ public class DataExpression extends Expression {
 					headerLine = in.readLine();
 					
 				while (in.ready() && !isDone) {
-				  String currLine = in.readLine();
-				  rowCount++;
-				  if (!currLine.startsWith("%")){
-					  sizeLine = currLine;
-					  isDone = false;
-				  }
-				  else {
-					  if (rowCount >= maxRowCount){
-						  LOG.error(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
-						  throw new LanguageException(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
-					  }
-				  }
+					String currLine = in.readLine();
+					rowCount++;
+					
+					if (rowCount >= maxRowCount){
+						LOG.error(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
+						throw new LanguageException(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
+					}
+					
+					if (!currLine.startsWith("%")){
+						sizeLine = currLine;
+						isDone = true;
+					}
 				}
+				
 				in.close();
 				
 				retVal[0] = headerLine;
@@ -1186,6 +1223,131 @@ public class DataExpression extends Expression {
         	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MatrixMarket file with path " + pt.toString());
         }
 	}
+	
+	
+	
+	public boolean checkHasMatrixMarketFormat(String filename) throws LanguageException {
+		
+		boolean exists = false;
+		FileSystem fs = null;
+		
+		try {
+			fs = FileSystem.get(new Configuration());
+		} catch (Exception e){
+			e.printStackTrace();
+			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
+		}
+		
+		Path pt = new Path(filename);
+		try {
+			if (fs.exists(pt)){
+				exists = true;
+			}
+		} catch (Exception e){
+			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
+			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
+		}
+	
+		try {
+			// CASE: filename is a directory -- process as a directory
+			if (exists && fs.getFileStatus(pt).isDir()){
+				
+				// currently, only MM files as files are supported.  So, if file is directory, then infer 
+				// likely not MM file
+				return false;
+			}
+			// CASE: filename points to a file
+			else if (exists){
+				
+				BufferedReader in = new BufferedReader(new FileReader(filename));
+			
+				String headerLine = new String("");
+			
+				if (in.ready())
+					headerLine = in.readLine();
+				in.close();
+			
+				// check that headerline starts with "%%"
+				// will infer malformed 
+				if (headerLine.startsWith("%%"))
+					return true;
+				else
+					return false;
+			}
+			else {
+				return false;
+			}
+			
+		} catch (Exception e){
+			return false;
+		}
+	}
+	
+	
+
+	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
+		
+		boolean exists = false;
+		FileSystem fs = null;
+		
+		try {
+			fs = FileSystem.get(new Configuration());
+		} catch (Exception e){
+			e.printStackTrace();
+			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
+			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.");
+		}
+		
+		Path pt = new Path(filename);
+		try {
+			if (fs.exists(pt)){
+				exists = true;
+			}
+		} catch (Exception e){
+			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
+			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
+		}
+	
+		try {
+				
+			// currently only support actual file, and do not support directory for delimited file
+			if (exists && fs.getFileStatus(pt).isDir()){
+				return false;
+			}
+			
+			// CASE: filename points to a file
+			else if (exists){
+				
+				BufferedReader in = new BufferedReader(new FileReader(filename));
+			
+				String headerLine = new String("");
+			
+				if (in.ready())
+					headerLine = in.readLine();
+				in.close();
+			
+				// check if there are delimited values "
+				// will infer malformed 
+				if (getVarParam(Statement.FORMAT_DELIMITER) != null)
+					return true;
+				else {
+					String defaultDelimiter = ",";
+					boolean lineHasDelimiters = headerLine.contains(defaultDelimiter);
+					return lineHasDelimiters;
+				}
+				
+
+			}
+			else {
+				return false;
+			}
+			
+		} catch (Exception e){
+			return false;
+		}
+	}
+	
 	
 	
 } // end class

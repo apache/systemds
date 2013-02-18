@@ -47,8 +47,8 @@ public class ExpressionTest {
     @Test
     public void testConvertFormatType() {
         assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(null));
-        assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(Statement.TEXT_FORMAT_TYPE));
-        assertEquals(FileFormatTypes.BINARY, Expression.convertFormatType(Statement.BINARY_FORMAT_TYPE));
+        assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType(Statement.FORMAT_TYPE_VALUE_TEXT));
+        assertEquals(FileFormatTypes.BINARY, Expression.convertFormatType(Statement.FORMAT_TYPE_VALUE_BINARY));
         assertEquals(FileFormatTypes.TEXT, Expression.convertFormatType("wrong"));
     }
 

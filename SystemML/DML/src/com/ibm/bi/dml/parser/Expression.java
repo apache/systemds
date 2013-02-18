@@ -69,7 +69,7 @@ public abstract class Expression {
 	};
 
 	public enum FormatType {
-		TEXT, BINARY, UNKNOWN
+		TEXT, BINARY, MM, DELIMITED, UNKNOWN
 	};
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 
@@ -155,10 +155,10 @@ public abstract class Expression {
 	public static FileFormatTypes convertFormatType(String fn) {
 		if (fn == null)
 			return FileFormatTypes.TEXT;
-		if (fn.equalsIgnoreCase(Statement.TEXT_FORMAT_TYPE)) {
+		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_TEXT)) {
 			return FileFormatTypes.TEXT;
 		}
-		if (fn.equalsIgnoreCase(Statement.BINARY_FORMAT_TYPE)) {
+		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY)) {
 			return FileFormatTypes.BINARY;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type

@@ -158,6 +158,7 @@ public class LeftIndexingOp  extends Hops {
 	@Override
 	public double computeMemEstimate() {
 		
+		//1) output mem estimate
 		if ( dimsKnown() ) {
 			// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
 			// However, the sparsity might change -- TODO: we can not handle the change in sparsity, for now
@@ -167,7 +168,14 @@ public class LeftIndexingOp  extends Hops {
 			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}
 		
-		_memEstimate = getInputOutputSize();
+		//2) operation mem estimate
+		if( !getInput().get(1).dimsKnown() ) {
+			//use worst-case memory estimate for second input (it cannot be larger than overall matrix)
+			_memEstimate = 2 * _outputMemEstimate;
+		}
+		else
+			_memEstimate = getInputOutputSize();
+		
 		return _memEstimate;
 	}
 	
@@ -186,6 +194,7 @@ public class LeftIndexingOp  extends Hops {
 			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
+				checkAndModifyRecompilationStatus();
 			}
 			else if ( getInput().get(0).areDimsBelowThreshold() )
 				_etype = ExecType.CP;
@@ -202,4 +211,23 @@ public class LeftIndexingOp  extends Hops {
 		set_dim1( input1.get_dim1() );
 		set_dim2( input1.get_dim2() );
 	}
+	
+	/**
+	 * 
+	 */
+	private void checkAndModifyRecompilationStatus()
+	{
+		// disable recompile for LIX and scond input matrix (under certain conditions)
+		// if worst-case estimate (2 * original matrix size) was enough to already send it to CP 		
+		
+		if( _etype == ExecType.CP )
+		{
+			_requiresRecompile = false;
+			
+			Hops rInput = getInput().get(1);
+			if( !rInput.dimsKnown() && rInput instanceof DataOp  )
+				rInput._requiresRecompile=false;
+		}
+	}
+	
 }

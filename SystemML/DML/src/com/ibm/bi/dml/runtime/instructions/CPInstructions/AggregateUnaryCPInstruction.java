@@ -170,7 +170,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
@@ -182,18 +182,18 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		}
 		
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"));
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uacmax") ) {
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("uacmin") ) {
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"));
+			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 

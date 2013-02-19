@@ -335,6 +335,7 @@ public class OptTreeConverter
 			node.setExecType(ExecType.CP);
 			//process if condition
 			OptNode ifn = new OptNode(NodeType.GENERIC);
+			_hlMap.putProgMapping(sb, pb, ifn);
 			ifn.setExecType(ExecType.CP);
 			node.addChild( ifn );
 			int len = is.getIfBody().size();
@@ -348,6 +349,7 @@ public class OptTreeConverter
 			if( ipb.getChildBlocksElseBody() != null )
 			{
 				OptNode efn = new OptNode(NodeType.GENERIC);
+				_hlMap.putProgMapping(sb, pb, efn);
 				efn.setExecType(ExecType.CP);
 				node.addChild( efn );
 				int len2 = is.getElseBody().size();

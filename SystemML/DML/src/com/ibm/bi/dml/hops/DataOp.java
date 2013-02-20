@@ -26,6 +26,7 @@ public class DataOp extends Hops {
 	String _fileName;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
 	
+	private boolean _recompileRead = true;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -500,12 +501,12 @@ public class DataOp extends Hops {
 				}
 			}
 		}
-		else
+	    else //READ
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+	    	//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _recompileRead )
 				setRequiresRecompile();
-			
+	    	
 			_etype = null;
 		}
 		
@@ -516,5 +517,15 @@ public class DataOp extends Hops {
 	public void refreshSizeInformation()
 	{
 		//do nothing; dimensions updated via set output params
+	}
+	
+	/**
+	 * Explicitly disables recompilation of transient reads, this additional information 
+	 * is required because requiresRecompile is set in a top-down manner, hence any value
+	 * set from a consuming operating would be overwritten by opFindExecType.
+	 */
+	public void disableRecompileRead()
+	{
+		_recompileRead = false;
 	}
 }

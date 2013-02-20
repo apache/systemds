@@ -217,7 +217,7 @@ public class LeftIndexingOp  extends Hops {
 	 */
 	private void checkAndModifyRecompilationStatus()
 	{
-		// disable recompile for LIX and scond input matrix (under certain conditions)
+		// disable recompile for LIX and second input matrix (under certain conditions)
 		// if worst-case estimate (2 * original matrix size) was enough to already send it to CP 		
 		
 		if( _etype == ExecType.CP )
@@ -225,8 +225,13 @@ public class LeftIndexingOp  extends Hops {
 			_requiresRecompile = false;
 			
 			Hops rInput = getInput().get(1);
-			if( !rInput.dimsKnown() && rInput instanceof DataOp  )
-				rInput._requiresRecompile=false;
+			if( (!rInput.dimsKnown()) && rInput instanceof DataOp  )
+			{
+				//disable recompile for this dataop (we cannot set requiresRecompile directly 
+				//because we use a top-down traversal for creating lops, hence it would be overwritten)
+				
+				((DataOp)rInput).disableRecompileRead();
+			}
 		}
 	}
 	

@@ -33,17 +33,30 @@ public class ForStatementBlock extends StatementBlock {
 		ForStatement fs = (ForStatement) _statements.get(0);
 		IterablePredicate predicate = fs.getIterablePredicate();
 		
-		// process the statement blocks in the body of the for statement
-		predicate.validateExpression(ids.getVariables(), constVars);
-		ArrayList<StatementBlock> body = fs.getBody();
+		// Record original size information before loop for ALL variables 
+		// Will compare size / type info for these after loop completes
+		// Replace variables with changed size with unknown value 
+		VariableSet origVarsBeforeBody = new VariableSet();
+		for (String key : ids.getVariableNames()){
+			DataIdentifier origId = ids.getVariable(key);
+			DataIdentifier copyId = new DataIdentifier(origId);
+			origVarsBeforeBody.addVariable(key, copyId);
+		}
+			
+		//////////////////////////////////////////////////////////////////////////////
+		// FIRST PASS: process the predicate / statement blocks in the body of the for statement
+		///////////////////////////////////////////////////////////////////////////////
 		
 		//remove updated vars from constants
 		HashSet<String> updatedVars = new HashSet<String>();
-		rFindUpdatedVariables(body, updatedVars);
+		rFindUpdatedVariables(fs.getBody(), updatedVars);
 		for( String var : updatedVars )
 			if( constVars.containsKey( var ) )
 				constVars.remove( var );
-				
+		
+		predicate.validateExpression(ids.getVariables(), constVars);
+		ArrayList<StatementBlock> body = fs.getBody();
+		
 		//perform constant propagation for ( from, to, incr )
 		//(e.g., useful for reducing false positives in parfor dependency analysis)
 		performConstantPropagation(constVars);
@@ -55,10 +68,81 @@ public class ForStatementBlock extends StatementBlock {
 			ids = sb.validate(dmlProg, ids, constVars);
 			constVars = sb.getConstOut();
 		}
+		
 		if (body.size() > 0){
 			_constVarsIn.putAll(body.get(0).getConstIn());
 			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 		}
+		
+		// for each updated variable 
+		boolean revalidationRequired = false;
+		for (String key : _updated.getVariableNames()){
+			
+			DataIdentifier startVersion = origVarsBeforeBody.getVariable(key);
+			DataIdentifier endVersion   = ids.getVariable(key);
+			
+			if (startVersion != null && endVersion != null){
+				 
+				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
+				long endVersionDim1		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
+				
+				long startVersionDim2 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim2() : startVersion.getDim2(); 
+				long endVersionDim2		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim2() : endVersion.getDim2(); 
+				
+				boolean sizeUnchanged = true;
+				if (startVersionDim1 != endVersionDim1)
+					sizeUnchanged = false;
+				
+				if (startVersionDim2 != endVersionDim2)
+					sizeUnchanged = false;
+				
+				// IF size has changed -- 
+				if (!sizeUnchanged){
+					revalidationRequired = true;
+					DataIdentifier recVersion = new DataIdentifier(endVersion);
+					recVersion.setDimensions(-1, -1);
+					origVarsBeforeBody.addVariable(key, recVersion);
+				}
+			}
+		}
+		
+		// revalidation is required -- size was updated for at least 1 variable
+		if (revalidationRequired){
+		
+			// update ids to the reconciled values
+			ids = origVarsBeforeBody;
+			
+			//////////////////////////////////////////////////////////////////////////////
+			// SECOND PASS: process the predicate / statement blocks in the body of the for statement
+			///////////////////////////////////////////////////////////////////////////////
+			
+			//remove updated vars from constants
+			updatedVars = new HashSet<String>();
+			rFindUpdatedVariables(body, updatedVars);
+			for( String var : updatedVars )
+				if( constVars.containsKey( var ) )
+					constVars.remove( var );
+					
+			//perform constant propagation for ( from, to, incr )
+			//(e.g., useful for reducing false positives in parfor dependency analysis)
+			performConstantPropagation(constVars);
+			
+			predicate.validateExpression(ids.getVariables(), constVars);
+			body = fs.getBody();
+			
+			//validate body
+			_dmlProg = dmlProg;
+			for(StatementBlock sb : body)
+			{
+				ids = sb.validate(dmlProg, ids, constVars);
+				constVars = sb.getConstOut();
+			}
+			if (body.size() > 0){
+				_constVarsIn.putAll(body.get(0).getConstIn());
+				_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
+			}
+		}
+		
 		return ids;
 	}
 	

@@ -1,138 +1,82 @@
 package com.ibm.bi.dml.parser;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import com.ibm.bi.dml.utils.LanguageException;
 
  
 public class ImportStatement extends Statement{
 	
+	/*
 	// indicates the imported list of function names 
 	private ArrayList<String> _importVarList;
 	
 	// Indicates if the "import all" option (import moudle (*)) is being used
 	private boolean _importAll;
+	*/
 	
-	// Stores the alias for the module name
-	private String _alias;
+	// Stores the namespace methods for 
+	private String _namespace;
 	
-	// stores only PATH to the module DML file (but NOT the name of the DML file with the module)
-	private String _modulePath;
+	// Stores the filepath with the DML file location
+	private String _filePath;
 	
-	// Stores module name (i.e., the name of the DML file storing the module)
-	private String _moduleName;
-	
-	// Stores complete path to module (package "root" path + modulePath + moduleName + ".dml")
+	// store "complete path" -- DML working dir + filepath
 	private String _completePath;
-	
-	// Stores the absolute path to module
-	private String _absolutePath;
 	
 
 	public ImportStatement(){
-		_importVarList = new ArrayList<String>();
-		_importAll = false;
-		_alias = null;
-		_modulePath = null;
-		_moduleName = null;
-		_completePath = null;
-		_absolutePath = null;
-	}
-	
-	public void setAbsolutePath(String passed){
-		_absolutePath = passed;
-	}
-	
-	public void setImportVarList(ArrayList<String> passed){
-		_importVarList = passed;
-	}
-	
-	public void addVar(String passed){
-		_importVarList.add(passed);
-	}
-	
-	public void setImportAll(boolean passed){
-		_importAll = passed;
-	}
-	
-	/**
-	 * setModulePathAndName: Set the package (i.e., directory path relative to 
-	 * package root directories specified in a dml-path statement.
-	 * 
-	 * @param pathPieces the individual pieces of the package path, such that when concatenated with 
-	 * a "/" will yield the correct entire 
-	 */
-	public void setModulePathAndName(ArrayList<String> pathPieces ){
+		_namespace 	  	= null;
+		_filePath 		= null;
+		_completePath 	= null;
 		
-		_modulePath = new String();
-		for (int i=0; i<pathPieces.size()-1; i++)
-			_modulePath += pathPieces.get(i) +"/";
-		
-		// the module name is the name of the dml file 
-		_moduleName = pathPieces.get(pathPieces.size()-1);
 	}
 	
-	public void setAlias(String passed){
-		_alias = passed;
+	public void setNamespace(String passed){
+		_namespace = passed;
 	}
 	
-	public String getModuleName() {
-		return _moduleName;
+	public String getNamespace(){
+		return _namespace;
 	}
 	
-	public String getModulePath() {
-		return _modulePath;
+	public String getFilePath() {
+		return _filePath;
 	}
 	
-	public String getAlias(){
-		return _alias;
-	}
-	
-	public boolean getImportAll(){
-		return _importAll;
-	}
-	
-	public ArrayList<String> getImportVarList(){
-		return _importVarList;
+	public void setFilePath(String filePath) {
+		_filePath = filePath;
 	}
 
-	public String getCompletePath(){
+	public String getCompletePath() {
 		return _completePath;
 	}
 	
-	public String getAbsolutePath(){
-		return _absolutePath;
+	public void setCompletePath(String filePath) {
+		_completePath = filePath;
 	}
 	
 	/**
 	 * verify: verifies that the module actually exists and sets the complete 
-	 * path for the import statement (package root specified in dml-path concatenated 
+	 * path for the import statement (package root specified in working directory concatenated 
 	 * with package path 
 	 *  
 	 * @param packagePaths specifies directories to search for DML packages
 	 * 
 	 * @return true if the module exists in one of the specified packagePaths
 	 */
-	public boolean verify(ArrayList<String> packagePaths){
+	public boolean verify(String workingDir){
 		
-		// go through package paths in order
-		// find first package path to contain module path
-		for (String packagePath : packagePaths){
-						
-			// translate modulePath to correct path (replace :: with /, 
-			// add ".dml" to end to get DML filename containing module)	
-			String path = packagePath + "/" + _modulePath + _moduleName + ".dml";
-			File completePathFile = new File(path);
-			if (completePathFile.exists()){
-				_completePath = path;
-				_absolutePath = completePathFile.getAbsolutePath();
-				return true;
-			}	
-		} // end for (String packagePath : packagePaths){
-		
+		if (!workingDir.endsWith("/"))
+			workingDir += "/";
+			
+		String path = workingDir + this._filePath;
+		File completePathFile = new File(path);
+		if (completePathFile.exists()){
+			_completePath = path;
+			return true;
+		}	
 		_completePath = null;
-		_absolutePath = null;
 		return false;
 	} // end method
 	
@@ -163,21 +107,11 @@ public class ImportStatement extends Statement{
 
 	public String toString(){
 		 StringBuffer sb = new StringBuffer();
-		 sb.append(Statement.IMPORT + " ");
-		 sb.append(this._modulePath + this._moduleName);
-		 if (this._importAll){
-			sb.append("(*) " ); 
-		 }
-		 else if (this._importVarList != null && this._importVarList.size() > 0){
-			sb.append("(");
-			for (int i = 0; i < this._importVarList.size(); i++){
-				sb.append(this._importVarList.get(i));
-				if (i < this._importVarList.size() -1) sb.append(",");
-			}
-			sb.append(") ");
-		 }
-		 if (this._alias != null){
-			 sb.append(" AS " + this._alias);
+		 sb.append(Statement.SOURCE + "(");
+		 sb.append(this._filePath + ")");
+		 
+		 if (this._namespace != null){
+			 sb.append(" AS " + this._namespace);
 		 }
 		 sb.append(";");
 		 return sb.toString(); 

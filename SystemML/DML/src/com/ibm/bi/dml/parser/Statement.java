@@ -25,8 +25,8 @@ public abstract class Statement {
 	public static final String FORMAT_TYPE_VALUE_DELIMITED		= "delimited";
 	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
 	
-	public static final String FORMAT_DELIMITER = "delimiter";
-	public static final String HAS_HEADER_ROW = "hasHeader";
+	public static final String FORMAT_DELIMITER = "sep";
+	public static final String HAS_HEADER_ROW = "header";
 	
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
@@ -43,8 +43,8 @@ public abstract class Statement {
 	public static final String RAND_SEED    =  "seed";
 	public static final String RAND_PDF		=  "pdf";
 	
-	public static final String IMPORT  = "import";
-	public static final  String DMLPATH = "dml-path";
+	public static final String SOURCE  	= "source";
+	public static final String SETWD 	= "setwd";
 	
 	
 	

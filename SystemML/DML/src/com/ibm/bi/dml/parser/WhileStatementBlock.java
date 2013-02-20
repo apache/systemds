@@ -16,13 +16,29 @@ public class WhileStatementBlock extends StatementBlock {
 	private Hops _predicateHops;
 	private Lops _predicateLops = null;
 	
+	
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1){
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		}
+		
 		WhileStatement wstmt = (WhileStatement) _statements.get(0);
 		ConditionalPredicate predicate = wstmt.getConditionalPredicate();
+		
+		// Record original size information before loop for ALL variables 
+		// Will compare size / type info for these after loop completes
+		// Replace variables with changed size with unknown value 
+		VariableSet origVarsBeforeBody = new VariableSet();
+		for (String key : ids.getVariableNames()){
+			DataIdentifier origId = ids.getVariable(key);
+			DataIdentifier copyId = new DataIdentifier(origId);
+			origVarsBeforeBody.addVariable(key, copyId);
+		}
+		
+		//////////////////////////////////////////////////////////////////////////////
+		// FIRST PASS: process the predicate / statement blocks in the body of the for statement
+		///////////////////////////////////////////////////////////////////////////////
 		
 		//remove updated vars from constants
 		HashSet<String> updatedVars = new HashSet<String>();
@@ -34,6 +50,7 @@ public class WhileStatementBlock extends StatementBlock {
 		// process the statement blocks in the body of the while statement
 		predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
 		ArrayList<StatementBlock> body = wstmt.getBody();
+		
 		_dmlProg = dmlProg;
 		for(StatementBlock sb : body)
 		{
@@ -45,6 +62,74 @@ public class WhileStatementBlock extends StatementBlock {
 			_constVarsIn.putAll(body.get(0).getConstIn());
 			_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
 		}
+		
+		// for each updated variable 
+		boolean revalidationRequired = false;
+		for (String key : _updated.getVariableNames()){
+			
+			DataIdentifier startVersion = origVarsBeforeBody.getVariable(key);
+			DataIdentifier endVersion   = ids.getVariable(key);
+			
+			if (startVersion != null && endVersion != null){
+				 
+				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
+				long endVersionDim1		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
+				
+				long startVersionDim2 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim2() : startVersion.getDim2(); 
+				long endVersionDim2		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim2() : endVersion.getDim2(); 
+				
+				boolean sizeUnchanged = true;
+				if (startVersionDim1 != endVersionDim1)
+					sizeUnchanged = false;
+				
+				if (startVersionDim2 != endVersionDim2)
+					sizeUnchanged = false;
+				
+				// IF size has changed -- 
+				if (!sizeUnchanged){
+					revalidationRequired = true;
+					DataIdentifier recVersion = new DataIdentifier(endVersion);
+					recVersion.setDimensions(-1, -1);
+					origVarsBeforeBody.addVariable(key, recVersion);
+				}
+			}
+		}
+		
+			
+		// revalidation is required -- size was updated for at least 1 variable
+		if (revalidationRequired){
+		
+			// update ids to the reconciled values
+			ids = origVarsBeforeBody;
+		
+			//////////////////////////////////////////////////////////////////////////////
+			// SECOND PASS: process the predicate / statement blocks in the body of the for statement
+			///////////////////////////////////////////////////////////////////////////////
+		
+			//remove updated vars from constants
+			updatedVars = new HashSet<String>();
+			rFindUpdatedVariables(wstmt.getBody(), updatedVars);
+			for( String var : updatedVars )
+				if( constVars.containsKey( var ) )
+					constVars.remove( var );
+			
+			// process the statement blocks in the body of the while statement
+			predicate.getPredicate().validateExpression(ids.getVariables(), constVars);
+			body = wstmt.getBody();
+			
+			_dmlProg = dmlProg;
+			for(StatementBlock sb : body)
+			{
+				ids = sb.validate(dmlProg, ids, constVars);
+				constVars = sb.getConstOut();
+			}
+					
+			if (body.size() > 0) {
+				_constVarsIn.putAll(body.get(0).getConstIn());
+				_constVarsOut.putAll(body.get(body.size()-1).getConstOut());
+			}		
+		}
+		
 		return ids;
 	}
 

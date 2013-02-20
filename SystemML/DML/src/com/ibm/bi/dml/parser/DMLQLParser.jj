@@ -39,13 +39,8 @@ public class DMLQLParser extends DMLQLParserBase{
 	/** stores the listing of command-line arguments, which are indexed from 1 and being with '$' --  $1, $2, etc. **/
  	private HashMap<String,String> commandArgs; 
 
-	/** stores list of paths to DML packages (directories to look for modules) **/
- 	private ArrayList<String> dmlPathSet;
-	private boolean alreadySeen = false;
-
-	/** stores the mapping of absolute path to namespace program **/
-	/** if the module in the absolute path has been processed, then use this program  **/
-	static private HashMap<String, DMLProgram> allNamespacesByAbsolutePath = new HashMap<String, DMLProgram>();
+	/** stores working directory to DML packages (directory to look for source files) **/
+ 	private String dmlWorkingDir = ".";
 
  	/** Convenience constructor for reading from a string. */
  	public DMLQLParser(String s)throws IOException, ParseException {
@@ -59,10 +54,8 @@ public class DMLQLParser extends DMLQLParserBase{
 		setFileEncoding(encoding);
 	    setCommandArgs(commandArgs);
 	        
-	  	// initialize pathset to current working directory
-	  	dmlPathSet = new ArrayList<String>();
-	    dmlPathSet.add(".");
-	    alreadySeen = false;
+	  	// initialize working dir to current working directory
+	  	dmlWorkingDir = new String(".");
 	}
 
  	public DMLQLParser(File f, String encoding, HashMap<String,String> commandArgs)throws IOException, ParseException {
@@ -70,16 +63,8 @@ public class DMLQLParser extends DMLQLParserBase{
 		setFileEncoding(encoding);
 		setCommandArgs(commandArgs);
 		      
-		// initialize pathset to current working directory
-		dmlPathSet = new ArrayList<String>();
-		dmlPathSet.add(".");
-
-		if (DMLQLParser.allNamespacesByAbsolutePath.get(f.getAbsolutePath()) != null)
-			alreadySeen = true;
-		else {
-			alreadySeen = false;
-			DMLQLParser.allNamespacesByAbsolutePath.put(f.getAbsolutePath(), new DMLProgram());
-		}       
+		// initialize working dir to current working directory
+		dmlWorkingDir = new String(".");
 	}
 
 	private void setCommandArgs(HashMap<String,String> ca){
@@ -93,11 +78,7 @@ public class DMLQLParser extends DMLQLParserBase{
 	private String printWarningLocation(int line, int col){
 		return "WARNING: line " + line + ", col " + col + " -- "; 
 	}	  
-
- 	private void setDmlPathSet(ArrayList<String> passed){
-  		dmlPathSet = passed;
- 	}
-    
+   
 	public DMLQLParser(File f, HashMap<String,String> commandArgs)throws IOException, ParseException {
 		this(f, DEFAULT_ENCODING, commandArgs);
 	}
@@ -209,8 +190,10 @@ TOKEN :
 	| <CROSSVAL 		: "crossval">
 
 	// RESERVED KEYWORDS -- required to support import / packages -- NOT common to R
-	| <IMPORT 		: "import"> 
-	| <DMLPATH 		: "dml-path">  
+	//| <IMPORT 		: "import"> 
+	//| <DMLPATH 		: "dml-path">  
+	| <SOURCE		: "source">
+	| <SETWD		: "setwd" >
 	| <AS  			: "as">
 
 	// RESERVED KEYWORDS -- could be eliminated, may cause issue with lookahead
@@ -374,7 +357,8 @@ DMLProgram __inputInternal() :
 
 				// if the path verifies, parse the file to create a DMLProgram
 				ImportStatement importStmt = (ImportStatement) sb.getStatement(0);
-				if (importStmt.verify(dmlPathSet)) {
+
+				if (importStmt.verify(dmlWorkingDir)) {
 
 					try {
 						DMLProgram importedProg = null;
@@ -383,72 +367,31 @@ DMLProgram __inputInternal() :
 
 						//if (DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath()) == null){  
 						DMLQLParser parser = new DMLQLParser(moduleFile,null);
-						if (parser.alreadySeen)
-							importedProg = DMLQLParser.allNamespacesByAbsolutePath.get(((ImportStatement)current).getAbsolutePath());
-						else {
-							importedProg = parser.parse();
-							DMLQLParser.allNamespacesByAbsolutePath.put(((ImportStatement)current).getAbsolutePath(), importedProg);       
-						}
-     
+						importedProg = parser.parse();
+						       	
 						// set the key to be the name of the module or the alias      
-						String namespaceKey = (importStmt.getAlias() == null) ? importStmt.getModuleName() : importStmt.getAlias();
+						String namespaceKey = (importStmt.getNamespace() == null) ? DMLProgram.DEFAULT_NAMESPACE : importStmt.getNamespace();
 
-						// IF (alias is defined OR no filter placed on functions to import) THEN
-						//  1) attempt to create new namespace for imported DML module file if not already defined
-						//  2) attempt to add functions to existing namespace
-						if (importStmt.getAlias() != null || ( !importStmt.getImportAll() && importStmt.getImportVarList().size() == 0)) {
-
-							if (!dmlp.getNamespaces().containsKey(namespaceKey))
+						if (!dmlp.getNamespaces().containsKey(namespaceKey))
 								dmlp.getNamespaces().put(namespaceKey,importedProg);
 	  
-							else {
-								// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
-								for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
-									if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null)									{  
-										LOG.error(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
-										throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
-									}
-									else 
-	          							dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
-	        					}
-	       					}
-						}
-
-
-	        			// import all functions into the current "null" namespace
-						if(importStmt.getImportAll()){
-	
+						else {
+							// attempt to import the new functions in the importedProgram (DML file specified in import statement) into the existing namespace
 							for (String fname : importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).keySet()){
-				
-				        		if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname)){				        			LOG.error(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
-									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
-								}	
-								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
-							} 
-						}
-      
-						// import named functions into current namespace. Named functions must NOT exist in current namespace ("null" namespace).
-						else if (importStmt.getImportVarList().size() > 0){
-							for (String fname : importStmt.getImportVarList()) {
-				
-								if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname)){
-									LOG.error(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
-									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " is already defined in current namespace ");
+								if (dmlp.getFunctionStatementBlock(namespaceKey,fname) != null){  
+									LOG.error(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
+									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " already defined in namespace " + namespaceKey);
 								}
-								if (!importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(fname)){									LOG.error(importStmt.printErrorLocation() + "function " + fname + " not defined in module path " + importStmt.getModulePath());								  
-									throw new ParseException(importStmt.printErrorLocation() + "function " + fname + " not defined in module path " + importStmt.getModulePath());
-								}
-								String currName = (importStmt.getAlias() == null) ? null : importStmt.getAlias();
-								dmlp.getFunctionStatementBlocks(currName).put(fname,importedProg.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).get(fname));
-							}
-						}     
+								else 
+	          						dmlp.getFunctionStatementBlocks(namespaceKey).put(fname, importedProg.getFunctionStatementBlock(DMLProgram.DEFAULT_NAMESPACE, fname));   
+	        				}
+	       				}
 					}
 					catch(Exception e){
 					  	LOG.error(e.getMessage());
 						throw new ParseException(e.getMessage());
 					}
-				} // if (importStmt.verify(dmlPathSet))
+				} 
     
     			else {
     			    LOG.error(importStmt.printErrorLocation() + "failed to import " + importStmt.toString());
@@ -487,6 +430,7 @@ DMLProgram __inputInternal() :
  	}
 }
 
+
 PathStatement PathStatement():
 {
 	// track start / end token positions
@@ -497,12 +441,12 @@ PathStatement PathStatement():
 	PathStatement pstmt = new PathStatement();
 }
 {
-	tStart = <DMLPATH> t1 = <DBLQUOTE_STRING_LITERAL>
-	{
+	tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>	{
 		String dequotedString = dequoteStr('\"',t1.image);
-		pstmt.addPackagePaths(dequotedString);
-		dmlPathSet.addAll(pstmt.getPackagePaths());
+		pstmt.setPathValue(dequotedString);
+		dmlWorkingDir = pstmt.getPathValue();
 	}
+	
 	[<SEMICOLON>]
 
 	{
@@ -517,6 +461,7 @@ PathStatement PathStatement():
 	}
 }
 
+
 ImportStatement ImportStatement() :
 {
 	// track start / end token positions
@@ -526,20 +471,15 @@ ImportStatement ImportStatement() :
 	Token t1 = null, t2 = null, t3 = null, t4 = null;
 	ImportStatement importStmt = new ImportStatement();
 
-	// directory structure of DML package containing module being imported
-	// last entry is the name of the module.
-	ArrayList<String> modulePathPieces = new ArrayList<String>();
 }
 {
-	tStart = <IMPORT> t1 = <ID> { modulePathPieces.add(t1.image);}
-	(<COLON><COLON> t1 = <ID> {modulePathPieces.add(t1.image);})*
- 
-	[<LEFTPAREN>
-		[ t2 = <MULT>{ importStmt.setImportAll(true);} | t3 = <ID> {importStmt.addVar(t3.image);}
-			(<COMMA> t3 = <ID>{importStmt.addVar(t3.image);} )*]
-	<RIGHTPAREN>]
+	tStart = <SOURCE><LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>
+	{
+		String dequotedString = dequoteStr('\"',t1.image);
+		importStmt.setFilePath(dequotedString);
+	}
 
-	[<AS> t4 = <ID> {importStmt.setAlias(t4.image);}] [<SEMICOLON>]
+		[<AS> t4 = <ID> {importStmt.setNamespace(t4.image);}] [<SEMICOLON>]
 
 	{ 
 		// track position for start / end token tStart
@@ -550,14 +490,6 @@ ImportStatement ImportStatement() :
 			elp = t4.endLine;
 			ecp = t4.endColumn;
 		}
-		else if (t3 != null){
-			elp = t3.endLine;
-			ecp = t3.endColumn;
-		}
-		else if (t2 != null){
-			elp = t2.endLine;
-			ecp = t2.endColumn;
-		}
 		else {
 			elp = t1.endLine;
 			ecp = t1.endColumn;
@@ -565,10 +497,10 @@ ImportStatement ImportStatement() :
 
 		importStmt.setAllPositions(blp, bcp, elp, ecp);
 
-		importStmt.setModulePathAndName(modulePathPieces);
 		return importStmt;
 	}
 }
+
 
 FunctionStatement FunctionStatement() :
 {

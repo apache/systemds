@@ -1,0 +1,2 @@
+testFunc = externalFunction(Matrix[Double] D, Integer k) return (Matrix[Double] C, Integer l)
+	implemented in (classname="com.ibm.bi.dml.packagesupport.TestPackageFunctionMaster",execlocation="worker")

@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.parser;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -1203,7 +1202,9 @@ public class DataExpression extends Expression {
 	
 			BufferedReader in = null;
 			try {
-				in = new BufferedReader(new FileReader(filename));
+				
+				//in = new BufferedReader(new FileReader(filename));
+				in = new BufferedReader(new InputStreamReader(fs.open(pt)));
 			}
 			catch (Exception e){
 				e.printStackTrace();
@@ -1295,8 +1296,9 @@ public class DataExpression extends Expression {
 			// CASE: filename points to a file
 			else if (exists){
 				
-				BufferedReader in = new BufferedReader(new FileReader(filename));
-			
+				//BufferedReader in = new BufferedReader(new FileReader(filename));
+				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
+				
 				String headerLine = new String("");
 			
 				if (in.ready())
@@ -1354,8 +1356,8 @@ public class DataExpression extends Expression {
 			// CASE: filename points to a file
 			else if (exists){
 				
-				BufferedReader in = new BufferedReader(new FileReader(filename));
-			
+				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
+				
 				String headerLine = new String("");
 			
 				if (in.ready())

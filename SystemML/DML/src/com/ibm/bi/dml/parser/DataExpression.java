@@ -1157,71 +1157,106 @@ public class DataExpression extends Expression {
 				exists = true;
 			}
 		} catch (Exception e){
+			exists = false;
+			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "file " + filename + " not found");
 			throw new LanguageException(this.printErrorLocation() + "file " + filename + " not found");
 		}
 	
-		try {
-			// CASE: filename is a directory -- process as a directory
-			if (exists && fs.getFileStatus(pt).isDir()){
-			
-				LOG.error(this.printErrorLocation() + "MatrixMarket files as directories not supported");
-				throw new LanguageException(this.printErrorLocation() + "MatrixMarket files as directories not supported");
-				/*
-				// TODO: DRB FIX --- read directory contents
-				retVal = new JSONObject();
-				FileStatus[] stats = fs.listStatus(pt);
-				for(FileStatus stat : stats){
-					Path childPath = stat.getPath(); // gives directory name
-					if (childPath.getName().startsWith("part")){
-						BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(childPath)));
-						JSONObject childObj = JSONObject.parse(br);
-						
-						for (Object key : childObj.keySet()){
-							retVal.put(key, childObj.get(key));
-						}
-					}
-				} 
-				*/
-			}
-			// CASE: filename points to a file
-			else if (exists){
 		
-				BufferedReader in = new BufferedReader(new FileReader(filename));
-				boolean isDone = false;
-				String headerLine = new String("");
-				String sizeLine   = new String("");
-				int rowCount = 0, maxRowCount = 200;
+		// CASE: filename is a directory -- process as a directory
+		
+		boolean getFileStatusIsDir = false;
+		try {
+			getFileStatusIsDir = fs.getFileStatus(pt).isDir();
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			LOG.error(this.printErrorLocation() + " error checking file status is directory for MatrixMarket file with path " + pt.toString());
+			throw new LanguageException(this.printErrorLocation() + " error checking file status is directory for MatrixMarket file with path " + pt.toString());
+			
+		}
+		
+		if (exists && getFileStatusIsDir){
+			
+			LOG.error(this.printErrorLocation() + "MatrixMarket files as directories not supported");
+			throw new LanguageException(this.printErrorLocation() + "MatrixMarket files as directories not supported");
+			/*
+			// TODO: DRB FIX --- read directory contents
+			retVal = new JSONObject();
+			FileStatus[] stats = fs.listStatus(pt);
+			for(FileStatus stat : stats){
+				Path childPath = stat.getPath(); // gives directory name
+				if (childPath.getName().startsWith("part")){
+					BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(childPath)));
+					JSONObject childObj = JSONObject.parse(br);
+					
+					for (Object key : childObj.keySet()){
+						retVal.put(key, childObj.get(key));
+					}
+				}
+			} 
+			*/
+		}
+		// CASE: filename points to a file
+		else if (exists){
+	
+			BufferedReader in = null;
+			try {
+				in = new BufferedReader(new FileReader(filename));
+			}
+			catch (Exception e){
+				e.printStackTrace();
+				LOG.error(this.printErrorLocation() + " error creating reader for MatrixMarket file with path " + pt.toString());
+				throw new LanguageException(this.printErrorLocation() + " error creating reader for MatrixMarket file with path " + pt.toString());
+			}
+			boolean isDone = false;
+			String headerLine = new String("");
+			String sizeLine   = new String("");
+			int rowCount = 0, maxRowCount = 200;
+			try {
 				if (in.ready())
 					headerLine = in.readLine();
-					
+				
 				while (in.ready() && !isDone) {
 					String currLine = in.readLine();
 					rowCount++;
-					
+				
 					if (rowCount >= maxRowCount){
 						LOG.error(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
 						throw new LanguageException(this.printErrorLocation() + "MatrixMarket file has too many comments -- please limit comments to <= 100 rows");
 					}
-					
+				
 					if (!currLine.startsWith("%")){
 						sizeLine = currLine;
 						isDone = true;
 					}
 				}
-				
-				in.close();
-				
-				retVal[0] = headerLine;
-				retVal[1] = sizeLine;
 			}
+			catch (LanguageException e){
+				e.printStackTrace();
+				throw e;
+			} catch (IOException e) {
+				e.printStackTrace();
+				LOG.error(this.printErrorLocation() + "error reading and/or parsing MatrixMarket file with path " + pt.toString());
+	        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MatrixMarket file with path " + pt.toString());
+	        }
 			
-			return retVal;
+			try {
+				in.close();
+			}
+			catch(Exception e){
+				e.printStackTrace();
+				LOG.error(this.printErrorLocation() + "error closing MatrixMarket file with path " + pt.toString());
+	        	throw new LanguageException(this.printErrorLocation() + "error closing MatrixMarket file with path " + pt.toString());
+	        }
 			
-		} catch (Exception e){
-			LOG.error(this.printErrorLocation() + "error reading and/or parsing MatrixMarket file with path " + pt.toString());
-        	throw new LanguageException(this.printErrorLocation() + "error reading and/or parsing MatrixMarket file with path " + pt.toString());
-        }
+			retVal[0] = headerLine;
+			retVal[1] = sizeLine;
+		}
+		
+		return retVal;
+		
 	}
 	
 	

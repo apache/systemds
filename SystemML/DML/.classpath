@@ -24,9 +24,9 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-math-2.2.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-core-asl-1.8.8.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/jackson-mapper-asl-1.8.8.jar"/>
-	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-1.0.3.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-io-2.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/Jaql-0.5/jaql.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/lib/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-1.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

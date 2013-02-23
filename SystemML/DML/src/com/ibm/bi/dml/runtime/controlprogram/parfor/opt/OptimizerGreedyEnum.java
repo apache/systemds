@@ -46,7 +46,7 @@ class OptimizerGreedyEnum extends Optimizer
 		
 		//preparations
 		boolean change = false;
-		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb, new HashSet<Long>());
+		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb, new HashSet<String>());
 		OptNode lRoot = lPlan.getRoot();
 		OptNode pRoot = pPlan.getRoot();
 		double T = est.getEstimate(TestMeasure.EXEC_TIME, pRoot);
@@ -158,7 +158,7 @@ class OptimizerGreedyEnum extends Optimizer
 	{
 		//OptNode lroot = plan.getRoot();
 
-		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<Long>());
+		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<String>());
 		OptNode absRoot = absPlan.getRoot();
 		
 		Collection<OptNode> nodes = absRoot.getNodeList();

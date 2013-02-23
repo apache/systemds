@@ -85,6 +85,16 @@ public class DMLProgram {
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;
 	}
+
+	public void addFunctionStatementBlock( String namespace, String fname, FunctionStatementBlock fsb ) 
+		throws LanguageException
+	{
+		DMLProgram namespaceProgram = this.getNamespaces().get(namespace);
+		if (namespaceProgram == null)
+			throw new LanguageException( "Namespace does not exist." );
+		
+		namespaceProgram._functionBlocks.put(fname, fsb);
+	}
 	
 	public ArrayList<StatementBlock> getBlocks(){
 		return _blocks;

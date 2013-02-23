@@ -909,13 +909,13 @@ public class ParForProgramBlock extends ForProgramBlock
 				}
 				else
 				{
-					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix); 
+					cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false); 
 					_pbcache.put(pwID, cpChildBlocks);
 				}
 			}
 			else
 			{
-				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix); 
+				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), false); 
 			}                     
 			//symbol table
 			LocalVariableMap cpVars = (LocalVariableMap) _variables.clone();
@@ -1305,7 +1305,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			try 
 			{
-				OptTree tree;tree = OptTreeConverter.createAbstractOptTree(-1, -1, _sb, this, new HashSet<Long>());
+				OptTree tree;tree = OptTreeConverter.createAbstractOptTree(-1, -1, _sb, this, new HashSet<String>());
 				CostEstimator est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
 				double mem = est.getEstimate(TestMeasure.MEMORY_USAGE, tree.getRoot());
 				

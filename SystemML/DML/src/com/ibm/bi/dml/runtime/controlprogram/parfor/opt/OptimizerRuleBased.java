@@ -15,9 +15,13 @@ import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.FunctionStatement;
+import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -37,12 +41,14 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.bi.dml.utils.LopsException;
 
 /**
@@ -59,8 +65,9 @@ import com.ibm.bi.dml.utils.LopsException;
  * - 8) rewrite set task partitioner
  * - 9) rewrite set result merge 		 		 
  * - 10) rewrite set recompile memory budget
- * - 11) remove unnecessary parfor		
- * 
+ * - 11) remove recursive parfor	
+ * - 12) remove unnecessary parfor		
+
  * 	 
  * 
  * 
@@ -71,8 +78,9 @@ public class OptimizerRuleBased extends Optimizer
 {
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
-	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 4;    
+	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;    
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
+	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
@@ -185,7 +193,10 @@ public class OptimizerRuleBased extends Optimizer
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 11: parfor (par=1) to for 
+		// rewrite 11: parfor (in recursive functions) to for
+		rewriteRemoveRecursiveParFor( pn );
+		
+		// rewrite 12: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -291,7 +302,7 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 	/**
-	 * TODO synchronize mem estimation with Indexing Hop
+	 * TODO consolidate mem estimation with Indexing Hop
 	 * 
 	 * NOTE: Using the dimensions without sparsity is a conservative worst-case consideration.
 	 * 
@@ -393,6 +404,15 @@ public class OptimizerRuleBased extends Optimizer
 		return apply;
 	}
 	
+	/**
+	 * 
+	 * @param nlist
+	 * @param resultVars
+	 * @param vars
+	 * @param iterVarname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	private boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -407,6 +427,15 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param n
+	 * @param resultVars
+	 * @param vars
+	 * @param iterVarname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	private boolean isResultPartitionable( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, String iterVarname ) 
 		throws DMLRuntimeException
 	{
@@ -480,6 +509,15 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
 	private void recompileLIX( OptNode n ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
@@ -1024,7 +1062,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
+	private boolean hasResultMRLeftIndexing( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = false;
@@ -1061,7 +1099,15 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 	
-	public boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars ) 
+	/**
+	 * 
+	 * @param n
+	 * @param resultVars
+	 * @param vars
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -1110,6 +1156,12 @@ public class OptimizerRuleBased extends Optimizer
 				rInvokeSetResultMerge(n.getChilds(), vars);
 	}
 	
+	/**
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @return
+	 */
 	public static boolean isInMemoryResultMerge( long rows, long cols )
 	{
 		return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hops.CPThreshold, 2) );
@@ -1144,6 +1196,290 @@ public class OptimizerRuleBased extends Optimizer
 		
 		LOG.debug("RULEBASED OPT: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
 	}	
+	
+	
+	///////
+	//REWRITE remove recursive parfor
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private void rewriteRemoveRecursiveParFor(OptNode n) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		int count = 0; //num removed parfor
+		
+		//find recursive parfor
+		HashSet<ParForProgramBlock> recPBs = new HashSet<ParForProgramBlock>();
+		rFindRecursiveParFor( n, recPBs, false );
+
+		if( recPBs.size() > 0 )
+		{
+			//unfold if necessary
+			try 
+			{
+				ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+		        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+				if( recPBs.contains(pfpb) ) 
+					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs);
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//remove recursive parfor (parfor to for)
+			count = removeRecursiveParFor(n, recPBs);
+		}
+		
+		LOG.debug("RULEBASED OPT: rewrite 'remove recursive parfor' - result="+recPBs.size()+"/"+count );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param cand
+	 * @param recContext
+	 * @return
+	 */
+	private void rFindRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> cand, boolean recContext )
+	{
+		//recursive invocation
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+			{
+				if( c.getNodeType() == NodeType.FUNCCALL && c.isRecursive() )
+					rFindRecursiveParFor(c, cand, true);
+				else
+					rFindRecursiveParFor(c, cand, recContext);
+			}
+		
+		//add candidate program blocks
+		if( recContext && n.getNodeType()==NodeType.PARFOR )
+		{
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+									    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			cand.add(pfpb);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param parfor
+	 * @param recPBs
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws HopsException
+	 * @throws LanguageException
+	 */
+	private void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs )
+		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LanguageException
+	{
+		//unfold if found
+		if( n.getNodeType() == NodeType.FUNCCALL && n.isRecursive())
+		{
+			boolean exists = rContainsNode(n, parfor);
+			if( exists )
+			{
+				String fnameKey = n.getParam(ParamType.OPSTRING);
+				String[] names = fnameKey.split(Program.KEY_DELIM);
+				String fnamespace = names[0];
+				String fname = names[1];
+				String fnameNew = FUNCTION_UNFOLD_NAMEPREFIX + fname;
+				
+				//unfold function
+				Object[] tmp = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+				FunctionStatementBlock fsb = (FunctionStatementBlock) tmp[0];	
+				FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+				FunctionProgramBlock fpb = (FunctionProgramBlock) tmp[1];
+				FunctionProgramBlock copyfpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<String>());
+				DMLProgram dmlprog = fsb.getDMLProg();
+				Program prog = fpb.getProgram();
+				prog.addFunctionProgramBlock(fnamespace, fnameNew, copyfpb);
+				dmlprog.addFunctionStatementBlock(fnamespace, fnameNew, fsb);
+				
+				//recreate sub opttree
+				String fnameNewKey = fnamespace + Program.KEY_DELIM + fnameNew;
+				OptNode nNew = new OptNode(NodeType.FUNCCALL);
+				OptTreeConverter.getAbstractPlanMapping().putProgMapping(fsb, copyfpb, nNew);
+				nNew.setExecType(ExecType.CP);
+				nNew.addParam(ParamType.OPSTRING, fnameNewKey);
+				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
+				OptTreeConverter.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
+				HashSet<String> memo = new HashSet<String>();
+				memo.add(fnameKey);
+				int len = fs.getBody().size();
+				for( int i=0; i<copyfpb.getChildBlocks().size() && i<len; i++ )
+				{
+					ProgramBlock lpb = copyfpb.getChildBlocks().get(i);
+					StatementBlock lsb = fs.getBody().get(i);
+					nNew.addChild( OptTreeConverter.rCreateAbstractOptNode(lsb,lpb,copyfpb.getVariables(),false, memo) );
+				}
+				
+				//compute delta for recPB set (use for removing parfor)
+				recPBs.removeAll( rGetAllParForPBs(n, new HashSet<ParForProgramBlock>()) );
+				recPBs.addAll( rGetAllParForPBs(nNew, new HashSet<ParForProgramBlock>()) );
+				
+				//replace function names in subtree
+				rReplaceFunctionNames(nNew, fname, fnameNew);
+			}
+			//else, we can return anyway because we will not find that parfor
+			
+			return;
+		}
+		
+		//recursive invocation (only for non-recursive functions)
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				rFindAndUnfoldRecursiveFunction(c, parfor, recPBs);
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param parfor
+	 * @return
+	 */
+	private boolean rContainsNode( OptNode n, ParForProgramBlock parfor )
+	{
+		boolean ret = false;
+		
+		if( n.getNodeType() == NodeType.PARFOR )
+		{
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+		    						.getAbstractPlanMapping().getMappedProg(n.getID())[1];	
+			ret = (parfor == pfpb);
+		}
+		
+		if( !ret && !n.isLeaf() )
+			for( OptNode c : n.getChilds() ) {
+				ret |= rContainsNode(c, parfor);
+				if( ret ) break; //early abort
+			}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param pbs
+	 * @return
+	 */
+	private HashSet<ParForProgramBlock> rGetAllParForPBs( OptNode n, HashSet<ParForProgramBlock> pbs )
+	{
+		//collect parfor
+		if( n.getNodeType()==NodeType.PARFOR )
+		{
+			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+									.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			pbs.add(pfpb);
+		}
+		
+		//recursive invocation
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				rGetAllParForPBs(c, pbs);
+		
+		return pbs;
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param oldName
+	 * @param newName
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private void rReplaceFunctionNames( OptNode n, String oldName, String newName ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		if( n.getNodeType() == NodeType.FUNCCALL)
+		{
+			String[] names = n.getParam(ParamType.OPSTRING).split(Program.KEY_DELIM);
+			String fnamespace = names[0];
+			String fname = names[1];
+			
+			if( fname.equals(oldName) )
+			{
+				//set opttree function name
+				n.addParam(ParamType.OPSTRING, fnamespace+Program.KEY_DELIM+newName);
+				
+				//set instruction function name
+				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());	
+				ProgramBlock pb = (ProgramBlock)OptTreeConverter.getAbstractPlanMapping().getMappedProg(parentID)[1];
+				ArrayList<Instruction> instArr = pb.getInstructions();				
+				for( int i=0; i<instArr.size(); i++ )
+				{
+					Instruction inst = instArr.get(i);
+					if( inst instanceof FunctionCallCPInstruction ) 
+					{
+						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
+						if( oldName.equals(fci.getFunctionName()) )
+							instArr.set(i, FunctionCallCPInstruction.parseInstruction(fci.toString().replaceAll(oldName, newName)));
+					}
+				}
+			}
+		}
+	
+		//recursive invocation
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				rReplaceFunctionNames(c, oldName, newName);
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param recPBs
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private int removeRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> recPBs ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		int count = 0;
+		
+		if( !n.isLeaf() )
+		{
+			for( OptNode sub : n.getChilds() )
+			{
+				if( sub.getNodeType() == NodeType.PARFOR )
+				{
+					long id = sub.getID();
+					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+	                                            .getAbstractPlanMapping().getMappedProg(id)[1];
+					
+					if( recPBs.contains(pfpb) )
+					{
+						//create for pb as replacement
+						Program prog = pfpb.getProgram();
+						ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
+						
+						//replace parfor with for, and update objectmapping
+						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
+						
+						//update node
+						sub.setNodeType(NodeType.FOR);
+						sub.setK(1);
+						
+						count++;
+					}
+				}
+				
+				count += removeRecursiveParFor(sub, recPBs);
+			}
+		}
+		
+		return count;
+	}
 	
 	
 	///////
@@ -1207,6 +1543,7 @@ public class OptimizerRuleBased extends Optimizer
 		return count;
 	}
 
+	
 	
 	////////////////////////
 	//   Helper methods   //

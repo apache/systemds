@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import com.ibm.bi.dml.lops.LopProperties;
@@ -51,7 +52,8 @@ public class OptNode
 		DATA_PARTITIONER,
 		DATA_PARTITION_FORMAT,
 		RESULT_MERGE,
-		NUM_ITERATIONS
+		NUM_ITERATIONS,
+		RECURSIVE_CALL
 	}
 
 	//child nodes
@@ -204,6 +206,23 @@ public class OptNode
 	
 	/**
 	 * 
+	 * @param qn
+	 * @return
+	 */
+	public boolean containsNode( OptNode qn )
+	{
+		boolean ret = (this == qn);
+		if( !ret && !isLeaf() )
+			for( OptNode n : _childs ) {
+				ret |= n.containsNode(qn);
+				if( ret ) break; //early abort
+			}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
 	 * @return
 	 */
 	public boolean isLeaf()
@@ -218,6 +237,19 @@ public class OptNode
 	public String getInstructionName() 
 	{
 		return String.valueOf(_etype) + Lops.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isRecursive()
+	{
+		boolean ret = false;
+		String rec = getParam(ParamType.RECURSIVE_CALL);
+		if( rec != null )
+			ret = Boolean.parseBoolean(rec);
+		return ret;
 	}
 	
 
@@ -280,6 +312,8 @@ public class OptNode
 		
 		return nodes;
 	}
+	
+	
 
 	
 	/**
@@ -446,19 +480,42 @@ public class OptNode
 	/**
 	 * 
 	 */
-	public void checkAndCleanup() 
+	public void checkAndCleanupLeafNodes() 
 	{
 		if( _childs != null )
 			for( int i=0; i<_childs.size(); i++ )
 			{
 				OptNode n = _childs.get(i);
-				n.checkAndCleanup();
-				if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST )
+				n.checkAndCleanupLeafNodes();
+				if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST && n._ntype != NodeType.FUNCCALL )
 				{
 					_childs.remove(i);
 					i--;
 				}
 			}
+	}
+	
+	/**
+	 * @param stack 
+	 * 
+	 */
+	public void checkAndCleanupRecursiveFunc(HashSet<String> stack) 
+	{
+		//recursive invocation
+		if( !isLeaf() )
+			for( OptNode n : _childs )
+				n.checkAndCleanupRecursiveFunc( stack );
+		
+		//collect and update func info
+		if(_ntype == NodeType.FUNCCALL)
+		{
+			String rec = getParam(ParamType.RECURSIVE_CALL);
+			String fname = getParam(ParamType.OPSTRING);
+			if( rec != null && Boolean.parseBoolean(rec) ) 
+				stack.add(fname); //collect
+			else if( stack.contains(fname) )
+				addParam(ParamType.RECURSIVE_CALL, "true");
+		}
 	}
 	
 	/**
@@ -481,14 +538,24 @@ public class OptNode
 		sb.append(_etype);
 		sb.append(", k=");
 		sb.append(_k);
-		if( _ntype == NodeType.PARFOR )
-		{
-			sb.append(", dp="); //data partitioner
-			sb.append(_params.get(ParamType.DATA_PARTITIONER));
-			sb.append(", tp="); //task partitioner
-			sb.append(_params.get(ParamType.TASK_PARTITIONER));
-			sb.append(", rm="); //result merge
-			sb.append(_params.get(ParamType.RESULT_MERGE));
+		switch( _ntype ) //specific details
+		{	
+			case PARFOR: {
+				sb.append(", dp="); //data partitioner
+				sb.append(_params.get(ParamType.DATA_PARTITIONER));
+				sb.append(", tp="); //task partitioner
+				sb.append(_params.get(ParamType.TASK_PARTITIONER));
+				sb.append(", rm="); //result merge
+				sb.append(_params.get(ParamType.RESULT_MERGE));
+				break;
+			}
+			case FUNCCALL: {
+				sb.append(", name=");
+				sb.append(_params.get(ParamType.OPSTRING));
+				if( _params.get(ParamType.RECURSIVE_CALL)!=null && Boolean.parseBoolean(_params.get(ParamType.RECURSIVE_CALL)) )
+					sb.append(", recursive");
+				break;
+			}	
 		}
 		sb.append("\n");
 		

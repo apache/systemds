@@ -98,7 +98,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false);
 
 		return newInst;
 	}
@@ -149,7 +149,7 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null);
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false);
 
 		return newInst;
 	}

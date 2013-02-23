@@ -23,6 +23,7 @@ import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -55,7 +56,6 @@ public class OptTreeConverter
 {		
 	//internal configuration flags
 	public static boolean INCLUDE_FUNCTIONS = true;
-	public static boolean INCLUDE_ALL_FUNCTION_CALLS = true;
 	
 	//internal state
 	private static OptTreePlanMappingAbstract _hlMap = null; 
@@ -77,9 +77,10 @@ public class OptTreeConverter
 		switch( type )
 		{
 			case ABSTRACT_PLAN:
-				HashSet<Long> memo = new HashSet<Long>();
+				HashSet<String> memo = new HashSet<String>();
 				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true, memo);	
-				root.checkAndCleanup();
+				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
+				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
 				break;
 			case RUNTIME_PLAN:
 				root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );
@@ -111,7 +112,7 @@ public class OptTreeConverter
 		return tree;
 	}
 	
-	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<Long> memo ) 
+	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<String> memo ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		OptTree tree = null;
@@ -320,7 +321,7 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
-	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, HashSet<Long> memo ) 
+	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, HashSet<String> memo ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException 
 	{
 		OptNode node = null;
@@ -343,7 +344,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(i);
 				StatementBlock lsb = is.getIfBody().get(i);
-				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
@@ -357,7 +358,7 @@ public class OptTreeConverter
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
-					efn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+					efn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 				}
 			}				
 		}
@@ -375,7 +376,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}			
 		}
 		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
@@ -400,7 +401,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}	
 		}
 		else if( pb instanceof ParForProgramBlock )
@@ -438,7 +439,7 @@ public class OptTreeConverter
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
-				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+				node.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}
 			
 			//parameters, add required parameters
@@ -469,6 +470,7 @@ public class OptTreeConverter
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
 						String fname = fci.getFunctionName();
 						String fnspace = fci.getNamespace();
+						String fKey = fnspace + Program.KEY_DELIM + fname; 
 						FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnspace, fname);
 						FunctionStatementBlock fsb = sb.getDMLProg().getFunctionStatementBlock(fnspace, fname);
 						FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
@@ -476,32 +478,36 @@ public class OptTreeConverter
 						OptNode fn = new OptNode(NodeType.FUNCCALL);
 						_hlMap.putProgMapping(fsb, fpb, fn);
 						fn.setExecType(ExecType.CP);
+						fn.addParam(ParamType.OPSTRING, fKey);
 						node.addChild( fn );
 						
-						//process body
-						int len = fs.getBody().size();
-						for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+						//process body; NOTE: memo prevents inclusion of functions multiple times
+						if( !memo.contains(fKey) )
 						{
-							ProgramBlock lpb = fpb.getChildBlocks().get(i);
-							StatementBlock lsb = fs.getBody().get(i);
-							if( INCLUDE_ALL_FUNCTION_CALLS )
-								fn.addChild(rCreateAbstractOptNode(lsb,lpb,vars,topLevel, new HashSet<Long>()));
-							else
+							memo.add(fKey); 
+						
+							int len = fs.getBody().size();
+							for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
 							{
-								//NOTE: memo prevents inclusion of functions multiple times
-								fn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,topLevel, memo) );
+								ProgramBlock lpb = fpb.getChildBlocks().get(i);
+								StatementBlock lsb = fs.getBody().get(i);
+								fn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 							}
-						}		
+						
+							memo.remove(fKey);							
+						}
+						else
+							fn.addParam(ParamType.RECURSIVE_CALL, "true");
 					}
 			}
 		}
 		
 		//final cleanup
-		node.checkAndCleanup();
+		node.checkAndCleanupLeafNodes(); //NOTE: required because this function is also used to create subtrees
 		
 		return node;
 	}
-
+	
 	//TODO predicate hops e.g., at whilestatementblock
 
 
@@ -511,7 +517,7 @@ public class OptTreeConverter
 	 * @param vars
 	 * @return
 	 */
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<Long> memo ) 
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<String> memo ) 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		for( Hops hop : hops )
@@ -525,25 +531,20 @@ public class OptTreeConverter
 	 * @param vars
 	 * @return
 	 */
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<Long> memo) 
+	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<String> memo) 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hops> in = hop.getInput();
 		
 		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
 		{
-			if( !memo.contains(hop.getHopID()) )
-			{
-				OptNode node = new OptNode(NodeType.HOP);
-				String opstr = hop.getOpString();
-				node.addParam(ParamType.OPSTRING,opstr);
-				LopProperties.ExecType et = hop.getExecType();
-				node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
-				_hlMap.putHopMapping(hop, node);
-				ret.add(node);
-			
-				memo.add(hop.getHopID());
-			}
+			OptNode node = new OptNode(NodeType.HOP);
+			String opstr = hop.getOpString();
+			node.addParam(ParamType.OPSTRING,opstr);
+			LopProperties.ExecType et = hop.getExecType();
+			node.setExecType((et==LopProperties.ExecType.MR) ? ExecType.MR : ExecType.CP); //note: for scalars no exec type
+			_hlMap.putHopMapping(hop, node);
+			ret.add(node);
 		}	
 
 		if( in != null )
@@ -710,6 +711,11 @@ public class OptTreeConverter
 		else if( pbParent instanceof ForProgramBlock || pbParent instanceof ParForProgramBlock )
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pbParent;
+			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );	
+		}
+		else if( pbParent instanceof FunctionProgramBlock )
+		{
+			FunctionProgramBlock fpb = (FunctionProgramBlock) pbParent;
 			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );	
 		}
 		else

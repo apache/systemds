@@ -1,0 +1,4 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.data.writeTest.java
+
+A = read("$$indir$$a");
+write(A, "$$outdir$$a", format="$$format$$");

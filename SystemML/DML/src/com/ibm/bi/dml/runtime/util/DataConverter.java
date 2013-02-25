@@ -5,6 +5,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.OutputStream;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
@@ -16,6 +18,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.InputFormat;
@@ -272,7 +275,164 @@ public class DataConverter
 			throw new DMLRuntimeException(e);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param srcfileName
+	 * @param fileName
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @throws IOException
+	 */
+	public static void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
+		throws IOException
+	{
+		  Configuration conf = new Configuration();
+		
+		  Path src = new Path (srcFileName);
+	      Path merge = new Path (fileName);
+	      FileSystem hdfs = FileSystem.get(conf);
+	    
+	      if (hdfs.exists (merge)) {
+	    	hdfs.delete(merge, true);
+	      }
+        
+	      OutputStream out = hdfs.create(merge, true);
 
+	      // write out the header first 
+	      StringBuilder  sb = new StringBuilder();
+	      sb.append ("%%MatrixMarket matrix coordinate real general\n");
+	    
+	      // output number of rows, number of columns and number of nnz
+	 	  sb.append (rlen + " " + clen + " " + nnz + "\n");
+	      out.write (sb.toString().getBytes());
+
+	      // if the source is a directory
+	      if (hdfs.getFileStatus(src).isDir()) {
+	        try {
+	          FileStatus contents[] = hdfs.listStatus(src);
+	          for (int i = 0; i < contents.length; i++) {
+	            if (!contents[i].isDir()) {
+	               InputStream in = hdfs.open (contents[i].getPath());
+	               try {
+	                 IOUtils.copyBytes (in, out, conf, false);
+	               }  finally {
+	                 in.close();
+	               }
+	             }
+	           }
+	         } finally {
+	            out.close();
+	         }
+	      } else if (hdfs.isFile(src))  {
+	        InputStream in = null;
+	        try {
+   	          in = hdfs.open (src);
+	          IOUtils.copyBytes (in, out, conf, true);
+	        } finally {
+	          in.close();
+	          out.close();
+	        }
+	      } else {
+	        throw new IOException(src.toString() + ": No such file or directory");
+	      }
+}
+	
+	/**
+	 * 
+	 * @param fileName
+	 * @param src
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @throws IOException
+	 */
+	public static void writeMatrixMarketToHDFS( String fileName, MatrixBlock src, long rlen, long clen, long nnz )
+		throws IOException
+	{
+		JobConf job = new JobConf();
+		Path path = new Path(fileName);
+		boolean sparse = src.isInSparseFormat();
+		boolean entriesWritten = false;
+		FileSystem fs = FileSystem.get(job);
+        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+        
+    	int rows = src.getNumRows();
+		int cols = src.getNumColumns();
+
+		//bound check per block
+		if( rows > rlen || cols > clen )
+		{
+			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
+					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+		}
+		
+		try
+		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
+			// First output MM header
+			sb.append ("%%MatrixMarket matrix coordinate real general\n");
+		
+			// output number of rows, number of columns and number of nnz
+			sb.append (rlen + " " + clen + " " + nnz + "\n");
+            br.write( sb.toString());
+            sb.setLength(0);
+            
+            // output matrix cell
+			if( sparse ) //SPARSE
+			{			   
+				SparseCellIterator iter = src.getSparseCellIterator();
+				while( iter.hasNext() )
+				{
+					IJV cell = iter.next();
+
+					sb.append(cell.i+1);
+					sb.append(' ');
+					sb.append(cell.j+1);
+					sb.append(' ');
+					sb.append(cell.v);
+					sb.append('\n');
+					br.write( sb.toString() ); //same as append
+					sb.setLength(0); 
+					entriesWritten = true;					
+				}
+			}
+			else //DENSE
+			{
+				for( int i=0; i<rows; i++ )
+					for( int j=0; j<cols; j++ )
+					{
+						double lvalue = src.getValueDenseUnsafe(i, j);
+						if( lvalue != 0 ) //for nnz
+						{
+							sb.append(i+1);
+							sb.append(' ');
+							sb.append(j+1);
+							sb.append(' ');
+							sb.append(lvalue);
+							sb.append('\n');
+							br.write( sb.toString() ); //same as append
+							sb.setLength(0); 
+							entriesWritten = true;
+						}
+					}
+			}
+	
+			//handle empty result
+			if ( !entriesWritten ) {
+				br.write("1 1 0\n");
+			}
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
+		}
+	}
+	
 	/**
 	 * 
 	 * @param path

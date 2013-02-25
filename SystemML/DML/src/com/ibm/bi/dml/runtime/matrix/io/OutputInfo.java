@@ -29,6 +29,8 @@ public class OutputInfo {
 	}
 	public static OutputInfo TextCellOutputInfo=new OutputInfo(TextOutputFormat.class, 
 			NullWritable.class, Text.class);
+	public static OutputInfo MatrixMarketOutputInfo  = new OutputInfo (TextOutputFormat.class, 
+			NullWritable.class, Text.class);
 	public static OutputInfo BinaryCellOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
 //	public static OutputInfo TextBlockOutputInfo=new OutputInfo(TextOutputFormat.class, 
@@ -45,6 +47,8 @@ public class OutputInfo {
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) throws DMLRuntimeException {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
 			return InputInfo.BinaryBlockInputInfo;
+		else if ( oi == OutputInfo.MatrixMarketOutputInfo )
+			return InputInfo.MatrixMarketInputInfo;
 		else if ( oi == OutputInfo.BinaryCellOutputInfo ) 
 			return InputInfo.BinaryCellInputInfo;
 		else if ( oi == OutputInfo.TextCellOutputInfo )
@@ -62,6 +66,9 @@ public class OutputInfo {
 	public static OutputInfo stringToOutputInfo (String str) {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellOutputInfo;
+		}
+		else if ( str.equalsIgnoreCase("matrixmarket")) {
+			return MatrixMarketOutputInfo;
 		}
 		else if ( str.equalsIgnoreCase("binarycell")) {
 			return BinaryCellOutputInfo;
@@ -81,6 +88,8 @@ public class OutputInfo {
 	public static String outputInfoToString (OutputInfo oi) {
 		if ( oi == TextCellOutputInfo )
 			return "textcell";
+		else if ( oi == MatrixMarketOutputInfo)
+			return "matrixmarket";
 		else if ( oi == BinaryCellOutputInfo )
 			return "binarycell";
 		else if ( oi == BinaryBlockOutputInfo )

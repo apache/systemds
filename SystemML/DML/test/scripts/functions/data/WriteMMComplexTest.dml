@@ -1,4 +1,10 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.data.WriteMMTest.java
 
 A = read("$$indir$$a");
-writeMM(A, "$$outdir$$a");
+
+i = 0;
+while( i < 2) {
+     writeMM (A, "$$outdir$$a");
+     i = i +1;
+}
+

@@ -161,6 +161,9 @@ public abstract class Expression {
 		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY)) {
 			return FileFormatTypes.BINARY;
 		}
+		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
+			return FileFormatTypes.MM;
+		}
 		// ToDo : throw parse exception for invalid / unsupported format type
 		return FileFormatTypes.TEXT;
 	}

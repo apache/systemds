@@ -440,8 +440,9 @@ public class VariableCPInstruction extends CPInstruction {
 					m.exportData();
 			}
 			else {
-				throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
+				//throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
 				//cleanDataOnHDFS(pb, input1.get_name());
+				cleanDataOnHDFS (pb, m);
 			}
 			
 			// check if in-memory object can be cleaned up

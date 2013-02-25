@@ -427,6 +427,20 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * <p>
+	 * Adds a matrix to the expectation path and writes it to a file.
+	 * </p>
+	 * 
+	 * @param name
+	 *            directory name
+	 * @param matrix
+	 *            two dimensional matrix
+	 */
+	protected void writeExpectedMatrixMarket(String name, double[][] matrix) {
+		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + name, matrix, true);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+	}
+	/**
+	 * <p>
 	 * Adds a matrix to the expectation path and writes it to a file in binary
 	 * format.
 	 * </p>
@@ -911,6 +925,9 @@ public abstract class AutomatedTestBase {
 		compareResultsWithR(0);
 	}
 
+	protected void compareResultsWithMM () {
+		TestUtils.compareMMMatrixWithJavaMatrix (comparisonFiles[0], outputDirectories[0], 0);
+	}
 	/**
 	 * <p>
 	 * Compares the results of the computation with the expected ones with a

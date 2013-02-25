@@ -233,6 +233,96 @@ public class TestUtils {
 			fail("unable to read file: " + e.getMessage());
 		}
 	}
+	
+	/**
+	 * <p>
+	 * Compares the expected values calculated in Java by testcase and which are
+	 * in the normal filesystem, with those calculated by SystemML located in
+	 * HDFS with Matrix Market format
+	 * </p>
+	 * 
+	 * @param expectedFile
+	 *            file with expected values, which is located in OS filesystem
+	 * @param actualDir
+	 *            file with actual values, which is located in HDFS
+	 * @param epsilon
+	 *            tolerance for value comparison
+	 */
+	public static void compareMMMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
+		try {
+			FileSystem fs = FileSystem.get(conf);
+			Path outDirectory = new Path(actualDir);
+			Path compareFile = new Path(expectedFile);
+			FSDataInputStream compareIn = fs.open(compareFile);
+			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			String line;
+			
+			// skip the header of Matrix Market file
+			line = compareIn.readLine();
+			
+			// rows, cols and nnz
+			line = compareIn.readLine();
+			String [] expRcn = line.split(" ");
+			
+			while ((line = compareIn.readLine()) != null) {
+				String[] rcv = line.split(" ");
+				expectedValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+						.parseDouble(rcv[2]));
+			}
+			compareIn.close();
+
+			HashMap<CellIndex, Double> actualValues = new HashMap<CellIndex, Double>();
+
+			FSDataInputStream outIn = fs.open(outDirectory);
+			
+			//skip MM header
+			line = outIn.readLine();
+			
+			//rows, cols and nnz
+			line = outIn.readLine();
+			String[] rcn = line.split(" ");
+			
+			if (Integer.parseInt(expRcn[0]) != Integer.parseInt(rcn[0])) {
+				System.out.println(" Rows mismatch: expected " + Integer.parseInt(expRcn[0]) + ", actual " + Integer.parseInt(rcn[0]));
+			}
+			else if (Integer.parseInt(expRcn[1]) != Integer.parseInt(rcn[1])) {
+				System.out.println(" Cols mismatch: expected " + Integer.parseInt(expRcn[1]) + ", actual " + Integer.parseInt(rcn[1]));
+			}
+			else if (Integer.parseInt(expRcn[2]) != Integer.parseInt(rcn[2])) {
+				System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
+			}
+			
+			long cellCounter = 0;
+			
+			while ((line = outIn.readLine()) != null) {
+					String[] rcv = line.split(" ");
+					actualValues.put(new CellIndex(Integer.parseInt(rcv[0]), Integer.parseInt(rcv[1])), Double
+							.parseDouble(rcv[2]));
+					cellCounter++;
+			}
+			outIn.close();
+
+			int countErrors = 0;
+			for (CellIndex index : expectedValues.keySet()) {
+				Double expectedValue = expectedValues.get(index);
+				Double actualValue = actualValues.get(index);
+				if (expectedValue == null)
+					expectedValue = 0.0;
+				if (actualValue == null)
+					actualValue = 0.0;
+				
+			//	System.out.println("actual value: "+actualValue+", expected value: "+expectedValue);
+				
+				if (!compareCellValue(expectedValue, actualValue, epsilon)) {
+					System.out.println(expectedFile+": "+index+" mismatch: expected " + expectedValue + ", actual " + actualValue);
+					countErrors++;
+				}
+			}
+			assertTrue("for file " + actualDir + " " + countErrors + " values are not equal", countErrors == 0);
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
 	/**
 	 * <p>
 	 * Compares the expected values calculated in Java by testcase and which are

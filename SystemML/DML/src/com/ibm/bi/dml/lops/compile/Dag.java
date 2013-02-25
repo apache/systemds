@@ -94,7 +94,8 @@ public class Dag<N extends Lops> {
 		String fileName;
 		String varName;
 		OutputInfo outInfo;
-		ArrayList<Instruction> preInstructions;
+		ArrayList<Instruction> preInstructions; // instructions added before a MR instruction
+		ArrayList<Instruction> postInstructions; // instructions added after a MR instruction
 		ArrayList<Instruction> lastInstructions;
 		
 		NodeOutput() {
@@ -102,7 +103,8 @@ public class Dag<N extends Lops> {
 			varName = null;
 			outInfo = null;
 			preInstructions = new ArrayList<Instruction>(); 
-			lastInstructions = new ArrayList<Instruction>(); 
+			postInstructions = new ArrayList<Instruction>(); 
+			lastInstructions = new ArrayList<Instruction>();
 		}
 		
 		public String getFileName() {
@@ -128,6 +130,12 @@ public class Dag<N extends Lops> {
 		}
 		public void addPreInstruction(Instruction inst) {
 			preInstructions.add(inst);
+		}
+		public ArrayList<Instruction> getPostInstructions() {
+			return postInstructions;
+		}
+		public void addPostInstruction(Instruction inst) {
+			postInstructions.add(inst);
 		}
 		public ArrayList<Instruction> getLastInstructions() {
 			return lastInstructions;
@@ -2219,7 +2227,7 @@ public class Dag<N extends Lops> {
 				}
 			}
 		} else {
-			if (oparams.getFormat() == Format.TEXT)
+			if (oparams.getFormat() == Format.TEXT || oparams.getFormat() == Format.MM)
 				oinfo = OutputInfo.TextCellOutputInfo;
 			else {
 				oinfo = OutputInfo.BinaryCellOutputInfo;
@@ -2454,21 +2462,50 @@ public class Dag<N extends Lops> {
 
 						int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
 						int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
-						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+						Instruction createvarInst;
+						
+						// for MatrixMarket format, the creatvar will output the result to a temporary file in textcell format 
+						// the CP write instruction (post instruction) after the MR instruction will merge the result into a single
+						// part MM format file on hdfs.
+						if (oparams.getFormat() == Format.MM  )  {
+							
+							String tempFileName = scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+			   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
+			   					    "temp" + job_id.getNextID();
+							
+							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 													oparams.getLabel(), 
-													oparams.getFile_name(), 
+													tempFileName, 
 													false, 
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 													new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 												);
-						out.addPreInstruction(createvarInst);
-
-						// remove the variable
-						out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
-								"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
-								+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
-								+ "false" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
+							out.addPostInstruction(CPInstructionParser.parseSingleInstruction(writeInst));
 							
+							// remove the variable
+							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+									"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
+									+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
+									+ "true" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+						} else {
+							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
+									                oparams.getLabel(), 
+									                oparams.getFile_name(), 
+									                false, 
+									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
+									                new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
+								                 );
+							// remove the variable
+							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+									"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
+									+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
+									+ "false" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+							
+						}
+						out.addPreInstruction(createvarInst);
+						
+
 						// finally, add the filename and variable name to the list of outputs 
 						out.setFileName(oparams.getFile_name());
 						out.setVarName(oparams.getLabel());
@@ -2521,6 +2558,7 @@ public class Dag<N extends Lops> {
 		ArrayList<String> outputLabels = new ArrayList<String>();
 		ArrayList<Instruction> renameInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
+		ArrayList<Instruction> writeInstructions = new ArrayList<Instruction>();
 		
 		ArrayList<Lops> inputLops = new ArrayList<Lops>();
 		
@@ -2650,6 +2688,7 @@ public class Dag<N extends Lops> {
 			outputInfos.add(out.getOutInfo());
 			renameInstructions.addAll(out.getLastInstructions());
 			variableInstructions.addAll(out.getPreInstructions());
+			writeInstructions.addAll(out.getPostInstructions());
 			
 		}
 		
@@ -2708,6 +2747,7 @@ public class Dag<N extends Lops> {
 		/* Add the prepared instructions to output set */
 		inst.addAll(variableInstructions);
 		inst.add(mr);
+		inst.addAll(writeInstructions);
 		deleteinst.addAll(renameInstructions);
 		
 		for (Lops l : inputLops) {

@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.test.integration.functions.data;
 
-import static org.junit.Assert.*;
+
 
 import org.junit.Test;
 
@@ -30,88 +30,53 @@ public class WriteMMTest extends AutomatedTestBase {
 		baseDirectory = SCRIPT_DIR + "functions/data/";
 		
 		// positive tests
-		availableTestConfigurations.put("TextTest", new TestConfiguration("WriteMMTest",
+		availableTestConfigurations.put("SimpleTest", new TestConfiguration("WriteMMTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("BinaryTest", new TestConfiguration("WriteMMTest",
+		availableTestConfigurations.put("ComplexTest", new TestConfiguration("WriteMMComplexTest",
 				new String[] { "a" }));
-		availableTestConfigurations.put("WriteTwiceTest", new TestConfiguration("WriteTwiceTest",
-				new String[] { "b", "c" }));
+		
 		
 		// negative tests
 	}
 	
 	@Test
-	public void testText() {
+	public void testMM() {
 		int rows = 10;
 		int cols = 10;
 		
-		TestConfiguration config = availableTestConfigurations.get("TextTest");
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		config.addVariable("format", "text");	
-		loadTestConfiguration("TextTest");
+		TestConfiguration config = availableTestConfigurations.get("SimpleTest");
+		loadTestConfiguration("SimpleTest");
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
 		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
-		writeExpectedMatrix("a", a);
+		writeExpectedMatrixMarket("a", a);
 		
 		runTest();
 		
-		compareResults();
+		compareResultsWithMM();
 	}
-	
+
 	@Test
-	public void testBinary() {
-		int rows = 10;
-		int cols = 10;
+	public void testComplex() {
 		
-		TestConfiguration config = availableTestConfigurations.get("BinaryTest");
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		config.addVariable("format", "binary");
-		loadTestConfiguration("BinaryTest");
+		int rows = 100;
+		int cols = 100;
+		
+		TestConfiguration config = availableTestConfigurations.get("ComplexTest");
+	
+		
+		loadTestConfiguration("ComplexTest");
 		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
 		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
-				
-		runTest();
-		
-		//compareResults();
-		
-		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,1000);
-		//BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
-		assertEquals(rows, matrix.getRows());
-		assertEquals(cols, matrix.getCols());
-		double[][] matrixValues = matrix.getValues();
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < cols; j++) {
-				assertEquals(i + "," + j, a[i][j], matrixValues[i][j], 0);
-			}
-		}
-	}
-	
-	@Test
-	public void testWriteTwice() {
-		int rows = 10;
-		int cols = 10;
-		
-		TestConfiguration config = availableTestConfigurations.get("WriteTwiceTest");
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		
-		loadTestConfiguration("WriteTwiceTest");
-		
-		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.7, System.currentTimeMillis());
-		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
-		writeExpectedMatrix("b", a);
-		writeExpectedMatrix("c", a);
+		writeExpectedMatrixMarket("a", a);
 		
 		
 		runTest();
 
 			
-		compareResults();
+		compareResultsWithMM();
 
-	}
+	} 
 
-}
+} 

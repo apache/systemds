@@ -1783,6 +1783,7 @@ public class DMLTranslator {
 
 
 				if (ae.getFormatType() == FileFormatTypes.TEXT || 
+					ae.getFormatType() == FileFormatTypes.MM ||
 					ae.get_dataType() == DataType.SCALAR)  {
 					
 					ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), -1, -1);

@@ -560,23 +560,62 @@ public class MatrixObject extends CacheableData
 			pWrite = true;  // i.e., export is called from "write" instruction
 		}
 
-		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
-		if(  isDirty()  ||      //use dirty for skipping parallel exports
+		// for pWrite  to MatrixMarket format, if the matrix is already in memory, write it out with MM format,
+		// if the matrix is not in memory, then this is the case, previous MR job write the matrix in textcell format, 
+		// merging the multi-parts textcell format and pre-append the header to output MM in CP mode
+	    if (pWrite && ( outputFormat != null ) && OutputInfo.stringToOutputInfo (outputFormat) == OutputInfo.MatrixMarketOutputInfo) 
+	    {
+	    	// Get the dimension information from the metadata stored within MatrixObject
+			MatrixCharacteristics mc = ((MatrixFormatMetaData)_metaData).getMatrixCharacteristics ();
+			
+	       // merge text cell format matrix on hdfs to single part MM matrix file 
+		   if (isEmpty()) {
+				 if (_hdfsFileName != null) {
+					 try {
+					 DataConverter.mergeTextcellToMatrixMarket(_hdfsFileName, fName, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+					 }  catch (IOException e)	{
+							throw new CacheIOException ("matrix data export to " + fName + " failed.", e);
+					}
+				 }
+			 } else { // write out in-memory matrix in MM format 
+				 if( _data == null )
+						getCache();
+				 acquire( false, _data==null ); //incl. read matrix if evicted
+				
+				// Write the matrix to HDFS in requested format	
+				try {
+					// If the file already exists on HDFS, remove it.
+					MapReduceTool.deleteFileIfExistOnHDFS(fName);
+				    DataConverter.writeMatrixMarketToHDFS(fName, _data, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+			
+				} catch (IOException e)	{
+					throw new CacheIOException ("Cached matrix data export to " + fName + " failed.", e);
+				}
+				finally
+				{
+					release();
+				}	
+			 }
+		   LOG.trace("Writing matrix to HDFS ("+fName+") - COMPLETED... ");
+		} else {
+		  //actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
+		  if(  isDirty()  ||      //use dirty for skipping parallel exports
 		    (pWrite && !isEqualOutputFormat(outputFormat)) ) 
-		{
+		  {
+		  
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix		
 			if( isEmpty() )
 			{
-				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
+			    //read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				try
 				{
-					_data = readMatrixFromHDFS( _hdfsFileName );
+			        _data = readMatrixFromHDFS( _hdfsFileName );
 					_dirtyFlag = false;
 				}
 				catch (IOException e)
 				{
-					throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
+				    throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
 				}
 			}
 			//get object from cache
@@ -621,6 +660,7 @@ public class MatrixObject extends CacheableData
 			//CASE 3: data already in hdfs (do nothing, no need for export)
 			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
+	  }
 	}
 
 	

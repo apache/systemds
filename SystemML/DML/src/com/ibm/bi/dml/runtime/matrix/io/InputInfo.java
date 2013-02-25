@@ -43,6 +43,8 @@ public class InputInfo {
 	}
 	public static InputInfo TextCellInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
+	public static InputInfo MatrixMarketInputInfo = new InputInfo (TextInputFormat.class, 
+			 LongWritable.class, Text.class);
 	public static InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
 	//public static InputInfo TextBlockInputInfo=new InputInfo(TextInputFormat.class, 
@@ -64,6 +66,8 @@ public class InputInfo {
 	public static OutputInfo getMatchingOutputInfo(InputInfo ii) throws DMLRuntimeException {
 		if ( ii == InputInfo.BinaryBlockInputInfo )
 			return OutputInfo.BinaryBlockOutputInfo;
+		else if ( ii == InputInfo.MatrixMarketInputInfo)
+			return OutputInfo.MatrixMarketOutputInfo;
 		else if ( ii == InputInfo.BinaryCellInputInfo ) 
 			return OutputInfo.BinaryCellOutputInfo;
 		else if ( ii == InputInfo.TextCellInputInfo )

@@ -9,7 +9,7 @@ import com.ibm.bi.dml.utils.HopsException;
 
 public class OutputParameters {
 	public enum Format {
-		TEXT, BINARY
+		TEXT, BINARY, MM
 	};
 
 	boolean blocked_representation = true;

@@ -204,6 +204,8 @@ public class Data extends Lops
 			this.outParams.setFormat(Format.BINARY) ;
 		else if(type == FileFormatTypes.TEXT)
 			this.outParams.setFormat(Format.TEXT) ;
+		else if (type == FileFormatTypes.MM)
+			this.outParams.setFormat(Format.MM);
 	}
 
 	/**
@@ -301,8 +303,10 @@ public class Data extends Lops
 				sb.append( OPERAND_DELIMITOR );
 				if ( get_dataType() == DataType.MATRIX ) {
 					OutputParameters oparams = getOutputParameters();
-					if ( oparams.getFormat() == Format.TEXT )
-						sb.append( "textcell" );
+					if ( oparams.getFormat() == Format.MM )
+						sb.append( "matrixmarket" );
+					else if (oparams.getFormat() == Format.TEXT)
+						sb.append( "textcell");
 					else {
 						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 							sb.append( "binaryblock" );
@@ -339,12 +343,12 @@ public class Data extends Lops
 			OutputParameters oparams = getOutputParameters();
 			String fmt = "";
 			// TODO: following logic should change once we LOPs encode key-value-class information.
-			if ( oparams.getFormat() == Format.TEXT )
+			if ( oparams.getFormat() == Format.TEXT  || oparams.getFormat() == Format.MM)
 				fmt = "textcell";
 			else {
 				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 					fmt = "binaryblock";
-				else
+				else 
 					fmt = "binarycell";
 			}
 			

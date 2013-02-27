@@ -68,7 +68,7 @@ public class OperationsOnMatrixValues {
 		value_out=value_in.reorgOperations(op, value_out, startRow, startColumn, length);
 		
 	}
-	public static void performAppend(MatrixIndexes indexes_in, MatrixValue value_in, 
+/*	public static void performAppend(MatrixIndexes indexes_in, MatrixValue value_in, 
 			MatrixIndexes indexes_out, MatrixValue value_out, ReorgOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -77,6 +77,13 @@ public class OperationsOnMatrixValues {
 		
 		//operation on the cells inside the value
 		value_out=value_in.reorgOperations(op, value_out, 0, 0, 0);
+	}*/
+	
+	public static void performAppend(MatrixValue value_in1, MatrixValue value_in2,
+			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		value_in1.appendOperations(value_in2, outlist, blockRowFactor, blockColFactor, m2IsLast, nextNCol);
 	}
 	
 	public static void performZeroOut(MatrixIndexes indexes_in, MatrixValue value_in, 

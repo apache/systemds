@@ -12,6 +12,7 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -146,13 +147,17 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 
 		MatrixValue mv = getDataFromDistributedCache(input, distCache_index, rowBlockIndex, colBlockIndex);
 		
-		int part_rl = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input])*inputPartitionSizes[input];
-		//int part_ru = (int) Math.min(inputPartitionSizes[input], distCacheNumRows[index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)-1;
-		//int part_cl = 0; //(int) ((colBlockIndex-1)*DMLTranslator.DMLBlockSize); // /inputPartitionSizes[input]);  TODO: FIX IT BASED ON PFORMAT
-		//int part_cu = 0; //(int) Math.min((rowBlockIndex)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input], distCacheNumColumns[index]);
-			
-		int st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize - part_rl);
-		int end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-part_rl-1;
+		int part_rl, st, end;
+		if ( inputPartitionFlags[input] == false ) {
+			st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize);
+			end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-1;
+		}
+		else {
+			part_rl = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input])*inputPartitionSizes[input];
+			st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize - part_rl);
+			end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-part_rl-1;
+		}
+	
 
 		MatrixBlock mb = new MatrixBlock(
 				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumRows[distCache_index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)), 
@@ -259,7 +264,15 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
-		}else
+		}else if(ins instanceof AppendInstruction)
+		{
+			byte input=((AppendInstruction) ins).input1;
+			MatrixCharacteristics dim=dimensions.get(input);
+			if(dim==null)
+				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+		}
+		else
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);
 	}
 }

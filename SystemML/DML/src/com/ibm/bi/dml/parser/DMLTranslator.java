@@ -2861,8 +2861,8 @@ public class DMLTranslator {
 			break;
 			
 		case APPEND:
-			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), 
-										Hops.ReorgOp.APPEND, expr, expr2);
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+										Hops.OpOp2.APPEND, expr, expr2);
 			break;
 		
 		case DIAG:

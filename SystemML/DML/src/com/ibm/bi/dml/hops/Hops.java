@@ -893,7 +893,7 @@ abstract public class Hops {
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, INVALID
+		CENTRALMOMENT, COVARIANCE, APPEND, INVALID
 	};
 
 	// Operations that require 3 operands
@@ -905,7 +905,7 @@ abstract public class Hops {
 	};
 
 	public enum ReorgOp {
-		TRANSPOSE, DIAG_V2M, DIAG_M2V, APPEND
+		TRANSPOSE, DIAG_V2M, DIAG_M2V
 	};
 
 	public enum ParamBuiltinOp {
@@ -1136,6 +1136,7 @@ abstract public class Hops {
 		HopsOpOp2String.put(OpOp2.IQM, "IQM");
 		HopsOpOp2String.put(OpOp2.CENTRALMOMENT, "centraMoment");
 		HopsOpOp2String.put(OpOp2.COVARIANCE, "cov");
+		HopsOpOp2String.put(OpOp2.APPEND, "APP");
 	}
 	
 	static public HashMap<Hops.OpOp3, String> HopsOpOp3String;
@@ -1172,7 +1173,7 @@ abstract public class Hops {
 	static {
 		HopsTransf2String = new HashMap<Hops.ReorgOp, String>();
 		HopsTransf2String.put(ReorgOp.TRANSPOSE, "T");
-		HopsTransf2String.put(ReorgOp.APPEND, "APP");
+	//	HopsTransf2String.put(ReorgOp.APPEND, "APP");
 		HopsTransf2String.put(ReorgOp.DIAG_M2V, "diagM2V");
 		HopsTransf2String.put(ReorgOp.DIAG_V2M, "diagV2M");
 	}

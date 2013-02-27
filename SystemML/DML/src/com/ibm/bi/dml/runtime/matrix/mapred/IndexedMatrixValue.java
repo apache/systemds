@@ -6,8 +6,12 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 
 public class IndexedMatrixValue extends CachedMapElement {
 	private MatrixIndexes indexes=new MatrixIndexes();
-	private MatrixValue value;
+	private MatrixValue value=null;
 	private Class<? extends MatrixValue> valueClass=MatrixBlock.class;
+	
+	public IndexedMatrixValue()
+	{
+	}
 	public IndexedMatrixValue(Class<? extends MatrixValue> cls)
 	{
 		valueClass=cls;
@@ -44,6 +48,12 @@ public class IndexedMatrixValue extends CachedMapElement {
 			set(that.indexes, that.value);
 		}
 	}
+	
+	public void shallowSetValue(MatrixValue v2)
+	{
+		value=v2;
+	}
+	
 	public MatrixIndexes getIndexes()
 	{
 		return indexes;

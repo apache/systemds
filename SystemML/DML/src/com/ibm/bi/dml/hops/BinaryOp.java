@@ -2,6 +2,7 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.Append;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.CentralMoment;
@@ -316,7 +317,29 @@ public class BinaryOp extends Hops {
 	
 					set_lops(pick);
 				}
-			} else {
+			}else if(op == Hops.OpOp2.APPEND)
+			{
+				ExecType et = optFindExecType();
+				DataType dt1 = getInput().get(0).get_dataType();
+				DataType dt2 = getInput().get(1).get_dataType();
+				if(dt1!=DataType.MATRIX || dt2!=DataType.MATRIX)
+					throw new HopsException("Append can only apply to two matrices!");
+				
+				
+				Lops offset=new UnaryCP(getInput().get(0).constructLops(), 
+						UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+				offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+				offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				Append app=new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	offset,
+						get_dataType(), get_valueType(), et);
+				app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+						get_rows_in_block(), get_cols_in_block(), getNnz());
+				set_lops(app);
+				
+			}
+			else {
 				/* Default behavior for BinaryOp */
 				// it depends on input data types
 				DataType dt1 = getInput().get(0).get_dataType();
@@ -1016,6 +1039,21 @@ public class BinaryOp extends Hops {
 		if (get_dataType() == DataType.SCALAR) {
 			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 		}
+		else if(op==OpOp2.APPEND)
+		{
+			// input are two matrices [k,k1], [k,k2] and output is [k,k1+k2]
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && dimsKnown() ) {
+				Hops input1 = getInput().get(0);
+				// always get a worst-case estimate for append if no dynamic recompilation
+				Hops input2 = getInput().get(1);
+				long ncols = input1.get_dim2() + input2.get_dim2();
+				double spa = (input1.getNnz()>0&&input2.getNnz()>0)? (input1.getNnz()+input2.getNnz())/input1.get_dim1()/ncols : 1.0;
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input1.get_dim1(), ncols, spa);
+			}
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
+		}
 		else {
 			Hops input1 = getInput().get(0);
 			Hops input2 = getInput().get(1);
@@ -1047,8 +1085,9 @@ public class BinaryOp extends Hops {
 		else 
 		{
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && (!dimsKnown() || op == OpOp2.APPEND) )
 				setRequiresRecompile();
+
 			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
@@ -1124,7 +1163,13 @@ public class BinaryOp extends Hops {
 					set_dim1(0);
 					set_dim2(0);
 				}
-			}//else do nothing
+			}else if(op== OpOp2.APPEND)
+			{
+				set_dim1( input1.get_dim1() );
+				set_dim2( input1.get_dim2() + input2.get_dim2() );
+				
+				setNnz( input1.getNnz() + input2.getNnz() );
+			}
 		}	
 	}
 }

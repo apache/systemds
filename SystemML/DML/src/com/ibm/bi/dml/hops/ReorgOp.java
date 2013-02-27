@@ -2,13 +2,10 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Append;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.PartialAggregate;
-import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.Transform;
-import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -125,7 +122,7 @@ public class ReorgOp extends Hops {
 				} catch (LopsException e) {
 					throw new HopsException(this.printErrorLocation() + "In ReorgOp Hop, error constructing Lops " , e);
 				}
-			} else if(op == ReorgOp.APPEND){
+			}/* else if(op == ReorgOp.APPEND){
 				ExecType et = optFindExecType();
 				
 				UnaryCP offset = new UnaryCP(getInput().get(0).constructLops(),
@@ -162,7 +159,7 @@ public class ReorgOp extends Hops {
 				
 				set_lops(reblock);
 				
-			} else {
+			}*/ else {
 				ExecType et = optFindExecType();
 				Transform transform1 = new Transform(
 						getInput().get(0).constructLops(), HopsTransf2Lops
@@ -233,52 +230,37 @@ public class ReorgOp extends Hops {
 		
 		switch(op) {
 		case TRANSPOSE:
-			// input is a [k1,k2] matrix and output is a [k2,k1] matrix
-			// although nnz and dims do not change, we need to compute mem based on our sparse row representation
-			if( dimsKnown() ){
-				double spt = (input.getNnz()>0)? input.getNnz()/input.get_dim1()/input.get_dim2() : 1.0;
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim2(), input.get_dim1(), spt);	
-			}
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
+			// transpose does not change #nnz, and hence it takes same amount of space as that of its input
+			_outputMemEstimate = input.getOutputSize(); 
 			break;
 			
-		case DIAG_V2M:	
-			// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
+		case DIAG_V2M:
+			
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
+			/*// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
 			// In the worst case, #nnz in output = k => sparsity = 1/k
-			if( dimsKnown() ){
+			if (dimsKnown()) {
 				long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(k, k, (double)1/k); 
+				_outputMemEstimate = OptimizerUtils.estimate(k, k, (double)1/k);
+				//System.out.println("DIAG k=" + k + ": " + _outputMemEstimate);
 			}
-			else 
+			else {
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-
+			}*/
 			break;
 			
 		case DIAG_M2V:
 			// input is [k,k] matrix and output is [k,1] matrix
 			// #nnz in the output is likely to be k (a dense matrix)
-			if( dimsKnown() )
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), 1, 1.0); 
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
+			_outputMemEstimate = OptimizerUtils.estimateSize(input.get_dim1(), input.get_dim1(), 1.0);
 			break;
 		
-		case APPEND:
-			// input are two matrices [k,k1], [k,k2] and output is [k,k1+k2]
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && dimsKnown() ) {
-				// always get a worst-case estimate for append if no dynamic recompilation
-				Hops input2 = getInput().get(1);
-				long ncols = input.get_dim2() + input2.get_dim2();
-				double spa = (input.getNnz()>0&&input2.getNnz()>0)? (input.getNnz()+input2.getNnz())/input.get_dim1()/ncols : 1.0;
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), ncols, spa);
-			}
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+	/*	case APPEND:
+			// always get a worst-case estimate for append!
+			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			
-			break;
+			break;*/
 			
 		}
 		
@@ -299,7 +281,7 @@ public class ReorgOp extends Hops {
 		else 
 		{
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && (!dimsKnown() || op == ReorgOp.APPEND) )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
 				setRequiresRecompile();
 			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
@@ -311,7 +293,6 @@ public class ReorgOp extends Hops {
 			else 
 				_etype = ExecType.MR;
 		}
-		
 		return _etype;
 	}
 	
@@ -340,15 +321,14 @@ public class ReorgOp extends Hops {
 				set_dim1(input1.get_dim1());
 				set_dim2(1);								
 				break;
-			
+		/*	
 			case APPEND:
 				Hops input2 = getInput().get(1);
 				set_dim1( input1.get_dim1() );
 				set_dim2( input1.get_dim2() + input2.get_dim2() );
-				
 				setNnz( input1.getNnz() + input2.getNnz() );
 				break;
-				
+		*/		
 		}	
 	}
 }

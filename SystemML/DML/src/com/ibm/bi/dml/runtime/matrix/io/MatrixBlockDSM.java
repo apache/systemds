@@ -2692,6 +2692,109 @@ public class MatrixBlockDSM extends MatrixValue{
 		}	
 	}
 	
+	@Override
+	//This the append operations for MR side
+	//nextNCol is the number columns for the block right of block v2
+	public void appendOperations(MatrixValue v2,
+			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
+			int blockColFactor, boolean m2IsLast, int nextNCol)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		
+		MatrixBlockDSM m2=(MatrixBlockDSM)v2;
+		//System.out.println("second matrix: \n"+m2);
+		Iterator<IndexedMatrixValue> p=outlist.iterator();
+		if(this.clen==blockColFactor)
+		{
+			MatrixBlockDSM first=(MatrixBlockDSM) p.next().getValue();
+			first.copy(this);
+			MatrixBlockDSM second=(MatrixBlockDSM) p.next().getValue();
+			second.copy(m2);
+		}else
+		{
+			int ncol=Math.min(clen+m2.getNumColumns(), blockColFactor);
+			int part=ncol-clen;
+			MatrixBlockDSM first=(MatrixBlockDSM) p.next().getValue();
+			first.reset(rlen, ncol, this.nonZeros+m2.getNonZeros()*part/m2.getNumColumns());
+			
+			//copy the first matrix
+			if(this.sparse)
+			{
+				if(this.sparseRows!=null)
+				{
+					for(int i=0; i<Math.min(rlen, this.sparseRows.length); i++)
+					{
+						if(this.sparseRows[i]!=null)
+							first.appendRow(i, this.sparseRows[i]);
+					}
+				}
+			}else if(this.denseBlock!=null)
+			{
+				int sindx=0;
+				for(int r=0; r<rlen; r++)
+					for(int c=0; c<clen; c++)
+					{
+						first.appendValue(r, c, this.denseBlock[sindx]);
+						sindx++;
+					}
+			}
+			
+			
+			MatrixBlockDSM second=null;
+			
+			if(part<m2.clen)
+			{
+				second=(MatrixBlockDSM) p.next().getValue();
+				if(m2IsLast)
+					second.reset(m2.rlen, m2.clen-part, m2.sparse);
+				else
+					second.reset(m2.rlen, Math.min(m2.clen-part+nextNCol, blockColFactor), m2.sparse);
+			}
+			
+			//copy the second
+			if(m2.sparse)
+			{
+				if(m2.sparseRows!=null)
+				{
+					for(int i=0; i<Math.min(m2.rlen, m2.sparseRows.length); i++)
+					{
+						if(m2.sparseRows[i]!=null)
+						{
+							int[] indexContainer=m2.sparseRows[i].getIndexContainer();
+							double[] valueContainer=m2.sparseRows[i].getValueContainer();
+							for(int j=0; j<m2.sparseRows[i].size(); j++)
+							{
+								if(indexContainer[j]<part)
+									first.appendValue(i, clen+indexContainer[j], valueContainer[j]);
+								else
+									second.appendValue(i, indexContainer[j]-part, valueContainer[j]);
+							}
+						}
+					}
+				}
+			}else if(m2.denseBlock!=null)
+			{
+				int sindx=0;
+				for(int r=0; r<m2.rlen; r++)
+				{
+					int c=0;
+					for(; c<part; c++)
+					{
+						first.appendValue(r, clen+c, m2.denseBlock[sindx+c]);
+					//	System.out.println("access "+(sindx+c));
+					//	System.out.println("add first ("+r+", "+(clen+c)+"), "+m2.denseBlock[sindx+c]);
+					}
+					for(; c<m2.clen; c++)
+					{
+						second.appendValue(r, c-part, m2.denseBlock[sindx+c]);
+					//	System.out.println("access "+(sindx+c));
+					//	System.out.println("add second ("+r+", "+(c-part)+"), "+m2.denseBlock[sindx+c]);
+					}
+					sindx+=m2.clen;
+				}
+			}
+		}
+	}
+	
 	
 	public void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)

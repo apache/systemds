@@ -408,8 +408,16 @@ public class MatrixCell extends MatrixValue implements WritableComparable{
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
 			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new DMLRuntimeException("MatrixCell.aggregateBinaryOperations should never be called");
+	}
+
+	@Override
+	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException  {
+		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
+		MatrixCell c2=checkType(valueIn2);
+		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());	
 	}
 
 }

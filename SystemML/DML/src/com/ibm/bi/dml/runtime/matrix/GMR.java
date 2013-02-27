@@ -71,7 +71,7 @@ public class GMR{
 			byte index;
 			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
 			for(int i=0; i < inst.length; i++) {
-				if ( inst[i].contains("mvmult") ) {
+				if ( inst[i].contains("mvmult") || inst[i].contains("append") ) {
 					// example: MR.mvmult.0.1.2
 					
 					// Determine the index that points to a vector

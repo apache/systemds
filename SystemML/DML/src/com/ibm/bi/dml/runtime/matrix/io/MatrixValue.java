@@ -211,4 +211,7 @@ public abstract class MatrixValue implements WritableComparable {
 			ctableResult.put(temp, oldw+w);
 		}
 	}
+
+	public abstract void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol)throws DMLUnsupportedOperationException, DMLRuntimeException ;
 }

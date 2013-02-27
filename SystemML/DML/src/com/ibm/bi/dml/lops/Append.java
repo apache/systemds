@@ -32,7 +32,7 @@ public class Append extends Lops{
 		this.addInput(input3);
 		input3.addOutput(this);
 		
-		boolean breaksAlignment = true;
+		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		

@@ -52,6 +52,7 @@ import com.ibm.bi.dml.runtime.instructions.*;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -1255,6 +1256,12 @@ public class MRJobConfiguration {
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
 							dims.get(tempIns.input));
 					intermediateMatrixIndexes.add(tempIns.input);
+				}else if(ins instanceof AppendInstruction)
+				{
+					AppendInstruction tempIns=(AppendInstruction) ins;
+					setIntermediateMatrixCharactristics(job, tempIns.input1, 
+							dims.get(tempIns.input1));
+					intermediateMatrixIndexes.add(tempIns.input1);
 				}
 			}
 		}

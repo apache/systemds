@@ -2339,7 +2339,15 @@ public class MatrixBlock1D extends MatrixValue{
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
 			MatrixValue result, AggregateBinaryOperator op, boolean partialMult)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("operation not supported for MatrixBlock1D");
+	}
+
+	@Override
+	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
+			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
+	throws DMLUnsupportedOperationException, DMLRuntimeException  
+	{
+		throw new RuntimeException("operation not supported for MatrixBlock1D");
+		
 	}
 }

@@ -114,21 +114,27 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	{
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.getFirst(output);
-			if(result==null)
+			ArrayList<IndexedMatrixValue> results= cachedValues.get(output);
+			if(results==null)
 				continue;
-			indexBuffer.setIndexes(result.getIndexes());
-			////////////////////////////////////////
-			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-			taggedValueBuffer.setBaseObject(result.getValue());
-			////////////////////////////////////////
-			taggedValueBuffer.setTag(output);
-			for(int outputIndex: tagMapping.get(output))
+			for(IndexedMatrixValue result: results)
 			{
-				collectOutput_N_Increase_Counter(indexBuffer, taggedValueBuffer.getBaseObject(), outputIndex, 
-					reporter);
+				if(result==null)
+					continue;
+				indexBuffer.setIndexes(result.getIndexes());
+				////////////////////////////////////////
+				//	taggedValueBuffer.getBaseObject().copy(result.getValue());
+				taggedValueBuffer.setBaseObject(result.getValue());
+				////////////////////////////////////////
+				taggedValueBuffer.setTag(output);
+				for(int outputIndex: tagMapping.get(output))
+				{
+					collectOutput_N_Increase_Counter(indexBuffer, taggedValueBuffer.getBaseObject(), outputIndex, 
+						reporter);
+				}
 			}
 		}	
+		
 	}
 
 	protected void collectOutput_N_Increase_Counter(MatrixIndexes indexes, MatrixValue value, 

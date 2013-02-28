@@ -230,30 +230,37 @@ public class ReorgOp extends Hops {
 		
 		switch(op) {
 		case TRANSPOSE:
-			// transpose does not change #nnz, and hence it takes same amount of space as that of its input
-			_outputMemEstimate = input.getOutputSize(); 
+			// input is a [k1,k2] matrix and output is a [k2,k1] matrix
+			// although nnz and dims do not change, we need to compute mem based on our sparse row representation
+			if( dimsKnown() ){
+				double spt = (input.getNnz()>0)? input.getNnz()/input.get_dim1()/input.get_dim2() : 1.0;
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim2(), input.get_dim1(), spt);	
+			}
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
 			break;
 			
 		case DIAG_V2M:
-			
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-			/*// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
+			// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
 			// In the worst case, #nnz in output = k => sparsity = 1/k
-			if (dimsKnown()) {
+			if( dimsKnown() ){
 				long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
-				_outputMemEstimate = OptimizerUtils.estimate(k, k, (double)1/k);
-				//System.out.println("DIAG k=" + k + ": " + _outputMemEstimate);
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(k, k, (double)1/k); 
 			}
-			else {
+			else 
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			}*/
+
 			break;
 			
 		case DIAG_M2V:
 			// input is [k,k] matrix and output is [k,1] matrix
 			// #nnz in the output is likely to be k (a dense matrix)
-			_outputMemEstimate = OptimizerUtils.estimateSize(input.get_dim1(), input.get_dim1(), 1.0);
+			if( dimsKnown() )
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), 1, 1.0); 
+			else
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+			
 			break;
 		
 	/*	case APPEND:

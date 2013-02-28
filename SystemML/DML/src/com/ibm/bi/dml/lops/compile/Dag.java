@@ -1972,6 +1972,7 @@ public class Dag<N extends Lops> {
 
 		printJobNodes(jobNodes);
 		
+		ArrayList<Instruction> rmvarinst = new ArrayList<Instruction>();
 		for (JobType jt : JobType.values()) { 
 			
 			// do nothing, if jt = INVALID or ANY
@@ -1997,7 +1998,7 @@ public class Dag<N extends Lops> {
 					// split the nodes by recordReader lops
 					ArrayList<Vector<N>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
 					for (int i = 0; i < rrlist.size(); i++) {
-						generateMapReduceInstructions(rrlist.get(i), inst, deleteinst, jt);
+						generateMapReduceInstructions(rrlist.get(i), inst, deleteinst, rmvarinst, jt);
 					}
 				}
 				else if ( jt.allowsSingleShuffleInstruction() ) {
@@ -2030,16 +2031,17 @@ public class Dag<N extends Lops> {
 								addParents(jobNodes.get(index).elementAt(i), nodesForASingleJob, jobNodes.get(index));
 							}
 							
-							generateMapReduceInstructions(nodesForASingleJob, inst, deleteinst, jt);
+							generateMapReduceInstructions(nodesForASingleJob, inst, deleteinst, rmvarinst, jt);
 						}
 					}
 				}
 				else {
 					// the default case
-					generateMapReduceInstructions(jobNodes.get(index), inst, deleteinst, jt);
+					generateMapReduceInstructions(jobNodes.get(index), inst, deleteinst, rmvarinst, jt);
 				}
 			}
 		}
+		inst.addAll(rmvarinst);
 
 	}
 
@@ -2108,14 +2110,15 @@ public class Dag<N extends Lops> {
 
 	@SuppressWarnings("unchecked")
 	private void addChildren(N node, Vector<N> node_v, Vector<N> exec_n) {
-		if (node != null && LOG.isTraceEnabled())
-			LOG.trace("Adding children " + node.toString());
 
 		/** add child in exec nodes that is not of type scalar **/
 		if (exec_n.contains(node)
 				&& node.getExecLocation() != ExecLocation.ControlProgram) {
-			if (!node_v.contains(node))
+			if (!node_v.contains(node)) {
 				node_v.add(node);
+				if (node != null && LOG.isTraceEnabled())
+					LOG.trace("      Added child " + node.toString());
+			}
 
 		}
 
@@ -2536,7 +2539,7 @@ public class Dag<N extends Lops> {
 	 * @throws DMLRuntimeException
 	 */
 	public void generateMapReduceInstructions(Vector<N> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst,
+			ArrayList<Instruction> inst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
 			JobType jt) throws LopsException,
 			DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -2751,7 +2754,7 @@ public class Dag<N extends Lops> {
 		deleteinst.addAll(renameInstructions);
 		
 		for (Lops l : inputLops) {
-			processConsumers((N)l, inst, deleteinst);
+			processConsumers((N)l, rmvarinst, deleteinst);
 		}
 
 	}

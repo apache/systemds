@@ -169,14 +169,14 @@ public class MMRJMR {
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
 		}
 
 /*		Group rowgroup, colgroup;
 		for(int i=0; i<resultIndexes.length; i++)
 		{
 			// number of non-zeros
-			stats[i].nonZero=group.getCounter(Byte.toString(resultIndexes[i]));
+			stats[i].nonZero=group.getCounter(Integer.toString(i));
 		//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 			
 			// compute dimensions for output matrices whose dimensions are unknown at compilation time 

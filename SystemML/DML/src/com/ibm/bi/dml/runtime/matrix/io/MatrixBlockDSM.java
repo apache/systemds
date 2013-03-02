@@ -2141,8 +2141,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					double[] values=sparseRows[r].getValueContainer();
 					for(int i=0; i<sparseRows[r].size(); i++)
 					{
-						tempCellIndex.set(r, cols[i]);
-						op.fn.execute(tempCellIndex, temp);
+						result.tempCellIndex.set(r, cols[i]);
+						op.fn.execute(result.tempCellIndex, temp);
 						result.appendValue(temp.row, temp.column, values[i]);
 					}
 				}

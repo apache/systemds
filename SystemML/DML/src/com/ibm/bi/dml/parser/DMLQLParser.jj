@@ -2113,6 +2113,7 @@ InputStatement InputStatement() :
 	    	readMMExpr.setValueType(ValueType.STRING);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
 		}
+		/*
 		else if (tRead.image.equals("read.matrix")){
 		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED);
 		    readMMExpr.setDimensions(0,0);
@@ -2120,7 +2121,7 @@ InputStatement InputStatement() :
 	    	readMMExpr.setValueType(ValueType.STRING);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
 		}
-
+		*/
 		
  		is.setIdentifier(id);
  		id.setDimensions(is);

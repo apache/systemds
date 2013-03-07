@@ -22,10 +22,10 @@ public abstract class Statement {
 	public static final String FORMAT_TYPE 						= "format";
 	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
 	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
-	public static final String FORMAT_TYPE_VALUE_DELIMITED		= "delimited";
+	//public static final String FORMAT_TYPE_VALUE_DELIMITED		= "delimited";
 	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
 	
-	public static final String FORMAT_DELIMITER = "sep";
+	//public static final String FORMAT_DELIMITER = "sep";
 	public static final String HAS_HEADER_ROW = "header";
 	
 	

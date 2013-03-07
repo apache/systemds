@@ -833,8 +833,8 @@ public class StatementBlock extends LiveVariableAnalysis{
 				s._id.setFormatType(FormatType.TEXT);
 			} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
 				s._id.setFormatType(FormatType.MM);
-			} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
-				s._id.setFormatType(FormatType.DELIMITED);
+			//} else if (ft.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
+			//	s._id.setFormatType(FormatType.DELIMITED);
 			} else{ 
 				
 				LOG.error(s.printErrorLocation() + "IO statement parameter " + Statement.FORMAT_TYPE 

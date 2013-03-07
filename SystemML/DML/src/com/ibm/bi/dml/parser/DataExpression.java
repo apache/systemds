@@ -151,7 +151,7 @@ public class DataExpression extends Expression {
 						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.FORMAT_TYPE) != null
-						|| getVarParam(Statement.FORMAT_DELIMITER) != null	
+						//|| getVarParam(Statement.FORMAT_DELIMITER) != null	
 						|| getVarParam(Statement.HAS_HEADER_ROW) != null) {
 					
 					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
@@ -224,11 +224,12 @@ public class DataExpression extends Expression {
 				}
 			}
 			
+			/*
 			// check if file is delimited format
 			if (formatTypeString == null) { //  && getVarParam(Statement.READROWPARAM) != null  && getVarParam(Statement.READCOLPARAM) != null ){
 			
 				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
-				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
+				boolean isDelimitedFormat = false;checkHasDelimitedFormat(origFilename); 
 				
 				if (isDelimitedFormat){
 					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED));
@@ -238,7 +239,7 @@ public class DataExpression extends Expression {
 				}
 				
 			}
-			
+			*/
 				
 			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
 				/*
@@ -348,14 +349,15 @@ public class DataExpression extends Expression {
 					}	
 				}
 			}
+			/*
 			else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
 			
-				/* Handle delimited file format
-				 * 
-				 * 1) only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
-				 *  
-				 * 2) open the file
-				 */
+				 // Handle delimited file format
+				 // 
+				 // 1) only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				 //  
+				 // 2) open the file
+				 //
 				
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = false;
@@ -403,7 +405,7 @@ public class DataExpression extends Expression {
 							+  " must specify both row and column dimensions ");
 				}
 			}
-			
+			*/
 			configObject = null;
 			
 			if (shouldReadMTD){
@@ -497,8 +499,8 @@ public class DataExpression extends Expression {
 					format = 1;
 				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
 					format = 2;
-				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) 
-						|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)) 
+				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)) 
+					//	|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)) 
 				{
 					format = 1;
 				} else {
@@ -581,11 +583,11 @@ public class DataExpression extends Expression {
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
-				if (getVarParam(Statement.FORMAT_DELIMITER) == null){
-					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
-				}
-			}
+			//if (getVarParam(Statement.FORMAT_TYPE) == null) || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
+				//if (getVarParam(Statement.FORMAT_DELIMITER) == null){
+				//	addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
+				//}
+			//}
 			
 			if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
 				BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
@@ -615,7 +617,7 @@ public class DataExpression extends Expression {
 				_output.setBlockDimensions(-1, -1);
 			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				_output.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED) || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET))
+			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)) // || (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED))
 				_output.setBlockDimensions(-1, -1);
 			
 			else{
@@ -1264,6 +1266,12 @@ public class DataExpression extends Expression {
 	
 	public boolean checkHasMatrixMarketFormat(String filename) throws LanguageException {
 		
+		// Check the MTD file exists. if there is an MTD file, return false.
+		JSONObject mtdObject = readMetadataFile(filename +".mtd");
+	    
+		if (mtdObject != null)
+			return false;
+		
 		boolean exists = false;
 		FileSystem fs = null;
 		
@@ -1323,8 +1331,16 @@ public class DataExpression extends Expression {
 	
 	
 
-	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
+	/*
+	 public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
+	 
 		
+
+        // if the MTD file exists, 
+		//JSONObject mtdObject = readMetadataFile(filename);
+        //if (mtdObject != null)
+        //	return false;
+        	
 		boolean exists = false;
 		FileSystem fs = null;
 		
@@ -1384,7 +1400,7 @@ public class DataExpression extends Expression {
 			return false;
 		}
 	}
-	
+	*/
 	
 	
 } // end class

@@ -8,7 +8,7 @@ import com.ibm.bi.dml.utils.LanguageException;
  
 public class OutputStatement extends IOStatement{
 	
-	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE, FORMAT_DELIMITER};
+	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE, /*FORMAT_DELIMITER*/};
 
 	public static boolean isValidParamName(String key){
 	for (String paramName : WRITE_VALID_PARAM_NAMES)

@@ -1,4 +1,5 @@
 # junit test class: com.ibm.bi.dml.test.integration.functions.data.WriteMMTest.java
 
-A = read("$$indir$$a");
-writeMM(A, "$$outdir$$a");
+A = read($1, rows=$2, cols=$3, format="text");
+
+writeMM(A, $4);

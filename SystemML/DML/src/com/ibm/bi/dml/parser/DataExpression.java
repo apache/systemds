@@ -1128,9 +1128,8 @@ public class DataExpression extends Expression {
 			}
 			catch (Exception e){
 				LOG.error(e.toString());
-				LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString());
-	        	e.toString();
-				throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString());	
+				LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());
+				throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());	
 			}
 			
 			for(FileStatus stat : stats){
@@ -1143,9 +1142,8 @@ public class DataExpression extends Expression {
 					}
 					catch(Exception e){
 						LOG.error(e.toString());
-						LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString());
-			        	e.toString();
-						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString());	
+						LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + ": " + e.toString());
+						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + e.toString());	
 					}
 					
 					JSONObject childObj = null;
@@ -1153,10 +1151,8 @@ public class DataExpression extends Expression {
 						childObj = JSONObject.parse(br);
 					}
 					catch(Exception e){
-						LOG.error(e.toString());
-						LOG.error(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString());
-			        	e.toString();
-						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString());		
+						LOG.error(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());
+						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());		
 					}
 					for (Object key : childObj.keySet()){
 						retVal.put(key, childObj.get(key));
@@ -1174,20 +1170,16 @@ public class DataExpression extends Expression {
 			try {
 				br=new BufferedReader(new InputStreamReader(fs.open(pt)));
 			} catch (Exception e){
-				LOG.error(e.toString());
-				LOG.error(this.printErrorLocation() + "error reading MTD file with path " + pt.toString());
-	        	e.toString();
-				throw new LanguageException(this.printErrorLocation() + "error reading with path " + pt.toString());
+				LOG.error(this.printErrorLocation() + "error reading MTD file with path " + pt.toString() + ": " + e.toString());
+				throw new LanguageException(this.printErrorLocation() + "error reading with path " + pt.toString() + ": " + e.toString());
 	        }
 			
 			// try parsing MTD file
 			try {
 				retVal =  JSONObject.parse(br);	
 			} catch (Exception e){
-				LOG.error(e.toString());
-				LOG.error(this.printErrorLocation() + "error parsing MTD file with path " + pt.toString());
-				e.toString();
-				throw new LanguageException(this.printErrorLocation() + "error parsing with path " + pt.toString());
+				LOG.error(this.printErrorLocation() + "error parsing MTD file with path " + pt.toString() + ": " + e.toString());
+				throw new LanguageException(this.printErrorLocation() + "error parsing with path " + pt.toString() + ": " + e.toString());
 	        }
 		}
 			

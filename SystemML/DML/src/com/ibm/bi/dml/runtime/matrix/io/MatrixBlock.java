@@ -23,8 +23,7 @@ public class MatrixBlock extends MatrixBlockDSM
 	
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed)
 	{
-		MatrixBlock m = null;
-		m = new MatrixBlock();
+		MatrixBlock m = new MatrixBlock();
 		
 		if ( pdf.equalsIgnoreCase("normal") ) {
 			m.getNormalRandomSparseMatrix(rows, cols, sparsity, seed);

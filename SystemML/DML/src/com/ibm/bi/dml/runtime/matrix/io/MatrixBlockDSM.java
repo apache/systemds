@@ -5061,7 +5061,8 @@ public class MatrixBlockDSM extends MatrixValue{
 
 		if ( sparse ) {
 			// sparse representation
-			this.sparseRows=new SparseRow[rows];
+			sparseRows=new SparseRow[rows];
+			estimatedNNzsPerRow=(int)(clen*sparsity);
 			for(int i=0; i<rows; i++) {
 				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
 				for(int j=0; j<cols; j++) {
@@ -5119,7 +5120,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		if ( sparse ) {
 			// sparse representation
 			RandN rn = new RandN(ru);
-			this.sparseRows=new SparseRow[rows];
+			sparseRows=new SparseRow[rows];
+			estimatedNNzsPerRow=(int)(clen*sparsity);
 			for(int i=0; i<rows; i++) {
 				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
 				for(int j=0; j<cols; j++) {

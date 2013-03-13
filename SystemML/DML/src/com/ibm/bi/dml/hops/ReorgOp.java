@@ -233,7 +233,7 @@ public class ReorgOp extends Hops {
 			// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 			// although nnz and dims do not change, we need to compute mem based on our sparse row representation
 			if( dimsKnown() ){
-				double spt = (input.getNnz()>0)? input.getNnz()/input.get_dim1()/input.get_dim2() : 1.0;
+				double spt = (input.getNnz()>0)? ((double)input.getNnz())/input.get_dim1()/input.get_dim2() : 1.0;
 				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim2(), input.get_dim1(), spt);	
 			}
 			else

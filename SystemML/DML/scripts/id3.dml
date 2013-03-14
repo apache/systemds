@@ -1,0 +1,237 @@
+#assumes labels are numbered from 1 to #class_labels
+#assumes each feature column is numbered from 1 to max_domain_val of feature
+#second assumption should go away if we can determine the domain of a feature col
+#second assumption is unrealistic because features can be binary 0/1 valued
+#should allow 0 in feature columns
+
+id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes) return (Matrix[Double] nodes, Matrix[Double] edges){
+	one = Rand(rows=1, cols=1, min=1, max=1)
+	
+	#try the two base cases first
+
+	#of the remaining samples, compute a histogram for labels
+	hist_labels = groupedAggregate(target=X_subset, groups=y, fn="sum")
+	
+	if (1==1) {
+	  print(" ");
+	}
+	#go through the histogram to compute the number of labels
+	#with non-zero samples
+	#and to pull out the most popular label
+	
+	num_non_zero_labels = sum(ppred(hist_labels, 0, ">"));
+	most_popular_label = rowIndexMax(t(hist_labels));
+	num_samples_w_most_popular_label = max(hist_labels);
+
+	/*
+	num_non_zero_labels = 0
+	most_popular_label = -1
+	num_samples_w_most_popular_label = -1
+	for(i in 1:nrow(hist_labels)){
+		if(castAsScalar(hist_labels[i,1]) != 0){
+			num_non_zero_labels = num_non_zero_labels + 1
+			if(castAsScalar(hist_labels[i,1]) >= num_samples_w_most_popular_label){
+				most_popular_label = i
+				num_samples_w_most_popular_label = castAsScalar(hist_labels[i,1])
+			}
+		}
+	}
+	*/
+
+	num_remaining_attrs = sum(attributes)
+	
+	nodes = Rand(rows=1, cols=1, min=0, max=0)
+	edges = Rand(rows=1, cols=1, min=0, max=0)
+	
+	#if all samples have the same label then return a leaf node
+	#if no attributes remain then return a leaf node with the most popular label	
+	if(num_samples_w_most_popular_label == -1 | num_non_zero_labels == 1 | num_remaining_attrs == 0){
+		nodes = Rand(rows=1, cols=2, min=0, max=0)
+		nodes[1,1] = -1*one
+		nodes[1,2] = most_popular_label*one
+		edges = Rand(rows=1, cols=1, min=-1, max=-1)
+	}else{
+		#computing gains for all available attributes using parfor
+		hist_labels2 = groupedAggregate(target=X_subset, groups=y, fn="sum")
+		num_samples2 = sum(X_subset)
+		zero_entries_in_hist1 = ppred(hist_labels2, 0, "==")
+		pi1 = hist_labels2/num_samples2
+		log_term1 = zero_entries_in_hist1*1 + (1-zero_entries_in_hist1)*pi1
+		entropy_vector1 = -pi1*log(log_term1)
+		ht = sum(entropy_vector1)
+		
+		#sz = 0
+		#if(1==1){
+			sz = nrow(attributes)
+		#}
+		gains = Rand(rows=sz, cols=1, min=0, max=0)
+		parfor(i in 1:nrow(attributes)){
+			if(castAsScalar(attributes[i,1]) == 1){
+				attr_vals = X[,i]
+				attr_domain = groupedAggregate(target=X_subset, groups=attr_vals, fn="sum")
+
+				hxt_vector = Rand(rows=nrow(attr_domain), cols=1, min=0, max=0)
+				
+				parfor(j in 1:nrow(attr_domain)){
+					if(castAsScalar(attr_domain[j,1]) != 0){
+						val = j
+						Tj = X_subset * ppred(X[,i], val, "==")
+						
+						#entropy = compute_entropy(Tj, y)
+						hist_labels1 = groupedAggregate(target=Tj, groups=y, fn="sum")
+						num_samples1 = sum(Tj)
+						zero_entries_in_hist = ppred(hist_labels1, 0, "==")
+						pi = hist_labels1/num_samples1
+						log_term = zero_entries_in_hist*1 + (1-zero_entries_in_hist)*pi
+						entropy_vector = -pi*log(log_term)
+						entropy = sum(entropy_vector)
+	
+						hxt_vector[j,1] = one*sum(Tj)/sum(X_subset)*entropy
+					}
+				}
+				hxt = sum(hxt_vector)
+				gains[i,1] = (ht - hxt)*one
+			}
+		}
+		
+		#pick out attr with highest gain
+		best_attr = -1
+		max_gain = 0
+		for(i in 1:nrow(gains)){
+			if(best_attr == -1 | max_gain <= castAsScalar(gains[i,1])){
+				max_gain = castAsScalar(gains[i,1])
+				best_attr = i
+			}
+		}
+		
+		print("best attribute is: " + best_attr)
+		
+		attr_vals = X[,best_attr]
+		attr_domain = groupedAggregate(target=X_subset, groups=attr_vals, fn="sum")
+			if (1==1) {
+	  print(" ");
+	}
+
+		new_attributes = attributes
+		new_attributes[best_attr, 1] = 0*one
+		
+		max_sz_subtree = 2*sum(X_subset)
+		sz1 = 0
+		sz2 = 0
+		if(1==1){
+			sz2 = nrow(attr_domain)
+			sz1 = sz2*max_sz_subtree
+		}
+		tempNodeStore = Rand(rows=2, cols=sz1, min=0, max=0)
+		tempEdgeStore = Rand(rows=3, cols=sz1, min=0, max=0)
+		numSubtreeNodes = Rand(rows=sz2, cols=1, min=0, max=0)
+		numSubtreeEdges = Rand(rows=sz2, cols=1, min=0, max=0)
+		
+		for(i in 1:nrow(attr_domain)){
+		#parfor(i in 1:nrow(attr_domain)){
+			
+			Ti = X_subset * ppred(X[,best_attr], i, "==")
+			[nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes)
+			
+			start_pt = 1+(i-1)*max_sz_subtree
+			tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
+			numSubtreeNodes[i,1] = one*nrow(nodesi)
+			if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1){
+				tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
+				numSubtreeEdges[i,1] = one*nrow(edgesi)
+			}else{
+				numSubtreeEdges[i,1] = one*0
+			}
+		}
+		
+		num_nodes_in_subtrees = sum(numSubtreeNodes)
+		num_edges_in_subtrees = sum(numSubtreeEdges)
+		
+		#creating root node
+		if(1==1){
+			sz = 1+num_nodes_in_subtrees
+		}
+		nodes = Rand(rows=sz, cols=2, min=0, max=0)
+		nodes[1,1] = best_attr*one
+		numNodes = 1
+		
+		#edges from root to children
+		if(1==1){
+			sz = nrow(attr_domain)+num_edges_in_subtrees
+		}
+		edges = Rand(rows=sz, cols=3, min=1, max=1)
+		parfor(i in 1:nrow(attr_domain)){
+			edges[i,2] = i*one
+		}
+		numEdges = nrow(attr_domain)
+		
+		for(i in 1:nrow(attr_domain)){
+			numNodesInSubtree = castAsScalar(numSubtreeNodes[i,1])
+		
+			start_pt1 = 1 + (i-1)*max_sz_subtree
+			nodes[numNodes+1:numNodes+numNodesInSubtree,] = t(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
+			
+			numEdgesInSubtree = castAsScalar(numSubtreeEdges[i,1])
+			
+			if(numEdgesInSubtree!=0){
+				edgesi1 = t(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
+				edgesi1[,1] = edgesi1[,1] + numNodes
+				edgesi1[,3] = edgesi1[,3] + numNodes
+				edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
+				numEdges = numEdges + numEdgesInSubtree
+			}
+			
+			edges[i,3] = numNodes + 1*one
+			numNodes = numNodes + numNodesInSubtree
+		}
+	}
+}
+
+X = read($1)
+y = read($2)
+
+n = nrow(X)
+m = ncol(X)
+
+/*
+sz = 0
+if(1==1){
+	sz = n
+}
+X_subset = Rand(rows=sz, cols=1, min=1, max=1)
+if(1==1){
+	sz = m
+}
+attributes = Rand(rows=sz, cols=1, min=1, max=1)
+sz1 = 0
+if(1==1){
+	sz1 = n
+}
+# recoding inputs
+featureCorrections = 1 - colMins(X)
+onesMat = Rand(rows=sz1, cols=sz, min=1, max=1)
+*/
+
+X_subset = Rand(rows=n, cols=1, min=1, max=1)
+attributes = Rand(rows=m, cols=1, min=1, max=1)
+# recoding inputs
+featureCorrections = 1 - colMins(X)
+onesMat = Rand(rows=n, cols=m, min=1, max=1)
+
+X = onesMat %*% diag(featureCorrections) + X
+labelCorrection = 1 - min(y)
+y = y + labelCorrection + 0
+
+[nodes, edges] = id3_learn(X, y, X_subset, attributes)
+
+# decoding outputs
+nodes[,2] = nodes[,2] - labelCorrection * ppred(nodes[,1], -1, "==")
+parfor(i in 1:nrow(edges)){
+	e_parent = castAsScalar(edges[i,1])
+	parent_feature = castAsScalar(nodes[e_parent,1])
+	correction = castAsScalar(featureCorrections[1,parent_feature])
+	edges[i,2] = edges[i,2] - correction
+}
+
+write(nodes, $3, format="text")
+write(edges, $4, format="text")

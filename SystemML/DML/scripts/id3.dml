@@ -1,8 +1,71 @@
-#assumes labels are numbered from 1 to #class_labels
-#assumes each feature column is numbered from 1 to max_domain_val of feature
-#second assumption should go away if we can determine the domain of a feature col
-#second assumption is unrealistic because features can be binary 0/1 valued
-#should allow 0 in feature columns
+# Learns a decision tree given training data
+# Writes out the learnt decision tree consisting
+# of a nodes matrix and edges matrix.
+# The representation is explained in detail below.
+#
+# arguments:
+#	1st arg: data matrix (rows are samples)
+#	2nd arg: column vector containing labels
+#	3rd arg: name of file to write nodes matrix to
+#	4th arg: name of file to write edges matrix to
+#
+# What does this script do:
+#	Learns a decision tree for data containing
+#	categorical features and categorical label. 
+#	Does not handle scale features as of yet.
+#	Does not perform pruning. Uses information
+#	gain to choose features to split on.
+#	See Wikipedia's ID3 decision tree learning 
+#	algorithm webpage for pseudo code.
+#
+# Representing decision trees:
+#	Since SystemML can only represent matrices,
+#	one question that needs answering is how to 
+#	represent decision trees. One option is to
+#	restrict ourselves to building binary decision
+#	trees (this is what Netezza and Oracle do). 
+#	Binary decision trees are fine except that they
+#	are less compact than trees that can have more
+#	than two children. We avoided that restriction.
+#
+# 	Our decision trees are represented using two 
+#	matrices. One is called the nodes matrix, which
+#	contains definitions of nodes in the decision tree,
+# 	and the other is called the edges matrix, containing
+#	the edges in the decision tree. This is a standard
+#	way of representing trees (graphs, in fact) in 
+#	databases. 
+#
+#	Nodes matrix: Is a 2-column matrix. First column 
+#	contains a column index in the input data indicating
+#	the feature that is being split in this node. The
+#	first column entry can be -1, that is not a valid index.
+#	When the first column denotes -1, that indicates this
+#	node is a leaf, in which case the second column entry 
+#	will denote the class label to be predicted is a sample
+#	reaches this leaf.
+#
+#	Edges matrix: Is a 3-colunm matrix. The first column
+#	denotes the row-index of the parent node in the nodes 
+#	matrix (i.e., a pointer into the nodes matrix). The 
+#	third column denotes the row-index of the child node 
+#	in the nodes matrix. The second column contains a
+# 	value in the domain of the feature that is being split
+# 	in the parent node. For instance, let p,v,c denote a 
+#	row in the edges matrix. If the p-th row in the nodes
+#	matrix says feature f is being split in this node, then
+#	v has to be a value in the domain of f.
+
+# Further notes:
+# Because of the way SystemML's groupedAggregate function
+# works, it is a good idea to have values in the domain of
+# a feature numbered starting with 1 contiguously through to
+# its domain size. Note that this is not a restriction. The
+# script takes care to handle 0/1-valued features (i.e, 
+# feature values begin from 0) and groupedAggregate can handle
+# non-contiguously numbered values (but in this case the
+# learnt decision tree may have spurious nodes where no samples
+# reach).
 
 id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes) return (Matrix[Double] nodes, Matrix[Double] edges){
 	one = Rand(rows=1, cols=1, min=1, max=1)

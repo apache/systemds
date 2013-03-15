@@ -447,7 +447,7 @@ public class Recompiler
 				long rows = mo.getNumRows();
 				long cols = mo.getNumColumns();
 				long nnz = mo.getNnz();
-				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? nnz/(rows*cols) : 1.0d);
+				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);				
 				if( mem >= Hops.getMemBudget(true) )
 				{
 					ret = false;

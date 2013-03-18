@@ -161,13 +161,16 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		best_attr = -1
 		max_gain = 0
 		for(i in 1:nrow(gains)){
-			if(best_attr == -1 | max_gain <= castAsScalar(gains[i,1])){
-				max_gain = castAsScalar(gains[i,1])
-				best_attr = i
+			if(castAsScalar(attributes[i,1]) == 1){
+				if(best_attr == -1 | max_gain <= castAsScalar(gains[i,1])){
+					max_gain = castAsScalar(gains[i,1])
+					best_attr = i
+				}
 			}
-		}
+		}		
 		
 		print("best attribute is: " + best_attr)
+		print("gain is: " + max_gain)
 		
 		attr_vals = X[,best_attr]
 		attr_domain = groupedAggregate(target=X_subset, groups=attr_vals, fn="sum")

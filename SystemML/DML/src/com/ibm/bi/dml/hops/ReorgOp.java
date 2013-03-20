@@ -69,109 +69,87 @@ public class ReorgOp extends Hops {
 
 	@Override
 	public Lops constructLops()
-			throws HopsException, LopsException {
-
+		throws HopsException, LopsException 
+	{
 		if (get_lops() == null) {
-			if (op == ReorgOp.DIAG_M2V) {
-				// TODO: this code must be revisited once the support 
-				// for matrix indexing is implemented. 
-
-				try {
+			
+			ExecType et = optFindExecType();
+			
+			switch( op )
+			{
+				case DIAG_M2V: 
+				{
 					// Handle M2V case separately
 					// partialAgg (diagM2V) - group - agg (+)
-
-					PartialAggregate transform1 = new PartialAggregate(
-							getInput().get(0).constructLops(),
-							Aggregate.OperationTypes.DiagM2V,
-							HopsDirection2Lops.get(Direction.Col),
-							get_dataType(), get_valueType());
-
 					
+					if( et==ExecType.MR )
+					{
+						// TODO: this code must be revisited once the support for matrix indexing is implemented. 
+						
+						PartialAggregate transform1 = new PartialAggregate(
+								getInput().get(0).constructLops(),
+								Aggregate.OperationTypes.DiagM2V,
+								HopsDirection2Lops.get(Direction.Col),
+								get_dataType(), get_valueType(), et);
+						transform1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
+						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+						Group group1 = new Group(
+								transform1, Group.OperationTypes.Sort,
+								get_dataType(), get_valueType());
+						group1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());						
+						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	
+						Aggregate agg1 = new Aggregate(
+								group1, HopsAgg2Lops.get(AggOp.SUM),
+								get_dataType(), get_valueType(), ExecType.MR);
+						agg1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());	
+						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						// kahanSum setup is not used for Diag operations. They are
+						// treated as special case in the run time
+						agg1.setupCorrectionLocation(transform1.getCorrectionLocaion());
+	
+						set_lops(agg1);
+					}
+					else //CP
+					{
+						PartialAggregate transform1 = new PartialAggregate(
+								getInput().get(0).constructLops(),
+								Aggregate.OperationTypes.DiagM2V,
+								HopsDirection2Lops.get(Direction.Col),
+								get_dataType(), get_valueType(), et);
+						transform1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(),
+								get_cols_in_block(), getNnz());
+						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+						set_lops(transform1);
+					}	
+					break;
+				}
+				case TRANSPOSE:
+				case DIAG_V2M:
+				{
+					Transform transform1 = new Transform(
+							getInput().get(0).constructLops(), HopsTransf2Lops
+									.get(op), get_dataType(), get_valueType(), et);
+					transform1.getOutputParameters().setDimensions(get_dim1(),
+							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
 					transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-					// copy the dimensions from the HOP (which would be a column
-					// vector, in this case)
-					transform1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(),
-							get_cols_in_block(), getNnz());
-
-					Group group1 = new Group(
-							transform1, Group.OperationTypes.Sort,
-							get_dataType(), get_valueType());
-					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(),
-							get_cols_in_block(), getNnz());
-					
-					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-					Aggregate agg1 = new Aggregate(
-							group1, HopsAgg2Lops.get(AggOp.SUM),
-							get_dataType(), get_valueType(), ExecType.MR);
-					agg1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(),
-							get_cols_in_block(), getNnz());
-
-					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					// kahanSum setup is not used for Diag operations. They are
-					// treated as special case in the run time
-					agg1.setupCorrectionLocation(transform1
-							.getCorrectionLocaion());
-
-					set_lops(agg1);
-				} catch (LopsException e) {
-					throw new HopsException(this.printErrorLocation() + "In ReorgOp Hop, error constructing Lops " , e);
+					set_lops(transform1);
+					break;
 				}
-			}/* else if(op == ReorgOp.APPEND){
-				ExecType et = optFindExecType();
-				
-				UnaryCP offset = new UnaryCP(getInput().get(0).constructLops(),
-						 UnaryCP.OperationTypes.NCOL,
-						 DataType.SCALAR,
-						 ValueType.DOUBLE);
-                offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-                offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				Append append = new Append(getInput().get(0).constructLops(), 
-										   getInput().get(1).constructLops(), 
-										   offset,
-										   get_dataType(),
-										   get_valueType(), et);
-				append.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				append.getOutputParameters().setDimensions(get_dim1(), 
-														   get_dim2(), 
-														   get_rows_in_block(), 
-														   get_cols_in_block(), 
-														   getNnz());
-				
-				ReBlock reblock = null;
-				try {
-					reblock = new ReBlock(
-							append, get_rows_in_block(),
-							get_cols_in_block(), get_dataType(), get_valueType());
-				} catch (Exception e) {
-					throw new HopsException(this.printErrorLocation() + "error in constructing Lops for ReorgOp " , e);
-				}
-				reblock.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
-						get_rows_in_block(), get_cols_in_block(), getNnz());
-		
-				reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				set_lops(reblock);
-				
-			}*/ else {
-				ExecType et = optFindExecType();
-				Transform transform1 = new Transform(
-						getInput().get(0).constructLops(), HopsTransf2Lops
-								.get(op), get_dataType(), get_valueType(), et);
-				transform1.getOutputParameters().setDimensions(get_dim1(),
-						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-				
-				transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				set_lops(transform1);
 			}
 		}
+		
 		return get_lops();
 	}
 
@@ -255,7 +233,7 @@ public class ReorgOp extends Hops {
 			
 		case DIAG_M2V:
 			// input is [k,k] matrix and output is [k,1] matrix
-			// #nnz in the output is likely to be k (a dense matrix)
+			// #nnz in the output is likely to be k (a dense matrix)			
 			if( dimsKnown() )
 				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), 1, 1.0); 
 			else
@@ -300,6 +278,7 @@ public class ReorgOp extends Hops {
 			else 
 				_etype = ExecType.MR;
 		}
+		
 		return _etype;
 	}
 	

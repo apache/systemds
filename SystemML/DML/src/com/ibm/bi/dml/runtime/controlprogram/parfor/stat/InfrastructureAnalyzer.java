@@ -276,26 +276,28 @@ public class InfrastructureAnalyzer
 		try
 		{
 			StringTokenizer st = new StringTokenizer( javaOpts, " " );
-			String arg = null;
-			while( (arg = st.nextToken()) != null )
+			while( st.hasMoreTokens() )
 			{
+				String arg = st.nextToken();
 				if( !arg.startsWith("-Xmx") ) //search for max mem
 					continue;
 				
 				arg = arg.substring(4); //cut off "-Xmx"
 				//parse number and unit
 				if ( arg.endsWith("g") || arg.endsWith("G") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024 * 1024 * 1024;
+					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024 * 1024;
 				else if ( arg.endsWith("m") || arg.endsWith("M") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024 * 1024;
+					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024;
 				else if( arg.endsWith("k") || arg.endsWith("K") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-2)) * 1024;
+					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024;
 				else 
 					ret = Long.parseLong(arg.substring(0,arg.length()-2));
 			}
 			
 			if( ret < 0 ) // no argument found
+			{
 				ret = DEFAULT_JVM_SIZE;
+			}
 		}
 		catch(Exception ex)
 		{

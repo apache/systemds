@@ -2302,16 +2302,16 @@ public class MatrixBlockDSM extends MatrixValue{
 					c[0] += a[i] * a[i];
 			}
 			else //general case: matrix
-			{
+			{	
 				//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
 				for(int k = 0, ix1 = 0, ix2 = 0; k < m; k++, ix2+=n)
-					for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+					for(int i = 0, ix3 = 0; i < n; i++, ix1++, ix3+=n) 
 					{
-						val = a[ ix1++ ];
+						val = a[ ix1 ];
 						if( val != 0 )
 							for(int j = i; j < n; j++) //from i due to symmetry
 								c[ ix3+j ]  += val * a[ ix2+j ];
-					}
+					}		
 			}
 		}
 		else // X%*%t(X)
@@ -3805,40 +3805,55 @@ public class MatrixBlockDSM extends MatrixValue{
 	private static void sparseAggregateBinaryHelp(MatrixIndexes m1Index, MatrixBlockDSM m1, MatrixIndexes m2Index, MatrixBlockDSM m2, 
 			MatrixBlockDSM result, AggregateBinaryOperator op, boolean partialMult) throws DMLRuntimeException 
 	{
-		//long start = System.currentTimeMillis();
-		if(!m1.sparse && m2 != null && !m2.sparse )
-			aggBinDense(m1, m2, result, op);
-		else if(m1.sparse && m2 != null && m2.sparse)
-			aggBinSparse(m1, m2, result, op);
-		else if(m1.sparse) {
-			/*if ( MRBaseForCommonInstructions.inputPartitionFlags[1] == true ) {
-				m2Index = new MatrixIndexes(1,1);
-				System.out.println("READ from distcacheFile: " + MRBaseForCommonInstructions.distCacheFiles[0]);
-				m2 = DataConverter.readPartitionFromDistCache(
-						MRBaseForCommonInstructions.distCacheFiles[0].toString(), !MRBaseForCommonInstructions.isJobLocal, 
-						MRBaseForCommonInstructions.distCacheNumRows[0], MRBaseForCommonInstructions.distCacheNumColumns[0],
-						MRBaseForCommonInstructions.inputPartitionFormats[1], MRBaseForCommonInstructions.inputPartitionSizes[1],
-						m1Index.getColumnIndex(), 1);
-			}*/
-			aggBinSparseDense(m1Index, m1, m2Index, m2, result, op, partialMult);
+		//matrix multiplication
+		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus && !partialMult)
+		{
+			matrixMult(m1, m2, result);
 		}
 		else
-			aggBinDenseSparse(m1, m2, result, op);
-		//mmultTime = (System.currentTimeMillis()-start);
-		//System.out.println(m1Index.toString() + " %*% " + m2Index.toString() + " " + mmultTime);
+		{
+			//long start = System.currentTimeMillis();
+			if(!m1.sparse && m2 != null && !m2.sparse )
+				aggBinDense(m1, m2, result, op);
+			else if(m1.sparse && m2 != null && m2.sparse)
+				aggBinSparse(m1, m2, result, op);
+			else if(m1.sparse) {
+				/*if ( MRBaseForCommonInstructions.inputPartitionFlags[1] == true ) {
+					m2Index = new MatrixIndexes(1,1);
+					System.out.println("READ from distcacheFile: " + MRBaseForCommonInstructions.distCacheFiles[0]);
+					m2 = DataConverter.readPartitionFromDistCache(
+							MRBaseForCommonInstructions.distCacheFiles[0].toString(), !MRBaseForCommonInstructions.isJobLocal, 
+							MRBaseForCommonInstructions.distCacheNumRows[0], MRBaseForCommonInstructions.distCacheNumColumns[0],
+							MRBaseForCommonInstructions.inputPartitionFormats[1], MRBaseForCommonInstructions.inputPartitionSizes[1],
+							m1Index.getColumnIndex(), 1);
+				}*/
+				aggBinSparseDense(m1Index, m1, m2Index, m2, result, op, partialMult);
+			}
+			else
+				aggBinDenseSparse(m1, m2, result, op);
+			//mmultTime = (System.currentTimeMillis()-start);
+			//System.out.println(m1Index.toString() + " %*% " + m2Index.toString() + " " + mmultTime);
+		}
 	}
 	
 	private static void sparseAggregateBinaryHelp(MatrixBlockDSM m1, MatrixBlockDSM m2, 
 			MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException 
 	{
-		if(!m1.sparse && !m2.sparse)
-			aggBinDense(m1, m2, result, op);
-		else if(m1.sparse && m2.sparse)
-			aggBinSparse(m1, m2, result, op);
-		else if(m1.sparse)
-			aggBinSparseDense(m1, m2, result, op);
+		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus )
+		{
+			matrixMult(m1, m2, result);
+		}
 		else
-			aggBinDenseSparse(m1, m2, result, op);
+		{
+			if(!m1.sparse && !m2.sparse)
+				aggBinDense(m1, m2, result, op);
+			else if(m1.sparse && m2.sparse)
+				aggBinSparse(m1, m2, result, op);
+			else if(m1.sparse)
+				aggBinSparseDense(m1, m2, result, op);
+			else
+				aggBinDenseSparse(m1, m2, result, op);
+		}
 	}
 	
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, 
@@ -3990,7 +4005,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(m2.sparseRows==null)
 			return;
-		
+
 		for(int k=0; k<Math.min(m2.rlen, m2.sparseRows.length); k++)
 		{
 			if(m2.sparseRows[k]==null) continue;
@@ -4092,7 +4107,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(m1.sparseRows==null)
 			return;
-		
+
 		for(int i=0; i<Math.min(m1.rlen, m1.sparseRows.length); i++)
 		{
 			if(m1.sparseRows[i]==null) continue;
@@ -4179,39 +4194,174 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
-	/**
-	 * <p>
-	 * 	Performs a dense-dense matrix multiplication using a modified algorithm and
-	 * 	stores the result in the resulting matrix.<br />
-	 *	The result of the matrix multiplication is again a dense matrix.
-	 * </p>
-	 * 
-	 * @param matrixA first matrix
-	 * @param matrixB second matrix
-	 * @param resultMatrix result matrix
-	 * @throws IllegalArgumentException if the matrixes are of wrong format
-	 */
-	public static void matrixMult(MatrixBlockDSM matrixA, MatrixBlockDSM matrixB,
-			MatrixBlockDSM resultMatrix)
+	private static void aggBinSparseUnsafe(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM result, 
+			AggregateBinaryOperator op) throws DMLRuntimeException
 	{
-	/*	if(matrixA.sparse || matrixB.sparse || resultMatrix.sparse)
-			throw new IllegalArgumentException("only dense matrixes are allowed");
-		if(resultMatrix.rlen != matrixA.rlen || resultMatrix.clen != matrixB.clen)
-			throw new IllegalArgumentException("result matrix has wrong size");
-	*/	
-		int l, i, j, aIndex, bIndex, cIndex;
+		for(int i=0; i<m1.rlen; i++)
+			for(int j=0; j<m2.clen; j++)
+			{
+				double aggValue=op.aggOp.initialValue;
+				for(int k=0; k<m1.clen; k++)
+				{
+					double aik=m1.quickGetValue(i, k);
+					double bkj=m2.quickGetValue(k, j);
+					double addValue=op.binaryFn.execute(aik, bkj);
+					aggValue=op.aggOp.increOp.fn.execute(aggValue, addValue);
+				}
+				result.appendValue(i, j, aggValue);
+			}
+	}
+	/*
+	 * to perform aggregateBinary when both matrices are dense
+	 */
+	private static void aggBinDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException
+	{
+		int j, l, i, cIndex, bIndex, aIndex;
 		double temp;
-		double[] a = matrixA.getDenseArray();
-		double[] b = matrixB.getDenseArray();
+		double v;
+		double[] a = m1.getDenseArray();
+		double[] b = m2.getDenseArray();
 		if(a==null || b==null)
 			return;
-		if(resultMatrix.denseBlock==null)
-			resultMatrix.denseBlock = new double[resultMatrix.rlen * resultMatrix.clen];
-		Arrays.fill(resultMatrix.denseBlock, 0, resultMatrix.denseBlock.length, 0);
-		double[] c=resultMatrix.denseBlock;
-		int m = matrixA.rlen;
-		int n = matrixB.clen;
-		int k = matrixA.clen;
+		
+		for(l = 0; l < m1.clen; l++)
+		{
+			aIndex = l;
+			cIndex = 0;
+			for(i = 0; i < m1.rlen; i++)
+			{
+				// aIndex = l + i * m1clen
+				temp = a[aIndex];
+			
+				bIndex = l * m1.rlen;
+				for(j = 0; j < m2.clen; j++)
+				{
+					// cIndex = i * m1.rlen + j
+					// bIndex = l * m1.rlen + j
+					v = op.aggOp.increOp.fn.execute(result.quickGetValue(i, j), op.binaryFn.execute(temp, b[bIndex]));
+					result.quickSetValue(i, j, v);
+					cIndex++;
+					bIndex++;
+				}
+				
+				aIndex += m1.clen;
+			}
+		}
+	}
+	
+	
+
+	/**
+	 * Performs a matrix multiplication and stores the result in the resulting matrix.
+	 * 
+	 * All variants use a IKJ access pattern, and internally use dense output. After the
+	 * actual computation, we recompute nnz and check for sparse/dense representation.
+	 *  
+	 * 
+	 * @param m1 first matrix
+	 * @param m2 second matrix
+	 * @param ret result matrix
+	 * @throws DMLRuntimeException 
+	 */
+	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+		throws DMLRuntimeException
+	{		
+		if(!m1.sparse && !m2.sparse)
+			matrixMultDenseDense(m1, m2, ret);
+		else if(m1.sparse && m2.sparse)
+			matrixMultSparseSparse(m1, m2, ret);
+		else if(m1.sparse)
+			matrixMultSparseDense(m1, m2, ret);
+		else
+			matrixMultDenseSparse(m1, m2, ret);
+	}
+
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 */
+	public static void matrixMultDenseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret)
+	{	
+		//check inputs / outputs
+		if( m1.denseBlock==null || m2.denseBlock==null )
+			return;
+		ret.sparse=false;
+		if( ret.denseBlock==null )
+			ret.denseBlock = new double[ret.rlen * ret.clen];
+		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
+		
+		double[] a = m1.denseBlock;
+		double[] b = m2.denseBlock;
+		double[] c = ret.denseBlock;
+		int m = m1.rlen;
+		int n = m2.clen;
+		int cd = m1.clen;
+					
+		if( m==1 && n==1 ) //dot product
+		{
+			for( int i=0; i<cd; i++ )
+				c[0] += a[i] * b[i];
+			ret.nonZeros = (c[0]!=0) ? 1 : 0;
+		}
+		else if( n==1 ) //matrix-vector
+		{
+			for( int i = 0, aix=0, cix=0; i < m; i++, cix++) 
+				for( int k = 0; k < cd; k++, aix++)
+					c[ cix ] += a[ aix ] * b[ k ];
+			ret.recomputeNonZeros();
+		}
+		else //general case
+		{			
+			//opt version with blocking 
+			/*
+			int blocksize1 = 32;
+			int blocksize2 = 32;
+			int blocksize3 = 500;
+			double val = 0;	
+			for( int bi = 0; bi < m; bi+=blocksize1) 
+			{
+				int maxI = Math.min(m,bi+blocksize1);
+				for( int bk = 0; bk < cd; bk+=blocksize2)
+				{
+					int maxK = Math.min(cd,bk+blocksize2);
+					for( int bj = 0; bj < n; bj+=blocksize3) 
+					{	
+						int maxJ = Math.min(n,bj+blocksize3);
+						for( int i = bi, aix=bi*cd, cix=bi*n; i < maxI; i++, aix+=cd, cix+=n) 
+							for( int k = bk, bix=bk*n; k < maxK; k++, bix+=n)
+							{			
+								val = a[ aix+k ];
+								if( val != 0 )
+									for( int j = bj; j < maxJ; j++) 
+										c[ cix+j ] += val * b[ bix+j ];
+							}	
+					}
+				}
+			}
+			*/
+			
+			 //opt version without blocking
+			double val; 
+			for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
+				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
+				{			
+					val = a[ aix ];
+					if( val != 0 )
+						for( int j = 0; j < n; j++) 
+							c[ cix+j ] += val * b[ bix+j ];
+				}	
+			ret.recomputeNonZeros();
+			
+		}
+		
+		
+		// OLD VERSION
+		/*
+		int k = m1.clen; 
+		int l, i, j, aIndex, bIndex, cIndex; 
+		double temp;
 		
 		int nnzs=0;
 		for(l = 0; l < k; l++)
@@ -4242,68 +4392,197 @@ public class MatrixBlockDSM extends MatrixValue{
 				aIndex += k;
 			}
 		}
-		resultMatrix.nonZeros=nnzs;
+		ret.nonZeros=nnzs;
+		*/		
 	}
 	
-	private static void aggBinSparseUnsafe(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM result, 
-			AggregateBinaryOperator op) throws DMLRuntimeException
-	{
-		for(int i=0; i<m1.rlen; i++)
-			for(int j=0; j<m2.clen; j++)
-			{
-				double aggValue=op.aggOp.initialValue;
-				for(int k=0; k<m1.clen; k++)
-				{
-					double aik=m1.quickGetValue(i, k);
-					double bkj=m2.quickGetValue(k, j);
-					double addValue=op.binaryFn.execute(aik, bkj);
-					aggValue=op.aggOp.increOp.fn.execute(aggValue, addValue);
-				}
-				result.appendValue(i, j, aggValue);
-			}
-	}
-	/*
-	 * to perform aggregateBinary when both matrices are dense
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @throws DMLRuntimeException 
 	 */
-	private static void aggBinDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException
+	public static void matrixMultDenseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+		throws DMLRuntimeException 
 	{
-		if(op.binaryFn instanceof Multiply && (op.aggOp.increOp.fn instanceof Plus) && !result.sparse)
-		{
-			matrixMult(m1, m2, result);
-		} else
-		{
-			int j, l, i, cIndex, bIndex, aIndex;
-			double temp;
-			double v;
-			double[] a = m1.getDenseArray();
-			double[] b = m2.getDenseArray();
-			if(a==null || b==null)
-				return;
-			
-			for(l = 0; l < m1.clen; l++)
+		//check inputs / outputs
+		if( m1.denseBlock==null || m2.sparseRows==null  )
+			return;
+		ret.sparse=false;
+		if( ret.denseBlock==null )
+			ret.denseBlock = new double[ret.rlen * ret.clen];
+		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
+		
+		double[] a = m1.denseBlock;
+		double[] c = ret.denseBlock;
+		int m = m1.rlen;
+		int n = m2.clen;
+		int cd = m1.clen;
+		
+		double val;
+		int blen;
+		int[] bix;
+		double[] bvals;
+	
+		for( int i=0, aix=0, cix=0; i < m; i++, cix+=n ) 
+			for(int k = 0; k < cd; k++, aix++ ) 
 			{
-				aIndex = l;
-				cIndex = 0;
-				for(i = 0; i < m1.rlen; i++)
+				val = a[aix];
+				if( val!=0 )
 				{
-					// aIndex = l + i * m1clen
-					temp = a[aIndex];
-				
-					bIndex = l * m1.rlen;
-					for(j = 0; j < m2.clen; j++)
+					SparseRow brow = m2.sparseRows[ k ];
+					if( brow != null && brow.size() > 0 ) 
 					{
-						// cIndex = i * m1.rlen + j
-						// bIndex = l * m1.rlen + j
-						v = op.aggOp.increOp.fn.execute(result.quickGetValue(i, j), op.binaryFn.execute(temp, b[bIndex]));
-						result.quickSetValue(i, j, v);
-						cIndex++;
-						bIndex++;
+						blen = brow.size();
+						bix = brow.getIndexContainer();
+						bvals = brow.getValueContainer();	
+						for(int j = 0; j < blen; j++)
+							c[cix+bix[j]] += val * bvals[j];								
 					}
-					
-					aIndex += m1.clen;
 				}
+			}						
+		ret.recomputeNonZeros();
+		ret.examSparsity();	
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @throws DMLRuntimeException 
+	 */
+	public static void matrixMultSparseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+		throws DMLRuntimeException
+	{
+		//check inputs / outputs
+		if( m1.sparseRows==null || m2.denseBlock==null )
+			return;	
+		ret.sparse=false;
+		if(ret.denseBlock==null)
+			ret.denseBlock = new double[ret.rlen * ret.clen];
+		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
+		
+		double[] b = m2.denseBlock;
+		double[] c = ret.denseBlock;
+		int m = m1.rlen;
+		int n = m2.clen;
+		
+		double val;
+		int alen;
+		int[] aix;
+		double[] avals;
+		
+		if( m==1 && n==1 ) //dot product
+		{
+			SparseRow arow = m1.sparseRows[0];
+			if( arow != null && arow.size() > 0 )
+			{
+				alen = arow.size();
+				aix = arow.getIndexContainer();
+				avals = arow.getValueContainer();
+				
+				for(int k = 0; k < alen; k++) 
+					c[0] += avals[k] * b[aix[k]];
+			}
+			ret.nonZeros = (c[0]!=0) ? 1 : 0;
+		}
+		else if( n==1 ) //matrix-vector
+		{
+			for( int i=0; i<Math.min(m, m1.sparseRows.length); i++ )
+			{
+				SparseRow arow = m1.sparseRows[i];
+				if( arow != null && arow.size() > 0 ) 
+				{
+					alen = arow.size();
+					aix = arow.getIndexContainer();
+					avals = arow.getValueContainer();					
+					
+					for(int k = 0; k < alen; k++) 
+						c[i] += avals[k] * b[aix[k]];														
+				}
+			}
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+		}
+		else //general case
+		{
+			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
+			{
+				SparseRow arow = m1.sparseRows[i];
+				if( arow != null && arow.size() > 0 ) 
+				{
+					alen = arow.size();
+					aix = arow.getIndexContainer();
+					avals = arow.getValueContainer();					
+					
+					for(int k = 0; k < alen; k++) 
+					{
+						val = avals[k];
+						for(int j = 0, bix=aix[k]*n; j < n; j++)
+							c[cix+j] += val * b[bix+j];								
+					}						
+				}
+			}
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param ret
+	 * @throws DMLRuntimeException 
+	 */
+	public static void matrixMultSparseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
+		throws DMLRuntimeException
+	{
+		//check inputs / outputs
+		if( m1.sparseRows==null || m2.sparseRows==null )
+			return;	
+		ret.sparse=false;
+		if(ret.denseBlock==null)
+			ret.denseBlock = new double[ret.rlen * ret.clen];
+		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
+		
+		double[] c = ret.denseBlock;
+		int m = m1.rlen;
+		int n = m2.clen;
+		
+		double val;
+		int alen, blen;
+		int[] aix, bix;
+		double[] avals, bvals;
+		
+		for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
+		{
+			SparseRow arow = m1.sparseRows[i];
+			if( arow != null && arow.size() > 0 ) 
+			{
+				alen = arow.size();
+				aix = arow.getIndexContainer();
+				avals = arow.getValueContainer();					
+				
+				for(int k = 0; k < alen; k++) 
+				{
+					val = avals[k];
+					SparseRow brow = m2.sparseRows[ aix[k] ];
+					if( brow != null && brow.size() > 0 ) 
+					{
+						blen = brow.size();
+						bix = brow.getIndexContainer();
+						bvals = brow.getValueContainer();	
+						for(int j = 0; j < blen; j++)
+							c[cix+bix[j]] += val * bvals[j];								
+					}
+				}						
 			}
 		}
+		ret.recomputeNonZeros();
+		ret.examSparsity();
 	}
 	
 	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, Operator op) 

@@ -641,9 +641,7 @@ public class DMLScript {
 		
 
 		////////////////////// generate runtime program ///////////////////////////////
-		Program rtprog = null;
-
-			rtprog = prog.getRuntimeProgram(config);
+		Program rtprog = prog.getRuntimeProgram(config);
 		
 		//setup nimble queue (external package support)
 		DAGQueue dagQueue = setupNIMBLEQueue(config);
@@ -678,7 +676,7 @@ public class DMLScript {
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
 		try 
-		{   
+		{  
 			initHadoopExecution( config );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
@@ -883,9 +881,7 @@ public class DMLScript {
 				for( String g : groups )
 					groupNames.add( g );
 			}
-		}catch(Exception ex){
-			LOG.warn("Failed in checking current user and group security info: " + ex.getStackTrace());
-		}
+		}catch(Exception ex){}
 		
 		//analyze hadoop configuration
 		JobConf job = new JobConf();
@@ -902,7 +898,6 @@ public class DMLScript {
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		
-		//TODO format should stay the same
 		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringHashSet(groupNames) + ", "
 				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
 				        + "fs.default.name = " + fsURI.getScheme() + ", " + "dfs.permissions = " + perm );

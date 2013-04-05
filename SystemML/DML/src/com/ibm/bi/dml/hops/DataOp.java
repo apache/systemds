@@ -516,8 +516,18 @@ public class DataOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		//do nothing; dimensions updated via set output params
+		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
+		{
+			Hops input1 = getInput().get(0);
+			set_dim1(input1.get_dim1());
+			set_dim2(input1.get_dim2());
+		}
+		else //READ
+		{
+			//do nothing; dimensions updated via set output params
+		}
 	}
+		
 	
 	/**
 	 * Explicitly disables recompilation of transient reads, this additional information 

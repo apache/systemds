@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
@@ -239,6 +240,14 @@ public class AggBinaryOp extends Hops {
 	@Override
 	public double computeMemEstimate() {
 		
+		//NOTES:  
+		// * The estimate for transpose-self is the same as for normal matrix multiplications
+		//   because (1) this decouples the decision of TSMM over default MM and (2) some cases
+		//   of TSMM internally materialize the transpose for efficiency.
+		// * All matrix multiplications internally use dense output representations for efficiency.
+		//   This is already reflected in our conservative memory estimate. However, we additionallz need 
+		//   to account for potential final dense/sparse transformations via processing mem estimates.
+		
 		if (dimsKnown() && isMatrixMultiply()) {
 			Hops input1 = getInput().get(0);
 			Hops input2 = getInput().get(1);
@@ -246,6 +255,11 @@ public class AggBinaryOp extends Hops {
 																	input1.get_dim1(), input1.get_dim2(), input2.get_dim2());
 
 			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
+			
+			//account for potential final dense-sparse transformation (worst-case sparse representation)
+			if( get_dim2() > MatrixBlock.SKINNY_MATRIX_TURN_POINT )
+				_processingMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), MatrixBlock.SPARCITY_TURN_POINT);
+			
 		} else {
 			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 		}

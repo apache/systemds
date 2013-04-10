@@ -12,7 +12,7 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public class TransposeSelfMatrixMultiplicationTest extends AutomatedTestBase 
+public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "TransposeSelfMatrixMultiplication1";
 	private final static String TEST_NAME2 = "TransposeSelfMatrixMultiplication2";
@@ -47,53 +47,107 @@ public class TransposeSelfMatrixMultiplicationTest extends AutomatedTestBase
 
 	
 	@Test
-	public void testLeftDenseCP() 
+	public void testMMLeftDenseCP() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testRightDenseCP() 
+	public void testMMRightDenseCP() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
 	}
 
 	@Test
-	public void testLeftSparseCP() 
+	public void testMMLeftSparseCP() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testRightSparseCP() 
+	public void testMMRightSparseCP() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testLeftDenseMR() 
+	public void testMMLeftDenseMR() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
 	}
 	
 	@Test
-	public void testRightDenseMR() 
+	public void testMMRightDenseMR() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
 	}
 
 	@Test
-	public void testLeftSparseMR() 
+	public void testMMLeftSparseMR() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
 	}
 	
 	@Test
-	public void testRightSparseMR() 
+	public void testMMRightSparseMR() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
 	}	
+	
+	@Test
+	public void testVVLeftDenseCP() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
+	}
+	
+	@Test
+	public void testVRightDenseCP() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
+	}
 
+	@Test
+	public void testVVLeftSparseCP() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testVVRightSparseCP() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
+	}
+	
+	@Test
+	public void testVVLeftDenseMR() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testVVRightDenseMR() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
+	}
+
+	@Test
+	public void testVVLeftSparseMR() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
+	}
+	
+	@Test
+	public void testVVRightSparseMR() 
+	{
+		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
+	}
+
+	/**
+	 * 
+	 * @param type
+	 * @param instType
+	 * @param sparse
+	 */
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols
@@ -163,5 +217,79 @@ public class TransposeSelfMatrixMultiplicationTest extends AutomatedTestBase
 		}
 	}
 	
+	/**
+	 * 
+	 * @param type
+	 * @param instType
+	 * @param sparse
+	 */
+	private void runTransposeSelfVectorMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
+	{
+		//setup exec type, rows, cols
+		int rows = -1, cols = -1;
+		String TEST_NAME = null;
+		if( type == MMTSJType.LEFT ) {
+			if( instType == ExecType.CP ) {
+				rows = rows1;
+				cols = 1;
+			}
+			else { //if type MR
+				rows = rows2;
+				cols = 1;
+			}
+			TEST_NAME = TEST_NAME1;
+		}
+		else {
+			if( instType == ExecType.CP ) {
+				rows = 1;
+				cols = rows1;
+			}
+			else { //if type MR
+				rows = 1;
+				cols = rows2;
+			}
+			TEST_NAME = TEST_NAME2;
+		}
+
+		//rtplatform for MR
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	
+		try
+		{
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
+					                        Integer.toString(rows),
+					                        Integer.toString(cols),
+					                        HOME + OUTPUT_DIR + "B"    };
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			
+			loadTestConfiguration(config);
+	
+			//generate actual dataset
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 7); 
+			writeInputMatrix("A", A, true);
+			
+	
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1); 
+			runRScript(true); 
+			
+			//compare matrices 
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+		}
+		finally
+		{
+			rtplatform = platformOld;
+		}
+	}	
 	
 }

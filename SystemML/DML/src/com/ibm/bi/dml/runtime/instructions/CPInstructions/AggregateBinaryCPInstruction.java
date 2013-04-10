@@ -97,8 +97,11 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
 			tcompute = System.currentTimeMillis() - st;
 
+			//remove redundant representation (see examSparsity in matrixmult)
+			soresBlock.cleanUp(); 
+
+			//release inputs/outputs
 			st = System.currentTimeMillis();
-			matBlock1 = matBlock2 = null;
 			pb.releaseMatrixInput(input1.get_name());
 			pb.releaseMatrixInput(input2.get_name());
 			pb.setMatrixOutput(output_name, soresBlock);
@@ -142,4 +145,14 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 		}
 	}
 
+	/**
+	 * NOTE: This method is only used for experiments.
+	 * 
+	 * @return
+	 */
+	@Deprecated
+	public AggregateBinaryOperator getAggregateOperator()
+	{
+		return (AggregateBinaryOperator) optr;
+	}
 }

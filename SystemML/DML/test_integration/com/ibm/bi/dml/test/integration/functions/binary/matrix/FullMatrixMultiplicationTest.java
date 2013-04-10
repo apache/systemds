@@ -108,6 +108,31 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runMatrixVectorMultiplicationTest(true, ExecType.MR);
 	}
+	
+	
+	@Test
+	public void testVVDenseDenseCP() 
+	{
+		runVectorVectorMultiplicationTest(false, ExecType.CP);
+	}
+	
+	@Test
+	public void testVVSparseDenseCP() 
+	{
+		runVectorVectorMultiplicationTest(true, ExecType.CP);
+	}
+	
+	@Test
+	public void testVVDenseDenseMR() 
+	{
+		runVectorVectorMultiplicationTest(false, ExecType.MR);
+	}
+	
+	@Test
+	public void testVVSparseDenseMR() 
+	{
+		runVectorVectorMultiplicationTest(true, ExecType.MR);
+	}
 
 	/**
 	 * 
@@ -200,6 +225,61 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparseM1?sparsity2:sparsity1, 7); 
+			writeInputMatrix("A", A, true);
+			double[][] B = getRandomMatrix(rowsB, 1, 0, 1, sparsity1, 3); 
+			writeInputMatrix("B", B, true);
+	
+			boolean exceptionExpected = false;
+			runTest(true, exceptionExpected, null, -1); 
+			runRScript(true); 
+			
+			//compare matrices 
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+		}
+		finally
+		{
+			rtplatform = platformOld;
+		}
+	}
+
+	/**
+	 * Note: second matrix is always dense if vector.
+	 * 
+	 * @param sparseM1
+	 * @param instType
+	 */
+	private void runVectorVectorMultiplicationTest( boolean sparseM1, ExecType instType)
+	{
+		//setup exec type, rows, cols
+
+		//rtplatform for MR
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+	
+		try
+		{
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+					                        Integer.toString(1),
+					                        Integer.toString(colsA),
+					                        HOME + INPUT_DIR + "B",
+					                        Integer.toString(rowsB),
+					                        Integer.toString(1),
+					                        HOME + OUTPUT_DIR + "C"    };
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			
+			loadTestConfiguration(config);
+	
+			//generate actual dataset
+			double[][] A = getRandomMatrix(1, colsA, 0, 1, sparseM1?sparsity2:sparsity1, 7); 
 			writeInputMatrix("A", A, true);
 			double[][] B = getRandomMatrix(rowsB, 1, 0, 1, sparsity1, 3); 
 			writeInputMatrix("B", B, true);

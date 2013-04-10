@@ -52,9 +52,9 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static final int SKINNY_MATRIX_TURN_POINT=4;//based on math
 	
-	private int rlen;
-	private int clen;
-	private boolean sparse;
+	protected int rlen;
+	protected int clen;
+	protected boolean sparse;
 	
 	protected int maxrow, maxcolumn;
 	protected double[] denseBlock=null;
@@ -2259,226 +2259,13 @@ public class MatrixBlockDSM extends MatrixValue{
 		if( !(tstype == MMTSJType.LEFT || tstype == MMTSJType.RIGHT) )
 			throw new DMLRuntimeException("Invalid MMTSJ type '"+tstype+"'.");
 		
+		//compute matrix mult
 		boolean leftTranspose = ( tstype == MMTSJType.LEFT );
-		if( sparse )
-			transposeSelfMatrixMultSparse(out, leftTranspose);
-		else 
-			transposeSelfMatrixMultDense(out, leftTranspose);
-		out.recomputeNonZeros();
-		out.examSparsity();
+		MatrixMultLib.matrixMultTransposeSelf(this, out, leftTranspose);
 		
 		return out;
 	}
 	
-	/**
-	 * 
-	 * @param out
-	 * @param leftTranspose
-	 */
-	private void transposeSelfMatrixMultDense( MatrixBlockDSM out, boolean leftTranspose )
-	{
-		//1) allocate output block
-		out.rlen = leftTranspose ? clen : rlen;
-		out.clen = leftTranspose ? clen : rlen;
-		out.sparse = false;
-		out.denseBlock = new double[out.rlen * out.clen]; 
-		Arrays.fill(out.denseBlock, 0, out.denseBlock.length, 0);
-		if( denseBlock == null )
-			return;
-		
-		//2) transpose self matrix multiply dense
-		// (compute only upper-triangular matrix due to symmetry)
-		double[] a = denseBlock;
-		double[] c = out.denseBlock;
-		int m = rlen;
-		int n = clen;
-		
-		double val;
-		if( leftTranspose ) // t(X)%*%X
-		{
-			if( n==1 ) //specific case: vector 
-			{
-				for( int i = 0; i < m; i++ )
-					c[0] += a[i] * a[i];
-			}
-			else //general case: matrix
-			{	
-				//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
-				for(int k = 0, ix1 = 0, ix2 = 0; k < m; k++, ix2+=n)
-					for(int i = 0, ix3 = 0; i < n; i++, ix1++, ix3+=n) 
-					{
-						val = a[ ix1 ];
-						if( val != 0 )
-							for(int j = i; j < n; j++) //from i due to symmetry
-								c[ ix3+j ]  += val * a[ ix2+j ];
-					}		
-			}
-		}
-		else // X%*%t(X)
-		{
-			if( m==1 ) //specific case: vector 
-			{
-				for( int i = 0; i < n; i++ )
-					c[0] += a[i] * a[i];
-			}
-			else //general case: matrix
-			{
-				//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
-				for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
-					for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
-					{
-						val = 0;
-						for(int k = 0; k < n; k++)
-							val += a[ ix1+k ] * a[ix2+k];
-						c[ ix3+j ] = val;	
-					}
-			}
-		}
-
-		//3) copy symmetric values
-		for( int i=0; i<out.rlen; i++)
-			for( int j=i+1; j<out.clen; j++ )
-			{
-				val = c[i*out.clen+j];
-				if( val != 0 ) 
-					c[ j*out.clen+i ] = val;
-			}
-	}
-	
-	/**
-	 * 
-	 * @param out
-	 * @param leftTranspose
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
-	 */
-	private void transposeSelfMatrixMultSparse( MatrixBlockDSM out, boolean leftTranspose ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		//1) allocate output block
-		out.rlen = leftTranspose ? clen : rlen;
-		out.clen = leftTranspose ? clen : rlen;
-		out.sparse = false;  //assumption dense output
-		out.denseBlock = new double[out.rlen * out.clen];
-		Arrays.fill(out.denseBlock, 0, out.denseBlock.length, 0);
-		if( sparseRows == null )
-			return;
-		
-		//2) transpose self matrix multiply sparse
-		// (compute only upper-triangular matrix due to symmetry)		
-		double[] c = out.denseBlock;
-		int m = rlen;
-		
-		double val;
-		int alen;
-		int[] aix;
-		double[] avals;
-
-		if( leftTranspose ) // t(X)%*%X 
-		{
-			//only general case (because vectors always dense)
-			//algorithm: scan rows, foreach row self join (KIJ)
-			for( SparseRow arow : sparseRows )
-				if( arow != null && arow.size() > 0 ) 
-				{
-					alen = arow.size();
-					aix = arow.getIndexContainer();
-					avals = arow.getValueContainer();					
-					
-					for(int i = 0; i < alen; i++) 
-						for(int j = i, ix2 = aix[i]*clen; j < alen; j++)
-							c[ix2+aix[j]] += avals[i] * avals[j];
-				}
-		}
-		else // X%*%t(X)
-		{
-			if( m==1 ) //specific case: vector 
-			{
-				SparseRow arow = sparseRows[0];
-				alen = arow.size();
-				avals = arow.getValueContainer();	
-				for( int i = 0; i < alen; i++ )
-					c[0] += avals[i] * avals[i];
-			}
-			else //general case: matrix
-			{	
-				//faster than direct computation with IJK (no dependencies/branches)
-				MatrixBlockDSM tmpBlock = new MatrixBlock(clen,rlen,sparse);
-				reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
-						       tmpBlock, 0, 0, -1);
-			
-				//algorithm: scan rows, foreach row self join (KIJ)
-				for( SparseRow arow : tmpBlock.sparseRows )
-					if( arow != null && arow.size() > 0 ) 
-					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
-						
-						for(int i = 0; i < alen; i++) 
-							for(int j = i, ix2 = aix[i]*tmpBlock.clen; j < alen; j++)
-								c[ix2+aix[j]] += avals[i] * avals[j];
-					}
-								
-				/*
-				//OLD VERSION: direct computation (without transpose, IJK) 
-				//             but slower due to dependencies/branches in inner loop
-				int blen;
-				int[] bix;
-				double[] bvals;		
-				double tmp = 0; 
-				
-				SparseRow arow = null, brow = null;
-				for(int i = 0, ix3 = 0; i < m; i++, ix3+=m)
-				{
-					arow = sparseRows[i];
-					if( arow != null && arow.size()>0 )
-					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();
-
-						for(int j = i; j < m; j++) //from i due to symmetry
-						{
-							brow = sparseRows[j];							
-							if( brow != null && brow.size()>0 )
-							{
-								blen = brow.size();
-								bix = brow.getIndexContainer();
-								bvals = brow.getValueContainer();								
-								val = 0;
-								for(int k1=0, k2=0, ix1=0, ix2=0; k1 < alen && k2 < blen; )
-								{
-									ix1 = aix[k1];
-									ix2 = bix[k2];
-									
-									if( ix1 == ix2 ) 
-										val += avals[k1++] * bvals[k2++];
-									else if( ix1 < ix2 )
-										k1++;
-									else //ix1 > ix2
-										k2++;		
-								}
-								
-								if( val != 0 )
-									c[ ix3+j ] = val;			
-							}
-						}
-					}
-				}
-				*/
-			}
-		}
-	
-		//3) copy symmetric values
-		for( int i=0; i<out.rlen; i++)
-			for( int j=i+1; j<out.clen; j++ )
-			{
-				val = c[i*out.clen+j];
-				if( val != 0 ) 
-					c[ j*out.clen+i ] = val;
-			}
-	}
 	
 	private void slideHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
 	{
@@ -3808,7 +3595,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		//matrix multiplication
 		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus && !partialMult)
 		{
-			matrixMult(m1, m2, result);
+			MatrixMultLib.matrixMult(m1, m2, result);
 		}
 		else
 		{
@@ -3841,7 +3628,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	{
 		if(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus )
 		{
-			matrixMult(m1, m2, result);
+			MatrixMultLib.matrixMult(m1, m2, result);
 		}
 		else
 		{
@@ -4000,7 +3787,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	/*
 	 * to perform aggregateBinary when the first matrix is dense and the second is sparse
 	 */
-	private static void aggBinDenseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2,
+	public static void aggBinDenseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2,
 			MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException 
 	{
 		if(m2.sparseRows==null)
@@ -4102,7 +3889,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	/*
 	 * to perform aggregateBinary when the first matrix is sparse and the second is dense
 	 */
-	private static void aggBinSparseDense(MatrixBlockDSM m1, MatrixBlockDSM m2,
+	public static void aggBinSparseDense(MatrixBlockDSM m1, MatrixBlockDSM m2,
 			MatrixBlockDSM result, AggregateBinaryOperator op) throws DMLRuntimeException
 	{
 		if(m1.sparseRows==null)
@@ -4249,341 +4036,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
-	
 
-	/**
-	 * Performs a matrix multiplication and stores the result in the resulting matrix.
-	 * 
-	 * All variants use a IKJ access pattern, and internally use dense output. After the
-	 * actual computation, we recompute nnz and check for sparse/dense representation.
-	 *  
-	 * 
-	 * @param m1 first matrix
-	 * @param m2 second matrix
-	 * @param ret result matrix
-	 * @throws DMLRuntimeException 
-	 */
-	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
-		throws DMLRuntimeException
-	{		
-		if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret);
-		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret);
-		else if(m1.sparse)
-			matrixMultSparseDense(m1, m2, ret);
-		else
-			matrixMultDenseSparse(m1, m2, ret);
-	}
-
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 */
-	public static void matrixMultDenseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret)
-	{	
-		//check inputs / outputs
-		if( m1.denseBlock==null || m2.denseBlock==null )
-			return;
-		ret.sparse=false;
-		if( ret.denseBlock==null )
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
-		
-		double[] a = m1.denseBlock;
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
-		int cd = m1.clen;
-					
-		if( m==1 && n==1 ) //dot product
-		{
-			for( int i=0; i<cd; i++ )
-				c[0] += a[i] * b[i];
-			ret.nonZeros = (c[0]!=0) ? 1 : 0;
-		}
-		else if( n==1 ) //matrix-vector
-		{
-			for( int i = 0, aix=0, cix=0; i < m; i++, cix++) 
-				for( int k = 0; k < cd; k++, aix++)
-					c[ cix ] += a[ aix ] * b[ k ];
-			ret.recomputeNonZeros();
-		}
-		else //general case
-		{			
-			//opt version with blocking 
-			/*
-			int blocksize1 = 32;
-			int blocksize2 = 32;
-			int blocksize3 = 500;
-			double val = 0;	
-			for( int bi = 0; bi < m; bi+=blocksize1) 
-			{
-				int maxI = Math.min(m,bi+blocksize1);
-				for( int bk = 0; bk < cd; bk+=blocksize2)
-				{
-					int maxK = Math.min(cd,bk+blocksize2);
-					for( int bj = 0; bj < n; bj+=blocksize3) 
-					{	
-						int maxJ = Math.min(n,bj+blocksize3);
-						for( int i = bi, aix=bi*cd, cix=bi*n; i < maxI; i++, aix+=cd, cix+=n) 
-							for( int k = bk, bix=bk*n; k < maxK; k++, bix+=n)
-							{			
-								val = a[ aix+k ];
-								if( val != 0 )
-									for( int j = bj; j < maxJ; j++) 
-										c[ cix+j ] += val * b[ bix+j ];
-							}	
-					}
-				}
-			}
-			*/
-			
-			 //opt version without blocking
-			double val; 
-			for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
-				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
-				{			
-					val = a[ aix ];
-					if( val != 0 )
-						for( int j = 0; j < n; j++) 
-							c[ cix+j ] += val * b[ bix+j ];
-				}	
-			ret.recomputeNonZeros();
-			
-		}
-		
-		
-		// OLD VERSION
-		/*
-		int k = m1.clen; 
-		int l, i, j, aIndex, bIndex, cIndex; 
-		double temp;
-		
-		int nnzs=0;
-		for(l = 0; l < k; l++)
-		{
-			aIndex = l;
-			cIndex = 0;
-			for(i = 0; i < m; i++)
-			{
-				// aIndex = i * k + l => a[i, l]
-				temp = a[aIndex];
-				if(temp != 0)
-				{
-					bIndex = l * n;
-					for(j = 0; j < n; j++)
-					{
-						// bIndex = l * n + j => b[l, j]
-						// cIndex = i * n + j => c[i, j]
-						if(c[cIndex]==0)
-							nnzs++;
-						c[cIndex] = c[cIndex] + temp * b[bIndex];
-						if(c[cIndex]==0)
-							nnzs--;
-						cIndex++;
-						bIndex++;
-					}
-				}else
-					cIndex+=n;
-				aIndex += k;
-			}
-		}
-		ret.nonZeros=nnzs;
-		*/		
-	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @throws DMLRuntimeException 
-	 */
-	public static void matrixMultDenseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
-		throws DMLRuntimeException 
-	{
-		//check inputs / outputs
-		if( m1.denseBlock==null || m2.sparseRows==null  )
-			return;
-		ret.sparse=false;
-		if( ret.denseBlock==null )
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
-		
-		double[] a = m1.denseBlock;
-		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
-		int cd = m1.clen;
-		
-		double val;
-		int blen;
-		int[] bix;
-		double[] bvals;
-	
-		for( int i=0, aix=0, cix=0; i < m; i++, cix+=n ) 
-			for(int k = 0; k < cd; k++, aix++ ) 
-			{
-				val = a[aix];
-				if( val!=0 )
-				{
-					SparseRow brow = m2.sparseRows[ k ];
-					if( brow != null && brow.size() > 0 ) 
-					{
-						blen = brow.size();
-						bix = brow.getIndexContainer();
-						bvals = brow.getValueContainer();	
-						for(int j = 0; j < blen; j++)
-							c[cix+bix[j]] += val * bvals[j];								
-					}
-				}
-			}						
-		ret.recomputeNonZeros();
-		ret.examSparsity();	
-	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @throws DMLRuntimeException 
-	 */
-	public static void matrixMultSparseDense(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
-		throws DMLRuntimeException
-	{
-		//check inputs / outputs
-		if( m1.sparseRows==null || m2.denseBlock==null )
-			return;	
-		ret.sparse=false;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
-		
-		double[] b = m2.denseBlock;
-		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
-		
-		double val;
-		int alen;
-		int[] aix;
-		double[] avals;
-		
-		if( m==1 && n==1 ) //dot product
-		{
-			SparseRow arow = m1.sparseRows[0];
-			if( arow != null && arow.size() > 0 )
-			{
-				alen = arow.size();
-				aix = arow.getIndexContainer();
-				avals = arow.getValueContainer();
-				
-				for(int k = 0; k < alen; k++) 
-					c[0] += avals[k] * b[aix[k]];
-			}
-			ret.nonZeros = (c[0]!=0) ? 1 : 0;
-		}
-		else if( n==1 ) //matrix-vector
-		{
-			for( int i=0; i<Math.min(m, m1.sparseRows.length); i++ )
-			{
-				SparseRow arow = m1.sparseRows[i];
-				if( arow != null && arow.size() > 0 ) 
-				{
-					alen = arow.size();
-					aix = arow.getIndexContainer();
-					avals = arow.getValueContainer();					
-					
-					for(int k = 0; k < alen; k++) 
-						c[i] += avals[k] * b[aix[k]];														
-				}
-			}
-			ret.recomputeNonZeros();
-			ret.examSparsity();
-		}
-		else //general case
-		{
-			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
-			{
-				SparseRow arow = m1.sparseRows[i];
-				if( arow != null && arow.size() > 0 ) 
-				{
-					alen = arow.size();
-					aix = arow.getIndexContainer();
-					avals = arow.getValueContainer();					
-					
-					for(int k = 0; k < alen; k++) 
-					{
-						val = avals[k];
-						for(int j = 0, bix=aix[k]*n; j < n; j++)
-							c[cix+j] += val * b[bix+j];								
-					}						
-				}
-			}
-			ret.recomputeNonZeros();
-			ret.examSparsity();
-		}
-	}
-	
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 * @throws DMLRuntimeException 
-	 */
-	public static void matrixMultSparseSparse(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
-		throws DMLRuntimeException
-	{
-		//check inputs / outputs
-		if( m1.sparseRows==null || m2.sparseRows==null )
-			return;	
-		ret.sparse=false;
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
-		
-		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
-		
-		double val;
-		int alen, blen;
-		int[] aix, bix;
-		double[] avals, bvals;
-		
-		for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
-		{
-			SparseRow arow = m1.sparseRows[i];
-			if( arow != null && arow.size() > 0 ) 
-			{
-				alen = arow.size();
-				aix = arow.getIndexContainer();
-				avals = arow.getValueContainer();					
-				
-				for(int k = 0; k < alen; k++) 
-				{
-					val = avals[k];
-					SparseRow brow = m2.sparseRows[ aix[k] ];
-					if( brow != null && brow.size() > 0 ) 
-					{
-						blen = brow.size();
-						bix = brow.getIndexContainer();
-						bvals = brow.getValueContainer();	
-						for(int j = 0; j < blen; j++)
-							c[cix+bix[j]] += val * bvals[j];								
-					}
-				}						
-			}
-		}
-		ret.recomputeNonZeros();
-		ret.examSparsity();
-	}
 	
 	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, Operator op) 
 	throws DMLRuntimeException, DMLUnsupportedOperationException {

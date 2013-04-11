@@ -129,11 +129,13 @@ public class RandStatement extends Statement
 	{
 		// check name is valid
 		boolean found = false;
-		for (String name : RAND_VALID_PARAM_NAMES){
-			if (name.equals(paramName)) {
-				found = true;
-				break;
-			}			
+		if (paramName != null ){
+			for (String name : RAND_VALID_PARAM_NAMES){
+				if (name.equals(paramName)) {
+					found = true;
+					break;
+				}			
+			}
 		}
 		if (!found){
 			

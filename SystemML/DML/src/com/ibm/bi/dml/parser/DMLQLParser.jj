@@ -182,7 +182,7 @@ TOKEN :
 	| <WRITEMM		: "writeMM" >
 	| <READ_MATRIX	: "read.matrix" >
 	| <WRITE_MATRIX	: "write.matrix" >
-
+	| < MATRIX		: "matrix" >
 
 	// RESERVED KEYWORDS -- required for meta-learning
  	| <BUILD_ENSEMBLE	: "build ensemble" >
@@ -2222,7 +2222,7 @@ RandStatement RandStatement() :
 {
 	RandStatement rs = null;
 	DataIdentifier id = null;
-	Token t1 = null;
+	Token t1 = null, tName = null;
 	Expression t2 = null;
 	
 	Token tEnd = null;
@@ -2230,13 +2230,24 @@ RandStatement RandStatement() :
 	
 }
 {
-	id = Identifier() <ASSIGN> <RAND> <LEFTPAREN>
+	id = Identifier() <ASSIGN> (tName = <RAND> | tName = <MATRIX>) <LEFTPAREN>
 	{
 		rs = new RandStatement(id);
 	}
 	(
-		( t1 = <ID> ) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); }
-		( <COMMA> (t1 = <ID>) <ASSIGN> t2 = Expression() { rs.addExprParam(t1.image, t2); })*
+
+		( t1 = <ID>  <ASSIGN>)? t2 = Expression()
+		{
+			// handle Matrix(...) different from Rand(...)
+			String tNameStr = tName.image;  
+			if (tNameStr.equals("matrix"))			{				rs.addExprParam("min", t2);
+				rs.addExprParam("max", t2);	
+			}
+			else			{
+			  rs.addExprParam(t1.image, t2);
+			}
+		}
+		( <COMMA> (t1 = <ID> <ASSIGN>) t2 = Expression() { rs.addExprParam(t1.image, t2); })*
 	)
 	tEnd = <RIGHTPAREN> [<SEMICOLON>]
 	{

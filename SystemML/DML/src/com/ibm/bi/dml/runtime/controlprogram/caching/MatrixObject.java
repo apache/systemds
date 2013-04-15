@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
@@ -19,7 +18,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.CacheAssignmentException;
 import com.ibm.bi.dml.utils.CacheException;
@@ -327,9 +325,7 @@ public class MatrixObject extends CacheableData
 		}
 		else if( CACHING_STATS )
 		{
-			if( _data==null )
-				CacheStatistics.incrementFSHits();
-			else 
+			if( _data!=null )
 				CacheStatistics.incrementMemHits();
 		}
 		acquire( false, _data==null );	
@@ -913,9 +909,10 @@ public class MatrixObject extends CacheableData
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				File f = new File(cacheFilePathAndName);
-				if( f.exists() )
-					f.delete();
+				LazyWriteBuffer.deleteMatrix(cacheFilePathAndName);
+				//File f = new File(cacheFilePathAndName);
+				//if( f.exists() )
+				//	f.delete();
 				break;
 			case HDFS:
 				try{
@@ -999,7 +996,8 @@ public class MatrixObject extends CacheableData
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				newData = LocalFileUtils.readMatrixBlockFromLocal(filePathAndName);
+				newData = LazyWriteBuffer.readMatrix(filePathAndName);
+				//newData = LocalFileUtils.readMatrixBlockFromLocal(filePathAndName);
 				break;			
 			case HDFS:
 				newData = readMatrixFromHDFS (filePathAndName);
@@ -1070,7 +1068,8 @@ public class MatrixObject extends CacheableData
 		switch (CacheableData.cacheEvictionStorageType)
 		{
 			case LOCAL:
-				LocalFileUtils.writeMatrixBlockToLocal(filePathAndName, _data);
+				LazyWriteBuffer.writeMatrix(filePathAndName, _data);
+				//LocalFileUtils.writeMatrixBlockToLocal(filePathAndName, _data);
 				
 				//TODO just NIO read/write, but our test is still experimental
 				//if( _data.isInSparseFormat() || _data.getDenseArray()==null )
@@ -1087,7 +1086,6 @@ public class MatrixObject extends CacheableData
 						+ CacheableData.cacheEvictionStorageType + "\"");				
 		}
 		
-		CacheStatistics.incrementFSWrites();
 	}
 
 	/**
@@ -1131,7 +1129,8 @@ public class MatrixObject extends CacheableData
 			LOG.trace ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
 		
-		CacheStatistics.incrementHDFSWrites();
+		if(CACHING_STATS)
+			CacheStatistics.incrementHDFSWrites();
 	}
 	
 	/**

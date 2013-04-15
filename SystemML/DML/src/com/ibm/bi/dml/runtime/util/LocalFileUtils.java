@@ -36,6 +36,13 @@ public class LocalFileUtils
 		_seq = new IDSequence();
 	}
 	
+	/**
+	 * 
+	 * @param filePathAndName
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName)
 		throws FileNotFoundException, IOException
 	{
@@ -92,6 +99,29 @@ public class LocalFileUtils
 		{
 			if( out != null )
 				out.close ();	
+		}	
+	}
+	
+	/**
+	 * 
+	 * @param filePathAndName
+	 * @param data
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public static void writeByteArrayToLocal (String filePathAndName, byte[] data)
+		throws FileNotFoundException, IOException
+	{		
+		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		
+		try 
+		{
+			fos.write(data);
+		}
+		finally
+		{
+			if( fos != null )
+				fos.close ();	
 		}	
 	}
 	
@@ -260,7 +290,9 @@ public class LocalFileUtils
 		return _workingDir;
 	}
 	
-	
+	/**
+	 * 
+	 */
 	public static void cleanupWorkingDirectory() 
 	{
 		if( _workingDir != null )
@@ -297,6 +329,10 @@ public class LocalFileUtils
 		dir.delete();
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public static String getWorkingDir()
 	{
 		if( _workingDir == null )
@@ -304,6 +340,11 @@ public class LocalFileUtils
 		return _workingDir;
 	}
 	
+	/**
+	 * 
+	 * @param category
+	 * @return
+	 */
 	public static String getWorkingDir( String category )
 	{
 		if( _workingDir == null )
@@ -318,6 +359,11 @@ public class LocalFileUtils
 		return sb.toString();
 	}
 	
+	/**
+	 * 
+	 * @param category
+	 * @return
+	 */
 	public static String getUniqueWorkingDir( String category )
 	{
 		if( _workingDir == null )

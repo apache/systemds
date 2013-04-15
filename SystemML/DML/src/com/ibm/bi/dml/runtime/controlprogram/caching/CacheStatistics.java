@@ -18,21 +18,25 @@ public class CacheStatistics
 	//enum used for MR counters
 	public enum Stat {
 		CACHE_HITS_MEM,
+		CACHE_HITS_FSBUFF,
 		CACHE_HITS_FS,
 		CACHE_HITS_HDFS,
+		CACHE_WRITES_FSBUFF,
 		CACHE_WRITES_FS,
 		CACHE_WRITES_HDFS
 	}
 	
 	//hit statistics (for acquire read)
-	private static AtomicInteger _numHitsTotal = null;
-	private static AtomicInteger _numHitsMem   = null;
-	private static AtomicInteger _numHitsFS    = null;
-	private static AtomicInteger _numHitsHDFS  = null;
+	private static AtomicInteger _numHitsTotal  = null;
+	private static AtomicInteger _numHitsMem    = null;
+	private static AtomicInteger _numHitsFSBuff = null;
+	private static AtomicInteger _numHitsFS     = null;
+	private static AtomicInteger _numHitsHDFS   = null;
 	
 	//write statistics caching
-	private static AtomicInteger _numWritesFS    = null;
-	private static AtomicInteger _numWritesHDFS  = null;
+	private static AtomicInteger _numWritesFSBuff = null;
+	private static AtomicInteger _numWritesFS     = null;
+	private static AtomicInteger _numWritesHDFS   = null;
 	
 
 	static
@@ -44,9 +48,11 @@ public class CacheStatistics
 	{
 		_numHitsTotal = new AtomicInteger(0);
 		_numHitsMem = new AtomicInteger(0);
+		_numHitsFSBuff = new AtomicInteger(0);
 		_numHitsFS = new AtomicInteger(0);
 		_numHitsHDFS = new AtomicInteger(0);
 		
+		_numWritesFSBuff = new AtomicInteger(0);
 		_numWritesFS = new AtomicInteger(0);
 		_numWritesHDFS = new AtomicInteger(0);
 	}
@@ -80,6 +86,11 @@ public class CacheStatistics
 	{
 		return _numHitsMem.get();
 	}
+
+	public static void incrementFSBuffHits()
+	{
+		_numHitsFSBuff.incrementAndGet();
+	}
 	
 	public static void incrementFSHits()
 	{
@@ -109,6 +120,11 @@ public class CacheStatistics
 	public static int getHDFSHits()
 	{
 		return _numHitsHDFS.get();
+	}
+
+	public static void incrementFSBuffWrites()
+	{
+		_numWritesFSBuff.incrementAndGet();
 	}
 	
 	public static void incrementFSWrites()
@@ -146,6 +162,8 @@ public class CacheStatistics
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsMem.get());
 		sb.append("/");
+		sb.append(_numHitsFSBuff.get());
+		sb.append("/");
 		sb.append(_numHitsFS.get());
 		sb.append("/");
 		sb.append(_numHitsHDFS.get());
@@ -157,6 +175,8 @@ public class CacheStatistics
 	public static String displayWrites()
 	{	
 		StringBuilder sb = new StringBuilder();
+		sb.append(_numWritesFSBuff.get());
+		sb.append("/");
 		sb.append(_numWritesFS.get());
 		sb.append("/");
 		sb.append(_numWritesHDFS.get());

@@ -83,8 +83,8 @@ public class Statistics {
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		if( CacheableData.CACHING_STATS )
 		{
-			sb.append("Cache hits (Mem, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
-			sb.append("Cache writes (FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
+			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
+			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 		}
 		return sb.toString();
 	}

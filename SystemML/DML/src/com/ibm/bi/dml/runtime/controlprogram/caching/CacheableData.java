@@ -10,6 +10,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -42,6 +43,8 @@ public abstract class CacheableData extends Data
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	public static final long CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
+	public static final double CACHING_BUFFER_SIZE = 0.1; 
+	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_STATS = false;
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
@@ -330,6 +333,10 @@ public abstract class CacheableData extends Data
 	 */
 	public synchronized static void cleanupCacheDir()
 	{
+		//cleanup remaining cached writes
+		LazyWriteBuffer.cleanup();
+		
+		//delete cache dir and files
 		cleanupCacheDir(true);
 	}
 	
@@ -362,10 +369,6 @@ public abstract class CacheableData extends Data
 					case LOCAL:
 						File fdir = new File(dir);
 						if( fdir.exists()){ //just for robustness
-							//String[] fnames = fdir.list();
-							//for( String fname : fnames )
-							//	if( fname.startsWith(cacheEvictionLocalFilePrefix) )
-							//		new File(fname).delete();
 							File[] files = fdir.listFiles();
 							for( File f : files )
 								if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
@@ -428,6 +431,9 @@ public abstract class CacheableData extends Data
 				break;
 		}
 	
+		//init write-ahead buffer
+		LazyWriteBuffer.init();
+		
 		_activeFlag = true; //turn on caching
 	}
 	

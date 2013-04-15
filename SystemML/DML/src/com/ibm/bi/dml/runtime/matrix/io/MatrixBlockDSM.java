@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheDataOutput;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
@@ -84,6 +85,37 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		return all_size;
 	}*/
+	
+	/**
+	 * NOTE: The used estimates must be kept consistent with the respective write functions. 
+	 * 
+	 * @return
+	 */
+	public long getExactSizeOnDisk()
+	{
+		//ensure exact size estimates for write
+		if( sparse || nonZeros==0 || nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT )
+			recomputeNonZeros();
+		
+		if(sparse)
+		{
+			if(sparseRows==null)
+				return 9+rlen*4;
+			else if(nonZeros>((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
+				return 9+rlen*clen*8;	
+			else
+				return 9 + rlen*4 + 12*nonZeros;	
+		}else
+		{
+			if(denseBlock==null)
+				return 9;
+			//if it should be sparse
+			else if(nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
+				return 9 + rlen*4 + 12*nonZeros;
+			else
+				return 9+rlen*clen*8;
+		}
+	}
 	
 	public static long estimateSize(long nrows, long ncols, double sparsity)
 	{
@@ -1365,6 +1397,82 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		else
 		{
+			/*
+			//FIXME: just a test
+			if( !result.sparse && !this.sparse && that.sparse && op.fn instanceof Plus )
+			{
+				if( result.denseBlock==null )
+					result.denseBlock = new double[rlen * clen];
+				Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+				
+				//sparse
+
+				int alen;
+				int[] aix;
+				double[] avals;
+				for( int i=0; i<that.sparseRows.length; i++ )
+				{
+					SparseRow arow = that.sparseRows[i];
+					if( arow != null && arow.size() > 0 )
+					{
+						alen = arow.size();
+						aix = arow.getIndexContainer();
+						avals = arow.getValueContainer();
+						
+						for(int k = 0; k < alen; k++) 
+							result.denseBlock[i*clen+aix[k]] = avals[k];
+					}
+				}
+				
+				//dense 
+				int nnz=0;
+				for( int i=0; i<result.denseBlock.length; i++ )
+				{
+					result.denseBlock[i] += denseBlock[ i ];
+					nnz += (result.denseBlock[i]!=0)?1:0;		
+				}
+				result.nonZeros=nnz;
+				
+			}
+			else if( !result.sparse && !this.sparse && that.sparse && op.fn instanceof Minus )
+			{
+				if( result.denseBlock==null )
+					result.denseBlock = new double[rlen * clen];
+				Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+				
+				//sparse
+
+				int alen;
+				int[] aix;
+				double[] avals;
+				for( int i=0; i<that.sparseRows.length; i++ )
+				{
+					SparseRow arow = that.sparseRows[i];
+					if( arow != null && arow.size() > 0 )
+					{
+						alen = arow.size();
+						aix = arow.getIndexContainer();
+						avals = arow.getValueContainer();
+						
+						for(int k = 0; k < alen; k++) 
+							result.denseBlock[i*clen+aix[k]] = -1 * avals[k];
+					}
+				}
+				
+				//dense 
+				int nnz=0;
+				for( int i=0; i<result.denseBlock.length; i++ )
+				{
+					result.denseBlock[i] += denseBlock[ i ];
+					nnz += (result.denseBlock[i]!=0)?1:0;		
+				}
+				result.nonZeros=nnz;
+				
+			}
+			
+			else*/
+			{
+			
 			double thisvalue, thatvalue, resultvalue;
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -1376,6 +1484,9 @@ public class MatrixBlockDSM extends MatrixValue{
 					resultvalue=op.fn.execute(thisvalue, thatvalue);
 					result.appendValue(r, c, resultvalue);
 				}
+			
+			}
+			
 		}
 	//	System.out.println("-- input 1: \n"+this.toString());
 	//	System.out.println("-- input 2: \n"+that.toString());
@@ -2031,6 +2142,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		int limit=rlen*clen;
 		if( out instanceof FastBufferedDataOutputStream )
 			((FastBufferedDataOutputStream)out).writeDoubleArray(limit, denseBlock);
+		else if( out instanceof CacheDataOutput )
+			((CacheDataOutput)out).writeDoubleArray(limit, denseBlock);
 		else
 			for(int i=0; i<limit; i++)
 				out.writeDouble(denseBlock[i]);

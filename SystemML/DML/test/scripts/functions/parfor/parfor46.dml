@@ -2,8 +2,8 @@ numC = 5;
 numF = 10;
 
 A = Rand(rows=numC, cols=numF, min=0.0, max=1.0, sparsity=1.0)
-B = Rand(rows=numC, cols=numF, min=0.0, max=0.0)  #classFeatureCumulativeDensityFunction
-C = Rand(rows=numC, cols=numF, min=0.0, max=0.0)  #tempCumulative
+B = matrix(0, rows=numC, cols=numF)  #classFeatureCumulativeDensityFunction
+C = matrix(0, rows=numC, cols=numF)  #tempCumulative
 
 parfor(i in 1:numC ) 
 {

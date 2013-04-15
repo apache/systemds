@@ -2,23 +2,23 @@
 
 dynRead = externalFunction(Matrix[Double] d, String fname, Integer m, Integer n) 
 return (Matrix[Double] D) 
-implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicReadMatrix2DCP",execlocation="CP") 
+implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicReadMatrix2DCP",exectype="mem") 
 
 dynWrite = externalFunction(Matrix[Double] R, String fname) 
 return (Matrix[Double] D) 
-implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicWriteMatrix2DCP",execlocation="CP") 
+implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicWriteMatrix2DCP",exectype="mem") 
 
-execLAPACK = externalFunction(Matrix[Double] A, Matrix[Double] y) 
+solve = externalFunction(Matrix[Double] A, Matrix[Double] y) 
 return (Matrix[Double] b) 
-implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.LapackWrapperCP",execlocation="CP") 
+implemented in (classname="com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP",exectype="mem") 
 
 k = %numModels%;
 m = -1; 
 n = -1;
 
-dummy = Rand(rows=1,cols=1); 
+dummy = matrix(1,rows=1,cols=1); 
 
-parfor( i in 1:k, par=8, mode=LOCAL )
+for( i in 1:k, par=8, mode=LOCAL )
 {
    sin1 = "./conf/PerfTestTool/"+i+"_in1.csv";   
    sin2 = "./conf/PerfTestTool/"+i+"_in2.csv";   
@@ -28,7 +28,7 @@ parfor( i in 1:k, par=8, mode=LOCAL )
    
    A = t(D) %*% D; # X'X
    b = t(D) %*% y; # X'y
-   beta = execLAPACK(A,b); 
+   beta = solve(A,b); 
 
    sout = "./conf/PerfTestTool/"+i+"_out.csv";   
    

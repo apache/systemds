@@ -7,7 +7,7 @@ parfor(i in 1:numC ) {
 	A[i,] = A[i,]/sum(A[i,]);
 }	
 
-B = Rand(rows=numC, cols=numF, min=0.0, max=0.0, sparsity=1.0)
+B = matrix(0, rows=numC, cols=numF)
 	
 parfor(i in 1:numC) {
 	for (j in 2:numF) {

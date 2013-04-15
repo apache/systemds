@@ -1,4 +1,4 @@
-A = Rand(rows=20,cols=20,min=0,max=0);
+A = matrix(0, rows=20,cols=20);
 B = Rand(rows=20,cols=20);
 
 parfor( i in 1:20 )

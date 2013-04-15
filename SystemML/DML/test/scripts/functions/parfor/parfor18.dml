@@ -1,4 +1,4 @@
-A = Rand(rows=20,cols=1,min=0,max=0);
+A = matrix(0,rows=20,cols=1);
 B = Rand(rows=20,cols=1);
 
 #GCD true, Banerjee false

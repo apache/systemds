@@ -1,9 +1,9 @@
 V = read($1,rows=$2,cols=$3);
 n = $3;
 
-R1 = Rand(rows=1,cols=n,min=0,max=0); 
-R2 = Rand(rows=1,cols=n,min=0,max=0); 
-dummy = Rand(rows=1, cols=1, min=1, max=1);
+R1 = matrix(0, rows=1,cols=n); 
+R2 = matrix(0, rows=1,cols=n); 
+dummy = matrix(1, rows=1, cols=1);
 
 parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=LOCAL, opt=NONE) 
 {

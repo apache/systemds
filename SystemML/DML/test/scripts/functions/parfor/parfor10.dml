@@ -1,5 +1,5 @@
-A = Rand(rows=10,cols=1,min=0,max=0);
-dummy = Rand(rows=1,cols=1,min=1.0,max=1.0);
+A = matrix(0,rows=10,cols=1);
+dummy = matrix(1, rows=1,cols=1);
 
 parfor( i in 1:10 )
 { 

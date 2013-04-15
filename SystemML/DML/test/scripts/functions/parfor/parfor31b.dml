@@ -1,8 +1,8 @@
-A = Rand(rows=20,cols=20,min=0,max=0);
-B = Rand(rows=20,cols=20,min=0,max=0);
-C = Rand(rows=20,cols=20,min=0,max=0);
-dummy1 = Rand(rows=10,cols=1,min=1.0,max=1.0);
-dummy2 = Rand(rows=1,cols=10,min=1.0,max=1.0);
+A = matrix(0,rows=20,cols=20);
+B = matrix(0,rows=20,cols=20);
+C = matrix(0,rows=20,cols=20);
+dummy1 = matrix(1,rows=10,cols=1);
+dummy2 = matrix(1,rows=1,cols=10);
 
 parfor( i in 1:20 )
 {                 

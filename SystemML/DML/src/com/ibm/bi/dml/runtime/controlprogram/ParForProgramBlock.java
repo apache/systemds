@@ -115,20 +115,29 @@ public class ParForProgramBlock extends ForProgramBlock
 		COLUMN_BLOCK_WISE,
 		COLUMN_BLOCK_WISE_N,
 		BLOCK_WISE_M_N;
-		
+
+		/**
+		 * Note: Robust version of valueOf in order to return NONE without exception
+		 * if misspelled or non-existing and for case-insensitivity.
+		 * 
+		 * @param s
+		 * @return
+		 */
 		public static PDataPartitionFormat parsePDataPartitionFormat(String s) {
 			if (s.equalsIgnoreCase("ROW_WISE"))
 				return ROW_WISE;
-			if (s.equalsIgnoreCase("ROW_BLOCK_WISE"))
+			else if (s.equalsIgnoreCase("ROW_BLOCK_WISE"))
 				return ROW_BLOCK_WISE;
-			if (s.equalsIgnoreCase("ROW_BLOCK_WISE_N"))
+			else if (s.equalsIgnoreCase("ROW_BLOCK_WISE_N"))
 				return ROW_BLOCK_WISE_N;
-			if (s.equalsIgnoreCase("COLUMN_WISE"))
+			else if (s.equalsIgnoreCase("COLUMN_WISE"))
 				return COLUMN_WISE;
-			if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE"))
+			else if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE"))
 				return COLUMN_BLOCK_WISE;
-			if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE_N"))
+			else if (s.equalsIgnoreCase("COLUMN_BLOCK_WISE_N"))
 				return COLUMN_BLOCK_WISE_N;
+			else if (s.equalsIgnoreCase("BLOCK_WISE_M_N"))
+				return BLOCK_WISE_M_N;
 			else
 				return NONE;
 		}

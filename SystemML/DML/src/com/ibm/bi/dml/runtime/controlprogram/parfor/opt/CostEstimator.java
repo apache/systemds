@@ -13,6 +13,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 /**
  * Base class for all potential cost estimators
  * 
+ * TODO account for shared read-only matrices when computing aggregated stats
+ * 
  */
 public abstract class CostEstimator 
 {

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
@@ -37,6 +38,12 @@ class OptimizerGreedyEnum extends Optimizer
 		return PlanInputType.RUNTIME_PLAN;
 	}
 	
+
+	@Override
+	public POptMode getOptMode() 
+	{
+		return POptMode.GREEDY;
+	}
 	
 	@Override
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree pPlan, CostEstimator est) 

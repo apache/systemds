@@ -141,6 +141,7 @@ public class OptimizationWrapper
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
+		//System.out.println("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
 		if( ParForProgramBlock.MONITOR )
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}

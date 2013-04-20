@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -18,39 +19,11 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 /**
  * Generic optimizer super class that defines the interface of all implemented optimizers.
  * Furthermore it implements basic primitives, used by all optimizers such as the enumeration
- * of plan alterantives and specific rewrites.
+ * of plan alternatives and specific rewrites.
  * 
  * Optimization objective: \phi: \min T(prog) | k \leq ck \wedge m(prog) \leq cm 
  *                                      with T(p)=max_(1\leq i\leq k)(T(prog_i). 
  * 
- * Known implementation classes: OptimizerHeuristic (time: O(m)), OptimizerGreedyEnum 
- * (time: O(m^2)), and OptimizerDPEnum (time: O(2^m)) 
- * 
- * 
- * CURRENT LIST of REWRITES
- * - Select execution strategy (parfor, hops that allow CP/MR)				done
- * - Nested parallelism (ParFOR[Remote] -> ParFOR[Remote],ParFOR[Local])	done
- * - Select task partitioner												done
- * - Select degree of parallelism for hierarchy of PB/inst					done
- * - Remove unnecessary nested parallelism (ParFOR[k=1]->FOR)				done
- * 
- * Experimental
- * - Select data partitioning, recompile, and indexed read                  ? (runtime support)
- * - Choose data partitioning granularity
- * 
- * 
- * TODO to be implemented
- * - result merge aware parallelization
- * - Select degree/distribution of parallelism for MR jobs (#mappers,#reducers)
- * - Choose configuration properties (sort.io, etc)
- * - Rewrite blocked matrix/file access (sharing-aware)
- * - Redundant execution (whenever compute is cheaper than transfer)
- * - Split single ParFOR into ParFOR of different types wrt data transfer and inst
- * - Rewrite specific CP inst (e.g., matmult) to ParFOR (inst on independent blocks)
- * - ...  
- * 
- * 
- * NOTE: better statistics, holistic view on all included instructions, awareness of par and mem, 
  */
 public abstract class Optimizer 
 {
@@ -96,6 +69,12 @@ public abstract class Optimizer
 	 * @return
 	 */
 	public abstract CostModelType getCostModelType();
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public abstract POptMode getOptMode();
 	
 	
 	///////

@@ -113,7 +113,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		ROW_BLOCK_WISE_N,
 		COLUMN_WISE,
 		COLUMN_BLOCK_WISE,
-		COLUMN_BLOCK_WISE_N;
+		COLUMN_BLOCK_WISE_N,
+		BLOCK_WISE_M_N;
 		
 		public static PDataPartitionFormat parsePDataPartitionFormat(String s) {
 			if (s.equalsIgnoreCase("ROW_WISE"))

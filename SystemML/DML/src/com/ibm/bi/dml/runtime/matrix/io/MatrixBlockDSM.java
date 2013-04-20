@@ -93,27 +93,35 @@ public class MatrixBlockDSM extends MatrixValue{
 	 */
 	public long getExactSizeOnDisk()
 	{
+		long lrlen = (long) rlen;
+		long lclen = (long) clen;
+		long lnonZeros = (long) nonZeros;
+		
 		//ensure exact size estimates for write
-		if( sparse || nonZeros==0 || nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT )
+		if( sparse || lnonZeros==0 || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		{
 			recomputeNonZeros();
+			lnonZeros = (long) nonZeros;
+		}
+		
 		
 		if(sparse)
 		{
 			if(sparseRows==null)
-				return 9+rlen*4;
-			else if(nonZeros>((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
-				return 9+rlen*clen*8;	
+				return lrlen*4 + 9;
+			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
+				return lrlen*lclen*8 + 9;	
 			else
-				return 9 + rlen*4 + 12*nonZeros;	
+				return lrlen*4 + lnonZeros*12 + 9;	
 		}else
 		{
 			if(denseBlock==null)
 				return 9;
 			//if it should be sparse
-			else if(nonZeros<((long)rlen)*((long)clen)*SPARCITY_TURN_POINT && clen>SKINNY_MATRIX_TURN_POINT)
-				return 9 + rlen*4 + 12*nonZeros;
+			else if(lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT)
+				return lrlen*4 + lnonZeros*12 + 9;
 			else
-				return 9+rlen*clen*8;
+				return lrlen*lclen*8 + 9;
 		}
 	}
 	
@@ -466,7 +474,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
 		if(sparse)
 		{
-			if(sp>SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT) {
+			if(sp>=SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT) {
 				//System.out.println("Calling sparseToDense(): nz=" + nonZeros + ", rlen=" + rlen + ", clen=" + clen + ", sparsity = " + sp + ", spturn=" + SPARCITY_TURN_POINT );
 				sparseToDense();
 			}
@@ -1302,7 +1310,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	private MatrixBlockDSM sparseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
-	throws DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
 		if(result==null)
@@ -2113,7 +2121,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			if(sparseRows==null)
 				writeEmptyBlock(out);
 			//if it should be dense, then write to the dense format
-			else if(nonZeros>((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
+			else if(nonZeros>=((long)rlen)*((long)clen)*SPARCITY_TURN_POINT || clen<=SKINNY_MATRIX_TURN_POINT)
 				writeSparseToDense(out);
 			else
 				writeSparseBlock(out);

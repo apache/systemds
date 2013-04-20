@@ -45,8 +45,8 @@ public class LazyWriteBuffer
 	public static void writeMatrix( String fname, MatrixBlock mb ) 
 		throws FileNotFoundException, IOException
 	{
-		int lSize = (int) mb.getExactSizeOnDisk(); 
-		boolean requiresWrite = ( lSize >= _limit );
+		long lSize = mb.getExactSizeOnDisk(); 
+		boolean requiresWrite = ( lSize >= _limit || lSize >= Integer.MAX_VALUE );
 	
 		if( !requiresWrite ) //if it fits in writebuffer
 		{			
@@ -75,7 +75,7 @@ public class LazyWriteBuffer
 				}
 				
 				//allocate mem and lock
-				buff = new byte[lSize];
+				buff = new byte[(int)lSize];
 				bbuff = new ByteBuffer(buff);
 		
 				//put placeholder into buffer

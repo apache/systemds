@@ -653,15 +653,16 @@ public class MRJobConfiguration {
 		for(int i=0; i<matrices.length; i++)
 			matrices[i]=new Path(matrices[i]).toString();
 		
-		Path thisFile=new Path(job.get("map.input.file"));
 		FileSystem fs=FileSystem.get(job);
+		Path thisFile=new Path(job.get("map.input.file")).makeQualified(fs);
+		
 		//Path p=new Path(thisFileName);
 		
-		Path thisDir=thisFile.getParent();
+		Path thisDir=thisFile.getParent().makeQualified(fs);
 		Vector<Byte> representativeMatrixes=new Vector<Byte>();
 		for(int i=0; i<matrices.length; i++)
 		{
-			Path p = fs.getFileStatus(new Path(matrices[i])).getPath();
+			Path p = new Path(matrices[i]).makeQualified(fs);
 			if(thisFile.toUri().compareTo(p.toUri())==0 || thisDir.toUri().compareTo(p.toUri())==0)
 				representativeMatrixes.add(indexes[i]);
 			/*if(thisDirName.endsWith(matrices[i]) || thisFileName.endsWith(matrices[i]))

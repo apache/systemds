@@ -306,6 +306,7 @@
 			 compression="gzip"/>
         <mkdir dir="${release.2012_Nov}/Apps" />
 		<copy file="../ExecRApp/build/ExecRApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		<!-- These app's are not included in BI 2.1 release
         <copy file="../GenerateMetadataApp/build/GenerateMetadataApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../FilterProjectApp/build/FilterProjectApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
         <copy file="../EnhanceMetadataApp/build/EnhanceMetadataApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
@@ -324,6 +325,7 @@
         <copy file="../BivariateDecodeApp/build/BivariateDecodeApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../PivotApp/build/PivotApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
 		<copy file="../UnPivotApp/build/UnPivotApp.zip" todir="${release.2012_Nov}/Apps" overwrite="true"/>
+		-->
 	</target>
 	
 	<target name="auto">

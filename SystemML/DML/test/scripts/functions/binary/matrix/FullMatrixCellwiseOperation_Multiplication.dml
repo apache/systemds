@@ -1,0 +1,7 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.FullMatrixMultiplicationTest.java
+
+A = read($1, rows=$2, cols=$3, format="text");
+B = read($4, rows=$5, cols=$6, format="text");
+C = A * B;
+
+write(C, $7, format="text");

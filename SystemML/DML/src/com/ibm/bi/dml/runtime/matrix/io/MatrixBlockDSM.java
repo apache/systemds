@@ -20,6 +20,7 @@ import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
+import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -1312,6 +1313,8 @@ public class MatrixBlockDSM extends MatrixValue{
 	private MatrixBlockDSM sparseBinaryHelp(BinaryOperator op, MatrixBlockDSM that, MatrixBlockDSM result) 
 		throws DMLRuntimeException 
 	{
+		//+, -, (*)
+		
 		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
 		if(result==null)
 			result=new MatrixBlockDSM(rlen, clen, resultSparse.sparse, resultSparse.estimatedNonZeros);
@@ -1403,84 +1406,99 @@ public class MatrixBlockDSM extends MatrixValue{
 				}
 			}
 		}
-		else
+		else if( !result.sparse && (this.sparse || that.sparse) &&
+				(op.fn instanceof Plus || op.fn instanceof Minus || 
+				(op.fn instanceof Multiply && !that.sparse )))
 		{
-			/*
-			//FIXME: just a test
-			if( !result.sparse && !this.sparse && that.sparse && op.fn instanceof Plus )
+			//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
+			
+			if( result.denseBlock==null )
+				result.denseBlock = new double[result.rlen * result.clen];
+			int m = result.rlen;
+			int n = result.clen;
+			double[] c = result.denseBlock;
+			
+			//1) process left input: assignment
+			int alen;
+			int[] aix;
+			double[] avals;
+			
+			if( this.sparse ) //SPARSE left
 			{
-				if( result.denseBlock==null )
-					result.denseBlock = new double[rlen * clen];
 				Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
 				
-				//sparse
-
-				int alen;
-				int[] aix;
-				double[] avals;
-				for( int i=0; i<that.sparseRows.length; i++ )
+				if( this.sparseRows != null )
 				{
-					SparseRow arow = that.sparseRows[i];
-					if( arow != null && arow.size() > 0 )
-					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();
-						
-						for(int k = 0; k < alen; k++) 
-							result.denseBlock[i*clen+aix[k]] = avals[k];
+					for( int i=0, ix=0; i<m; i++, ix+=n ) {
+						SparseRow arow = this.sparseRows[i];
+						if( arow != null && arow.size() > 0 )
+						{
+							alen = arow.size();
+							aix = arow.getIndexContainer();
+							avals = arow.getValueContainer();
+							for(int k = 0; k < alen; k++) 
+								c[ix+aix[k]] = avals[k];
+						}
 					}
 				}
-				
-				//dense 
-				int nnz=0;
-				for( int i=0; i<result.denseBlock.length; i++ )
-				{
-					result.denseBlock[i] += denseBlock[ i ];
-					nnz += (result.denseBlock[i]!=0)?1:0;		
-				}
-				result.nonZeros=nnz;
-				
 			}
-			else if( !result.sparse && !this.sparse && that.sparse && op.fn instanceof Minus )
+			else //DENSE left
 			{
-				if( result.denseBlock==null )
-					result.denseBlock = new double[rlen * clen];
-				Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
-				
-				//sparse
+				if( this.denseBlock!=null ) 
+					System.arraycopy(this.denseBlock, 0, c, 0, m*n);
+				else
+					Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+			}
+			
+			//2) process right input: op.fn (+,-,*), * only if dense
+			if( that.sparse ) //SPARSE right
+			{				
+				if(that.sparseRows!=null)
+				{
+					for( int i=0, ix=0; i<m; i++, ix+=n ) {
+						SparseRow arow = that.sparseRows[i];
+						if( arow != null && arow.size() > 0 )
+						{
+							alen = arow.size();
+							aix = arow.getIndexContainer();
+							avals = arow.getValueContainer();
+							for(int k = 0; k < alen; k++) 
+								c[ix+aix[k]] = op.fn.execute(c[ix+aix[k]], avals[k]);
+						}
+					}	
+				}
+			}
+			else //DENSE right
+			{
+				if( that.denseBlock!=null )
+					for( int i=0; i<m*n; i++ )
+						c[i] = op.fn.execute(c[i], that.denseBlock[i]);
+				else if(op.fn instanceof Multiply)
+					Arrays.fill(result.denseBlock, 0, result.denseBlock.length, 0); 
+			}
 
-				int alen;
-				int[] aix;
-				double[] avals;
-				for( int i=0; i<that.sparseRows.length; i++ )
-				{
-					SparseRow arow = that.sparseRows[i];
-					if( arow != null && arow.size() > 0 )
-					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();
-						
-						for(int k = 0; k < alen; k++) 
-							result.denseBlock[i*clen+aix[k]] = -1 * avals[k];
-					}
-				}
-				
-				//dense 
-				int nnz=0;
-				for( int i=0; i<result.denseBlock.length; i++ )
-				{
-					result.denseBlock[i] += denseBlock[ i ];
-					nnz += (result.denseBlock[i]!=0)?1:0;		
-				}
-				result.nonZeros=nnz;
-				
-			}
+			//3) recompute nnz
+			result.recomputeNonZeros();
+		}
+		else if( !result.sparse && !this.sparse && !that.sparse && this.denseBlock!=null && that.denseBlock!=null )
+		{
+			if( result.denseBlock==null )
+				result.denseBlock = new double[result.rlen * result.clen];
+			int m = result.rlen;
+			int n = result.clen;
+			double[] c = result.denseBlock;
 			
-			else*/
+			
+			int nnz = 0;
+			for( int i=0; i<m*n; i++ )
 			{
-			
+				c[i] = op.fn.execute(this.denseBlock[i], that.denseBlock[i]);	
+				nnz += (c[i]!=0)? 1 : 0;
+			}
+			result.nonZeros = nnz;
+		}
+		else //generic case
+		{
 			double thisvalue, thatvalue, resultvalue;
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -1492,10 +1510,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					resultvalue=op.fn.execute(thisvalue, thatvalue);
 					result.appendValue(r, c, resultvalue);
 				}
-			
-			}
-			
 		}
+		
 	//	System.out.println("-- input 1: \n"+this.toString());
 	//	System.out.println("-- input 2: \n"+that.toString());
 	//	System.out.println("~~ output: \n"+result);
@@ -1512,13 +1528,14 @@ public class MatrixBlockDSM extends MatrixValue{
 					"cell operations: "+this.rlen+"*"+this.clen+" vs "+ that.rlen+"*"
 					+that.clen);
 		
+		MatrixBlockDSM tmp = null;
 		if(op.sparseSafe)
-			return sparseBinaryHelp(op, that, (MatrixBlockDSM)result);
+			tmp = sparseBinaryHelp(op, that, (MatrixBlockDSM)result);
 		else
-			return denseBinaryHelp(op, that, (MatrixBlockDSM)result);
-		
+			tmp = denseBinaryHelp(op, that, (MatrixBlockDSM)result);
+				
+		return tmp;
 	}
-	
 	
 	
 	

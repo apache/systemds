@@ -204,7 +204,14 @@ public class RandOp extends Hops
 	@Override
 	public void refreshSizeInformation()
 	{
-		//do nothing always set from outside
+		Hops input1 = getInput().get(_paramIndexMap.get("rows")); //rows 
+		Hops input2 = getInput().get(_paramIndexMap.get("cols")); //cols
+
+		if( input1 instanceof UnaryOp && ((UnaryOp)input1).get_op() == Hops.OpOp1.NROW  )
+			set_dim1(input1.getInput().get(0).get_dim1());
+		
+		if( input2 instanceof UnaryOp && ((UnaryOp)input2).get_op() == Hops.OpOp1.NCOL  )
+			set_dim2(input2.getInput().get(0).get_dim2());
 	}
 	
 

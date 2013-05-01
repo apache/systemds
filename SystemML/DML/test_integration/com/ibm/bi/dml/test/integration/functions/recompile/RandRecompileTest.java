@@ -11,47 +11,80 @@ import com.ibm.bi.dml.utils.Statistics;
 
 public class RandRecompileTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "rand_recompile";
+	private final static String TEST_NAME1 = "rand_recompile"; //scalar values
+	private final static String TEST_NAME2 = "rand_recompile2"; //nrow
+	private final static String TEST_NAME3 = "rand_recompile3"; //ncol
 	private final static String TEST_DIR = "functions/recompile/";
 	
-	private final static int rows = 200;   
+	private final static int rows = 200;
+	private final static int cols = 200;
 	
 	@Override
 	public void setUp() 
 	{
 		addTestConfiguration(
 				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   );
+				new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{} ));
+		addTestConfiguration(
+				TEST_NAME2, 
+				new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{} ));
+		addTestConfiguration(
+				TEST_NAME3, 
+				new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{} ));
 	}
 
 	@Test
-	public void testRandWithoutRecompile() 
+	public void testRandScalarWithoutRecompile() 
 	{
-		runRandTest(false);
+		runRandTest(TEST_NAME1, false);
 	}
 	
 	@Test
-	public void testRandWithRecompile() 
+	public void testRandScalarWithRecompile() 
 	{
-		runRandTest(true);
+		runRandTest(TEST_NAME1, true);
+	}
+
+	@Test
+	public void testRandNRowWithoutRecompile() 
+	{
+		runRandTest(TEST_NAME2, false);
+	}
+	
+	@Test
+	public void testRandNRowWithRecompile() 
+	{
+		runRandTest(TEST_NAME2, true);
+	}
+	
+	@Test
+	public void testRandNColWithoutRecompile() 
+	{
+		runRandTest(TEST_NAME3, false);
+	}
+	
+	@Test
+	public void testRandNColWithRecompile() 
+	{
+		runRandTest(TEST_NAME3, true);
 	}
 
 
 	
-	private void runRandTest( boolean recompile )
+	private void runRandTest( String testName, boolean recompile )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			TestConfiguration config = getTestConfiguration(testName);
 			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(rows) };
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[]{"-args", Integer.toString(rows), Integer.toString(cols) };
 			
 			loadTestConfiguration(config);
 	

@@ -1,0 +1,16 @@
+testFun = function (Matrix[double] X)
+    return (Double s)
+{  
+   if(0==0){} #prevent inlining
+   
+   n = ncol(X);
+   D = Rand(rows=1,cols=n);
+   s = sum(D);
+}
+
+m = $1;
+n = $2;
+
+X = Rand(rows=10,cols=10);
+s = testFun(X);
+print(s);   

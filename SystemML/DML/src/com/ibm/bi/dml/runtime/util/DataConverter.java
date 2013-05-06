@@ -76,7 +76,6 @@ public class DataConverter
 	{
 		JobConf job = new JobConf();
 		Path path = new Path(dir);
-		//FileOutputFormat.setOutputPath(job, path); FIXME
 
 		//System.out.println("write matrix (sparse="+mat.isInSparseFormat()+") to HDFS: "+dir);
 		
@@ -162,6 +161,19 @@ public class DataConverter
 	}
 
 	/**
+	 * Core method for reading matrices in format textcell, matrixmarket, binarycell, or binaryblock 
+	 * from HDFS into main memory. For expected dense matrices we directly copy value- or block-at-a-time 
+	 * into the target matrix. In contrast, for sparse matrices, we append (column-value)-pairs and do a 
+	 * final sort if required in order to prevent large reorg overheads and increased memory consumption 
+	 * in case of unordered inputs.  
+	 * 
+	 * DENSE MxN input:
+	 *  * best/average/worst: O(M*N)
+	 * SPARSE MxN input
+	 *  * best (ordered, or binary block w/ clen<=bclen): O(M*N)
+	 *  * average (unordered): O(M*N*log(N))
+	 *  * worst (descending order per row): O(M * N^2)
+	 * 
 	 * NOTE: providing an exact estimate of 'expected sparsity' can prevent a full copy of the result
 	 * matrix block (required for changing sparse->dense, or vice versa)
 	 * 
@@ -209,7 +221,6 @@ public class DataConverter
 		if( !fs.exists(path) )	
 			throw new IOException("File "+dir+" does not exist on HDFS/LFS.");
 		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
-		//FileInputFormat.addInputPath(job, path); //FIXME 
 		
 		try 
 		{
@@ -241,6 +252,7 @@ public class DataConverter
 		}
 
 		//System.out.println("read matrix (after exec sparse="+ret.isInSparseFormat()+") from HDFS: "+dir);
+		//System.out.println("read matrix ("+rlen+","+clen+","+ret.getNonZeros()+") in "+time.stop());
 		
 		return ret;
 	}
@@ -713,7 +725,8 @@ public class DataConverter
 							row = Integer.parseInt( st.nextToken() )-1;
 							col = Integer.parseInt( st.nextToken() )-1;
 							double lvalue = Double.parseDouble( st.nextToken() );
-							dest.quickSetValue( row, col, lvalue );
+							//dest.quickSetValue( row, col, lvalue );
+							dest.appendValue(row, col, lvalue);
 						}
 					} 
 					else //DENSE<-value
@@ -735,6 +748,9 @@ public class DataConverter
 						reader.close();
 				}
 			}
+			
+			if( sparse )
+				dest.sortSparseRows();
 		}
 		catch(Exception ex)
 		{
@@ -786,8 +802,11 @@ public class DataConverter
 					row = Integer.parseInt( st.nextToken() )-1;
 					col = Integer.parseInt( st.nextToken() )-1;
 					double lvalue = Double.parseDouble( st.nextToken() );
-					dest.quickSetValue( row, col, lvalue );
+					//dest.quickSetValue( row, col, lvalue );
+					dest.appendValue(row, col, lvalue);
 				}
+				
+				dest.sortSparseRows();
 			} 
 			else //DENSE<-value
 			{
@@ -862,7 +881,8 @@ public class DataConverter
 							row = (int)key.getRowIndex()-1;
 							col = (int)key.getColumnIndex()-1;
 							double lvalue = value.getValue();
-							dest.quickSetValue( row, col, lvalue );
+							//dest.quickSetValue( row, col, lvalue );
+							dest.appendValue(row, col, lvalue);
 						}
 					}
 					else
@@ -882,6 +902,9 @@ public class DataConverter
 						reader.close();
 				}
 			}
+			
+			if( sparse )
+				dest.sortSparseRows();
 		}
 		catch(Exception ex)
 		{
@@ -923,9 +946,10 @@ public class DataConverter
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
+		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
-		
+			
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
 		{
 			//directly read from sequence files (individual partfiles)
@@ -934,7 +958,7 @@ public class DataConverter
 			try
 			{
 				while( reader.next(key, value) )
-				{
+				{					
 					int row_offset = (int)(key.getRowIndex()-1)*brlen;
 					int col_offset = (int)(key.getColumnIndex()-1)*bclen;
 					
@@ -947,11 +971,19 @@ public class DataConverter
 						throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
 								              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 					}
-					
+			
 					//copy block to result
-					dest.copy( row_offset, row_offset+rows-1, 
-							   col_offset, col_offset+cols-1,
-							   value, false );
+					if( sparse )
+					{
+						dest.appendToSparse(value, row_offset, col_offset);
+						//note: append requires final sort
+					} 
+					else
+					{
+						dest.copy( row_offset, row_offset+rows-1, 
+								   col_offset, col_offset+cols-1,
+								   value, false );
+					}
 				}
 			}
 			finally
@@ -959,6 +991,11 @@ public class DataConverter
 				if( reader != null )
 					reader.close();
 			}
+		}
+		
+		if( sparse && clen>bclen ){
+			//no need to sort if 1 column block since always sorted
+			dest.sortSparseRows();
 		}
 	}
 	

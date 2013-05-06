@@ -727,6 +727,8 @@ public class MatrixBlockDSM extends MatrixValue{
 				else //general case (w/o awareness NNZ)
 				{		
 					SparseRow brow = sparseRows[rl+i];
+
+					//brow.set(cl, arow);	
 					for( int j=0; j<alen; j++ )
 						brow.set(cl+aix[j], avals[j]);
 				}				
@@ -1954,6 +1956,71 @@ public class MatrixBlockDSM extends MatrixValue{
 			for(int i=0; i<values.size(); i++)
 				quickSetValue(r, cols[i], vals[i]);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 * @param rowoffset
+	 * @param coloffset
+	 */
+	public void appendToSparse( MatrixBlockDSM that, int rowoffset, int coloffset ) //FIXME
+	{
+		if(   that.sparse && that.sparseRows==null 
+		   || !that.sparse && that.denseBlock==null )
+		{
+			return; //nothing to append
+		}
+		
+		//init sparse rows if necessary
+		if(sparseRows==null)
+			sparseRows=new SparseRow[rlen];
+		
+		if( that.sparse ) //SPARSE <- SPARSE
+		{
+			for( int i=0; i<that.rlen; i++ )
+			{
+				SparseRow brow = that.sparseRows[i];
+				if( brow!=null && brow.size()>0 )
+				{
+					int aix = rowoffset+i;
+					int len = brow.size();
+					int[] ix = brow.getIndexContainer();
+					double[] val = brow.getValueContainer();
+					
+					if( sparseRows[aix]==null )
+						sparseRows[aix] = new SparseRow(estimatedNNzsPerRow,clen);
+					
+					for( int j=0; j<len; j++ )
+						sparseRows[aix].append(coloffset+ix[j], val[j]);		
+				}
+			}
+		}
+		else //SPARSE <- DENSE
+		{
+			for( int i=0; i<that.rlen; i++ )
+			{
+				int aix = rowoffset+i;
+				if( sparseRows[aix]==null )
+					sparseRows[aix] = new SparseRow(estimatedNNzsPerRow,clen);
+				
+				for( int j=0, bix=i*that.clen; j<that.clen; j++ )
+					sparseRows[aix].append(coloffset+j, that.denseBlock[bix+j]);	
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public void sortSparseRows()
+	{
+		if( !sparse || sparseRows==null )
+			return;
+		
+		for( SparseRow arow : sparseRows )
+			if( arow!=null && arow.size()>0 )
+				arow.sort();
 	}
 	
 	@Override

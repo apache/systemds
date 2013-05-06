@@ -3,6 +3,8 @@ package com.ibm.bi.dml.runtime.matrix.io;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.util.SortUtils;
+
 public class SparseRow {
 
 	public static final int initialCapacity=16;
@@ -198,6 +200,58 @@ public class SparseRow {
 			return true;
 		}
 	}
+	
+	
+	/*
+	 * Copies an entire sparserow into an existing sparserow in order to
+	 * reduce the shifting effort.
+	 * 
+	 * Use case: copy sparse-sparse but currently not used since specific case
+	 * for read.
+	 * 
+	 * @param col_offset
+	 * @param arow
+	 * @return
+	 */
+	/*
+    public boolean set( int col_offset, SparseRow arow )
+	{
+		int index = searchIndexesFirstGT(col_offset);
+		
+		if( size+arow.size>values.length )
+		{
+			//resize and insert
+			int newCap=Math.max(newCapacity(),values.length+arow.size);
+			double[] oldvalues=values;
+			int[] oldindexes=indexes;
+			values=new double[newCap];
+			indexes=new int[newCap];
+			System.arraycopy(oldvalues, 0, values, 0, index);
+			System.arraycopy(oldindexes, 0, indexes, 0, index);
+			
+			System.arraycopy(arow.values, 0, values, index, arow.size);
+			for( int i=0; i<arow.size; i++ )
+				indexes[index+i] = col_offset + arow.indexes[i];
+
+			System.arraycopy(oldvalues, index, values, index+arow.size, size-index);
+			System.arraycopy(oldindexes, index, indexes, index+arow.size, size-index);
+			size+=arow.size;
+		}
+		else
+		{
+			//shift and insert
+			System.arraycopy(values, index, values, index+arow.size, size-index);
+			System.arraycopy(indexes, index, indexes, index+arow.size, size-index);			
+			System.arraycopy(arow.values, 0, values, index, arow.size);
+			for( int i=0; i<arow.size; i++ )
+				indexes[index+i] = col_offset + arow.indexes[i];
+			size+=arow.size;
+		}
+			
+		return true;
+	}
+	*/
+	
 	private void shiftAndInsert(int index, int col, double v) {
 		for(int i=size; i>index; i--)
 		{
@@ -332,6 +386,21 @@ public class SparseRow {
 			values[i]=values[start+i];
 		}
 		size=(end-start);
+	}
+	
+	/**
+	 * In-place sort of column-index value pairs in order to allow binary search
+	 * after constant-time append was used for reading unordered sparse rows. We
+	 * first check if already sorted and subsequently sort if necessary in order
+	 * to get O(n) bestcase.
+	 * 
+	 * Note: In-place sort necessary in order to guarantee the memory estimate
+	 * for operations that implicitly read that data set.
+	 */
+	public void sort()
+	{
+		if( size<=100 || !SortUtils.isSorted(0, size, indexes) )
+			SortUtils.sort(0, size, indexes, values);
 	}
 	
 	public static void main(String[] args) throws Exception

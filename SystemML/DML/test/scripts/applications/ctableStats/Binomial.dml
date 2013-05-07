@@ -1,0 +1,150 @@
+# COMMON FUNCTIONS TO SOLVE BINOMIAL DISTRIBUTION PROBLEMS
+# WORK OVER VECTORS (IN PARALLEL) TO SAVE COMPUTATION TIME
+
+# Computes binomial parameter  p  (the biased-coin probability)
+# such that  Prob [Binom(n, p) <= m] = alpha
+# Use it for "exact" confidence intervals over p given m, n:
+# For example, for 95%-confidence intervals, use  [p1, p2]
+# such that Prob [Binom(n, p1) <= m-1] = 0.975
+# and       Prob [Binom(n, p2) <= m  ] = 0.025
+binomQuantile =
+    function (matrix[double] n_vector, matrix[double] m_vector, matrix[double] alpha_vector)
+    return (matrix[double] p_vector)
+{
+    num_rows = nrow (n_vector);
+    p_min = Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
+    alpha_p_min = Rand (rows = num_rows, cols = 1, min = 1.0, max = 1.0);
+    p_max = Rand (rows = num_rows, cols = 1, min = 1.0, max = 1.0);
+    alpha_p_max = Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
+    
+    for (i in 1:27) {  #  Uses "division by half" method to solve equations
+        p_new = (p_min + p_max) / 2.0;
+        [alpha_p_new] = binomProb (n_vector, m_vector, p_new);
+        move_new_to_max = ppred (alpha_p_new, alpha_vector, "<");
+        p_max = (1 - move_new_to_max) * p_max + move_new_to_max * p_new;
+        p_min = (1 - move_new_to_max) * p_new + move_new_to_max * p_min;
+        alpha_p_max = (1 - move_new_to_max) * alpha_p_max + move_new_to_max * alpha_p_new;
+        alpha_p_min = (1 - move_new_to_max) * alpha_p_new + move_new_to_max * alpha_p_min;
+    }
+    p_vector = (p_min + p_max) / 2.0;
+}
+
+
+# Computes the cumulative distribution fuction of the binomial distribution,
+# that is,  Prob [Binom(n, p) <= m],  using the incomplete Beta function
+# approximated via a continued fraction, see "Handbook of Mathematical Functions"
+# edited by M. Abramowitz and I.A. Stegun, U.S. Nat-l Bureau of Standards,
+# 10th print (Dec 1972), Sec. 26.5.8-26.5.9, p. 944
+binomProb =
+    function (matrix[double] n_vector, matrix[double] m_vector, matrix[double] p_vector)
+    return (matrix[double] result)
+{
+    num_rows = nrow (n_vector);
+    num_iterations = 100;
+
+    mean_vector = p_vector * n_vector;
+    is_opposite = ppred (mean_vector, m_vector, "<");
+    l_vector = is_opposite * (n_vector - (m_vector + 1)) + (1 - is_opposite) * m_vector;
+    q_vector = is_opposite * (1.0 - p_vector) + (1 - is_opposite) * p_vector;
+    n_minus_l_vector = n_vector - l_vector;
+    
+    is_result_zero1 = ppred (l_vector, - 0.0000000001, "<");
+    is_result_one1  = ppred (n_minus_l_vector, 0.0000000001, "<");
+    is_result_zero2 = ppred (q_vector, 0.9999999999, ">");
+    is_result_one2  = ppred (q_vector, 0.0000000001, "<");
+    
+    is_result_zero  = is_result_zero1 + (1 - is_result_zero1) * is_result_zero2 * (1 - is_result_one1);
+    is_result_one   = (is_result_one1 + (1 - is_result_one1)  * is_result_one2) * (1 - is_result_zero);
+    
+    result = Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
+    result = result + is_result_one;
+    is_already_done = is_result_zero + is_result_one;
+    still_iterating = 1 - is_already_done;
+    
+    n_vector = (1 - is_already_done) * n_vector + is_already_done * 2;
+    l_vector = (1 - is_already_done) * l_vector + is_already_done;
+    n_minus_l_vector = (1 - is_already_done) * n_minus_l_vector + is_already_done;
+    q_vector = (1 - is_already_done) * q_vector + is_already_done * 0.8;
+
+    numer_old = q_vector;
+    denom_old = Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
+    numer =  Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
+    denom = 1.0 - q_vector;
+    
+    is_i_even = 1;
+
+    for (i in 1:num_iterations)  #  The continued fraction iterations
+    {
+        is_i_even = 1 - is_i_even;
+        e_term = Rand (rows = num_rows, cols = 1, min = 1.0, max = 1.0);
+        if (i > 1) {
+            if (is_i_even == 1) {
+                e_term = - (2 * n_minus_l_vector + (i - 2)) * (2 * l_vector - (i - 2));
+            }
+            if (is_i_even == 0) {
+                e_term = (i - 1) * (2 * n_vector + (i - 1));
+            }
+            e_term = e_term / (n_minus_l_vector + (i - 2)) / (n_minus_l_vector + (i - 1));
+            e_term = e_term * 0.25;
+        }
+        numer_new = still_iterating * (q_vector * numer + (1.0 - q_vector) * e_term * numer_old) + (1.0 - still_iterating);
+        denom_new = still_iterating * (q_vector * denom + (1.0 - q_vector) * e_term * denom_old) + (1.0 - still_iterating);
+        numer_old = still_iterating * (q_vector * numer) + (1.0 - still_iterating);
+        denom_old = still_iterating * (q_vector * denom) + (1.0 - still_iterating);
+        numer = numer_new;
+        denom = denom_new;
+        
+        abs_denom = abs (denom);
+        denom_too_big = ppred (abs_denom, 10000000000.0, ">");
+        denom_too_small = ppred (abs_denom, 0.0000000001, "<");
+        denom_normal = 1.0 - denom_too_big - denom_too_small;
+        rescale_vector = denom_too_big * 0.0000000001 + denom_too_small * 10000000000.0 + denom_normal;
+        numer_old = numer_old * rescale_vector;
+        denom_old = denom_old * rescale_vector;
+        numer = numer * rescale_vector;
+        denom = denom * rescale_vector;
+        
+        convergence_check_left  = abs (numer * denom_old - numer_old * denom);
+        convergence_check_right = abs (numer * denom_old) * 0.000000001;
+        has_converged = ppred (convergence_check_left, convergence_check_right, "<=");
+        has_converged = still_iterating * has_converged;
+        still_iterating = still_iterating - has_converged;
+        result = result + has_converged * numer / denom;
+    }
+    
+    result = result + still_iterating * numer / denom;
+    
+    n_vector_not_already_done = (1 - is_already_done) * n_vector;
+    l_vector_not_already_done = (1 - is_already_done) * l_vector;
+    n_minus_l_vector_not_already_done = (1 - is_already_done) * n_minus_l_vector;
+    q_vector_not_already_done = (1 - is_already_done) * q_vector + is_already_done;
+    one_minus_q_vector_not_already_done = (1 - is_already_done) * (1.0 - q_vector) + is_already_done;
+    
+    [n_logfact] = logFactorial (n_vector_not_already_done);
+    [l_logfact] = logFactorial (l_vector_not_already_done);
+    [n_minus_l_logfact] = logFactorial (n_minus_l_vector_not_already_done);
+    
+    log_update_factor = n_logfact - l_logfact - n_minus_l_logfact + l_vector * log (q_vector_not_already_done) 
+        + n_minus_l_vector * log (one_minus_q_vector_not_already_done);
+    updated_result = result * (is_already_done + (1 - is_already_done) * exp (log_update_factor));
+    result = is_opposite + (1 - 2 * is_opposite) * updated_result;
+}
+
+
+# Computes the logarithm of the factorial of x >= 0 via the Gamma function 
+# From paper: C. Lanczos "A Precision Approximation of the Gamma Function",
+# Journal of the SIAM: Numerical Analysis, Series B, Vol. 1, 1964, pp. 86-96
+logFactorial = function (matrix[double] x) return (matrix[double] logfact)
+{
+    y = 1.000000000178;
+    y = y + 76.180091729406 / (x + 1);
+    y = y - 86.505320327112 / (x + 2);
+    y = y + 24.014098222230 / (x + 3);
+    y = y -  1.231739516140 / (x + 4);
+    y = y +  0.001208580030 / (x + 5);
+    y = y -  0.000005363820 / (x + 6);
+    logfact = log(y) + (x + 0.5) * log(x + 5.5) - (x + 5.5) + 0.91893853320467; # log(sqrt(2 * PI));
+}
+
+
+

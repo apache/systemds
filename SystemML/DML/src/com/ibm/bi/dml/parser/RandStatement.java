@@ -4,7 +4,6 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.parser.Expression.DataOp;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
@@ -60,51 +59,30 @@ public class RandStatement extends Statement
 	public void setRandDefault(){
 		if (_paramsExpr.getVarParam(RAND_ROWS)== null){
 			IntIdentifier id = new IntIdentifier(1L);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.INT);
 			_paramsExpr.addVarParam(RAND_ROWS, 	id);
 		}
 		if (_paramsExpr.getVarParam(RAND_COLS)== null){
 			IntIdentifier id = new IntIdentifier(1L);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.INT);
             _paramsExpr.addVarParam(RAND_COLS, 	id);
 		}
 		if (_paramsExpr.getVarParam(RAND_MIN)== null){
 			DoubleIdentifier id = new DoubleIdentifier(0.0);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.DOUBLE);
 			_paramsExpr.addVarParam(RAND_MIN, id);
 		}
 		if (_paramsExpr.getVarParam(RAND_MAX)== null){
 			DoubleIdentifier id = new DoubleIdentifier(1.0);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.DOUBLE);
 			_paramsExpr.addVarParam(RAND_MAX, id);
 		}
 		if (_paramsExpr.getVarParam(RAND_SPARSITY)== null){
 			DoubleIdentifier id = new DoubleIdentifier(1.0);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.DOUBLE);
 			_paramsExpr.addVarParam(RAND_SPARSITY,	id);
 		}
 		if (_paramsExpr.getVarParam(RAND_SEED)== null){
 			IntIdentifier id = new IntIdentifier(RandOp.UNSPECIFIED_SEED);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.INT);
 			_paramsExpr.addVarParam(RAND_SEED, id);
 		}
 		if (_paramsExpr.getVarParam(RAND_PDF)== null){
 			StringIdentifier id = new StringIdentifier(RAND_PDF_UNIFORM);
-		    id.setDimensions(0,0);
-            id.computeDataType();
-            id.setValueType(ValueType.STRING);
 			_paramsExpr.addVarParam(RAND_PDF, id);
 		}
 		//setIdentifierProperties();
@@ -151,15 +129,9 @@ public class RandStatement extends Statement
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
 			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
-		    ((IntIdentifier)paramValue).setDimensions(0,0);
-            ((IntIdentifier)paramValue).computeDataType();
-            ((IntIdentifier)paramValue).setValueType(ValueType.INT);
 		}
 		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
 			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
-		    ((IntIdentifier)paramValue).setDimensions(0,0);
-            ((IntIdentifier)paramValue).computeDataType();
-            ((IntIdentifier)paramValue).setValueType(ValueType.INT);
 		}
 			
 		// add the parameter to expression list

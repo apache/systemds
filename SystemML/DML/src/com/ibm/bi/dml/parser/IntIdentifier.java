@@ -1,8 +1,5 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.HashMap;
-
-import com.ibm.bi.dml.parser.Expression.Kind;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
@@ -18,12 +15,18 @@ public class IntIdentifier extends ConstIdentifier {
 		super();
 		 _val = val;
 		_kind = Kind.Data;
+		this.setDimensions(0,0);
+        this.computeDataType();
+        this.setValueType(ValueType.INT);
 	}
 	
 	public IntIdentifier(IntIdentifier i){
 		super();
 		 _val = i.getValue();
 		_kind = Kind.Data;
+		this.setDimensions(0,0);
+        this.computeDataType();
+        this.setValueType(ValueType.INT);
 	}
 	
 	public long getValue(){

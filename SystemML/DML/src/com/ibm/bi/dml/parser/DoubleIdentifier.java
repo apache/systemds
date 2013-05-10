@@ -12,12 +12,18 @@ public class DoubleIdentifier extends ConstIdentifier {
 		super();
 		 _val = val;
 		_kind = Kind.Data;
+		this.setDimensions(0,0);
+        this.computeDataType();
+        this.setValueType(ValueType.DOUBLE);
 	}
 	
 	public DoubleIdentifier(DoubleIdentifier d){
 		super();
 		 _val = d.getValue();
 		_kind = Kind.Data;
+		this.setDimensions(0,0);
+        this.computeDataType();
+        this.setValueType(ValueType.DOUBLE);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

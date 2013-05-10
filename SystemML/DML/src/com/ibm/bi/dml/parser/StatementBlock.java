@@ -572,6 +572,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 						} else {
 							intid = new IntIdentifier((int)currVal.getDim2());
 						}
+						
 						// handle case when nrow / ncol called on variable with size unknown (dims == -1) 
 						//	--> const prop NOT possible 
 						if (intid.getValue() != -1){

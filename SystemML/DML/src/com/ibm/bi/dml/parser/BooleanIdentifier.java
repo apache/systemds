@@ -12,6 +12,9 @@ public class BooleanIdentifier extends ConstIdentifier {
 		super();
 		 _val = val;
 		_kind = Kind.Data;
+		this.setDimensions(0,0);
+        this.computeDataType();
+        this.setValueType(ValueType.BOOLEAN);
 	}
 	
 	public Expression rewriteExpression(String prefix) throws LanguageException{

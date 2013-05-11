@@ -7,6 +7,7 @@ import java.util.HashSet;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -391,6 +392,9 @@ public class OptTreeConverter
 			
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
+			fsb.getFromHops().resetVisitStatus();
+			fsb.getToHops().resetVisitStatus();
+			fsb.getIncrementHops().resetVisitStatus();
 			node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
 			node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
 			node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
@@ -428,6 +432,9 @@ public class OptTreeConverter
 			
 			if( !topLevel )
 			{
+				fsb.getFromHops().resetVisitStatus();
+				fsb.getToHops().resetVisitStatus();
+				fsb.getIncrementHops().resetVisitStatus();
 				node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
 				node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
 				node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
@@ -520,8 +527,10 @@ public class OptTreeConverter
 	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<String> memo ) 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
-		for( Hops hop : hops )
+		for( Hops hop : hops ){
+			hop.resetVisitStatus();
 			ret.addAll(rCreateAbstractOptNodes(hop,vars, memo));
+		}
 		return ret;
 	}
 	
@@ -535,6 +544,9 @@ public class OptTreeConverter
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hops> in = hop.getInput();
+	
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return ret;
 		
 		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
 		{
@@ -552,6 +564,8 @@ public class OptTreeConverter
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
 					ret.addAll(rCreateAbstractOptNodes(hin,vars, memo));
 
+		hop.set_visited(VISIT_STATUS.DONE);
+		
 		return ret;
 	}
 

@@ -131,8 +131,13 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
-		//ANALYZE infrastructure properties
 		OptNode pn = plan.getRoot();
+		
+		//early abort for empty parfor body 
+		if( pn.isLeaf() )
+			return true;
+		
+		//ANALYZE infrastructure properties
 		_N     = Integer.parseInt(pn.getParam(ParamType.NUM_ITERATIONS)); 
 		_Nmax  = pn.getMaxProblemSize(); 
 		_lk    = InfrastructureAnalyzer.getLocalParallelism();

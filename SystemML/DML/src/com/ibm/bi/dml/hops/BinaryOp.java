@@ -1047,7 +1047,7 @@ public class BinaryOp extends Hops {
 				// always get a worst-case estimate for append if no dynamic recompilation
 				Hops input2 = getInput().get(1);
 				long ncols = input1.get_dim2() + input2.get_dim2();
-				double spa = (input1.getNnz()>0&&input2.getNnz()>0)? (input1.getNnz()+input2.getNnz())/input1.get_dim1()/ncols : 1.0;
+				double spa = (input1.getNnz()>0&&input2.getNnz()>0)? ((double)(input1.getNnz()+input2.getNnz()))/input1.get_dim1()/ncols : 1.0;
 				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input1.get_dim1(), ncols, spa);
 			}
 			else

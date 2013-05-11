@@ -7,7 +7,7 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class OffsetColumnIndex extends IndexFunction{
-	private static OffsetColumnIndex singleObj = null;
+	//private static OffsetColumnIndex singleObj = null;
 	private int offset, numRowsInOutput, numColumnsInOutput;
 	
 	private OffsetColumnIndex(int offset) {
@@ -15,9 +15,10 @@ public class OffsetColumnIndex extends IndexFunction{
 	}
 	
 	public static OffsetColumnIndex getOffsetColumnIndexFnObject(int offset) {
-		if ( singleObj == null )
-			singleObj = new OffsetColumnIndex(offset);
-		return singleObj;
+		return new OffsetColumnIndex(offset);
+		//if ( singleObj == null )
+		//	singleObj = new OffsetColumnIndex(offset);
+		//return singleObj;
 	}
 	
 	public void setOutputSize(int rows, int columns){

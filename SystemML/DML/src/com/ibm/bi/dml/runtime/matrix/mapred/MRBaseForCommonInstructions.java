@@ -136,13 +136,18 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		return imv.getValue();
 	}
 	
-	public static MatrixValue readBlockFromDistributedCache(byte input, long rowBlockIndex, long colBlockIndex) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
-		int distCache_index = 0;
-		while(distCache_index < distCacheIndices.length)
-			if(distCacheIndices[distCache_index] == input)
+	public static MatrixValue readBlockFromDistributedCache(byte input, long rowBlockIndex, long colBlockIndex) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//find cache index for input
+		int distCache_index = -1;
+		for( int i=0; i<distCacheIndices.length; i++ )
+			if(distCacheIndices[i] == input){
+				distCache_index = i;
 				break;
-		if(distCache_index == distCacheIndices.length)
+			}
+		//return null, if no cache index found
+		if(distCache_index == -1)
 			return null;
 
 		MatrixValue mv = getDataFromDistributedCache(input, distCache_index, rowBlockIndex, colBlockIndex);

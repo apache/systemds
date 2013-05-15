@@ -1,0 +1,9 @@
+order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
+			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+ 
+A = read( $1, rows=$2, cols=$3);
+desc = ($4<0);
+B = order(A, $4, desc);
+
+write(B, $5);
+

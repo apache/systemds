@@ -338,13 +338,11 @@ public abstract class Lops {
 	 * 
 	 * @param dag
 	 */
-
-	public final void addToDag(Dag<Lops> dag) {
-		dag.addNode(this);
-		for (int i = 0; i < this.getInputs().size(); i++) {
-			this.getInputs().get(i).addToDag(dag);
-		}
-
+	public final void addToDag(Dag<Lops> dag) 
+	{
+		if( dag.addNode(this) )
+			for( Lops l : getInputs() )
+				l.addToDag(dag);
 	}
 
 	/**

@@ -1,0 +1,113 @@
+# Arguments
+# 1st arg: X (one column time series)
+# 2nd arg: p (non-seasonal AR order)
+# 3rd arg: d (non-seasonal differencing order)
+# 4th arg: q (non-seasonal MA order)
+# 5th arg: s (period in terms of number of time-steps)
+# 6th arg: P (seasonal AR order)
+# 7th arg: D (seasonal differencing order)
+# 8th arg: Q (seasonal MA order)
+# 9th arg: file name to store learnt parameters
+
+#input col of time series data
+Y = read($1) 
+#will be lhs of our linear regression
+#so calling it Y
+
+#non-seasonal order
+p = $2
+d = $3
+q = $4
+
+#seasonal order
+s = $5
+P = $6
+D = $7
+Q = $8
+
+num_rows = nrow(Y)
+num_cols = 1 + p + d + q + P + D + Q
+X = Rand(rows=num_rows, cols=num_cols, min=0, max=0)
+
+col_offset = 0
+
+X[,1] = Rand(rows=num_rows, cols=1, min=1, max=1)
+#tracks how many columns have been filled
+#col_offset is set to 1 because we've already
+#"filled" in the constant term
+col_offset = col_offset + 1
+
+if(p > 0){
+  	parfor(i in 1:p){
+		X[(1+i):num_rows,i+col_offset] = Y[1:(num_rows-i),1]
+	}
+	col_offset = col_offset + p
+}
+
+if(d > 0){
+	parfor(i in 1:d){
+		X[(2+i):num_rows,i+col_offset] = Y[2:(num_rows-i),1] - Y[1:(num_rows-i-1),1]
+	}	
+	col_offset = col_offset + d
+}
+
+#in the beginning
+#all MA cols are set to 0
+col_offset = col_offset + q
+
+if(P > 0){
+	parfor(i in 1:P){
+		X[(1+i*s):num_rows,i+col_offset] = Y[1:(num_rows-i*s),1]
+	}
+	col_offset = col_offset + P
+}
+
+if(D > 0){
+	parfor(i in 1:D){
+		X[((1+i)*s+1):num_rows,i+col_offset] = Y[(s+1):(num_rows-i*s),1] - Y[1:(num_rows-(1+i)*s),1]
+	}
+	col_offset = col_offset + D
+}
+
+col_offset = col_offset + Q
+
+w = Rand(rows=num_cols, cols=1, min=0, max=0)
+
+#make these top level params?
+max_iter = 100
+tol = 0.001
+
+change = 1
+iter = 0
+while(iter < max_iter & change >= tol){
+	w_old = w
+
+	A = t(X)%*%X
+	b = t(X)%*%Y
+	w = solve(A,b)
+	
+	#update error cols
+	Y_hat = X%*%w
+	errs = Y - Y_hat
+	
+	#non-seasonal
+	col_offset = 1 + p + d
+	if(q > 0){
+		parfor(i in 1:q){
+			X[(1+i):num_rows,i+col_offset] = errs[1:(num_rows-i),1]
+		}
+	}
+	
+	col_offset = col_offset + q + P + D
+	#seasonal
+	if(Q > 0){
+		parfor(i in 1:Q){
+			X[(1+i*s):num_rows,i+col_offset] = errs[1:(num_rows-i*s),1]
+		}
+	}	
+		
+	change = sum((w-w_old)*(w-w_old))
+	iter = iter+1
+}
+
+write(w, $9, format="text")

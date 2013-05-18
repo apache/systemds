@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -224,6 +225,10 @@ public class DataConverter
 		
 		try 
 		{
+			//check for empty file
+			if( MapReduceTool.isHDFSFileEmpty( path.toString() ) )
+				throw new EOFException("Empty input file "+dir+".");
+			
 			//core matrix reading 
 			if( inputinfo == InputInfo.TextCellInputInfo )
 			{			

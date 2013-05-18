@@ -296,7 +296,7 @@ public class ReadMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testEmptytext() {
+	public void testEmptyText() {
 		int rows = 10;
 		int cols = 10;
 

@@ -62,28 +62,23 @@ public class RunMRJobs {
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(pb);
 		
 		// export dirty matrices to HDFS
-		for(MatrixObject m : inputMatrices) {
-			if ( m.isDirty() )
-				m.exportData();
+		// note: for REBLOCK postponed until we know if necessary
+		if( !(inst.getJobType() == JobType.REBLOCK_TEXT || inst.getJobType() == JobType.REBLOCK_BINARY ) )
+		{
+			//export matrices
+			for(MatrixObject m : inputMatrices) {
+				if ( m.isDirty() )
+					m.exportData();
+			}
+
+			//check input files
+			checkEmptyInputs( inst, inputMatrices, pb );	
 		}
 		
 		// Obtain references to all output matrices
 		MatrixObject[] outputMatrices = inst.extractOutputMatrices(pb);
 		
-		// Check if any of the input files are empty.. only for those job types
-		// for which empty inputs are NOT allowed
-		if (!inst.getJobType().areEmptyInputsAllowed()) {
-			for ( int i=0; i < inputMatrices.length; i++ ) {
-				try {
-					if (MapReduceTool.isHDFSFileEmpty(inputMatrices[i].getFileName())) {
-						throw new DMLRuntimeException(pb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
-					}
-				} catch (IOException e) {
-					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " , e);
-				}
-			}
-		}
-
+		
 		boolean execCP = false;
 		
 		// Spawn MapReduce Jobs
@@ -158,6 +153,13 @@ public class RunMRJobs {
 				}
 				else 
 				{
+					// export dirty matrices to HDFS (initially deferred)
+					for(MatrixObject m : inputMatrices) {
+						if ( m.isDirty() )
+							m.exportData();
+					}
+					checkEmptyInputs( inst, inputMatrices, pb );
+					
 					ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
 							inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 							mapInst, shuffleInst, otherInst,
@@ -340,6 +342,31 @@ public class RunMRJobs {
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
+	/**
+	 * 
+	 * @param inst
+	 * @param inputMatrices
+	 * @param pb
+	 * @throws DMLRuntimeException
+	 */
+	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices, ProgramBlock pb ) 
+		throws DMLRuntimeException
+	{
+		// Check if any of the input files are empty.. only for those job types
+		// for which empty inputs are NOT allowed
+		if (!inst.getJobType().areEmptyInputsAllowed()) {
+			for ( int i=0; i < inputMatrices.length; i++ ) {
+				try {
+					if (MapReduceTool.isHDFSFileEmpty(inputMatrices[i].getFileName())) {
+						throw new DMLRuntimeException(pb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
+					}
+				} catch (IOException e) {
+					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " , e);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Computes the replacement string for a given variable name placeholder string 
 	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix 

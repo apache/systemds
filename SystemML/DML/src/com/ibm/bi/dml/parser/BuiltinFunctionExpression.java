@@ -644,9 +644,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		if (expr1 != null && expr2 != null) {
 			
 			// if any matrix has unknown dimensions, simply return
-			if (expr1.getOutput().getDim1() == -1 || 
-			 expr2.getOutput().getDim1() == -1) {
-
+			if(  expr1.getOutput().getDim1() == -1 || expr2.getOutput().getDim1() == -1 
+			   ||expr1.getOutput().getDim2() == -1 || expr2.getOutput().getDim2() == -1 ) 
+			{
 				return;
 			}
 			else if (expr1.getOutput().getDim1() != expr2.getOutput().getDim1() 

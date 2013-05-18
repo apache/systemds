@@ -46,7 +46,7 @@ public class CostEstimatorHops extends CostEstimator
 		double value = h.getMemEstimate();
 		
 		//handle specific cases 
-		if( value >= DEFAULT_MEM_ESTIMATE_MR )   	  
+		if( value >= DEFAULT_MEM_MR )   	  
 		{
 			if( h.getExecType()==ExecType.MR ) //CP estimate but MR type
 				value = DEFAULT_MEM_MR;
@@ -55,12 +55,8 @@ public class CostEstimatorHops extends CostEstimator
 				LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_MR;
 			}
-			else //h.getExecType()==null
-			{
-				//note: if exec type is 'null' lops have never been created (e.g., r(T) for tsmm),
-				//in that case, we do not need to raise a warning
-				value = DEFAULT_MEM_MR;
-			}
+			//note: if exec type is 'null' lops have never been created (e.g., r(T) for tsmm),
+			//in that case, we do not need to raise a warning 
 		}
 		
 		if( h.getForcedExecType()==ExecType.MR ) //forced runtime platform

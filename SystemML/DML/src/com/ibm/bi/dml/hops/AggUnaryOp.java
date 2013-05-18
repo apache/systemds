@@ -33,6 +33,10 @@ public class AggUnaryOp extends Hops {
 	private AggOp _op;
 	private Direction _direction;
 
+	private AggUnaryOp() {
+		//default constructor for clone
+	}
+	
 	public AggUnaryOp(String l, DataType dt, ValueType vt, AggOp o,
 			Direction idx, Hops inp) {
 		super(Kind.AggUnaryOp, l, dt, vt);
@@ -344,5 +348,20 @@ public class AggUnaryOp extends Hops {
 				set_dim2(1);	
 			}
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		AggUnaryOp ret = new AggUnaryOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret._op = _op;
+		ret._direction = _direction;
+		
+		return ret;
 	}
 }

@@ -15,6 +15,10 @@ public class CrossvalOp extends Hops {
 
 	MetaLearningFunctionParameters _params ;
 
+	private CrossvalOp() {
+		//default constructor for clone
+	}
+	
 	public CrossvalOp(String l, DataType dt, ValueType vt, PartitionOp input, MetaLearningFunctionParameters params) {
 		super(Hops.Kind.CrossvalOp, l, dt, vt);
 		getInput().add(input) ;
@@ -79,5 +83,19 @@ public class CrossvalOp extends Hops {
 	public void refreshSizeInformation()
 	{
 		// TODO modify whenever CL/EL integrated into the optimizer
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		CrossvalOp ret = new CrossvalOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		// TODO modify whenever CL/EL integrated into the optimizer
+		
+		return ret;
 	}
 }

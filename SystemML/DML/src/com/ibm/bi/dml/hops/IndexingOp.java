@@ -21,6 +21,10 @@ public class IndexingOp extends Hops {
 	//right indexing doesn't really need the dimensionality of the left matrix
 	private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	
+	private IndexingOp() {
+		//default constructor for clone
+	}
+	
 	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
 		/*
@@ -215,5 +219,18 @@ public class IndexingOp extends Hops {
 		else if( allRows ) set_dim1(input1.get_dim1());
 		if( singleCol )    set_dim2(1);
 		else if( allCols ) set_dim2(input1.get_dim2());
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		IndexingOp ret = new IndexingOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+
+		return ret;
 	}
 }

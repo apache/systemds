@@ -22,6 +22,10 @@ public class LiteralOp extends Hops {
 
 	// INT, DOUBLE, STRING, BOOLEAN}
 
+	private LiteralOp() {
+		//default constructor for clone
+	}
+	
 	public LiteralOp(String l, double value) {
 		super(Kind.LiteralOp, l, DataType.SCALAR, ValueType.DOUBLE);
 		this.value_double = value;
@@ -230,5 +234,22 @@ public class LiteralOp extends Hops {
 	public void refreshSizeInformation()
 	{
 		//do nothing; it is a scalar
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		LiteralOp ret = new LiteralOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.value_double = value_double;
+		ret.value_long = value_long;
+		ret.value_string = value_string;
+		ret.value_boolean = value_boolean;
+		
+		return ret;
 	}
 }

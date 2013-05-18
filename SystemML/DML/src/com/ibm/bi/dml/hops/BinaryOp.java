@@ -45,6 +45,10 @@ public class BinaryOp extends Hops {
 
 	Hops.OpOp2 op;
 
+	private BinaryOp() {
+		//default constructor for clone
+	}
+	
 	public BinaryOp(String l, DataType dt, ValueType vt, Hops.OpOp2 o,
 			Hops inp1, Hops inp2) {
 		super(Kind.BinaryOp, l, dt, vt);
@@ -1171,5 +1175,19 @@ public class BinaryOp extends Hops {
 				setNnz( input1.getNnz() + input2.getNnz() );
 			}
 		}	
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		BinaryOp ret = new BinaryOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.op = op;
+		
+		return ret;
 	}
 }

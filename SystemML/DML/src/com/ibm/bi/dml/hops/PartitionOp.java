@@ -14,6 +14,10 @@ import com.ibm.bi.dml.utils.LopsException;
 public class PartitionOp extends Hops {
 	PartitionParams pp ;
 	
+	private PartitionOp() {
+		//default constructor for clone
+	}
+	
 	public PartitionOp(String l, DataType dt, ValueType vt, PartitionParams pp, DataOp input) {
 		super(Hops.Kind.PartitionOp, l, dt, vt);
 		getInput().add(input) ;
@@ -83,5 +87,19 @@ public class PartitionOp extends Hops {
 	public void refreshSizeInformation()
 	{
 		// TODO modify whenever CL/EL integrated into the optimizer
+	}
+		
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		PartitionOp ret = new PartitionOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		// TODO modify whenever CL/EL integrated into the optimizer
+		
+		return ret;
 	}
 }

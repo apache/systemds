@@ -233,6 +233,79 @@ public class Recompiler
 		
 		return ret;
 	}
+
+	/**
+	 * Deep copy of hops dags for parallel recompilation.
+	 * 
+	 * @param hops
+	 * @return
+	 * @throws CloneNotSupportedException
+	 */
+	public static ArrayList<Hops> deepCopyHopsDag( ArrayList<Hops> hops ) 
+		throws CloneNotSupportedException 
+	{
+		ArrayList<Hops> ret = new ArrayList<Hops>();
+		
+		//note: need memo table over all independent DAGs in order to 
+		//account for shared transient reads (otherwise more instructions generated)
+		HashMap<Long, Hops> memo = new HashMap<Long, Hops>(); //orig ID, new clone
+		for( Hops hopRoot : hops )
+			ret.add(rDeepCopyHopsDag(hopRoot, memo));
+		
+		return ret;
+	}
+	
+	/**
+	 * Deep copy of hops dags for parallel recompilation.
+	 * 
+	 * @param hops
+	 * @return
+	 * @throws CloneNotSupportedException
+	 */
+	public static Hops deepCopyHopsDag( Hops hops ) 
+		throws CloneNotSupportedException 
+	{
+		HashMap<Long, Hops> memo = new HashMap<Long, Hops>(); //orig ID, new clone
+		return rDeepCopyHopsDag(hops, memo);
+	}
+	
+	/**
+	 * 
+	 * @param hops
+	 * @param memo
+	 * @return
+	 * @throws CloneNotSupportedException
+	 */
+	private static Hops rDeepCopyHopsDag( Hops hops, HashMap<Long,Hops> memo ) 
+		throws CloneNotSupportedException
+	{
+		Hops ret = memo.get(hops.getHopID());
+	
+		//create clone if required 
+		if( ret == null ) 
+		{
+			ret = (Hops) hops.clone();
+			ArrayList<Hops> tmp = new ArrayList<Hops>();
+			
+			//create new childs
+			for( Hops in : hops.getInput() )
+			{
+				Hops newIn = rDeepCopyHopsDag(in, memo);
+				tmp.add(newIn);
+			}
+			//modify references of childs
+			for( Hops in : tmp )
+			{
+				ret.getInput().add(in);
+				in.getParent().add(ret);
+			}
+			
+			memo.put(hops.getHopID(), ret);
+		}
+		
+		return ret;
+	}
+	
 	
 	//////////////////////////////
 	// private helper functions //
@@ -324,7 +397,7 @@ public class Recompiler
 			return;
 		
 		//preserve Treads to prevent wrong rmfilevar instructions
-		if( hop.getOpString().equals("TRead") )
+		if( hop.getOpString().equals("TRead") ) 
 			return; 
 		
 		//clear all relevant lops to allow for recompilation

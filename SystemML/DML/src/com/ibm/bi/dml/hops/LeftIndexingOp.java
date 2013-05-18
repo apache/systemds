@@ -19,6 +19,10 @@ public class LeftIndexingOp  extends Hops {
 
 	public static String OPSTRING = "LeftIndexing";
 	
+	private LeftIndexingOp() {
+		//default constructor for clone
+	}
+	
 	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
 		super(Kind.Indexing, l, dt, vt);
 
@@ -233,6 +237,19 @@ public class LeftIndexingOp  extends Hops {
 				((DataOp)rInput).disableRecompileRead();
 			}
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		LeftIndexingOp ret = new LeftIndexingOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		
+		return ret;
 	}
 	
 }

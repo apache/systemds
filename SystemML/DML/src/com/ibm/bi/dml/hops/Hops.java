@@ -78,6 +78,10 @@ abstract public class Hops {
 	// (in that case re-complication ensures robustness and efficiency)
 	protected boolean _requiresRecompile = false;
 	
+	protected Hops(){
+		//default constructor for clone
+	}
+	
 	
 	private static long getNextHopID() {
 		return UniqueHopID.getNextID();
@@ -380,7 +384,7 @@ abstract public class Hops {
 				if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTREAD) {
 				
 					// insert reblock after the hop
-					Reblock r = new Reblock(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
+					ReblockOp r = new ReblockOp(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					r.computeMemEstimate();
 					r.set_visited(Hops.VISIT_STATUS.DONE);
@@ -395,7 +399,7 @@ abstract public class Hops {
 						// instruction for it (the info is conveyed through
 						// OutputInfo.
 
-					} else if (getInput().get(0) instanceof Reblock && getInput().get(0).getParent().size() == 1) {
+					} else if (getInput().get(0) instanceof ReblockOp && getInput().get(0).getParent().size() == 1) {
 
 						// if a reblock is feeding into this, then use it if
 						// this is
@@ -406,7 +410,7 @@ abstract public class Hops {
 
 					} else {
 
-						Reblock r = new Reblock(this);
+						ReblockOp r = new ReblockOp(this);
 						r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						r.computeMemEstimate();
 						r.set_visited(Hops.VISIT_STATUS.DONE);
@@ -452,7 +456,7 @@ abstract public class Hops {
 			 * Remaining hops will get their blocking dimensions from their input hops.
 			 */
 			
-			if ( this instanceof Reblock ) {
+			if ( this instanceof ReblockOp ) {
 				set_rows_in_block(GLOBAL_BLOCKSIZE);
 				set_cols_in_block(GLOBAL_BLOCKSIZE);
 			}
@@ -1297,6 +1301,50 @@ abstract public class Hops {
 		return sb.toString();
 	}
 	
+	/**
+	 * Clones the attributes of that and copies it over to this.
+	 * 
+	 * @param that
+	 * @throws HopsException 
+	 */
+	protected void clone( Hops that, boolean withRefs ) 
+		throws CloneNotSupportedException 
+	{
+		if( withRefs )
+			throw new CloneNotSupportedException( "Hops deep copy w/ lops/inputs/parents not supported." );
+		
+		ID = that.ID;
+		_kind = that._kind;
+		_name = that._name;
+		_dataType = that._dataType;
+		_valueType = that._valueType;
+		_visited = that._visited;
+		_dim1 = that._dim1;
+		_dim2 = that._dim2;
+		_rows_in_block = that._rows_in_block;
+		_cols_in_block = that._cols_in_block;
+		_nnz = that._nnz;
+
+		//no copy of lops (regenerated)
+		_parent = new ArrayList<Hops>();
+		_input = new ArrayList<Hops>();
+		_lops = null;
+		_sqllops = null;
+		
+		_etype = that._etype;
+		_etypeForced = that._etypeForced;
+		_outputMemEstimate = that._outputMemEstimate;
+		_memEstimate = that._memEstimate;
+		_processingMemEstimate = that._processingMemEstimate;
+		_requiresRecompile = that._requiresRecompile;
+		
+		_beginLine = that._beginLine;
+		_beginColumn = that._beginColumn;
+		_endLine = that._endLine;
+		_endColumn = that._endColumn;
+	}
+
+	public abstract Object clone() throws CloneNotSupportedException;
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for Hops
@@ -1328,5 +1376,8 @@ abstract public class Hops {
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
+
+	
+	
 	
 } // end class

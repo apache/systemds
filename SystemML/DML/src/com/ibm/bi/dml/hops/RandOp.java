@@ -50,15 +50,16 @@ public class RandOp extends Hops
 	/** this is used for mem estimate */
 	private double sparsity;
 	
+	private RandOp() {
+		//default constructor for clone
+	}
+	
 	/**
 	 * <p>Creates a new Rand HOP.</p>
 	 * 
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-
-
-
 	public RandOp(DataIdentifier id, HashMap<String, Hops> inputParameters){
 		super(Kind.RandOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
 		
@@ -236,5 +237,21 @@ public class RandOp extends Hops
 	{
 		return System.nanoTime();
 	}
-	
+
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		RandOp ret = new RandOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.id = id;
+		ret.sparsity = sparsity;
+		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
+		//note: no deep cp of params since read-only 
+		
+		return ret;
+	}
 }

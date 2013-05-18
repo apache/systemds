@@ -40,6 +40,10 @@ public class ParameterizedBuiltinOp extends Hops {
 	 */
 	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
 
+	private ParameterizedBuiltinOp() {
+		//default constructor for clone
+	}
+	
 	/**
 	 * Creates a new HOP for a function call
 	 */
@@ -357,5 +361,21 @@ public class ParameterizedBuiltinOp extends Hops {
 					set_dim1( target.get_dim1() );
 				break;
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		ParameterizedBuiltinOp ret = new ParameterizedBuiltinOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret._op = _op;
+		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
+		//note: no deep cp of params since read-only 
+		
+		return ret;
 	}
 }

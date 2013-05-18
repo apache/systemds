@@ -30,6 +30,10 @@ public class ReorgOp extends Hops {
 
 	ReorgOp op;
 
+	private ReorgOp() {
+		//default constructor for clone
+	}
+	
 	public ReorgOp(String l, DataType dt, ValueType vt, ReorgOp o, Hops inp) {
 		super(Kind.ReorgOp, l, dt, vt);
 		op = o;
@@ -316,5 +320,19 @@ public class ReorgOp extends Hops {
 				break;
 		*/		
 		}	
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		com.ibm.bi.dml.hops.ReorgOp ret = new com.ibm.bi.dml.hops.ReorgOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.op = op;
+		
+		return ret;
 	}
 }

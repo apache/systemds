@@ -38,6 +38,10 @@ public class DataOp extends Hops {
 	 */
 	private HashMap<String, Integer> _paramIndexMap = new HashMap<String, Integer>();
 
+	private DataOp() {
+		//default constructor for clone
+	}
+	
 	// READ operation for Matrix w/ dim1, dim2. 
 	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
@@ -537,5 +541,25 @@ public class DataOp extends Hops {
 	public void disableRecompileRead()
 	{
 		_recompileRead = false;
+	}
+	
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		DataOp ret = new DataOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret._dataop = _dataop;
+		ret._fileName = _fileName;
+		ret._formatType = _formatType;
+		ret._recompileRead = ret._recompileRead;
+		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
+		//note: no deep cp of params since read-only 
+		
+		return ret;
 	}
 }

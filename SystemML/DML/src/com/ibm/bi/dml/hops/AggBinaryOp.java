@@ -46,6 +46,11 @@ public class AggBinaryOp extends Hops {
 
 	private enum MMultMethod { CPMM, RMM, DIST_MVMULT, TSMM, CP };
 	
+	
+	private AggBinaryOp() {
+		//default constructor for clone
+	}
+	
 	public AggBinaryOp(String l, DataType dt, ValueType vt, OpOp2 innOp,
 			AggOp outOp, Hops in1, Hops in2) {
 		super(Kind.AggBinaryOp, l, dt, vt);
@@ -56,7 +61,7 @@ public class AggBinaryOp extends Hops {
 		in1.getParent().add(this);
 		in2.getParent().add(this);
 	}
-	
+
 	public boolean isMatrixMultiply () {
 		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
 	}
@@ -813,5 +818,20 @@ public class AggBinaryOp extends Hops {
 			set_dim1(input1.get_dim1());
 			set_dim2(input2.get_dim2());
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		AggBinaryOp ret = new AggBinaryOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.innerOp = innerOp;
+		ret.outerOp = outerOp;
+		
+		return ret;
 	}
 }

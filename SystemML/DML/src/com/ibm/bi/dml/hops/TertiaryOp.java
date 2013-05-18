@@ -52,6 +52,10 @@ public class TertiaryOp extends Hops {
 
 	Hops.OpOp3 op;
 
+	private TertiaryOp() {
+		//default constructor for clone
+	}
+	
 	public TertiaryOp(String l, DataType dt, ValueType vt, Hops.OpOp3 o,
 			Hops inp1, Hops inp2, Hops inp3) {
 		super(Hops.Kind.TertiaryOp, l, dt, vt);
@@ -709,5 +713,19 @@ public class TertiaryOp extends Hops {
 					throw new RuntimeException("Size information for operation (" + op + ") can not be updated.");
 			}
 		}	
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		TertiaryOp ret = new TertiaryOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret.op = op;
+		
+		return ret;
 	}
 }

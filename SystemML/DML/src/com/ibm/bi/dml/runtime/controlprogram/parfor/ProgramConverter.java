@@ -9,9 +9,13 @@ import java.util.Vector;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -166,7 +170,8 @@ public class ProgramConverter
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
 				
 				//for recompile in the master node JVM
-				tmpPB.setStatementBlock(pb.getStatementBlock()); 
+				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock())); 
+				//tmpPB.setStatementBlock(pb.getStatementBlock()); 
 				tmpPB.setThreadID(pid);
 			}
 
@@ -566,6 +571,42 @@ public class ProgramConverter
 		}
 		
 		return inst;
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static StatementBlock createStatementBlockCopy( StatementBlock sb ) 
+		throws DMLRuntimeException
+	{
+		StatementBlock ret = null;
+		
+		try
+		{
+			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				&& sb != null 
+				&& Recompiler.requiresRecompilation( sb.get_hops() )
+				//&& !Recompiler.containsNonRecompileInstructions(tmp)  //TODO
+				)
+			{
+				ret = new StatementBlock();
+				ret.set_hops( Recompiler.deepCopyHopsDag( sb.get_hops() ) );
+			}
+			else
+			{
+				ret = sb;
+			}
+		}
+		catch( Exception ex )
+		{
+			throw new DMLRuntimeException( ex );
+		}
+		
+		return ret;
 	}
 	
 	

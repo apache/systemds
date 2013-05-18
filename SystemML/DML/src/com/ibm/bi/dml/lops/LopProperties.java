@@ -1,13 +1,18 @@
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties {
 	public enum ExecType { CP, CP_FILE, MR, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 
 	// static variable to assign an unique ID to every lop that is created
-	private static int UniqueLopID = 0;
+	private static IDSequence UniqueLopID = null;
+	
+	static{
+		UniqueLopID = new IDSequence();
+	}
 	
 	/** 
 	 * Execution properties for each lop.
@@ -18,7 +23,8 @@ public class LopProperties {
 	 * isAligner = is this lop mainly used to reorder/sort/align the keys
 	 *   
 	 */
-	int ID, level;
+	long ID;
+	int level;
 	ExecType execType;
 	ExecLocation execLoc;
 	int compatibleJobs;
@@ -26,12 +32,8 @@ public class LopProperties {
 	boolean isAligner;
 	boolean definesMRJob;
 	
-	private static int getNextLopID() {
-		return ++UniqueLopID;
-	}
-	
 	public LopProperties() {
-		ID = getNextLopID();
+		ID = UniqueLopID.getNextID();
 		execType = ExecType.INVALID;
 		execLoc = ExecLocation.INVALID;
 		compatibleJobs = JobType.INVALID.getBase();
@@ -40,7 +42,7 @@ public class LopProperties {
 		definesMRJob = false;
 	}
 	
-	public int getID() { return ID; }
+	public long getID() { return ID; }
 	public int getLevel() { return level; }
 	public void setLevel( int l ) { level = l; }
 	

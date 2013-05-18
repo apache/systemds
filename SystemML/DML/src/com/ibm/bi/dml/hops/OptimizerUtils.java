@@ -106,7 +106,6 @@ public class OptimizerUtils {
 	public static final long CHAR_SIZE = 1;
 	public static final long BOOLEAN_SIZE = 1;
 	public static final double INVALID_SIZE = -1d; // used to indicate the memory estimate is not computed
-
 	
 	/**
 	 * Enables/disables dynamic re-compilation of lops/instructions.
@@ -115,6 +114,8 @@ public class OptimizerUtils {
 	 * during compilation, or program blocks in functions).  
 	 */
 	public static boolean ALLOW_DYN_RECOMPILATION = true;
+	public static boolean ALLOW_PARALLEL_DYN_RECOMPILATION = ALLOW_DYN_RECOMPILATION && true;
+	
 	/**
 	 * Enables/disables to put operations with data-dependent output
 	 * size into individual statement blocks / program blocks.

@@ -39,13 +39,10 @@ public class UnaryOp extends Hops {
 	private OpOp1 _op = null;
 
 	
-	
-	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
-
-	public OpOp1 get_op() {
-		return _op;
+	private UnaryOp() {
+		//default constructor for clone
 	}
-
+	
 	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hops inp)
 			throws HopsException {
 		super(Hops.Kind.UnaryOp, l, dt, vt);
@@ -56,6 +53,11 @@ public class UnaryOp extends Hops {
 		_op = o;
 	}
 
+	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
+	public OpOp1 get_op() {
+		return _op;
+	}
+	
 	public void printMe() throws HopsException {
 		if (LOG.isDebugEnabled()){
 			if (get_visited() != VISIT_STATUS.DONE) {
@@ -521,5 +523,19 @@ public class UnaryOp extends Hops {
 			set_dim1( input.get_dim1() );
 			set_dim2( input.get_dim2() );
 		}
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		UnaryOp ret = new UnaryOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+		ret._op = _op;
+		
+		return ret;
 	}
 }

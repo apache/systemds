@@ -276,7 +276,7 @@ public abstract class Lops {
 	/**
 	 * Method to return the ID of LOP
 	 */
-	public int getID() {
+	public long getID() {
 		return lps.getID();
 	}
 	

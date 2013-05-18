@@ -10,11 +10,15 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
 
 
-public class Reblock extends Hops {
+public class ReblockOp extends Hops {
 
+	private ReblockOp() {
+		//default constructor for clone
+	}
+	
 	// Constructor that adds a Reblock Hop *AFTER* a hop (e.g. Read Hop) to
 	// produce a block size
-	public Reblock(Hops inp, int rows_per_block, int cols_per_block) {
+	public ReblockOp(Hops inp, int rows_per_block, int cols_per_block) {
 		super(Kind.Reblock, inp.get_name(), inp.get_dataType(), inp
 				.get_valueType());
 
@@ -44,7 +48,7 @@ public class Reblock extends Hops {
 	// Constructor that adds a Reblock Hop *BEFORE* a hop to create its block
 	// size(e.g. Write Hop)
 
-	public Reblock(Hops par) {
+	public ReblockOp(Hops par) {
 		super(Kind.Reblock, par.get_name(), par.get_dataType(), par
 				.get_valueType());
 
@@ -170,5 +174,17 @@ public class Reblock extends Hops {
 		set_dim2( input1.get_dim2() );
 		setNnz( input1.getNnz() );
 	}
-	
+
+	@Override
+	public Object clone() throws CloneNotSupportedException 
+	{
+		ReblockOp ret = new ReblockOp();	
+		
+		//copy generic attributes
+		ret.clone(this, false);
+		
+		//copy specific attributes
+
+		return ret;
+	}
 }

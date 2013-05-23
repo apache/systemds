@@ -173,12 +173,35 @@ public class LeftIndexingOp  extends Hops {
 		}
 		
 		//2) operation mem estimate
-		if( !getInput().get(1).dimsKnown() ) {
+		if( dimsKnown() && !getInput().get(1).dimsKnown() ) { 
 			//use worst-case memory estimate for second input (it cannot be larger than overall matrix)
-			_memEstimate = 2 * _outputMemEstimate;
+			Hops input2 = getInput().get(2); //inpRowL
+			Hops input3 = getInput().get(3); //inpRowU
+			Hops input4 = getInput().get(4); //inpColL
+			Hops input5 = getInput().get(5); //inpColU
+			
+			double subSize = -1;
+			boolean rowWise = ( input2==input3 && (input2.get_dataType()==DataType.SCALAR) ); //rowwise
+			boolean colWise = ( input4==input5 && (input4.get_dataType()==DataType.SCALAR) ); //colwise	
+			
+			if( rowWise && colWise )
+				subSize = OptimizerUtils.estimateSize(1, 1, 1.0);	
+			else if( rowWise )
+				subSize = OptimizerUtils.estimateSize(1, _dim2, 1.0);
+			else if( colWise )
+				subSize = OptimizerUtils.estimateSize(_dim1, 1, 1.0);
+			else 
+				subSize = _outputMemEstimate; //worstcase
+
+			_memEstimate = getInputSize(0) //original matrix (left)
+			               + subSize // new submatrix (right)
+			               + _outputMemEstimate; //output size (output)
 		}
 		else
+		{
+			//default case
 			_memEstimate = getInputOutputSize();
+		}
 		
 		return _memEstimate;
 	}

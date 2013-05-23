@@ -166,10 +166,20 @@ public class RandOp extends Hops
 	}	
 	
 	@Override
-	public double computeMemEstimate() {
-		
+	public double computeMemEstimate() 
+	{	
 		if( dimsKnown() )
-			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), sparsity);
+		{
+			Hops min = getInput().get(_paramIndexMap.get("min")); //min 
+			Hops max = getInput().get(_paramIndexMap.get("max")); //max
+			if(    min instanceof LiteralOp && min.get_name().equals("0")
+				&& max instanceof LiteralOp && max.get_name().equals("0"))
+			{
+				_outputMemEstimate = OptimizerUtils.estimateSizeEmptyBlock(get_dim1(), get_dim2());
+			}
+			else
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), sparsity);
+		}
 		else
 			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 			

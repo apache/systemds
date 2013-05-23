@@ -152,6 +152,19 @@ abstract public class Hops {
 		}
 		return sum;
 	}
+	
+	/**
+	 * 
+	 * @param pos
+	 * @return
+	 */
+	protected double getInputSize( int pos ){
+		double ret = 0;
+		if( _input.size()>pos )
+			ret = _input.get(pos)._outputMemEstimate;
+		return ret;
+	}
+	
 	/**
 	 * 
 	 * @return

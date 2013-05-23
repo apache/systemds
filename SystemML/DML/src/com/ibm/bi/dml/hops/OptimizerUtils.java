@@ -186,6 +186,17 @@ public class OptimizerUtils {
 	}
 	
 	/**
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @return
+	 */
+	public static long estimateSizeEmptyBlock(long nrows, long ncols)
+	{
+		return estimateSizeExactSparsity(0, 0, 0.0d);
+	}
+	
+	/**
 	 * Estimates the memory footprint of a SparseRow with <code>clen</code>
 	 * columns and <code>sp</code> sparsity. This method accounts for the
 	 * overhead incurred by extra cells allocated (but not used) for SparseRow.

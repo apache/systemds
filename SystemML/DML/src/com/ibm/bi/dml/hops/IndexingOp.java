@@ -186,7 +186,7 @@ public class IndexingOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		//TODO MB: verify with Doug and Shirish that the structure is always as expected here.
+		//TODO MB: generalize this.
 		
 		Hops input1 = getInput().get(0); //original matrix
 		Hops input2 = getInput().get(1); //inpRowL

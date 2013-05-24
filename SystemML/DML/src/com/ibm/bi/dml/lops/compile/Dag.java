@@ -22,6 +22,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.OutputParameters;
 import com.ibm.bi.dml.lops.PartitionLop;
@@ -1320,6 +1321,22 @@ public class Dag<N extends Lops> {
 						|| node.getType() == Lops.Type.GroupedAgg ){
 					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
 				} 
+				// Lops with arbitrary number of inputs and outputs are handled
+				// separately as well by passing arrays of inputs and outputs
+				else if ( node.getType() == Lops.Type.FunctionCallCP )
+				{
+					String[] inputs = new String[node.getInputs().size()];
+					String[] outputs = new String[node.getOutputs().size()];
+					int count = 0;
+					for( Lops in : node.getInputs() )
+						inputs[count++] = in.getOutputParameters().getLabel();
+					count = 0;
+					for( Lops out : node.getOutputs() )
+					{
+						outputs[count++] = out.getOutputParameters().getLabel();
+					}
+					inst_string = node.getInstructions(inputs, outputs);
+				}
 				else {
 					if ( node.getInputs().size() == 0 ) {
 						// currently, such a case exists only for Rand lop
@@ -2296,44 +2313,50 @@ public class Dag<N extends Lops> {
 		// Compute the output format for this node
 		out.setOutInfo(getOutputInfo(node, cellModeOverride));
 		
-		// If node is NOT of type Data then we must generate 
+		// If node is NOT of type Data then we must generate
 		// a variable to hold the value produced by this node
-		if (node.getExecLocation() != ExecLocation.Data) {
-			
-			if ( node.get_dataType() == DataType.SCALAR ) {
-				oparams.setLabel("Var"+ var_index.getNextID());
+		// note: functioncallcp requires no createvar, rmvar since
+		// since outputs are explicitly specified
+		if (node.getExecLocation() != ExecLocation.Data ) 
+		{
+			if (node.get_dataType() == DataType.SCALAR) {
+				oparams.setLabel("Var" + var_index.getNextID());
 				out.setVarName(oparams.getLabel());
 				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
-			}
-			else {
-				// generate temporary filename and a variable name to hold the output produced by "rootNode"
-				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-						   					   Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR + 
-											   "temp" + job_id.getNextID());
-				oparams.setLabel("mVar" + var_index.getNextID() );
-				
+			} 
+			else if(!(node instanceof FunctionCallCP)) //general case
+			{
+				// generate temporary filename and a variable name to hold the
+				// output produced by "rootNode"
+				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR
+						+ Lops.PROCESS_PREFIX + DMLScript.getUUID()
+						+ Lops.FILE_SEPARATOR + Lops.FILE_SEPARATOR
+						+ ProgramConverter.CP_ROOT_THREAD_ID
+						+ Lops.FILE_SEPARATOR + "temp" + job_id.getNextID());
+				oparams.setLabel("mVar" + var_index.getNextID());
+
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
 				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-				int rpb = Integer.parseInt(""+oparams.get_rows_in_block());
-				int cpb = Integer.parseInt(""+oparams.get_cols_in_block());
+				int rpb = Integer.parseInt("" + oparams.get_rows_in_block());
+				int cpb = Integer.parseInt("" + oparams.get_cols_in_block());
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-											oparams.getLabel(), 
+									        oparams.getLabel(),
 											oparams.getFile_name(), 
 											true, 
-											OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
+											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 											new MatrixCharacteristics(oparams.getNum_rows(), oparams.getNum_cols(), rpb, cpb, oparams.getNnz())
 										);
 				out.addPreInstruction(createvarInst);
-				
+
 				// temp file as well as the variable has to be deleted at the end
 				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
-	
-				// finally, add the generated filename and variable name to the list of outputs 
+
+				// finally, add the generated filename and variable name to the list of outputs
 				out.setFileName(oparams.getFile_name());
 				out.setVarName(oparams.getLabel());
 			}
-		} 
+		}
 		// rootNode is of type Data
 		else {
 			

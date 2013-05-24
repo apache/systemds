@@ -481,11 +481,6 @@ public class DMLProgram {
 				for (Instruction i : instruct) {
 					cvpb.addInstruction(i);
 				}
-				
-				// add instruction for a function call
-				if (sb.getFunctionCallInst() != null){
-					cvpb.addInstruction(sb.getFunctionCallInst());
-				}
 			}
 
 			retPB = cvpb;
@@ -513,11 +508,6 @@ public class DMLProgram {
 				instruct = dag.getJobs(sb, config);
 				for (Instruction i : instruct) {
 					epb.addInstruction(i);
-				}
-				
-				// add instruction for a function call
-				if (sb.getFunctionCallInst() != null){
-					epb.addInstruction(sb.getFunctionCallInst());
 				}
 			}
 
@@ -547,11 +537,6 @@ public class DMLProgram {
 				for (Instruction i : instruct) {
 					eupb.addInstruction(i);
 				}
-				
-				// add instruction for a function call
-				if (sb.getFunctionCallInst() != null){
-					eupb.addInstruction(sb.getFunctionCallInst());
-				}
 			}
 
 			retPB = eupb;
@@ -565,11 +550,6 @@ public class DMLProgram {
 		
 			// DAGs for Lops
 			dag = new Dag<Lops>();
-
-			// add instruction for a function call
-			if (sb.getFunctionCallInst() != null){
-				rtpb.addInstruction(sb.getFunctionCallInst());
-			}
 
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (sb.get_lops() != null && sb.get_lops().size() > 0){

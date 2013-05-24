@@ -15,7 +15,6 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -34,7 +33,7 @@ abstract public class Hops {
 	
 	public enum Kind {
 		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, RandOp, GenericFunctionOp, 
-		TertiaryOp, ParameterizedBuiltinOp, Indexing
+		TertiaryOp, ParameterizedBuiltinOp, Indexing, FunctionOp
 	};
 
 	public enum VISIT_STATUS {
@@ -153,6 +152,14 @@ abstract public class Hops {
 		return sum;
 	}
 	
+	protected double getInputSize() {
+		double sum = 0;
+		for(Hops h : _input ) {
+			sum += h._outputMemEstimate;
+		}
+		return sum;
+	}
+	
 	/**
 	 * 
 	 * @param pos
@@ -248,7 +255,7 @@ abstract public class Hops {
 	protected ExecType findExecTypeByMemEstimate() {
 		ExecType et = null;
 		char c = ' ';
-		if ( getMemEstimate() < getMemBudget(true) ) {
+		if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
 			et = ExecType.CP;
 		}
 		else {
@@ -266,27 +273,7 @@ abstract public class Hops {
 		
 		return et;
 	}
-	
-	/**
-	 * TODO move to OptimizerUtils
-	 * 
-	 * Returns memory budget (according to util factor) in bytes
-	 * 
-	 * @param localOnly specifies if only budget of current JVM or also MR JVMs 
-	 * @return
-	 */
-	public static double getMemBudget( boolean localOnly )
-	{
-		double ret = -1;		
-		if( localOnly )
-			ret = InfrastructureAnalyzer.getLocalMaxMemory();
-		else
-			ret = InfrastructureAnalyzer.getGlobalMaxMemory();
-		
-		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
 
-	
 	public ArrayList<Hops> getParent() {
 		return _parent;
 	}
@@ -942,7 +929,7 @@ abstract public class Hops {
 	};
 
 	public enum DataOpTypes {
-		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE
+		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT
 	};
 
 	public enum Direction {
@@ -1290,6 +1277,11 @@ abstract public class Hops {
 		_requiresRecompile = true;
 	}
 	
+	public void unsetRequiresRecompile()
+	{
+		_requiresRecompile = false;
+	}
+	
 	/**
 	 * Update the output size information for this hop.
 	 */
@@ -1389,8 +1381,5 @@ abstract public class Hops {
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
-
-	
-	
 	
 } // end class

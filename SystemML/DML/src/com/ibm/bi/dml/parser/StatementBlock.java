@@ -13,7 +13,6 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -29,9 +28,6 @@ public class StatementBlock extends LiveVariableAnalysis{
 	
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
 	
-	// this stores the function call instruction 
-	private FunctionCallCPInstruction _functionCallInst;
-	
 	public StatementBlock(){
 		_dmlProg = null;
 		_statements = new ArrayList<Statement>();
@@ -43,17 +39,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 		_initialized = true;
 		_constVarsIn = new HashMap<String,ConstIdentifier>();
 		_constVarsOut = new HashMap<String,ConstIdentifier>();
-		_functionCallInst = null;
 	}
-	
-	public void setFunctionCallInst(FunctionCallCPInstruction fci){
-		_functionCallInst = fci;
-	}
-	
-	public FunctionCallCPInstruction getFunctionCallInst(){
-		return _functionCallInst;
-	}
-	
 	
 	public void setDMLProg(DMLProgram dmlProg){
 		_dmlProg = dmlProg;
@@ -992,10 +978,14 @@ public class StatementBlock extends LiveVariableAnalysis{
 	}
 	
 	/**
+	 * MB: This method was used to remove updated vars from constant propagation when
+	 * live-variable-analysis was executed AFTER validate. Since now we execute
+	 * live-variable-analysis BEFORE validate, this is redundant and should not be used anymore.
 	 * 
 	 * @param asb
 	 * @param upVars
 	 */
+	@Deprecated
 	public void rFindUpdatedVariables( ArrayList<StatementBlock> asb, HashSet<String> upVars )
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock
@@ -1034,6 +1024,12 @@ public class StatementBlock extends LiveVariableAnalysis{
 					{
 						tmp = ((MultiAssignmentStatement)s).getTargetList();
 					}
+					/* FIXME at Doug
+					else if (s instanceof RandStatement)
+					{
+						tmp = new ArrayList<DataIdentifier>();
+						tmp.add(((RandStatement)s).getIdentifier());
+					}*/
 					
 					//add names of updated data identifiers to results
 					if( tmp!=null )

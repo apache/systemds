@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
@@ -170,13 +171,13 @@ public class ProgramConverter
 				tmpPB = new ProgramBlock(prog); // general case use for most PBs
 				
 				//for recompile in the master node JVM
-				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock())); 
+				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock(), pid, plain)); 
 				//tmpPB.setStatementBlock(pb.getStatementBlock()); 
 				tmpPB.setThreadID(pid);
 			}
 
 			//copy instructions
-			tmpPB.setInstructions( createDeepCopyInstructionSet(pb.getInstructions(), pid, IDPrefix, prog, fnStack, plain) );
+			tmpPB.setInstructions( createDeepCopyInstructionSet(pb.getInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 			
 			//copy symbol table
 			tmpPB.setVariables( pb.getVariables() ); //implicit cloning			
@@ -200,12 +201,12 @@ public class ProgramConverter
 	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, plain);
+		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
 		tmpPB.setStatementBlock( wpb.getStatementBlock() );
 		tmpPB.setThreadID(pid);
 		
-		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain));
+		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, plain));
 		
 		return tmpPB;
@@ -224,12 +225,12 @@ public class ProgramConverter
 	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, plain);
+		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
 		tmpPB.setStatementBlock( ipb.getStatementBlock() );
 		tmpPB.setThreadID(pid);
 		
-		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain));
+		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true));
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, plain));
 		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, plain));
 		
@@ -253,10 +254,10 @@ public class ProgramConverter
 		tmpPB.setStatementBlock(fpb.getStatementBlock());
 		tmpPB.setThreadID(pid);
 		
-		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setExitInstructions( createDeepCopyInstructionSet(fpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain) );
+		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setExitInstructions( createDeepCopyInstructionSet(fpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, plain) );
 		
 		return tmpPB;
@@ -335,13 +336,13 @@ public class ProgramConverter
 		tmpPB.disableOptimization(); //already done in top-level parfor
 		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		
-		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setToInstructions( createDeepCopyInstructionSet(pfpb.getToInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(pfpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, plain) );
-		tmpPB.setExitInstructions( createDeepCopyInstructionSet(pfpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain) );
+		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setToInstructions( createDeepCopyInstructionSet(pfpb.getToInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(pfpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
+		tmpPB.setExitInstructions( createDeepCopyInstructionSet(pfpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 
 		//NOTE: Normally, no recursive copy because (1) copied on each execution in this PB anyway 
-		//and (2) leave placeholders as they are. However, if pid=0, an explicit deep copy is requested.
+		//and (2) leave placeholders as they are. However, if plain, an explicit deep copy is requested.
 		if( plain )
 			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, plain) ); 
 		else
@@ -365,6 +366,9 @@ public class ProgramConverter
 		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
 		String fnameNew = (plain)? oldName :(oldName+CP_CHILD_THREAD+pid); 
 		String fnameNewKey = namespace+Program.KEY_DELIM+fnameNew;
+
+		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
+			return; //prevent redundant deep copy if already existent
 		
 		if( fpb == null )
 		{
@@ -459,21 +463,22 @@ public class ProgramConverter
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unchecked")
-	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain) 
+	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, boolean plain, boolean cpFunctions) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> tmp = (ArrayList<Instruction>) instSet.clone();
 		for( int i=0; i<instSet.size(); i++ )
 		{
 			Instruction inst1 = instSet.get(i);
-			if( inst1 instanceof FunctionCallCPInstruction )
+			if( inst1 instanceof FunctionCallCPInstruction && cpFunctions )
 			{
 				FunctionCallCPInstruction finst1 = (FunctionCallCPInstruction) inst1;
 				createDeepCopyFunctionProgramBlock( finst1.getNamespace(),
 						                            finst1.getFunctionName(), 
 						                            pid, IDPrefix, prog, fnStack, plain );
 			}
-			Instruction inst2 = cloneInstruction( inst1, pid, plain ); 
+			
+			Instruction inst2 = cloneInstruction( inst1, pid, plain, cpFunctions ); 
 			tmp.set(i, inst2);
 		}
 		
@@ -489,7 +494,7 @@ public class ProgramConverter
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unchecked")
-	public static Instruction cloneInstruction( Instruction oInst, long pid, boolean plain ) 
+	public static Instruction cloneInstruction( Instruction oInst, long pid, boolean plain, boolean cpFunctions ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		Instruction inst = null;
@@ -510,7 +515,7 @@ public class ProgramConverter
 		{
 			if( parse != null )
 			{
-				if( oInst instanceof FunctionCallCPInstruction )
+				if( oInst instanceof FunctionCallCPInstruction && cpFunctions )
 				{
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;
 					if( !plain )
@@ -579,7 +584,7 @@ public class ProgramConverter
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static StatementBlock createStatementBlockCopy( StatementBlock sb ) 
+	public static StatementBlock createStatementBlockCopy( StatementBlock sb, long pid, boolean plain ) 
 		throws DMLRuntimeException
 	{
 		StatementBlock ret = null;
@@ -594,7 +599,10 @@ public class ProgramConverter
 				)
 			{
 				ret = new StatementBlock();
-				ret.set_hops( Recompiler.deepCopyHopsDag( sb.get_hops() ) );
+				ArrayList<Hops> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
+				if( !plain )
+					Recompiler.updateFunctionNames( hops, pid );
+				ret.set_hops( hops );
 			}
 			else
 			{

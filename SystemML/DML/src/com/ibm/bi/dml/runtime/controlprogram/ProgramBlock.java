@@ -155,7 +155,7 @@ public class ProgramBlock
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& _sb != null 
 				&& Recompiler.requiresRecompilation(_sb.get_hops()) 
-				&& !Recompiler.containsNonRecompileInstructions(tmp) )
+				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables, _tid);
 			}
@@ -190,7 +190,7 @@ public class ProgramBlock
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& Recompiler.requiresRecompilation(hops) 
-				&& !Recompiler.containsNonRecompileInstructions(inst) )
+				/*&& !Recompiler.containsNonRecompileInstructions(inst)*/ )
 			{
 				tmp = Recompiler.recompileHopsDag(hops, _variables, _tid);
 			}

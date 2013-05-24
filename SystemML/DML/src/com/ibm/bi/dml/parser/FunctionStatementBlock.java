@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -61,6 +62,30 @@ public class FunctionStatementBlock extends StatementBlock {
 		return ids;
 	}
 
+	public FunctionType getFunctionOpType()
+	{
+		FunctionType ret = FunctionType.UNKNOWN;
+		
+		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
+		if (fstmt instanceof ExternalFunctionStatement) 
+		{
+			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
+			String execType = efstmt.getOtherParams().get(ExternalFunctionStatement.EXEC_TYPE);
+			if( execType!=null ){
+				if(execType.equals(ExternalFunctionStatement.IN_MEMORY))
+					ret = FunctionType.EXTERNAL_MEM;
+				else
+					ret = FunctionType.EXTERNAL_FILE;
+			}
+		}
+		else
+		{
+			ret = FunctionType.DML; 
+		}
+		
+		return ret;
+	}
+	
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
 		
 		FunctionStatement fstmt = (FunctionStatement)_statements.get(0);

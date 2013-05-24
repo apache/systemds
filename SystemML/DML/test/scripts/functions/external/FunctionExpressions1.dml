@@ -1,0 +1,15 @@
+order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
+			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
+
+foo = function( Matrix[Double] A ) return (Matrix[Double] B)  
+{
+   for( i in 1:ncol(A) ) {
+      B = order(A, i, true);
+   }
+}
+ 
+X = read( $1, rows=$2, cols=$3 );
+Y = foo( X*X+7 );
+Y = sqrt( Y-7 );
+write( Y, $4 ); #ordered input
+

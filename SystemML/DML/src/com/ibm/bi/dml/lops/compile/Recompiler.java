@@ -8,6 +8,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.hops.DataOp;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.RandOp;
@@ -65,7 +66,10 @@ public class Recompiler
 
 		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
-			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
+			
+			//TODO potentially invoke also mmchain opt, currently not many usecases 
 			
 			// clear existing lops
 			for( Hops hopRoot : hops )
@@ -98,8 +102,8 @@ public class Recompiler
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false);
-
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
 		return newInst;
 	}
 	
@@ -126,7 +130,8 @@ public class Recompiler
 
 		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
-			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + OptimizerUtils.toMB(Hops.getMemBudget(true)) + " MB");
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
 			
 			// clear existing lops
 			hops.resetVisitStatus();
@@ -144,13 +149,13 @@ public class Recompiler
 			lops.addToDag(dag);		
 
 			// construct instructions
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			newInst = dag.getJobs(ConfigurationManager.getConfig());			
 		}
 		
 		// replace thread ids in new instructions
 		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false);
-
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
 		return newInst;
 	}
 
@@ -306,6 +311,32 @@ public class Recompiler
 		return ret;
 	}
 	
+
+	public static void updateFunctionNames(ArrayList<Hops> hops, long pid) 
+	{
+		for( Hops hopRoot : hops  )
+			rUpdateFunctionNames( hopRoot, pid );
+	}
+	
+	public static void rUpdateFunctionNames( Hops hop, long pid )
+	{
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		//update function names
+		if( hop instanceof FunctionOp ) {
+			FunctionOp fop = (FunctionOp) hop;
+			fop.setFunctionName( fop.getFunctionName() +
+					             ProgramConverter.CP_CHILD_THREAD + pid);
+		}
+		
+		if( hop.getInput() != null )
+			for( Hops c : hop.getInput() )
+				rUpdateFunctionNames(c, pid);
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+	}	
+	
 	
 	//////////////////////////////
 	// private helper functions //
@@ -359,7 +390,7 @@ public class Recompiler
 
 			if(	sb != null 
 				&& Recompiler.requiresRecompilation( sb.get_hops() ) 
-				&& !Recompiler.containsNonRecompileInstructions(tmp) )
+				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
 			{
 				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, tid);
 				pb.setInstructions( tmp );
@@ -397,7 +428,8 @@ public class Recompiler
 			return;
 		
 		//preserve Treads to prevent wrong rmfilevar instructions
-		if( hop.getOpString().equals("TRead") ) 
+		//TODO revisit if this is still required
+		if( hop.getOpString().equals("TRead") )
 			return; 
 		
 		//clear all relevant lops to allow for recompilation
@@ -521,7 +553,7 @@ public class Recompiler
 				long cols = mo.getNumColumns();
 				long nnz = mo.getNnz();
 				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);				
-				if( mem >= Hops.getMemBudget(true) )
+				if( mem >= OptimizerUtils.getMemBudget(true) )
 				{
 					ret = false;
 					break;
@@ -531,4 +563,5 @@ public class Recompiler
 
 		return ret;
 	}
+
 }

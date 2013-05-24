@@ -12,6 +12,7 @@ import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
@@ -22,6 +23,7 @@ import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
+import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hops.AggOp;
 import com.ibm.bi.dml.hops.Hops.DataOpTypes;
 import com.ibm.bi.dml.hops.Hops.Direction;
@@ -35,7 +37,6 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLBlockContainer;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLCleanup;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLContainerProgramBlock;
@@ -1865,96 +1866,68 @@ public class DMLTranslator {
 					
 					
 				}
-				else {
-					
-					/**
-					 * Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
-					 * These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
-					 * extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
-					 * 
-					 */
-
+				else 
+				{
+					//assignment, function call
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-					FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
+					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 					if (fstmt == null){
 						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
 					}
-					StringBuilder inst = new StringBuilder();
-
-					inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
-					inst.append(Lops.OPERAND_DELIMITOR);
 					
-					inst.append(fci.getNamespace());
-					inst.append(Lops.OPERAND_DELIMITOR);
-					
-					inst.append(fstmt.getName());
-					inst.append(Lops.OPERAND_DELIMITOR);
-			
-					inst.append(fstmt._inputParams.size());
-					inst.append(Lops.OPERAND_DELIMITOR);
-
-					inst.append(fstmt._outputParams.size());
-					inst.append(Lops.OPERAND_DELIMITOR);
-					
-					// TODO: DRB: make assumption that function call DOES NOT contain complex expressions
-					ArrayList<String> inParamNames = new ArrayList<String>();
+					ArrayList<Hops> finputs = new ArrayList<Hops>();
 					for (Expression paramName : fci.getParamExpressions()){
-						inst.append(paramName.toString());
-						inst.append(Lops.OPERAND_DELIMITOR);
-						inParamNames.add(paramName.toString());
+						Hops in = processExpression(paramName, null, _ids);						
+						finputs.add(in);
 					}
+
+					//create function op
+					FunctionType ftype = fsb.getFunctionOpType();
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()});
+					output.add(fcall);
 					
-					ArrayList<String> outParamNames = new ArrayList<String>();
-					outParamNames.add(target.getName());
-					inst.append(target.getName());
-					
-					// create the instruction for the function call
-					sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getNamespace(),fci.getName(), inParamNames,outParamNames, inst.toString()));
-					
+					//TODO function output dataops (phase 3)
+					//DataOp trFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), fcall, DataOpTypes.FUNCTIONOUTPUT, null);
+					//DataOp twFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), trFoutput, DataOpTypes.TRANSIENTWRITE, null);					
 				}
 			}
 
 			else if (current instanceof MultiAssignmentStatement) {
+				//multi-assignment, by definition a function call
 				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 				Expression source = mas.getSource();
 				
 				FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-				FunctionStatement fstmt = (FunctionStatement)this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName()).getStatement(0);
-				StringBuilder inst = new StringBuilder();
-
-				inst.append("CP" + Lops.OPERAND_DELIMITOR + "extfunct");
-				inst.append(Lops.OPERAND_DELIMITOR);
-
-				inst.append(fci.getNamespace());
-				inst.append(Lops.OPERAND_DELIMITOR);
+				FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
+				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+				if (fstmt == null){
+					LOG.error(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+				}
 				
-				inst.append(fstmt.getName());
-				inst.append(Lops.OPERAND_DELIMITOR);
-				
-				inst.append(fstmt.getInputParams().size());
-				inst.append(Lops.OPERAND_DELIMITOR);
-
-				inst.append(fstmt.getOutputParams().size());
-				inst.append(Lops.OPERAND_DELIMITOR);
-				
-				// TODO: DRB: make assumption that function call DOES NOT contain complex expressions
-				ArrayList<String> inParamNames = new ArrayList<String>();
+				ArrayList<Hops> finputs = new ArrayList<Hops>();
 				for (Expression paramName : fci.getParamExpressions()){
-					inst.append(paramName.toString());
-					inst.append(Lops.OPERAND_DELIMITOR);
-					inParamNames.add(paramName.toString());
+					Hops in = processExpression(paramName, null, _ids);						
+					finputs.add(in);
+				}
+
+				//create function op
+				String[] foutputs = new String[mas.getTargetList().size()]; 
+				int count = 0;
+				for ( DataIdentifier paramName : mas.getTargetList() ){
+					foutputs[count++]=paramName.getName();
 				}
 				
-				ArrayList<String> outParamNames = new ArrayList<String>();
-				for (int j=0; j<mas.getTargetList().size();j++){
-					DataIdentifier curr = mas.getTargetList().get(j);
-					outParamNames.add(curr.getName());
-					inst.append(curr.getName());
-					if (j < mas.getTargetList().size() - 1)
-						inst.append(Lops.OPERAND_DELIMITOR);
-				}
-				// create the instruction for the function call
-				sb.setFunctionCallInst(new FunctionCallCPInstruction(fci.getNamespace(),fci.getName(), inParamNames,outParamNames, inst.toString()));
+				FunctionType ftype = fsb.getFunctionOpType();
+				FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs);
+				output.add(fcall);
+				
+				//TODO function output dataops (phase 3)
+				/*for ( DataIdentifier paramName : mas.getTargetList() ){
+					DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
+					output.add(twFoutput);
+				}*/
 			}
 			
 			if (current instanceof RandStatement) {
@@ -2252,6 +2225,7 @@ public class DMLTranslator {
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		return target;
 	}
+	
 	 
 	/**
 	 * Constructs the Hops for arbitrary expressions that eventually evaluate to an INT scalar. 

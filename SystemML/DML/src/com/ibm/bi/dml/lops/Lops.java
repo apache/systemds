@@ -29,7 +29,7 @@ public abstract class Lops {
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition
+		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition, FunctionCallCP
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
@@ -410,6 +410,11 @@ public abstract class Lops {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 
+	/** Method should be overridden if needed **/
+	public String getInstructions(String[] inputs, String[] outputs) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
 	/** Method should be overridden if needed **/
 	public String getInstructions() throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");

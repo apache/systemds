@@ -52,12 +52,17 @@ public class Program {
 	public HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
 		
 		HashMap<String,FunctionProgramBlock> retVal = new HashMap<String,FunctionProgramBlock>();
-		for (String namespace : _namespaceFunctions.keySet()){
-			HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
-			for (String fname : namespaceFSB.keySet()){
-				retVal.put(namespace+KEY_DELIM+fname, namespaceFSB.get(fname));
+		
+		synchronized( _namespaceFunctions )
+		{
+			for (String namespace : _namespaceFunctions.keySet()){
+				HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
+				for (String fname : namespaceFSB.keySet()){
+					retVal.put(namespace+KEY_DELIM+fname, namespaceFSB.get(fname));
+				}
 			}
 		}
+		
 		return retVal;
 	}
 	

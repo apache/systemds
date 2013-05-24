@@ -61,7 +61,7 @@ public class AggBinaryOp extends Hops {
 		in1.getParent().add(this);
 		in2.getParent().add(this);
 	}
-
+	
 	public boolean isMatrixMultiply () {
 		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
 	}
@@ -340,7 +340,7 @@ public class AggBinaryOp extends Hops {
 	private static boolean partitionVectorInDistCache(long rows, long cols) {
 		//return true;
 		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
-		return ( vec_size > 0.8 * getMemBudget(false) );
+		return ( vec_size > 0.8 * OptimizerUtils.getMemBudget(false) );
 	}
 	
 	/*

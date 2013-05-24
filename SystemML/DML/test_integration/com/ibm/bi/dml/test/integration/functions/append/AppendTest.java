@@ -6,7 +6,6 @@ import java.util.Random;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -35,9 +34,7 @@ public class AppendTest extends AutomatedTestBase{
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
 	    rtplatform = platform;
-	    
-	    System.out.println(Hops.getMemBudget(true));
-	    
+
         config.addVariable("rows", rows);
         config.addVariable("cols", cols);
           

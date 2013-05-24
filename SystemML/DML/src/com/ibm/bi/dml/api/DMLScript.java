@@ -34,7 +34,6 @@ import org.nimble.control.PMLDriver;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
@@ -620,7 +619,7 @@ public class DMLScript {
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
 		          "Type = " + OptimizerUtils.getOptType() + "\n"
 				 +"Mode = " + OptimizerUtils.getOptMode() + "\nAvailable Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
-				 +"Memory Budget = " + ((double)Hops.getMemBudget(true)/1024/1024) + " MB" + "\n"
+				 +"Memory Budget = " + ((double)OptimizerUtils.getMemBudget(true)/1024/1024) + " MB" + "\n"
 				 +"Defaults: mem util " + OptimizerUtils.MEM_UTIL_FACTOR + ", sparsity " + OptimizerUtils.DEF_SPARSITY + ", def mem " +  + OptimizerUtils.DEF_MEM_FACTOR);
 			
 		/////////////////////// construct the lops ///////////////////////////////////
@@ -638,7 +637,6 @@ public class DMLScript {
 			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
-		
 
 		////////////////////// generate runtime program ///////////////////////////////
 		Program rtprog = prog.getRuntimeProgram(config);
@@ -673,6 +671,8 @@ public class DMLScript {
 
 		LOG.trace("Compile Status for executeHadoop is OK ");
 
+		//System.out.println("Estimated execution time: "+OpCostEstimator.getTimeEstimate(rtprog));
+		
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		
 		try 

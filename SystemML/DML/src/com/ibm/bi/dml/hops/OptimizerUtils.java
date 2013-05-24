@@ -10,8 +10,58 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
-public class OptimizerUtils {
+public class OptimizerUtils 
+{
+	////////////////////////////////////////////////////////
+	// Optimizer constants and flags (incl tuning knobs)  //
+	////////////////////////////////////////////////////////
+	/**
+	 * Utilization factor used in deciding whether an operation to be scheduled on CP or MR. 
+	 * NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE < 1.0
+	 */
+	public static final double MEM_UTIL_FACTOR = 0.7d;
+	
+	/**
+	 * Default memory size, which is used the actual estimate can not be computed 
+	 * -- for example, when input/output dimensions are unknown. In case of ROBUST,
+	 * the default is set to a large value so that operations are scheduled on MR.  
+	 */
+	public static double DEFAULT_SIZE;	
+	
+	public static final double DEF_MEM_FACTOR = 0.25d; //default if result size unkown (aggressive only)
+	public static final double DEF_SPARSITY = 0.1d;  //default if result sparsity unkown (aggressive only)
+	
+	public static final long DOUBLE_SIZE = 8;
+	public static final long INT_SIZE = 4;
+	public static final long CHAR_SIZE = 1;
+	public static final long BOOLEAN_SIZE = 1;
+	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
+	/**
+	 * Enables/disables dynamic re-compilation of lops/instructions.
+	 * If enabled, we recompile each program block that contains at least
+	 * one hop that requires re-compilation (e.g., unknown statistics 
+	 * during compilation, or program blocks in functions).  
+	 */
+	public static boolean ALLOW_DYN_RECOMPILATION = true;
+	public static boolean ALLOW_PARALLEL_DYN_RECOMPILATION = ALLOW_DYN_RECOMPILATION && true;
+	
+	/**
+	 * Enables/disables to put operations with data-dependent output
+	 * size into individual statement blocks / program blocks.
+	 * Since recompilation is done on the granularity of program blocks
+	 * this enables recompilation of subsequent operations according
+	 * to the actual output size. This rewrite might limit the opportunity
+	 * for piggybacking and therefore should only be applied if 
+	 * dyanmic recompilation is enabled as well.
+	 */
+	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
+
+	
+	//////////////////////
+	// Optimizer types  //
+	//////////////////////
+	
 	/**
 	 * Optimization Types for Compilation
 	 * 
@@ -24,12 +74,12 @@ public class OptimizerUtils {
 	 *  It does NOT take the execution time into account.
 	 *
 	 */
-	public enum OptimizationType { STATIC, MEMORY_BASED };
-	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
-	public static OptimizationType getOptType() {
-		return _optType;
-	}
+	public enum OptimizationType { 
+		STATIC, 
+		MEMORY_BASED 
+	};
 	
+
 	/**
 	 * Optimization Modes for Compilation
 	 * 
@@ -40,13 +90,30 @@ public class OptimizerUtils {
 	 * necessary precautions at runtime (e.g., make sure to avoid OutOfMemoryExceptions)
 	 *              
 	 */
-	public enum OptimizationMode { NONE, ROBUST, AGGRESSIVE };
+	public enum OptimizationMode { 
+		NONE,       
+		ROBUST,      //worst-case guarantees
+		AGGRESSIVE   //aggressive assumptions for unknowns
+	};
+	
+	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
 	private static OptimizationMode _optMode = OptimizationMode.ROBUST;
+	private static DecimalFormat df = new DecimalFormat("#.##");
+	
+	
+	public static OptimizationType getOptType() {
+		return _optType;
+	}
 	
 	public static OptimizationMode getOptMode() {
 		return _optMode;
 	}
 	
+	/**
+	 * 
+	 * @param optlevel
+	 * @throws DMLRuntimeException
+	 */
 	public static void setOptimizationLevel( int optlevel ) 
 		throws DMLRuntimeException
 	{
@@ -74,59 +141,33 @@ public class OptimizerUtils {
 		setDefaultSize();
 	}
 	
-	
 	/**
-	 * Optimization Constants
+	 * 
 	 */
-	
-	// Utilization factor used in deciding whether an operation to be scheduled on CP or MR. 
-	// NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE < 1.0
-	public static final double MEM_UTIL_FACTOR = 0.7d;
-	
-	/*
-	 * Default memory size, which is used the actual estimate can not be computed 
-	 * -- for example, when input/output dimensions are unknown. In case of ROBUST,
-	 * the default is set to a large value so that operations are scheduled on MR.  
-	 */
-	public static double DEFAULT_SIZE;
-	public static final double DEF_MEM_FACTOR = 0.25d; 
 	private static void setDefaultSize() {
 		if ( _optMode == OptimizationMode.ROBUST ) 
 			DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
 		else 
 			DEFAULT_SIZE = DEF_MEM_FACTOR * InfrastructureAnalyzer.getLocalMaxMemory();
 	}
-
-	// used when result sparsity can not be estimated, as per uniform distribution of non-zeros
-	public static final double DEF_SPARSITY = 0.1d;
-	
-	// size of native scalars
-	public static final long DOUBLE_SIZE = 8;
-	public static final long INT_SIZE = 4;
-	public static final long CHAR_SIZE = 1;
-	public static final long BOOLEAN_SIZE = 1;
-	public static final double INVALID_SIZE = -1d; // used to indicate the memory estimate is not computed
 	
 	/**
-	 * Enables/disables dynamic re-compilation of lops/instructions.
-	 * If enabled, we recompile each program block that contains at least
-	 * one hop that requires re-compilation (e.g., unknown statistics 
-	 * during compilation, or program blocks in functions).  
+	 * Returns memory budget (according to util factor) in bytes
+	 * 
+	 * @param localOnly specifies if only budget of current JVM or also MR JVMs 
+	 * @return
 	 */
-	public static boolean ALLOW_DYN_RECOMPILATION = true;
-	public static boolean ALLOW_PARALLEL_DYN_RECOMPILATION = ALLOW_DYN_RECOMPILATION && true;
-	
-	/**
-	 * Enables/disables to put operations with data-dependent output
-	 * size into individual statement blocks / program blocks.
-	 * Since recompilation is done on the granularity of program blocks
-	 * this enables recompilation of subsequent operations according
-	 * to the actual output size. This rewrite might limit the opportunity
-	 * for piggybacking and therefore should only be applied if 
-	 * dyanmic recompilation is enabled as well.
-	 */
-	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
+	public static double getMemBudget( boolean localOnly )
+	{
+		double ret = -1;		
+		if( localOnly )
+			ret = InfrastructureAnalyzer.getLocalMaxMemory();
+		else
+			ret = InfrastructureAnalyzer.getGlobalMaxMemory();
 		
+		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+	
 	/**
 	 * Returns the number of reducers that potentially run in parallel.
 	 * This is either just the configured value (SystemML config) or
@@ -143,6 +184,10 @@ public class OptimizerUtils {
 		
 		return ret;
 	}
+	
+	////////////////////////
+	// Memory Estimates   //
+	////////////////////////
 	
 	
 	/**
@@ -207,8 +252,8 @@ public class OptimizerUtils {
 	 * @param sp
 	 * @return estimated size in bytes
 	 */
-	public static long estimateRowSize(long clen, double sp) {
-		
+	public static long estimateRowSize(long clen, double sp) 
+	{	
 		if ( sp == 0 )
 			return 0;
 		
@@ -225,7 +270,12 @@ public class OptimizerUtils {
 		long rowSize = basicSize +  allocatedCells * cellSize;
 		return rowSize;
 	}
-
+	
+	
+	////////////////////////
+	// Sparsity Estimates //
+	////////////////////////
+	
 	/**
 	 * Estimates the result sparsity for Matrix Multiplication A %*% B. 
 	 *  
@@ -279,7 +329,6 @@ public class OptimizerUtils {
 		return 1.0; // default is worst-case estimate for robustness
 	}
 	
-	static DecimalFormat df = new DecimalFormat("#.##");
 	public static String toMB(double inB) {
 		if ( inB < 0 )
 			return "-";

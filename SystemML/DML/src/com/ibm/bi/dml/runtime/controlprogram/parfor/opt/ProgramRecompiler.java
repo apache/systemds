@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.IndexingOp;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
@@ -327,7 +328,7 @@ public class ProgramRecompiler
 				//NOTE: mem estimate of RIX, set to output size by parfor optmizer
 				//(rowblock/colblock only applied if in total less than two blocks,
 				// hence always mem_est<mem_budget)
-				if( hop.getMemEstimate() < Hops.getMemBudget(true) )
+				if( hop.getMemEstimate() < OptimizerUtils.getMemBudget(true) )
 					hop.setForcedExecType( LopProperties.ExecType.CP );
 				else
 					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );

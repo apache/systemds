@@ -146,7 +146,7 @@ public class OptimizerRuleBased extends Optimizer
 		_rnk   = InfrastructureAnalyzer.getRemoteParallelNodes();  
 		_rk    = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 
 		_rkmax = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
-		_lm   = Hops.getMemBudget(true);
+		_lm   = OptimizerUtils.getMemBudget(true);
 		_rm   = OptimizerUtils.MEM_UTIL_FACTOR * InfrastructureAnalyzer.getRemoteMaxMemory(); //Hops.getMemBudget(false); 
 		
 		_cost = est;
@@ -378,7 +378,7 @@ public class OptimizerRuleBased extends Optimizer
 				break;
 		}
 		
-		if( mem < Hops.getMemBudget(true) )
+		if( mem < OptimizerUtils.getMemBudget(true) )
 			return LopProperties.ExecType.CP;
 		else
 			return LopProperties.ExecType.CP_FILE;
@@ -1100,7 +1100,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			String opName = n.getParam(ParamType.OPSTRING);
 			//check opstring and exec type
-			if( opName.equals(LeftIndexingOp.OPSTRING) && n.getExecType()==ExecType.MR )
+			if( opName !=null && opName.equals(LeftIndexingOp.OPSTRING) && n.getExecType()==ExecType.MR )
 			{
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname

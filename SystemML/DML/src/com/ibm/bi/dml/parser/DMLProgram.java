@@ -165,8 +165,9 @@ public class DMLProgram {
 			// add program block to program
 			ProgramBlock rtpb = createRuntimeProgramBlock(rtprog, sb, config);
 			rtprog.addProgramBlock(rtpb);
-
 		}
+		
+		
 		return rtprog ;
 	}
 	
@@ -545,6 +546,7 @@ public class DMLProgram {
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		else {
+	
 			// handle general case
 			ProgramBlock rtpb = new ProgramBlock(prog);
 		
@@ -557,11 +559,10 @@ public class DMLProgram {
 				for (Lops l : sb.get_lops()) {
 					l.addToDag(dag);
 				}
+				
 				// Instructions for Lobs DAGs
 				instruct = dag.getJobs(sb, config);
-				for (Instruction i : instruct) {
-					rtpb.addInstruction(i);
-				}
+				rtpb.addInstructions(instruct);
 			}
 			
 			/*// TODO: check with Doug

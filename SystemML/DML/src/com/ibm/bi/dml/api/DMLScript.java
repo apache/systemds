@@ -28,19 +28,15 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nimble.configuration.NimbleConfig;
-import org.nimble.control.DAGQueue;
-import org.nimble.control.PMLDriver;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.packagesupport.PackageRuntimeException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -183,13 +179,11 @@ public class DMLScript {
 		////////////////print config file parameters /////////////////////////////
 		LOG.debug("\nDML config for this run: \n" + defaultConfig.getConfigInfo());
 		
-		
 		///////////////////////////////////// parse script ////////////////////////////////////////////
 		DMLProgram prog = null;
 		DMLQLParser parser = new DMLQLParser(_dmlScriptString, _argVals);
 	
 		prog = parser.parse();
-
 
 		if (prog == null){
 			throw new ParseException("DMLQLParser parsing returns a NULL object");
@@ -199,13 +193,11 @@ public class DMLScript {
 		DMLTranslator dmlt = new DMLTranslator(prog);
 
 		dmlt.liveVariableAnalysis(prog);			
-
-		
 		dmlt.validateParseTree(prog);
 	
 		//TODO: Doug will work on the format of prog.toString()
 		LOG.debug("\nCOMPILER: \n" + prog.toString());
-
+		
 		dmlt.constructHops(prog);
 		
 		/*
@@ -241,8 +233,7 @@ public class DMLScript {
 			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
-		
-
+	
 		executeHadoop(dmlt, prog, defaultConfig);
 	}
 	
@@ -640,16 +631,10 @@ public class DMLScript {
 
 		////////////////////// generate runtime program ///////////////////////////////
 		Program rtprog = prog.getRuntimeProgram(config);
-		
-		//setup nimble queue (external package support)
-		DAGQueue dagQueue = setupNIMBLEQueue(config);
-		if (dagQueue == null)
-			LOG.warn("dagQueue is not set");
-		rtprog.setDAGQueue(dagQueue);
-		
+
 		//count number compiled MR jobs	
 		int jobCount = DMLProgram.countCompiledMRJobs(rtprog);
-		Statistics.setNoOfCompiledMRJobs( jobCount );
+		Statistics.setNoOfCompiledMRJobs( jobCount );		
 		
 		/*
 		if (DEBUG) {
@@ -686,18 +671,17 @@ public class DMLScript {
 		{			
 			//TODO: Should statistics being turned on at info level?
 			Statistics.stopRunTimer();
-	
+			
 			//TODO: System.out is for running with JAQL shell, eventually we hope JAQL shell will not use
 			// its own log4j.properties
 			LOG.info(Statistics.display());
-			
 			LOG.info("END DML run " + getDateTime() );
-			//cleanup all nimble threads
-			if(rtprog.getDAGQueue() != null)
-		  	    rtprog.getDAGQueue().forceShutDown();
+			
+			//shut down nimble queue (if existing)
+			ExternalFunctionProgramBlock.shutDownNimbleQueue();
 			
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( config );
+			cleanupHadoopExecution( config );		
 		}
 	} // end executeHadoop
 
@@ -777,63 +761,7 @@ public class DMLScript {
 		}*/
 
 	} // end executeNetezza
-	/**
-	 * Method to setup the NIMBLE task queue. 
-	 * This will be used in future external function invocations
-	 * @param dmlCfg DMLConfig object
-	 * @return NIMBLE task queue
-	 */
-	static DAGQueue setupNIMBLEQueue(DMLConfig dmlCfg) {
-
-		//config not provided
-		if (dmlCfg == null) 
-			return null;
-		
-		// read in configuration files
-		NimbleConfig config = new NimbleConfig();
-
-		try {
-			config.parseSystemDocuments(dmlCfg.getConfig_file_name());
-			
-			//ensure unique working directory for nimble output
-			StringBuffer sb = new StringBuffer();
-			sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
-			sb.append( Lops.FILE_SEPARATOR );
-			sb.append( Lops.PROCESS_PREFIX );
-			sb.append( getUUID() );
-			sb.append( Lops.FILE_SEPARATOR  );
-			sb.append( dmlCfg.getTextValue(DMLConfig.NIMBLE_SCRATCH) );			
-			((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
-			                .setTextContent( sb.toString() );						
-		} catch (Exception e) {
-			throw new PackageRuntimeException ("Error parsing Nimble configuration files", e);
-		}
-
-		// get threads configuration and validate
-		int numSowThreads = 1;
-		int numReapThreads = 1;
-
-		numSowThreads = Integer.parseInt
-				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_SOW_THREADS));
-		numReapThreads = Integer.parseInt
-				(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
-		
-		if (numSowThreads < 1 || numReapThreads < 1){
-			throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
-		}
-
-		// Initialize an instance of the driver.
-		PMLDriver driver = null;
-		try {
-			driver = new PMLDriver(numSowThreads, numReapThreads, config);
-			driver.startEmptyDriver(config);
-		} catch (Exception e) {
-			throw new PackageRuntimeException("Problem starting nimble driver", e);
-		} 
-
-		return driver.getDAGQueue();
-	}
-
+	
 
 	/**
 	 * @throws ParseException 

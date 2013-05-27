@@ -3,8 +3,6 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.nimble.control.DAGQueue;
-
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -18,10 +16,6 @@ public class Program {
 
 	protected LocalVariableMap _programVariables;
 	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
-	
-
-	//handle to the nimble dag queue
-	private DAGQueue _dagQueue;
 
 		
 	public Program() throws DMLRuntimeException {
@@ -87,16 +81,6 @@ public class Program {
 
 	public ArrayList<ProgramBlock> getProgramBlocks() {
 		return _programBlocks;
-	}
-	
-	public void setDAGQueue(DAGQueue dagQueue)
-	{
-		_dagQueue = dagQueue;
-	}
-	
-	public DAGQueue getDAGQueue()
-	{
-		return _dagQueue; 
 	}
 
 	public void execute(LocalVariableMap varMap, ExecutionContext ec)

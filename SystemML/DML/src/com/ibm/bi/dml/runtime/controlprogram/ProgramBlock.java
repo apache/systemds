@@ -124,6 +124,10 @@ public class ProgramBlock
 		_inst.add(inst);
 	}
 	
+	public void addInstructions(ArrayList<Instruction> inst) {
+		_inst.addAll(inst);
+	}
+	
 	public int getNumInstructions() {
 		return _inst.size();
 	}

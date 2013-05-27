@@ -5,9 +5,12 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import org.nimble.configuration.NimbleConfig;
 import org.nimble.control.DAGQueue;
+import org.nimble.control.PMLDriver;
 import org.nimble.exception.NimbleCheckedRuntimeException;
 import org.nimble.task.AbstractTask;
+import org.w3c.dom.Element;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
@@ -53,7 +56,11 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	
-	protected static IDSequence _idSeq;
+	protected static IDSequence _idSeq = null;
+
+	//handle to the nimble dag queue
+	protected static DAGQueue _dagQueue = null;
+	
 	protected String _baseDir = null;
 
 	ArrayList<Instruction> block2CellInst; 
@@ -80,7 +87,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param eFuncStat
 	 * @throws DMLRuntimeException 
 	 */
-
 	protected ExternalFunctionProgramBlock(Program prog,
 			Vector<DataIdentifier> inputParams,
 			Vector<DataIdentifier> outputParams,
@@ -88,6 +94,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	{
 		super(prog, inputParams, outputParams);		
 		_baseDir = baseDir;
+		
+		//NOTE: no need to setup nimble queue for CP external functions
 	}
 	
 	public ExternalFunctionProgramBlock(Program prog,
@@ -106,6 +114,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		_unblockedFileNames = new HashMap<String, String>();
 		_blockedFileNames = new HashMap<String, String>();
 
+		//setup nimble queue (if not existing)
+		setupNIMBLEQueue();
+		if (_dagQueue == null)
+			LOG.warn("dagQueue is not set");
+		
 		// generate instructions
 		createInstructions();
 	}
@@ -189,7 +202,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 					executeInstruction(
 							(ExternalFunctionInvocationInstruction) _inst
 							.get(i),
-							this._prog.getDAGQueue());
+							getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
 				
 					throw new PackageRuntimeException(this.printBlockErrorLocation() + 
@@ -928,5 +941,81 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in external function program block generated from external function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
+	
+	/**
+	 * Method to setup the NIMBLE task queue. 
+	 * This will be used in future external function invocations
+	 * @param dmlCfg DMLConfig object
+	 * @return NIMBLE task queue
+	 */
+	public synchronized static void setupNIMBLEQueue() 
+	{
+		if( _dagQueue == null )
+		{
+			DMLConfig dmlCfg = ConfigurationManager.getConfig();	
+			
+			//config not provided
+			if (dmlCfg == null) 
+				return;
+			
+			// read in configuration files
+			NimbleConfig config = new NimbleConfig();
+	
+			try {
+				config.parseSystemDocuments(dmlCfg.getConfig_file_name());
+				
+				//ensure unique working directory for nimble output
+				StringBuffer sb = new StringBuffer();
+				sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
+				sb.append( Lops.FILE_SEPARATOR );
+				sb.append( Lops.PROCESS_PREFIX );
+				sb.append( DMLScript.getUUID() );
+				sb.append( Lops.FILE_SEPARATOR  );
+				sb.append( dmlCfg.getTextValue(DMLConfig.NIMBLE_SCRATCH) );			
+				((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
+				                .setTextContent( sb.toString() );						
+			} catch (Exception e) {
+				throw new PackageRuntimeException ("Error parsing Nimble configuration files", e);
+			}
+	
+			// get threads configuration and validate
+			int numSowThreads = 1;
+			int numReapThreads = 1;
+	
+			numSowThreads = Integer.parseInt
+					(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_SOW_THREADS));
+			numReapThreads = Integer.parseInt
+					(NimbleConfig.getTextValue(config.getSystemConfig().getParameters(), DMLConfig.NUM_REAP_THREADS));
+			
+			if (numSowThreads < 1 || numReapThreads < 1){
+				throw new PackageRuntimeException("Illegal values for thread count (must be > 0)");
+			}
+	
+			// Initialize an instance of the driver.
+			PMLDriver driver = null;
+			try {
+				driver = new PMLDriver(numSowThreads, numReapThreads, config);
+				driver.startEmptyDriver(config);
+			} catch (Exception e) {
+				throw new PackageRuntimeException("Problem starting nimble driver", e);
+			} 
+	
+			_dagQueue = driver.getDAGQueue();
+		}
+	}
+
+	public static DAGQueue getDAGQueue()
+	{
+		return _dagQueue;
+	}
+	
+	public synchronized static void shutDownNimbleQueue()
+	{
+		//cleanup all nimble threads
+		if(_dagQueue != null)
+	  	    _dagQueue.forceShutDown();
+		_dagQueue = null;
 	}
 }

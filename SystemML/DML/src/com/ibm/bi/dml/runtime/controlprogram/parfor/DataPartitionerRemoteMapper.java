@@ -300,7 +300,7 @@ public class DataPartitionerRemoteMapper
 						{
 							longKey.set(row_offset+1+i);
 							key2.setIndexes(1, (col_offset/_bclen+1) );	
-							value2.slideOperations(i+1, i+1, 1, cols, _reuseBlk);		
+							value2.sliceOperations(i+1, i+1, 1, cols, _reuseBlk);		
 							pairValue.indexes = key2;
 							pairValue.block = _reuseBlk;
 							out.collect(longKey, pairValue);
@@ -327,7 +327,7 @@ public class DataPartitionerRemoteMapper
 						{
 							longKey.set(col_offset+1+i);
 							key2.setIndexes(row_offset/_brlen+1, 1);							
-							value2.slideOperations(1, rows, i+1, i+1, _reuseBlk);							
+							value2.sliceOperations(1, rows, i+1, i+1, _reuseBlk);							
 							pairValue.indexes = key2;
 							pairValue.block = _reuseBlk;
 							out.collect(longKey, pairValue );

@@ -167,7 +167,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		MatrixBlock mb = new MatrixBlock(
 				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumRows[distCache_index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)), 
 				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumColumns[distCache_index]-(colBlockIndex-1)*DMLTranslator.DMLBlockSize)), false);
-		mb = (MatrixBlock) ((MatrixBlockDSM)mv).slideOperations(st+1, end+1, 1, 1, mb);
+		mb = (MatrixBlock) ((MatrixBlockDSM)mv).sliceOperations(st+1, end+1, 1, 1, mb);
 
 			
 		//System.out.println("readBlock(): [" + rowBlockIndex + "," + colBlockIndex + "] part_rl " + part_rl + ", (" + st + "," + end +")");

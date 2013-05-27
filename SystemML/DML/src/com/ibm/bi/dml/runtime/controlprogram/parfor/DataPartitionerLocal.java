@@ -535,7 +535,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
-				mb.slideOperations(i+1, i+1, 1, cols, _reuseBlk);
+				mb.sliceOperations(i+1, i+1, 1, cols, _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
 			}
@@ -555,7 +555,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(row_offset/brlen+1); 			
-				mb.slideOperations(1, rows, i+1, i+1, _reuseBlk);
+				mb.sliceOperations(1, rows, i+1, i+1, _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
 			}				

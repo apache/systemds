@@ -664,8 +664,8 @@ public class DataConverter
 						//get reuse matrix block
 						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 	
-						//copy submatrix to block TODO rename to slice!
-						src.slideOperations( row_offset+1, row_offset+maxRow, 
+						//copy submatrix to block
+						src.sliceOperations( row_offset+1, row_offset+maxRow, 
 								             col_offset+1, col_offset+maxCol, 
 								             block );
 						

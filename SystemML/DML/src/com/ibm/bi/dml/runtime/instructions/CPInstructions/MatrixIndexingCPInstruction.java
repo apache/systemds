@@ -128,7 +128,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 			}
 			
 			if ( opcode.equalsIgnoreCase("rangeReIndex"))
-				resultBlock = (MatrixBlock) matBlock.slideOperations(rl, ru, cl, cu, new MatrixBlock());
+				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
 			else if ( opcode.equalsIgnoreCase("leftIndex"))
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
 			else

@@ -783,12 +783,12 @@ public class MatrixObject extends CacheableData
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{
 					long rix = (pred.rowStart-1)%brlen+1;
-					mb = (MatrixBlock) mb.slideOperations(rix, rix, pred.colStart, pred.colEnd, new MatrixBlock());
+					mb = (MatrixBlock) mb.sliceOperations(rix, rix, pred.colStart, pred.colEnd, new MatrixBlock());
 				}
 				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 				{
 					long cix = (pred.colStart-1)%bclen+1;
-					mb = (MatrixBlock) mb.slideOperations(pred.rowStart, pred.rowEnd, cix, cix, new MatrixBlock());
+					mb = (MatrixBlock) mb.sliceOperations(pred.rowStart, pred.rowEnd, cix, cix, new MatrixBlock());
 				}
 			}
 			

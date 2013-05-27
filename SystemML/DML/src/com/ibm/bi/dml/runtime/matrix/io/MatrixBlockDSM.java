@@ -2574,7 +2574,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixValue slideOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue ret) 
+	public MatrixValue sliceOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue ret) 
 	throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		// Check the validity of bounds
@@ -2667,13 +2667,11 @@ public class MatrixBlockDSM extends MatrixValue{
 		if( cl==cu ) //specific case: column vector 
 		{
 			dest.allocateDenseBlock();
-			double val;
 			for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
-				if( (val = denseBlock[i]) != 0 )
-				{
-					dest.denseBlock[ix] = val;
-					dest.nonZeros++;
-				}
+			{
+				dest.denseBlock[ix] = denseBlock[i];
+				dest.nonZeros+=(dest.denseBlock[ix]!=0)?1:0;
+			}
 		}
 		else //general case (dense)
 		{

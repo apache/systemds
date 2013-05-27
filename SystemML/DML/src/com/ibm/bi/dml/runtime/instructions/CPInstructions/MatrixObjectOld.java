@@ -258,7 +258,7 @@ public class MatrixObjectOld extends Data {
 	}
 	
 	public MatrixObjectOld indexOperations(long rl, long ru, long cl, long cu, MatrixObjectOld result) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		MatrixBlock result_data = (MatrixBlock) _data.slideOperations(rl, ru, cl, cu, new MatrixBlock());
+		MatrixBlock result_data = (MatrixBlock) _data.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
 		result.setData(result_data);
 		// update the metadata for resulting matrix
 		result.updateMatrixMetaData();

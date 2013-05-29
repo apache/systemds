@@ -140,11 +140,22 @@ public class MatrixBlockDSM extends MatrixValue{
 		//estimate memory consumption for sparse/dense
 		if(sparse)
 		{
-			//account for sparsity and initial capacity
-			int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
-			size += nrows * (28 + 12 * len );
+			//NOTES:
+			// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
+			//   12B (3 int members), 32B (overhead int array), 32B (overhead double array),
+			// * Each non-zero value requires 12B for the column-index/value pair.
+			// * Overheads for arrays, objects, and references refer to 64bit JVMs
+			// * If nnz < than rows we have only also empty rows.
 			
-			//size += (Math.ceil(sparsity*ncols)*12+28)*nrows;
+			//account for sparsity and initial capacity
+			long cnnz = Math.max(SparseRow.initialCapacity, (long)Math.ceil(sparsity*ncols));
+			long rlen = Math.min(nrows, (long) Math.ceil(sparsity*nrows*ncols));
+			size += rlen * ( 116 + 12 * cnnz ); //sparse row
+			size += (nrows-rlen) * 8; //empty rows
+			
+			//OLD ESTIMATE: 
+			//int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
+			//size += nrows * (28 + 12 * len );
 		}
 		else
 		{

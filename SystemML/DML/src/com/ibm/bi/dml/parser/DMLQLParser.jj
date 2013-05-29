@@ -252,8 +252,7 @@ TOKEN :
  	| <INTEGER : (["0"-"9"])+>
  
  	// A number with decimal point -- minus sign is a separate token
- 	| <DOUBLE : (["0"-"9"])* "." (["0"-"9"])+>
- 
+ 	| <DOUBLE : (["0"-"9"])* "." (["0"-"9"])+  ( ("e"|"E")("-"|"+")? (["0"-"9"])+)? > 
 	// A double-quoted string literal (Based on JavaCC.jj)
  	| <DBLQUOTE_STRING_LITERAL :
   	"\""
@@ -1402,9 +1401,6 @@ IterablePredicate IterablePredicate() :
      			fromExpr = seqExprs.get(0);
      			toExpr   = seqExprs.get(1);
      			IntIdentifier oneExpr = new IntIdentifier(1);
-     			((IntIdentifier)oneExpr).setDimensions(0,0);
-				((IntIdentifier)oneExpr).computeDataType();
-				((IntIdentifier)oneExpr).setValueType(ValueType.INT);
      			incrementExpr = (seqExprs.size() == 3) ? seqExprs.get(2) : oneExpr;  
     		} 
     
@@ -1414,10 +1410,6 @@ IterablePredicate IterablePredicate() :
     		fromExpr = exprParams.get(0);
     		toExpr   = exprParams.get(1);
     		incrementExpr = new IntIdentifier(1);
-    		((IntIdentifier)incrementExpr).setDimensions(0,0);
-			((IntIdentifier)incrementExpr).computeDataType();
-			((IntIdentifier)incrementExpr).setValueType(ValueType.INT);
-    		
    		}
     	// if (params.size() > 2)
   	}
@@ -1680,9 +1672,6 @@ Expression UnaryExpression() :
      		{
 				BinaryExpression exprb = new BinaryExpression(bop, t.beginLine, t.beginColumn, t.beginLine, t.beginColumn);
      			IntIdentifier id = new IntIdentifier(0);
-				id.setDimensions(0,0);
-				id.computeDataType();
-				id.setValueType(ValueType.INT);
 				exprb.setLeft(id);
 				exprb.setRight(right);
 				expr = exprb;
@@ -1761,18 +1750,12 @@ Identifier IdentifierOrConstant() :
 			  	// try to assign to long value
 				Long longVal = new Long(argVal);
 				id = new IntIdentifier(longVal);
-				id.setDimensions(0,0);
-		    	id.computeDataType();
-		    	id.setValueType(ValueType.INT);
 				
 			} catch(Exception e1){
 			  	try {
 			  	  	// try to assign to double value
 			  	  	Double doubleVal = new Double(argVal);
 			  	  	id = new DoubleIdentifier(doubleVal);
-				  	id.setDimensions(0,0);
-	    		  	id.computeDataType();
-	    		  	id.setValueType(ValueType.DOUBLE);
 			  	  
 			  	} catch (Exception e2) {
 
@@ -1780,16 +1763,10 @@ Identifier IdentifierOrConstant() :
 					if (argVal.equalsIgnoreCase("true") || argVal.equalsIgnoreCase("false")){   
 						Boolean boolVal = new Boolean(argVal);
 			  	  		id = new BooleanIdentifier(boolVal);
-						id.setDimensions(0,0);
-	    				id.computeDataType();
-	    				id.setValueType(ValueType.BOOLEAN);
 					}
 					else {
 					  	// try to assign to string value
 						id = new StringIdentifier(argVal);
-						id.setDimensions(0,0);
-	    				id.computeDataType();
-	    				id.setValueType(ValueType.STRING);
 					}	
 
 			  	} // end catch e2
@@ -1853,9 +1830,6 @@ IntIdentifier IntConstant() :
      		}
 
    			id = new IntIdentifier(intval);
-   			id.setDimensions(0,0);
-      		id.computeDataType();
-      		id.setValueType(ValueType.INT);
   		}
  	)
  	{
@@ -1887,9 +1861,6 @@ DoubleIdentifier DoubleConstant() :
         		doubleval = -doubleval;
       		}
    			id = new DoubleIdentifier(doubleval);
-   			id.setDimensions(0,0);
-      		id.computeDataType();
-      		id.setValueType(ValueType.DOUBLE);
   		}
  	)
  	{ 
@@ -1938,12 +1909,8 @@ StringIdentifier StringConstant() :
 }
 {
     (
-  		(t =<DBLQUOTE_STRING_LITERAL>)
-  		{
+  		(t =<DBLQUOTE_STRING_LITERAL>){
 			id = new StringIdentifier(dequoteStr('\"',t.image));
-   			id.setDimensions(0,0);
-      		id.computeDataType();
-      		id.setValueType(ValueType.STRING);
   		}
  	)
  	{ 
@@ -2108,17 +2075,11 @@ InputStatement InputStatement() :
 
 		if (tRead.image.equals("readMM")){
 		    StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-		    readMMExpr.setDimensions(0,0);
-	    	readMMExpr.computeDataType();
-	    	readMMExpr.setValueType(ValueType.STRING);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
 		}
 		/*
 		else if (tRead.image.equals("read.matrix")){
 		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED);
-		    readMMExpr.setDimensions(0,0);
-	    	readMMExpr.computeDataType();
-	    	readMMExpr.setValueType(ValueType.STRING);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
 		}
 		*/
@@ -2167,16 +2128,10 @@ OutputStatement OutputStatement() :
 		tWrite = tStart;
 		if (tWrite.image.equals("writeMM")){
 
-			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-		  	writeMMExpr.setDimensions(0,0);
-	    	writeMMExpr.computeDataType();
-	    	writeMMExpr.setValueType(ValueType.STRING);			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
+			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
 		}
 		else if (tWrite.image.equals("write.matrix")){
 			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
-		  	delimitedExpr.setDimensions(0,0);
-	    	delimitedExpr.computeDataType();
-	    	delimitedExpr.setValueType(ValueType.STRING);
 			os.addExprParam(Statement.FORMAT_TYPE, delimitedExpr, false);
 		}	
 		blp = tStart.beginLine;

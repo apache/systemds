@@ -15,8 +15,10 @@ import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -35,6 +37,8 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -73,7 +77,7 @@ public class Recompiler
 			
 			// clear existing lops
 			for( Hops hopRoot : hops )
-			{
+			{	
 				hopRoot.resetVisitStatus();
 				rClearLops( hopRoot );
 			}
@@ -394,9 +398,55 @@ public class Recompiler
 			{
 				tmp = Recompiler.recompileHopsDag(sb.get_hops(), vars, tid);
 				pb.setInstructions( tmp );
+				
+				//propagate stats across hops (should be executed on clone of vars)
+				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
 			}
 		}
 		
+	}
+	
+	/**
+	 * 
+	 * @param hops
+	 * @param vars
+	 */
+	private static void extractDAGOutputStatistics(ArrayList<Hops> hops, LocalVariableMap vars)
+	{
+		for( Hops hop : hops ) //for all hop roots
+			if(    hop.getOpString().equals("TWrite")  //for all writes
+				&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims
+			{
+				String varName = hop.get_name();
+				if( !vars.keySet().contains(varName) ) //not existing so far
+				{
+					//TODO dense, once we have reliable worst-case sparsity estimates this should change.
+					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
+					MatrixCharacteristics mc = new MatrixCharacteristics( 
+												hop.get_dim1(), hop.get_dim2(),
+												DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+					mo.setMetaData(meta);	
+					vars.put(varName, mo);
+				}
+				else //already existing: take largest   
+				{
+					Data dat = vars.get(varName);
+					if( dat instanceof MatrixObject )
+					{
+						MatrixObject mo = (MatrixObject)dat;
+						MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+						if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
+						    < OptimizerUtils.estimateSize(hop.get_dim1(), hop.get_dim2(), 1.0d) )
+						{
+							//update statistics if necessary
+							mc.setDimension(hop.get_dim1(), hop.get_dim2());
+							mc.setNonZeros(hop.getNnz());
+						}
+					}
+					
+				}
+			}
 	}
 	
 	/**
@@ -479,6 +529,8 @@ public class Recompiler
 					d.setNnz(mo.getNnz());
 				}
 			}
+			//else 
+			//	System.out.println("Warning: missing statistics for "+varName);
 		}
 		else if ( hop instanceof RandOp )
 		{

@@ -25,6 +25,7 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -179,8 +180,15 @@ public class OptimizationWrapper
 		if(   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 		   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
 		{
-			//(tid=0, because deep copies created after opt)
-			Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), pb.getVariables(), 0);
+			//NOTES on recompilation:
+			//* clone of variables in order to allow for statistics propagation across DAGs
+			//* tid=0, because deep copies created after opt
+			try{
+				LocalVariableMap tmp = (LocalVariableMap) pb.getVariables().clone();
+				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0);
+			}catch(Exception ex){
+				throw new DMLRuntimeException(ex);
+			}
 		}
 		
 		//create opt tree

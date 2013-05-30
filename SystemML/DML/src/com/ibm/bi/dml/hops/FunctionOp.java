@@ -55,6 +55,11 @@ public class FunctionOp extends Hops
 		}
 	}
 	
+	public String getFunctionNamespace()
+	{
+		return _fnamespace;
+	}
+	
 	public String getFunctionName()
 	{
 		return _fname;
@@ -75,7 +80,7 @@ public class FunctionOp extends Hops
 	public double computeMemEstimate() 
 	{
 		if( _type == FunctionType.DML )
-			_memEstimate = 0;
+			_memEstimate = 1; //minimal mem estimate
 		else if( _type == FunctionType.EXTERNAL_MEM )
 			_memEstimate = getInputSize();
 		else if(    _type == FunctionType.EXTERNAL_FILE || _type == FunctionType.UNKNOWN )

@@ -5,10 +5,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.DataOp;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.FunctionStatement;
@@ -78,6 +80,7 @@ public class OptTreeConverter
 		switch( type )
 		{
 			case ABSTRACT_PLAN:
+				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
 				HashSet<String> memo = new HashSet<String>();
 				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true, memo);	
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
@@ -318,12 +321,11 @@ public class OptTreeConverter
 	 * @param vars
 	 * @param topLevel
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 */
 	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, HashSet<String> memo ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException 
+		throws DMLRuntimeException, HopsException 
 	{
 		OptNode node = null;
 		
@@ -466,47 +468,6 @@ public class OptTreeConverter
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() && containsMRJobInstruction(pb) )
 				node.setExecType(ExecType.MR);
-				
-			//TODO remove this workaround once this information can be obtained from hops/lops omcpiler
-			//process function call statements
-			if( INCLUDE_FUNCTIONS )
-			{
-				for( Instruction inst : pb.getInstructions() )
-					if( inst instanceof FunctionCallCPInstruction )
-					{
-						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
-						String fname = fci.getFunctionName();
-						String fnspace = fci.getNamespace();
-						String fKey = fnspace + Program.KEY_DELIM + fname; 
-						FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnspace, fname);
-						FunctionStatementBlock fsb = sb.getDMLProg().getFunctionStatementBlock(fnspace, fname);
-						FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-						
-						OptNode fn = new OptNode(NodeType.FUNCCALL);
-						_hlMap.putProgMapping(fsb, fpb, fn);
-						fn.setExecType(ExecType.CP);
-						fn.addParam(ParamType.OPSTRING, fKey);
-						node.addChild( fn );
-						
-						//process body; NOTE: memo prevents inclusion of functions multiple times
-						if( !memo.contains(fKey) )
-						{
-							memo.add(fKey); 
-						
-							int len = fs.getBody().size();
-							for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-							{
-								ProgramBlock lpb = fpb.getChildBlocks().get(i);
-								StatementBlock lsb = fs.getBody().get(i);
-								fn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
-							}
-						
-							memo.remove(fKey);							
-						}
-						else
-							fn.addParam(ParamType.RECURSIVE_CALL, "true");
-					}
-			}
 		}
 		
 		//final cleanup
@@ -523,13 +484,16 @@ public class OptTreeConverter
 	 * @param hops
 	 * @param vars
 	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws HopsException 
 	 */
 	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<String> memo ) 
+		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		for( Hops hop : hops ){
 			hop.resetVisitStatus();
-			ret.addAll(rCreateAbstractOptNodes(hop,vars, memo));
+			ret.addAll(rCreateAbstractOptNodes(hop, vars, memo));
 		}
 		return ret;
 	}
@@ -539,8 +503,11 @@ public class OptTreeConverter
 	 * @param hop
 	 * @param vars
 	 * @return
+	 * @throws DMLRuntimeException  
+	 * @throws HopsException 
 	 */
 	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<String> memo) 
+		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		ArrayList<Hops> in = hop.getInput();
@@ -548,7 +515,8 @@ public class OptTreeConverter
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return ret;
 		
-		if( !(hop instanceof DataOp || hop instanceof LiteralOp) )
+		//general case
+		if( !(hop instanceof DataOp || hop instanceof LiteralOp || hop instanceof FunctionOp) )
 		{
 			OptNode node = new OptNode(NodeType.HOP);
 			String opstr = hop.getOpString();
@@ -558,11 +526,48 @@ public class OptTreeConverter
 			_hlMap.putHopMapping(hop, node);
 			ret.add(node);
 		}	
-
+		//process function calls
+		else if (hop instanceof FunctionOp && INCLUDE_FUNCTIONS )
+		{
+			FunctionOp fhop = (FunctionOp) hop;
+			String fname = fhop.getFunctionName();
+			String fnspace = fhop.getFunctionNamespace();
+			String fKey = fnspace + Program.KEY_DELIM + fname;
+			Object[] prog = _hlMap.getRootProgram();
+			FunctionProgramBlock fpb = ((Program)prog[1]).getFunctionProgramBlock(fnspace, fname);
+			FunctionStatementBlock fsb = ((DMLProgram)prog[0]).getFunctionStatementBlock(fnspace, fname);
+			FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+						
+			OptNode node = new OptNode(NodeType.FUNCCALL);
+			_hlMap.putProgMapping(fsb, fpb, node);
+			node.setExecType(ExecType.CP);
+			node.addParam(ParamType.OPSTRING, fKey);
+			
+			//process body; NOTE: memo prevents inclusion of functions multiple times
+			if( !memo.contains(fKey) )
+			{
+				memo.add(fKey); 
+			
+				int len = fs.getBody().size();
+				for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
+				{
+					ProgramBlock lpb = fpb.getChildBlocks().get(i);
+					StatementBlock lsb = fs.getBody().get(i);
+					node.addChild( rCreateAbstractOptNode(lsb, lpb, vars, false, memo) );
+				}
+			
+				memo.remove(fKey);							
+			}
+			else
+				node.addParam(ParamType.RECURSIVE_CALL, "true");
+			
+			ret.add(node);
+		}
+		
 		if( in != null )
 			for( Hops hin : in ) 
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
-					ret.addAll(rCreateAbstractOptNodes(hin,vars, memo));
+					ret.addAll(rCreateAbstractOptNodes(hin, vars, memo));
 
 		hop.set_visited(VISIT_STATUS.DONE);
 		

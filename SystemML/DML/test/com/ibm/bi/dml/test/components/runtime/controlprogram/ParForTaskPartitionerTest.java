@@ -955,7 +955,7 @@ public class ParForTaskPartitionerTest
 		if( streaming )
 		{
 			tasks = new LinkedList<Task>();
-			LocalTaskQueue tq = new LocalTaskQueue();
+			LocalTaskQueue<Task> tq = new LocalTaskQueue<Task>();
 			tp.createTasks(tq);
 			Task t = null;
 			while( (t=tq.dequeueTask())!=LocalTaskQueue.NO_MORE_TASKS )

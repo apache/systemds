@@ -1,0 +1,15 @@
+V = read($1,rows=$2,cols=$3);
+m = $2;
+n = $3;
+
+R1 = matrix(0,rows=m,cols=n);
+R2 = matrix(0,rows=m,cols=n);
+parfor( i in 1:n, par=8, mode=REMOTE_MR, resultmerge=REMOTE_MR, taskpartitioner=FACTORING, opt=NONE )
+{
+   X = V[,i];
+   R1[,i] = X;
+   R2[,i] = X;                 
+}   
+
+R = R1 + R2; 
+write(R, $4);       

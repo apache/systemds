@@ -17,18 +17,18 @@ import org.apache.commons.logging.LogFactory;
  * 
  *
  */
-public class LocalTaskQueue 
+public class LocalTaskQueue<T> 
 {
-	public static final int  MAX_SIZE      = 10000; //main memory constraint
-	public static final Task NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
+	public static final int    MAX_SIZE      = 100000; //main memory constraint
+	public static final Object NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
 	
-	private LinkedList<Task> _data        = null;
-	private boolean 		 _closedInput = false; 
+	private LinkedList<T>  _data        = null;
+	private boolean 	   _closedInput = false; 
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
 	{
-		_data        = new LinkedList<Task>();
+		_data        = new LinkedList<T>();
 		_closedInput = false;
 	}
 	
@@ -38,7 +38,7 @@ public class LocalTaskQueue
 	 * @param t
 	 * @throws InterruptedException
 	 */
-	public synchronized void enqueueTask( Task t ) 
+	public synchronized void enqueueTask( T t ) 
 		throws InterruptedException
 	{
 		while( _data.size() + 1 > MAX_SIZE )
@@ -58,7 +58,7 @@ public class LocalTaskQueue
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public synchronized Task dequeueTask() 
+	public synchronized T dequeueTask() 
 		throws InterruptedException
 	{
 		while( _data.isEmpty() )
@@ -66,10 +66,10 @@ public class LocalTaskQueue
 			if( !_closedInput )
 				wait(); // wait for writers
 			else
-				return NO_MORE_TASKS; 
+				return (T)NO_MORE_TASKS; 
 		}
 		
-		Task t = _data.removeFirst();
+		T t = _data.removeFirst();
 		
 		notify(); // notify waiting writers
 		
@@ -109,7 +109,7 @@ public class LocalTaskQueue
 		sb.append(")\n");
 		
 		int count = 1;
-		for( Task t : _data )
+		for( T t : _data )
 		{
 			sb.append("  TASK #");
 			sb.append(count);

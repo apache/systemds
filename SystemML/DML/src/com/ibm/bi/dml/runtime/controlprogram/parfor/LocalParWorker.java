@@ -15,12 +15,12 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  */
 public class LocalParWorker extends ParWorker implements Runnable
 {
-	protected LocalTaskQueue _taskQueue   = null;
+	protected LocalTaskQueue<Task> _taskQueue   = null;
 	protected boolean        _stopped     = false;
 	
 	protected int 			 _max_retry   = -1;
 	
-	public LocalParWorker( long ID, LocalTaskQueue q, ParForBody body, int max_retry )	
+	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, int max_retry )	
 	{
 		super(ID, body);
 

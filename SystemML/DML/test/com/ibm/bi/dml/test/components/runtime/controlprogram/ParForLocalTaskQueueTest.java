@@ -35,7 +35,7 @@ public class ParForLocalTaskQueueTest
  		}
 		
 		//put all tasks into queue
-		LocalTaskQueue q = new LocalTaskQueue(); 
+		LocalTaskQueue<Task> q = new LocalTaskQueue<Task>(); 
 		for( Task ltask : tasks )
 			q.enqueueTask(ltask);
 		

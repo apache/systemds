@@ -176,6 +176,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
+	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean ALLOW_DATA_COLOCATION       = true;
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
@@ -595,7 +596,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		setMemoryBudget();
 		
 		// Step 1) init parallel workers, task queue and threads
-		LocalTaskQueue queue     = new LocalTaskQueue();
+		LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
 		Thread[] threads         = new Thread[_numThreads];
 		LocalParWorker[] workers = new LocalParWorker[_numThreads];
 		for( int i=0; i<_numThreads; i++ )
@@ -718,7 +719,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		int numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION )
 		{
-			LocalTaskQueue queue = new LocalTaskQueue();
+			LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
 
 			//put tasks into queue and start writing to taskFile
 			numCreatedTasks = partitioner.createTasks(queue);
@@ -901,7 +902,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws CloneNotSupportedException
 	 */
-	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue queue, ExecutionContext ec) 
+	private LocalParWorker createParallelWorker(long pwID, LocalTaskQueue<Task> queue, ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
 		LocalParWorker pw = null; 
@@ -1104,7 +1105,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private String writeTasksToFile(String fname, LocalTaskQueue queue, int maxDigits)
+	private String writeTasksToFile(String fname, LocalTaskQueue<Task> queue, int maxDigits)
 		throws DMLRuntimeException, IOException
 	{
 		BufferedWriter br = null;
@@ -1155,27 +1156,57 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws DMLRuntimeException
 	{
 		//result merge
-		for( String var : _resultVars ) //foreach non-local write
+		if( checkParallelRemoteResultMerge() )
 		{
+			//execute result merge in parallel for all result vars
+			int par = Math.min( _resultVars.size(), 
+					            InfrastructureAnalyzer.getLocalParallelism() );
 			
-			String varname = var;
-			MatrixObject out = (MatrixObject) getVariable(varname);
-			MatrixObject[] in = new MatrixObject[ results.length ];
-			for( int i=0; i< results.length; i++ )
-				in[i] = (MatrixObject) results[i].get( varname ); 			
-			String fname = constructResultMergeFileName();
-			ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
-			MatrixObject outNew = null;
-			if( USE_PARALLEL_RESULT_MERGE )
-				outNew = rm.executeParallelMerge( _numThreads );
-			else
-				outNew = rm.executeSerialMerge(); 			
-			_variables.put( varname, outNew);
-	
-			//cleanup of intermediate result variables
-			cleanWorkerResultVariables( out, in );
+			try
+			{
+				//enqueue all result vars as tasks
+				LocalTaskQueue<String> q = new LocalTaskQueue<String>();
+				for( String var : _resultVars ) //foreach non-local write
+					q.enqueueTask(var);
+				q.closeInput();
+				
+				//run result merge workers
+				Thread[] rmWorkers = new Thread[par];
+				for( int i=0; i<par; i++ )
+					rmWorkers[i] = new Thread(new ResultMergeWorker(q, results));
+				for( int i=0; i<par; i++ ) //start all
+					rmWorkers[i].start();
+				for( int i=0; i<par; i++ ) //wait for all
+					rmWorkers[i].join();
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException(ex);
+			}
 		}
+		else
+		{
+			//execute result merge sequentially for all result vars
+			for( String var : _resultVars ) //foreach non-local write
+			{			
+				String varname = var;
+				MatrixObject out = (MatrixObject) getVariable(varname);
+				MatrixObject[] in = new MatrixObject[ results.length ];
+				for( int i=0; i< results.length; i++ )
+					in[i] = (MatrixObject) results[i].get( varname ); 			
+				String fname = constructResultMergeFileName();
+				ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
+				MatrixObject outNew = null;
+				if( USE_PARALLEL_RESULT_MERGE )
+					outNew = rm.executeParallelMerge( _numThreads );
+				else
+					outNew = rm.executeSerialMerge(); 			
+				_variables.put( varname, outNew);
 		
+				//cleanup of intermediate result variables
+				cleanWorkerResultVariables( out, in );
+			}
+		}
 		//handle unscoped variables (vars created in parfor, but potentially used afterwards)
 		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && _variables != null ) //sb might be null for nested parallelism
 			createEmptyUnscopedVariables( _variables, _sb );
@@ -1183,6 +1214,20 @@ public class ParForProgramBlock extends ForProgramBlock
 		//check expected counters
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
+	}
+	
+	/**
+	 * NOTE: Currently we use a fixed rule (multiple results AND REMOTE_MR -> only selected by the optimizer
+	 * if mode was REMOTE_MR as well). 
+	 * TODO Eventually, the optimizer should decide about parallel result merge and its degree of parallelism.
+	 * 
+	 * @return
+	 */
+	private boolean checkParallelRemoteResultMerge()
+	{
+		return (USE_PARALLEL_RESULT_MERGE_REMOTE 
+			    && _resultVars.size() > 1
+			    && _resultMerge == PResultMerge.REMOTE_MR);
 	}
 	
 	/**
@@ -1354,6 +1399,64 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in parfor program block generated from parfor statement block between lines " + _beginLine + " and " + _endLine + " -- ";
+	}
+	
+	
+	/**
+	 * Helper class for parallel invocation of REMOTE_MR result merge for multiple variables.
+	 */
+	private class ResultMergeWorker implements Runnable
+	{
+		private LocalTaskQueue<String> _q = null;
+		private LocalVariableMap[] _refVars = null;
+		
+		public ResultMergeWorker( LocalTaskQueue<String> q, LocalVariableMap[] results )
+		{
+			_q = q;
+			_refVars = results;
+		}
+		
+		@Override
+		public void run() 
+		{
+			try
+			{
+				while( true ) 
+				{
+					String varname = _q.dequeueTask();
+					if( varname == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
+						break;
+				
+					MatrixObject out = null;
+					synchronized( _variables ){
+						out = (MatrixObject) getVariable(varname);
+					}
+					
+					MatrixObject[] in = new MatrixObject[ _refVars.length ];
+					for( int i=0; i< _refVars.length; i++ )
+						in[i] = (MatrixObject) _refVars[i].get( varname ); 			
+					String fname = constructResultMergeFileName();
+				
+					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname);
+					MatrixObject outNew = null;
+					if( USE_PARALLEL_RESULT_MERGE )
+						outNew = rm.executeParallelMerge( _numThreads );
+					else
+						outNew = rm.executeSerialMerge(); 	
+					
+					synchronized( _variables ){
+						_variables.put( varname, outNew);
+					}
+		
+					//cleanup of intermediate result variables
+					cleanWorkerResultVariables( out, in );
+				}
+			}
+			catch(Exception ex)
+			{
+				LOG.error("Error executing result merge: ", ex);
+			}
+		}
 	}
 	
 }

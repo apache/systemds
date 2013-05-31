@@ -603,7 +603,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					// validate that size of LHS index ranges is being assigned:
 					//	(a) a matrix value of same size as LHS
 					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
-					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
+					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars);
 							
 					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
 						
@@ -732,7 +732,7 @@ public class StatementBlock extends LiveVariableAnalysis{
 					// validate that size of LHS index ranges is being assigned:
 					//	(a) a matrix value of same size as LHS
 					//	(b) singleton value (semantics: initialize enitre submatrix with this value)
-					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(currConstVars);
+					IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars);
 							
 					if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
 						

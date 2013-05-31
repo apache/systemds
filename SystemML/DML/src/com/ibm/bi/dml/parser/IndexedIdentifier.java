@@ -14,11 +14,27 @@ public class IndexedIdentifier extends DataIdentifier {
 	// stores whether row / col indices have same value (thus selecting either (1 X n) row-vector OR (n X 1) col-vector)
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
 	
-	// for IndexedIdentifier, dim1 and dim2 will ultimately be the dimensions of the indexed region and NOT the dims of what is being indexed
-	// E.g., for A[1:10,1:10], where A = Rand (rows = 20, cols = 20), dim1 = 10, dim2 = 10, origDim1 = 20, origDim2 = 20
+	// 	for IndexedIdentifier, dim1 and dim2 will ultimately be the dimensions of the indexed region and NOT the dims of what is being indexed
+	// 	E.g., for A[1:10,1:10], where A = Rand (rows = 20, cols = 20), dim1 = 10, dim2 = 10, origDim1 = 20, origDim2 = 20
 	
 	// stores the dimensions of Identifier prior to indexing 
 	private long _origDim1, _origDim2;
+	
+	public boolean getRowLowerEqualsUpper(){
+		return _rowLowerEqualsUpper;
+	}
+	
+	public boolean getColLowerEqualsUpper() {
+		return _colLowerEqualsUpper;
+	}
+	
+	public void setRowLowerEqualsUpper(boolean passed){
+		_rowLowerEqualsUpper  = passed;
+	}
+	
+	public void setColLowerEqualsUpper(boolean passed) {
+		_colLowerEqualsUpper = passed;
+	}
 	
 	public IndexedIdentifier(String name, boolean passedRows, boolean passedCols){
 		super(name);
@@ -35,7 +51,7 @@ public class IndexedIdentifier extends DataIdentifier {
 	}
 	
 		
-	public IndexPair calculateIndexedDimensions(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
 		
 		// stores the updated row / col dimension info
 		long updatedRowDim = -1, updatedColDim = -1;
@@ -75,10 +91,12 @@ public class IndexedIdentifier extends DataIdentifier {
 		else if (_rowLowerBound instanceof ConstIdentifier) {
 			throw new LanguageException(this.printErrorLocation() + " assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString());
 		}
-		
+	
 		// perform constant propogation for row lower bound
 		else if (_rowLowerBound != null && _rowLowerBound instanceof DataIdentifier && !(_rowLowerBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_rowLowerBound).getName();
+			
+			// CASE: rowLowerBound is a constant DataIdentifier
 			if (currConstVars.containsKey(identifierName)){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
@@ -115,8 +133,11 @@ public class IndexedIdentifier extends DataIdentifier {
 						}
 						isConst_rowLowerBound = true;
 					}
-				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
-			} 	
+				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))				
+			} // end if (currConstVars.containsKey(identifierName))
+			
+			// TODO: DRB: handle list-based indexing case
+					
 		} // end constant propogation for row LB
 		
 		// check 1 < indexed row lower-bound < rows in IndexedIdentifier 
@@ -204,7 +225,17 @@ public class IndexedIdentifier extends DataIdentifier {
 						isConst_rowUpperBound = true;
 					}
 				} // end else -- if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
-			}	
+			} // end if (currConstVars.containsKey(identifierName)){
+			
+			// TODO: DRB: handle list-based indexing case
+			
+			//else if(){
+			//	
+			//}
+			//else {
+			//	
+			//}
+			
 		} // end constant propogation for row UB	
 		
 		
@@ -524,6 +555,8 @@ public class IndexedIdentifier extends DataIdentifier {
 		else if (rowIndices.size() == 1){
 			_rowLowerBound = rowIndices.get(0);
 			_rowUpperBound = rowIndices.get(0);
+			
+			
 			_rowLowerEqualsUpper = true;
 		}
 		else {

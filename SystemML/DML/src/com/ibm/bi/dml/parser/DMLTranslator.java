@@ -2308,7 +2308,8 @@ public class DMLTranslator {
 			throw new ParseException(target.printErrorLocation() + " must define matrix " + target.getName() + " before indexing operations are allowed ");
 		}
 		Hops leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
-				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
+				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
 		setIdentifierParams(leftIndexOp, target);
 	
@@ -2374,7 +2375,8 @@ public class DMLTranslator {
 		}
 		
 		Hops indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
-				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops);
+				hops.get(source.getName()), rowLowerHops, rowUpperHops, colLowerHops, colUpperHops,
+				source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 	
 		indexOp.setAllPositions(indexOp.getBeginLine(), indexOp.getBeginColumn(), indexOp.getEndLine(), indexOp.getEndColumn());
 		

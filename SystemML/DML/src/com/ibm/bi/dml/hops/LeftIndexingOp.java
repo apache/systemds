@@ -19,11 +19,30 @@ public class LeftIndexingOp  extends Hops {
 
 	public static String OPSTRING = "LeftIndexing";
 	
+	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
+	
+	public boolean getRowLowerEqualsUpper(){
+		return _rowLowerEqualsUpper;
+	}
+	
+	public boolean getColLowerEqualsUpper() {
+		return _colLowerEqualsUpper;
+	}
+	
+	public void setRowLowerEqualsUpper(boolean passed){
+		_rowLowerEqualsUpper  = passed;
+	}
+	
+	public void setColLowerEqualsUpper(boolean passed) {
+		_colLowerEqualsUpper = passed;
+	}
+	
+	
 	private LeftIndexingOp() {
 		//default constructor for clone
 	}
 	
-	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
+	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
 		super(Kind.Indexing, l, dt, vt);
 
 		getInput().add(0, inpMatrixLeft);
@@ -40,6 +59,10 @@ public class LeftIndexingOp  extends Hops {
 		inpRowU.getParent().add(this);
 		inpColL.getParent().add(this);
 		inpColU.getParent().add(this);
+		
+		// set information whether left indexing operation involves row (n x 1) or column (1 x m) matrix
+		setRowLowerEqualsUpper(passedRowsLEU);
+		setColLowerEqualsUpper(passedColsLEU);
 	}
 
 	public Lops constructLops()
@@ -174,21 +197,17 @@ public class LeftIndexingOp  extends Hops {
 		
 		//2) operation mem estimate
 		if( dimsKnown() && !getInput().get(1).dimsKnown() ) { 
-			//use worst-case memory estimate for second input (it cannot be larger than overall matrix)
-			Hops input2 = getInput().get(2); //inpRowL
-			Hops input3 = getInput().get(3); //inpRowU
-			Hops input4 = getInput().get(4); //inpColL
-			Hops input5 = getInput().get(5); //inpColU
+			
+			// unless second input is single cell / row vector / column vector
+			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
 			
 			double subSize = -1;
-			boolean rowWise = ( input2==input3 && (input2.get_dataType()==DataType.SCALAR) ); //rowwise
-			boolean colWise = ( input4==input5 && (input4.get_dataType()==DataType.SCALAR) ); //colwise	
 			
-			if( rowWise && colWise )
+			if( _rowLowerEqualsUpper && _colLowerEqualsUpper )
 				subSize = OptimizerUtils.estimateSize(1, 1, 1.0);	
-			else if( rowWise )
+			else if( _rowLowerEqualsUpper )
 				subSize = OptimizerUtils.estimateSize(1, _dim2, 1.0);
-			else if( colWise )
+			else if( _colLowerEqualsUpper )
 				subSize = OptimizerUtils.estimateSize(_dim1, 1, 1.0);
 			else 
 				subSize = _outputMemEstimate; //worstcase

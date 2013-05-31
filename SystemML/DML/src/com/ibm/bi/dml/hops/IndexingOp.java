@@ -18,6 +18,24 @@ public class IndexingOp extends Hops {
 
 	public static String OPSTRING = "Indexing";
 	
+	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
+	
+	public boolean getRowLowerEqualsUpper(){
+		return _rowLowerEqualsUpper;
+	}
+	
+	public boolean getColLowerEqualsUpper() {
+		return _colLowerEqualsUpper;
+	}
+	
+	public void setRowLowerEqualsUpper(boolean passed){
+		_rowLowerEqualsUpper  = passed;
+	}
+	
+	public void setColLowerEqualsUpper(boolean passed) {
+		_colLowerEqualsUpper = passed;
+	}
+	
 	//right indexing doesn't really need the dimensionality of the left matrix
 	private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	
@@ -25,7 +43,7 @@ public class IndexingOp extends Hops {
 		//default constructor for clone
 	}
 	
-	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU) {
+	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
 		super(Kind.Indexing, l, dt, vt);
 		/*
 		if(inpRowL==null)
@@ -49,6 +67,10 @@ public class IndexingOp extends Hops {
 		inpRowU.getParent().add(this);
 		inpColL.getParent().add(this);
 		inpColU.getParent().add(this);
+		
+		// set information whether left indexing operation involves row (n x 1) or column (1 x m) matrix
+		setRowLowerEqualsUpper(passedRowsLEU);
+		setColLowerEqualsUpper(passedColsLEU);
 	}
 
 	public Lops constructLops()
@@ -195,29 +217,24 @@ public class IndexingOp extends Hops {
 		Hops input5 = getInput().get(4); //inpColU
 		
 		//parse input information
-		boolean singleRow = false;
 		boolean allRows = false;
 		if( input2 instanceof LiteralOp )
 		{
-			if( input3 instanceof LiteralOp && ((LiteralOp)input2).get_name().equals(((LiteralOp)input3).get_name()) )
-				singleRow = true;
-			else if ( ((LiteralOp)input2).get_name().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
+			if ( ((LiteralOp)input2).get_name().equals("1") && input3 instanceof UnaryOp && ((UnaryOp)input3).get_op() == OpOp1.NROW )
 				allRows = true;
-		}		
-		boolean singleCol = false;
+		}	
+		
 		boolean allCols = false;
 		if( input4 instanceof LiteralOp )
 		{
-			if( input5 instanceof LiteralOp && ((LiteralOp)input4).get_name().equals(((LiteralOp)input5).get_name()) )
-				singleCol = true;
-			else if ( ((LiteralOp)input4).get_name().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
+			if ( ((LiteralOp)input4).get_name().equals("1") && input5 instanceof UnaryOp && ((UnaryOp)input5).get_op() == OpOp1.NCOL )
 				allCols = true;
 		}
 		
 		//set dimension information
-		if( singleRow )    set_dim1(1);
+		if( _rowLowerEqualsUpper )    set_dim1(1);
 		else if( allRows ) set_dim1(input1.get_dim1());
-		if( singleCol )    set_dim2(1);
+		if( _colLowerEqualsUpper )    set_dim2(1);
 		else if( allCols ) set_dim2(input1.get_dim2());
 	}
 	

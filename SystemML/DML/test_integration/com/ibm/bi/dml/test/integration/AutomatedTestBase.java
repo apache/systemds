@@ -612,6 +612,7 @@ public abstract class AutomatedTestBase {
 			TestUtils.printRScript(executionFile);
 			
 		try {
+			long t0 = System.nanoTime();
 			System.out.println("starting R script");
 			System.out.println("cmd: " + cmd);           
 			Process child = Runtime.getRuntime().exec(cmd);     
@@ -648,7 +649,8 @@ public abstract class AutomatedTestBase {
 				child.destroy();
 			}
 
-			System.out.println("R is finished");
+			long t1 = System.nanoTime();
+			System.out.println("R is finished (in "+((double)t1-t0)/1000000000+" sec)");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1046,7 +1048,7 @@ public abstract class AutomatedTestBase {
 				|| iExpectedStdOutState == 2);
 		TestUtils.displayAssertionBuffer();
 
-		TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));
+		TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
 		TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
 		TestUtils.removeTemporaryFiles();
 

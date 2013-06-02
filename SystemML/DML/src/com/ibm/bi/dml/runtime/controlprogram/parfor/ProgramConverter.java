@@ -594,9 +594,7 @@ public class ProgramConverter
 			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& sb != null 
-				&& Recompiler.requiresRecompilation( sb.get_hops() )
-				//&& !Recompiler.containsNonRecompileInstructions(tmp)  //TODO
-				)
+				&& Recompiler.requiresRecompilation( sb.get_hops() )  )
 			{
 				ret = new StatementBlock();
 				ArrayList<Hops> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );

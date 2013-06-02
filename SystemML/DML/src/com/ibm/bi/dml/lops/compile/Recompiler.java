@@ -226,6 +226,7 @@ public class Recompiler
 	 * @param insts
 	 * @return
 	 */
+	@Deprecated
 	public static boolean containsNonRecompileInstructions( ArrayList<Instruction> insts )
 	{
 		boolean ret = false;
@@ -319,7 +320,10 @@ public class Recompiler
 	public static void updateFunctionNames(ArrayList<Hops> hops, long pid) 
 	{
 		for( Hops hopRoot : hops  )
+		{
+			hopRoot.resetVisitStatus();
 			rUpdateFunctionNames( hopRoot, pid );
+		}
 	}
 	
 	public static void rUpdateFunctionNames( Hops hop, long pid )
@@ -450,6 +454,7 @@ public class Recompiler
 	}
 	
 	/**
+	 * NOTE: no need for update visit status due to early abort
 	 * 
 	 * @param hop
 	 * @return
@@ -457,7 +462,7 @@ public class Recompiler
 	private static boolean rRequiresRecompile( Hops hop )
 	{	
 		boolean ret = hop.requiresRecompile();
-		
+
 		if( hop.getInput() != null )
 			for( Hops c : hop.getInput() )
 			{

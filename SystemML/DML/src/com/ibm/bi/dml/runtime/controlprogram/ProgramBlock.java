@@ -152,14 +152,13 @@ public class ProgramBlock
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		ArrayList<Instruction> tmp = _inst;
-		
+
 		//dynamically recompile instructions if enabled and required
 		try {
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& _sb != null 
-				&& Recompiler.requiresRecompilation(_sb.get_hops()) 
-				/*&& !Recompiler.containsNonRecompileInstructions(tmp)*/ )
+				&& Recompiler.requiresRecompilation(_sb.get_hops())  )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables, _tid);
 			}
@@ -186,15 +185,12 @@ public class ProgramBlock
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> tmp = inst;
-	
-		//System.out.println(_variables.toString());
 		
 		//dynamically recompile instructions if enabled and required
 		try {
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				&& Recompiler.requiresRecompilation(hops) 
-				/*&& !Recompiler.containsNonRecompileInstructions(inst)*/ )
+				&& Recompiler.requiresRecompilation(hops)            )
 			{
 				tmp = Recompiler.recompileHopsDag(hops, _variables, _tid);
 			}

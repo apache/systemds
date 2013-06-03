@@ -2,6 +2,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.MatrixIndexingCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.ParameterizedBuiltinCPFileInstruction;
@@ -116,6 +117,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "rmvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "assignvarwithfile", CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "valuepick"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "iqsize"      , CPINSTRUCTION_TYPE.Variable);

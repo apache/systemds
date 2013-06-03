@@ -14,8 +14,9 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class UnaryCP extends Lops {
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
 	};
+	public static final String CAST_AS_MATRIX_OPCODE = "castAsMatrix";
 
 	OperationTypes operation;
 
@@ -106,6 +107,9 @@ public class UnaryCP extends Lops {
 		case CAST_AS_SCALAR:
 			opString += "assignvarwithfile";
 			break;
+		case CAST_AS_MATRIX:
+			opString += CAST_AS_MATRIX_OPCODE;
+			break;
 		case NROW:
 			opString += "nrow";
 			vtype = ValueType.STRING;
@@ -121,7 +125,7 @@ public class UnaryCP extends Lops {
 
 		default:
 			throw new LopsException(this.printErrorLocation() + 
-					"Instruction not defined for UnaryScalar opration: "
+					"Instruction not defined for UnaryScalar operation: "
 							+ operation);
 		}
 

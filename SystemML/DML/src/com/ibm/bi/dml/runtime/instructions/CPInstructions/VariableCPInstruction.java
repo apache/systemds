@@ -3,6 +3,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import java.io.IOException;
 
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -49,7 +50,7 @@ public class VariableCPInstruction extends CPInstruction {
 		_uniqueVarID  = new IDSequence(true); 
 	}
 	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
+		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, CastAsMatrixVariable, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
 	}
 	
 	VariableOperationCode opcode;
@@ -79,6 +80,9 @@ public class VariableCPInstruction extends CPInstruction {
 		
 		else if ( str.equalsIgnoreCase("assignvarwithfile") ) 
 			return VariableOperationCode.AssignVariableWithFirstValue;
+		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) ) 
+			return VariableOperationCode.CastAsMatrixVariable;
 		
 		else if ( str.equalsIgnoreCase("valuepick") ) 
 			return VariableOperationCode.ValuePick;
@@ -271,6 +275,11 @@ public class VariableCPInstruction extends CPInstruction {
 		case AssignVariableWithFirstValue:
 			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
 			out = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
+			break;
+			
+		case CastAsMatrixVariable:
+			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
+			out = new CPOperand(parts[2]); // output variable name 
 			break;
 			
 		case ValuePick:
@@ -467,7 +476,13 @@ public class VariableCPInstruction extends CPInstruction {
 			pb.releaseMatrixInput(input1.get_name());
 			pb.setScalarOutput(output.get_name(), new DoubleObject(value));
 			break;
+		case CastAsMatrixVariable:
+			ScalarObject scalarInput = pb.getScalarInput(input1.get_name(), input1.get_valueType());
+			MatrixBlock out = new MatrixBlock(1,1,false);
+			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
+			pb.setMatrixOutput(output.get_name(), out);
 			
+			break;
 		case ValuePick:
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick a value from "temp3" and assign to Var0

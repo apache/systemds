@@ -1854,6 +1854,14 @@ public class DMLTranslator {
 						target.setProperties(source.getOutput());
 						((IndexedIdentifier)target).setOriginalDimensions(origDim1, origDim2);
 						
+						// preserve data type matrix of any index identifier
+						// (required for scalar input to left indexing)					
+						// TODO Doug, please verify this (required for scalar assignments, otherwise TWrite of LIX target becomes scalar as well)
+						if( target.getDataType() != DataType.MATRIX ) {
+							target.setDataType(DataType.MATRIX);
+							target.setValueType(ValueType.DOUBLE);
+						}
+						
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
@@ -2307,6 +2315,11 @@ public class DMLTranslator {
 		if (targetOp == null){
 			throw new ParseException(target.printErrorLocation() + " must define matrix " + target.getName() + " before indexing operations are allowed ");
 		}
+		
+		//TODO Doug, please verify this (we need probably a cleaner way than this postprocessing)
+		if( sourceOp.get_dataType() == DataType.MATRIX && source.getOutput().getDataType() == DataType.SCALAR )
+			sourceOp.set_dataType(DataType.SCALAR);
+		
 		Hops leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), target.getValueType(), 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
 				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
@@ -2409,7 +2422,7 @@ public class DMLTranslator {
 		if (target == null) {
 			target = createTarget(source);
 		}
-
+		
 		if (source.getOpCode() == Expression.BinaryOp.PLUS) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.PLUS, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.MINUS) {

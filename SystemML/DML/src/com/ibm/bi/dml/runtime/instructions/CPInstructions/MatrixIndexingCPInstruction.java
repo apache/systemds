@@ -1,5 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -122,26 +123,33 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 		else
 		{
 			MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
-			MatrixBlock rhsMatBlock = null;
-			if (opcode.equalsIgnoreCase("leftIndex")) {
-				rhsMatBlock = pb.getMatrixInput(input2.get_name());
-			}
 			
 			if ( opcode.equalsIgnoreCase("rangeReIndex"))
+			{
 				resultBlock = (MatrixBlock) matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
+			}
 			else if ( opcode.equalsIgnoreCase("leftIndex"))
-				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
+			{
+				if(input2.get_dataType() == DataType.MATRIX) //MATRIX<-MATRIX
+				{
+					MatrixBlock rhsMatBlock = pb.getMatrixInput(input2.get_name());
+					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
+					pb.releaseMatrixInput(input2.get_name());
+				}
+				else //MATRIX<-SCALAR 
+				{
+					if(!(rl==ru && cl==cu))
+						throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
+					ScalarObject scalar = pb.getScalarInput(input2.get_name(), ValueType.DOUBLE);
+					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock());
+				}
+			}
 			else
 				throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
 			
 			pb.releaseMatrixInput(input1.get_name());
-			if (opcode.equalsIgnoreCase("leftIndex")) {
-				pb.releaseMatrixInput(input2.get_name());
-			}
-			matBlock = rhsMatBlock = null;
 		}
 		
 		pb.setMatrixOutput(output.get_name(), resultBlock);
-		resultBlock = null;
 	}
 }

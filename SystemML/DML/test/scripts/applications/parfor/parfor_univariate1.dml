@@ -50,8 +50,6 @@ else {
 	if (maxC > 0) {
 	  countsArray = matrix(0, rows=maxC, cols=n);
     }
-    
-	dummy = matrix(1, rows=1, cols=1);
 	
 	parfor(i in 1:n, par=4, mode=LOCAL, check=0, opt=NONE) {
 
@@ -89,23 +87,23 @@ else {
 			iqm = interQuartileMean(F);
 
 			# place the computed statistics in output matrices
-			baseStats[1,i] = dummy * minimum;
-			baseStats[2,i] = dummy * maximum;
-			baseStats[3,i] = dummy * rng;
+			baseStats[1,i] = minimum;
+			baseStats[2,i] = maximum;
+			baseStats[3,i] = rng;
 
-			baseStats[4,i] = dummy * mu;
-			baseStats[5,i] = dummy * var;
-			baseStats[6,i] = dummy * std_dev;
-			baseStats[7,i] = dummy * se;
-			baseStats[8,i] = dummy * cv;
+			baseStats[4,i] = mu;
+			baseStats[5,i] = var;
+			baseStats[6,i] = std_dev;
+			baseStats[7,i] = se;
+			baseStats[8,i] = cv;
 
-			baseStats[9,i] = dummy * g1;
-			baseStats[10,i] = dummy * g2;
-			baseStats[11,i] = dummy * se_g1;
-			baseStats[12,i] = dummy * se_g2;
+			baseStats[9,i] = g1;
+			baseStats[10,i] = g2;
+			baseStats[11,i] = se_g1;
+			baseStats[12,i] = se_g2;
 
-			baseStats[13,i] = dummy * md;
-			baseStats[14,i] = dummy * iqm;
+			baseStats[13,i] = md;
+			baseStats[14,i] = iqm;
 		}
 		else {
 			if (kind == 2 | kind == 3) {
@@ -127,9 +125,9 @@ else {
 					numModes = sum(modeArr);
 
 					# place the computed statistics in output matrices
-					baseStats[15,i] = dummy * num_cat;
-					baseStats[16,i] = dummy * mode;
-					baseStats[17,i] = dummy * numModes;
+					baseStats[15,i] = num_cat;
+					baseStats[16,i] = mode;
+					baseStats[17,i] = numModes;
 
           if (max_kind > 1) {
 					  countsArray[,i] = cat_counts;

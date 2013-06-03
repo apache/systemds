@@ -871,6 +871,10 @@ abstract public class Hops {
 	public DataType get_dataType() {
 		return _dataType;
 	}
+	
+	public void set_dataType( DataType dt ) {
+		_dataType = dt;
+	}
 
 	public void set_visited(VISIT_STATUS visited) {
 		_visited = visited;

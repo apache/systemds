@@ -91,8 +91,20 @@ public class LeftIndexingOp  extends Hops {
 									OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
 					Lops ncol=new UnaryCP(getInput().get(0).constructLops(), 
 											OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+					
+					Lops rightInput = null;
+					if (isRightHandSideScalar()) {
+						//insert cast to matrix if necessary (for reuse MR runtime)
+						rightInput = new UnaryCP(getInput().get(1).constructLops(),
+								                 OperationTypes.CAST_AS_MATRIX, 
+								                 DataType.MATRIX, ValueType.DOUBLE);
+					} 
+					else 
+						rightInput = getInput().get(1).constructLops();
+	
+					
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							getInput().get(1).constructLops(), top, bottom, 
+							rightInput, top, bottom, 
 							left, right, nrow, ncol,
 							get_dataType(), get_valueType(), et, true);
 					
@@ -142,6 +154,7 @@ public class LeftIndexingOp  extends Hops {
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
 							get_dataType(), get_valueType(), et);
+					
 					left.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 					left.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(left);
@@ -294,4 +307,12 @@ public class LeftIndexingOp  extends Hops {
 		return ret;
 	}
 	
+	/**
+	 * @return true if the right hand side of the indexing operation is a
+	 *         literal.
+	 */
+	private boolean isRightHandSideScalar() {
+		Hops rightHandSide = getInput().get(1);
+		return (rightHandSide.get_dataType() == DataType.SCALAR);
+	}
 }

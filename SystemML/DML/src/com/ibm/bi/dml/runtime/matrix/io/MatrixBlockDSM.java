@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -2576,6 +2577,37 @@ public class MatrixBlockDSM extends MatrixValue{
 			result.copy(rl, ru, cl, cu, src, true);
 		}
 
+		return result;
+	}
+	
+	/**
+	 * Explicitly allow left indexing for scalars.
+	 * 
+	 * * Operations to be performed: 
+	 *   1) result=this; 
+	 *   2) result[row,column] = scalar.getDoubleValue();
+	 * 
+	 * @param scalar
+	 * @param row
+	 * @param col
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixValue leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixValue ret) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		MatrixBlockDSM result=checkType(ret);
+		if(result==null)
+			result=new MatrixBlockDSM(this);
+		else 
+			result.copy(this);
+		
+		int rl = (int)row-1;
+		int cl = (int)col-1;
+		
+		result.quickSetValue(rl, cl, scalar.getDoubleValue());
 		return result;
 	}
 	

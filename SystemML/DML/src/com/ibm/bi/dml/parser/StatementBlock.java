@@ -595,10 +595,10 @@ public class StatementBlock extends LiveVariableAnalysis{
 						((IndexedIdentifier)target).getColUpperBound().validateExpression(ids.getVariables(), currConstVars);
 					
 					// validate that LHS indexed identifier is being assigned a matrix value
-					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
-						LOG.error(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
-					}
+//					if (source.getOutput().getDataType() != Expression.DataType.MATRIX){
+//						LOG.error(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
+//						throw new LanguageException(target.printErrorLocation() + "Indexed expression " + target.toString() + " can only be assigned matrix value");
+//					}
 					
 					// validate that size of LHS index ranges is being assigned:
 					//	(a) a matrix value of same size as LHS

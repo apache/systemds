@@ -44,8 +44,6 @@ cat_counts = matrix(0, rows=maxC, cols=numPairs);
 cat_means = matrix(0, rows=maxC, cols=numPairs);
 cat_vars = matrix(0, rows=maxC, cols=numPairs);
 
-dummy = matrix(1, rows=1, cols=1);
-
 
 for( i in 1:s1size ) {
     a1 = castAsScalar(S1[,i]);
@@ -66,22 +64,22 @@ for( i in 1:s1size ) {
                 # scale-scale
                 print("[" + i + "," + j + "] scale-scale");
                 r = bivar_ss(A1,A2);   
-                basestats[1,pairID] = dummy*r;
+                basestats[1,pairID] = r;
                 #print("scale:"+r);
             } else {
                 # nominal-nominal or ordinal-ordinal
                 print("[" + i + "," + j + "] categorical-categorical");
                 [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
-                basestats[2,pairID] = dummy*chisq;
-                basestats[3,pairID] = dummy*df;
-                basestats[4,pairID] = dummy*pval;
-                basestats[5,pairID] = dummy*cramersv;
+                basestats[2,pairID] = chisq;
+                basestats[3,pairID] = df;
+                basestats[4,pairID] = pval;
+                basestats[5,pairID] = cramersv;
 
                 if ( k1 == 3 ) {
                     # ordinal-ordinal
                     print("[" + i + "," + j + "] ordinal-ordinal");
                     sp = bivar_oo(A1, A2);
-                    basestats[6,pairID] = dummy*sp;
+                    basestats[6,pairID] = sp;
                 }
             }
         } 
@@ -96,8 +94,8 @@ for( i in 1:s1size ) {
                 else {
                     [eta,f, counts, means, vars] = bivar_sc(A2,A1);
                 }
-                basestats[7,pairID] = dummy*eta;
-                basestats[8,pairID] = dummy*f;
+                basestats[7,pairID] = eta;
+                basestats[8,pairID] = f;
                 cat_counts[,pairID] = counts;
                 cat_means[,pairID] = means;
                 cat_vars[,pairID] = vars; 
@@ -106,10 +104,10 @@ for( i in 1:s1size ) {
                 # nominal-ordinal or ordinal-nominal
                 print("[" + i + "," + j + "] categorical-categorical");
                 [chisq, df, pval, cramersv]  = bivar_cc(A1,A2);
-                basestats[2,pairID] = dummy*chisq;
-                basestats[3,pairID] = dummy*df;
-                basestats[4,pairID] = dummy*pval;
-                basestats[5,pairID] = dummy*cramersv;
+                basestats[2,pairID] = chisq;
+                basestats[3,pairID] = df;
+                basestats[4,pairID] = pval;
+                basestats[5,pairID] = cramersv;
             }
         }
     }
@@ -212,7 +210,6 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double Eta, Doub
 # Function to compute ranks
 # takes a column vector as input, and produces a vector of same size in which each cell denotes to the computed score for that category
 computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
-    dummy = matrix(1, rows=1, cols=1);
     Rks = X;
     size = nrow(X);
     for(i in 1:size) {
@@ -220,7 +217,7 @@ computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
         if( i>1 ){
            prefixSum = sum(X[1:(i-1),1]);
         } 
-        Rks[i,1] = dummy * (prefixSum + ((castAsScalar(X[i,1])+1)/2));
+        Rks[i,1] = (prefixSum + ((castAsScalar(X[i,1])+1)/2));
     }
     Ranks = Rks;
 }
@@ -262,3 +259,4 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
 }
 
 # -----------------------------------------------------------------------------------------------------------
+ 

@@ -4,7 +4,6 @@ n = $3;
 W = m;
 
 R = matrix(0,rows=n,cols=n); 
-dummy = matrix(1,rows=1, cols=1);
 
 for( i in 1:(n-1) )
 {
@@ -23,7 +22,7 @@ for( i in 1:(n-1) )
       rXY = covXY / (sigmaX*sigmaY); 
       
       #print("R[("+i+","+j+")]="+rXY);
-      R[i,j] = dummy * rXY; 
+      R[i,j] = rXY; 
       
    }
 }   

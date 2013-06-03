@@ -4,7 +4,6 @@ n = $3;
 W = m;
 
 R = matrix(0, rows=n,cols=n); 
-dummy = matrix(1, rows=1, cols=1);
 
 parfor( i in 1:(n-1), par=4, mode=REMOTE_MR, opt=NONE )
 {
@@ -23,7 +22,7 @@ parfor( i in 1:(n-1), par=4, mode=REMOTE_MR, opt=NONE )
       rXY = covXY / (sigmaX*sigmaY); 
       
       print("R[("+i+","+j+")]="+rXY); #test robustness of ProgramConverter
-      R[i,j] = dummy * rXY; 
+      R[i,j] = rXY; 
       
    }
 }   

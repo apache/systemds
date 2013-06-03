@@ -20,7 +20,6 @@ P = Rand(rows=m, cols=1, min=0.0, max=1.0, pdf = "uniform");
 P = round(0.5+P*k);
 
 ones = matrix(1, rows=1, cols=n);
-onem = matrix(1, rows=1, cols=1);
 stats = matrix(0, rows=k, cols=1); #k-folds x 1-stats
    
 for( i in 1:k )
@@ -51,7 +50,7 @@ for( i in 1:k )
    #score multiclass SVM model per fold, use the TEST set
    out_correct_pct = scoreMultiClassSVM( Xi, yi, wi, intercept);
    
-   stats[i,1] = out_correct_pct * onem;
+   stats[i,1] = out_correct_pct;
 }
 
 # print output of stats

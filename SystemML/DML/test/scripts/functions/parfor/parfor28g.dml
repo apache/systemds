@@ -1,0 +1,20 @@
+A = Rand(rows=3,cols=1);
+
+p = 2;
+P = 0;
+s = 0;
+n = nrow(A);
+
+tr = n-(s*P+p)
+tc = 1+P*p+P+p
+
+B = matrix(1,rows=tr,cols=tc);
+
+parfor(i in 1:p){
+	B[,1+i] = A[s*P+p-i+1:n-i,]
+}
+parfor(j in 1:P){
+	parfor(k in 0:p){
+		B[,j*(p+1)+k+1] = A[s*P+p-s*j-k+1:n-s*j-k,]
+	}
+}

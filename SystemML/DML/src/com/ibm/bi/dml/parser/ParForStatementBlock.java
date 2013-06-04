@@ -1185,7 +1185,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		boolean ret = true; //data dependency to itself		
 		LinearFunction f1 = getLinearFunction(dat1);
-
+		if( f1 == null )
+			return true; //dependency 
+		
 		LOG.trace("PARFOR: f1: "+f1.toString());
 		
 		// no output dependency to itself if no index access will happen twice
@@ -1387,12 +1389,12 @@ public class ParForStatementBlock extends ForStatementBlock
 			else
 			{
 				//NOTE: we could mark sb for deferred validation and evaluate on execute (see ParForProgramBlock)
-				LOG.trace("PARFOR: Warning - matrix dimensionality unknown, cannot scale linear functions.");				
+				LOG.debug("PARFOR: Warning - matrix dimensionality unknown, cannot scale linear functions.");				
 			}
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
+			LOG.debug("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.", ex);
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1457,7 +1459,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 			catch(Exception ex)
 			{
-				LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub2)+"'.");
+				LOG.debug("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub2)+"'.", ex);
 				out = null; //let dependency analysis fail
 			}
 		}
@@ -1523,7 +1525,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
+			LOG.debug("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.", ex);
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1563,7 +1565,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.");
+			LOG.debug("PARFOR: Unable to parse MATRIX subscript expression for '"+String.valueOf(sub1)+"'.", ex);
 			out = null; //let dependency analysis fail
 		}
 		
@@ -1721,7 +1723,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		LinearFunction ret = null;
 		Expression l = be.getLeft();
 		Expression r = be.getRight();
-				
+		
 		if( be.getOpCode() == BinaryOp.PLUS )
 		{			
 			//parse binary expressions

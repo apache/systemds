@@ -26,7 +26,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * * nested control structures
  *    27:dep                                                                    
  * * nested parallelism and nested for/parfor
- *    28: no, 28b: no, 28c: no, 28d: dep, 28e: no
+ *    28: no, 28b: no, 28c: no, 28d: dep, 28e: no, 28f: no, 28g: no
  * * range indexing
  *    30: no, 31: no, 31b: no, 32: dep, 32b: dep, 32c: dep (no, dep is false positive), 32d: dep, 32e:dep
  * * set indexing
@@ -156,6 +156,9 @@ public class ParForDependencyAnalysisTest
 	
 	@Test
 	public void testDependencyAnalysis28f() { runTest("parfor28f.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis28g() { runTest("parfor28g.dml", true); } //TODO should be false, but currently not supported
 	
 	@Test
 	public void testDependencyAnalysis29() { runTest("parfor29.dml", false); } 

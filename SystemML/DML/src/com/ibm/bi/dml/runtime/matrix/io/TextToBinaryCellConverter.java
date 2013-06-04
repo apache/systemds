@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.io;
 
+import java.util.StringTokenizer;
+
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
@@ -36,12 +38,21 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 			return;
 		}
 		
+		String cellStr = str.toString().trim();							
+		StringTokenizer st = new StringTokenizer(cellStr, " ");
+		indexes.setIndexes( Long.parseLong(st.nextToken()), 
+				            Long.parseLong(st.nextToken()) );
+		value.setValue( Double.parseDouble(st.nextToken()) );
+		hasValue = true;
+		
+		/* FIXME,
 		String[] strs=str.split(" ");
 		if(strs.length==1)
 			strs=str.split(",");
 		indexes.setIndexes(Long.parseLong(strs[0]), Long.parseLong(strs[1]));
 		value.setValue(Double.parseDouble(strs[2]));
 		hasValue=true;
+		*/
 	}
 
 	@Override

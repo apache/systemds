@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 
@@ -348,7 +349,23 @@ public class NetezzaConnector {
             StringBuffer query = new StringBuffer();
             while(line != null)
             {
-	            String[] split = line.split(" ");
+        		String cellStr = line.trim();							
+        		StringTokenizer strt = new StringTokenizer(cellStr, " ");
+        		if( strt.countTokens() == 3 )
+        		{
+		        	query.append("INSERT INTO ");
+		        	query.append("\"" + tableName + "\"");
+		        	query.append(" VALUES (");
+		        	query.append(strt.nextToken());
+		        	query.append(", ");
+		        	query.append(strt.nextToken());
+		        	query.append(", ");
+		        	query.append(strt.nextToken());
+		        	query.append("); ");
+		        	//System.out.println(split[0] + "," + split[1] + ": " + split[2]);
+        		}
+            	
+	            /*String[] split = line.split(" ");
 	            if(split.length == 3)
 	            {
 		        	query.append("INSERT INTO ");
@@ -361,7 +378,7 @@ public class NetezzaConnector {
 		        	query.append(split[2]);
 		        	query.append("); ");
 		        	System.out.println(split[0] + "," + split[1] + ": " + split[2]);
-	            }
+	            }*/
 	            line = reader.readLine();
             	String sql = query.toString();
             	st.addBatch(sql);

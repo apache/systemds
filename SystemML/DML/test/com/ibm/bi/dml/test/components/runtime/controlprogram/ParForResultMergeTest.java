@@ -10,6 +10,7 @@ import org.junit.Test;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
+import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMerge;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ResultMergeLocalFile;
@@ -344,6 +345,8 @@ public class ParForResultMergeTest
 		try 
 		{
 			cleanup();
+			
+			LazyWriteBuffer.init();
 			
 			//create and write original matrix
 			MatrixBlock retOld = DataConverter.convertToMatrixBlock(matrixOld);

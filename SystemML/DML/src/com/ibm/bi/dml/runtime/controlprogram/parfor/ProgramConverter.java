@@ -19,6 +19,7 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -28,6 +29,7 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -51,7 +53,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -121,6 +122,24 @@ public class ProgramConverter
 	////////////////////////////////
 	
 	/**
+	 * Creates a deep copy of the given execution context.
+	 * For rt_platform=Hadoop, execution context has a symbol table.
+	 */
+	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec, ProgramBlock pb) {
+		ExecutionContext copy_ec = new ExecutionContext();
+		
+		// Create an empty symbol table according to the nested program structure given by <code>pb</code> 
+		SymbolTable copy_symb = pb.createSymbolTable();
+		
+		// Copy the variables corresponding to top-level program block
+		copy_symb.get_variableMap().putAll(ec.getSymbolTable().get_variableMap());
+		
+		copy_ec.setSymbolTable(copy_symb);
+		
+		return copy_ec;
+	}
+	
+	/**
 	 * This recursively creates a deep copy of program blocks and transparently replaces filenames according to the
 	 * specified parallel worker in order to avoid conflicts between parworkers. This happens recursively in order
 	 * to support arbitrary control-flow constructs within a parfor. 
@@ -180,7 +199,7 @@ public class ProgramConverter
 			tmpPB.setInstructions( createDeepCopyInstructionSet(pb.getInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );
 			
 			//copy symbol table
-			tmpPB.setVariables( pb.getVariables() ); //implicit cloning			
+			//tmpPB.setVariables( pb.getVariables() ); //implicit cloning			
 			
 			tmp.add(tmpPB);
 		}
@@ -414,7 +433,7 @@ public class ProgramConverter
 				copy = fpb;
 		}
 		
-		copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
+		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 		
 		//put 
@@ -445,7 +464,7 @@ public class ProgramConverter
 		
 		copy = new FunctionProgramBlock(fpb.getProgram(), tmp1, tmp2);
 		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), 0, -1, fnStack, true) );
-		copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
+		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 	
 		return copy;
@@ -630,9 +649,11 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
-		LocalVariableMap vars       = body.getVariables();
+		//LocalVariableMap vars       = body.getVariables();
 		ArrayList<String> rVnames   = body.getResultVarNames();
 		ExecutionContext ec         = body.getEc();
+		
+		SymbolTable symb = ec.getSymbolTable();
 		
 		if( pbs.size()==0 )
 			return PARFORBODY_BEGIN + PARFORBODY_END;
@@ -662,9 +683,11 @@ public class ProgramConverter
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
-		//handle symbol table
+		// Handle symbol table
+		// - Serialize ONLY the top-level variable map. 
+		// - (Empty) Symbol tables for nested/child blocks are created at parse time, on the remote side.
 		sb.append( PARFOR_VARS_BEGIN );
-		sb.append( serializeVariables(vars) );
+		sb.append( serializeVariables(symb.get_variableMap()) );
 		sb.append( PARFOR_VARS_END );
 		sb.append( NEWLINE );
 		sb.append( COMPONENTS_DELIM );
@@ -682,7 +705,7 @@ public class ProgramConverter
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
-		//handle program blocks
+		//handle program blocks -- ONLY instructions, not variables.
 		sb.append( PARFOR_PBS_BEGIN );
 		sb.append( NEWLINE );
 		sb.append( rSerializeProgramBlocks(pbs) );
@@ -836,10 +859,12 @@ public class ProgramConverter
 	public static String serializeExecutionContext( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
-		if( ec == null )
+		// TODO: statiko -- fix this!!
+		return EMPTY;
+		/*if( ec == null )
 			return EMPTY;
 		else
-			throw new DMLRuntimeException("Serialization of external system execution context not supported yet.");
+			throw new DMLRuntimeException("Serialization of external system execution context not supported yet.");*/
 	}
 	
 	/**
@@ -1097,7 +1122,7 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static String rSerializeProgramBlock( ProgramBlock pb ) 
+	public static String rSerializeProgramBlock( ProgramBlock pb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1119,10 +1144,11 @@ public class ProgramConverter
 			sb.append( PARFOR_PB_BEGIN );
 		
 		//handle variables (not required only on top level)
-		sb.append( PARFOR_VARS_BEGIN );
-		sb.append( serializeVariables( pb.getVariables() ) ); 
+		/*sb.append( PARFOR_VARS_BEGIN );
+		sb.append( serializeVariables( ) ); 
 		sb.append( PARFOR_VARS_END );
 		sb.append( COMPONENTS_DELIM );
+		*/
 		
 		//handle body
 		if( pb instanceof WhileProgramBlock )
@@ -1137,7 +1163,7 @@ public class ProgramConverter
 			sb.append( PARFOR_INST_END );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( PARFOR_PBS_BEGIN );
-			sb.append( rSerializeProgramBlocks( wpb.getChildBlocks() ) );
+			sb.append( rSerializeProgramBlocks( wpb.getChildBlocks()) );
 			sb.append( PARFOR_PBS_END );
 		}
 		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock ) )
@@ -1162,7 +1188,7 @@ public class ProgramConverter
 			sb.append( PARFOR_INST_END );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( PARFOR_PBS_BEGIN );
-			sb.append( rSerializeProgramBlocks( fpb.getChildBlocks() ) );
+			sb.append( rSerializeProgramBlocks( fpb.getChildBlocks()) );
 			sb.append( PARFOR_PBS_END );
 		}
 		else if ( pb instanceof ParForProgramBlock )
@@ -1317,9 +1343,9 @@ public class ProgramConverter
 		Program prog = parseProgram( progStr, id ); 
 		
 		//handle symbol table
+		//  - get the top-level variable mapping
 		String varStr = st.nextToken();
 		LocalVariableMap vars = parseVariables(varStr);
-		body.setVariables( vars );
 		
 		//handle result variable names
 		String rvarStr = st.nextToken();
@@ -1329,13 +1355,26 @@ public class ProgramConverter
 		//handle execution context
 		String ecStr = st.nextToken();
 		ExecutionContext ec = parseExecutionContext( ecStr );
-		body.setEc( ec );
-		
+		if(ec==null)
+			ec = new ExecutionContext();
+			
 		//handle program blocks
 		String spbs = st.nextToken();
 		spbs = spbs.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction 
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(spbs, prog, id);
 		body.setChildBlocks( pbs );
+
+		//construct (empty) symbol tables for all the child blocks
+		SymbolTable symb = new SymbolTable();
+		symb.set_variableMap(vars);
+		for(int i=0; i < pbs.size(); i++) {
+			symb.addChildTable(pbs.get(i).createSymbolTable());
+		}
+
+		//attach symbol table to execution context
+		ec.setSymbolTable(symb);
+		
+		body.setEc( ec );
 		
 		return body;		
 	}
@@ -1490,7 +1529,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_WHILE.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
@@ -1504,7 +1543,7 @@ public class ProgramConverter
 		WhileProgramBlock wpb = new WhileProgramBlock(prog,inst);
 		wpb.setExitInstructions2(exit);
 		wpb.setChildBlocks(pbs);
-		wpb.setVariables(vars);
+		//wpb.setVariables(vars);
 		
 		return wpb;
 	}
@@ -1524,7 +1563,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_FOR.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs
 		String[] iterPredVars = parseStringArray(st.nextToken());
@@ -1546,7 +1585,7 @@ public class ProgramConverter
 		fpb.setIncrementInstructions(incr);
 		fpb.setExitInstructions(exit);
 		fpb.setChildBlocks(pbs);
-		fpb.setVariables(vars);
+		//fpb.setVariables(vars);
 		
 		return fpb;
 	}
@@ -1567,7 +1606,7 @@ public class ProgramConverter
 		lin = lin.replaceAll(CP_CHILD_THREAD+id, CP_ROOT_THREAD_ID); // reset placeholder to preinit state (replaced by deep copies of nested parfor pbs)
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs
 		String[] iterPredVars = parseStringArray(st.nextToken());
@@ -1593,7 +1632,7 @@ public class ProgramConverter
 		pfpb.setIncrementInstructions(incr);
 		pfpb.setExitInstructions(exit);
 		pfpb.setChildBlocks(pbs);
-		pfpb.setVariables(vars);
+		//pfpb.setVariables(vars);
 		
 		return pfpb;
 	}
@@ -1613,7 +1652,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_IF.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
@@ -1629,7 +1668,7 @@ public class ProgramConverter
 		ipb.setExitInstructions2(exit);
 		ipb.setChildBlocksIfBody(pbs1);
 		ipb.setChildBlocksElseBody(pbs2);
-		ipb.setVariables(vars);
+		//ipb.setVariables(vars);
 		
 		return ipb;
 	}
@@ -1649,7 +1688,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_FC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs and outputs
 		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
@@ -1666,7 +1705,7 @@ public class ProgramConverter
 		FunctionProgramBlock fpb = new FunctionProgramBlock(prog, tmp1, tmp2);
 		fpb.setInstructions(inst);
 		fpb.setChildBlocks(pbs);
-		fpb.setVariables(vars);
+		//fpb.setVariables(vars);
 		
 		return fpb;
 	}
@@ -1686,7 +1725,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_EFC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//inputs, outputs and params
 		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
@@ -1710,7 +1749,7 @@ public class ProgramConverter
 		ExternalFunctionProgramBlockCP efpb = new ExternalFunctionProgramBlockCP(prog, tmp1, tmp2, dat3, basedir);
 		//efpb.setInstructions(inst);
 		efpb.setChildBlocks(pbs);
-		efpb.setVariables(vars);
+		//efpb.setVariables(vars);
 		
 		return efpb;
 	}
@@ -1729,13 +1768,13 @@ public class ProgramConverter
 	{
 		String lin = in.substring( PARFOR_PB_BEGIN.length(),in.length()-PARFOR_PB_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
-		LocalVariableMap vars = parseVariables(st.nextToken());
+		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
 		
 		ProgramBlock pb = new ProgramBlock(prog);
 		pb.setInstructions(inst);
-		pb.setVariables(vars);
+		//pb.setVariables(vars);
 		
 		return pb;
 	}

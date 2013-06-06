@@ -1,7 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
@@ -19,10 +19,10 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	}
 	
 	@Override
-	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException{
+	public void processInstruction(SymbolTable symb) throws DMLRuntimeException{
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so1 = pb.getScalarInput(input1.get_name(), input1.get_valueType());
-		ScalarObject so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so2 = symb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		
@@ -54,6 +54,6 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		pb.setScalarOutput(output.get_name(), sores);
+		symb.setScalarOutput(output.get_name(), sores);
 	}
 }

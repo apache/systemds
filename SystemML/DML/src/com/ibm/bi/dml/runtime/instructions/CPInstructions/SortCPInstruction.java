@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -61,25 +61,25 @@ public class SortCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(ProgramBlock pb)
+	public void processInstruction(SymbolTable symb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		MatrixBlock matBlock = (MatrixBlock) pb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock = (MatrixBlock) symb.getMatrixInput(input1.get_name());
 		MatrixBlock wtBlock = null, resultBlock = null;
  		
 		String output_name = output.get_name();
 		
 		if (input2 != null) {
-			wtBlock = (MatrixBlock) pb.getMatrixInput(input2.get_name());
+			wtBlock = (MatrixBlock) symb.getMatrixInput(input2.get_name());
 		}
 		
 		resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
 		
 		matBlock = wtBlock = null;
-		pb.releaseMatrixInput(input1.get_name());
+		symb.releaseMatrixInput(input1.get_name());
 		if (input2 != null)
-			pb.releaseMatrixInput(input2.get_name());
+			symb.releaseMatrixInput(input2.get_name());
 		
-		pb.setMatrixOutput(output_name, resultBlock);
+		symb.setMatrixOutput(output_name, resultBlock);
 	}
 }

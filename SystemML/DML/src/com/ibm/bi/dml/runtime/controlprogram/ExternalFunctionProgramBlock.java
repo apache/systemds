@@ -49,7 +49,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
@@ -158,6 +157,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 */
 	public void execute(ExecutionContext ec) throws DMLRuntimeException {
 	
+		SymbolTable symb = ec.getSymbolTable();
+		
 		_runID = _idSeq.getNextID();
 		
 		changeTmpInput( _runID ); 
@@ -169,7 +170,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 		try {
 			inputParams = getInputParams();
 			for(DataIdentifier di : inputParams ) {			
-				Data d = getVariable(di.getName());
+				Data d = symb.getVariable(di.getName());
 				if ( d.getDataType() == DataType.MATRIX ) {
 					MatrixObject inputObj = (MatrixObject) d;
 					inputObj.exportData();
@@ -199,9 +200,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 			if (_inst.get(i) instanceof ExternalFunctionInvocationInstruction) {
 				try {
-					executeInstruction(
-							(ExternalFunctionInvocationInstruction) _inst
-							.get(i),
+					executeInstruction(symb,
+							(ExternalFunctionInvocationInstruction) _inst.get(i),
 							getDAGQueue());
 				} catch (NimbleCheckedRuntimeException e) {
 				
@@ -516,7 +516,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @throws DMLRuntimeException 
 	 */
 
-	public void executeInstruction(ExternalFunctionInvocationInstruction inst,
+	public void executeInstruction(SymbolTable symb, ExternalFunctionInvocationInstruction inst,
 			DAGQueue dQueue) throws NimbleCheckedRuntimeException, DMLRuntimeException {
 
 		String className = inst.getClassName();
@@ -543,7 +543,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// add inputs to this package function based on input parameter
 		// and their mappings.
-		setupInputs(func, inst.getInputParams(), this.getVariables());
+		setupInputs(func, inst.getInputParams(), symb.get_variableMap());
 		func.setConfiguration(configFile);
 		func.setBaseDir(_baseDir);
 
@@ -575,7 +575,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 
 		// verify output of function execution matches declaration
 		// and add outputs to variableMapping and Metadata
-		verifyAndAttachOutputs(returnFunc, inst.getOutputParams());
+		verifyAndAttachOutputs(symb, returnFunc, inst.getOutputParams());
 	}
 
 	/**
@@ -585,7 +585,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 	 * @param outputParams
 	 * @throws DMLRuntimeException 
 	 */
-	protected void verifyAndAttachOutputs(PackageFunction returnFunc,
+	protected void verifyAndAttachOutputs(SymbolTable symb, PackageFunction returnFunc,
 			String outputParams) throws DMLRuntimeException {
 
 		ArrayList<String> outputs = getParameters(outputParams);
@@ -625,8 +625,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				if( oldVar!=null )
 					oldVar.clearData();*/
 				
-				getVariables().put(varName, newVar); //put/override in local symbol table
-
+				//getVariables().put(varName, newVar); //put/override in local symbol table
+				symb.setVariable(varName, newVar);
+				
 				continue;
 			}
 
@@ -664,7 +665,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 							"Unknown scalar object type");
 				}
 
-				this.getVariables().put(tokens.get(1), scalarObject);
+				//this.getVariables().put(tokens.get(1), scalarObject);
+				symb.setVariable(tokens.get(1), scalarObject);
 				continue;
 			}
 

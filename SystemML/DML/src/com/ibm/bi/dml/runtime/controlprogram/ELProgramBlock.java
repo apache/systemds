@@ -1,31 +1,9 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.MetaLearningFunctionParameters;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
@@ -48,7 +26,7 @@ public class ELProgramBlock extends ProgramBlock {
 		_pp = pp ;
 	}
 
-	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
+	/*protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
 		for (int i = 0; i < _inst.size(); i++) {	//only one itern occurs though
 			Instruction currInst = _inst.get(i);
 			if (currInst instanceof MRJobInstruction) {
@@ -122,10 +100,10 @@ public class ELProgramBlock extends ProgramBlock {
 			if(q > 0)
 				reblksinsts += ",rblk:::"+q+":DOUBLE:::"+(q+nummats)+":DOUBLE:::1000:::1000";
 		}
-		/*public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, 
+		public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, 
 		 * int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 		 * String reblockInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, 
-		 * byte[] resultDimsUnknown, int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)*/
+		 * byte[] resultDimsUnknown, int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
 
 		
 		// TODO: following setReblockInstructions() is commented since this does not adhere to the new method of setting up MR jobs.
@@ -199,13 +177,13 @@ long hashmapsize = N * V * 8 + 15000; //(for small vector overhead)
 			//### Boosting?? ###
 		}
 		
-/*if(hashmapsize <= availmem)	//we can simply use the hashmap MR job!
+if(hashmapsize <= availmem)	//we can simply use the hashmap MR job!
 return PartitionParams.AccessPath.HM;	//FOR DEBUGGING
 else {
 System.out.println("Not enough memory, HM dies!");
 System.exit(1);
 } //FORDEBUGGING
-*/
+
 return retapt;
 //return PartitionParams.AccessPath.JR;	//FOR DEBUGGING
 //return PartitionParams.AccessPath.RB;	//FOR DEBUGGING
@@ -225,7 +203,7 @@ return retapt;
 		((MRJobInstruction) _inst.get(0)).getPartitionParams().apt = _pp.apt;
 		System.out.println("$$$$$$$$$$$$$ Chosen accesspath: " + _pp.apt + "$$$$$$$$$$$$$");
 		//based on torepl, we need to execute partition once outside the for loop vs repeatedly inside the loop		
-		/********** Construct folds for partition with replication ****************/ 
+		*//********** Construct folds for partition with replication ****************//* 
 		if(_pp.toReplicate == true) {	//partition w repl
 			executePartition();
 			System.out.println("Finished executing partition w repl!");
@@ -262,9 +240,9 @@ return retapt;
 			ensembleValue.put("hashFile", _pp.sfmapfile);	//can be used later for re-partitioning new unlabeled data along corresp cols  
 		//### for boosting, we also need to add the zeta (importance) vector over train folds output models
 		
-		/******************* Iterate over the folds **************************/ 
+		*//******************* Iterate over the folds **************************//* 
 		for(int foldId = 0 ; foldId < foldCount; foldId++) {
-			/********** Construct folds for partition without replication ****************/
+			*//********** Construct folds for partition without replication ****************//*
 			if(_pp.toReplicate == false) {	//partition wo repl - invoke it and do post partn reblock if ncsry
 				executePartition();
 				System.out.println("Finished executing partition wo repl for fold "+foldId+"!");
@@ -274,7 +252,7 @@ return retapt;
 				}
 			}
 			//for mappings to trainer/test, several cases can arise dep on access path, el type and repl: (after stmt level reconciln) 
-			/* for both bagging and rsm, w repl, HM sends outputs[i] to train
+			 for both bagging and rsm, w repl, HM sends outputs[i] to train
 			 * Wo repl, it is outputs[0] alone! Also, if apt is RB or JR, append "re" to resp. fold aliters
 			 * #### boosting: here, w repl is meaningless; so we need to track eahc matr, and weights; also, there's tesing on orig input! 
 			 *
@@ -382,11 +360,11 @@ return retapt;
 			else {
 				//## for boosting we have train and test folds!
 			}	
-			System.out.println("$$$$$$$$$$ Deleted temp files and entries $$$$$$$$$$$$";*/
+			System.out.println("$$$$$$$$$$ Deleted temp files and entries $$$$$$$$$$$$";
 			
 		} // end for each fold
 		
-		/************** Put ensemble file in the varbls list of this pgm blk, to be used for Write() later! *********/
+		*//************** Put ensemble file in the varbls list of this pgm blk, to be used for Write() later! *********//*
 		//this._variables.put(_pp.ensembleName, ensembleValue); - this doenst work, since cant cast as Data
 		//It is not of Matrix / Scalar types! So, we need a new generic Object datatype in DML!
 		//instead we write it out as a tmp file somewhere? later, for write sttmt, we use it? TODO #####
@@ -406,15 +384,20 @@ return retapt;
 		
 	} // end execute
 	
+	@Override
+	protected SymbolTable createSymbolTable() {
+		// TODO: override this function whenever EL implementation is revisited
+		return null;
+	}
 	
-	/**
+	*//**
 	 * 
 	 * @param fpb Function program block for function being called
 	 * @param formalParams the formal parameters function is being called with [NOTE: these are string values, 
 	 * 			so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
-	 */
+	 *//*
 	HashMap<String, Data> setFunctionVariables(FunctionProgramBlock fpb, ArrayList<String> formalParams) throws DMLUnsupportedOperationException{
 	
 		HashMap<String, Data> retVal = new HashMap<String, Data>(); 
@@ -465,14 +448,14 @@ return retapt;
 	} // end method setFunctionVariables
 
 	
-	/**
+	*//**
 	 * 
 	 * @param fpb Function program block for function being called
 	 * @param formalParams the formal parameters function is being called with 
 	 * 								[NOTE: these are string values, so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
-	 */
+	 *//*
 	HashMap<String, Data> setFunctionVariables(FunctionStatement fstmt, ArrayList<String> formalParams) throws DMLUnsupportedOperationException{
 	
 		HashMap<String, Data> retVal = new HashMap<String, Data>(); 
@@ -521,5 +504,5 @@ return retapt;
 		}
 		return retVal;
 	} // end method setFunctionVariables
-
+*/
 } // end class

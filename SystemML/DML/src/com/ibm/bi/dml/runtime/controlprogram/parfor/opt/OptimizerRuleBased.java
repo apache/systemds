@@ -20,6 +20,7 @@ import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -126,7 +127,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * (no use of sb, direct change of pb).
 	 */
 	@Override
-	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
+	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
@@ -162,11 +163,11 @@ public class OptimizerRuleBased extends Optimizer
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		rewriteSetDataPartitioner( pn, pb.getVariables() );
+		rewriteSetDataPartitioner( pn, ec.getSymbolTable().get_variableMap() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
-		boolean flagLIX = rewriteSetResultPartitioning( pn, M );
+		boolean flagLIX = rewriteSetResultPartitioning( pn, M, ec.getSymbolTable().get_variableMap() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		
 		// rewrite 3: execution strategy
@@ -176,10 +177,10 @@ public class OptimizerRuleBased extends Optimizer
 		if( pn.getExecType() == ExecType.MR )
 		{
 			// rewrite 4: data colocation
-			rewriteDataColocation( pn, pb.getVariables() );
+			rewriteDataColocation( pn, ec.getSymbolTable().get_variableMap() );
 			
 			// rewrite 5: rewrite set partition replication factor
-			rewriteSetPartitionReplicationFactor( pn, pb.getVariables() );
+			rewriteSetPartitionReplicationFactor( pn, ec.getSymbolTable().get_variableMap() );
 			
 			// rewrite 6: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
@@ -200,7 +201,7 @@ public class OptimizerRuleBased extends Optimizer
 		}	
 		
 		//rewrite 9: set result merge
-		rewriteSetResultMerge( pn, pb.getVariables() );
+		rewriteSetResultMerge( pn, ec.getSymbolTable().get_variableMap() );
 		
 		//rewrite 10: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
@@ -209,7 +210,7 @@ public class OptimizerRuleBased extends Optimizer
 		//Final rewrites for cleanup / minor improvements
 		
 		// rewrite 11: parfor (in recursive functions) to for
-		rewriteRemoveRecursiveParFor( pn );
+		rewriteRemoveRecursiveParFor( pn, ec.getSymbolTable().get_variableMap() );
 		
 		// rewrite 12: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
@@ -393,7 +394,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @throws DMLRuntimeException
 	 */
-	protected boolean rewriteSetResultPartitioning(OptNode n, double M) 
+	protected boolean rewriteSetResultPartitioning(OptNode n, double M, LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
 		//preparations
@@ -407,7 +408,7 @@ public class OptimizerRuleBased extends Optimizer
 		//determine if applicable
 		boolean apply =    M < _rm         //ops fit in remote memory budget
 			            && cand.size() > 0 //at least one MR
-		                && isResultPartitionableAll(cand,pfpb.getResultVariables(),pfpb.getVariables(), pfpb.getIterablePredicateVars()[0]); // check candidates
+		                && isResultPartitionableAll(cand,pfpb.getResultVariables(),vars, pfpb.getIterablePredicateVars()[0]); // check candidates
 			
 		//recompile LIX
 		if( apply )
@@ -415,7 +416,7 @@ public class OptimizerRuleBased extends Optimizer
 			try
 			{
 				for(OptNode lix : cand)
-					recompileLIX( lix );
+					recompileLIX( lix, vars );
 			}
 			catch(Exception ex)
 			{
@@ -542,7 +543,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	protected void recompileLIX( OptNode n ) 
+	protected void recompileLIX( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
@@ -558,7 +559,7 @@ public class OptimizerRuleBased extends Optimizer
 		ProgramBlock pb = (ProgramBlock) o[1];
 		
 		//construct new instructions
-		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), pb.getVariables(), 0);
+		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), vars, 0);
 		pb.setInstructions( newInst );   
 		
 		//set new mem estimate (last, otherwise overwritten from recompile)
@@ -1237,7 +1238,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	protected void rewriteRemoveRecursiveParFor(OptNode n) 
+	protected void rewriteRemoveRecursiveParFor(OptNode n, LocalVariableMap vars) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		int count = 0; //num removed parfor
@@ -1254,7 +1255,7 @@ public class OptimizerRuleBased extends Optimizer
 				ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 		        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 				if( recPBs.contains(pfpb) ) 
-					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs);
+					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs, vars);
 			}
 			catch(Exception ex)
 			{
@@ -1306,7 +1307,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws HopsException
 	 * @throws LanguageException
 	 */
-	protected void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs )
+	protected void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs, LocalVariableMap vars )
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LanguageException
 	{
 		//unfold if found
@@ -1347,7 +1348,7 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					ProgramBlock lpb = copyfpb.getChildBlocks().get(i);
 					StatementBlock lsb = fs.getBody().get(i);
-					nNew.addChild( OptTreeConverter.rCreateAbstractOptNode(lsb,lpb,copyfpb.getVariables(),false, memo) );
+					nNew.addChild( OptTreeConverter.rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 				}
 				
 				//compute delta for recPB set (use for removing parfor)
@@ -1365,7 +1366,7 @@ public class OptimizerRuleBased extends Optimizer
 		//recursive invocation (only for non-recursive functions)
 		if( !n.isLeaf() )
 			for( OptNode c : n.getChilds() )
-				rFindAndUnfoldRecursiveFunction(c, parfor, recPBs);
+				rFindAndUnfoldRecursiveFunction(c, parfor, recPBs, vars);
 	}
 	
 	/**

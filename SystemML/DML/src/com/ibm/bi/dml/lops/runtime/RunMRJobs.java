@@ -2,8 +2,6 @@ package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -19,8 +17,9 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -53,13 +52,15 @@ import com.ibm.bi.dml.utils.Statistics;
 public class RunMRJobs {
 	public static boolean flagLocalModeOpt = false;
 	public enum ExecMode { LOCAL, CLUSTER, INVALID }; 
-	private static final Log LOG = LogFactory.getLog(RunMRJobs.class.getName());
+	//private static final Log LOG = LogFactory.getLog(RunMRJobs.class.getName());
 
-	public static JobReturn submitJob(MRJobInstruction inst, ProgramBlock pb ) throws DMLRuntimeException {
+	public static JobReturn submitJob(MRJobInstruction inst, ExecutionContext ec ) throws DMLRuntimeException {
+		
+		SymbolTable symb = ec.getSymbolTable();
 		JobReturn ret = new JobReturn();
 
 		// Obtain references to all input matrices 
-		MatrixObject[] inputMatrices = inst.extractInputMatrices(pb);
+		MatrixObject[] inputMatrices = inst.extractInputMatrices(symb);
 		
 		// export dirty matrices to HDFS
 		// note: for REBLOCK postponed until we know if necessary
@@ -72,24 +73,23 @@ public class RunMRJobs {
 			}
 
 			//check input files
-			checkEmptyInputs( inst, inputMatrices, pb );	
+			checkEmptyInputs( inst, inputMatrices, symb );	
 		}
 		
 		// Obtain references to all output matrices
-		MatrixObject[] outputMatrices = inst.extractOutputMatrices(pb);
-		
+		MatrixObject[] outputMatrices = inst.extractOutputMatrices(symb);
 		
 		boolean execCP = false;
 		
 		// Spawn MapReduce Jobs
 		try {
 			// replace all placeholders in all instructions with appropriate values
-			String rdInst = updateLabels(inst.getIv_randInstructions(), pb.getVariables());
-			String rrInst = updateLabels(inst.getIv_recordReaderInstructions(), pb.getVariables());
-			String mapInst = updateLabels(inst.getIv_instructionsInMapper(), pb.getVariables());
-			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(),pb.getVariables());
-			String aggInst = updateLabels(inst.getIv_aggInstructions(), pb.getVariables());
-			String otherInst = updateLabels(inst.getIv_otherInstructions(), pb.getVariables());
+			String rdInst = updateLabels(inst.getIv_randInstructions(), symb.get_variableMap());
+			String rrInst = updateLabels(inst.getIv_recordReaderInstructions(), symb.get_variableMap());
+			String mapInst = updateLabels(inst.getIv_instructionsInMapper(), symb.get_variableMap());
+			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(), symb.get_variableMap());
+			String aggInst = updateLabels(inst.getIv_aggInstructions(), symb.get_variableMap());
+			String otherInst = updateLabels(inst.getIv_otherInstructions(), symb.get_variableMap());
 			
 			switch(inst.getJobType()) {
 			
@@ -158,7 +158,7 @@ public class RunMRJobs {
 						if ( m.isDirty() )
 							m.exportData();
 					}
-					checkEmptyInputs( inst, inputMatrices, pb );
+					checkEmptyInputs( inst, inputMatrices, symb );
 					
 					ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
 							inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
@@ -284,7 +284,7 @@ public class RunMRJobs {
 			
 		} // end of try block
 		catch (Exception e) {
-			throw new DMLRuntimeException(pb.printBlockErrorLocation() , e);
+			throw new DMLRuntimeException(ec.getSymbolTable().printBlockErrorLocation() , e);
 		}
 
 		if (ret.checkReturnStatus()) {
@@ -341,7 +341,6 @@ public class RunMRJobs {
 		// should not come here!
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
-
 	/**
 	 * 
 	 * @param inst
@@ -349,7 +348,7 @@ public class RunMRJobs {
 	 * @param pb
 	 * @throws DMLRuntimeException
 	 */
-	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices, ProgramBlock pb ) 
+	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices, SymbolTable symb ) 
 		throws DMLRuntimeException
 	{
 		// Check if any of the input files are empty.. only for those job types
@@ -358,10 +357,10 @@ public class RunMRJobs {
 			for ( int i=0; i < inputMatrices.length; i++ ) {
 				try {
 					if (MapReduceTool.isHDFSFileEmpty(inputMatrices[i].getFileName())) {
-						throw new DMLRuntimeException(pb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
+						throw new DMLRuntimeException(symb.printBlockErrorLocation() + "Can not operate on an empty file: " + inputMatrices[i].getFileName());
 					}
 				} catch (IOException e) {
-					throw new DMLRuntimeException(pb.printBlockErrorLocation() + "runtime error occurred -- " , e);
+					throw new DMLRuntimeException(symb.printBlockErrorLocation() + "runtime error occurred -- " , e);
 				}
 			}
 		}

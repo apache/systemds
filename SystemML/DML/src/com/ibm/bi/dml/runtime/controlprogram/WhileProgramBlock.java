@@ -11,7 +11,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstructi
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -79,6 +78,7 @@ public class WhileProgramBlock extends ProgramBlock
 	private BooleanObject executePredicate(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		BooleanObject result = null;
 		try
 		{
@@ -93,11 +93,11 @@ public class WhileProgramBlock extends ProgramBlock
 					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
 			else
-				result = (BooleanObject)getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
+				result = (BooleanObject)symb.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("\nWhile predicate variables: "+ _variables.toString());
+			LOG.trace("\nWhile predicate variables: "+ symb.get_variableMap().toString());
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.", ex);
 		}
 		
@@ -111,24 +111,31 @@ public class WhileProgramBlock extends ProgramBlock
 
 		BooleanObject predResult = executePredicate(ec); 
 		
+		SymbolTable symb = ec.getSymbolTable();
 		while(predResult.getBooleanValue()){
 				
 			// for each program block
 			for (int i=0; i < this._childBlocks.size(); i++){
 				ProgramBlock pb = this._childBlocks.get(i);
-				pb.setVariables(_variables);
+				
+				SymbolTable childSymb = symb.getChildTable(i);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				ec.setSymbolTable(childSymb);
+
+				//pb.setVariables(_variables);
 				
 				try {
 					pb.execute(ec);
 				}
 				catch(Exception e){
-					
-					LOG.trace("\nWhile predicate variables: "+ _variables.toString());
-					
+					LOG.trace("\nWhile predicate variables: "+ symb.get_variableMap().toString());
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
 				}
 				
-				_variables = pb._variables;
+				//_variables = pb._variables;
+				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
+				ec.setSymbolTable(symb);
+
 			}
 			predResult = executePredicate(ec);
 		}
@@ -142,6 +149,15 @@ public class WhileProgramBlock extends ProgramBlock
 		
 	}
 	
+	@Override
+	public SymbolTable createSymbolTable() {
+		SymbolTable st = new SymbolTable(true);
+		for (int i=0; i < _childBlocks.size(); i++) {
+			st.addChildTable(_childBlocks.get(i).createSymbolTable());
+		}
+		return st;
+	}
+
 	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
 	}

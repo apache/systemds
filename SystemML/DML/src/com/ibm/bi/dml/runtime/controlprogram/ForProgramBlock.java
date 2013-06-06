@@ -8,7 +8,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -132,6 +131,7 @@ public class ForProgramBlock extends ProgramBlock
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
 
@@ -150,12 +150,16 @@ public class ForProgramBlock extends ProgramBlock
 		// (for supporting dynamic TO, move expression execution to end of while loop)
 		while( iterVar.getIntValue() <= to.getIntValue() )
 		{
-			_variables.put(iterVarName, iterVar); 
+			symb.get_variableMap().put(iterVarName, iterVar); 
 			
 			// for each program block
-			for (ProgramBlock pb : this._childBlocks)
-			{	
-				pb.setVariables(_variables);
+			for(int i=0; i < _childBlocks.size(); i++) {
+				SymbolTable childSymb = symb.getChildTable(i);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				ec.setSymbolTable(childSymb);
+				
+				ProgramBlock pb = _childBlocks.get(i);
+				//pb.setVariables(_variables);
 				
 				try {
 					pb.execute(ec);
@@ -164,11 +168,14 @@ public class ForProgramBlock extends ProgramBlock
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
 				}
 				
-				_variables = pb._variables;
+				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
+				ec.setSymbolTable(symb);
+				//_variables = pb._variables;
 			}
 			
 			// update the iterable predicate variable 
-			if (_variables.get(iterVarName) == null || !(_variables.get(iterVarName) instanceof IntObject))
+			if(symb.getVariable(iterVarName) == null || !(symb.getVariable(iterVarName) instanceof IntObject))
+			//if (_variables.get(iterVarName) == null || !(_variables.get(iterVarName) instanceof IntObject))
 				throw new DMLRuntimeException("iter predicate " + iterVarName + " must be remain of type scalar int");
 			
 			//increment of iterVar (changes  in loop body get discarded)
@@ -187,13 +194,15 @@ public class ForProgramBlock extends ProgramBlock
 	{
 		ScalarObject tmp = null;
 		IntObject ret = null;
-			
+		
+		SymbolTable symb = ec.getSymbolTable();
+		
 		try
 		{
 			if( _iterablePredicateVars[pos] != null )
 			{
 				//check for literals or scalar variables
-				tmp = (ScalarObject) getScalarInput(_iterablePredicateVars[pos], ValueType.INT);
+				tmp = (ScalarObject) symb.getScalarInput(_iterablePredicateVars[pos], ValueType.INT);
 			}		
 			else
 			{
@@ -236,6 +245,15 @@ public class ForProgramBlock extends ProgramBlock
 		return ret;
 	}
 	
+	@Override
+	public SymbolTable createSymbolTable() {
+		SymbolTable st = new SymbolTable(true);
+		for (int i=0; i < _childBlocks.size(); i++) {
+			st.addChildTable(_childBlocks.get(i).createSymbolTable());
+		}
+		return st;
+	}
+
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in for program block generated from for statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

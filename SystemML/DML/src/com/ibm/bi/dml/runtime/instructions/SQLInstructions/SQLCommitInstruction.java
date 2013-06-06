@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.SQLInstructions;
 
 import java.sql.SQLException;
 
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 

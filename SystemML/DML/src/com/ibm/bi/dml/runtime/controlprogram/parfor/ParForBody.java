@@ -2,9 +2,9 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 
 /**
  * Wrapper for exchanging parfor body data structures.
@@ -12,7 +12,6 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
  */
 public class ParForBody 
 {
-	private LocalVariableMap	 	_variables;
 	private ArrayList<String>       _resultVarNames;
 	private ArrayList<ProgramBlock> _childBlocks;
 	private ExecutionContext 		_ec;
@@ -23,9 +22,8 @@ public class ParForBody
 	}
 
 	public ParForBody( ArrayList<ProgramBlock> childBlocks, 
-			LocalVariableMap variables, ArrayList<String> resultVarNames, ExecutionContext ec ) 
+			ArrayList<String> resultVarNames, ExecutionContext ec ) 
 	{
-		_variables      = variables;
 		_resultVarNames = resultVarNames;
 		_childBlocks    = childBlocks;
 		_ec             = ec;
@@ -33,14 +31,9 @@ public class ParForBody
 
 	public LocalVariableMap getVariables() 
 	{
-		return _variables;
+		return _ec.getSymbolTable().get_variableMap();
 	}
 
-	public void setVariables (LocalVariableMap variables) 
-	{
-		_variables = variables;
-	}
-	
 	public ArrayList<String> getResultVarNames() 
 	{
 		return _resultVarNames;

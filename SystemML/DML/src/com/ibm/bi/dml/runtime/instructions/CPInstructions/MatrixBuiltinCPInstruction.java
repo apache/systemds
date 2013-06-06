@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
@@ -17,18 +17,18 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 	}
 
 	@Override 
-	public void processInstruction(ProgramBlock pb) 
+	public void processInstruction(SymbolTable symb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock = symb.getMatrixInput(input1.get_name());
 		UnaryOperator u_op = (UnaryOperator) optr;
 		String output_name = output.get_name();
 		
 		MatrixBlock resultBlock = (MatrixBlock) (matBlock.unaryOperations(u_op, new MatrixBlock()));
 		
-		pb.setMatrixOutput(output_name, resultBlock);
+		symb.setMatrixOutput(output_name, resultBlock);
 
 		resultBlock = matBlock = null;
-		pb.releaseMatrixInput(input1.get_name());
+		symb.releaseMatrixInput(input1.get_name());
 	}
 }

@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.SQLInstructions;
 
 import java.sql.SQLException;
 
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -35,7 +35,7 @@ public class SQLInstruction extends SQLInstructionBase {
 				break;
 			start = to + 2;
 			String name = prepSQL.substring(from+2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, true));
+			prepSQL = prepSQL.replace("##" + name + "##", ec.getSymbolTable().getVariableString(name, true));
 		}
 		return prepSQL;
 	}

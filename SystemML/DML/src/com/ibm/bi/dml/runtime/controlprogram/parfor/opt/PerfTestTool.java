@@ -37,9 +37,12 @@ import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -714,6 +717,10 @@ public class PerfTestTool
 			ainst.add( inst.getValue() );
 			pb.setInstructions(ainst);
 			
+			ExecutionContext ec = new ExecutionContext();
+			SymbolTable symb = prog.createSymbolTable();
+			ec.setSymbolTable(symb);
+			
 			//foreach registered test configuration
 			for( Integer defID : testDefIDs )
 			{
@@ -737,7 +744,7 @@ public class PerfTestTool
 				{
 					for( Double var : dvariable )
 					{
-						dmeasure.add(executeTestCase1D(m, pv[0], df, var, pb, vectors, schema));
+						dmeasure.add(executeTestCase1D(m, pv[0], df, var, pb, vectors, schema, ec));
 					}
 				}
 				else //multi-dim function
@@ -757,7 +764,7 @@ public class PerfTestTool
 							buff[i] = dvariable.get(index[i]);
 						
 						//core execution
-						dmeasure.add(executeTestCaseMD(m, pv, df, buff, pb, schema)); //not applicable for vector flag
+						dmeasure.add(executeTestCaseMD(m, pv, df, buff, pb, schema, ec)); //not applicable for vector flag
 						
 						//increment indexes
 						for( int i=plen-1; i>=0; i-- )
@@ -798,7 +805,7 @@ public class PerfTestTool
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static double executeTestCase1D( TestMeasure m, InternalTestVariable v, DataFormat df, double varValue, ProgramBlock pb, boolean vectors, IOSchema schema ) 
+	private static double executeTestCase1D( TestMeasure m, InternalTestVariable v, DataFormat df, double varValue, ProgramBlock pb, boolean vectors, IOSchema schema, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
 	{
 		double datasize = -1;
@@ -873,14 +880,15 @@ public class PerfTestTool
 		}
 		
 		//generate input and output matrices
-		pb.getVariables().removeAll();
+		LocalVariableMap vars = ec.getSymbolTable().get_variableMap();
+		vars.removeAll();
 		double mem1 = PerfTestMemoryObserver.getUsedMemory();
 		if( schema!=IOSchema.NONE_NONE && schema!=IOSchema.NONE_UNARY )
-			pb.getVariables().put("A", generateInputDataset(PERF_TOOL_DIR+"/A", dim1, dim2, sparsity, df));
+			vars.put("A", generateInputDataset(PERF_TOOL_DIR+"/A", dim1, dim2, sparsity, df));
 		if( schema==IOSchema.BINARY_NONE || schema==IOSchema.BINARY_UNARY || schema==IOSchema.UNARY_UNARY )
-			pb.getVariables().put("B", generateInputDataset(PERF_TOOL_DIR+"/B", dim1, dim2, sparsity, df));
+			vars.put("B", generateInputDataset(PERF_TOOL_DIR+"/B", dim1, dim2, sparsity, df));
 		if( schema==IOSchema.NONE_UNARY || schema==IOSchema.UNARY_UNARY || schema==IOSchema.BINARY_UNARY)
-			pb.getVariables().put("C", generateEmptyResult(PERF_TOOL_DIR+"/C", dim1, dim2, df));
+			vars.put("C", generateEmptyResult(PERF_TOOL_DIR+"/C", dim1, dim2, df));
 		double mem2 = PerfTestMemoryObserver.getUsedMemory();
 		
 		//foreach repetition
@@ -888,7 +896,7 @@ public class PerfTestTool
 		for( int i=0; i<TEST_REPETITIONS; i++ )
 		{
 			System.out.println("run "+i);
-			value += executeGenericProgramBlock( m, pb );
+			value += executeGenericProgramBlock( m, pb, ec );
 		}
 		value/=TEST_REPETITIONS;
 		
@@ -920,7 +928,7 @@ public class PerfTestTool
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static double executeTestCaseMD( TestMeasure m, InternalTestVariable[] v, DataFormat df, double[] varValue, ProgramBlock pb, IOSchema schema ) 
+	private static double executeTestCaseMD( TestMeasure m, InternalTestVariable[] v, DataFormat df, double[] varValue, ProgramBlock pb, IOSchema schema, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
 	{
 		//double datasize = DEFAULT_DATASIZE;
@@ -943,14 +951,15 @@ public class PerfTestTool
 		}
 		
 		//generate input and output matrices
-		pb.getVariables().removeAll();
+		LocalVariableMap vars = ec.getSymbolTable().get_variableMap();
+		vars.removeAll();
 		double mem1 = PerfTestMemoryObserver.getUsedMemory();
 		if( schema!=IOSchema.NONE_NONE && schema!=IOSchema.NONE_UNARY )
-			pb.getVariables().put("A", generateInputDataset(PERF_TOOL_DIR+"/A", dim1, dim2, sparsity, df));
+			 vars.put("A", generateInputDataset(PERF_TOOL_DIR+"/A", dim1, dim2, sparsity, df));
 		if( schema==IOSchema.BINARY_NONE || schema==IOSchema.BINARY_UNARY || schema==IOSchema.UNARY_UNARY )
-			pb.getVariables().put("B", generateInputDataset(PERF_TOOL_DIR+"/B", dim2, dim3, sparsity, df));
+			 vars.put("B", generateInputDataset(PERF_TOOL_DIR+"/B", dim2, dim3, sparsity, df));
 		if( schema==IOSchema.NONE_UNARY || schema==IOSchema.UNARY_UNARY || schema==IOSchema.BINARY_UNARY)
-			pb.getVariables().put("C", generateEmptyResult(PERF_TOOL_DIR+"/C", dim1, dim3, df));
+			vars.put("C", generateEmptyResult(PERF_TOOL_DIR+"/C", dim1, dim3, df));
 		double mem2 = PerfTestMemoryObserver.getUsedMemory();
 		
 		//foreach repetition
@@ -958,7 +967,7 @@ public class PerfTestTool
 		for( int i=0; i<TEST_REPETITIONS; i++ )
 		{
 			System.out.println("run "+i);
-			value += executeGenericProgramBlock( m, pb );
+			value += executeGenericProgramBlock( m, pb, ec );
 		}
 		value/=TEST_REPETITIONS;
 		
@@ -985,7 +994,7 @@ public class PerfTestTool
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public static double executeGenericProgramBlock( TestMeasure measure, ProgramBlock pb ) 
+	public static double executeGenericProgramBlock( TestMeasure measure, ProgramBlock pb, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		double value = 0;
@@ -1017,9 +1026,9 @@ public class PerfTestTool
 		}
 		
 		//clear matrixes from cache
-		for( String str : pb.getVariables().keySet() )
+		for( String str : ec.getSymbolTable().get_variableMap().keySet() )
 		{
-			Data dat = pb.getVariable(str); 
+			Data dat = ec.getSymbolTable().getVariable(str); 
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).clearData();		
 		}

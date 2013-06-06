@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
@@ -46,14 +47,14 @@ class OptimizerGreedyEnum extends Optimizer
 	}
 	
 	@Override
-	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree pPlan, CostEstimator est) 
+	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree pPlan, CostEstimator est, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		System.out.println("--- GREEDY OPTIMIZER -------");
 		
 		//preparations
 		boolean change = false;
-		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb, new HashSet<String>());
+		OptTree lPlan = OptTreeConverter.createAbstractOptTree(pPlan.getCK(), pPlan.getCM(), sb, pb, new HashSet<String>(), ec);
 		OptNode lRoot = lPlan.getRoot();
 		OptNode pRoot = pPlan.getRoot();
 		double T = est.getEstimate(TestMeasure.EXEC_TIME, pRoot);
@@ -94,7 +95,7 @@ class OptimizerGreedyEnum extends Optimizer
 				{
 					//System.out.println("Create and eval plan for node: "+ac.getID());
 					ProgramBlock cPB = ProgramRecompiler.recompile( ac ); 
-					OptNode rc = OptTreeConverter.rCreateOptNode(cPB, cPB.getVariables(), topLevel, false); 
+					OptNode rc = OptTreeConverter.rCreateOptNode(cPB, ec.getSymbolTable().get_variableMap(), topLevel, false); 
 
 					double cM = est.getEstimate(TestMeasure.MEMORY_USAGE, rc);
 					System.out.println("cM="+cM);
@@ -165,7 +166,11 @@ class OptimizerGreedyEnum extends Optimizer
 	{
 		//OptNode lroot = plan.getRoot();
 
-		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<String>());
+		// Dummy execution context
+		// TODO: fix this!
+		ExecutionContext ec = new ExecutionContext();
+		
+		OptTree absPlan = OptTreeConverter.createAbstractOptTree(plan.getCK(), plan.getCM(), sb, pb, new HashSet<String>(), ec);
 		OptNode absRoot = absPlan.getRoot();
 		
 		Collection<OptNode> nodes = absRoot.getNodeList();

@@ -109,6 +109,9 @@ public class LazyWriteBuffer
 	{
 		boolean requiresDelete = true;
 		
+		if (_mData == null)
+			System.out.println("Here!");
+		
 		synchronized( _mData )
 		{
 			ByteBuffer ldata = _mData.remove(fname);

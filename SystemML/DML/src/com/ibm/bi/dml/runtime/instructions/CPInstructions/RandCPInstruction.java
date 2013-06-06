@@ -4,13 +4,12 @@ import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-
 
 public class RandCPInstruction extends UnaryCPInstruction{
 	public long rows;
@@ -82,7 +81,7 @@ public class RandCPInstruction extends UnaryCPInstruction{
 				
 	}
 	
-	public void processInstruction (ProgramBlock pb)
+	public void processInstruction (SymbolTable symb)
 		throws DMLRuntimeException
 	{
 		String output_name = output.get_name();
@@ -96,6 +95,6 @@ public class RandCPInstruction extends UnaryCPInstruction{
 		
 		//execute rand
 		MatrixBlock soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, sparsity, minValue, maxValue, pdf, lSeed) );
-        pb.setMatrixOutput(output_name, soresBlock);
+        symb.setMatrixOutput(output_name, soresBlock);
 	}
 }

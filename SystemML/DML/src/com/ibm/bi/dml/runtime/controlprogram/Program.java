@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -70,8 +69,7 @@ public class Program {
 		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
 		if (retVal == null)
 			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);
-		// TODO: check with Doug
-		retVal._variables = new LocalVariableMap();
+		//retVal._variables = new LocalVariableMap();
 		return retVal;
 	}
 	
@@ -87,14 +85,21 @@ public class Program {
 	throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//populate initial symbol table
-		_programVariables.putAll (varMap);
+		//_programVariables.putAll (varMap);
+		
+		SymbolTable symb = createSymbolTable();
+		symb.copy_variableMap(varMap);
 		
 		for (int i=0; i<_programBlocks.size(); i++)
 		{
 			
 			// execute each top-level program block
 			ProgramBlock pb = _programBlocks.get(i);
-			pb.setVariables(_programVariables);
+
+			//pb.setVariables(_programVariables);
+			SymbolTable childSymb = symb.getChildTable(i);
+			childSymb.copy_variableMap(symb.get_variableMap());
+			ec.setSymbolTable(childSymb);
 			
 			try {
 				pb.execute(ec);
@@ -103,8 +108,18 @@ public class Program {
 				throw new DMLRuntimeException(pb.printBlockErrorLocation(), e);
 			}
 			
-			_programVariables = pb.getVariables();
+			//_programVariables = pb.getVariables();
+			symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
+			ec.setSymbolTable(symb);
 		}
+	}
+	
+	public SymbolTable createSymbolTable() {
+		SymbolTable st = new SymbolTable(true);
+		for (int i=0; i < _programBlocks.size(); i++) {
+			st.addChildTable(_programBlocks.get(i).createSymbolTable());
+		}
+		return st;
 	}
 	
 	/*public void cleanupCachedVariables() throws CacheStatusException

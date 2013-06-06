@@ -1,12 +1,11 @@
 package com.ibm.bi.dml.runtime.instructions.SQLInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -83,7 +82,7 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 			if(to == -1)
 				break;
 			String name = prepSQL.substring(from + 2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, hasSelect));
+			prepSQL = prepSQL.replace("##" + name + "##", ec.getSymbolTable().getVariableString(name, hasSelect));
 		}
 	}
 	
@@ -103,7 +102,7 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 		
 		if(!hasSelect)
 		{
-			ec.setVariable(this.prepName, ec.getVariable(this.prepSQL, vt));
+			ec.getSymbolTable().setVariable(this.prepName, ec.getSymbolTable().getScalarInput(this.prepSQL, vt));
 			return null;
 		}
 		try
@@ -111,23 +110,23 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 			if(this.vt == ValueType.BOOLEAN)
 			{
 				boolean val = ec.getNzConnector().getScalarBoolean(this.prepSQL);
-				ec.setVariable(this.prepName, new BooleanObject(val));
+				ec.getSymbolTable().setVariable(this.prepName, new BooleanObject(val));
 			}
 			else if(this.vt == ValueType.DOUBLE)
 			{
 				double val = ec.getNzConnector().getScalarDouble(this.prepSQL);
 				//System.out.println("VALUE FOR VARIABLE " + prepName + " = " + val);
-				ec.setVariable(this.prepName, new DoubleObject(val));
+				ec.getSymbolTable().setVariable(this.prepName, new DoubleObject(val));
 			}
 			else if(this.vt == ValueType.INT)
 			{
 				int val = ec.getNzConnector().getScalarInteger(this.prepSQL);
-				ec.setVariable(this.prepName, new IntObject(val));
+				ec.getSymbolTable().setVariable(this.prepName, new IntObject(val));
 			}
 			else if(this.vt == ValueType.STRING)
 			{
 				String val = ec.getNzConnector().getScalarString(this.prepSQL);
-				ec.setVariable(this.prepName, new StringObject(val));
+				ec.getSymbolTable().setVariable(this.prepName, new StringObject(val));
 			}
 		}
 		catch(Exception e)

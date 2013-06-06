@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -37,7 +38,11 @@ public class CPInstruction extends Instruction {
 		return null;
 	}
 
-	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		throw new DMLRuntimeException ( "processInstruction(ProgramBlock): should not be invoked in the base class.");
+	}
+
+	public void processInstruction(ProgramBlock pb, SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		throw new DMLRuntimeException ( "processInstruction(ProgramBlock): should not be invoked in the base class.");
 	}
 

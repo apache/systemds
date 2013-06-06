@@ -1,28 +1,9 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
-import java.util.ArrayList;
-
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.parser.CVStatement;
 import com.ibm.bi.dml.parser.MetaLearningFunctionParameters;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionParser;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
  
@@ -46,7 +27,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 	}
 
 
-	protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
+	/*protected void executePartition() throws DMLRuntimeException, DMLUnsupportedOperationException {
 		if (LOG.isTraceEnabled()){
 			LOG.trace("Variables: " + _variables.toString ());
 		}
@@ -59,7 +40,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 					
 				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
 				
-				/* Populate returned stats into symbol table of matrices */
+				 Populate returned stats into symbol table of matrices 
 				for ( int index=0; index < jb.getMetaData().length; index++) {
 					// TODO: Fix This
 					//_matrices.put(currMRInst.getIv_outputs()[index], jb.getMetaData(index));
@@ -80,7 +61,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
 		
-		/********************* Set partitions ************************************************/
+		*//********************* Set partitions ************************************************//*
 
 		// insert call to partitionParam function
 		
@@ -105,7 +86,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 					
 		for(int foldId = 0 ; foldId < foldCount; foldId++) {
 		
-			/*************************** Execute test function block *******************************/	
+			*//*************************** Execute test function block *******************************//*	
 			// THIS FUNCTION CALL NEEDS TO BE UPDATED
 			FunctionProgramBlock testpb = null; //_prog.getFunctionProgramBlock(_params.getTestFunctionName());
 
@@ -138,7 +119,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 			//this.setMetaData(testpb.getMetaData());
 			
 			
-			/*************** aggregate errors ********************************************************/
+			*//*************** aggregate errors ********************************************************//*
 			
 			// set the error outputs for aggregation
 			
@@ -175,14 +156,20 @@ public class ELUseProgramBlock extends ProgramBlock {
 	} // end execute
 	
 	
-	/**
+	@Override
+	protected SymbolTable createSymbolTable() {
+		// TODO: override this function whenever CV implementation is revisited
+		return null;
+	}
+
+	*//**
 	 * 
 	 * @param fpb Function program block for function being called
 	 * @param formalParams the formal parameters function is being called with [NOTE: these are string values, so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException 
-	 */
+	 *//*
 	LocalVariableMap setFunctionVariables(FunctionProgramBlock fpb, ArrayList<String> formalParams) throws DMLUnsupportedOperationException, DMLRuntimeException{
 	
 		LocalVariableMap retVal = new LocalVariableMap (); 
@@ -224,7 +211,7 @@ public class ELUseProgramBlock extends ProgramBlock {
 		}
 		return retVal;
 	} // end method setFunctionVariables
-	
+*/	
 	
 } // end class
 	

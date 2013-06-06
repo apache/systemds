@@ -74,7 +74,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			Text ovalue = new Text();
 			for( String rvar : _resultVars )
 			{
-				Data dat = _variables.get( rvar );
+				Data dat = _ec.getSymbolTable().getVariable(rvar );
 				
 				//export output variable to HDFS (see RunMRJobs)
 				if ( dat.getDataType() == DataType.MATRIX ) {
@@ -129,7 +129,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 					_workerID       = tmp._workerID;
 					
 					_childBlocks    = tmp._childBlocks;
-					_variables      = tmp._variables;
 					_resultVars     = tmp._resultVars;
 					_ec             = tmp._ec;
 					
@@ -156,7 +155,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
 				
 				_childBlocks = body.getChildBlocks();
-				_variables   = body.getVariables();
 				_ec          = body.getEc();				
 				_resultVars  = body.getResultVarNames();
 		
@@ -209,7 +207,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	{
 		for( String var : _resultVars )
 		{
-			Data dat = _variables.get(var);
+			Data dat = _ec.getSymbolTable().getVariable(var);
 			if( dat instanceof MatrixObject )
 			{
 				MatrixObject mo = (MatrixObject)dat;

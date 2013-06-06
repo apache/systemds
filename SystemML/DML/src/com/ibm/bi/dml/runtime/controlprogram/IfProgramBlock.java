@@ -11,7 +11,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstructi
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -108,6 +107,7 @@ public class IfProgramBlock extends ProgramBlock {
 	private BooleanObject executePredicate(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		BooleanObject result = null;
 		try
 		{
@@ -122,11 +122,11 @@ public class IfProgramBlock extends ProgramBlock {
 					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
 			else
-				result = (BooleanObject)getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
+				result = (BooleanObject)symb.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("\nIf predicate variables: "+ _variables.toString());
+			LOG.trace("\nIf predicate variables: "+ symb.get_variableMap().toString());
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.", ex);
 		}
 		
@@ -140,42 +140,53 @@ public class IfProgramBlock extends ProgramBlock {
 	}
 	
 	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
-
+		
+		SymbolTable symb = ec.getSymbolTable();
+		
 		BooleanObject predResult = executePredicate(ec); 
 
 		if(predResult.getBooleanValue())
 		{	
-			// for each program block
-			for (ProgramBlock pb : this._childBlocksIfBody){
+			initST_ifBody(symb);
+			for(int i=0; i < _childBlocksIfBody.size(); i++) {
+				ProgramBlock pb = _childBlocksIfBody.get(i);
 				
-				pb.setVariables(_variables);
+				SymbolTable childSymb = symb.getChildTable(i);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				ec.setSymbolTable(childSymb);
 				
 				try {
 					pb.execute(ec);
 				}
 				catch(Exception e){
-					
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement body ", e);
 				}
 				
-				_variables = pb._variables;
+				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
+				ec.setSymbolTable(symb);
+				//_variables = pb._variables;
 			}
 		}
 		else
 		{
-			// for each program block
-			for (ProgramBlock pb : this._childBlocksElseBody){
+			initST_elseBody(symb);
+			for(int i=0; i < _childBlocksElseBody.size(); i++) {
+				ProgramBlock pb = _childBlocksElseBody.get(i);
 				
-				pb.setVariables(_variables);
+				SymbolTable childSymb = symb.getChildTable(i);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				ec.setSymbolTable(childSymb);
 				
 				try {
 					pb.execute(ec);
 				}
-				catch (Exception e){
-					
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statement body ", e);
+				catch(Exception e){
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement body ", e);
 				}
-				_variables = pb._variables;
+				
+				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
+				ec.setSymbolTable(symb);
+				//_variables = pb._variables;
 			}
 		}
 		try { 
@@ -185,6 +196,24 @@ public class IfProgramBlock extends ProgramBlock {
 			
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating exit instructions ", e);
 		}
+	}
+	
+	@Override
+	public SymbolTable createSymbolTable() {
+		SymbolTable st = new SymbolTable(true);
+		// symbol table for IF or ELSE body is initialized 
+		// at runtime through calls initST_ifBody() and initST_elseBody() 
+		return st;
+	}
+	
+	private void initST_ifBody(SymbolTable st) {
+		for(int i=0; i < _childBlocksIfBody.size(); i++)
+			st.addChildTable(_childBlocksIfBody.get(i).createSymbolTable());
+	}
+	
+	private void initST_elseBody(SymbolTable st) {
+		for(int i=0; i < _childBlocksElseBody.size(); i++)
+			st.addChildTable(_childBlocksElseBody.get(i).createSymbolTable());
 	}
 	
 	private String findPredicateResultVar ( ) {

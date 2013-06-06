@@ -8,6 +8,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
@@ -55,7 +56,7 @@ public abstract class Optimizer
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est) 
+	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException;	
 	
 	/**

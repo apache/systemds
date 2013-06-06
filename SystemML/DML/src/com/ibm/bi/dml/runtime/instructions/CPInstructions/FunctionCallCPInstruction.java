@@ -5,9 +5,11 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -78,7 +80,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
 	}
 
-	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ProgramBlock pb, SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		LOG.trace("Executing instruction : " + this.toString());
 		// get the function program block (stored in the Program object)
@@ -105,7 +107,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			Data currFormalParamValue = null; 
 			ValueType valType = fpb.getInputParams().get(i).getValueType();
 					
-			if (i > this._boundInputParamNames.size() || (pb.getVariables().get(this._boundInputParamNames.get(i)) == null)){
+			if (i > this._boundInputParamNames.size() || (symb.getVariable(this._boundInputParamNames.get(i)) == null)){
 				// CASE (3): using default value 
 				
 				if (valType == ValueType.BOOLEAN){
@@ -130,7 +132,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			}
 			
 			else {
-				currFormalParamValue = pb.getVariables().get(this._boundInputParamNames.get(i));
+				currFormalParamValue = symb.getVariable(this._boundInputParamNames.get(i));
 			}
 				
 			functionVariables.put(currFormalParamName,currFormalParamValue);	
@@ -139,13 +141,18 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		HashMap<String,Boolean> pinStatus = pb.pinVariables(this._boundInputParamNames);
-			
+		HashMap<String,Boolean> pinStatus = symb.pinVariables(this._boundInputParamNames);
+		
+		// Create a symbol table under a new execution context for the function invocation,
+		// and copy the function arguments into the created table. 
+		SymbolTable fn_symb = fpb.createSymbolTable();
+		fn_symb.copy_variableMap(functionVariables);
+		ExecutionContext fn_ec = new ExecutionContext();
+		fn_ec.setSymbolTable(fn_symb);
+		
 		// execute the function block
-		fpb.setVariables(functionVariables);
-	
 		try {
-			fpb.execute(null);
+			fpb.execute(fn_ec);
 		}
 		catch (Exception e){
 			String fname = this._namespace + "::" + this._functionName;
@@ -153,11 +160,11 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// Unpin the pinned variables
-		pb.unpinVariables(this._boundInputParamNames, pinStatus);
+		symb.unpinVariables(this._boundInputParamNames, pinStatus);
 		
-		LocalVariableMap returnedVariables = fpb.getVariables(); 
+		LocalVariableMap returnedVariables = fn_ec.getSymbolTable().get_variableMap();  
 		
-		// add the updated binding for each return variable to the program block variables
+		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){
 		
 			String boundVarName = this._boundOutputParamNames.get(i); 
@@ -168,7 +175,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			//add/replace data in symbol table
 			if( boundValue instanceof MatrixObject )
 				((MatrixObject) boundValue).setVarName(boundVarName);
-			pb.getVariables().put(boundVarName, boundValue);
+			symb.setVariable(boundVarName, boundValue);
 		}
 	}
 

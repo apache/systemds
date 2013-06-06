@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -18,20 +18,20 @@ public class MatrixMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 	}
 
 	@Override
-	public void processInstruction(ProgramBlock pb) 
+	public void processInstruction(SymbolTable symb) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
-        MatrixBlock matBlock1 = pb.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = pb.getMatrixInput(input2.get_name());
+        MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
+        MatrixBlock matBlock2 = symb.getMatrixInput(input2.get_name());
 		
 		String output_name = output.get_name();
 		BinaryOperator bop = (BinaryOperator) optr;
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
 		
-		pb.setMatrixOutput(output_name, resultBlock);
+		symb.setMatrixOutput(output_name, resultBlock);
 		
 		resultBlock = matBlock1 = matBlock2 = null;
-		pb.releaseMatrixInput(input1.get_name());
-		pb.releaseMatrixInput(input2.get_name());
+		symb.releaseMatrixInput(input1.get_name());
+		symb.releaseMatrixInput(input2.get_name());
 	}
 }

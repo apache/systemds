@@ -1,7 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -17,9 +17,9 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 	}
 	
 	@Override
-	public void processInstruction(ProgramBlock pb) throws DMLRuntimeException{
-		ScalarObject so1 = pb.getScalarInput(input1.get_name(), input1.get_valueType());
-		ScalarObject so2 = pb.getScalarInput(input2.get_name(), input2.get_valueType() );
+	public void processInstruction(SymbolTable symb) throws DMLRuntimeException{
+		ScalarObject so1 = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so2 = symb.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) optr;
@@ -46,6 +46,6 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		}
 		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
 		
-		pb.setScalarOutput(output.get_name(), sores);
+		symb.setScalarOutput(output.get_name(), sores);
 	}
 }

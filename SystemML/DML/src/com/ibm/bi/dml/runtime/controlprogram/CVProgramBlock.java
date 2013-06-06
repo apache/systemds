@@ -1,37 +1,16 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.meta.PartitionParams;
-import com.ibm.bi.dml.parser.FunctionStatement;
-import com.ibm.bi.dml.parser.MetaLearningFunctionParameters;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 public class CVProgramBlock extends ProgramBlock {
 
-	public void printMe() {
+	public CVProgramBlock(Program prog) throws DMLRuntimeException {
+		super(prog);
+		// TODO Auto-generated constructor stub
+	}
+
+	/*public void printMe() {
 		for (Instruction i : this._inst) {
 			i.printMe();
 		}
@@ -127,10 +106,10 @@ public class CVProgramBlock extends ProgramBlock {
 			if(q > 0)
 				reblksinsts += ",rblk:::"+q+":DOUBLE:::"+(q+nummats)+":DOUBLE:::1000:::1000";
 		}
-		/*public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, 
+		public void setReBlockInstructions(String [] input, InputInfo [] inputInfo, long [] numRows, long [] numCols, 
 		 * int [] num_rows_per_block, int [] num_cols_per_block, String mapperInstructions, 
 		 * String reblockInstructions, String otherInstructions, String [] output, OutputInfo [] outputInfo, byte [] resultIndex, 
-		 * byte[] resultDimsUnknown, int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)*/
+		 * byte[] resultDimsUnknown, int numReducers, int replication, HashSet <String> inLabels, HashSet <String> outLabels)
 		
 		
 		// TODO: following setReblockInstructions() is commented since this does not adhere to the new method of setting up MR jobs.
@@ -206,13 +185,13 @@ long hashmapsize = N * V * 8 + 15000; //(for small vector overhead)
 				retapt = PartitionParams.AccessPath.RB;		//accesspath = 1;
 		}
 		
-/*if(hashmapsize <= availmem)	//we can simply use the hashmap MR job!
+if(hashmapsize <= availmem)	//we can simply use the hashmap MR job!
 return PartitionParams.AccessPath.HM;	//FOR DEBUGGING
 else {
 System.out.println("Not enough memory, HM dies!");
 System.exit(1);
 } //FORDEBUGGING
-*/
+
 return retapt;
 //return PartitionParams.AccessPath.JR;	//FOR DEBUGGING
 //return PartitionParams.AccessPath.RB;	//FOR DEBUGGING
@@ -232,7 +211,7 @@ return retapt;
 		((MRJobInstruction) _inst.get(0)).getPartitionParams().apt = _pp.apt;	//#######modify pp in partn instrcn - TODO: chk if this is allowed!
 		System.out.println("$$$$$$$$$$$$$ Chosen accesspath: " + _pp.apt + "$$$$$$$$$$$$$");
 		//based on torepl, we need to execute partition once outside the for loop vs repeatedly inside the loop		
-		/********** Construct folds for partition with replication ****************/ 
+		*//********** Construct folds for partition with replication ****************//* 
 		if(_pp.toReplicate == true) {	//partition w repl
 			executePartition();
 			System.out.println("Finished executing partition w repl!");
@@ -256,9 +235,9 @@ return retapt;
 		//TODO Arun: need to handle ############# submatrix and cell ########!! current focus is only row!!!!
 		//TODO Arun: need to handle ######### kfold (row) ###########!! if we produce only test folds; should we append matrcies there???
 		
-		/******************* Iterate over the folds **************************/ 
+		*//******************* Iterate over the folds **************************//* 
 		for(int foldId = 0 ; foldId < foldCount; foldId++) {
-			/********** Construct folds for partition without replication ****************/
+			*//********** Construct folds for partition without replication ****************//*
 			if(_pp.toReplicate == false) {	//partition wo repl - invoke it and do post partn reblock if ncsry
 				executePartition();
 				System.out.println("Finished executing partition wo repl for fold "+foldId+"!");
@@ -268,7 +247,7 @@ return retapt;
 				}
 			}
 			//for mappings to trainer/test, several cases can arise dep on access path, partn type and repl: (after stmt level reconciln) 
-			/* row partngn with repl:
+			 row partngn with repl:
 			 * 		holdout / kfold: HM: feed in outputs[T+i] to train and outputs[i] to test (since test folds occur first by convention!)
 			 * 		boostrap: HM: outputs[i] to train, original input to test!
 			 * In all the above, wo repl means T is 1 and i is 0! Also, if apt is RB or JR, append "re" to fold aliters
@@ -439,11 +418,11 @@ return retapt;
 			}
 			getError.processInstruction(this) ;
 			ssi.processInstruction(this) ;
-			*/
+			
 			System.out.println("$$$$$$$$$$ End of for loop iteration " + foldId + " on folds! $$$$$$$$$$$$");
 
 		} //8*********** end of for loop on folds *************8/ 
-		/*
+		
 		// handle the aggregation of the errors across the folds to compute final error for CV
 		if(_params.getAgg() == CVStatement.AGG.avg) {
 			ScalarCPInstruction ssi = null;
@@ -457,7 +436,7 @@ return retapt;
 				e.printStackTrace();
 			}
 			ssi.processInstruction(this) ;
-		}*/
+		}
 		
 		//***** for expts only, delete the hashmap file
 		String filepathname = new String(_pp.sfmapfile);
@@ -474,15 +453,20 @@ return retapt;
 		
 	} // end execute
 	
+	@Override
+	protected SymbolTable createSymbolTable() {
+		// TODO: override this function whenever CV implementation is revisited
+		return null;
+	}
 	
-	/**
+	*//**
 	 * 
 	 * @param fpb Function program block for function being called
 	 * @param formalParams the formal parameters function is being called with [NOTE: these are string values, 
 	 * 			so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
-	 */
+	 *//*
 	HashMap<String, Data> setFunctionVariables(FunctionProgramBlock fpb, ArrayList<String> formalParams) throws DMLUnsupportedOperationException{
 	
 		HashMap<String, Data> retVal = new HashMap<String, Data>(); 
@@ -533,14 +517,14 @@ return retapt;
 	} // end method setFunctionVariables
 
 	
-	/**
+	*//**
 	 * 
 	 * @param fpb Function program block for function being called
 	 * @param formalParams the formal parameters function is being called with 
 	 * 								[NOTE: these are string values, so arbitrary expressions as formal parameters are not supported]
 	 * @return the binding of data values 
 	 * @throws DMLUnsupportedOperationException
-	 */
+	 *//*
 	HashMap<String, Data> setFunctionVariables(FunctionStatement fstmt, ArrayList<String> formalParams) throws DMLUnsupportedOperationException{
 	
 		HashMap<String, Data> retVal = new HashMap<String, Data>(); 
@@ -589,5 +573,5 @@ return retapt;
 		}
 		return retVal;
 	} // end method setFunctionVariables
-
+*/
 } // end class

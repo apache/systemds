@@ -9,7 +9,7 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
@@ -20,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-
 
 /*
 ---------------------------------------------------------------------------------------
@@ -667,11 +666,11 @@ public class MRJobInstruction extends Instruction
 	 * 
 	 * @param pb
 	 */
-	public MatrixObject[] extractInputMatrices(ProgramBlock pb) {
+	public MatrixObject[] extractInputMatrices(SymbolTable symb) {
 		ArrayList<MatrixObject> inputmat = new ArrayList<MatrixObject>();
 		inputDataTypes = new DataType[inputVars.length];
 		for ( int i=0; i < inputVars.length; i++ ) {
-			Data d = pb.getVariable(inputVars[i]);
+			Data d = symb.getVariable(inputVars[i]);
 			inputDataTypes[i] = d.getDataType();
 			if ( d.getDataType() == DataType.MATRIX ) {
 				inputmat.add((MatrixObject) d);
@@ -702,11 +701,11 @@ public class MRJobInstruction extends Instruction
 	 * 
 	 * @param pb
 	 */
-	public MatrixObject[] extractOutputMatrices(ProgramBlock pb) throws DMLRuntimeException {
+	public MatrixObject[] extractOutputMatrices(SymbolTable symb) throws DMLRuntimeException {
 		outputMatrices = new MatrixObject[getOutputVars().length];
 		int ind = 0;
 		for(String oo: getOutputVars()) {
-			Data d = pb.getVariable(oo);
+			Data d = symb.getVariable(oo);
 			if ( d.getDataType() == DataType.MATRIX ) {
 				outputMatrices[ind++] = (MatrixObject)d;
 			}

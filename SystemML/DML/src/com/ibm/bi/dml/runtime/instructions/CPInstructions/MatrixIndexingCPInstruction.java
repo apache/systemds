@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -103,17 +103,17 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(ProgramBlock pb)
+	public void processInstruction(SymbolTable symb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(this.instString);
 		
-		long rl = pb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
-		long ru = pb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
-		long cl = pb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
-		long cu = pb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
+		long rl = symb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
+		long ru = symb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
+		long cl = symb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
+		long cu = symb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
 		
-		MatrixObject mo = (MatrixObject)pb.getVariable(input1.get_name());
+		MatrixObject mo = (MatrixObject)symb.getVariable(input1.get_name());
 		MatrixBlock resultBlock = null;
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) //MB: it will always be rangeReIndex!
@@ -122,7 +122,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 		}
 		else
 		{
-			MatrixBlock matBlock = pb.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = symb.getMatrixInput(input1.get_name());
 			
 			if ( opcode.equalsIgnoreCase("rangeReIndex"))
 			{
@@ -132,24 +132,24 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction{
 			{
 				if(input2.get_dataType() == DataType.MATRIX) //MATRIX<-MATRIX
 				{
-					MatrixBlock rhsMatBlock = pb.getMatrixInput(input2.get_name());
+					MatrixBlock rhsMatBlock = symb.getMatrixInput(input2.get_name());
 					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock());
-					pb.releaseMatrixInput(input2.get_name());
+					symb.releaseMatrixInput(input2.get_name());
 				}
 				else //MATRIX<-SCALAR 
 				{
 					if(!(rl==ru && cl==cu))
 						throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
-					ScalarObject scalar = pb.getScalarInput(input2.get_name(), ValueType.DOUBLE);
+					ScalarObject scalar = symb.getScalarInput(input2.get_name(), ValueType.DOUBLE);
 					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock());
 				}
 			}
 			else
 				throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
 			
-			pb.releaseMatrixInput(input1.get_name());
+			symb.releaseMatrixInput(input1.get_name());
 		}
 		
-		pb.setMatrixOutput(output.get_name(), resultBlock);
+		symb.setMatrixOutput(output.get_name(), resultBlock);
 	}
 }

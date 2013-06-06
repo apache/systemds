@@ -1,32 +1,33 @@
-package com.ibm.bi.dml.sql.sqlcontrolprogram;
+package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
+import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 
 
 public class ExecutionContext {
 	
+	private SymbolTable _symb;
+	
+	private NetezzaConnector nzConnector;
+	private boolean debug;
+	ArrayList<SQLExecutionStatistics> statistics;
+
 	public ExecutionContext(NetezzaConnector nzCon)
 	{
 		nzConnector = nzCon;
 		statistics = new ArrayList<SQLExecutionStatistics>();
 	}
 	
-	protected LocalVariableMap _variables;
-	private NetezzaConnector nzConnector;
-	private boolean debug;
-	ArrayList<SQLExecutionStatistics> statistics;
-
+	public ExecutionContext()
+	{
+		nzConnector = null;
+		statistics = null;
+		_symb = null;
+	}
+	
 	public void addStatistic(int instructionId, long runtime, String opString)
 	{
 		SQLExecutionStatistics s = new SQLExecutionStatistics(opString, instructionId, runtime);
@@ -60,23 +61,26 @@ public class ExecutionContext {
 		return statistics;
 	}
 
+	public SymbolTable getSymbolTable() {
+		return _symb;
+	}
+	
+	public void setSymbolTable(SymbolTable st) {
+		_symb = st;
+	}
+	
 	public boolean isDebug() {
 		return debug;
 	}
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-	public LocalVariableMap get_variables() {
-		return _variables;
-	}
-	public void set_variables (LocalVariableMap variables) {
-		_variables = variables;
-	}
+	
 	public NetezzaConnector getNzConnector() {
 		return nzConnector;
 	}
 	
-	public void setVariable(String name, Data val) throws DMLRuntimeException
+/*	public void setVariable(String name, Data val) throws DMLRuntimeException
 	{
 		_variables.put(name, val);
 	}
@@ -125,4 +129,4 @@ public class ExecutionContext {
 		}
 		return obj;
 	}
-}
+*/}

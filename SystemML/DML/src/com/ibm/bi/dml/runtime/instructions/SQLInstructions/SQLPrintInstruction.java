@@ -1,8 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.SQLInstructions;
 
-import java.sql.SQLException;
-
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionResult;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
@@ -27,7 +25,7 @@ public class SQLPrintInstruction extends SQLInstructionBase{
 				System.out.println("#" + this.id + "\r\n");
 				System.out.println(sql);
 			}
-			s = ec.getVariableString(sql.substring(2, sql.length()-2), false);
+			s = ec.getSymbolTable().getVariableString(sql.substring(2, sql.length()-2), false);
 		} catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}

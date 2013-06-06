@@ -22,6 +22,7 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -29,6 +30,7 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
@@ -96,6 +98,12 @@ public class OptimizationWrapper
 		//find all top-level paror pbs
 		findParForProgramBlocks(prog, rtprog, sbs, pbs);
 		
+		// Create an empty symbol table
+		// TODO: whenever this function is used, re-evaluate to see if an empty symbol table is OK
+		SymbolTable symb = rtprog.createSymbolTable();
+		ExecutionContext ec = new ExecutionContext();
+		ec.setSymbolTable(symb);
+		
 		//optimize each top-level parfor pb independently
 		for( Entry<Long, ParForProgramBlock> entry : pbs.entrySet() )
 		{
@@ -105,7 +113,7 @@ public class OptimizationWrapper
 			
 			//optimize (and implicit exchange)
 			POptMode type = pb.getOptimizationMode(); //known to be >0
-			optimize( type, sb, pb );
+			optimize( type, sb, pb, ec );
 		}		
 		
 		LOG.debug("ParFOR Opt: Finished optimization for DML program "+DMLScript.getUUID());
@@ -123,7 +131,7 @@ public class OptimizationWrapper
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb ) 
+	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		Timing time = new Timing();	
@@ -138,7 +146,7 @@ public class OptimizationWrapper
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
-		optimize( type, ck, cm, sb, pb );
+		optimize( type, ck, cm, sb, pb, ec );
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
@@ -159,7 +167,7 @@ public class OptimizationWrapper
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws  
 	 */
-	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb ) 
+	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		Timing time = new Timing();
@@ -182,20 +190,21 @@ public class OptimizationWrapper
 		{
 			//NOTES on recompilation:
 			//* clone of variables in order to allow for statistics propagation across DAGs
-			//* tid=0, because deep copies created after opt
+			//(tid=0, because deep copies created after opt)
 			try{
-				LocalVariableMap tmp = (LocalVariableMap) pb.getVariables().clone();
+				LocalVariableMap tmp = ec.getSymbolTable().get_variableMap();
 				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0);
 			}catch(Exception ex){
 				throw new DMLRuntimeException(ex);
 			}
+			//Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), ec.getSymbolTable().get_variableMap(), 0);
 		}
 		
 		//create opt tree
 		OptTree tree = null;
 		try
 		{
-			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb); 
+			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
 			LOG.debug("ParFOR Opt: Created plan:\n" + tree.explain(false));
 		}
 		catch(Exception ex)
@@ -208,7 +217,7 @@ public class OptimizationWrapper
 		LOG.trace("ParFOR Opt: Created cost estimator ("+cmtype+")");
 		
 		//core optimize
-		opt.optimize( sb, pb, tree, est );
+		opt.optimize( sb, pb, tree, est, ec );
 		
 		LOG.debug("ParFOR Opt: Optimized plan: \n" + tree.explain(false));
 		LOG.trace("ParFOR Opt: Optimized plan in "+time.stop()+"ms.");

@@ -15,6 +15,7 @@ import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -230,7 +231,7 @@ public class ProgramRecompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
-	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var )
+	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		if( pb instanceof IfProgramBlock )
@@ -243,7 +244,7 @@ public class ProgramRecompiler
 			{
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(0);
 				StatementBlock lsb = is.getIfBody().get(0);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
 			}
 			//process else condition
 			if( ipb.getChildBlocksElseBody() != null )
@@ -253,7 +254,7 @@ public class ProgramRecompiler
 				{
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
-					rFindAndRecompileIndexingHOP(lsb,lpb,var);
+					rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
 				}
 			}				
 		}
@@ -267,7 +268,7 @@ public class ProgramRecompiler
 			{
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
 			}			
 		}
 		else if( pb instanceof ForProgramBlock ) //for or parfor
@@ -281,7 +282,7 @@ public class ProgramRecompiler
 			{
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
-				rFindAndRecompileIndexingHOP(lsb,lpb,var);
+				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec);
 			}	
 		}
 		else //last level program block
@@ -300,7 +301,7 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), pb.getVariables(), 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getSymbolTable().get_variableMap(), 0);
 					pb.setInstructions( newInst );   
 				}
 			}

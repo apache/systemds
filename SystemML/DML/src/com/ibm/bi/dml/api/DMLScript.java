@@ -18,6 +18,8 @@ import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,8 +28,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.xml.sax.SAXException;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -36,6 +36,7 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -48,7 +49,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.DMLException;
@@ -197,7 +197,6 @@ public class DMLScript {
 	
 		//TODO: Doug will work on the format of prog.toString()
 		LOG.debug("\nCOMPILER: \n" + prog.toString());
-		
 		dmlt.constructHops(prog);
 		
 		/*
@@ -233,7 +232,7 @@ public class DMLScript {
 			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
-	
+
 		executeHadoop(dmlt, prog, defaultConfig);
 	}
 	
@@ -649,11 +648,12 @@ public class DMLScript {
 
 			System.out.println("********************** Execute *******************");
 		}
-		
+
 		LOG.info("********************** Instructions *******************");
 		rtprog.printMe();
-		LOG.info("*******************************************************");*/
-
+		
+		LOG.info("*******************************************************");
+		*/		
 		LOG.trace("Compile Status for executeHadoop is OK ");
 
 		//System.out.println("Estimated execution time: "+OpCostEstimator.getTimeEstimate(rtprog));
@@ -665,7 +665,7 @@ public class DMLScript {
 			initHadoopExecution( config );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
-			rtprog.execute (new LocalVariableMap (), null);  
+			rtprog.execute (new LocalVariableMap (), new ExecutionContext());  
 		}
 		finally //ensure cleanup/shutdown
 		{			
@@ -729,7 +729,7 @@ public class DMLScript {
 			ec.setDebug(false);
 	
 			LocalVariableMap vm = new LocalVariableMap ();
-			ec.set_variables (vm);
+			ec.getSymbolTable().set_variableMap(vm);
 			con.connect();
 			long time = System.currentTimeMillis();
 			pr.execute (vm, ec);

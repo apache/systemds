@@ -6,14 +6,15 @@ import java.util.LinkedList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -29,7 +30,6 @@ public abstract class ParWorker
 	protected long                      _workerID    = -1;
 	
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
-	protected LocalVariableMap          _variables   = null;
 	protected ExecutionContext          _ec          = null;
 	protected ArrayList<String>         _resultVars  = null;
 	
@@ -49,7 +49,6 @@ public abstract class ParWorker
 		if( body != null )
 		{
 			_childBlocks = body.getChildBlocks();
-			_variables   = body.getVariables();
 			_ec          = body.getEc();
 			_resultVars  = body.getResultVarNames();
 		}
@@ -64,7 +63,7 @@ public abstract class ParWorker
 	 */
 	public LocalVariableMap getVariables()
 	{
-		return _variables;
+		return _ec.getSymbolTable().get_variableMap();
 	}
 	
 	/**
@@ -139,16 +138,27 @@ public abstract class ParWorker
 			//System.out.println(" EXECUTE ITERATION: "+indexVal.getName()+"="+indexVal.getIntValue());
 			
 			//set index values
-			_variables.put(indexVal.getName(), indexVal);
+			SymbolTable symb = _ec.getSymbolTable();
+			//set index values
+			symb.get_variableMap().put(indexVal.getName(), indexVal);
 			
 			// for each program block
+			int i=0;
 			for (ProgramBlock pb : _childBlocks)
 			{		
-				pb.setVariables(_variables);
+				//pb.setVariables(_variables);
+				SymbolTable childSymb = symb.getChildTable(i);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				_ec.setSymbolTable(childSymb);
+				
 				pb.execute(_ec);
 
 				//update symbol table
-				_variables = pb.getVariables();
+				//_variables = pb.getVariables();
+				symb.set_variableMap( _ec.getSymbolTable().get_variableMap() );
+				_ec.setSymbolTable(symb);
+				
+				i++;
 			}
 					
 			_numIters++;
@@ -194,16 +204,27 @@ public abstract class ParWorker
 		for( int i=lFrom; i<=lTo; i+=lIncr )
 		{
 			//set index values
-			_variables.put(lVarName, new IntObject(lVarName,i)); 
+			SymbolTable symb = _ec.getSymbolTable();
+			symb.get_variableMap().put(lVarName, new IntObject(lVarName,i));
 			
 			// for each program block
+			int j=0;
 			for (ProgramBlock pb : _childBlocks)
 			{					
-				pb.setVariables(_variables);
+				//pb.setVariables(_variables);
+				
+				SymbolTable childSymb = symb.getChildTable(j);
+				childSymb.copy_variableMap(symb.get_variableMap());
+				_ec.setSymbolTable(childSymb);
+				
 				pb.execute(_ec);
 
 				//update symbol table
-				_variables = pb.getVariables();
+				//_variables = pb.getVariables();
+				symb.set_variableMap( _ec.getSymbolTable().get_variableMap() );
+				_ec.setSymbolTable(symb);
+				
+				j++;
 			}
 					
 			_numIters++;

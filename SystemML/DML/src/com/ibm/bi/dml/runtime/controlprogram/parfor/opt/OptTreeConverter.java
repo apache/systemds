@@ -21,6 +21,7 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -73,7 +74,7 @@ public class OptTreeConverter
 		_rtMap = new OptTreePlanMappingRuntime();
 	}
 	
-	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb ) 
+	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException
 	{	
 		OptNode root = null;
@@ -82,12 +83,12 @@ public class OptTreeConverter
 			case ABSTRACT_PLAN:
 				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
 				HashSet<String> memo = new HashSet<String>();
-				root = rCreateAbstractOptNode(pfsb, pfpb, pfpb.getVariables(), true, memo);	
+				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getSymbolTable().get_variableMap(), true, memo);	
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
 				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
 				break;
 			case RUNTIME_PLAN:
-				root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );
+				root = rCreateOptNode( pfpb, ec.getSymbolTable().get_variableMap(), true, true );
 				break;
 			default:
 				throw new DMLRuntimeException("Optimizer plan input type "+type+" not supported.");
@@ -110,13 +111,16 @@ public class OptTreeConverter
 	public static OptTree createOptTree( int ck, double cm, ParForProgramBlock pfpb ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		OptNode root = rCreateOptNode( pfpb, pfpb.getVariables(), true, true );		
+		// TODO: Passing an empty variable map here, for now. Must be reevaluated 
+		// whenever this function is used.
+		LocalVariableMap vars = new LocalVariableMap();
+		OptNode root = rCreateOptNode( pfpb, vars, true, true );		
 		OptTree tree = new OptTree(ck, cm, root);
 			
 		return tree;
 	}
 	
-	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<String> memo ) 
+	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, HashSet<String> memo, ExecutionContext ec ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		OptTree tree = null;
@@ -124,7 +128,7 @@ public class OptTreeConverter
 		
 		try
 		{
-			root = rCreateAbstractOptNode( pfsb, pfpb, pfpb.getVariables(), true, memo );
+			root = rCreateAbstractOptNode( pfsb, pfpb, ec.getSymbolTable().get_variableMap(), true, memo );
 			tree = new OptTree(ck, cm, root);
 		}
 		catch(HopsException he)

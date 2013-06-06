@@ -1,7 +1,6 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,28 +14,23 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
-import com.ibm.bi.dml.runtime.matrix.MetaData;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.sql.sqlcontrolprogram.ExecutionContext;
-import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.Statistics;
@@ -48,7 +42,6 @@ public class ProgramBlock
 	
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
 	protected ArrayList<Instruction> _inst;
-	protected LocalVariableMap _variables;
 	
 	//additional attributes for recompile
 	protected StatementBlock _sb = null;
@@ -59,7 +52,6 @@ public class ProgramBlock
 		throws DMLRuntimeException 
 	{	
 		_prog = prog;
-		_variables = new LocalVariableMap ();
 		_inst = new ArrayList<Instruction>();
 	}
     
@@ -84,30 +76,6 @@ public class ProgramBlock
 		_sb = sb;
 	}
 
-	public LocalVariableMap getVariables() {
-		return _variables;
-	}
-	
-	public Data getVariable(String name) {
-		return _variables.get(name);
-	}
-	
-	public void setVariables (LocalVariableMap vars){
-		_variables.putAll (vars);
-	}
-	
-	public void addVariables (LocalVariableMap vars) {
-		_variables.putAll (vars);
-	}
-
-	public void setVariable(String name, Data val) throws DMLRuntimeException{
-		_variables.put(name, val);
-	}
-
-	public void removeVariable(String name) {
-		_variables.remove(name);
-	}
-	
 	public  ArrayList<Instruction> getInstructions() {
 		return _inst;
 	}
@@ -151,6 +119,7 @@ public class ProgramBlock
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		ArrayList<Instruction> tmp = _inst;
 
 		//dynamically recompile instructions if enabled and required
@@ -160,7 +129,7 @@ public class ProgramBlock
 				&& _sb != null 
 				&& Recompiler.requiresRecompilation(_sb.get_hops())  )
 			{
-				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), _variables, _tid);
+				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), symb.get_variableMap(), _tid);
 			}
 		}
 		catch(Exception ex)
@@ -184,6 +153,7 @@ public class ProgramBlock
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hops hops, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		ArrayList<Instruction> tmp = inst;
 		
 		//dynamically recompile instructions if enabled and required
@@ -192,7 +162,7 @@ public class ProgramBlock
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& Recompiler.requiresRecompilation(hops)            )
 			{
-				tmp = Recompiler.recompileHopsDag(hops, _variables, _tid);
+				tmp = Recompiler.recompileHopsDag(hops, symb.get_variableMap(), _tid);
 			}
 		}
 		catch(Exception ex)
@@ -260,9 +230,11 @@ public class ProgramBlock
 		
 		//get return value
 		if(!isSQL)
-			ret = (ScalarObject) getScalarInput(retName, retType);
-		else 
-			ret = (ScalarObject) ec.getVariable(retName, retType);
+			ret = (ScalarObject) ec.getSymbolTable().getScalarInput(retName, retType);
+		else {
+			throw new DMLRuntimeException("Encountered unimplemented feature!");
+			//ret = (ScalarObject) ec.getVariable(retName, retType);
+		}
 		
 		//execute rmvar instructions
 		for (Instruction currInst : inst ) 
@@ -290,6 +262,7 @@ public class ProgramBlock
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
+		SymbolTable symb = ec.getSymbolTable();
 		try 
 		{
 			long t0 = 0, t1 = 0;
@@ -297,7 +270,7 @@ public class ProgramBlock
 			if( LOG.isTraceEnabled() )
 			{
 				t0 = System.nanoTime();
-				LOG.trace("\n Variables: " + _variables.toString());
+				LOG.trace("\n Variables: " + symb.get_variableMap().toString());
 				LOG.trace("Instruction: " + currInst.toString());
 			}
 		
@@ -308,7 +281,7 @@ public class ProgramBlock
 				
 				//execute MR job
 				MRJobInstruction currMRInst = (MRJobInstruction) currInst;
-				JobReturn jb = RunMRJobs.submitJob(currMRInst, this);
+				JobReturn jb = RunMRJobs.submitJob(currMRInst, ec);
 				
 				//specific post processing
 				if ( currMRInst.getJobType() == JobType.SORT && jb.getMetaData().length > 0 ) 
@@ -316,7 +289,7 @@ public class ProgramBlock
 					/* Populate returned stats into symbol table of matrices */
 					for ( int index=0; index < jb.getMetaData().length; index++) {
 						String varname = currMRInst.getOutputVars()[index];
-						_variables.get(varname).setMetaData(jb.getMetaData()[index]); // updateMatrixCharacteristics(mc);
+						symb.setMetaData(varname, jb.getMetaData()[index]);
 					}
 				}
 				else if ( jb.getMetaData().length > 0 ) 
@@ -325,7 +298,7 @@ public class ProgramBlock
 					for ( int index=0; index < jb.getMetaData().length; index++) {
 						String varname = currMRInst.getOutputVars()[index];
 						MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
-						_variables.get(varname).updateMatrixCharacteristics(mc);
+						symb.getVariable(varname).updateMatrixCharacteristics(mc);
 					}
 				}
 				
@@ -345,13 +318,16 @@ public class ProgramBlock
 				{
 					//update labels if required
 					//note: no exchange of updated instruction as labels might change in the general case
-					String updInst = RunMRJobs.updateLabels(currInst.toString(), _variables);
+					String updInst = RunMRJobs.updateLabels(currInst.toString(), symb.get_variableMap());
 					tmp = CPInstructionParser.parseSingleInstruction(updInst);
 				}
-				
+
 				//execute original or updated instruction
-				tmp.processInstruction(this); 
-					
+				if(tmp.getCPInstructionType() == CPINSTRUCTION_TYPE.External)
+					tmp.processInstruction(this, symb); 
+				else
+					tmp.processInstruction(symb);
+				
 				if (LOG.isTraceEnabled()){	
 					t1 = System.nanoTime();
 					LOG.trace("CP Instruction: " + currInst.toString() + ", duration = " + (t1-t0)/1000000);
@@ -359,7 +335,7 @@ public class ProgramBlock
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{			
-				((SQLInstructionBase)currInst).execute(ec);
+				((SQLInstructionBase)currInst).execute(null); // TODO: must pass SQLExecutionContext here!!!
 			}	
 		}
 		catch (Exception e)
@@ -373,149 +349,10 @@ public class ProgramBlock
 		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );
 	}
 	
-	
-	//////////////////////////////////
-	// caching-related functionality 
-	//////////////////////////////////
-	
-	public void setMetaData(String fname, MetaData md) throws DMLRuntimeException {
-		_variables.get(fname).setMetaData(md);
+	public SymbolTable createSymbolTable() {
+		SymbolTable st = new SymbolTable(true);
+		return st;
 	}
-	
-	public MetaData getMetaData(String varname) throws DMLRuntimeException {
-		return _variables.get(varname).getMetaData();
-	}
-	
-	public void removeMetaData(String varname) throws DMLRuntimeException {
-		 _variables.get(varname).removeMetaData();
-	}
-	
-	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {
-		try {
-			MatrixObject mobj = (MatrixObject) this.getVariable(varName);
-			return mobj.acquireRead();
-		} catch (CacheException e) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
-		}
-	}
-	
-	public void releaseMatrixInput(String varName) throws DMLRuntimeException {
-		try {
-			((MatrixObject)this.getVariable(varName)).release();
-		} catch (CacheException e) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
-		}
-	}
-	
-	public ScalarObject getScalarInput(String name, ValueType vt) {
-		Data obj = getVariable(name);
-		if (obj == null) {
-			try {
-				switch (vt) {
-				case INT:
-					int intVal = Integer.parseInt(name);
-					IntObject intObj = new IntObject(intVal);
-					return intObj;
-				case DOUBLE:
-					double doubleVal = Double.parseDouble(name);
-					DoubleObject doubleObj = new DoubleObject(doubleVal);
-					return doubleObj;
-				case BOOLEAN:
-					Boolean boolVal = Boolean.parseBoolean(name);
-					BooleanObject boolObj = new BooleanObject(boolVal);
-					return boolObj;
-				case STRING:
-					StringObject stringObj = new StringObject(name);
-					return stringObj;
-				default:
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Unknown variable: " + name + ", or unknown value type: " + vt);
-				}
-			} 
-			catch (Exception e) 
-			{	
-				e.printStackTrace();
-			}
-		}
-		
-		
-		return (ScalarObject) obj;
-	}
-
-	
-	public void setScalarOutput(String varName, ScalarObject so) throws DMLRuntimeException {
-		this.setVariable(varName, so);
-	}
-	
-	public void setMatrixOutput(String varName, MatrixBlock outputData) throws DMLRuntimeException {
-		MatrixObject sores = (MatrixObject) this.getVariable (varName);
-        
-		try {
-			sores.acquireModify (outputData);
-	        
-	        // Output matrix is stored in cache and it is written to HDFS, on demand, at a later point in time. 
-	        // downgrade() and exportData() need to be called only if we write to HDFS.
-	        //sores.downgrade();
-	        //sores.exportData();
-	        sores.release();
-	        
-	        this.setVariable (varName, sores);
-		
-		} catch ( CacheException e ) {
-			throw new DMLRuntimeException(this.printBlockErrorLocation() , e);
-		}
-	}
-		
-	/**
-	 * Pin a given list of variables i.e., set the "clean up" state in 
-	 * corresponding matrix objects, so that the cached data inside these
-	 * objects is not cleared and the corresponding HDFS files are not 
-	 * deleted (through rmvar instructions). 
-	 * 
-	 * The function returns the OLD "clean up" state of matrix objects.
-	 */
-	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
-	{
-		HashMap<String, Boolean> varsState = new HashMap<String,Boolean>();
-		
-		for( String var : varList )
-		{
-			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject )
-			{
-				//System.out.println("pin ("+_ID+") "+var);
-				MatrixObject mo = (MatrixObject)dat;
-				varsState.put( var, mo.isCleanupEnabled() );
-				mo.enableCleanup(false); 
-			}
-		}
-		return varsState;
-	}
-	
-	/**
-	 * Unpin the a given list of variables by setting their "cleanup" status
-	 * to the values specified by <code>varsStats</code>.
-	 * 
-	 * Typical usage:
-	 *    <code> 
-	 *    oldStatus = pinVariables(varList);
-	 *    ...
-	 *    unpinVariables(varList, oldStatus);
-	 *    </code>
-	 * 
-	 * i.e., a call to unpinVariables() is preceded by pinVariables(). 
-	 */
-	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState)
-	{
-		for( String var : varList)
-		{
-			//System.out.println("unpin ("+_ID+") "+var);
-			
-			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject )
-				((MatrixObject)dat).enableCleanup(varsState.get(var));
-		}
-	}
-
 	
 	public void printMe() {
 		//System.out.println("***** INSTRUCTION BLOCK *****");

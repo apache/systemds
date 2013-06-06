@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPFileInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -77,15 +77,15 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 	}
 	
 	@Override
-	public void processInstruction(ProgramBlock pb)
+	public void processInstruction(SymbolTable symb)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		String opcode = InstructionUtils.getOpCode( instString );
-		long rl = pb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
-		long ru = pb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
-		long cl = pb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
-		long cu = pb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
-		MatrixObject mo = (MatrixObject)pb.getVariable(input1.get_name());
+		long rl = symb.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
+		long ru = symb.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
+		long cl = symb.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
+		long cu = symb.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
+		MatrixObject mo = (MatrixObject) symb.getVariable(input1.get_name());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 
 		{
@@ -95,7 +95,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
-				MatrixObject out = (MatrixObject)pb.getVariable(output.get_name());
+				MatrixObject out = (MatrixObject)symb.getVariable(output.get_name());
 				
 				//create output matrix object				
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
@@ -118,13 +118,13 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 				mobj.setMetaData(metaNew);	 
 				
 				//put output object into symbol table
-				pb.getVariables().put(output.get_name(), mobj);
+				symb.setVariable(output.get_name(), mobj);
 			}
 			else
 			{
 				//will return an empty matrix partition 
 				MatrixBlock resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
-				pb.setMatrixOutput(output.get_name(), resultBlock);
+				symb.setMatrixOutput(output.get_name(), resultBlock);
 			}
 		}
 		else

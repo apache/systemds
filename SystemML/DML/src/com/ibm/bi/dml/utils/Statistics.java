@@ -9,6 +9,9 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 public class Statistics {
 	private static long lStartTime = 0;
 	private static long lEndTime = 0;
+	
+	//public static long parseTime=0, hopsTime=0, lopsTime=0, piggybackTime=0, execTime=0;
+	public static long execTime=0;
 
 	/** number of executed MR jobs */
 	private static int iNoOfExecutedMRJobs = 0;
@@ -79,6 +82,12 @@ public class Statistics {
 		sb.append("SystemML Statistics:\n");
 		double totalT = getRunTime()*1e-9; // nanoSec --> sec
 		sb.append("Total time:\t\t" + totalT + " sec.\n");
+		/*sb.append("CompileTime: " + parseTime*1e-9);
+		sb.append(" " + hopsTime*1e-9);
+		sb.append(" " + lopsTime*1e-9);
+		sb.append(" " + piggybackTime*1e-9);
+		sb.append(" = " + (parseTime+hopsTime+lopsTime+piggybackTime)*1e-9  + "\n");
+		*/sb.append("RunTime: " + execTime*1e-9 + "\n");
 		sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		if( CacheableData.CACHING_STATS )

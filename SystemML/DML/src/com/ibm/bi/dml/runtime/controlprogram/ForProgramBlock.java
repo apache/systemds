@@ -6,8 +6,10 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -175,8 +177,7 @@ public class ForProgramBlock extends ProgramBlock
 			
 			// update the iterable predicate variable 
 			if(symb.getVariable(iterVarName) == null || !(symb.getVariable(iterVarName) instanceof IntObject))
-			//if (_variables.get(iterVarName) == null || !(_variables.get(iterVarName) instanceof IntObject))
-				throw new DMLRuntimeException("iter predicate " + iterVarName + " must be remain of type scalar int");
+				throw new DMLRuntimeException("Iterable predicate variable " + iterVarName + " must remain of type scalar int.");
 			
 			//increment of iterVar (changes  in loop body get discarded)
 			iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
@@ -201,8 +202,12 @@ public class ForProgramBlock extends ProgramBlock
 		{
 			if( _iterablePredicateVars[pos] != null )
 			{
-				//check for literals or scalar variables
-				tmp = (ScalarObject) symb.getScalarInput(_iterablePredicateVars[pos], ValueType.INT);
+				//probe for scalar variables
+				Data ldat = symb.getVariable( _iterablePredicateVars[pos] );
+				if( ldat != null && ldat instanceof ScalarObject )
+					tmp = (ScalarObject)ldat;
+				else //handle literals
+					tmp = new IntObject( UtilFunctions.parseToInt(_iterablePredicateVars[pos]) );
 			}		
 			else
 			{

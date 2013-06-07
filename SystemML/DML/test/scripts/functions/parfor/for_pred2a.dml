@@ -1,0 +1,12 @@
+a = $1+1-1;
+b = $2+1-1;
+
+sum = 0;
+for( i in a:b ) 
+{
+   sum = sum + 1; 
+}  
+
+R = matrix(1, rows=1, cols=1);
+R = R * sum;
+write(R, $4);       

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -50,7 +51,24 @@ public class FunctionProgramBlock extends ProgramBlock {
 		return _childBlocks;
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException{
+	public void execute(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{	
+		//dynamically recompile entire function body (according to function inputs)
+		/*//TODO in order to make this really useful we need CHAINED UPDATE of STATISTICS along PBs (see parfor)
+		try {
+			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+			{
+				System.out.println("FUNCTION RECOMPILE "+_beginLine);
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, _variables, _tid, true);
+				System.out.println("END FUNCTION RECOMPILE "+_beginLine);
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException("Error recompiling function body.", ex);
+		}
+		*/
 		
 		SymbolTable symb = ec.getSymbolTable();
 		
@@ -76,6 +94,29 @@ public class FunctionProgramBlock extends ProgramBlock {
 			symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
 			ec.setSymbolTable(symb);
 			//_variables = pb._variables;
+		}
+		
+		// check return values
+		checkOutputParameters(symb.get_variableMap());
+	}
+	
+	/**
+	 * 
+	 * @param vars
+	 */
+	protected void checkOutputParameters( LocalVariableMap vars )
+	{
+		for( DataIdentifier diOut : _outputParams )
+		{
+			String varName = diOut.getName();
+			Data dat = vars.get( varName );
+			if( dat == null )
+				LOG.error("Function output "+ varName +" is missing.");
+			else if( dat.getDataType() != diOut.getDataType() )
+				LOG.warn("Function output "+ varName +" has wrong data type: "+dat.getDataType()+".");
+			else if( dat.getValueType() != diOut.getValueType() )
+				LOG.warn("Function output "+ varName +" has wrong value type: "+dat.getValueType()+".");
+			   
 		}
 	}
 	

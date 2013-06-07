@@ -89,6 +89,8 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 			}
 		}
 		
+		// check return values
+		checkOutputParameters(symb.get_variableMap());
 	}
 	
 	/**

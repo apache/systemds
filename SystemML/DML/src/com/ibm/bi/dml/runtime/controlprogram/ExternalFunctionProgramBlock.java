@@ -226,6 +226,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 						+ cell2BlockInst.toString(), e);
 			}
 		}
+		
+		// check return values
+		checkOutputParameters(symb.get_variableMap());
 	}
 
 	/**

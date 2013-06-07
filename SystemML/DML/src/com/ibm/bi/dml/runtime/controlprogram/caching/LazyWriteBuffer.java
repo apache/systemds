@@ -52,7 +52,7 @@ public class LazyWriteBuffer
 		{			
 			ByteBuffer bbuff = null;
 			byte[] buff = null; 
-						
+			
 			//modify buffer
 			synchronized( _mData )
 			{
@@ -71,10 +71,15 @@ public class LazyWriteBuffer
 						if(CacheableData.CACHING_STATS)
 							CacheStatistics.incrementFSWrites();
 						_size-=tmp.data.length;
+						
+						//keep page for reuse
+						//if( lSize <= tmp.data.length && lSize*1.5d >= tmp.data.length && (buff==null||tmp.data.length<buff.length) ) //TODO 
+						//	buff = tmp.data;
 					}
 				}
 				
-				//allocate mem and lock
+				//allocate mem (if necessary) and lock
+				//if( buff==null )
 				buff = new byte[(int)lSize];
 				bbuff = new ByteBuffer(buff);
 		
@@ -108,9 +113,6 @@ public class LazyWriteBuffer
 	public static void deleteMatrix( String fname )
 	{
 		boolean requiresDelete = true;
-		
-		if (_mData == null)
-			System.out.println("Here!");
 		
 		synchronized( _mData )
 		{

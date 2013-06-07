@@ -345,8 +345,8 @@ public class ParForResultMergeTest
 		try 
 		{
 			cleanup();
-			
 			LazyWriteBuffer.init();
+			
 			
 			//create and write original matrix
 			MatrixBlock retOld = DataConverter.convertToMatrixBlock(matrixOld);

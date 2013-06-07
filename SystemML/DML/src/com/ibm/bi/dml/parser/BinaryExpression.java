@@ -120,7 +120,7 @@ public class BinaryExpression extends Expression {
 					&& this.getRight().getOutput().getDim1() != -1
 					&& this.getLeft().getOutput().getDim2() != this.getRight()
 							.getOutput().getDim1()) {
-				throw new LanguageException(this.printErrorLocation() + "invalid dimensions for matrix multiplication", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "invalid dimensions for matrix multiplication (k1="+this.getLeft().getOutput().getDim2()+", k2="+this.getRight().getOutput().getDim1()+")", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDimensions(this.getLeft().getOutput().getDim1(), this
 					.getRight().getOutput().getDim2());

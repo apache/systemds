@@ -87,7 +87,7 @@ public class Statistics {
 		sb.append(" " + lopsTime*1e-9);
 		sb.append(" " + piggybackTime*1e-9);
 		sb.append(" = " + (parseTime+hopsTime+lopsTime+piggybackTime)*1e-9  + "\n");
-		*/sb.append("RunTime: " + execTime*1e-9 + "\n");
+		sb.append("RunTime: " + execTime*1e-9 + "\n");*/
 		sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		if( CacheableData.CACHING_STATS )

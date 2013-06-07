@@ -7,8 +7,8 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
 
 
-public class ExecutionContext {
-	
+public class ExecutionContext 
+{	
 	private SymbolTable _symb;
 	
 	private NetezzaConnector nzConnector;
@@ -26,6 +26,13 @@ public class ExecutionContext {
 		nzConnector = null;
 		statistics = null;
 		_symb = null;
+	}
+	
+	public ExecutionContext( SymbolTable symb )
+	{
+		nzConnector = null;
+		statistics = null;
+		_symb = symb;
 	}
 	
 	public void addStatistic(int instructionId, long runtime, String opString)

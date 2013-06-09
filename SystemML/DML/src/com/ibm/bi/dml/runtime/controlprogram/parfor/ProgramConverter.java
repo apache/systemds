@@ -90,7 +90,7 @@ public class ProgramConverter
 	public static final String PARFOR_PROG_END   = LEVELOUT;	
 	public static final String PARFORBODY_BEGIN  = PARFOR_CDATA_BEGIN+"PARFORBODY" + LEVELIN;
 	public static final String PARFORBODY_END    = LEVELOUT+PARFOR_CDATA_END;
-	public static final String PARFOR_VARS_BEGIN = " VARS: ";
+	public static final String PARFOR_VARS_BEGIN = "VARS: ";
 	public static final String PARFOR_VARS_END   = "";
 	public static final String PARFOR_PBS_BEGIN  = " PBS" + LEVELIN;
 	public static final String PARFOR_PBS_END    = LEVELOUT;
@@ -649,11 +649,8 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
-		//LocalVariableMap vars       = body.getVariables();
 		ArrayList<String> rVnames   = body.getResultVarNames();
 		ExecutionContext ec         = body.getEc();
-		
-		SymbolTable symb = ec.getSymbolTable();
 		
 		if( pbs.size()==0 )
 			return PARFORBODY_BEGIN + PARFORBODY_END;
@@ -683,21 +680,13 @@ public class ProgramConverter
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
-		// Handle symbol table
-		// - Serialize ONLY the top-level variable map. 
-		// - (Empty) Symbol tables for nested/child blocks are created at parse time, on the remote side.
-		sb.append( PARFOR_VARS_BEGIN );
-		sb.append( serializeVariables(symb.get_variableMap()) );
-		sb.append( PARFOR_VARS_END );
-		sb.append( NEWLINE );
-		sb.append( COMPONENTS_DELIM );
-		sb.append( NEWLINE );
-		
 		//handle result variable names
 		sb.append( serializeStringArrayList( rVnames ) );
 		sb.append( COMPONENTS_DELIM );
 		
 		//handle execution context
+		//note: this includes also the symbol table (serialize only the top-level variable map,
+		//      (symbol tables for nested/child blocks are created at parse time, on the remote side)
 		sb.append( PARFOR_EC_BEGIN );
 		sb.append( serializeExecutionContext(ec) );
 		sb.append( PARFOR_EC_END );
@@ -780,7 +769,12 @@ public class ProgramConverter
 	public static String serializeVariables (LocalVariableMap vars) 
 		throws DMLRuntimeException
 	{
-		return vars.serialize();
+		StringBuilder sb = new StringBuilder();
+		sb.append( PARFOR_VARS_BEGIN );
+		sb.append( vars.serialize() );
+		sb.append( PARFOR_VARS_END );
+		
+		return sb.toString();
 	}
 	
 	/**
@@ -859,12 +853,20 @@ public class ProgramConverter
 	public static String serializeExecutionContext( ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
-		// TODO: statiko -- fix this!!
-		return EMPTY;
-		/*if( ec == null )
-			return EMPTY;
+		String ret = null;
+		
+		if( ec != null )
+		{
+			SymbolTable symb = ec.getSymbolTable();
+			LocalVariableMap vars = symb.get_variableMap();
+			ret = serializeVariables( vars );	
+		}
 		else
-			throw new DMLRuntimeException("Serialization of external system execution context not supported yet.");*/
+		{
+			ret = EMPTY;
+		}
+		
+		return ret;
 	}
 	
 	/**
@@ -1342,11 +1344,6 @@ public class ProgramConverter
 	    progStr = progStr.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction  
 		Program prog = parseProgram( progStr, id ); 
 		
-		//handle symbol table
-		//  - get the top-level variable mapping
-		String varStr = st.nextToken();
-		LocalVariableMap vars = parseVariables(varStr);
-		
 		//handle result variable names
 		String rvarStr = st.nextToken();
 		ArrayList<String> rvars = parseStringArrayList(rvarStr);
@@ -1355,8 +1352,6 @@ public class ProgramConverter
 		//handle execution context
 		String ecStr = st.nextToken();
 		ExecutionContext ec = parseExecutionContext( ecStr );
-		if(ec==null)
-			ec = new ExecutionContext();
 			
 		//handle program blocks
 		String spbs = st.nextToken();
@@ -1365,15 +1360,13 @@ public class ProgramConverter
 		body.setChildBlocks( pbs );
 
 		//construct (empty) symbol tables for all the child blocks
-		SymbolTable symb = new SymbolTable();
-		symb.set_variableMap(vars);
+		SymbolTable symb = ec.getSymbolTable();
 		for(int i=0; i < pbs.size(); i++) {
 			symb.addChildTable(pbs.get(i).createSymbolTable());
 		}
 
 		//attach symbol table to execution context
 		ec.setSymbolTable(symb);
-		
 		body.setEc( ec );
 		
 		return body;		
@@ -1417,7 +1410,7 @@ public class ProgramConverter
 		throws DMLRuntimeException
 	{
 		String varStr = in.substring( PARFOR_VARS_BEGIN.length(),in.length()-PARFOR_VARS_END.length()).trim(); 
-		return LocalVariableMap.deserialize (varStr);
+		return LocalVariableMap.deserialize(varStr);
 	}
 	
 	/**
@@ -1987,12 +1980,20 @@ public class ProgramConverter
 	public static ExecutionContext parseExecutionContext(String in) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		ExecutionContext ec = null;
+		
 		String lin = in.substring(PARFOR_EC_BEGIN.length(),in.length()-PARFOR_EC_END.length()).trim(); 
 		
-		if( lin.equals( EMPTY ) )
-			return null;
-		else
-			throw new DMLUnsupportedOperationException(NOT_SUPPORTED_EXECUTION_CONTEXT);
+		if( !lin.equals( EMPTY ) )
+		{
+			LocalVariableMap vars = parseVariables(lin);
+			SymbolTable symb = new SymbolTable();
+			symb.set_variableMap( vars );
+			
+			ec = new ExecutionContext( symb );
+		}
+		
+		return ec;
 	}
 
 	

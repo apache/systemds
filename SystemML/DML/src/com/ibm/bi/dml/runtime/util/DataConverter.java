@@ -72,7 +72,25 @@ public class DataConverter
 	 * @throws IOException
 	 */
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, 
-										 long rlen, long clen, int brlen, int bclen )
+			                             long rlen, long clen, int brlen, int bclen )
+		throws IOException
+	{
+		writeMatrixToHDFS(mat, dir, outputinfo, rlen, clen, brlen, bclen, -1);
+	}
+	
+	/**
+	 * 
+	 * @param mat
+	 * @param dir
+	 * @param outputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @throws IOException
+	 */
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, 
+										 long rlen, long clen, int brlen, int bclen, int replication )
 		throws IOException
 	{
 		JobConf job = new JobConf();
@@ -80,8 +98,10 @@ public class DataConverter
 
 		//System.out.println("write matrix (sparse="+mat.isInSparseFormat()+") to HDFS: "+dir);
 		
-		//NOTE: MB creating the sparse map was slower than iterating over the array, however, this might change with an iterator interface
-		// for sparsity=0.1 iterating over the whole block was 2x faster
+		//set the replication factor for the output
+		if( replication > 0 ) //otherwise: default 3
+			job.setInt("dfs.replication", replication);
+		
 		try
 		{
 			// If the file already exists on HDFS, remove it.

@@ -208,6 +208,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected LocalVariableMap _variablesDPOriginal = null;
 	protected String           _colocatedDPMatrix   = null;
 	protected int              _replicationDP       = WRITE_REPLICATION_FACTOR;
+	protected int              _replicationExport   = -1;
 	//specifics used for result partitioning
 	protected boolean          _jvmReuse            = true;
 	//specifics used for recompilation 
@@ -373,6 +374,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void setPartitionReplicationFactor( int rep )
 	{
 		_replicationDP = rep;
+	}
+	
+	public void setExportReplicationFactor( int rep )
+	{
+		_replicationExport = rep;
 	}
 	
 	public void disableJVMReuse() 
@@ -875,7 +881,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @throws CacheException
 	 */
-	private void exportMatricesToHDFS(SymbolTable symb) 
+	private void exportMatricesToHDFS( SymbolTable symb ) 
 		throws CacheException 
 	{
 		for (String key : symb.get_variableMap().keySet() ) 
@@ -883,7 +889,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			Data d = symb.getVariable(key);
 			if ( d.getDataType() == DataType.MATRIX )
 			{
-				((MatrixObject)d).exportData();
+				MatrixObject mo = (MatrixObject)d;
+				mo.exportData( _replicationExport );
 			}
 		}
 	}

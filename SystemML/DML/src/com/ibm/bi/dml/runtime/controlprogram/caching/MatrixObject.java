@@ -505,7 +505,13 @@ public class MatrixObject extends CacheableData
 		
 		freeEvictedBlob();
 	}
-
+	
+	public void exportData()
+		throws CacheException
+	{
+		exportData( -1 );
+	}
+	
 	/**
 	 * Writes, or flushes, the matrix data to HDFS.
 	 * 
@@ -514,11 +520,23 @@ public class MatrixObject extends CacheableData
 	 * 
 	 * @throws CacheException 
 	 */
-	public void exportData()
+	public void exportData( int replication )
 		throws CacheException
 	{
-		exportData (_hdfsFileName, null);
+		exportData(_hdfsFileName, null, replication);
 		_hdfsFileExists = true;
+	}
+	
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @throws CacheException
+	 */
+	public synchronized void exportData (String fName, String outputFormat)
+		throws CacheException
+	{
+		exportData(fName, outputFormat, -1);
 	}
 	
 	/**
@@ -536,7 +554,7 @@ public class MatrixObject extends CacheableData
 	 * @param outputFormat
 	 * @throws CacheException
 	 */
-	public synchronized void exportData (String fName, String outputFormat)
+	public synchronized void exportData (String fName, String outputFormat, int replication)
 		throws CacheException
 	{
 		LOG.trace("Export data "+_varName+" "+fName);
@@ -623,7 +641,7 @@ public class MatrixObject extends CacheableData
 			try
 			{
 				writeMetaData( fName, outputFormat );
-				writeMatrixToHDFS( fName, outputFormat );
+				writeMatrixToHDFS( fName, outputFormat, replication );
 				if ( !pWrite )
 					_dirtyFlag = false;
 			}
@@ -1078,7 +1096,7 @@ public class MatrixObject extends CacheableData
 				//	LocalFileUtils.writeMatrixBlockToLocal2(filePathAndName, _data);
 				break;			
 			case HDFS:
-				writeMatrixToHDFS (filePathAndName, null);
+				writeMatrixToHDFS (filePathAndName, null, -1);
 				break;
 			default:
 				throw new IOException (filePathAndName + 
@@ -1094,7 +1112,7 @@ public class MatrixObject extends CacheableData
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private void writeMatrixToHDFS (String filePathAndName, String outputFormat)
+	private void writeMatrixToHDFS (String filePathAndName, String outputFormat, int replication)
 		throws DMLRuntimeException, IOException
 	{
 		//System.out.println("write matrix "+_varName+" "+filePathAndName);
@@ -1116,10 +1134,10 @@ public class MatrixObject extends CacheableData
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
 					(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, replication);
 			}
 			else {
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
 			}
 
 			LOG.trace("Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");

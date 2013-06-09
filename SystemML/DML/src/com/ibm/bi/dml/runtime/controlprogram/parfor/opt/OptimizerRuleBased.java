@@ -61,14 +61,15 @@ import com.ibm.bi.dml.utils.LopsException;
  * - 2) rewrite result partitioning (incl. recompile LIX)
  * - 3) rewrite set execution strategy
  * - 4) rewrite use data colocation		 
- * - 5) rewrite set partition replication factor 
- * - 6) rewrite use nested parallelism 
- * - 7) rewrite set degree of parallelism
- * - 8) rewrite set task partitioner
- * - 9) rewrite set result merge 		 		 
- * - 10) rewrite set recompile memory budget
- * - 11) remove recursive parfor	
- * - 12) remove unnecessary parfor		
+ * - 5) rewrite set partition replication factor
+ * - 6) rewrite set export replication factor 
+ * - 7) rewrite use nested parallelism 
+ * - 8) rewrite set degree of parallelism
+ * - 9) rewrite set task partitioner
+ * - 10) rewrite set result merge 		 		 
+ * - 11) rewrite set recompile memory budget
+ * - 12) rewrite remove recursive parfor	
+ * - 13) rewrite remove unnecessary parfor		
  * 	 
  * 
  * 
@@ -182,37 +183,40 @@ public class OptimizerRuleBased extends Optimizer
 			// rewrite 5: rewrite set partition replication factor
 			rewriteSetPartitionReplicationFactor( pn, ec.getSymbolTable().get_variableMap() );
 			
-			// rewrite 6: nested parallelism (incl exec types)	
+			// rewrite 6: rewrite set partition replication factor
+			rewriteSetExportReplicationFactor( pn, ec.getSymbolTable().get_variableMap() );
+			
+			// rewrite 7: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
 			
-			// rewrite 7: determine parallelism
+			// rewrite 8: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, flagNested );
 			
-			// rewrite 8: task partitioning 
+			// rewrite 9: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 7: determine parallelism
+			// rewrite 8: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 8: task partitioning
+			// rewrite 9: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 9: set result merge
+		//rewrite 10: set result merge
 		rewriteSetResultMerge( pn, ec.getSymbolTable().get_variableMap() );
 		
-		//rewrite 10: set local recompile memory budget
+		//rewrite 11: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 11: parfor (in recursive functions) to for
+		// rewrite 12: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getSymbolTable().get_variableMap() );
 		
-		// rewrite 12: parfor (par=1) to for 
+		// rewrite 13: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -758,7 +762,44 @@ public class OptimizerRuleBased extends Optimizer
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set partition replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
-	
+
+
+	///////
+	//REWRITE set export replication factor
+	///
+
+	/**
+	 * Increasing the export replication factor is beneficial for remote execution
+	 * because each task will read the full input data set. This only applies to
+	 * matrices that are created as in-memory objects before parfor execution. 
+	 * 
+	 * NOTE: this rewrite requires 'set execution strategy' to be executed. 
+	 *  
+	 * @param n
+	 * @throws DMLRuntimeException 
+	 */
+	protected void rewriteSetExportReplicationFactor( OptNode n, LocalVariableMap vars ) 
+		throws DMLRuntimeException
+	{
+		boolean apply = false;
+		int replication = -1;
+		
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		
+		if( n.getExecType()==ExecType.MR )		
+		{
+			apply = true;
+			replication = Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_PARTITIONING) );
+		}
+		
+		//modify the runtime plan 
+		if( apply )
+			pfpb.setExportReplicationFactor( replication );
+		
+		LOG.debug(getOptMode()+" OPT: rewrite 'set export replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
+	}
+
 	
 	///////
 	//REWRITE enable nested parallelism

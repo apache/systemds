@@ -35,11 +35,11 @@ public class PickByCount extends Lops {
 		
 		if ( et == ExecType.MR ) {
 			lps.addCompatibility(JobType.GMR);
-			this.lps.setProperties( et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 	

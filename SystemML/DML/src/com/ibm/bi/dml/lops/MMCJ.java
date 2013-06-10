@@ -34,7 +34,7 @@ public class MMCJ extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.MMCJ);
-		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override

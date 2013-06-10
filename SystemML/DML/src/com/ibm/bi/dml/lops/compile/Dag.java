@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Vector;
 
 import org.apache.commons.logging.Log;
@@ -91,6 +89,18 @@ public class Dag<N extends Lops> {
 	static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
 	static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
 
+	public static class PiggyProfiler {
+		public static long setupTime=0;
+		public static long topoTime=0, groupingTime=0;
+		public static long topoSetup=0, topoFindSrcs=0, topoSetLevels=0, topoSort=0, topoCopy=0, topoSanity=0;
+		
+		public static void print() {
+			System.out.print("Piggybacking: setup = " + setupTime + ", topo = " + topoTime + ", grouping = " + groupingTime);
+			System.out.println(" --> Total = " + (setupTime + topoTime + groupingTime) + " msec.");
+			System.out.println("TOPO: " + topoSetup + "   " +  topoFindSrcs + "   " +  topoSetLevels + "   " +  topoSort + "   " +  topoCopy + "   " +  topoSanity);
+		}
+	}
+	
 	private class NodeOutput {
 		String fileName;
 		String varName;
@@ -182,7 +192,7 @@ public class Dag<N extends Lops> {
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
 			throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
-
+		
 		if (config != null) 
 		{
 			String numReducers  = null; 
@@ -203,7 +213,6 @@ public class Dag<N extends Lops> {
 			if ( scratchSpace != null )
 				scratch = scratchSpace + "/";
 		}
-
 		
 		// hold all nodes in a vector (needed for ordering)
 		Vector<N> node_v = new Vector<N>();
@@ -217,10 +226,10 @@ public class Dag<N extends Lops> {
 		 * they are created
 		 */
 		doTopologicalSort_strict_order(node_v);
-
+		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst = doGreedyGrouping(sb, node_v);
-
+		
 		return inst;
 
 	}
@@ -3552,10 +3561,11 @@ public class Dag<N extends Lops> {
 	 * @param v
 	 */
 	private void doTopologicalSort_strict_order(Vector<N> v) {
-		int numNodes = v.size();
+		//int numNodes = v.size();
 
 		/*
-		 * Step 1: compute the level for each node in the DAG.
+		 * Step 1: compute the level for each node in the DAG. Level for each node is 
+		 *   computed as lops are created. So, this step is need not be performed here.
 		 * Step 2: sort the nodes by level, and within a level by node ID.
 		 */
 		
@@ -3564,19 +3574,19 @@ public class Dag<N extends Lops> {
 		 * level(v) = max( levels(v.inputs) ) + 1.
 		 */
 		// initialize
-		for (int i = 0; i < numNodes; i++) {
+/*		for (int i = 0; i < numNodes; i++) {
 			v.get(i).setLevel(-1);
 		}
 
 		// BFS (breadth-first) style of algorithm.
 		Queue<N> q = new LinkedList<N>();
-
+*/
 		/*
 		 * A node is marked visited only afterall its inputs are visited.
 		 * A node is added to sortedNodes and its levelmap is updated only when
 		 * it is visited.
 		 */
-		int numSourceNodes = 0;
+/*		int numSourceNodes = 0;
 		for (int i = 0; i < numNodes; i++) {
 			if (v.get(i).getInputs().size() == 0) {
 				v.get(i).setLevel(0);
@@ -3584,8 +3594,9 @@ public class Dag<N extends Lops> {
 				numSourceNodes++;
 			}
 		}
-
-		N n, parent;
+*/
+		
+/*		N n, parent;
 		int maxLevel, inputLevel;
 		boolean markAsVisited;
 		while (q.size() != 0) {
@@ -3617,7 +3628,7 @@ public class Dag<N extends Lops> {
 				}
 			}
 		}
-
+*/
 		// Step2: sort nodes by level, and then by node ID
 		Object[] nodearray = v.toArray();
 		Arrays.sort(nodearray, new LopComparator());
@@ -3629,7 +3640,7 @@ public class Dag<N extends Lops> {
 		}
 
 		// Sanity check -- can be removed
-		for (int i = 1; i < v.size(); i++) {
+/*		for (int i = 1; i < v.size(); i++) {
 			if (v.get(i).getLevel() < v.get(i - 1).getLevel()
 					|| (v.get(i).getLevel() == v.get(i - 1).getLevel() && v
 							.get(i).getID() <= v.get(i - 1).getID())) {
@@ -3642,7 +3653,7 @@ public class Dag<N extends Lops> {
 				}
 			}
 		}
-
+*/
 		// print the nodes in sorted order
 		if (LOG.isTraceEnabled()) {
 			for (int i = 0; i < v.size(); i++) {
@@ -3650,8 +3661,10 @@ public class Dag<N extends Lops> {
 				// + levelmap.get(sortedNodes.get(i).getID()) + "), ");
 				LOG.trace(v.get(i).getID() + "(" + v.get(i).getLevel()
 						+ "), ");
+				System.out.print(v.get(i).getID() + "(" + v.get(i).getLevel()+ "), ");
 			}
 			
+			System.out.println("");
 			LOG.trace("topological sort -- done");
 		}
 

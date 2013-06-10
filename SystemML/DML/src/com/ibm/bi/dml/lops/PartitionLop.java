@@ -29,7 +29,7 @@ public class PartitionLop extends Lops {
 		boolean aligner = false;
 		boolean definesMRJob = true;
 		lps.addCompatibility(JobType.PARTITION);
-		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		this.lps.setProperties(inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 	}
 
 	@Override

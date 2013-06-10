@@ -57,11 +57,11 @@ public class Binary extends Lops
 			lps.addCompatibility(JobType.RAND);
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
-			this.lps.setProperties( et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else if ( et == ExecType.CP ){
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 

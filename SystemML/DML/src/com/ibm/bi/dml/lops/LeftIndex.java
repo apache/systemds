@@ -52,7 +52,7 @@ public class LeftIndex extends Lops {
 		} 
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 	

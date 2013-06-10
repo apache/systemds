@@ -44,7 +44,7 @@ public class ReBlock extends Lops
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 		else
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
-		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override

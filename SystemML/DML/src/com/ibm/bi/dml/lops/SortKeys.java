@@ -26,7 +26,7 @@ public class SortKeys extends Lops
 			boolean definesMRJob = true;
 			
 			lps.addCompatibility(JobType.SORT);
-			this.lps.setProperties( et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties( inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			// SortKeys can accept a optional second input only when executing in CP
@@ -36,7 +36,7 @@ public class SortKeys extends Lops
 				input2.addOutput(this);
 			}
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, false, false, false);
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, false, false, false);
 		}
 	}
 	

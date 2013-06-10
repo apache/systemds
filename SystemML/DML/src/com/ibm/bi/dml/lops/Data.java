@@ -179,7 +179,7 @@ public class Data extends Lops
 		boolean definesMRJob = false;
 		
 		// ExecType is invalid for Data lop
-		this.lps.setProperties ( ExecType.INVALID, ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties ( inputs, ExecType.INVALID, ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	/**

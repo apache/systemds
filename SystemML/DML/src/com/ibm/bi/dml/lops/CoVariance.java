@@ -22,7 +22,7 @@ public class CoVariance extends Lops {
 		boolean definesMRJob = true;
 		if ( et == ExecType.MR ) {
 			lps.addCompatibility(JobType.CM_COV);
-			this.lps.setProperties(et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			definesMRJob = false;
@@ -36,7 +36,7 @@ public class CoVariance extends Lops {
 				input3.addOutput(this);
 			}
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 	

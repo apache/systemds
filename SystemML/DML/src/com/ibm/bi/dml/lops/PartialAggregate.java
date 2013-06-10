@@ -55,11 +55,11 @@ public class PartialAggregate extends Lops {
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties(et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 		} 
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 	

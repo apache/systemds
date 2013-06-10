@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.lops;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
@@ -99,7 +101,28 @@ public class LopProperties {
 		isAligner = align;
 	}
 	
-	public void setProperties ( ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
+	/*
+	 * Function to compute the node level in the entire Lops DAG. 
+	 *   level(v) = max( levels(v.inputs) ) + 1
+	 */
+	public void setLevel(ArrayList<Lops>  inputs) {
+		int level = -1;
+		if ( inputs == null || inputs.size() == 0)
+			level = 0;
+		else {
+			// find the max level among all inputs
+			for(Lops in : inputs) {
+				if(level < in.getLevel() ) {
+					level = in.getLevel();
+				}
+			}
+			// this.level should be one more than the max
+			level = level+1;
+		}
+		setLevel(level);
+	}
+
+	public void setProperties ( ArrayList<Lops> inputs, ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
 		execType = et;
 		execLoc = el;
 		breaksAlignment = ba;

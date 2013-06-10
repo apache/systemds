@@ -27,7 +27,7 @@ public class DataPartition extends Lops
 		
 		// This lop executes only in DATA_PARTITION job
 		lps.addCompatibility(JobType.DATA_PARTITION);
-		this.lps.setProperties( ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override

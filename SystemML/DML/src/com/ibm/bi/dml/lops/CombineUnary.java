@@ -36,7 +36,7 @@ public class CombineUnary extends Lops
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.SORT);
-		this.lps.setProperties( ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	/**

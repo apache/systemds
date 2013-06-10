@@ -66,12 +66,12 @@ public class Rand extends Lops
 		if ( et == ExecType.MR ) {
 			definesMRJob = true;
 			lps.addCompatibility(JobType.RAND);
-			this.lps.setProperties( et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			definesMRJob = false;
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 

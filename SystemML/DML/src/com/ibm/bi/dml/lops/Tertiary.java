@@ -62,11 +62,11 @@ public class Tertiary extends Lops
 			lps.addCompatibility(JobType.REBLOCK_BINARY);
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
 			
-			this.lps.setProperties( et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 

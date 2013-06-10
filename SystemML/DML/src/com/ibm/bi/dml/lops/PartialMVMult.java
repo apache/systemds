@@ -35,7 +35,7 @@ public class PartialMVMult extends Lops {
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.GMR);
 		lps.addCompatibility(JobType.RAND);
-		this.lps.setProperties( ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 
 

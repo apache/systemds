@@ -284,8 +284,8 @@ public abstract class Lops {
 		return lps.getLevel();
 	}
 	
-	public void setLevel(int l) {
-		lps.setLevel(l);
+	public void setLevel() {
+		lps.setLevel(inputs);
 	}
 	
 	/**

@@ -36,7 +36,7 @@ public class MMTSJ extends Lops
 		
 		lps.addCompatibility(JobType.GMR);
 		//lps.addCompatibility(JobType.MMTSJ);
-		lps.setProperties( et, el, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et, el, breaksAlignment, aligner, definesMRJob );
 	}
 
 	@Override

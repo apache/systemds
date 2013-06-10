@@ -69,11 +69,11 @@ public class Unary extends Lops {
 			lps.removeCompatibility(JobType.SORT);
 			lps.removeCompatibility(JobType.CM_COV);
 			lps.removeCompatibility(JobType.COMBINE);
-			this.lps.setProperties(et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 
@@ -112,11 +112,11 @@ public class Unary extends Lops {
 			 */
 			lps.addCompatibility(JobType.ANY);
 			lps.removeCompatibility(JobType.PARTITION);
-			this.lps.setProperties(et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 

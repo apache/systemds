@@ -52,7 +52,7 @@ public class GroupedAggregate extends Lops {
 			boolean aligner = false;
 			boolean definesMRJob = true;
 			lps.addCompatibility(JobType.GROUPED_AGG);
-			this.lps.setProperties(et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			boolean breaksAlignment = false;
@@ -75,7 +75,7 @@ public class GroupedAggregate extends Lops {
 			_inputParams = inputParameterLops;
 			
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 	

@@ -29,7 +29,7 @@ public class CentralMoment extends Lops {
 		if ( et == ExecType.MR ) {
 			definesMRJob = true;
 			lps.addCompatibility(JobType.CM_COV);
-			this.lps.setProperties(et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 		}
 		else {
 			// when executing in CP, this lop takes an optional 3rd input (Weights)
@@ -38,7 +38,7 @@ public class CentralMoment extends Lops {
 				input3.addOutput(this);
 			}
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 	}
 	

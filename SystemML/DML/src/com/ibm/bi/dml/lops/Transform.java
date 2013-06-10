@@ -58,13 +58,13 @@ public class Transform extends Lops
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties( et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			// <code>breaksAlignment</code> is not meaningful when <code>Transform</code> executes in CP. 
 			breaksAlignment = false;
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 	

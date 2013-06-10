@@ -128,6 +128,7 @@ public class LopProperties {
 		breaksAlignment = ba;
 		isAligner = aligner;
 		definesMRJob = definesMR;
+		setLevel(inputs);
 	}
 	
 }

@@ -54,8 +54,8 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
-public class CSVRowAssignmentMR {
-	private static final Log LOG = LogFactory.getLog(CSVRowAssignmentMR.class.getName());
+public class CSVReblockMR {
+	private static final Log LOG = LogFactory.getLog(CSVReblockMR.class.getName());
 	
 	public static final String NUM_ROWS_IN_MATRIX="num.rows.in.matrix.";
 	public static final String NUM_COLS_IN_MATRIX="num.cols.in.matrix.";
@@ -446,7 +446,7 @@ public class CSVRowAssignmentMR {
 	{
 		AssignRowIDMRReturn ret=new AssignRowIDMRReturn();
 		JobConf job;
-		job = new JobConf(CSVRowAssignmentMR.class);
+		job = new JobConf(CSVReblockMR.class);
 		job.setJobName("Assign-RowID-MR");
 		
 		byte[] realIndexes=new byte[inputs.length];
@@ -619,8 +619,8 @@ public class CSVRowAssignmentMR {
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
 			String[] outputs, OutputInfo[] outputInfos) throws Exception 
 	{
-		AssignRowIDMRReturn ret1 = CSVRowAssignmentMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
-		return CSVRowAssignmentMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
+		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
+		return CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
 				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile);
 	}
 	
@@ -653,7 +653,7 @@ public class CSVRowAssignmentMR {
 		+ false+ Instruction.OPERAND_DELIM
 		+0.0;
 		
-		CSVRowAssignmentMR.runJob(null, inputs, inputInfos, null, null, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
+		CSVReblockMR.runJob(null, inputs, inputInfos, null, null, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
 				outputInfos);
 	}
 }

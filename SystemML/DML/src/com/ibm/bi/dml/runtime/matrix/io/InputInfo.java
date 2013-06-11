@@ -63,6 +63,9 @@ public class InputInfo {
 	public static InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
 	
+	public static InputInfo CSVInputInfo=new InputInfo(TextInputFormat.class, 
+			 LongWritable.class, Text.class);
+	
 	public static OutputInfo getMatchingOutputInfo(InputInfo ii) throws DMLRuntimeException {
 		if ( ii == InputInfo.BinaryBlockInputInfo )
 			return OutputInfo.BinaryBlockOutputInfo;

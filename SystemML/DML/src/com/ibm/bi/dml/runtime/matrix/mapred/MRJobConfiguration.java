@@ -54,6 +54,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
@@ -487,6 +488,13 @@ public class MRJobConfiguration {
 		return reblock_instructions;
 	}
 	
+	public static CSVReblockInstruction[] getCSVReblockInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		String str=job.get(REBLOCK_INSTRUCTIONS_CONFIG);
+		CSVReblockInstruction[] reblock_instructions = MRInstructionParser.parseCSVReblockInstructions(str);
+		return reblock_instructions;
+	}
+	
 	public static AggregateInstruction[] getAggregateInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		String str=job.get(AGGREGATE_INSTRUCTIONS_CONFIG);
@@ -706,7 +714,8 @@ public class MRJobConfiguration {
 	
 	public static void setInstructionsInReducer(JobConf job, String instructionsInReducer)
 	{
-		job.set(INSTRUCTIONS_IN_REDUCER_CONFIG, instructionsInReducer);
+		if(instructionsInReducer!=null)
+			job.set(INSTRUCTIONS_IN_REDUCER_CONFIG, instructionsInReducer);
 	}
 	
 	public static void setAggregateBinaryInstructions(JobConf job, String aggBinInstrctions)
@@ -1616,7 +1625,7 @@ public class MRJobConfiguration {
 		return true;
 	}
 	
-	private static String constructTempOutputFilename() 
+	public static String constructTempOutputFilename() 
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
@@ -1649,5 +1658,7 @@ public class MRJobConfiguration {
 		
 		return sb.toString(); 
 	}
+	
+	
 }
 

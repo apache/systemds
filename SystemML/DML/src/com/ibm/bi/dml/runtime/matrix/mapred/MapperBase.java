@@ -15,6 +15,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
@@ -62,6 +63,9 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	
 	//block instructions that need to be performed in part by mapper
 	protected Vector<Vector<ReblockInstruction>> reblock_instructions=new Vector<Vector<ReblockInstruction>>();
+	
+	//csv block instructions that need to be performed in part by mapper
+	protected Vector<Vector<CSVReblockInstruction>> csv_reblock_instructions=new Vector<Vector<CSVReblockInstruction>>();
 	
 	//the indexes of the matrices that needed to be outputted
 	protected Vector<Vector<Byte>> outputIndexes=new Vector<Vector<Byte>>();
@@ -219,6 +223,8 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		RandInstruction[] allRandIns;
 		MRInstruction[] allMapperIns;
 		ReblockInstruction[] allReblockIns;
+		CSVReblockInstruction[] allCSVReblockIns;
+		
 		try {
 			allRandIns = MRJobConfiguration.getRandInstructions(job);
 			
@@ -227,6 +233,8 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			
 			//parse the reblock instructions on the matrices that this file represent
 			allReblockIns=MRJobConfiguration.getReblockInstructions(job);
+			
+			allCSVReblockIns=MRJobConfiguration.getCSVReblockInstructions(job);
 			
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
@@ -381,6 +389,22 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			}
 		
 			reblock_instructions.add(reblocksForThisMatrix);
+			
+			//collect the relavent reblock instructions for this representative matrix
+			Vector<CSVReblockInstruction> csvReblocksForThisMatrix=new Vector<CSVReblockInstruction>();
+			if(allCSVReblockIns!=null)
+			{
+				for(CSVReblockInstruction ins:allCSVReblockIns)
+				{
+					if(set.contains(ins.input))
+					{
+						csvReblocksForThisMatrix.add(ins);
+						set.add(ins.output);
+					}
+				}
+			}
+		
+			csv_reblock_instructions.add(csvReblocksForThisMatrix);
 			
 			//collect the output indexes for this representative matrix
 			Vector<Byte> outsForThisMatrix=new Vector<Byte>();

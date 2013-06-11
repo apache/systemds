@@ -8,6 +8,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruct
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
@@ -111,6 +112,7 @@ public class MRInstructionParser extends InstructionParser {
 		
 		// REBLOCK Instruction Opcodes 
 		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);
+		String2MRInstructionType.put( "rblkcsv"   , MRINSTRUCTION_TYPE.CSVReblock);
 		
 		// Tertiary Reorg Instruction Opcodes 
 		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Tertiary);
@@ -288,6 +290,22 @@ public class MRInstructionParser extends InstructionParser {
 			for(int i=0; i < strlist.length; i++)
 			{
 				inst[i] = (ReblockInstruction) ReblockInstruction.parseInstruction( strlist[i] );
+			}
+		}
+		return inst;
+	}
+	
+	public static CSVReblockInstruction[] parseCSVReblockInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		CSVReblockInstruction[] inst=null;
+		if(str!=null && !str.isEmpty())
+		{
+			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
+			inst = new CSVReblockInstruction[strlist.length];
+			
+			for(int i=0; i < strlist.length; i++)
+			{
+				inst[i] = (CSVReblockInstruction) CSVReblockInstruction.parseInstruction( strlist[i] );
 			}
 		}
 		return inst;

@@ -50,7 +50,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 	protected CollectMultipleConvertedOutputs collectFinalMultipleOutputs;
 	
 	//a counter to calculate the time spent in a reducer or a combiner
-	protected static enum Counters {COMBINE_OR_REDUCE_TIME };
+	public static enum Counters {COMBINE_OR_REDUCE_TIME };
 
 	//the counters to record how many nonZero cells have been produced for each output
 	protected long[] resultsNonZeros=null;

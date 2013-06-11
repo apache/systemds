@@ -1,0 +1,5 @@
+
+d = $1;
+rd = round(d);
+write(rd, $2);
+

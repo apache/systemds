@@ -315,17 +315,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setValueType(ValueType.DOUBLE);
 			break;
 
-		case ROUND:
-			checkNumParameters(1);
-			checkMatrixParam(_first);
-
-			output.setDataType(DataType.MATRIX);
-			output.setDimensions(id.getDim1(), id.getDim2());
-			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
-			output.setValueType(id.getValueType());
-
-			break;
-
 		case CENTRALMOMENT:
 			/*
 			 * x = centralMoment(V,order) or xw = centralMoment(V,W,order)

@@ -1,0 +1,4 @@
+
+V = read($1, rows=$2, cols=$3);
+R = round(V);
+write(R, $4);

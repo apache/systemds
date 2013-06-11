@@ -28,7 +28,6 @@ import com.ibm.bi.dml.hops.Hops.AggOp;
 import com.ibm.bi.dml.hops.Hops.DataOpTypes;
 import com.ibm.bi.dml.hops.Hops.Direction;
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hops.OpOp1;
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.hops.Hops.OpOp3;
 import com.ibm.bi.dml.hops.Hops.ParamBuiltinOp;
@@ -2891,10 +2890,6 @@ public class DMLTranslator {
 			} 
 			break;
 
-		case ROUND:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp1.ROUND, expr);
-			break;
-			
 		case CAST_AS_SCALAR:
 			// TODO: fix the hops/lops first.
 			try {
@@ -2910,6 +2905,7 @@ public class DMLTranslator {
 		case TAN:
 		case SQRT:
 		case EXP:
+		case ROUND:
 			Hops.OpOp1 mathOp1;
 			switch (source.getOpCode()) {
 			case ABS:
@@ -2929,6 +2925,9 @@ public class DMLTranslator {
 				break;
 			case EXP:
 				mathOp1 = Hops.OpOp1.EXP;
+				break;
+			case ROUND:
+				mathOp1 = Hops.OpOp1.ROUND;
 				break;
 			default:
 				

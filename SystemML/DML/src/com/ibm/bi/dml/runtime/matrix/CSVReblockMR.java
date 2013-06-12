@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Vector;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -48,6 +50,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -235,18 +238,12 @@ public class CSVReblockMR {
 		BlockRow row;
 		String delim=" ";
 		boolean ignoreFirstLine=false;
-		double missingValue=0;
+		//double missingValue=0;
 		
 		public void configure(JobConf job)
 		{
 			super.configure(job);
 			//get the number colums per block
-			row=new BlockRow();
-			int maxBclen=0;
-			for(int i=0; i<bclens.length; i++)
-				if(maxBclen<bclens[i])
-					maxBclen=bclens[i];
-			row.container=new double[maxBclen];		
 			
 			//load the offset mapping
 			byte matrixIndex=representativeMatrixes.get(0);
@@ -288,7 +285,19 @@ public class CSVReblockMR {
 			CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
 			delim=Character.toString(ins.delim);
 			ignoreFirstLine=ins.ignoreFirstLine;
-			missingValue=ins.missingValue;
+			//missingValue=ins.missingValue;
+			
+			row=new BlockRow();
+			int maxBclen=0;
+		
+			for(Vector<CSVReblockInstruction> insv: csv_reblock_instructions)
+				for(CSVReblockInstruction in: insv)
+				{	
+					if(maxBclen<in.bclen)
+						maxBclen=in.bclen;
+				}
+			row.container=new double[maxBclen];		
+		
 		}
 		
 		@Override
@@ -307,39 +316,45 @@ public class CSVReblockMR {
 			String[] cells=value.toString().split(delim);
 			
 			for(int i=0; i<representativeMatrixes.size(); i++)
-			{
-				int start=0;
-				row.numCols=bclens[i];
-				outIndexes.setTag(csv_reblock_instructions.get(i).get(0).output);
-				long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, brlens[i]);
-				row.indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, brlens[i]);
-				
-				long col=0;
-				for(; col<cells.length/bclens[i]; col++)
+				for(CSVReblockInstruction ins: csv_reblock_instructions.get(i))
 				{
-					outIndexes.setIndexes(rowIndex, col+1);
-					for(int k=0;k<bclens[i]; k++)
+					int start=0;
+					row.numCols=ins.bclen;
+					outIndexes.setTag(ins.output);
+					long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, ins.brlen);
+					row.indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, ins.brlen);
+					
+					long col=0;
+					for(; col<cells.length/ins.bclen; col++)
 					{
-						if(cells[k+start].isEmpty())
-							row.container[k]=missingValue;
-						else
-							row.container[k]= Double.parseDouble(cells[k+start]);
+						outIndexes.setIndexes(rowIndex, col+1);
+						for(int k=0;k<ins.bclen; k++)
+						{
+							if(cells[k+start].isEmpty())
+								row.container[k]=ins.missingValue;
+							else
+								row.container[k]= Double.parseDouble(cells[k+start]);
+						}
+						out.collect(outIndexes, row);
+						//System.out.println("mapper: "+outIndexes+", "+row);
+						start+=ins.bclen;
 					}
-					out.collect(outIndexes, row);
-					//System.out.println("mapper: "+outIndexes+", "+row);
-					start+=bclens[i];
+					outIndexes.setIndexes(rowIndex, col+1);
+					int lastBclen=cells.length%ins.bclen;
+					if(lastBclen!=0)
+					{
+						row.numCols=lastBclen+1;
+						for(int k=0;k<lastBclen; k++)
+						{
+							if(cells[k+start].isEmpty())
+								row.container[k]=ins.missingValue;
+							else
+								row.container[k]= Double.parseDouble(cells[k+start]);
+						}
+						out.collect(outIndexes, row);
+						//System.out.println("mapper: "+outIndexes+", "+row);
+					}
 				}
-				outIndexes.setIndexes(rowIndex, col+1);
-				int lastBclen=cells.length%bclens[i];
-				if(lastBclen!=0)
-				{
-					row.numCols=lastBclen+1;
-					for(int k=0;k<lastBclen; k++)
-						row.container[k]= Double.parseDouble(cells[k+start]);
-					out.collect(outIndexes, row);
-					//System.out.println("mapper: "+outIndexes+", "+row);
-				}
-			}
 			
 			num++;
 		}
@@ -403,7 +418,7 @@ public class CSVReblockMR {
 				((MatrixBlock) block.getValue()).copyRowArrayToDense((int)row.indexInBlock, row.container, 0);
 			}
 			((MatrixBlock) block.getValue()).recomputeNonZeros();
-			System.out.println("block+\n"+block);
+			//System.out.println("block+\n"+block);
 		}
 		
 		public void configure(JobConf job) {
@@ -602,6 +617,8 @@ public class CSVReblockMR {
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
+		MapReduceTool.deleteFileIfExistOnHDFS(counterFile, job);
+		
 		/* Process different counters */
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
@@ -609,7 +626,7 @@ public class CSVReblockMR {
 			// number of non-zeros
 			stats[i].nonZero=group.getCounter(Integer.toString(i));
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-		}	
+		}
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	
@@ -620,8 +637,9 @@ public class CSVReblockMR {
 			String[] outputs, OutputInfo[] outputInfos) throws Exception 
 	{
 		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
-		return CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
+		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
 				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile);
+		return ret;
 	}
 	
 	public static void main(String[] args) throws Exception {

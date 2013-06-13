@@ -15,6 +15,7 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "applications/descriptivestats/";
 	private final static String TEST_NOMINAL_NOMINAL = "CategoricalCategorical";
 	private final static String TEST_NOMINAL_NOMINAL_WEIGHTS = "CategoricalCategoricalWithWeightsTest";
+	private final static String TEST_ODDS_RATIO = "OddsRatio";
 
 	private final static double eps = 1e-9;
 	private int rows = 10000;  // # of rows in each vector
@@ -26,8 +27,17 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	public void setUp() {
 		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, 
 				new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
-		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "CategoricalCategoricalWithWeightsTest", new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
-		//addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, "CategoricalCategoricalWithWeightsTest", new String[] { "outPValue", "outCramersV" }));
+		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL_WEIGHTS, new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
+		addTestConfiguration(TEST_ODDS_RATIO, new TestConfiguration(TEST_DIR, TEST_ODDS_RATIO, new String[] { 	"oddsRatio"+".scalar", 
+																												"sigma"+".scalar", 
+																												"leftConf"+".scalar", 
+																												"rightConf"+".scalar", 
+																												"sigmasAway"+".scalar" 
+																												//"chiSquared"+".scalar", 
+																												//"degFreedom"+".scalar", 
+																												//"pValue"+".scalar", 
+																												//"cramersV"+".scalar"
+																												}));
 	}
 
 	@Test
@@ -92,7 +102,7 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 	
 	private void round(double[][] weight) {
 		for(int i=0; i<weight.length; i++)
-			weight[i][0]=Math.floor(weight[i][0]);
+			weight[i][0]=Math.round(weight[i][0]);
 	}
 
 	@Test
@@ -160,5 +170,68 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase {
 		
 	}
 	
+	@Test
+	public void testOddsRatio() {
+		
+		TestConfiguration config = getTestConfiguration(TEST_ODDS_RATIO);
+		
+		config.addVariable("rows", rows);
+
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String CC_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = CC_HOME + TEST_ODDS_RATIO + ".dml";
+		programArgs = new String[]{"-args",  CC_HOME + INPUT_DIR + "A" , 
+				                        Integer.toString(rows),
+				                        CC_HOME + INPUT_DIR + "B" , 
+				                        CC_HOME + OUTPUT_DIR + "oddsRatio" , 
+				                        CC_HOME + OUTPUT_DIR + "sigma", 
+				                        CC_HOME + OUTPUT_DIR + "leftConf" , 
+				                        CC_HOME + OUTPUT_DIR + "rightConf", 
+				                        CC_HOME + OUTPUT_DIR + "sigmasAway" 
+				                        //CC_HOME + OUTPUT_DIR + "chiSquared", 
+				                        //CC_HOME + OUTPUT_DIR + "degFreedom" , 
+				                        //CC_HOME + OUTPUT_DIR + "pValue", 
+				                        //CC_HOME + OUTPUT_DIR + "cramersV"
+				                        };
+		fullRScriptName = CC_HOME + TEST_ODDS_RATIO + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
+		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;
+		
+		loadTestConfiguration(config);
+
+		// current test works only for 2x2 contingency tables => #categories must be 2
+		int numCat = 2;
+        double[][] A = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis());
+        double[][] B = getRandomMatrix(rows, 1, 1, numCat, 1, System.currentTimeMillis()+1);
+        round(A);
+        round(B);
+        
+		writeInputMatrix("A", A, true);
+		writeInputMatrix("B", B, true);
+
+		runTest(true, false, null, -1);
+		
+		runRScript(true);
+		
+		for(String file: config.getOutputFiles())
+		{
+			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			HashMap<CellIndex, Double> dmlfile;
+			HashMap<CellIndex, Double> rfile;
+			if (file.endsWith(".scalar")) {
+				file = file.replace(".scalar", "");
+				dmlfile = readDMLScalarFromHDFS(file);
+				rfile = readRScalarFromFS(file);
+			}
+			else {
+				dmlfile = readDMLMatrixFromHDFS(file);
+				rfile = readRMatrixFromFS(file);
+			}
+			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
+		}
+		
+	}
+	
+
 
 }

@@ -263,13 +263,11 @@ public class ResultMergeRemoteReducer
 	{
 		private boolean _requiresCompare;
 		private String _stagingDir;
-		private MatrixBlock _block = null;
 		
 		public ResultMergeReducerBinaryBlock(boolean requiresCompare, String stagingDir)
 		{
 			_requiresCompare = requiresCompare;
 			_stagingDir = stagingDir;
-			_block = new MatrixBlock();
 		}
 		
 		@Override
@@ -324,7 +322,7 @@ public class ResultMergeRemoteReducer
 							{
 								if( mbOut == null )
 								{
-									mbOut = _block;
+									mbOut = new MatrixBlock();
 									mbOut.copy( bVal );
 								}
 								else
@@ -339,7 +337,7 @@ public class ResultMergeRemoteReducer
 						MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(_stagingDir+"/"+blockListCnt);
 						if( mbOut == null )
 						{
-							mbOut = _block;
+							mbOut = new MatrixBlock();
 							mbOut.copy( tmp );
 						}
 						else
@@ -358,11 +356,13 @@ public class ResultMergeRemoteReducer
 						MatrixBlock tmp = (MatrixBlock) tVal.getBaseObject();
 						if( mbOut == null )
 						{
-							mbOut = _block;
+							mbOut = new MatrixBlock();
 							mbOut.copy( tmp );
 						}
 						else
+						{
 							mergeWithoutComp(mbOut, tmp);	
+						}
 					}				
 				}
 				
@@ -371,10 +371,6 @@ public class ResultMergeRemoteReducer
 			catch( Exception ex )
 			{
 				throw new IOException(ex);
-			}
-			finally
-			{
-				_block.reset();
 			}
 		}
 		

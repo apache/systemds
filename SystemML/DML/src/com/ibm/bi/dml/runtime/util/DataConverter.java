@@ -246,7 +246,7 @@ public class DataConverter
 		try 
 		{
 			//check for empty file
-			if( MapReduceTool.isHDFSFileEmpty( path.toString() ) )
+			if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
 				throw new EOFException("Empty input file "+dir+".");
 			
 			//core matrix reading 

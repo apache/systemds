@@ -138,6 +138,10 @@ public class MapReduceTool {
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
 		FileSystem fs = FileSystem.get(new JobConf());
+		return isFileEmpty(fs, dir);
+	}
+
+	public static boolean isFileEmpty(FileSystem fs, String dir) throws IOException {
 		Path pth = new Path(dir);
 		FileStatus fstat = fs.getFileStatus(pth);
 

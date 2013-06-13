@@ -234,7 +234,9 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			//parse the reblock instructions on the matrices that this file represent
 			allReblockIns=MRJobConfiguration.getReblockInstructions(job);
 			
-			allCSVReblockIns=MRJobConfiguration.getCSVReblockInstructions(job);
+			//FIXME at Yuanyuan: fails for normal reblock jobs!
+			//allCSVReblockIns=MRJobConfiguration.getCSVReblockInstructions(job);
+			allCSVReblockIns = new CSVReblockInstruction[0];
 			
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);

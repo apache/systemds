@@ -47,14 +47,15 @@ public class OrderTest extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
-		int sortcol = sc * ((asc) ? 1 : -1);
+		int sortcol = sc * (asc ? 1 : -1);
+		int namesuffix = (asc ? 1 : 2);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + namesuffix + ".dml";
 		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
 				                        Integer.toString(rows),
 				                        Integer.toString(cols),
-				                        Integer.toString(sortcol),
+				                        Integer.toString(sc),
 				                        HOME + OUTPUT_DIR + "B" };
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 

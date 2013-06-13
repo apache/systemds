@@ -48,10 +48,9 @@ public class OrderWrapper extends PackageFunction
 			if( !desc ) //asc
 				Arrays.sort(inData, new AscRowComparator(col-1));
 			else //desc
-				Arrays.sort(inData, new DescRowComparator(Math.abs(col)-1));
+				Arrays.sort(inData, new DescRowComparator(col-1));
 				
-			//create and copy output matrix
-		
+			//create and copy output matrix		
 			String dir = createOutputFilePathAndName( OUTPUT_FILE );	
 			ret = new Matrix( dir, inM.getNumRows(), inM.getNumCols(), ValueType.Double );
 			ret.setMatrixDoubleArray(inData);

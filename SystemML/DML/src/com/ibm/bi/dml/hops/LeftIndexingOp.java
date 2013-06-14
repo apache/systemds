@@ -10,6 +10,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.ZeroOut;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -98,6 +99,10 @@ public class LeftIndexingOp  extends Hops {
 						rightInput = new UnaryCP(getInput().get(1).constructLops(),
 								                 OperationTypes.CAST_AS_MATRIX, 
 								                 DataType.MATRIX, ValueType.DOUBLE);
+						rightInput.getOutputParameters().setDimensions( (long)1, (long)1,
+																		(long)DMLTranslator.DMLBlockSize, 
+								                                        (long)DMLTranslator.DMLBlockSize,
+								                                        (long)-1);
 					} 
 					else 
 						rightInput = getInput().get(1).constructLops();

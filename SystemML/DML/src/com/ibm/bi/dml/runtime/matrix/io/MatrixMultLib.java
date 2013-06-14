@@ -618,42 +618,42 @@ public class MatrixMultLib
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
 					int bn;
-					for(int k = 0, ix1 = 0, ix2 = 0; k < m; k++, ix2+=n)
-						for(int i = 0, ix3 = 0; i < n; i++, ix1++, ix3+=n) 
+					for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
+						for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
 						{
-							val = a[ ix1 ];
+							val = a[ ix1+i ];
 							if( val != 0 )
 							{
 								//from i due to symmetry
 								bn = (n-i)%8;
 								//compute rest
 								for(int j = i; j < i+bn; j++) 
-									c[ ix3+j ]  += val * a[ ix2+j ];
+									c[ ix3+j ]  += val * a[ ix1+j ];
 								//unrolled 8-block
 								for(int j = i+bn; j < n; j+=8) 
 								{
-									c[ ix3+j ]    += val * a[ ix2+j ];
-									c[ ix3+j+1 ]  += val * a[ ix2+j+1 ];
-									c[ ix3+j+2 ]  += val * a[ ix2+j+2 ];
-									c[ ix3+j+3 ]  += val * a[ ix2+j+3 ];
-									c[ ix3+j+4 ]  += val * a[ ix2+j+4 ];
-									c[ ix3+j+5 ]  += val * a[ ix2+j+5 ];
-									c[ ix3+j+6 ]  += val * a[ ix2+j+6 ];
-									c[ ix3+j+7 ]  += val * a[ ix2+j+7 ];
+									c[ ix3+j ]    += val * a[ ix1+j ];
+									c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
+									c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
+									c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
+									c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
+									c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
+									c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
+									c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
 								}
 							}
 						}	
 				}
 				else
 				{	
-					for(int k = 0, ix1 = 0, ix2 = 0; k < m; k++, ix2+=n)
-						for(int i = 0, ix3 = 0; i < n; i++, ix1++, ix3+=n) 
+					for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
+						for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
 						{
-							val = a[ ix1 ];
+							val = a[ ix1+i ];
 							if( val != 0 )
 							{
 								for(int j = i; j < n; j++) //from i due to symmetry
-									c[ ix3+j ]  += val * a[ ix2+j ];
+									c[ ix3+j ]  += val * a[ ix1+j ];
 							}
 						}	
 				}

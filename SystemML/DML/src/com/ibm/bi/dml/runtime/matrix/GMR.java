@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixPackedCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
@@ -99,6 +100,10 @@ public class GMR{
 			}
 			
 			MRJobConfiguration.setupDistCacheInputs(job, indexString, pathString, pathList);
+			
+			//clean in-memory cache (prevent job interference in local mode)
+			if( MRJobConfiguration.isLocalJobTracker(job) )
+				MRBaseForCommonInstructions.resetDistCache();
 		}
 	}
 	
@@ -394,8 +399,8 @@ public class GMR{
         String instructionsInMapper = prepMVMult((byte)0, (byte)1, (byte)4) + Instruction.INSTRUCTION_DELIM + prepMVMult( (byte)2, (byte)3, (byte)5);
         //String instructionsInMapper = prepPartialAgg((byte)0, (byte)1);
         String aggInstructionsInReducer = prepAgg((byte)4, (byte)6) + Instruction.INSTRUCTION_DELIM + prepAgg((byte)5, (byte)7);
-		System.out.println("Mapper Instructions: " + instructionsInMapper);
-		System.out.println("Reduce Instructions: " + aggInstructionsInReducer);
+		//System.out.println("Mapper Instructions: " + instructionsInMapper);
+		//System.out.println("Reduce Instructions: " + aggInstructionsInReducer);
 
 		byte[] resultIndexes = { 6, 7 };
 		

@@ -956,12 +956,14 @@ public class MRJobConfiguration {
 		job.set(DISTCACHE_INPUT_INDICES, indices);
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);
 		Path p = null;
+		
 		for(String spath : paths) {
 			p = new Path(spath);
-			System.out.println("Adding file DistCache: " + p.toString());
+			//System.out.println("Adding file DistCache: " + p.toString());
 			DistributedCache.addCacheFile(p.toUri(), job);
 			DistributedCache.createSymlink(job);
 		}
+		
 		//createAllSymlink(job, jobCacheDir, workDir)
 	}
 	
@@ -1658,7 +1660,5 @@ public class MRJobConfiguration {
 		
 		return sb.toString(); 
 	}
-	
-	
 }
 

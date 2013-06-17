@@ -55,6 +55,20 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	protected IndexedMatrixValue tempValue=null;
 	protected IndexedMatrixValue zeroInput=null;
 
+	//TODO at Shirish: please review if this is the way you would like handle local mode
+	public static void resetDistCache()
+	{
+		distCacheValues.clear();
+		distCacheIndices = null;
+		distCacheFiles = null;
+		distCacheNumRows = null;
+		distCacheNumColumns = null;	
+		inputPartitionFlags = null;
+		inputPartitionFormats = null;
+		inputPartitionSizes = null;
+	}
+	
+	//TODO at Shirish: please review if DMLTranslator.Blocksize is right here, it is a configuration property and hence cannot be used as a static variable in a MR context
 	public static int computePartitionID(long rowBlockIndex, long colBlockIndex, PDataPartitionFormat pformat, int psize) throws DMLRuntimeException {
 		int pfile = -1; // partition file ID
 		switch(pformat) {
@@ -74,6 +88,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		
 		return pfile;
 	}
+	
+	
 	public static MatrixValue getDataFromDistributedCache(byte input, int distCache_index, long rowBlockIndex, long colBlockIndex) throws DMLRuntimeException {
 		
 		IndexedMatrixValue imv = distCacheValues.get(input);
@@ -99,7 +115,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			int cachedPartID = (int) partIdx.getRowIndex();
 			if(partID == cachedPartID || inputPartitionFlags[input] == false)
 				readNewPartition = false;
-			System.out.println("reqIndex ["+rowBlockIndex+","+colBlockIndex+"] reqRange [" + req_st + "," + req_end +"]  partRange [" + part_st + "," + part_end + "] ... cachedPart " + cachedPartID + " reqPartID " + partID + " --> " + (readNewPartition ? "ReadNew" : "UseCached"));
+			//System.out.println("reqIndex ["+rowBlockIndex+","+colBlockIndex+"] reqRange [" + req_st + "," + req_end +"]  partRange [" + part_st + "," + part_end + "] ... cachedPart " + cachedPartID + " reqPartID " + partID + " --> " + (readNewPartition ? "ReadNew" : "UseCached"));
 		}
 		if(imv == null || readNewPartition) {
 			MatrixValue data = null;
@@ -128,7 +144,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 						partID, inputPartitionSizes[input]);
 				idx = new MatrixIndexes(partID,1);
 			}
-			System.out.println(".... READ " + idx.toString());
+			//System.out.println(".... READ " + idx.toString());
 			imv = new IndexedMatrixValue(idx, data);
 			distCacheValues.put(input, imv);
 		}

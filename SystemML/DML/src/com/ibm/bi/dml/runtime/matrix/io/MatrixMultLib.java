@@ -617,31 +617,40 @@ public class MatrixMultLib
 				//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					int bn;
-					for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
-						for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+					//1) Unrolled inner loop, for better ILP
+					//2) Blocked execution, for less cache trashing in parallel exec 					
+					int blocksize = 64;
+					int bn, bjmin, bjmax;
+					for( int bi = 0; bi<n; bi+=blocksize )
+						for( int bj = bi; bj<n; bj+=blocksize ) 
 						{
-							val = a[ ix1+i ];
-							if( val != 0 )
-							{
-								//from i due to symmetry
-								bn = (n-i)%8;
-								//compute rest
-								for(int j = i; j < i+bn; j++) 
-									c[ ix3+j ]  += val * a[ ix1+j ];
-								//unrolled 8-block
-								for(int j = i+bn; j < n; j+=8) 
+							bjmin = Math.min(n, bj+blocksize);
+							for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
+								for(int i = bi, ix3 = bi*n; i < Math.min(n, bi+blocksize); i++, ix3+=n) 
 								{
-									c[ ix3+j ]    += val * a[ ix1+j ];
-									c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
-									c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
-									c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
-									c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
-									c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
-									c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
-									c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
+									val = a[ ix1+i ];
+									if( val != 0 )
+									{
+										//from i due to symmetry
+										bjmax = Math.max(i,bj);
+										bn = (bjmin-bjmax)%8;
+										//compute rest
+										for(int j = bjmax; j < bjmax+bn; j++) 
+											c[ ix3+j ]  += val * a[ ix1+j ];
+										//unrolled 8-block
+										for(int j = bjmax+bn; j < bjmin; j+=8) 
+										{
+											c[ ix3+j ]    += val * a[ ix1+j ];
+											c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
+											c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
+											c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
+											c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
+											c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
+											c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
+											c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
+										}
+									}
 								}
-							}
 						}	
 				}
 				else
@@ -655,7 +664,7 @@ public class MatrixMultLib
 								for(int j = i; j < n; j++) //from i due to symmetry
 									c[ ix3+j ]  += val * a[ ix1+j ];
 							}
-						}	
+						}
 				}
 			}
 		}
@@ -671,28 +680,41 @@ public class MatrixMultLib
 				//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
 				if(LOW_LEVEL_OPTIMIZATION)
 				{
+					//1) Unrolled inner loop, for better ILP
+					//2) Blocked execution, for less cache trashing in parallel exec 
+					//   (smaller block sizes would be slightly better, but consistent as is)
+					int blocksize = 64; 
 					int bn = n%8;
-					for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
-						for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
+					int bjmin, bjmax;
+					for( int bi = 0; bi<m; bi+=blocksize )
+						for( int bj = bi; bj<m; bj+=blocksize ) 
 						{
-							val = 0;
-							//compute rest
-							for(int k = 0; k < bn; k++)
-								val += a[ ix1+k ] * a[ix2+k];
-							//unrolled 8-block
-							for(int k = bn; k < n; k+=8)
+							bjmin =  Math.min(m, bj+blocksize);							
+							for(int i = bi, ix1 = bi*n, ix3 = bi*m; i < Math.min(m, bi+blocksize); i++, ix1+=n, ix3+=m)
 							{
-								val += a[ ix1+k ]   * a[ix2+k];
-								val += a[ ix1+k+1 ] * a[ix2+k+1];
-								val += a[ ix1+k+2 ] * a[ix2+k+2];
-								val += a[ ix1+k+3 ] * a[ix2+k+3];
-								val += a[ ix1+k+4 ] * a[ix2+k+4];
-								val += a[ ix1+k+5 ] * a[ix2+k+5];
-								val += a[ ix1+k+6 ] * a[ix2+k+6];
-								val += a[ ix1+k+7 ] * a[ix2+k+7];
+								bjmax = Math.max(i,bj);
+								for(int j = bjmax, ix2 = bjmax*n; j <bjmin; j++, ix2+=n) //from i due to symmetry
+								{
+									val = 0;
+									//compute rest
+									for(int k = 0; k < bn; k++)
+										val += a[ ix1+k ] * a[ix2+k];
+									//unrolled 8-block
+									for(int k = bn; k < n; k+=8)
+									{
+										val += a[ ix1+k ]   * a[ix2+k];
+										val += a[ ix1+k+1 ] * a[ix2+k+1];
+										val += a[ ix1+k+2 ] * a[ix2+k+2];
+										val += a[ ix1+k+3 ] * a[ix2+k+3];
+										val += a[ ix1+k+4 ] * a[ix2+k+4];
+										val += a[ ix1+k+5 ] * a[ix2+k+5];
+										val += a[ ix1+k+6 ] * a[ix2+k+6];
+										val += a[ ix1+k+7 ] * a[ix2+k+7];
+									}
+									c[ ix3+j ] = val;	
+								}
 							}
-							c[ ix3+j ] = val;	
-						}					
+						}
 				}
 				else
 				{

@@ -101,7 +101,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testVRightDenseCP() 
+	public void testVVRightDenseCP() 
 	{
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
 	}

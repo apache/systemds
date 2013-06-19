@@ -473,7 +473,7 @@ public class CSVReblockMR {
 				false, brlens, bclens, false, false);
 		
 		//set up the aggregate instructions that will happen in the combiner and reducer
-		MRJobConfiguration.setReblockInstructions(job, reblockInstructions);
+		MRJobConfiguration.setCSVReblockInstructions(job, reblockInstructions);
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
@@ -546,7 +546,7 @@ public class CSVReblockMR {
 		MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
 		
 		//set up the aggregate instructions that will happen in the combiner and reducer
-		MRJobConfiguration.setReblockInstructions(job, reblockInstructions);
+		MRJobConfiguration.setCSVReblockInstructions(job, reblockInstructions);
 		
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
@@ -637,6 +637,9 @@ public class CSVReblockMR {
 			String[] outputs, OutputInfo[] outputInfos) throws Exception 
 	{
 		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
+		for(int i=0; i<rlens.length; i++)
+			if( (rlens[i]>0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>0 && clens[i]!=ret1.clens[i]) )
+				throw new RuntimeException("Dimension doesn't mach for input matrix "+i+", expected ("+rlens[i]+", "+clens[i]+") but real ("+ret1.rlens[i]+", "+ret1.clens[i]+")");
 		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
 				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile);
 		return ret;
@@ -671,7 +674,7 @@ public class CSVReblockMR {
 		+ false+ Instruction.OPERAND_DELIM
 		+0.0;
 		
-		CSVReblockMR.runJob(null, inputs, inputInfos, null, null, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
+		CSVReblockMR.runJob(null, inputs, inputInfos, new long[]{-1, -1}, new long[]{-1, -1}, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
 				outputInfos);
 	}
 }

@@ -127,6 +127,7 @@ public class MRJobConfiguration {
 	private static final String INSTRUCTIONS_IN_REDUCER_CONFIG="instructions.in.reducer";
 	private static final String AGGREGATE_BINARY_INSTRUCTIONS_CONFIG="aggregate.binary.instructions";
 	private static final String REBLOCK_INSTRUCTIONS_CONFIG="reblock.instructions";
+	private static final String CSV_REBLOCK_INSTRUCTIONS_CONFIG="csv.reblock.instructions";
 	private static final String COMBINE_INSTRUCTIONS_CONFIG="combine.instructions";
 	private static final String CM_N_COV_INSTRUCTIONS_CONFIG="cm_n_com.instructions";
 	private static final String GROUPEDAGG_INSTRUCTIONS_CONFIG="groupedagg.instructions";
@@ -490,7 +491,7 @@ public class MRJobConfiguration {
 	
 	public static CSVReblockInstruction[] getCSVReblockInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		String str=job.get(REBLOCK_INSTRUCTIONS_CONFIG);
+		String str=job.get(CSV_REBLOCK_INSTRUCTIONS_CONFIG);
 		CSVReblockInstruction[] reblock_instructions = MRInstructionParser.parseCSVReblockInstructions(str);
 		return reblock_instructions;
 	}
@@ -705,6 +706,11 @@ public class MRJobConfiguration {
 	public static void setReblockInstructions(JobConf job, String reblockInstructions)
 	{
 		job.set(REBLOCK_INSTRUCTIONS_CONFIG, reblockInstructions);
+	}
+	
+	public static void setCSVReblockInstructions(JobConf job, String reblockInstructions)
+	{
+		job.set(CSV_REBLOCK_INSTRUCTIONS_CONFIG, reblockInstructions);
 	}
 	
 	public static void setCombineInstructions(JobConf job, String combineInstructions)

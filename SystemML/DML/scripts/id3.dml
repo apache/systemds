@@ -6,8 +6,10 @@
 # arguments:
 #	1st arg: data matrix (rows are samples)
 #	2nd arg: column vector containing labels
-#	3rd arg: name of file to write nodes matrix to
-#	4th arg: name of file to write edges matrix to
+#	3rd arg: minsplit (min. number of samples
+#			 before we create a split)
+#	4th arg: name of file to write nodes matrix to
+#	5th arg: name of file to write edges matrix to
 #
 # What does this script do:
 #	Learns a decision tree for data containing
@@ -67,7 +69,12 @@
 # learnt decision tree may have spurious nodes where no samples
 # reach).
 
-id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes) return (Matrix[Double] nodes, Matrix[Double] edges){
+id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes, Double minsplit) return (Matrix[Double] nodes, Matrix[Double] edges){
+	parfor(i1 in 1:nrow(attributes)){
+		isAvailable = castAsScalar(attributes[i1,1])
+		print("attribute " + i1 + " is available? " + isAvailable)
+	}
+	
 	one = Rand(rows=1, cols=1, min=1, max=1)
 	
 	#try the two base cases first
@@ -84,31 +91,21 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 	
 	num_non_zero_labels = sum(ppred(hist_labels, 0, ">"));
 	most_popular_label = rowIndexMax(t(hist_labels));
-	num_samples_w_most_popular_label = max(hist_labels);
-
-	/*
-	num_non_zero_labels = 0
-	most_popular_label = -1
-	num_samples_w_most_popular_label = -1
-	for(i in 1:nrow(hist_labels)){
-		if(castAsScalar(hist_labels[i,1]) != 0){
-			num_non_zero_labels = num_non_zero_labels + 1
-			if(castAsScalar(hist_labels[i,1]) >= num_samples_w_most_popular_label){
-				most_popular_label = i
-				num_samples_w_most_popular_label = castAsScalar(hist_labels[i,1])
-			}
-		}
-	}
-	*/
-
 	num_remaining_attrs = sum(attributes)
+	
+	num_samples = sum(X_subset)
+	
+	print("num non zero labels: " + num_non_zero_labels)
+	mpl = castAsScalar(most_popular_label)
+	print("most popular label: " + mpl)
+	print("num remaining attrs: " + num_remaining_attrs)
 	
 	nodes = Rand(rows=1, cols=1, min=0, max=0)
 	edges = Rand(rows=1, cols=1, min=0, max=0)
 	
 	#if all samples have the same label then return a leaf node
 	#if no attributes remain then return a leaf node with the most popular label	
-	if(num_samples_w_most_popular_label == -1 | num_non_zero_labels == 1 | num_remaining_attrs == 0){
+	if(num_non_zero_labels == 1 | num_remaining_attrs == 0 | num_samples < minsplit){
 		nodes = Rand(rows=1, cols=2, min=0, max=0)
 		nodes[1,1] = -1*one
 		nodes[1,2] = most_popular_label*one
@@ -128,6 +125,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 			sz = nrow(attributes)
 		#}
 		gains = Rand(rows=sz, cols=1, min=0, max=0)
+		#for(i in 1:nrow(attributes)){
 		parfor(i in 1:nrow(attributes)){
 			if(castAsScalar(attributes[i,1]) == 1){
 				attr_vals = X[,i]
@@ -135,6 +133,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 
 				hxt_vector = Rand(rows=nrow(attr_domain), cols=1, min=0, max=0)
 				
+				#for(j in 1:nrow(attr_domain)){
 				parfor(j in 1:nrow(attr_domain)){
 					if(castAsScalar(attr_domain[j,1]) != 0){
 						val = j
@@ -193,20 +192,24 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		numSubtreeNodes = Rand(rows=sz2, cols=1, min=0, max=0)
 		numSubtreeEdges = Rand(rows=sz2, cols=1, min=0, max=0)
 		
-		for(i in 1:nrow(attr_domain)){
-		#parfor(i in 1:nrow(attr_domain)){
+		#for(i in 1:nrow(attr_domain)){
+		parfor(i in 1:nrow(attr_domain)){
 			
 			Ti = X_subset * ppred(X[,best_attr], i, "==")
-			[nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes)
+			num_nodes_Ti = sum(Ti)
 			
-			start_pt = 1+(i-1)*max_sz_subtree
-			tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
-			numSubtreeNodes[i,1] = one*nrow(nodesi)
-			if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1){
-				tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
-				numSubtreeEdges[i,1] = one*nrow(edgesi)
-			}else{
-				numSubtreeEdges[i,1] = one*0
+			if(num_nodes_Ti > 0){
+				[nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes, minsplit)
+			
+				start_pt = 1+(i-1)*max_sz_subtree
+				tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
+				numSubtreeNodes[i,1] = one*nrow(nodesi)
+				if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1){
+					tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
+					numSubtreeEdges[i,1] = one*nrow(edgesi)
+				}else{
+					numSubtreeEdges[i,1] = one*0
+				}
 			}
 		}
 		
@@ -223,32 +226,41 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		
 		#edges from root to children
 		if(1==1){
-			sz = nrow(attr_domain)+num_edges_in_subtrees
+			sz = sum(ppred(numSubtreeNodes, 0, ">")) + num_edges_in_subtrees
 		}
 		edges = Rand(rows=sz, cols=3, min=1, max=1)
-		parfor(i in 1:nrow(attr_domain)){
-			edges[i,2] = i*one
+		numEdges = 0
+		for(i in 1:nrow(attr_domain)){
+			num_nodesi = castAsScalar(numSubtreeNodes[i,1])
+			if(num_nodesi > 0){
+				edges[numEdges+1,2] = i*one
+				numEdges = numEdges + 1
+			}
 		}
-		numEdges = nrow(attr_domain)
 		
+		nonEmptyAttri = 0
 		for(i in 1:nrow(attr_domain)){
 			numNodesInSubtree = castAsScalar(numSubtreeNodes[i,1])
 		
-			start_pt1 = 1 + (i-1)*max_sz_subtree
-			nodes[numNodes+1:numNodes+numNodesInSubtree,] = t(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
+			if(numNodesInSubtree > 0){
+				start_pt1 = 1 + (i-1)*max_sz_subtree
+				nodes[numNodes+1:numNodes+numNodesInSubtree,] = t(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
 			
-			numEdgesInSubtree = castAsScalar(numSubtreeEdges[i,1])
+				numEdgesInSubtree = castAsScalar(numSubtreeEdges[i,1])
 			
-			if(numEdgesInSubtree!=0){
-				edgesi1 = t(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
-				edgesi1[,1] = edgesi1[,1] + numNodes
-				edgesi1[,3] = edgesi1[,3] + numNodes
-				edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
-				numEdges = numEdges + numEdgesInSubtree
+				if(numEdgesInSubtree!=0){
+					edgesi1 = t(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
+					edgesi1[,1] = edgesi1[,1] + numNodes
+					edgesi1[,3] = edgesi1[,3] + numNodes
+					edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
+					numEdges = numEdges + numEdgesInSubtree
+				}
+			
+				edges[nonEmptyAttri+1,3] = numNodes + 1*one
+				nonEmptyAttri = nonEmptyAttri + 1
+				
+				numNodes = numNodes + numNodesInSubtree
 			}
-			
-			edges[i,3] = numNodes + 1*one
-			numNodes = numNodes + numNodesInSubtree
 		}
 	}
 }
@@ -258,6 +270,8 @@ y = read($2)
 
 n = nrow(X)
 m = ncol(X)
+
+minsplit = $3
 
 /*
 sz = 0
@@ -288,10 +302,11 @@ X = onesMat %*% diag(featureCorrections) + X
 labelCorrection = 1 - min(y)
 y = y + labelCorrection + 0
 
-[nodes, edges] = id3_learn(X, y, X_subset, attributes)
+[nodes, edges] = id3_learn(X, y, X_subset, attributes, minsplit)
 
 # decoding outputs
 nodes[,2] = nodes[,2] - labelCorrection * ppred(nodes[,1], -1, "==")
+#for(i in 1:nrow(edges)){
 parfor(i in 1:nrow(edges)){
 	e_parent = castAsScalar(edges[i,1])
 	parent_feature = castAsScalar(nodes[e_parent,1])
@@ -299,5 +314,5 @@ parfor(i in 1:nrow(edges)){
 	edges[i,2] = edges[i,2] - correction
 }
 
-write(nodes, $3, format="text")
-write(edges, $4, format="text")
+write(nodes, $4, format="text")
+write(edges, $5, format="text")

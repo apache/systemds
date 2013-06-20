@@ -85,6 +85,17 @@ public class DMLProgram {
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;
 	}
+	
+	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() 
+		throws LanguageException
+	{
+		ArrayList<FunctionStatementBlock> ret = new ArrayList<FunctionStatementBlock>();
+		
+		for( DMLProgram nsProg : _namespaces.values() )
+			ret.addAll(nsProg._functionBlocks.values());
+		
+		return ret;
+	}
 
 	public void addFunctionStatementBlock( String namespace, String fname, FunctionStatementBlock fsb ) 
 		throws LanguageException

@@ -243,6 +243,8 @@ public class ParForStatementBlock extends ForStatementBlock
 		{			
 			//### Step 2 ###: prune c without dependencies
 			_bounds = new Bounds();
+			for( FunctionStatementBlock fsb : dmlProg.getFunctionStatementBlocks() )
+				rDetermineBounds( fsb, false ); //writes to _bounds	
 			rDetermineBounds( dmlProg.getBlocks(), false ); //writes to _bounds
 			
 			for( Candidate c : C )
@@ -368,6 +370,16 @@ public class ParForStatementBlock extends ForStatementBlock
 					dpf = PDataPartitionFormat.NONE;	
 				else
 					dpf = tmp;
+					
+				/* TODO block partitioning
+				if( dpf == null || dpf==tmp ) //consensus
+					dpf = tmp;
+				else if(   dpf==PDataPartitionFormat.BLOCK_WISE_M_N //subsumption 
+						|| tmp==PDataPartitionFormat.BLOCK_WISE_M_N )
+					dpf = PDataPartitionFormat.BLOCK_WISE_M_N;
+				else //no consensus
+					dpf = PDataPartitionFormat.NONE;
+				*/			
 			}
 			if( dpf == null )
 				dpf = PDataPartitionFormat.NONE;
@@ -507,7 +519,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		Expression rowU = dat.getRowUpperBound();
 		Expression colL = dat.getColLowerBound();
 		Expression colU = dat.getColUpperBound();
-		boolean flag1=false, flag2=false;
+		boolean flag1=false, flag2=false; //, flag3=false;
 		
 		//flag1: true if row expr is colon
 		if( rowL == null && rowU == null )
@@ -516,10 +528,18 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( colL == null && colU == null )
 			flag2 = true;
 		
+		//TODO block partitioning
+		//flag3: true if row and col expr
+		//if( rowL != null && rowU != null && colL != null && colU != null )
+		//	flag3 = true;
+			
 		if( flag1 && !flag2 )
 			dpf = PDataPartitionFormat.COLUMN_WISE;
 		else if( !flag1 && flag2 )
 			dpf = PDataPartitionFormat.ROW_WISE;
+		//TODO block partitioning
+		//else if (flag3)
+		//	dpf = PDataPartitionFormat.BLOCK_WISE_M_N; //subsumes col and row
 		else
 			dpf = PDataPartitionFormat.NONE;
 		
@@ -848,6 +868,20 @@ public class ParForStatementBlock extends ForStatementBlock
 
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @param sbs
+	 * @param flag
+	 * @throws LanguageException
+	 */
+	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) 
+		throws LanguageException
+	{
+		for( StatementBlock sb : sbs )
+			rDetermineBounds(sb, flag);
+	}
+	
 	/**
 	 * Determines the lower/upper bounds of all nested for/parfor indexes.
 	 * 
@@ -856,90 +890,96 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @return
 	 * @throws LanguageException 
 	 */
-	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) 
+	private void rDetermineBounds( StatementBlock sb, boolean flag ) 
 		throws LanguageException
 	{
 		// catch all known for/ parfor bounds 
 		// (all unknown bounds are assumed to be +-infinity)
 		
-		for( StatementBlock sb : sbs )
-			for( Statement s : sb._statements )
+		for( Statement s : sb._statements )
+		{
+			boolean lFlag = flag;
+			if( s instanceof ParForStatement || (s instanceof ForStatement && CONSERVATIVE_CHECK) ) //incl. for if conservative
 			{
-				boolean lFlag = flag;
-				if( s instanceof ParForStatement || (s instanceof ForStatement && CONSERVATIVE_CHECK) ) //incl. for if conservative
+				ForStatement fs = (ForStatement)s;
+				IterablePredicate ip = fs._predicate;
+		
+				//checks for position in overall tree
+				if( sb==this )
+					lFlag = true;
+				
+				if( lFlag || rIsParent(sb,this) ) //add only if in subtree of this
 				{
-					ForStatement fs = (ForStatement)s;
-					IterablePredicate ip = fs._predicate;
-			
-					//checks for position in overall tree
-					if( sb==this )
-						lFlag = true;
-					
-					if( lFlag || rIsParent(sb,this) ) //add only if in subtree of this
+					//check for internal names
+					if(   ip.getIterVar()._name.equals( INTERAL_FN_INDEX_ROW )
+					   || ip.getIterVar()._name.equals( INTERAL_FN_INDEX_COL ))
 					{
-						//check for internal names
-						if(   ip.getIterVar()._name.equals( INTERAL_FN_INDEX_ROW )
-						   || ip.getIterVar()._name.equals( INTERAL_FN_INDEX_COL ))
-						{
-							
-							throw new LanguageException(" The iteration variable must not use the " +
-									"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
-						}
 						
-						long low = Integer.MIN_VALUE;
-						long up = Integer.MAX_VALUE;
-						long incr = -1;
-						
-						if( ip.getFromExpr()instanceof IntIdentifier)
-							low = ((IntIdentifier)ip.getFromExpr()).getValue();
-						if( ip.getToExpr()instanceof IntIdentifier)
-							up = ((IntIdentifier)ip.getToExpr()).getValue();
-						
-						//NOTE: conservative approach: include all index variables (also from for)
-						if( ip.getIncrementExpr() instanceof IntIdentifier )
-							incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
-						else
-							throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
-									                    "because increment expression '"+ip.getIncrementExpr().toString()+"' cannot be normalized.");
-					
-						_bounds._lower.put(ip.getIterVar()._name, low);
-						_bounds._upper.put(ip.getIterVar()._name, up);
-						_bounds._increment.put(ip.getIterVar()._name, incr);
-					}	
-					
-					//recursive invocation (but not for nested parfors due to constant check)
-					if( !lFlag )
-					{
-						ArrayList<StatementBlock> tmp = fs.getBody();
-						if( tmp != null )
-							rDetermineBounds(tmp, lFlag);
+						throw new LanguageException(" The iteration variable must not use the " +
+								"internal iteration variable name prefix '"+ip.getIterVar()._name+"'.");
 					}
-				}
-				else if( s instanceof ForStatement ) 
+					
+					long low = Integer.MIN_VALUE;
+					long up = Integer.MAX_VALUE;
+					long incr = -1;
+					
+					if( ip.getFromExpr()instanceof IntIdentifier)
+						low = ((IntIdentifier)ip.getFromExpr()).getValue();
+					if( ip.getToExpr()instanceof IntIdentifier)
+						up = ((IntIdentifier)ip.getToExpr()).getValue();
+					
+					//NOTE: conservative approach: include all index variables (also from for)
+					if( ip.getIncrementExpr() instanceof IntIdentifier )
+						incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
+					else
+						throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
+								                    "because increment expression '"+ip.getIncrementExpr().toString()+"' cannot be normalized.");
+				
+					_bounds._lower.put(ip.getIterVar()._name, low);
+					_bounds._upper.put(ip.getIterVar()._name, up);
+					_bounds._increment.put(ip.getIterVar()._name, incr);
+				}	
+				
+				//recursive invocation (but not for nested parfors due to constant check)
+				if( !lFlag )
 				{
-					//recursive invocation
-					ArrayList<StatementBlock> tmp = ((ForStatement) s).getBody();
+					ArrayList<StatementBlock> tmp = fs.getBody();
 					if( tmp != null )
 						rDetermineBounds(tmp, lFlag);
-				}
-				else if( s instanceof WhileStatement ) 
-				{
-					//recursive invocation
-					ArrayList<StatementBlock> tmp = ((WhileStatement) s).getBody();
-					if( tmp != null )
-						rDetermineBounds(tmp, lFlag);
-				}
-				else if( s instanceof IfStatement )
-				{
-					//recursive invocation
-					ArrayList<StatementBlock> tmp = ((IfStatement) s).getIfBody();
-					if( tmp != null )
-						rDetermineBounds(tmp, lFlag);
-					ArrayList<StatementBlock> tmp2 = ((IfStatement) s).getElseBody();
-					if( tmp2 != null )
-						rDetermineBounds(tmp2, lFlag);
 				}
 			}
+			else if( s instanceof ForStatement ) 
+			{
+				//recursive invocation
+				ArrayList<StatementBlock> tmp = ((ForStatement) s).getBody();
+				if( tmp != null )
+					rDetermineBounds(tmp, lFlag);
+			}
+			else if( s instanceof WhileStatement ) 
+			{
+				//recursive invocation
+				ArrayList<StatementBlock> tmp = ((WhileStatement) s).getBody();
+				if( tmp != null )
+					rDetermineBounds(tmp, lFlag);
+			}
+			else if( s instanceof IfStatement )
+			{
+				//recursive invocation
+				ArrayList<StatementBlock> tmp = ((IfStatement) s).getIfBody();
+				if( tmp != null )
+					rDetermineBounds(tmp, lFlag);
+				ArrayList<StatementBlock> tmp2 = ((IfStatement) s).getElseBody();
+				if( tmp2 != null )
+					rDetermineBounds(tmp2, lFlag);
+			}
+			else if( s instanceof FunctionStatement )
+			{
+				//recursive invocation
+				ArrayList<StatementBlock> tmp = ((FunctionStatement) s).getBody();
+				if( tmp != null )
+					rDetermineBounds(tmp, lFlag);
+			}
+		}
 	}
 	
 	/**

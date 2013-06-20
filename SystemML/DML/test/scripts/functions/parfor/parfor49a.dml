@@ -1,0 +1,11 @@
+foo = function (Integer in) return (Integer out)
+{
+   A = matrix( 1, rows=10, cols=10 );
+   parfor (f in 1:in) {
+       A = A + f;
+   }
+   out = round(sum(A));
+}
+
+x = foo( 10 );
+print( x );

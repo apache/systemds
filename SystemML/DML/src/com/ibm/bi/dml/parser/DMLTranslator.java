@@ -1400,10 +1400,7 @@ public class DMLTranslator {
 	
 		ArrayList<Hops> hopsDAG = current.get_hops();
 		if (hopsDAG != null && hopsDAG.size() > 0) {
-			Iterator<Hops> iter = hopsDAG.iterator();
-			while (iter.hasNext()) {
-				iter.next().resetVisitStatus();
-			}
+			Hops.resetVisitStatus(hopsDAG);
 		}
 		
 		if (current instanceof FunctionStatementBlock) {

@@ -349,6 +349,13 @@ abstract public class Hops {
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0) );
 	}
 
+	
+	public static void resetVisitStatus( ArrayList<Hops> hops )
+	{
+		for( Hops hopRoot : hops )
+			hopRoot.resetVisitStatus();
+	}
+	
 	public void resetVisitStatus() {
 		if (this.get_visited() == Hops.VISIT_STATUS.NOTVISITED)
 			return;

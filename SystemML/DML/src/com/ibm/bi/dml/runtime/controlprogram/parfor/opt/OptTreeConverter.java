@@ -495,10 +495,14 @@ public class OptTreeConverter
 		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
-		for( Hops hop : hops ){
-			hop.resetVisitStatus();
+		
+		//reset all hops
+		Hops.resetVisitStatus(hops);
+		
+		//created and add actual opt nodes
+		for( Hops hop : hops )
 			ret.addAll(rCreateAbstractOptNodes(hop, vars, memo));
-		}
+		
 		return ret;
 	}
 	

@@ -76,21 +76,17 @@ public class Recompiler
 			//TODO potentially invoke also mmchain opt, currently not many usecases 
 			
 			// clear existing lops
+			Hops.resetVisitStatus(hops);
 			for( Hops hopRoot : hops )
-			{	
-				hopRoot.resetVisitStatus();
 				rClearLops( hopRoot );
-			}
 
 			// update statistics if unknown
+			Hops.resetVisitStatus(hops);
 			for( Hops hopRoot : hops )
-			{
-				hopRoot.resetVisitStatus();
 				rUpdateStatistics( hopRoot, vars );
-				
-				hopRoot.resetVisitStatus();
+			Hops.resetVisitStatus(hops);
+			for( Hops hopRoot : hops )
 				hopRoot.refreshMemEstimates(); 
-			}			
 			
 			// construct lops
 			Dag<Lops> dag = new Dag<Lops>();
@@ -319,11 +315,9 @@ public class Recompiler
 
 	public static void updateFunctionNames(ArrayList<Hops> hops, long pid) 
 	{
+		Hops.resetVisitStatus(hops);
 		for( Hops hopRoot : hops  )
-		{
-			hopRoot.resetVisitStatus();
 			rUpdateFunctionNames( hopRoot, pid );
-		}
 	}
 	
 	public static void rUpdateFunctionNames( Hops hop, long pid )

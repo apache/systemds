@@ -291,11 +291,9 @@ public class ProgramRecompiler
 			{
 				//process actual hops
 				boolean ret = false;
+				Hops.resetVisitStatus(sb.get_hops());
 				for( Hops h : sb.get_hops() )
-				{
-					h.resetVisitStatus();
 					ret |= rFindAndSetCPIndexingHOP(h, var);
-				}
 				
 				//recompilation on-demand
 				if( ret )

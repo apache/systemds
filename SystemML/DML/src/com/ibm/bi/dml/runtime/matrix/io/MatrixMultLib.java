@@ -838,10 +838,13 @@ public class MatrixMultLib
 			if( m==1 ) //VECTOR 
 			{
 				SparseRow arow = m1.sparseRows[0];
-				alen = arow.size();
-				avals = arow.getValueContainer();	
-				for( int i = 0; i < alen; i++ )
-					c[0] += avals[i] * avals[i];
+				if( arow !=null && arow.size()>0 )
+				{
+					alen = arow.size();
+					avals = arow.getValueContainer();	
+					for( int i = 0; i < alen; i++ )
+						c[0] += avals[i] * avals[i];
+				}
 			}
 			else //MATRIX
 			{	
@@ -851,6 +854,9 @@ public class MatrixMultLib
 				m1.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), 
 						       tmpBlock, 0, 0, -1);
 			
+				if( tmpBlock.sparseRows == null )
+					return;
+				
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{

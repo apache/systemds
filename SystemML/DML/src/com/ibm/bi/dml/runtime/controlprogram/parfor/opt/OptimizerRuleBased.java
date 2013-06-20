@@ -81,6 +81,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
 	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;    
+	public static final int MAX_REPLICATION_FACTOR_EXPORT = 5;    
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
@@ -790,7 +791,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getExecType()==ExecType.MR )		
 		{
 			apply = true;
-			replication = Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_PARTITIONING) );
+			replication = Math.min( _N, Math.min(_rnk, MAX_REPLICATION_FACTOR_EXPORT) );
 		}
 		
 		//modify the runtime plan 

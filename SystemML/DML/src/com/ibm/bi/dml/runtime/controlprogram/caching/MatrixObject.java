@@ -236,28 +236,36 @@ public class MatrixObject extends CacheableData
 		if ( _metaData instanceof NumItemsByEachReducerMetaData ) {
 			str.append("NumItemsByEachReducerMetaData");
 		} 
-		else {
-			MatrixFormatMetaData md = (MatrixFormatMetaData)_metaData;
-			if ( md != null ) {
-				MatrixCharacteristics mc = ((MatrixDimensionsMetaData)_metaData).getMatrixCharacteristics();
-				str.append(mc.toString());
-				
-				InputInfo ii = md.getInputInfo();
-				if ( ii == null )
-					str.append("null");
-				else {
-					if ( InputInfo.inputInfoToString(ii) == null ) {
-						try {
-							throw new DMLRuntimeException("Unexpected input format");
-						} catch (DMLRuntimeException e) {
-							e.printStackTrace();
+		else 
+		{
+			try
+			{
+				MatrixFormatMetaData md = (MatrixFormatMetaData)_metaData;
+				if ( md != null ) {
+					MatrixCharacteristics mc = ((MatrixDimensionsMetaData)_metaData).getMatrixCharacteristics();
+					str.append(mc.toString());
+					
+					InputInfo ii = md.getInputInfo();
+					if ( ii == null )
+						str.append("null");
+					else {
+						if ( InputInfo.inputInfoToString(ii) == null ) {
+							try {
+								throw new DMLRuntimeException("Unexpected input format");
+							} catch (DMLRuntimeException e) {
+								e.printStackTrace();
+							}
 						}
+						str.append(InputInfo.inputInfoToString(ii));
 					}
-					str.append(InputInfo.inputInfoToString(ii));
+				}
+				else {
+					str.append("null, null");
 				}
 			}
-			else {
-				str.append("null, null");
+			catch(Exception ex)
+			{
+				LOG.error(ex);
 			}
 		}
 		str.append(",");

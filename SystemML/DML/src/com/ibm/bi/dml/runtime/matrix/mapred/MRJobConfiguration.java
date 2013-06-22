@@ -531,6 +531,7 @@ public class MRJobConfiguration {
 	
 	//partitioning configurations
 	public static void setPartitioningInfoInMapper( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew )
+		throws DMLRuntimeException
 	{
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
@@ -609,6 +610,7 @@ public class MRJobConfiguration {
 	}
 	
 	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir )
+		throws DMLRuntimeException
 	{
 		job.set(RESULTMERGE_COMPARE_FILENAME_CONFIG, fnameNew);
 		job.set(RESULTMERGE_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));

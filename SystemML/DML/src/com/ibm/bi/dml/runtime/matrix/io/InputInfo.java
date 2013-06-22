@@ -104,7 +104,9 @@ public class InputInfo {
 		return null;
 	}
 	
-	public static String inputInfoToString (InputInfo ii) {
+	public static String inputInfoToString (InputInfo ii) 
+		throws DMLRuntimeException 
+	{
 		if ( ii == TextCellInputInfo )
 			return "textcell";
 		else if ( ii == BinaryCellInputInfo )
@@ -117,7 +119,8 @@ public class InputInfo {
 			return "sort_output";
 		else if ( ii == WeightedPairInputInfo )
 			return "weightedpair";
-		return null;
+		else
+			throw new DMLRuntimeException("Unrecognized inputInfo: " + ii);
 	}
 	
 	

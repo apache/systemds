@@ -85,7 +85,9 @@ public class OutputInfo {
 		return null;
 	}
 	
-	public static String outputInfoToString (OutputInfo oi) {
+	public static String outputInfoToString (OutputInfo oi) 
+		throws DMLRuntimeException
+	{
 		if ( oi == TextCellOutputInfo )
 			return "textcell";
 		else if ( oi == MatrixMarketOutputInfo)
@@ -101,12 +103,6 @@ public class OutputInfo {
 		else if ( oi == WeightedPairOutputInfo )
 			return "weightedpair";
 		else
-			try {
-				throw new DMLRuntimeException("unrecognized outputInfo: " + oi);
-			} catch (DMLRuntimeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		return null;
+			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}
 }

@@ -192,7 +192,7 @@ public class OptimizationWrapper
 			//* clone of variables in order to allow for statistics propagation across DAGs
 			//(tid=0, because deep copies created after opt)
 			try{
-				LocalVariableMap tmp = ec.getSymbolTable().get_variableMap();
+				LocalVariableMap tmp = (LocalVariableMap) ec.getSymbolTable().get_variableMap().clone();
 				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0);
 			}catch(Exception ex){
 				throw new DMLRuntimeException(ex);

@@ -27,7 +27,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -373,7 +372,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	  }
     
     InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
-    OutputInfo outputInfo=new OutputInfo(CompactOutputFormat.class, DoubleWritable.class, IntWritable.class);
+    OutputInfo outputInfo=OutputInfo.OutputInfoForSortOutput;
     
     MRJobInstruction sort_dummy = new MRJobInstruction(JobType.SORT);
     JobReturn ret=runJob(sort_dummy, args[0], InputInfo.BinaryBlockInputInfo, 100, 1, 10, 1, "combineunary:::0:DOUBLE:::1:DOUBLE", 
@@ -408,7 +407,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 		  System.exit(-1);
 	  }
 	  
-    OutputInfo outputInfo=new OutputInfo(SequenceFileOutputFormat.class, DoubleWritable.class, IntWritable.class);
+    OutputInfo outputInfo=OutputInfo.OutputInfoForSortInput;
     
     MRJobInstruction dummy = new MRJobInstruction(JobType.COMBINE);
     CombineMR.runJob(dummy, new String[]{args[0], args[1]}, new InputInfo[]{InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo}, 
@@ -417,7 +416,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     		new String[]{"temp"}, new OutputInfo[]{outputInfo});
     
     InputInfo inputinfo=new InputInfo(SequenceFileInputFormat.class, DoubleWritable.class, IntWritable.class);
-    outputInfo=new OutputInfo(CompactOutputFormat.class, DoubleWritable.class, IntWritable.class);
+    outputInfo=OutputInfo.OutputInfoForSortOutput;
     MRJobInstruction sort_dummy = new MRJobInstruction(JobType.SORT);
     JobReturn ret=runJob(sort_dummy, "temp", inputinfo, 100, 1, 10, 1, null, Integer.parseInt(args[3]), 1, args[2], outputInfo, true);
 

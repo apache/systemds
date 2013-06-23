@@ -603,13 +603,14 @@ public abstract class AutomatedTestBase {
 			cmd = cmd.replace('/', '\\');                        
 			executionFile = executionFile.replace('/', '\\');
 		}
+		if (DEBUG && !newWay);
+			if ( !newWay )	
+				TestUtils.printRScript(executionFile);
 		
 		if (newWay == false) {
 		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
 		}
 	
-		if (DEBUG);
-			TestUtils.printRScript(executionFile);
 			
 		try {
 			long t0 = System.nanoTime();
@@ -766,6 +767,9 @@ public abstract class AutomatedTestBase {
 		ArrayList<String> args = new ArrayList<String>();
 		// setup arguments to SystemML
 		
+		if (DEBUG) {
+			args.add("-Dsystemml.logging=trace");
+		}
 		args.add("-f");
 		if ( newWay == true )
 			args.add(fullDMLScriptName);

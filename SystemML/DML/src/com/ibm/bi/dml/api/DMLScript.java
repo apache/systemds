@@ -649,11 +649,14 @@ public class DMLScript {
 			System.out.println("********************** Execute *******************");
 		}
 
-		LOG.info("********************** Instructions *******************");
-		rtprog.printMe();
-		
 		LOG.info("*******************************************************");
 		*/		
+		if (LOG.isDebugEnabled()) {
+			LOG.info("********************** Instructions *******************");
+			rtprog.printMe();
+			LOG.info("*******************************************************");
+		}
+
 		LOG.trace("Compile Status for executeHadoop is OK ");
 
 		//System.out.println("Estimated execution time: "+OpCostEstimator.getTimeEstimate(rtprog));

@@ -89,6 +89,9 @@ public class InputInfo {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellInputInfo;
 		}
+		if ( str.equalsIgnoreCase("matrixmarket")) {
+			return MatrixMarketInputInfo;
+		}
 		else if ( str.equalsIgnoreCase("binarycell")) {
 			return BinaryCellInputInfo;
 		}
@@ -119,6 +122,8 @@ public class InputInfo {
 			return "sort_output";
 		else if ( ii == WeightedPairInputInfo )
 			return "weightedpair";
+		else if ( ii == MatrixMarketInputInfo )
+			return "matrixmarket";
 		else
 			throw new DMLRuntimeException("Unrecognized inputInfo: " + ii);
 	}

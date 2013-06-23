@@ -354,7 +354,7 @@ public class ParForResultMergeTest
 			retOld.examSparsity();
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, retOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
-			DataConverter.writeMatrixToHDFS(retOld, _fname, oi, _rows, _cols, _brlen, _bclen);		
+			DataConverter.writeMatrixToHDFS(retOld, _fname, oi, mc);		
 			MatrixObject moOut = new MatrixObject(ValueType.DOUBLE,_fname);
 			moOut.setVarName("VarOut");
 			moOut.setMetaData(meta);
@@ -378,7 +378,7 @@ public class ParForResultMergeTest
 				tmpMB.examSparsity();
 				MatrixCharacteristics mc2 = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, tmpMB.getNonZeros());
 				MatrixFormatMetaData meta2 = new MatrixFormatMetaData(mc2, oi, ii);
-				DataConverter.writeMatrixToHDFS(tmpMB, _fname2+k, oi, _rows, _cols, _brlen, _bclen);		
+				DataConverter.writeMatrixToHDFS(tmpMB, _fname2+k, oi, mc2);		
 				MatrixObject tmpMo = new MatrixObject(ValueType.DOUBLE,_fname2+k);
 				tmpMo.setVarName("Var"+k);
 				tmpMo.setMetaData(meta2);

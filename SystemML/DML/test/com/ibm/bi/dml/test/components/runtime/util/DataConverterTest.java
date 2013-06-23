@@ -3,6 +3,7 @@ package com.ibm.bi.dml.test.components.runtime.util;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -63,7 +64,7 @@ public class DataConverterTest
 		{
 			MatrixBlock mb1 = DataConverter.convertToMatrixBlock(matrix);		
 			
-			DataConverter.writeMatrixToHDFS(mb1, _fname, oi, _rows, _cols, _brlen, _bclen);		
+			DataConverter.writeMatrixToHDFS(mb1, _fname, oi, new MatrixCharacteristics(_rows, _cols, _brlen, _bclen));		
 			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(_fname, ii, _rows, _cols, _brlen, _bclen);
 			
 			matrix2 = DataConverter.convertToDoubleMatrix(mb2);

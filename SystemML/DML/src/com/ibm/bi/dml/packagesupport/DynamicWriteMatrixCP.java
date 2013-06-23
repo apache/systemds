@@ -54,7 +54,7 @@ public class DynamicWriteMatrixCP extends PackageFunction
 			OutputInfo oi = OutputInfo.stringToOutputInfo(format);
 			
 			MatrixBlock mb = mo.acquireRead();
-			DataConverter.writeMatrixToHDFS(mb, fname, oi, rlen, clen, brlen, bclen);			
+			DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);			
 			mo.release();
 			
 			success = true;

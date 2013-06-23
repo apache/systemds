@@ -1,0 +1,6 @@
+
+A = read($1, rows=$2, cols=$3, format=$4);
+x = sum(A);
+write(x, $5);
+
+

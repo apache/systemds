@@ -121,7 +121,7 @@ public class RemoveEmptyTest
 			retOld.examSparsity();
 			MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, _brlen, _bclen, retOld.getNonZeros());
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
-			DataConverter.writeMatrixToHDFS(retOld, _fname, oi, _rows, _cols, _brlen, _bclen);		
+			DataConverter.writeMatrixToHDFS(retOld, _fname, oi, mc);		
 			
 			MatrixObject moIn = new MatrixObject(ValueType.DOUBLE,_fname);
 			moIn.setVarName("VarIn");

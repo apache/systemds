@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.CacheException;
@@ -617,7 +618,37 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			else {
 				MatrixObject mo = (MatrixObject)symb.getVariable(input1.get_name());
-				mo.exportData(input2.get_name(), input3.get_name());
+				String outFmt = input3.get_name();
+				if (outFmt.equalsIgnoreCase("matrixmarket")) {
+					if(mo.isDirty()) {
+						// there exist data computed in CP that is not backed up on HDFS
+						// i.e., it is either in-memory or in evicted space
+						mo.exportData(input2.get_name(), outFmt);
+					}
+					else {
+						OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
+						MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+						if(oi == OutputInfo.TextCellOutputInfo) {
+							try {
+								DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), input2.get_name(), mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+							} catch (IOException e) {
+								throw new DMLRuntimeException(e);
+							}
+						}
+						else if ( oi == OutputInfo.BinaryBlockOutputInfo) {
+							mo.exportData(input2.get_name(), outFmt);
+							//System.out.println("TO BE IMPLEMENTED");
+							//throw new DMLRuntimeException("TO BE IMPLEMENTED");
+						}
+						else {
+							throw new DMLRuntimeException("Unrecognized data format: can not write in matrixmarket format.");
+						}
+					}
+				}
+				else {
+					// Default behavior
+					mo.exportData(input2.get_name(), outFmt);
+				}
 			}
 			break;
 			

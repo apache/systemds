@@ -1,0 +1,6 @@
+
+# test for reading and writing in MM format
+
+A = read($1, format=$2);
+write(A, $3, format=$4);
+

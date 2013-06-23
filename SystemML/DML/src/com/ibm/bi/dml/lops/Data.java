@@ -343,8 +343,10 @@ public class Data extends Lops
 			OutputParameters oparams = getOutputParameters();
 			String fmt = "";
 			// TODO: following logic should change once we LOPs encode key-value-class information.
-			if ( oparams.getFormat() == Format.TEXT  || oparams.getFormat() == Format.MM)
+			if ( oparams.getFormat() == Format.TEXT )
 				fmt = "textcell";
+			else if ( oparams.getFormat() == Format.MM )
+				fmt = "matrixmarket";
 			else {
 				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 					fmt = "binaryblock";

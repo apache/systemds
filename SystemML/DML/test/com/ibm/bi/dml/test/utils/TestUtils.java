@@ -486,45 +486,56 @@ public class TestUtils {
 	 * Reads a scalar value in DML format from HDFS
 	 */
 	public static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String filePath) {
+		HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+		expectedValues.put(new CellIndex(1,1), readDMLScalar(filePath));
+		return expectedValues;
+	}
+
+	public static double readDMLScalar(String filePath) {
 		FileSystem fs;
 		try {
+			double d=Double.NaN;
 			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
-			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
 			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
 				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
-					expectedValues.put(new CellIndex(1,1), Double.parseDouble(line));
+					d = Double.parseDouble(line);
 				}
 				outIn.close();
 			}
-			return expectedValues;
+			return d;
 		} catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
-		return null;
+		return Double.NaN;
 	}
-
+	
 	/**
 	 * Reads a scalar value in R format from OS's FS
 	 */
 	public static HashMap<CellIndex, Double> readRScalarFromFS(String filePath) {
-		BufferedReader compareIn;
+		HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+		expectedValues.put(new CellIndex(1,1), readRScalar(filePath));
+		return expectedValues;
+	}
+	
+	public static Double readRScalar(String filePath) {
 		try {
-			compareIn = new BufferedReader(new FileReader(filePath));
-			HashMap<CellIndex, Double> expectedValues = new HashMap<CellIndex, Double>();
+			double d = Double.NaN;
+			BufferedReader compareIn = new BufferedReader(new FileReader(filePath));
 			String line;
 			while ((line = compareIn.readLine()) != null) { // only 1 scalar value in file
-			expectedValues.put(new CellIndex(1,1), Double.parseDouble(line));
+				d = Double.parseDouble(line);
 			}
 			compareIn.close();
-			return expectedValues;
+			return d;
 		} catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
-		return null;
+		return Double.NaN;
 	}
 
 	/**
@@ -586,6 +597,12 @@ public class TestUtils {
 			}
 		}
 		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+	}
+	
+	public static void compareScalars(double d1, double d2, double tol) {
+		if(!compareCellValue(d1, d2, tol)) {
+			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , true);
+		}
 	}
 
 	/**

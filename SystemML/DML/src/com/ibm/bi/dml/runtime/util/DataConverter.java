@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
@@ -72,26 +73,14 @@ public class DataConverter
 	 * @throws IOException
 	 */
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, 
-			                             long rlen, long clen, int brlen, int bclen )
+			                             MatrixCharacteristics mc )
 		throws IOException
 	{
-		writeMatrixToHDFS(mat, dir, outputinfo, rlen, clen, brlen, bclen, -1);
+		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1);
 	}
 	
-	/**
-	 * 
-	 * @param mat
-	 * @param dir
-	 * @param outputinfo
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 */
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, 
-										 long rlen, long clen, int brlen, int bclen, int replication )
-		throws IOException
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication)
+	throws IOException
 	{
 		JobConf job = new JobConf();
 		Path path = new Path(dir);
@@ -110,23 +99,27 @@ public class DataConverter
 			// core matrix writing
 			if ( outputinfo == OutputInfo.TextCellOutputInfo ) 
 			{	
-				writeTextCellMatrixToHDFS(path, job, mat, rlen, clen, brlen, bclen);
+				writeTextCellMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
 			}
 			else if ( outputinfo == OutputInfo.BinaryCellOutputInfo ) 
 			{
-				writeBinaryCellMatrixToHDFS(path, job, mat, rlen, clen, brlen, bclen);
+				writeBinaryCellMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
 			}
 			else if( outputinfo == OutputInfo.BinaryBlockOutputInfo )
 			{
-				writeBinaryBlockMatrixToHDFS(path, job, mat, rlen, clen, brlen, bclen);
+				writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+			}
+			else if ( outputinfo == OutputInfo.MatrixMarketOutputInfo ) 
+			{
+				writeMatrixMarketToHDFS( path, job, mat, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
 			}
 		}
 		catch(Exception e)
 		{
 			throw new IOException(e);
 		}
-	}	
-
+	}
+	
 	/**
 	 * 
 	 * @param dir
@@ -255,7 +248,7 @@ public class DataConverter
 				if( fs.getFileStatus(path).isDir() )
 					readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
 				else
-					readRawTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
+					readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, false);
 			}
 			else if( inputinfo == InputInfo.BinaryCellInputInfo )
 			{
@@ -264,6 +257,9 @@ public class DataConverter
 			else if( inputinfo == InputInfo.BinaryBlockInputInfo )
 			{
 				readBinaryBlockMatrixFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
+			}
+			else if ( inputinfo == InputInfo.MatrixMarketInputInfo ) {
+				readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, true);
 			}
 			
 			//finally check if change of sparse/dense block representation required
@@ -385,11 +381,9 @@ public class DataConverter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	public static void writeMatrixMarketToHDFS( String fileName, MatrixBlock src, long rlen, long clen, long nnz )
+	public static void writeMatrixMarketToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
 		throws IOException
 	{
-		JobConf job = new JobConf();
-		Path path = new Path(fileName);
 		boolean sparse = src.isInSparseFormat();
 		boolean entriesWritten = false;
 		FileSystem fs = FileSystem.get(job);
@@ -805,17 +799,36 @@ public class DataConverter
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
 		throws IOException, IllegalAccessException, InstantiationException
 	{
 		boolean sparse = dest.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
+		//FileSystem fs = FileSystem.get(job);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
 		
 		String value = null;
 		int row = -1;
 		int col = -1;
 
+		// Read the header lines, if reading from a matrixMarket file
+		if ( matrixMarket ) {
+			value = br.readLine(); // header line
+			if ( !value.startsWith("%%") ) {
+				throw new IOException("Error while reading \"" + path.toString() + "\" in MatrixMarket format. Expecting a header line <blah>, but encountered, \"" + value +"\".");
+			}
+			value = br.readLine(); // line with matrix dimensions
+			
+			// validate
+			long mm_rlen, mm_clen, mm_nnz;
+			String[] fields = value.split(" ");
+			mm_rlen = Long.parseLong(fields[0]);
+			mm_clen = Long.parseLong(fields[1]);
+			mm_nnz = Long.parseLong(fields[2]);
+			if ( rlen != mm_rlen || clen != mm_clen ) {
+				throw new IOException("Unexpected matrix dimensions while reading \"" + path.toString() + "\". Expecting dimensions [" + rlen + " rows, " + clen + " cols] but encountered [" + mm_rlen + " rows, " + mm_clen + "cols].");
+			}
+		}
+		
 		try
 		{
 			if( sparse ) //SPARSE<-value

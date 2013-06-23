@@ -523,7 +523,7 @@ public class ParForDataPartitionerTest
 			
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, _brlen, _bclen);
 			MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, oi, ii);
-			DataConverter.writeMatrixToHDFS(mb1, _fname, oi, rows, cols, _brlen, _bclen);		
+			DataConverter.writeMatrixToHDFS(mb1, _fname, oi, mc);		
 			MatrixObject mo1 = new MatrixObject(ValueType.DOUBLE,_fname);
 			mo1.setMetaData(meta);
 			

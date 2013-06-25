@@ -70,12 +70,6 @@
 # reach).
 
 id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes, Double minsplit) return (Matrix[Double] nodes, Matrix[Double] edges){
-	#for(i2 in 1:nrow(attributes)){
-	parfor(i2 in 1:nrow(attributes)){
-		isAvailable = castAsScalar(attributes[i2,1])
-		print("attribute " + i2 + " is available? " + isAvailable)
-	}
-	
 	one = Rand(rows=1, cols=1, min=1, max=1)
 	
 	#try the two base cases first
@@ -107,6 +101,11 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 	#if all samples have the same label then return a leaf node
 	#if no attributes remain then return a leaf node with the most popular label	
 	if(num_non_zero_labels == 1 | num_remaining_attrs == 0 | num_samples < minsplit){
+		for(i8 in 1:nrow(hist_labels)){
+			cnt = castAsScalar(hist_labels[i8,1])
+			print("label " + i8 + " cnt " + cnt)
+		}
+		 
 		nodes = Rand(rows=1, cols=2, min=0, max=0)
 		nodes[1,1] = -1*one
 		nodes[1,2] = most_popular_label*one
@@ -159,10 +158,11 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		
 		#pick out attr with highest gain
 		best_attr = -1
-		max_gain = 0
+		max_gain = 0.0
 		for(i4 in 1:nrow(gains)){
 			if(castAsScalar(attributes[i4,1]) == 1){
-				if(best_attr == -1 | max_gain <= castAsScalar(gains[i4,1])){
+				g = castAsScalar(gains[i4,1])
+				if(best_attr == -1 | max_gain <= g){
 					max_gain = castAsScalar(gains[i4,1])
 					best_attr = i4
 				}
@@ -194,7 +194,7 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 		numSubtreeEdges = Rand(rows=sz2, cols=1, min=0, max=0)
 		
 		#for(i1 in 1:nrow(attr_domain)){
-		parfor(i1 in 1:nrow(attr_domain)){
+		parfor(i1 in 1:nrow(attr_domain), check=0){
 			
 			Ti = X_subset * ppred(X[,best_attr], i1, "==")
 			num_nodes_Ti = sum(Ti)

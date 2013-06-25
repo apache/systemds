@@ -3,16 +3,83 @@
 # 2nd arg: p (non-seasonal AR order)
 # 3rd arg: d (non-seasonal differencing order)
 # 4th arg: q (non-seasonal MA order)
-# 5th arg: s (period in terms of number of time-steps)
-# 6th arg: P (seasonal AR order)
-# 7th arg: D (seasonal differencing order)
-# 8th arg: Q (seasonal MA order)
-# 9th arg: file name to store learnt parameters
+# 5th arg: P (seasonal AR order)
+# 6th arg: D (seasonal differencing order)
+# 7th arg: Q (seasonal MA order)
+# 8th arg: s (period in terms of number of time-steps)
+# 9th arg: 0/1 (1 means include.mean)
+# 10th arg: file name to store learnt parameters
+
+arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer p, Integer P, Integer q, Integer Q, Integer include_mean) return (Double obj){
+	b = X[,2:ncol(X)]%*%w
+	
+	R = Rand(rows=nrow(X), cols=nrow(X), min=0, max=0)
+	#for(i7 in 1:q, check=0){
+	parfor(i7 in 1:q, check=0){
+		ma_ind_ns = i7
+		ones_ns = Rand(rows=nrow(R)-ma_ind_ns, cols=1, min=1, max=1)
+		d_ns = ones_ns * castAsScalar(w[include_mean+P*p+P+p+ma_ind_ns,1])
+		R[1+ma_ind_ns:nrow(R),1:ncol(R)-ma_ind_ns] = R[1+ma_ind_ns:nrow(R),1:ncol(R)-ma_ind_ns] + diag(d_ns)
+	}
+	#for(i8 in 1:Q, check=0){
+	parfor(i8 in 1:Q, check=0){
+		#for(i9 in 0:q, check=0){
+		parfor(i9 in 0:q, check=0){
+			ma_ind_s = q+(i8-1)*(q+1)+i9+1
+			ones_s = Rand(rows=nrow(R)-ma_ind_s, cols=1, min=1, max=1)
+			d_s = ones_s * castAsScalar(w[include_mean+P*p+P+p+ma_ind_s,1])
+			R[1+ma_ind_s:nrow(R),1:ncol(R)-ma_ind_s] = R[1+ma_ind_s:nrow(R),1:ncol(R)-ma_ind_s] + diag(d_s)
+		}
+	}
+	
+	max_iter = 100
+	tol = 0.01
+
+	y_hat = Rand(rows=nrow(X), cols=1, min=0, max=0)
+	iter = 0
+  	diff = tol+1.0
+	while(iter < max_iter & diff > tol){
+    	y_hat_new = b - R%*%y_hat
+    	diff = sum((y_hat_new-y_hat)*(y_hat_new-y_hat))
+    	y_hat = y_hat_new
+    	iter = iter + 1
+
+    	#print("Inner iter " + iter + ": " + diff)
+  	}
+  	print("Inner loop " + iter + ": " + diff)
+  
+  	errs = X[,1] - y_hat
+  	obj = sum(errs*errs)
+}
+
+order = function(Matrix[Double] X) return (Integer best_index, Integer worst_index, Integer second_worst_index){
+	n = ncol(X)
+	
+	best_index = 1
+	worst_index = 1
+	for(i in 2:n){
+		this = castAsScalar(X[1,i])
+		that = castAsScalar(X[1,best_index])
+  		if(that > this){
+    		best_index = i
+  		}
+  		that = castAsScalar(X[1,worst_index])
+  		if(that < this){
+    		worst_index = i
+  		}
+	}
+	second_worst_index = best_index
+	for(i in 1:n){
+		this = castAsScalar(X[1,i])
+		that = castAsScalar(X[1,second_worst_index])
+  		if(i != worst_index & that < this){
+    		second_worst_index = i
+  		}
+	}
+} 
 
 #input col of time series data
-Y = read($1) 
-#will be lhs of our linear regression
-#so calling it Y
+X = read($1)
 
 #non-seasonal order
 p = $2
@@ -20,94 +87,164 @@ d = $3
 q = $4
 
 #seasonal order
-s = $5
-P = $6
-D = $7
-Q = $8
+P = $5
+D = $6
+Q = $7
 
-num_rows = nrow(Y)
-num_cols = 1 + p + d + q + P + D + Q
-X = Rand(rows=num_rows, cols=num_cols, min=0, max=0)
+#length of the season
+s = $8
 
-col_offset = 0
+include_mean = $9
 
-X[,1] = Rand(rows=num_rows, cols=1, min=1, max=1)
-#tracks how many columns have been filled
-#col_offset is set to 1 because we've already
-#"filled" in the constant term
-col_offset = col_offset + 1
+num_rows = nrow(X)
 
-if(p > 0){
-  	parfor(i in 1:p){
-		X[(1+i):num_rows,i+col_offset] = Y[1:(num_rows-i),1]
+if(num_rows <= d){
+	print("non-seasonal differencing order should be larger than length of the time-series")
+}
+
+Y = X
+for(i in 1:d){
+	n1 = nrow(Y)+0.0
+	Y = Y[2:n1,] - Y[1:n1-1,]
+}
+
+num_rows = nrow(Y)+0.0
+if(num_rows <= s*D){
+	print("seasonal differencing order should be larger than number of observations divided by length of season")
+}
+
+for(i in 1:D){
+	n1 = nrow(Y)+0.0
+	Y = Y[s+1:n1,] - Y[1:n1-s,]
+}
+
+n = nrow(Y)
+
+max_ar_col = s*P+p
+max_ma_col = s*Q+q
+if(max_ar_col > max_ma_col){
+	max_arma_col = max_ar_col
+}else{
+	max_arma_col = max_ma_col
+}
+
+totcols = 1+include_mean+P*p+P+p+Q*q+Q+q #target col (X), p-P cols, q-Q cols  
+
+Z = Rand(rows=n, cols=totcols, min=0, max=0)
+Z[,1] = Y #target col
+if(include_mean == 1){
+	constant_col = Rand(rows=n, cols=1, min=1, max=1)
+	Z[,1+include_mean] = constant_col
+}
+
+parfor(i1 in 1:p, check=0){
+	Z[i1+1:n,1+include_mean+i1] = Y[1:n-i1,]
+}
+parfor(i2 in 1:P){
+	parfor(j1 in 0:p, check=0){
+		Z[s*i2+j1+1:n,1+include_mean+p+(i2-1)*(p+1)+j1+1] = Y[1:n-s*i2-j1,]
 	}
-	col_offset = col_offset + p
 }
-
-if(d > 0){
-	parfor(i in 1:d){
-		X[(2+i):num_rows,i+col_offset] = Y[2:(num_rows-i),1] - Y[1:(num_rows-i-1),1]
-	}	
-	col_offset = col_offset + d
+parfor(i5 in 1:q, check=0){
+	Z[i5+1:n,1+include_mean+P*p+P+p+i5] = Y[1:n-i5,]
 }
-
-#in the beginning
-#all MA cols are set to 0
-col_offset = col_offset + q
-
-if(P > 0){
-	parfor(i in 1:P){
-		X[(1+i*s):num_rows,i+col_offset] = Y[1:(num_rows-i*s),1]
+parfor(i6 in 1:Q){
+	parfor(j2 in 0:q, check=0){
+		Z[s*i6+j2+1:n,1+include_mean+P*p+P+p+q+(i6-1)*(q+1)+j2+1] = Y[1:n-s*i6-j2,]
 	}
-	col_offset = col_offset + P
 }
 
-if(D > 0){
-	parfor(i in 1:D){
-		X[((1+i)*s+1):num_rows,i+col_offset] = Y[(s+1):(num_rows-i*s),1] - Y[1:(num_rows-(1+i)*s),1]
-	}
-	col_offset = col_offset + D
+one = Rand(rows=1, cols=1, min=1, max=1)
+
+simplex = Rand(rows=totcols-1, cols=totcols, min=0, max=0)
+point = Rand(rows=totcols-1, cols=1, min=0, max=0)
+for(i in 2:ncol(simplex)){
+	point[i-1,1] = point[i-1,1] + 1
+	simplex[,i] = point
 }
-
-col_offset = col_offset + Q
-
-w = Rand(rows=num_cols, cols=1, min=0, max=0)
+objvals = Rand(rows=1, cols=ncol(simplex), min=0, max=0)
+for(i3 in 1:ncol(simplex)){
+#parfor(i3 in 1:ncol(simplex)){
+	arima_css_objval = arima_css(simplex[,i3], Z, p, P, q, Q, include_mean)
+	objvals[1,i3] = arima_css_objval*one
+}
 
 #make these top level params?
-max_iter = 100
+max_iter = 1000
 tol = 0.001
 
-change = 1
 iter = 0
-while(iter < max_iter & change >= tol){
-	w_old = w
-
-	A = t(X)%*%X
-	b = t(X)%*%Y
-	w = solve(A,b)
+diff = tol+1.0
+while(diff > tol & iter < max_iter) {
+	[best_index, worst_index, second_worst_index] = order(objvals)
+	best_val = castAsScalar(objvals[1,best_index])
+	worst_val = castAsScalar(objvals[1,worst_index])
+	second_worst_val = castAsScalar(objvals[1,second_worst_index])
 	
-	#update error cols
-	Y_hat = X%*%w
-	errs = Y - Y_hat
+	obj = castAsScalar(objvals[1,best_index])
+	print("OBJ: " + obj)
 	
-	#non-seasonal
-	col_offset = 1 + p + d
-	if(q > 0){
-		parfor(i in 1:q){
-			X[(1+i):num_rows,i+col_offset] = errs[1:(num_rows-i),1]
+	mx = rowMaxs(simplex)
+	mn = rowMins(simplex)
+	diff = sum((mx-mn)*(mx-mn))
+	print("Outer Iter " + iter + ": " + diff)
+	
+	c = (rowSums(simplex) - simplex[,worst_index])/(nrow(simplex))
+	x_r = 2*c - simplex[,worst_index]
+	obj_x_r = arima_css(x_r, Z, p, P, q, Q, include_mean)
+	
+	if(best_val <= obj_x_r & obj_x_r < second_worst_val){
+		simplex[,worst_index] = x_r
+		objvals[1,worst_index] = obj_x_r
+	}else{
+		if(obj_x_r < best_val){
+			x_e = 2*x_r - c
+			obj_x_e = arima_css(x_e, Z, p, P, q, Q, include_mean)
+			
+			if(obj_x_r <= obj_x_e){
+				simplex[,worst_index] = x_r
+				objvals[1,worst_index] = obj_x_r
+			}else{
+				simplex[,worst_index] = x_e
+				objvals[1,worst_index] = obj_x_e
+			}
+		}else{
+			performShrink = 0
+			
+			if(obj_x_r < worst_val){
+				x_c_out = (x_r + c)/2
+				obj_x_c_out = arima_css(x_c_out, Z, p, P, q, Q, include_mean)
+				
+				if(obj_x_c_out < obj_x_r){
+					simplex[,worst_index] = x_c_out
+					objvals[1,worst_index] = obj_x_c_out
+				}else{
+					performShrink = 1
+				}
+			}else{
+				x_c_in = (simplex[,worst_index] + c)/2
+				obj_x_c_in = arima_css(x_c_in, Z, p, P, q, Q, include_mean)
+				
+				if(obj_x_c_in < worst_val){
+					simplex[,worst_index] = x_c_in
+					objvals[1,worst_index] = obj_x_c_in
+				}else{
+					performShrink = 1
+				}
+			}
+			
+			if(performShrink == 1){
+				best_point = simplex[,best_index]
+				parfor(i4 in 1:ncol(simplex)){
+					simplex[,i4] = (simplex[,i4] + best_point)/2
+					objvals[1,i4] = arima_css(simplex[,i4], Z, p, P, q, Q, include_mean)
+				}
+			}
 		}
 	}
 	
-	col_offset = col_offset + q + P + D
-	#seasonal
-	if(Q > 0){
-		parfor(i in 1:Q){
-			X[(1+i*s):num_rows,i+col_offset] = errs[1:(num_rows-i*s),1]
-		}
-	}	
-		
-	change = sum((w-w_old)*(w-w_old))
-	iter = iter+1
+	iter = iter + 1
 }
 
-write(w, $9, format="text")
+best_point = simplex[,best_index]
+write(best_point, $10, format="text")

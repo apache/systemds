@@ -207,13 +207,17 @@ public class IfProgramBlock extends ProgramBlock {
 	}
 	
 	private void initST_ifBody(SymbolTable st) {
-		for(int i=0; i < _childBlocksIfBody.size(); i++)
-			st.addChildTable(_childBlocksIfBody.get(i).createSymbolTable());
+		for(int i=0; i < _childBlocksIfBody.size(); i++) {
+			if ( st.get_childTables() == null || st.getChildTable(i) == null )
+				st.addChildTable(_childBlocksIfBody.get(i).createSymbolTable());
+		}
 	}
 	
 	private void initST_elseBody(SymbolTable st) {
-		for(int i=0; i < _childBlocksElseBody.size(); i++)
-			st.addChildTable(_childBlocksElseBody.get(i).createSymbolTable());
+		for(int i=0; i < _childBlocksElseBody.size(); i++) {
+			if ( st.get_childTables() == null || st.getChildTable(i) == null )
+				st.addChildTable(_childBlocksElseBody.get(i).createSymbolTable());
+		}
 	}
 	
 	private String findPredicateResultVar ( ) {

@@ -36,7 +36,7 @@ public class SymbolTable {
 	}
 
 	public void set_variableMap(LocalVariableMap varMap) {
-		_variableMap = varMap;
+		_variableMap.putAll(varMap); //_variableMap = varMap;
 	}
 
 	public void copy_variableMap(LocalVariableMap varMap) {

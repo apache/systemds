@@ -180,7 +180,18 @@ public class FunctionCallIdentifier extends DataIdentifier {
 	@Override
 	public DataIdentifier getOutput() {
 			
-		return _outputs.get(0);
+		if (_outputs.size() == 0){
+			try{
+				LOG.error(this.printErrorLocation() + "function " + this._name + " must return a value");
+				throw new LanguageException(this.printErrorLocation() + "function " + this._name + " must return a value");
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+			return null;
+		}
+		else
+			return _outputs.get(0);
 	}
 	
 	public ArrayList<DataIdentifier> getOutputs() {

@@ -688,7 +688,7 @@ Vector<DataIdentifier> ReadTypedArgList() :
 {
 	Vector<DataIdentifier> params = new Vector<DataIdentifier>() ;
 	DataIdentifier d1=null, d2=null ;
-	Token t1 = null, t2 = null, t3 = null;
+	Token t1 = null, t2 = null, t3 = null, t4 = null;
 	String valueType = null;
 	String dataType = null;
 	IntIdentifier intid = null;
@@ -696,50 +696,11 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	BooleanIdentifier boolid = null;  
 } 
 {
-	<LEFTPAREN> t1 =<ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>] d1 = Identifier() 
-
-	// For scalar inputs, support assigmnent of default value for function parameters 
+	
+	<LEFTPAREN>
 	(
-		<ASSIGN> intid = IntConstant() 		  { d1.setDefaultValue(intid.toString());}
-				| doubleid = DoubleConstant() { d1.setDefaultValue(doubleid.toString()); }
-      			| boolid = BooleanConstant()  { d1.setDefaultValue(boolid.toString()); }
-      			| t3 = <SQL_STRING_LITERAL>   { d1.setDefaultValue(dequoteStr('\'',t3.image)); }
-      			| t3 = <DBLQUOTE_STRING_LITERAL> { d1.setDefaultValue(dequoteStr('\"',t3.image)); }
-	)?
-
-	{
-		if (t1.image.equalsIgnoreCase("matrix")){
-			if (t2 == null){
-			    LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);	  
-     			LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-				System.out.println(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);	  
-     			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " Valuetype (int, double, boolean, String) must be defined for Matrix datatype -- e.g., Matrix(Double) ");
-    		}
-    		else {
-     			dataType = "matrix";
-     			valueType = t2.image;
-    		}
-       	}
-     	else if (t1.image.equalsIgnoreCase("object")){
-    		dataType = "object";
-    		valueType = "object";
-     	}
-		else {
-			dataType = "scalar";
-			valueType = t1.image;
-        }
-
-		try {
-		  	d1.setTypeInfo(valueType, dataType);      
-       		params.add(d1);
-       } catch (ParseException e) {
-         	LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " function parameter has unknown value type");
-			throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " function parameter has unknown value type");
-       }
-	}
-
-	(
-		<COMMA>  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier()
+		{ t4 = null; }
+		t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier() (t4 = <COMMA>)? 
 
   		(
 			<ASSIGN> intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
@@ -776,7 +737,14 @@ Vector<DataIdentifier> ReadTypedArgList() :
  	)*
 	<RIGHTPAREN>
   
-	{ return params; }
+	{
+	  	if (t4 != null){
+			LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
+			throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
+		}
+
+		return params;
+	}
 }
 
 ArrayList<String> ReadList() :
@@ -1997,12 +1965,14 @@ FunctionCallIdentifier FunctionCall():
 	ArrayList<Expression> exprs = new ArrayList<Expression>();
 	HashMap<String, Expression> namedExprs = new HashMap<String,Expression>(); 
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	Token tStart = null, tEnd = null, t1 = null;
+	Token tStart = null, tEnd = null, t1 = null, t2 = null;
 }
 {
 	tStart = <LEFTPAREN>
+
 		(
-		  	(LOOKAHEAD(2) t1 = <ID> <ASSIGN>)? expr = Expression()
+			{t2 = null;}
+			(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
 			{
 				if (t1 != null){
 					namedExprs.put(t1.image, expr);
@@ -2010,25 +1980,17 @@ FunctionCallIdentifier FunctionCall():
 				else {
 				   exprs.add(expr);
 				}
-				t1 = null;
-			}
-		)
-
-
-		(
-			<COMMA> (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression()
-			{
-				if (t1 != null){
-					namedExprs.put(t1.image, expr);
-				}	
-				else {
-				   exprs.add(expr);
-				}
-				t1 = null;
+				t1 = null;	
 			}
 		)*
 	tEnd = <RIGHTPAREN>  
 	{
+
+		if (t2 != null){
+			LOG.error(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
+			throw new ParseException(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
+		}
+
 		functCall = new FunctionCallIdentifier(exprs, namedExprs);
 
 		blp = tStart.beginLine;

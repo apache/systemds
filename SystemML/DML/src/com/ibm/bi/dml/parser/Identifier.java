@@ -44,7 +44,7 @@ public abstract class Identifier extends Expression{
 		_formatType = null;
 	}
 	
-	public void setProperties(Identifier i){
+	public void setProperties(Identifier i){		
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();
 		if (i instanceof IndexedIdentifier){

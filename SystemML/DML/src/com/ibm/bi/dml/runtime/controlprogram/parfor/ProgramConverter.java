@@ -1987,7 +1987,7 @@ public class ProgramConverter
 		if( !lin.equals( EMPTY ) )
 		{
 			LocalVariableMap vars = parseVariables(lin);
-			SymbolTable symb = new SymbolTable();
+			SymbolTable symb = new SymbolTable(true);
 			symb.set_variableMap( vars );
 			
 			ec = new ExecutionContext( symb );

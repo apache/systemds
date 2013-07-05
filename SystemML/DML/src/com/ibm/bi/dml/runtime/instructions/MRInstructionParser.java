@@ -42,6 +42,7 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "amax"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amin"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amean"  , MRINSTRUCTION_TYPE.Aggregate);
+		String2MRInstructionType.put( "arimax"  , MRINSTRUCTION_TYPE.Aggregate);
 
 		// AGG_BINARY Instruction Opcodes 
 		String2MRInstructionType.put( "cpmm" , MRINSTRUCTION_TYPE.AggregateBinary);

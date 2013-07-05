@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -32,7 +33,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(true)) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );
@@ -53,7 +54,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 		long rows = mc.get_rows();
 		long cols = mc.get_cols();
 		
-		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols) )
+		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols, OptimizerUtils.getMemBudget(true)) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName );
 		else
 			_rm = new ResultMergeLocalFile( _output, _inputs, _outputFName );

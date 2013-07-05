@@ -487,7 +487,8 @@ public class OptNode
 			{
 				OptNode n = _childs.get(i);
 				n.checkAndCleanupLeafNodes();
-				if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST && n._ntype != NodeType.FUNCCALL )
+				if( n.isLeaf() && n._ntype != NodeType.HOP && n._ntype != NodeType.INST 
+					&& n._ntype != NodeType.FUNCCALL ) // && n._ntype != NodeType.PARFOR
 				{
 					_childs.remove(i);
 					i--;

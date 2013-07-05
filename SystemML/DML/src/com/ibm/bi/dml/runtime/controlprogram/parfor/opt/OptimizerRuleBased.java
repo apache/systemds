@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -206,7 +207,7 @@ public class OptimizerRuleBased extends Optimizer
 		}	
 		
 		//rewrite 10: set result merge
-		rewriteSetResultMerge( pn, ec.getSymbolTable().get_variableMap() );
+		rewriteSetResultMerge( pn, ec.getSymbolTable().get_variableMap(), true );
 		
 		//rewrite 11: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
@@ -1050,11 +1051,12 @@ public class OptimizerRuleBased extends Optimizer
 	///
 	
 	/**
+	 *
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException 
 	 */
-	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars ) 
+	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
@@ -1064,7 +1066,7 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
 		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
-		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars );
+		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars, true );
 		
 		//actual decision on result merge
 		PResultMerge ret = null;
@@ -1086,7 +1088,7 @@ public class OptimizerRuleBased extends Optimizer
 
 		//recursively apply rewrite for parfor nodes
 		if( n.getChilds() != null )
-			rInvokeSetResultMerge(n.getChilds(), vars);
+			rInvokeSetResultMerge(n.getChilds(), vars, inLocal && !flagMRParFOR);
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result merge' - result="+ret );
 	}
@@ -1157,7 +1159,7 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						ret = !isInMemoryResultMerge(rows, cols);
+						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(false));
 					}
 				}
 			}
@@ -1179,7 +1181,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars ) 
+	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<String> resultVars, LocalVariableMap vars, boolean inLocal ) 
 		throws DMLRuntimeException
 	{
 		boolean ret = true;
@@ -1199,14 +1201,14 @@ public class OptimizerRuleBased extends Optimizer
 					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).get_name() );
 					long rows = mo.getNumRows();
 					long cols = mo.getNumColumns();
-					ret &= isInMemoryResultMerge(rows, cols);
+					ret &= isInMemoryResultMerge(rows, cols, OptimizerUtils.getMemBudget(inLocal));
 				}
 			}
 		}
 		else
 		{
 			for( OptNode c : n.getChilds() )
-				ret &= hasOnlyInMemoryResults(c, resultVars, vars);
+				ret &= hasOnlyInMemoryResults(c, resultVars, vars, inLocal);
 		}
 		
 		return ret;
@@ -1218,14 +1220,18 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param vars
 	 * @throws DMLRuntimeException 
 	 */
-	protected void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars) 
+	protected void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean inLocal) 
 		throws DMLRuntimeException
 	{
 		for( OptNode n : nodes )
 			if( n.getNodeType() == NodeType.PARFOR )
-				rewriteSetResultMerge(n, vars);
+			{
+				rewriteSetResultMerge(n, vars, inLocal);
+				if( n.getExecType()==ExecType.MR )
+					inLocal = false;
+			}
 			else if( n.getChilds()!=null )  
-				rInvokeSetResultMerge(n.getChilds(), vars);
+				rInvokeSetResultMerge(n.getChilds(), vars, inLocal);
 	}
 	
 	/**
@@ -1234,9 +1240,15 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param cols
 	 * @return
 	 */
-	public static boolean isInMemoryResultMerge( long rows, long cols )
+	public static boolean isInMemoryResultMerge( long rows, long cols, double memBudget )
 	{
-		return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hops.CPThreshold, 2) );
+		if( !ParForProgramBlock.USE_PARALLEL_RESULT_MERGE )
+		{
+			//1/4 mem budget because: 2xout (incl sparse-dense change), 1xin, 1xcompare  
+			return ( rows>=0 && cols>=0 && MatrixBlockDSM.estimateSize(rows, cols, 1.0) < memBudget/4 );
+		}
+		else
+			return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hops.CPThreshold, 2) );
 	}
 
 	

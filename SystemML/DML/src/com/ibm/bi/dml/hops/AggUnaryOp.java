@@ -128,7 +128,7 @@ public class AggUnaryOp extends Hops {
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "a(" + HopsAgg2String.get(_op)
+		s += "au(" + HopsAgg2String.get(_op)
 				+ HopsDirection2String.get(_direction) + ")";
 		return s;
 	}

@@ -46,7 +46,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
         config.addVariable("rows1", rows1);
         config.addVariable("rows2", rows2);
 
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		// This is for running the junit test the new way, i.e., construct the arguments directly 
 		String S_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = S_HOME + "Scale" + ".dml";
 		programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
@@ -83,12 +83,11 @@ public class UnivariateStatsTest extends AutomatedTestBase{
         writeInputMatrix("vector", vector, true);
         writeInputMatrix("prob", prob, true);
 
-		/*
-		 * Expected number of jobs:
-		 * Reblock - 1 job 
-		 * While loop iteration - 10 jobs
-		 * Final output write - 1 job
-		 */
+		// Expected number of jobs:
+		// Reblock - 1 job 
+		// While loop iteration - 10 jobs
+		// Final output write - 1 job
+		//
         //boolean exceptionExpected = false;
 		//int expectedNumberOfJobs = 12;
 		//runTest(exceptionExpected, null, expectedNumberOfJobs);
@@ -99,7 +98,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 	
 		for(String file: config.getOutputFiles())
 		{
-			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			// NOte that some files do not contain matrix, but just a single scalar value inside 
 			HashMap<CellIndex, Double> dmlfile;
 			HashMap<CellIndex, Double> rfile;
 			if (file.endsWith(".scalar")) {
@@ -122,7 +121,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
         config.addVariable("rows1", rows1);
         config.addVariable("rows2", rows2);
 
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		// This is for running the junit test the new way, i.e., construct the arguments directly 
 		String S_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = S_HOME + "WeightedScaleTest" + ".dml";
 		programArgs = new String[]{"-args",  S_HOME + INPUT_DIR + "vector" , 
@@ -163,12 +162,12 @@ public class UnivariateStatsTest extends AutomatedTestBase{
         writeInputMatrix("weight", weight, true);
         writeInputMatrix("prob", prob, true);
 
-		/*
-		 * Expected number of jobs:
-		 * Reblock - 1 job 
-		 * While loop iteration - 10 jobs
-		 * Final output write - 1 job
-		 */
+		//
+		// Expected number of jobs:
+		// Reblock - 1 job 
+		// While loop iteration - 10 jobs
+		// Final output write - 1 job
+		
 		runTest(true, false, null, -1);
 		
 		runRScript(true);
@@ -176,7 +175,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 	
 		for(String file: config.getOutputFiles())
 		{
-			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			// NOte that some files do not contain matrix, but just a single scalar value inside
 			HashMap<CellIndex, Double> dmlfile;
 			HashMap<CellIndex, Double> rfile;
 			if (file.endsWith(".scalar")) {
@@ -256,7 +255,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
         TestConfiguration config = getTestConfiguration("WeightedCategoricalTest");
         config.addVariable("rows1", rows1);
 
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		// This is for running the junit test the new way, i.e., construct the arguments directly
 		String C_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = C_HOME + "WeightedCategoricalTest" + ".dml";
 		programArgs = new String[]{"-args",  C_HOME + INPUT_DIR + "vector" , 
@@ -289,7 +288,7 @@ public class UnivariateStatsTest extends AutomatedTestBase{
 	
 		for(String file: config.getOutputFiles())
 		{
-			/* NOte that some files do not contain matrix, but just a single scalar value inside */
+			// NOte that some files do not contain matrix, but just a single scalar value inside
 			HashMap<CellIndex, Double> dmlfile;
 			HashMap<CellIndex, Double> rfile;
 			if (file.endsWith(".scalar")) {

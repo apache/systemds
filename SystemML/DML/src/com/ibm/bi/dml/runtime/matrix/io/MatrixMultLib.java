@@ -19,7 +19,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  * NOTES on BLAS:
  * * Experiments in 04/2013 showed that even on dense-dense this implementation 
  *   is 3x faster than f2j-BLAS-DGEMM, 2x faster than f2c-BLAS-DGEMM, and
- *   level with a native C implementation. 
+ *   level (+10% after JIT) with a native C implementation. 
  * * Calling native BLAS would loose platform independence and would require 
  *   JNI calls incl data transfer (and changing the representation from row-
  *   to column-major representation). Furthermore, BLAS does not support sparse 

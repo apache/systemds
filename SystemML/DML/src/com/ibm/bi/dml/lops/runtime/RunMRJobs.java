@@ -341,6 +341,7 @@ public class RunMRJobs {
 		// should not come here!
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
+
 	/**
 	 * 
 	 * @param inst
@@ -460,12 +461,13 @@ public class RunMRJobs {
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
+	@Deprecated
 	public static ExecMode getExecMode(JobType jt, MatrixCharacteristics[] stats) throws DMLRuntimeException {
 		
 		//if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
 		//	return ExecMode.LOCAL;
 		
-		if ( flagLocalModeOpt == false )
+		if ( !flagLocalModeOpt )
 			return ExecMode.CLUSTER;
 		
 		switch ( jt ) {

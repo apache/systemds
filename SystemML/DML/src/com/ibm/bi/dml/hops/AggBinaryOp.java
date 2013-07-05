@@ -206,7 +206,7 @@ public class AggBinaryOp extends Hops {
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += "a(" + HopsAgg2String.get(outerOp) + HopsOpOp2String.get(innerOp)+")";
+		s += "ab(" + HopsAgg2String.get(outerOp) + HopsOpOp2String.get(innerOp)+")";
 		return s;
 	}
 

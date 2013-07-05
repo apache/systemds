@@ -37,8 +37,8 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase{
 		}
 		public void set(long rs, long re, long cs, long ce)
 		{
-			if(re<rs || ce<cs)
-				throw new RuntimeException("This is invalid index range: ["+rs+":"+re+", "+cs+":"+ce+"]!");
+			//if(re<rs || ce<cs)
+			//	throw new RuntimeException("This is invalid index range: ["+rs+":"+re+", "+cs+":"+ce+"]!");
 			rowStart=rs;
 			rowEnd=re;
 			colStart=cs;

@@ -67,4 +67,9 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 		symb.setMatrixOutput(output_name, ret);
 		symb.releaseMatrixInput(input1.get_name());
 	}
+	
+	public MMTSJType getMMTSJType()
+	{
+		return _type;
+	}
 }

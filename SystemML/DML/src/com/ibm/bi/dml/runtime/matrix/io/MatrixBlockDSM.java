@@ -127,6 +127,18 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 	}
 	
+	public static long estimateSizeOnDisk( long lrlen, long lclen, long lnonZeros, boolean sparse )
+	{		
+		if(sparse)
+		{
+			return lrlen*4 + lnonZeros*12 + 9;	
+		}
+		else
+		{
+			return lrlen*lclen*8 + 9;
+		}
+	}
+	
 	public static long estimateSize(long nrows, long ncols, double sparsity)
 	{
 		long size=44;//the basic variables and references sizes

@@ -563,6 +563,13 @@ public class MRJobInstruction extends Instruction
 		throw new DMLRuntimeException("getAllIndexes(): Invalid method invokation for MRJobInstructions class.");
 	}
 
+	public boolean isMapOnly()
+	{
+		return (   (iv_shuffleInstructions == null || iv_shuffleInstructions.length()==0)
+				&& (iv_aggInstructions == null || iv_aggInstructions.length()==0)
+				&& (iv_otherInstructions == null || iv_otherInstructions.length()==0) );
+	}
+	
 	/*
 	 * Following attributes are populated by pulling out information from Symbol Table.
 	 * This is done just before a job is submitted/spawned.

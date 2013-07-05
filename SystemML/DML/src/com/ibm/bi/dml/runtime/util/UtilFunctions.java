@@ -91,4 +91,13 @@ public class UtilFunctions {
 	{
 		return (long) Math.floor( val + DOUBLE_EPS );
 	}
+	
+	public static boolean isIntegerNumber( String str )
+	{
+		byte[] c = str.getBytes();
+		for( int i=0; i<c.length; i++ )
+			if( c[i] < 48 || c[i] > 57 )
+				return false;
+		return true;
+	}
 }

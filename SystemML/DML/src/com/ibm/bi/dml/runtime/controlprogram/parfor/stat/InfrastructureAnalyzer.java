@@ -30,6 +30,8 @@ public class InfrastructureAnalyzer
 	public static long _remoteJVMMaxMem = -1;
 	public static long _remoteMRSortMem = -1;
 	public static boolean _localJT      = false;
+	public static long _blocksize       = -1;
+	
 	
 	//static initialization, called for each JVM (on each node)
 	static 
@@ -223,52 +225,25 @@ public class InfrastructureAnalyzer
 		//default value (if not specified)
 		return Math.min( getLocalMaxMemory(), getRemoteMaxMemory() );
 	}
-	
-	///////
-	//internal methods for analysis
-		
-	/**
-	 * Analyzes properties of local machine and JVM.
-	 */
-	private static void analyzeLocalMachine()
-	{
-		_localPar       = Runtime.getRuntime().availableProcessors();
-		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
-	}
-	
-	/**
-	 * Analyzes properties of hadoop cluster and configuration.
-	 */
-	private static void analyzeHadoopCluster()
-	{
-		try 
-		{
-			JobConf job = new JobConf(InfrastructureAnalyzer.class);
-			JobClient client = new JobClient(job);
-			ClusterStatus stat = client.getClusterStatus();
-			if( stat != null ) //if in cluster mode
-			{
-				_remotePar = stat.getTaskTrackers();
-				_remoteParMap = stat.getMaxMapTasks(); 
-				_remoteParReduce = stat.getMaxReduceTasks(); 
-				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
-				
-				//handle jvm max mem
-				String javaOpts = job.get("mapred.child.java.opts");
-				_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts);
-				
-				//analyze if local mode
-				String jobTracker = job.get("mapred.job.tracker", "local");
-				_localJT = jobTracker.equals("local");
-			}		
-		} 
-		catch (IOException e) 
-		{
-			throw new RuntimeException("Unable to analyze infrastructure.",e);
-		}
-	}
 
+	/**
+	 * Gets the HDFS blocksize of the used cluster in bytes.
+	 * 
+	 * @return
+	 */
+	public static long getHDFSBlockSize()
+	{
+		if( _blocksize == -1 )
+			analyzeHadoopCluster();
+		
+		return _blocksize;		
+	}
 	
+	/**
+	 * 
+	 * @param javaOpts
+	 * @return
+	 */
 	public static long extractMaxMemoryOpt(String javaOpts)
 	{
 		long ret = -1; //mem in bytes
@@ -308,6 +283,12 @@ public class InfrastructureAnalyzer
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param job
+	 * @param key
+	 * @param bytes
+	 */
 	public static void setMaxMemoryOpt(JobConf job, String key, long bytes)
 	{
 		String javaOptsOld = job.get( key );
@@ -331,5 +312,53 @@ public class InfrastructureAnalyzer
 		}
 		javaOptsNew = sb.toString().trim();		
 		job.set(key, javaOptsNew);
+	}
+	
+	///////
+	//internal methods for analysis
+		
+	/**
+	 * Analyzes properties of local machine and JVM.
+	 */
+	private static void analyzeLocalMachine()
+	{
+		_localPar       = Runtime.getRuntime().availableProcessors();
+		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
+	}
+	
+	/**
+	 * Analyzes properties of hadoop cluster and configuration.
+	 */
+	private static void analyzeHadoopCluster()
+	{
+		try 
+		{
+			JobConf job = new JobConf(InfrastructureAnalyzer.class);
+			JobClient client = new JobClient(job);
+			ClusterStatus stat = client.getClusterStatus();
+			if( stat != null ) //if in cluster mode
+			{
+				_remotePar = stat.getTaskTrackers();
+				_remoteParMap = stat.getMaxMapTasks(); 
+				_remoteParReduce = stat.getMaxReduceTasks(); 
+				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
+				
+				//handle jvm max mem
+				String javaOpts = job.get("mapred.child.java.opts");
+				_remoteJVMMaxMem = extractMaxMemoryOpt(javaOpts);
+				
+				//analyze if local mode
+				String jobTracker = job.get("mapred.job.tracker", "local");
+				_localJT = jobTracker.equals("local");
+				
+				//HDFS blocksize
+				String blocksize = job.get("dfs.block.size", "134217728");
+				_blocksize = Long.parseLong(blocksize);
+			}		
+		} 
+		catch (IOException e) 
+		{
+			throw new RuntimeException("Unable to analyze infrastructure.",e);
+		}
 	}
 }

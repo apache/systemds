@@ -232,7 +232,7 @@ public class DMLScript {
 			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetHopsDAGVisitStatus(prog);
 		}
-
+	
 		executeHadoop(dmlt, prog, defaultConfig);
 	}
 	
@@ -501,7 +501,6 @@ public class DMLScript {
 				_argVals.put("$"+index ,arg);
 				index++;
 			}
-
 		}
 	}
 	
@@ -659,7 +658,8 @@ public class DMLScript {
 
 		LOG.trace("Compile Status for executeHadoop is OK ");
 
-		//System.out.println("Estimated execution time: "+OpCostEstimator.getTimeEstimate(rtprog));
+		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
+		//System.out.println("Estimated costs: "+costs);
 		
 		/////////////////////////// execute program //////////////////////////////////////
 		Statistics.startRunTimer();		

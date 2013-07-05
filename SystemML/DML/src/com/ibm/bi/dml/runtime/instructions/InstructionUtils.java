@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions;
 
+import java.util.StringTokenizer;
+
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
@@ -7,16 +9,26 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class InstructionUtils {
-
-
-	public static int checkNumFields ( String str, int expected ) throws DMLRuntimeException {
-		String[] parts = str.split(Instruction.OPERAND_DELIM);
+public class InstructionUtils 
+{
+	/**
+	 * 
+	 * @param str
+	 * @param expected
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static int checkNumFields( String str, int expected ) 
+		throws DMLRuntimeException 
+	{
+		//note: split required for empty tokens
+		int numParts = str.split(Instruction.OPERAND_DELIM).length;
+		int numFields = numParts - 2; // -2 accounts for execType and opcode
 		
-		if ( parts.length - 2 != expected ) // -2 accounts for execType and opcode
-			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected + ") != is not equal to actual number(" + (parts.length-2) + ").");
+		if ( numFields != expected ) 
+			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected + ") != is not equal to actual number (" + numFields + ").");
 		
-		return parts.length - 2; 
+		return numFields; 
 	}
 	
 	/**
@@ -27,13 +39,17 @@ public class InstructionUtils {
 	 * @param str
 	 * @return 
 	 */
-	public static String[] getInstructionParts ( String str ) {
-		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		String[] ret = new String[parts.length-1]; // stripping-off the exectype
-		
-		ret[0] = parts[1]; // opcode
-		for ( int i=2; i < parts.length; i++ ) {
-			ret[i-1] = parts[i].split(Instruction.DATATYPE_PREFIX)[0];
+	public static String[] getInstructionParts( String str ) 
+	{
+		StringTokenizer st = new StringTokenizer( str, Instruction.OPERAND_DELIM );
+		String[] ret = new String[st.countTokens()-1];
+		st.nextToken(); // stripping-off the exectype
+		ret[0] = st.nextToken(); // opcode
+		int index = 1;
+		while( st.hasMoreTokens() ){
+			String tmp = st.nextToken();
+			int ix = tmp.indexOf(Instruction.DATATYPE_PREFIX);
+			ret[index++] = tmp.substring(0,((ix>=0)?ix:tmp.length()));	
 		}
 		return ret;
 	}
@@ -50,53 +66,82 @@ public class InstructionUtils {
 	 * @param str
 	 * @return
 	 */
-	public static String[] getInstructionPartsWithValueType ( String str ) {
+	public static String[] getInstructionPartsWithValueType( String str ) 
+	{
+		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.OPERAND_DELIM);
 		String[] ret = new String[parts.length-1]; // stripping-off the exectype
-		
 		ret[0] = parts[1]; // opcode
-		for ( int i=2; i < parts.length; i++ ) {
+		for( int i=1; i<parts.length; i++ )
 			ret[i-1] = parts[i];
-		}
+		
 		return ret;
 	}
 	
-	public static String getOpCode ( String str ) {
-		String[] parts = str.split(Instruction.OPERAND_DELIM);
-		return parts[1]; // parts[0] is the execution type
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static String getOpCode( String str ) 
+	{
+		int ix1 = str.indexOf(Instruction.OPERAND_DELIM);
+		int ix2 = str.indexOf(Instruction.OPERAND_DELIM, ix1+1);
+		return str.substring(ix1+1, ix2);
 	}
 	
-	
-	public static MRINSTRUCTION_TYPE getMRType ( String str ) throws DMLUnsupportedOperationException {
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static MRINSTRUCTION_TYPE getMRType( String str ) 
+		throws DMLUnsupportedOperationException 
+	{
 		String opcode = getOpCode(str);
-		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get ( opcode ); 
+		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode ); 
 		return mrtype;
 	}
 	
-	public static CPINSTRUCTION_TYPE getCPType ( String str ) throws DMLUnsupportedOperationException {
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static CPINSTRUCTION_TYPE getCPType( String str ) 
+		throws DMLUnsupportedOperationException 
+	{
 		String opcode = getOpCode(str);
-		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get ( opcode ); 
+		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get( opcode ); 
 		return cptype;
 	}
 	
-	public static boolean isBuiltinFunction ( String opcode ) {
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static boolean isBuiltinFunction ( String opcode ) 
+	{
 		Builtin.BuiltinFunctionCode bfc = Builtin.String2BuiltinFunctionCode.get(opcode);
 		return (bfc != null);
 	}
 	
-	public static boolean isOperand(String str) {
+	public static boolean isOperand(String str) 
+	{
+		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.DATATYPE_PREFIX);
-		if (parts.length > 1){
-			return true;
-		}
-		else {
-			return false;
-		}
+		return (parts.length > 1);
 	}
 	
-	public static boolean isDistributedCacheUsed(String str) {
-		for(String inst : str.split(Instruction.INSTRUCTION_DELIM)) {
-			String opcode = InstructionUtils.getOpCode(inst);
+	public static boolean isDistributedCacheUsed(String str) 
+	{	
+		String[] parts = str.split(Instruction.INSTRUCTION_DELIM);
+		for(String inst : parts) 
+		{
+			String opcode = getOpCode(inst);
 			if(opcode.equalsIgnoreCase("mvmult") || opcode.equalsIgnoreCase("append")) // || opcode.equalsIgnoreCase("vmmult"))
 				return true;
 		}

@@ -184,11 +184,27 @@ public class OptimizationWrapper
 			throw new DMLRuntimeException("ParFOR Optimizer "+otype+" requires cost model "+cmtype+" that is not suported yet.");
 		}
 		
+		OptTree tree = null;
+		
 		//recompile parfor body 
 		if(   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 		   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
 		{
-			//NOTES on recompilation:
+			//debug output before recompilation
+			if( LOG.isDebugEnabled() ) 
+			{
+				try {
+					tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
+					LOG.debug("ParFOR Opt: Input plan (before recompilation):\n" + tree.explain(false));
+					OptTreeConverter.clear();
+				}
+				catch(Exception ex)
+				{
+					throw new DMLRuntimeException("Unable to create opt tree.", ex);
+				}
+			}
+			
+			//recompilation of parfor body:
 			//* clone of variables in order to allow for statistics propagation across DAGs
 			//(tid=0, because deep copies created after opt)
 			try{
@@ -197,15 +213,12 @@ public class OptimizationWrapper
 			}catch(Exception ex){
 				throw new DMLRuntimeException(ex);
 			}
-			//Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), ec.getSymbolTable().get_variableMap(), 0);
 		}
 		
-		//create opt tree
-		OptTree tree = null;
-		try
-		{
+		//create opt tree (before optimization)
+		try {
 			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
-			LOG.debug("ParFOR Opt: Created plan:\n" + tree.explain(false));
+			LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
 		}
 		catch(Exception ex)
 		{
@@ -219,7 +232,7 @@ public class OptimizationWrapper
 		//core optimize
 		opt.optimize( sb, pb, tree, est, ec );
 		
-		LOG.debug("ParFOR Opt: Optimized plan: \n" + tree.explain(false));
+		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 		LOG.trace("ParFOR Opt: Optimized plan in "+time.stop()+"ms.");
 		
 		

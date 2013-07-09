@@ -129,8 +129,8 @@ foreach( i=1:numModels, .combine=cbind, .multicombine=TRUE ) %dopar%{ #.inorder=
               r <- r - as.numeric(tau) * Hd
               
               #break
-              shouldBreak <- true;
-              innerconverge <- true;
+              shouldBreak <- TRUE;
+              innerconverge <- TRUE;
           } 
        
           if (!shouldBreak) 

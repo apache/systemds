@@ -125,8 +125,8 @@ for( i in 1:numModels )
               r <- r - as.numeric(tau) * Hd
               
               #break
-              shouldBreak <- true;
-              innerconverge <- true;
+              shouldBreak <- TRUE;
+              innerconverge <- TRUE;
           } 
        
           if (!shouldBreak) 

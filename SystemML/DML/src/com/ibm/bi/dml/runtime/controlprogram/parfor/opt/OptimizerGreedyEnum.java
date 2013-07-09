@@ -95,7 +95,7 @@ class OptimizerGreedyEnum extends Optimizer
 				{
 					//System.out.println("Create and eval plan for node: "+ac.getID());
 					ProgramBlock cPB = ProgramRecompiler.recompile( ac ); 
-					OptNode rc = OptTreeConverter.rCreateOptNode(cPB, ec.getSymbolTable().get_variableMap(), topLevel, false); 
+					OptNode rc = OptTreeConverter.rCreateOptNode(cPB, ec.getVariables(), topLevel, false); 
 
 					double cM = est.getEstimate(TestMeasure.MEMORY_USAGE, rc);
 					System.out.println("cM="+cM);

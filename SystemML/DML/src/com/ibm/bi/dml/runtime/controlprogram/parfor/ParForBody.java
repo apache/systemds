@@ -31,7 +31,7 @@ public class ParForBody
 
 	public LocalVariableMap getVariables() 
 	{
-		return _ec.getSymbolTable().get_variableMap();
+		return _ec.getVariables();
 	}
 
 	public ArrayList<String> getResultVarNames() 

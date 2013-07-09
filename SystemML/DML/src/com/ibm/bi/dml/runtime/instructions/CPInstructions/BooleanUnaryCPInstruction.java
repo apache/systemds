@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -36,9 +36,9 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so = ec.getScalarInput(input1.get_name(), input1.get_valueType());
 		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 
@@ -49,6 +49,6 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction{
 		sores = (ScalarObject) new BooleanObject(rval);
 		
 		// 3) Put the result value into ProgramBlock
-		symb.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.get_name(), sores);
 	}
 }

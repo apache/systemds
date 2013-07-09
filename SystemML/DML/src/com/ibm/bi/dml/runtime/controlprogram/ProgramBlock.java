@@ -119,7 +119,6 @@ public class ProgramBlock
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		ArrayList<Instruction> tmp = _inst;
 
 		//dynamically recompile instructions if enabled and required
@@ -129,7 +128,7 @@ public class ProgramBlock
 				&& _sb != null 
 				&& Recompiler.requiresRecompilation(_sb.get_hops())  )
 			{
-				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), symb.get_variableMap(), _tid);
+				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), ec.getVariables(), _tid);
 			}
 		}
 		catch(Exception ex)
@@ -153,7 +152,6 @@ public class ProgramBlock
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hops hops, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		ArrayList<Instruction> tmp = inst;
 		
 		//dynamically recompile instructions if enabled and required
@@ -162,7 +160,7 @@ public class ProgramBlock
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& Recompiler.requiresRecompilation(hops)            )
 			{
-				tmp = Recompiler.recompileHopsDag(hops, symb.get_variableMap(), _tid);
+				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), _tid);
 			}
 		}
 		catch(Exception ex)
@@ -230,7 +228,7 @@ public class ProgramBlock
 		
 		//get return value
 		if(!isSQL)
-			ret = (ScalarObject) ec.getSymbolTable().getScalarInput(retName, retType);
+			ret = (ScalarObject) ec.getScalarInput(retName, retType);
 		else {
 			throw new DMLRuntimeException("Encountered unimplemented feature!");
 			//ret = (ScalarObject) ec.getVariable(retName, retType);
@@ -262,7 +260,6 @@ public class ProgramBlock
 	private void executeSingleInstruction( Instruction currInst, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		try 
 		{
 			long t0 = 0, t1 = 0;
@@ -270,7 +267,7 @@ public class ProgramBlock
 			if( LOG.isTraceEnabled() )
 			{
 				t0 = System.nanoTime();
-				LOG.trace("\n Variables: " + symb.get_variableMap().toString());
+				LOG.trace("\n Variables: " + ec.getVariables().toString());
 				LOG.trace("Instruction: " + currInst.toString());
 			}
 		
@@ -289,7 +286,7 @@ public class ProgramBlock
 					/* Populate returned stats into symbol table of matrices */
 					for ( int index=0; index < jb.getMetaData().length; index++) {
 						String varname = currMRInst.getOutputVars()[index];
-						symb.setMetaData(varname, jb.getMetaData()[index]);
+						ec.setMetaData(varname, jb.getMetaData()[index]);
 					}
 				}
 				else if ( jb.getMetaData().length > 0 ) 
@@ -298,7 +295,7 @@ public class ProgramBlock
 					for ( int index=0; index < jb.getMetaData().length; index++) {
 						String varname = currMRInst.getOutputVars()[index];
 						MatrixCharacteristics mc = ((MatrixDimensionsMetaData)jb.getMetaData(index)).getMatrixCharacteristics();
-						symb.getVariable(varname).updateMatrixCharacteristics(mc);
+						ec.getVariable(varname).updateMatrixCharacteristics(mc);
 					}
 				}
 				
@@ -318,15 +315,15 @@ public class ProgramBlock
 				{
 					//update labels if required
 					//note: no exchange of updated instruction as labels might change in the general case
-					String updInst = RunMRJobs.updateLabels(currInst.toString(), symb.get_variableMap());
+					String updInst = RunMRJobs.updateLabels(currInst.toString(), ec.getVariables());
 					tmp = CPInstructionParser.parseSingleInstruction(updInst);
 				}
 
 				//execute original or updated instruction
 				if(tmp.getCPInstructionType() == CPINSTRUCTION_TYPE.External)
-					tmp.processInstruction(this, symb); 
+					tmp.processInstruction(this, ec); //FIXME
 				else
-					tmp.processInstruction(symb);
+					tmp.processInstruction(ec);
 				
 				if (LOG.isTraceEnabled()){	
 					t1 = System.nanoTime();
@@ -347,11 +344,6 @@ public class ProgramBlock
 	private boolean isRemoveVariableInstruction(Instruction inst)
 	{
 		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );
-	}
-	
-	public SymbolTable createSymbolTable() {
-		SymbolTable st = new SymbolTable(true);
-		return st;
 	}
 	
 	public void printMe() {

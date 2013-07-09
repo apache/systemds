@@ -3,36 +3,51 @@ package com.ibm.bi.dml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.matrix.MetaData;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLExecutionStatistics;
+import com.ibm.bi.dml.utils.CacheException;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 public class ExecutionContext 
-{	
-	private SymbolTable _symb;
+{
+	//symbol table
+	private LocalVariableMap _variables;
 	
 	private NetezzaConnector nzConnector;
 	private boolean debug;
 	ArrayList<SQLExecutionStatistics> statistics;
+	
+	public ExecutionContext()
+	{
+		this( true );
+	}
 
 	public ExecutionContext(NetezzaConnector nzCon)
 	{
+		this( true );
 		nzConnector = nzCon;
 		statistics = new ArrayList<SQLExecutionStatistics>();
 	}
 	
-	public ExecutionContext()
+	public ExecutionContext( boolean allocateVariableMap )
 	{
 		nzConnector = null;
 		statistics = null;
-		_symb = null;
-	}
-	
-	public ExecutionContext( SymbolTable symb )
-	{
-		nzConnector = null;
-		statistics = null;
-		_symb = symb;
+		if( allocateVariableMap )
+			_variables = new LocalVariableMap();
+		else
+			_variables = null;
 	}
 	
 	public void addStatistic(int instructionId, long runtime, String opString)
@@ -67,14 +82,6 @@ public class ExecutionContext
 	public ArrayList<SQLExecutionStatistics> getStatistics() {
 		return statistics;
 	}
-
-	public SymbolTable getSymbolTable() {
-		return _symb;
-	}
-	
-	public void setSymbolTable(SymbolTable st) {
-		_symb = st;
-	}
 	
 	public boolean isDebug() {
 		return debug;
@@ -86,12 +93,34 @@ public class ExecutionContext
 	public NetezzaConnector getNzConnector() {
 		return nzConnector;
 	}
+
+
 	
-/*	public void setVariable(String name, Data val) throws DMLRuntimeException
-	{
-		_variables.put(name, val);
+	public LocalVariableMap getVariables() {
+		return _variables;
 	}
 	
+	public void setVariables(LocalVariableMap vars) {
+		_variables = vars;
+	}
+	
+	/* -------------------------------------------------------
+	 * Methods to handle variables and associated data objects
+	 * -------------------------------------------------------
+	 */
+	
+	public Data getVariable(String name) {
+		return _variables.get(name);
+	}
+	
+	public void setVariable(String name, Data val) throws DMLRuntimeException{
+		_variables.put(name, val);
+	}
+
+	public void removeVariable(String name) {
+		_variables.remove(name);
+	}
+
 	public String getVariableString(String name, boolean forSQL)
 	{
 		Data obj = _variables.get(name);
@@ -106,9 +135,38 @@ public class ExecutionContext
 		}
 		else return name;
 	}
+
+	public void setMetaData(String fname, MetaData md) throws DMLRuntimeException {
+		_variables.get(fname).setMetaData(md);
+	}
 	
-	public Data getVariable(String name, ValueType vt) {
-		Data obj = _variables.get(name);
+	public MetaData getMetaData(String varname) throws DMLRuntimeException {
+		return _variables.get(varname).getMetaData();
+	}
+	
+	public void removeMetaData(String varname) throws DMLRuntimeException {
+		_variables.get(varname).removeMetaData();
+	}
+	
+	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {
+		try {
+			MatrixObject mobj = (MatrixObject) this.getVariable(varName);
+			return mobj.acquireRead();
+		} catch (CacheException e) {
+			throw new DMLRuntimeException( e );
+		}
+	}
+	
+	public void releaseMatrixInput(String varName) throws DMLRuntimeException {
+		try {
+			((MatrixObject)this.getVariable(varName)).release();
+		} catch (CacheException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+	
+	public ScalarObject getScalarInput(String name, ValueType vt) {
+		Data obj = getVariable(name);
 		if (obj == null) {
 			try {
 				switch (vt) {
@@ -128,12 +186,89 @@ public class ExecutionContext
 					StringObject stringObj = new StringObject(name);
 					return stringObj;
 				default:
-					throw new DMLRuntimeException("ERROR: Unknown variable: " + name + ", or unknown value type: " + vt);
+					throw new DMLRuntimeException("Unknown variable: " + name + ", or unknown value type: " + vt);
 				}
-			} catch (Exception e) {
+			} 
+			catch (Exception e) 
+			{	
 				e.printStackTrace();
 			}
 		}
-		return obj;
+		return (ScalarObject) obj;
 	}
-*/}
+
+	
+	public void setScalarOutput(String varName, ScalarObject so) throws DMLRuntimeException {
+		this.setVariable(varName, so);
+	}
+	
+	public void setMatrixOutput(String varName, MatrixBlock outputData) throws DMLRuntimeException {
+		MatrixObject sores = (MatrixObject) this.getVariable (varName);
+        
+		try {
+			sores.acquireModify (outputData);
+	        
+	        // Output matrix is stored in cache and it is written to HDFS, on demand, at a later point in time. 
+	        // downgrade() and exportData() need to be called only if we write to HDFS.
+	        //sores.downgrade();
+	        //sores.exportData();
+	        sores.release();
+	        
+	        this.setVariable (varName, sores);
+		
+		} catch ( CacheException e ) {
+			throw new DMLRuntimeException( e );
+		}
+	}
+	
+	/**
+	 * Pin a given list of variables i.e., set the "clean up" state in 
+	 * corresponding matrix objects, so that the cached data inside these
+	 * objects is not cleared and the corresponding HDFS files are not 
+	 * deleted (through rmvar instructions). 
+	 * 
+	 * The function returns the OLD "clean up" state of matrix objects.
+	 */
+	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
+	{
+		HashMap<String, Boolean> varsState = new HashMap<String,Boolean>();
+		
+		for( String var : varList )
+		{
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObject )
+			{
+				//System.out.println("pin ("+_ID+") "+var);
+				MatrixObject mo = (MatrixObject)dat;
+				varsState.put( var, mo.isCleanupEnabled() );
+				mo.enableCleanup(false); 
+			}
+		}
+		return varsState;
+	}
+	
+	/**
+	 * Unpin the a given list of variables by setting their "cleanup" status
+	 * to the values specified by <code>varsStats</code>.
+	 * 
+	 * Typical usage:
+	 *    <code> 
+	 *    oldStatus = pinVariables(varList);
+	 *    ...
+	 *    unpinVariables(varList, oldStatus);
+	 *    </code>
+	 * 
+	 * i.e., a call to unpinVariables() is preceded by pinVariables(). 
+	 */
+	public void unpinVariables(ArrayList<String> varList, HashMap<String,Boolean> varsState)
+	{
+		for( String var : varList)
+		{
+			//System.out.println("unpin ("+_ID+") "+var);
+			
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObject )
+				((MatrixObject)dat).enableCleanup(varsState.get(var));
+		}
+	}
+}

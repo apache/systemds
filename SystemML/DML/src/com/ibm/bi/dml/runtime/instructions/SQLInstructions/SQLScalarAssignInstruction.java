@@ -82,7 +82,7 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 			if(to == -1)
 				break;
 			String name = prepSQL.substring(from + 2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getSymbolTable().getVariableString(name, hasSelect));
+			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, hasSelect));
 		}
 	}
 	
@@ -102,7 +102,7 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 		
 		if(!hasSelect)
 		{
-			ec.getSymbolTable().setVariable(this.prepName, ec.getSymbolTable().getScalarInput(this.prepSQL, vt));
+			ec.setVariable(this.prepName, ec.getScalarInput(this.prepSQL, vt));
 			return null;
 		}
 		try
@@ -110,23 +110,23 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase {
 			if(this.vt == ValueType.BOOLEAN)
 			{
 				boolean val = ec.getNzConnector().getScalarBoolean(this.prepSQL);
-				ec.getSymbolTable().setVariable(this.prepName, new BooleanObject(val));
+				ec.setVariable(this.prepName, new BooleanObject(val));
 			}
 			else if(this.vt == ValueType.DOUBLE)
 			{
 				double val = ec.getNzConnector().getScalarDouble(this.prepSQL);
 				//System.out.println("VALUE FOR VARIABLE " + prepName + " = " + val);
-				ec.getSymbolTable().setVariable(this.prepName, new DoubleObject(val));
+				ec.setVariable(this.prepName, new DoubleObject(val));
 			}
 			else if(this.vt == ValueType.INT)
 			{
 				int val = ec.getNzConnector().getScalarInteger(this.prepSQL);
-				ec.getSymbolTable().setVariable(this.prepName, new IntObject(val));
+				ec.setVariable(this.prepName, new IntObject(val));
 			}
 			else if(this.vt == ValueType.STRING)
 			{
 				String val = ec.getNzConnector().getScalarString(this.prepSQL);
-				ec.getSymbolTable().setVariable(this.prepName, new StringObject(val));
+				ec.setVariable(this.prepName, new StringObject(val));
 			}
 		}
 		catch(Exception e)

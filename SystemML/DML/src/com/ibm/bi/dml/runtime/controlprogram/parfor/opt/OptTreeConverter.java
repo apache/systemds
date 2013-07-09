@@ -83,12 +83,12 @@ public class OptTreeConverter
 			case ABSTRACT_PLAN:
 				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
 				HashSet<String> memo = new HashSet<String>();
-				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getSymbolTable().get_variableMap(), true, memo);	
+				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, memo);	
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
 				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
 				break;
 			case RUNTIME_PLAN:
-				root = rCreateOptNode( pfpb, ec.getSymbolTable().get_variableMap(), true, true );
+				root = rCreateOptNode( pfpb, ec.getVariables(), true, true );
 				break;
 			default:
 				throw new DMLRuntimeException("Optimizer plan input type "+type+" not supported.");
@@ -128,7 +128,7 @@ public class OptTreeConverter
 		
 		try
 		{
-			root = rCreateAbstractOptNode( pfsb, pfpb, ec.getSymbolTable().get_variableMap(), true, memo );
+			root = rCreateAbstractOptNode( pfsb, pfpb, ec.getVariables(), true, memo );
 			tree = new OptTree(ck, cm, root);
 		}
 		catch(HopsException he)

@@ -78,7 +78,6 @@ public class WhileProgramBlock extends ProgramBlock
 	private BooleanObject executePredicate(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		BooleanObject result = null;
 		try
 		{
@@ -93,11 +92,11 @@ public class WhileProgramBlock extends ProgramBlock
 					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
 			else
-				result = (BooleanObject)symb.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
+				result = (BooleanObject)ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("\nWhile predicate variables: "+ symb.get_variableMap().toString());
+			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.", ex);
 		}
 		
@@ -111,51 +110,32 @@ public class WhileProgramBlock extends ProgramBlock
 
 		BooleanObject predResult = executePredicate(ec); 
 		
-		SymbolTable symb = ec.getSymbolTable();
-		while(predResult.getBooleanValue()){
-				
-			// for each program block
-			for (int i=0; i < this._childBlocks.size(); i++){
-				ProgramBlock pb = this._childBlocks.get(i);
-				
-				SymbolTable childSymb = symb.getChildTable(i);
-				childSymb.copy_variableMap(symb.get_variableMap());
-				ec.setSymbolTable(childSymb);
-
-				//pb.setVariables(_variables);
-				
-				try {
+		//execute while loop
+		try 
+		{
+			while(predResult.getBooleanValue())
+			{		
+				//execute all child blocks
+				for( ProgramBlock pb : _childBlocks )
 					pb.execute(ec);
-				}
-				catch(Exception e){
-					LOG.trace("\nWhile predicate variables: "+ symb.get_variableMap().toString());
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
-				}
 				
-				//_variables = pb._variables;
-				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
-				ec.setSymbolTable(symb);
-
+				predResult = executePredicate(ec);
 			}
-			predResult = executePredicate(ec);
+		}
+		catch(Exception e)
+		{
+			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while program block.", e);
 		}
 		
+		//execute exit instructions
 		try {
 			executeInstructions(_exitInstructions, ec);
 		}
-		catch(Exception e){
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing exit instructions ", e);
+		catch(Exception e)
+		{
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing while exit instructions.", e);
 		}
-		
-	}
-	
-	@Override
-	public SymbolTable createSymbolTable() {
-		SymbolTable st = new SymbolTable(true);
-		for (int i=0; i < _childBlocks.size(); i++) {
-			st.addChildTable(_childBlocks.get(i).createSymbolTable());
-		}
-		return st;
 	}
 
 	public ArrayList<ProgramBlock> getChildBlocks() {
@@ -167,7 +147,6 @@ public class WhileProgramBlock extends ProgramBlock
 		_childBlocks = childs;
 	}
 	
-
 	private String findPredicateResultVar ( ) {
 		String result = null;
 		for ( Instruction si : _predicate ) {

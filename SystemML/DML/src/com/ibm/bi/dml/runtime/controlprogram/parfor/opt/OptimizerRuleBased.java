@@ -81,7 +81,7 @@ public class OptimizerRuleBased extends Optimizer
 {
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations
-	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;    
+	public static final int MAX_REPLICATION_FACTOR_PARTITIONING = 5;     
 	public static final int MAX_REPLICATION_FACTOR_EXPORT = 5;    
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
@@ -166,11 +166,11 @@ public class OptimizerRuleBased extends Optimizer
 		//OPTIMIZE PARFOR PLAN
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
-		rewriteSetDataPartitioner( pn, ec.getSymbolTable().get_variableMap() );
+		rewriteSetDataPartitioner( pn, ec.getVariables() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
-		boolean flagLIX = rewriteSetResultPartitioning( pn, M, ec.getSymbolTable().get_variableMap() );
+		boolean flagLIX = rewriteSetResultPartitioning( pn, M, ec.getVariables() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 		
 		// rewrite 3: execution strategy
@@ -180,13 +180,13 @@ public class OptimizerRuleBased extends Optimizer
 		if( pn.getExecType() == ExecType.MR )
 		{
 			// rewrite 4: data colocation
-			rewriteDataColocation( pn, ec.getSymbolTable().get_variableMap() );
+			rewriteDataColocation( pn, ec.getVariables() );
 			
 			// rewrite 5: rewrite set partition replication factor
-			rewriteSetPartitionReplicationFactor( pn, ec.getSymbolTable().get_variableMap() );
+			rewriteSetPartitionReplicationFactor( pn, ec.getVariables() );
 			
 			// rewrite 6: rewrite set partition replication factor
-			rewriteSetExportReplicationFactor( pn, ec.getSymbolTable().get_variableMap() );
+			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
 			// rewrite 7: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
@@ -207,7 +207,7 @@ public class OptimizerRuleBased extends Optimizer
 		}	
 		
 		//rewrite 10: set result merge
-		rewriteSetResultMerge( pn, ec.getSymbolTable().get_variableMap(), true );
+		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
 		//rewrite 11: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
@@ -216,7 +216,7 @@ public class OptimizerRuleBased extends Optimizer
 		//Final rewrites for cleanup / minor improvements
 		
 		// rewrite 12: parfor (in recursive functions) to for
-		rewriteRemoveRecursiveParFor( pn, ec.getSymbolTable().get_variableMap() );
+		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
 		// rewrite 13: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );

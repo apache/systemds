@@ -10,7 +10,6 @@ import junit.framework.Assert;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParForBody;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
@@ -92,8 +91,6 @@ public class ParForParWorkerTest extends ParWorker
 		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
 		pbs.add(new ProgramBlock(prog));
 		ExecutionContext ec = new ExecutionContext();
-		SymbolTable symb = prog.createSymbolTable();
-		ec.setSymbolTable(symb);
 		ParForBody body = new ParForBody(pbs,new ArrayList<String>(),ec);
 		
 		_workerID = -1;

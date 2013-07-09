@@ -10,7 +10,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -63,7 +62,7 @@ public abstract class ParWorker
 	 */
 	public LocalVariableMap getVariables()
 	{
-		return _ec.getSymbolTable().get_variableMap();
+		return _ec.getVariables();
 	}
 	
 	/**
@@ -138,28 +137,11 @@ public abstract class ParWorker
 			//System.out.println(" EXECUTE ITERATION: "+indexVal.getName()+"="+indexVal.getIntValue());
 			
 			//set index values
-			SymbolTable symb = _ec.getSymbolTable();
-			//set index values
-			symb.get_variableMap().put(indexVal.getName(), indexVal);
+			_ec.setVariable(indexVal.getName(), indexVal);
 			
 			// for each program block
-			int i=0;
 			for (ProgramBlock pb : _childBlocks)
-			{		
-				//pb.setVariables(_variables);
-				SymbolTable childSymb = symb.getChildTable(i);
-				childSymb.copy_variableMap(symb.get_variableMap());
-				_ec.setSymbolTable(childSymb);
-				
 				pb.execute(_ec);
-
-				//update symbol table
-				//_variables = pb.getVariables();
-				symb.set_variableMap( _ec.getSymbolTable().get_variableMap() );
-				_ec.setSymbolTable(symb);
-				
-				i++;
-			}
 					
 			_numIters++;
 			
@@ -204,28 +186,11 @@ public abstract class ParWorker
 		for( int i=lFrom; i<=lTo; i+=lIncr )
 		{
 			//set index values
-			SymbolTable symb = _ec.getSymbolTable();
-			symb.get_variableMap().put(lVarName, new IntObject(lVarName,i));
+			_ec.setVariable(lVarName, new IntObject(lVarName,i));
 			
 			// for each program block
-			int j=0;
 			for (ProgramBlock pb : _childBlocks)
-			{					
-				//pb.setVariables(_variables);
-				
-				SymbolTable childSymb = symb.getChildTable(j);
-				childSymb.copy_variableMap(symb.get_variableMap());
-				_ec.setSymbolTable(childSymb);
-				
 				pb.execute(_ec);
-
-				//update symbol table
-				//_variables = pb.getVariables();
-				symb.set_variableMap( _ec.getSymbolTable().get_variableMap() );
-				_ec.setSymbolTable(symb);
-				
-				j++;
-			}
 					
 			_numIters++;
 			

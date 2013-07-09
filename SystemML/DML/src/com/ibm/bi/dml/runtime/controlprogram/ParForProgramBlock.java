@@ -171,7 +171,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = true;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
-	public static final boolean ALLOW_REUSE_MR_JVMS         = false;     // potential benefits: less setup costs per task
+	public static final boolean ALLOW_REUSE_MR_JVMS         = false;     // potential benefits: less setup costs per task, NOTE> cannot be used MR4490 in Hadoop 1.0.3, still not fixed in 1.1.1
 	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
@@ -416,8 +416,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
-		SymbolTable symb = ec.getSymbolTable();
-		
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
 
@@ -458,7 +456,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			ArrayList<String> vars = (_sb!=null) ? _sb.getReadOnlyParentVars() : null;
 			for( String var : vars )
 			{
-				Data dat = symb.getVariable(var);
+				Data dat = ec.getVariable(var);
 				if( dat != null && dat instanceof MatrixObject )
 				{
 					MatrixObject moVar = (MatrixObject) dat;
@@ -476,14 +474,14 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( OptimizerRuleBased.getRIXExecType(moVar, dpf) == LopProperties.ExecType.CP_FILE )
 								dp.disableBinaryCell();
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
-							symb.setVariable(var, moVarNew);
+							ec.setVariable(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
 							LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
 						}
 					}
 					else if( ALLOW_UNSCOPED_PARTITIONING ) //note: vars partitioned and not recompiled can only happen in case of unscoped partitioning over multiple top-level parfors.
 					{
-						//only recompile if input matrix is already paritioned.
+						//only recompile if input matrix is already partitioned.
 						Timing ltime = new Timing();
 						ltime.start();
 						ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
@@ -514,7 +512,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//preserve result variables of cleanup
-		pinResultVariables(symb);
+		pinResultVariables(ec);
 		//_resultVarsState = pinVariables(_resultVars); //TODO consolidate
 		
 		try 
@@ -539,12 +537,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//clear result variables 
-		unpinResultVariables(symb);
+		unpinResultVariables(ec);
 		//unpinVariables(_resultVars,_resultVarsState); TODO consolidate
 
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
-		symb.setVariable(iterVarName, iterVar);
+		ec.setVariable(iterVarName, iterVar);
 		
 		//ensure that subsequent program blocks only see partitioned data if allowed
 		if( !ALLOW_UNSCOPED_PARTITIONING )
@@ -553,7 +551,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( String var : _variablesDPOriginal.keySet() )
 			{
 				MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
-				symb.setVariable(var, mo);
+				ec.setVariable(var, mo);
 			}
 		}
 		
@@ -707,8 +705,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			time.start();
 		}
 		
-		SymbolTable symb = ec.getSymbolTable();
-		
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
 		//        cannot reuse serialized string, since variables are serialized as well.
@@ -746,10 +742,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
 		//write matrices to HDFS 
-		exportMatricesToHDFS(symb);
+		exportMatricesToHDFS(ec);
 				
 		// Step 3) submit MR job (wait for finished work)
-		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)symb.getVariable(_colocatedDPMatrix) : null;
+		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj,
 				                                          ExecMode.CLUSTER, _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(ec),
 				                                          (ALLOW_REUSE_MR_JVMS & _jvmReuse) );
@@ -777,13 +773,13 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * Pin state of result variables before execution.
 	 */
-	private void pinResultVariables(SymbolTable symb)
+	private void pinResultVariables(ExecutionContext ec)
 	{
 		_resultVarsState = new ArrayList<Boolean>();
 		
 		for( String var : _resultVars )
 		{
-			Data dat = symb.getVariable(var);
+			Data dat = ec.getVariable(var);
 			if( dat instanceof MatrixObject )
 			{
 				MatrixObject mo = (MatrixObject)dat;
@@ -796,12 +792,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * Unpin (revert) state of result variables after execution.
 	 */
-	private void unpinResultVariables(SymbolTable symb)
+	private void unpinResultVariables(ExecutionContext ec)
 	{
 		for( int i=0; i<_resultVars.size(); i++ )
 		{
 			String var = _resultVars.get(i);
-			Data dat = symb.getVariable(var);
+			Data dat = ec.getVariable(var);
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).enableCleanup(_resultVarsState.get(i));
 		}
@@ -881,12 +877,12 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @throws CacheException
 	 */
-	private void exportMatricesToHDFS( SymbolTable symb ) 
+	private void exportMatricesToHDFS( ExecutionContext ec ) 
 		throws CacheException 
 	{
-		for (String key : symb.get_variableMap().keySet() ) 
+		for (String key : ec.getVariables().keySet() ) 
 		{
-			Data d = symb.getVariable(key);
+			Data d = ec.getVariable(key);
 			if ( d.getDataType() == DataType.MATRIX )
 			{
 				MatrixObject mo = (MatrixObject)d;
@@ -940,7 +936,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			}             
 			
 			// Deep copy Execution Context
-			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec, this);
+			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
 			
 			//create the actual parallel worker
 			ParForBody body = new ParForBody( cpChildBlocks, _resultVars, cpEc );
@@ -1166,8 +1162,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void consolidateAndCheckResults(ExecutionContext ec, int expIters, int expTasks, int numIters, int numTasks, LocalVariableMap [] results) 
 		throws DMLRuntimeException
 	{
-		SymbolTable symb = ec.getSymbolTable();
-		
 		//result merge
 		if( checkParallelRemoteResultMerge() )
 		{
@@ -1203,7 +1197,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( String var : _resultVars ) //foreach non-local write
 			{			
 				String varname = var;
-				MatrixObject out = (MatrixObject) symb.getVariable(varname);
+				MatrixObject out = (MatrixObject) ec.getVariable(varname);
 				MatrixObject[] in = new MatrixObject[ results.length ];
 				for( int i=0; i< results.length; i++ )
 					in[i] = (MatrixObject) results[i].get( varname ); 			
@@ -1214,15 +1208,15 @@ public class ParForProgramBlock extends ForProgramBlock
 					outNew = rm.executeParallelMerge( _numThreads );
 				else
 					outNew = rm.executeSerialMerge(); 			
-				symb.setVariable(varname, outNew);
+				ec.setVariable(varname, outNew);
 		
 				//cleanup of intermediate result variables
 				cleanWorkerResultVariables( out, in );
 			}
 		}
 		//handle unscoped variables (vars created in parfor, but potentially used afterwards)
-		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && symb.get_variableMap() != null ) //sb might be null for nested parallelism
-			createEmptyUnscopedVariables( symb.get_variableMap(), _sb );
+		if( CREATE_UNSCOPED_RESULTVARS && _sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
+			createEmptyUnscopedVariables( ec.getVariables(), _sb );
 		
 		//check expected counters
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
@@ -1444,8 +1438,8 @@ public class ParForProgramBlock extends ForProgramBlock
 						break;
 				
 					MatrixObject out = null;
-					synchronized( _ec.getSymbolTable().get_variableMap() ){
-						out = (MatrixObject) _ec.getSymbolTable().getVariable(varname);
+					synchronized( _ec.getVariables() ){
+						out = (MatrixObject) _ec.getVariable(varname);
 					}
 					
 					MatrixObject[] in = new MatrixObject[ _refVars.length ];
@@ -1460,8 +1454,8 @@ public class ParForProgramBlock extends ForProgramBlock
 					else
 						outNew = rm.executeSerialMerge(); 	
 					
-					synchronized( _ec.getSymbolTable().get_variableMap() ){
-					_ec.getSymbolTable().get_variableMap().put( varname, outNew);
+					synchronized( _ec.getVariables() ){
+						_ec.getVariables().put( varname, outNew);
 					}
 		
 					//cleanup of intermediate result variables

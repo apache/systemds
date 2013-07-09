@@ -6,7 +6,7 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -318,7 +318,7 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 
 	//private int getRefCount(ProgramBlock pb, String var, boolean breakIfMultipleRefs) {
-	private int getRefCount(SymbolTable symb, Data d, boolean breakIfMultipleRefs) {
+	private int getRefCount(ExecutionContext ec, Data d, boolean breakIfMultipleRefs) {
 		
 		//Data d = pb.getVariable(var);
 		
@@ -327,9 +327,9 @@ public class VariableCPInstruction extends CPInstruction {
 		
 		int refCount = 0;
 		//int hash = d.hashCode();
-		for( String key : symb.get_variableMap().keySet() ) {
+		for( String key : ec.getVariables().keySet() ) {
 			//System.out.println("    probing for " + key + ": " + pb.getVariable(key));
-			if ( symb.getVariable(key).equals(d) ) {
+			if ( ec.getVariable(key).equals(d) ) {
 				refCount++;
 				
 				//if ( !key.equalsIgnoreCase(var) && !instString.contains("rmvar"))
@@ -343,7 +343,7 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		switch ( opcode ) { 
 		case CreateVariable:
@@ -354,7 +354,7 @@ public class VariableCPInstruction extends CPInstruction {
 				String fname = input2.get_name();
 				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) symb.getScalarInput(input3.get_name(), input3.get_valueType())).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
+				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(input3.get_name(), input3.get_valueType())).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
 				if ( overrideFileName ) {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}
@@ -364,11 +364,11 @@ public class VariableCPInstruction extends CPInstruction {
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
 				
-				symb.setVariable(input1.get_name(), mobj);
+				ec.setVariable(input1.get_name(), mobj);
 			}
 			else if ( input1.get_dataType() == DataType.SCALAR ){
 				ScalarObject sobj = null;
-				symb.setScalarOutput(input1.get_name(), sobj);
+				ec.setScalarOutput(input1.get_name(), sobj);
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data type: " + input1.get_dataType());
@@ -377,72 +377,72 @@ public class VariableCPInstruction extends CPInstruction {
 		
 		case AssignVariable:
 			// assign value of variable to the other
-			symb.setScalarOutput(input2.get_name(), symb.getScalarInput(input1.get_name(), input1.get_valueType()));			
+			ec.setScalarOutput(input2.get_name(), ec.getScalarInput(input1.get_name(), input1.get_valueType()));			
 			break;
 			
 		case RemoveVariable:
 			
-			Data input1_data = symb.getVariable(input1.get_name());
+			Data input1_data = ec.getVariable(input1.get_name());
 			
 			if ( input1_data == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
 			}
 
 			// check if any other variable refers to the same Data object
-			int refCount = getRefCount(symb, input1_data, true);
+			int refCount = getRefCount(ec, input1_data, true);
 			if ( refCount == 1 ) {
 				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 				
 				if ( input1_data instanceof MatrixObject ) {
 					// clean in-memory object
-					clearCachedMatrixObject(symb, input1_data);
+					clearCachedMatrixObject( input1_data );
 					
 					if ( ((MatrixObject) input1_data).isFileExists() && ((MatrixObject) input1_data).isCleanupEnabled() )
 						// clean data on hdfs, if exists
-						cleanDataOnHDFS(symb, input1_data);
+						cleanDataOnHDFS( input1_data );
 				}
 			}
 			else if ( refCount == 0 ) 
 				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
 
 			// remove variable from the program block
-			symb.removeVariable(input1.get_name());
+			ec.removeVariable(input1.get_name());
 
 			break;
 			
 		case CopyVariable:
 			// example instruction: cpvar <srcVar> <destVar>
 			
-			Data dd = symb.getVariable(input1.get_name());		
+			Data dd = ec.getVariable(input1.get_name());		
 			
 			if ( dd == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
 			}
 			
 			// check if <destVar> has any existing references
-			int destRefCount = getRefCount(symb, symb.getVariable(input2.get_name()), false);
+			int destRefCount = getRefCount(ec, ec.getVariable(input2.get_name()), false);
 			
 			if ( destRefCount == 1 ) {
 				// input2.get_name() currently refers to a Data object.
 				// make sure to call clearData(), if it is a matrix object 
 				
 				//System.out.println("  " + this.instString + " ... clearing input2");
-				clearCachedMatrixObject(symb, symb.getVariable(input2.get_name()) );
+				clearCachedMatrixObject( ec.getVariable(input2.get_name()) );
 			
 			} /*else if ( destRefCount > 1) {
 				System.err.println("  --- " + this.instString + " ... refCount for input2 > 1");
 			}*/
 			
 			// do the actual copy!
-			symb.setVariable(input2.get_name(), dd);
+			ec.setVariable(input2.get_name(), dd);
 			
 			break;
 			
 		case RemoveVariableAndFile:
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
-			boolean del = ( (BooleanObject) symb.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
+			boolean del = ( (BooleanObject) ec.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
 			
-			MatrixObject m = (MatrixObject) symb.getVariable(input1.get_name());
+			MatrixObject m = (MatrixObject) ec.getVariable(input1.get_name());
 			if ( !del ) {
 				// HDFS file should be retailed after clearData(), 
 				// therefore data must be exported if dirty flag is set
@@ -452,52 +452,52 @@ public class VariableCPInstruction extends CPInstruction {
 			else {
 				//throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
 				//cleanDataOnHDFS(pb, input1.get_name());
-				cleanDataOnHDFS (symb, m);
+				cleanDataOnHDFS( m );
 			}
 			
 			// check if in-memory object can be cleaned up
-			int refCnt = getRefCount(symb, symb.getVariable(input1.get_name()), true);
+			int refCnt = getRefCount(ec, ec.getVariable(input1.get_name()), true);
 			if ( refCnt== 1 ) {
 				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 				
 				//remove matrix object from cache
-				clearCachedMatrixObject( symb, m);
+				clearCachedMatrixObject( m );
 			}
 			else if ( refCnt == 0 ) 
 				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
 
 			// remove the variable from the HashMap (_variables) in ProgramBlock.
-			symb.removeVariable( input1.get_name() );
+			ec.removeVariable( input1.get_name() );
 			break;
 			
 		case AssignVariableWithFirstValue:
-			MatrixBlock mBlock = (MatrixBlock) symb.getMatrixInput(input1.get_name());
+			MatrixBlock mBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
 			double value = mBlock.getValue(0,0);
 			//double value = MapReduceTool.readFirstNumberFromHDFSMatrix(mobj.getFileName());
-			symb.releaseMatrixInput(input1.get_name());
-			symb.setScalarOutput(output.get_name(), new DoubleObject(value));
+			ec.releaseMatrixInput(input1.get_name());
+			ec.setScalarOutput(output.get_name(), new DoubleObject(value));
 			break;
 		case CastAsMatrixVariable:
-			ScalarObject scalarInput = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType());
 			MatrixBlock out = new MatrixBlock(1,1,false);
 			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
-			symb.setMatrixOutput(output.get_name(), out);
+			ec.setMatrixOutput(output.get_name(), out);
 			
 			break;
 		case ValuePick:
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick a value from "temp3" and assign to Var0
 			
-			MatrixObject mat = (MatrixObject)symb.getVariable(input1.get_name());
+			MatrixObject mat = (MatrixObject)ec.getVariable(input1.get_name());
 			String fname = mat.getFileName();
 			MetaData mdata = mat.getMetaData();
-			ScalarObject pickindex = symb.getScalarInput(input2.get_name(), input2.get_valueType());
+			ScalarObject pickindex = ec.getScalarInput(input2.get_name(), input2.get_valueType());
 			
 			if ( mdata != null ) {
 				try {
 					double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
 					ScalarObject result = (ScalarObject) new DoubleObject(picked);
-					symb.setVariable(output.get_name(), result);
+					ec.setVariable(output.get_name(), result);
 				} catch (Exception e ) {
 					throw new DMLRuntimeException(e);
 				}
@@ -508,31 +508,31 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case InMemValuePick:
-			MatrixBlock matBlock = (MatrixBlock) symb.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
 
 			if ( input2.get_dataType() == DataType.SCALAR ) {
-				ScalarObject quantile = symb.getScalarInput(input2.get_name(), input2.get_valueType());
+				ScalarObject quantile = ec.getScalarInput(input2.get_name(), input2.get_valueType());
 				double picked = matBlock.pickValue(quantile.getDoubleValue());
-				symb.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
+				ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
 			} 
 			else {
-				MatrixBlock quantiles = (MatrixBlock) symb.getMatrixInput(input2.get_name());
+				MatrixBlock quantiles = (MatrixBlock) ec.getMatrixInput(input2.get_name());
 				MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
 				quantiles = null;
-				symb.releaseMatrixInput(input2.get_name());
-				symb.setMatrixOutput(output.get_name(), resultBlock);
+				ec.releaseMatrixInput(input2.get_name());
+				ec.setMatrixOutput(output.get_name(), resultBlock);
 			}
 			matBlock = null;
-			symb.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input1.get_name());
 			break;
 			
 		case InMemIQM:
-			MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
+			MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
 			double iqm = matBlock1.interQuartileMean();
 			
 			matBlock1 = null;
-			symb.releaseMatrixInput(input1.get_name());
-			symb.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(iqm));
+			ec.releaseMatrixInput(input1.get_name());
+			ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(iqm));
 			break;
 			
 		case IQSize:
@@ -541,16 +541,16 @@ public class VariableCPInstruction extends CPInstruction {
 			
 			// get otherMetadata associated with the matrix
 			String iqs_fname = input1.get_name();
-			MetaData iqs_md = symb.getMetaData(iqs_fname);
+			MetaData iqs_md = ec.getMetaData(iqs_fname);
 			
 			// ge the range
-			ScalarObject pickrange = symb.getScalarInput(input2.get_name(), input2.get_valueType());
+			ScalarObject pickrange = ec.getScalarInput(input2.get_name(), input2.get_valueType());
 			
 			if ( iqs_md != null ) {
 				try {
 					double rangesize = UtilFunctions.getLengthForInterQuantile((NumItemsByEachReducerMetaData) iqs_md, pickrange.getDoubleValue());
 					ScalarObject result = (ScalarObject) new DoubleObject(rangesize);
-					symb.setVariable(output.get_name(), result);
+					ec.setVariable(output.get_name(), result);
 				} catch (Exception e ) {
 					throw new DMLRuntimeException(e);
 				}
@@ -586,13 +586,13 @@ public class VariableCPInstruction extends CPInstruction {
 			} catch ( IOException e ) {
 				throw new DMLRuntimeException(e);
 			}
-			symb.setScalarOutput(input1.get_name(), res);
+			ec.setScalarOutput(input1.get_name(), res);
 			
 			break;
 			
 		case Write:
 			if ( input1.get_dataType() == DataType.SCALAR ) {
-				ScalarObject scalar = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+				ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType());
 				try {
 					switch ( input1.get_valueType() ) {
 					case DOUBLE:
@@ -617,7 +617,7 @@ public class VariableCPInstruction extends CPInstruction {
 				}
 			}
 			else {
-				MatrixObject mo = (MatrixObject)symb.getVariable(input1.get_name());
+				MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
 				String outFmt = input3.get_name();
 				if (outFmt.equalsIgnoreCase("matrixmarket")) {
 					if(mo.isDirty()) {
@@ -653,7 +653,7 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case SetFileName:
-			Data data = symb.getVariable(input1.get_name());
+			Data data = ec.getVariable(input1.get_name());
 			if ( data.getDataType() == DataType.MATRIX ) {
 				if ( input3.get_name().equalsIgnoreCase("remote") ) {
 					((MatrixObject)data).setFileName(input2.get_name());
@@ -677,7 +677,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 * @param op
 	 * @throws CacheException 
 	 */
-	public void clearCachedMatrixObject( SymbolTable symb, Data d) 
+	public void clearCachedMatrixObject( Data d) 
 		throws CacheException 
 	{
 		if ( d instanceof MatrixObject ) {
@@ -685,7 +685,7 @@ public class VariableCPInstruction extends CPInstruction {
 		}
 	}
 	
-	private void cleanDataOnHDFS(SymbolTable symb, Data d) 
+	private void cleanDataOnHDFS(Data d) 
 			throws DMLRuntimeException {
 		if (d instanceof MatrixObject ) {
 			MatrixObject m = (MatrixObject) d;

@@ -9,7 +9,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -80,7 +79,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
 	}
 
-	public void processInstruction(ProgramBlock pb, SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ProgramBlock pb, ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		LOG.trace("Executing instruction : " + this.toString());
 		// get the function program block (stored in the Program object)
@@ -88,7 +87,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
-		LocalVariableMap functionVariables = new LocalVariableMap ();
+		LocalVariableMap functionVariables = new LocalVariableMap();
 		
 		for (int i=0; i<fpb.getInputParams().size();i++) {
 			
@@ -107,7 +106,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			Data currFormalParamValue = null; 
 			ValueType valType = fpb.getInputParams().get(i).getValueType();
 					
-			if (i > this._boundInputParamNames.size() || (symb.getVariable(this._boundInputParamNames.get(i)) == null)){
+			if (i > this._boundInputParamNames.size() || (ec.getVariable(this._boundInputParamNames.get(i)) == null)){
 				// CASE (3): using default value 
 				
 				if (valType == ValueType.BOOLEAN){
@@ -132,7 +131,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			}
 			
 			else {
-				currFormalParamValue = symb.getVariable(this._boundInputParamNames.get(i));
+				currFormalParamValue = ec.getVariable(this._boundInputParamNames.get(i));
 			}
 				
 			functionVariables.put(currFormalParamName,currFormalParamValue);	
@@ -141,14 +140,12 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		HashMap<String,Boolean> pinStatus = symb.pinVariables(this._boundInputParamNames);
+		HashMap<String,Boolean> pinStatus = ec.pinVariables(this._boundInputParamNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
-		SymbolTable fn_symb = fpb.createSymbolTable();
-		fn_symb.copy_variableMap(functionVariables);
-		ExecutionContext fn_ec = new ExecutionContext();
-		fn_ec.setSymbolTable(fn_symb);
+		ExecutionContext fn_ec = new ExecutionContext(false);
+		fn_ec.setVariables(functionVariables);
 		
 		// execute the function block
 		try {
@@ -160,9 +157,9 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// Unpin the pinned variables
-		symb.unpinVariables(this._boundInputParamNames, pinStatus);
+		ec.unpinVariables(this._boundInputParamNames, pinStatus);
 		
-		LocalVariableMap returnedVariables = fn_ec.getSymbolTable().get_variableMap();  
+		LocalVariableMap returnedVariables = fn_ec.getVariables();  
 		
 		// add the updated binding for each return variable to the variables in original symbol table
 		for (int i=0; i< fpb.getOutputParams().size(); i++){
@@ -175,7 +172,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			//add/replace data in symbol table
 			if( boundValue instanceof MatrixObject )
 				((MatrixObject) boundValue).setVarName(boundVarName);
-			symb.setVariable(boundVarName, boundValue);
+			ec.setVariable(boundVarName, boundValue);
 		}
 	}
 

@@ -13,7 +13,6 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -68,10 +67,8 @@ public class CostEstimationWrapper
 		Timing time = new Timing();
 		time.start();
 		
-		SymbolTable symbIn = ec.getSymbolTable(); 
 		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();		
-		LocalVariableMap vars = (symbIn!=null)? symbIn.get_variableMap() 
-				                              : new LocalVariableMap(); 
+		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
 		
 		double costs = _costEstim.getTimeEstimate(rtprog, vars, stats);
 		LOG.debug("Finished estimation in "+time.stop()+"ms.");
@@ -95,10 +92,8 @@ public class CostEstimationWrapper
 		Timing time = new Timing();
 		time.start();
 		
-		SymbolTable symbIn = ec.getSymbolTable(); 
 		HashMap<String,VarStats> stats = new HashMap<String, VarStats>();
-		LocalVariableMap vars = (symbIn!=null)? symbIn.get_variableMap() 
-				                              : new LocalVariableMap(); 
+		LocalVariableMap vars = (ec!=null)? ec.getVariables() : new LocalVariableMap(); 
 		
 		double costs = _costEstim.getTimeEstimate(hops, vars, stats);
 		LOG.debug("Finished estimation in "+time.stop()+"ms.");

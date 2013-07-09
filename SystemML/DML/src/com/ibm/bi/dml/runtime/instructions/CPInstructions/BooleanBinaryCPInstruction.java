@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -39,17 +39,17 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException {
-		ScalarObject so1 = symb.getScalarInput(input1.get_name(), input1.get_valueType());
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType());
 		ScalarObject so2 = null;
 		if ( input2 != null ) 
-			so2 = symb.getScalarInput(input2.get_name(), input2.get_valueType() );
+			so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) optr;
 		boolean rval = dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue());
 		sores = (ScalarObject) new BooleanObject(rval);
 		
-		symb.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.get_name(), sores);
 	}
 }

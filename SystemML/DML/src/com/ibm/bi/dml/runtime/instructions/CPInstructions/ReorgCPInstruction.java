@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -39,12 +39,12 @@ public class ReorgCPInstruction extends UnaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb)
+	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		long begin, st, tread, tcompute, twrite, ttotal;
 		
 		begin = System.currentTimeMillis();
-		MatrixBlock matBlock = (MatrixBlock) symb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
 		tread = System.currentTimeMillis() - begin;
 		
 		st = System.currentTimeMillis();
@@ -57,8 +57,8 @@ public class ReorgCPInstruction extends UnaryCPInstruction{
 		
 		st = System.currentTimeMillis();
 		matBlock = null;
-		symb.releaseMatrixInput(input1.get_name());
-		symb.setMatrixOutput(output_name, soresBlock);
+		ec.releaseMatrixInput(input1.get_name());
+		ec.setMatrixOutput(output_name, soresBlock);
 		soresBlock = null;
 		
 		twrite = System.currentTimeMillis() - st;

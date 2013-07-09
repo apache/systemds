@@ -28,6 +28,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -42,13 +43,12 @@ import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
@@ -91,13 +91,13 @@ public class PerfTestTool
 {
 	//internal parameters
 	public static final boolean READ_STATS_ON_STARTUP  = false;
-	public static final int     TEST_REPETITIONS       = 3; 
+	public static final int     TEST_REPETITIONS       = 20; //FIXME 3 
 	public static final int     NUM_SAMPLES_PER_TEST   = 11; 
 	public static final int     MODEL_MAX_ORDER        = 2;
 	public static final boolean MODEL_INTERCEPT        = true;
 	
-	public static final long    MIN_DATASIZE           = 100;
-	public static final long    MAX_DATASIZE           = 1000000;
+	public static final long    MIN_DATASIZE           = 1000;
+	public static final long    MAX_DATASIZE           = 10000000; //FIXME 1000000
 	public static final long    DEFAULT_DATASIZE       = (MAX_DATASIZE-MIN_DATASIZE)/2;
 	public static final long    DATASIZE_MR_SCALE      = 20;
 	public static final double  MIN_DIMSIZE            = 1;
@@ -370,9 +370,9 @@ public class PerfTestTool
 		//reset ID Sequence for consistent IDs
 		_seqTestDef.reset();
 		
-		//register default testdefs
-		TestMeasure[] M = new TestMeasure[]{ TestMeasure.EXEC_TIME, TestMeasure.MEMORY_USAGE };
-		DataFormat[] D =  new DataFormat[]{DataFormat.DENSE,DataFormat.SPARSE};
+		//register default testdefs //TODO
+		TestMeasure[] M = new TestMeasure[]{ TestMeasure.EXEC_TIME/*, TestMeasure.MEMORY_USAGE*/ };
+		DataFormat[] D =  new DataFormat[]{DataFormat.DENSE/*,DataFormat.SPARSE*/};
 		Integer[] defaultConf = new Integer[M.length*D.length*2];		
 		int i=0;
 		for( TestMeasure m : M ) //for all measures
@@ -386,28 +386,29 @@ public class PerfTestTool
 		
 
 		//register advanced (multi-dim) test defs
-		for( TestMeasure m : M ) //for all measures
+		//FIXME enable
+		/*for( TestMeasure m : M ) //for all measures
 			for( DataFormat d : D ) //for all data formats
 			{
 				registerTestDef( new PerfTestDef( m, TestVariable.DATA_SIZE, d,
                         new InternalTestVariable[]{InternalTestVariable.DIM1_SIZE,InternalTestVariable.DIM2_SIZE,InternalTestVariable.DIM3_SIZE}, 
                         MIN_DIMSIZE, MAX_DIMSIZE, NUM_SAMPLES_PER_TEST ) );
-			}
+			}?*
 
 			
 		//register MR specific instructions FIXME: just for test
-		Integer[] mrConf = new Integer[D.length];
+		/*Integer[] mrConf = new Integer[D.length];
 		i = 0;
 		for( DataFormat d : D )
 		{
 			mrConf[i++] = registerTestDef( new PerfTestDef(TestMeasure.EXEC_TIME, TestVariable.SORT_IO_MEM, d,
 					                         InternalTestVariable.SORT_IO_MEM,
 				                             MIN_SORT_IO_MEM, MAX_SORT_IO_MEM, NUM_SAMPLES_PER_TEST ) );
-		}
+		}*/
 		
 		//set default testdefs
 		_defaultConf = defaultConf;
-		_MRConf = mrConf;
+		//_MRConf = mrConf;
 	}
 	
 	/**
@@ -423,14 +424,19 @@ public class PerfTestTool
 		
 		///////
 		// CP instructions
-		/* FIXME
+		
+		//matrix multiply mmtsj
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"tsmm", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"tsmm"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+MMTSJType.LEFT),
+						     getDefaultTestDefs(), false, IOSchema.UNARY_UNARY ); 
+		
+		/*
 		//matrix multiply 
 		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 						     getDefaultTestDefs(), false, IOSchema.BINARY_UNARY ); 
 		////registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"ba+*", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"ba+*"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"B"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 		////		             changeToMuliDimTestDefs(TestVariable.DATA_SIZE, getDefaultTestDefs()) ); 
 		//rand
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"Rand", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"Rand"+Lops.OPERAND_DELIMITOR+"rows=1"+Lops.OPERAND_DELIMITOR+"cols=1"+Lops.OPERAND_DELIMITOR+"min=1.0"+Lops.OPERAND_DELIMITOR+"max=100.0"+Lops.OPERAND_DELIMITOR+"sparsity=1.0"+Lops.OPERAND_DELIMITOR+"pdf=uniform"+Lops.OPERAND_DELIMITOR+"dir=."+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
+		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"Rand", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"Rand"+Lops.OPERAND_DELIMITOR+"rows=1"+Lops.OPERAND_DELIMITOR+"cols=1"+Lops.OPERAND_DELIMITOR+"rowsInBlock=1000"+Lops.OPERAND_DELIMITOR+"colsInBlock=1000"+Lops.OPERAND_DELIMITOR+"min=1.0"+Lops.OPERAND_DELIMITOR+"max=100.0"+Lops.OPERAND_DELIMITOR+"sparsity=1.0"+Lops.OPERAND_DELIMITOR+"seed=7"+Lops.OPERAND_DELIMITOR+"pdf=uniform"+Lops.OPERAND_DELIMITOR+"dir=."+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
 				 			 getDefaultTestDefs(), false, IOSchema.NONE_UNARY );
 		//matrix transpose
 		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"r'", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"r'"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"),
@@ -449,6 +455,7 @@ public class PerfTestTool
      						 getDefaultTestDefs(), true, IOSchema.BINARY_NONE );
 		*/
 		
+		/*
 		///////
 		// MR instructions
 		registerInstruction( "jobtypeMMRJ", createMRJobInstruction(JobType.MMRJ,
@@ -459,7 +466,7 @@ public class PerfTestTool
 							                    		                                   "2"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE ")),
 							 _MRConf, false, IOSchema.BINARY_UNARY ); 		
 
-		
+		*/
 		/*ADD ADDITIONAL INSTRUCTIONS HERE*/
 		
 		
@@ -717,9 +724,7 @@ public class PerfTestTool
 			ainst.add( inst.getValue() );
 			pb.setInstructions(ainst);
 			
-			ExecutionContext ec = new ExecutionContext();
-			SymbolTable symb = prog.createSymbolTable();
-			ec.setSymbolTable(symb);
+			ExecutionContext ec = new ExecutionContext( false );
 			
 			//foreach registered test configuration
 			for( Integer defID : testDefIDs )
@@ -880,7 +885,7 @@ public class PerfTestTool
 		}
 		
 		//generate input and output matrices
-		LocalVariableMap vars = ec.getSymbolTable().get_variableMap();
+		LocalVariableMap vars = ec.getVariables();
 		vars.removeAll();
 		double mem1 = PerfTestMemoryObserver.getUsedMemory();
 		if( schema!=IOSchema.NONE_NONE && schema!=IOSchema.NONE_UNARY )
@@ -951,7 +956,7 @@ public class PerfTestTool
 		}
 		
 		//generate input and output matrices
-		LocalVariableMap vars = ec.getSymbolTable().get_variableMap();
+		LocalVariableMap vars = ec.getVariables();
 		vars.removeAll();
 		double mem1 = PerfTestMemoryObserver.getUsedMemory();
 		if( schema!=IOSchema.NONE_NONE && schema!=IOSchema.NONE_UNARY )
@@ -1026,9 +1031,9 @@ public class PerfTestTool
 		}
 		
 		//clear matrixes from cache
-		for( String str : ec.getSymbolTable().get_variableMap().keySet() )
+		for( String str : ec.getVariables().keySet() )
 		{
-			Data dat = ec.getSymbolTable().getVariable(str); 
+			Data dat = ec.getVariable(str); 
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).clearData();		
 		}

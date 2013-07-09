@@ -25,7 +25,7 @@ public class SQLPrintInstruction extends SQLInstructionBase{
 				System.out.println("#" + this.id + "\r\n");
 				System.out.println(sql);
 			}
-			s = ec.getSymbolTable().getVariableString(sql.substring(2, sql.length()-2), false);
+			s = ec.getVariableString(sql.substring(2, sql.length()-2), false);
 		} catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}

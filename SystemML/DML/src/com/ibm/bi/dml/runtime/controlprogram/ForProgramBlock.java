@@ -133,7 +133,6 @@ public class ForProgramBlock extends ProgramBlock
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
 
@@ -145,65 +144,64 @@ public class ForProgramBlock extends ProgramBlock
 		if ( incr.getIntValue() <= 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 				
-		// initialize iter var to form value
+		// initialize iter var to from value
 		IntObject iterVar = new IntObject(iterVarName, from.getIntValue() );
 		
-		// run for loop body as long as predicate is true 
-		// (for supporting dynamic TO, move expression execution to end of while loop)
-		while( iterVar.getIntValue() <= to.getIntValue() )
+		// execute for loop
+		try 
 		{
-			symb.get_variableMap().put(iterVarName, iterVar); 
-			
-			// for each program block
-			for(int i=0; i < _childBlocks.size(); i++) {
-				SymbolTable childSymb = symb.getChildTable(i);
-				childSymb.copy_variableMap(symb.get_variableMap());
-				ec.setSymbolTable(childSymb);
+			// run for loop body as long as predicate is true 
+			// (for supporting dynamic TO, move expression execution to end of while loop)
+			while( iterVar.getIntValue() <= to.getIntValue() )
+			{
+				ec.setVariable(iterVarName, iterVar); 
 				
-				ProgramBlock pb = _childBlocks.get(i);
-				//pb.setVariables(_variables);
-				
-				try {
+				//for all child blocks
+				for( ProgramBlock pb : _childBlocks ) 
 					pb.execute(ec);
-				}
-				catch (Exception e){
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating child program block", e);
-				}
+			
+				// update the iterable predicate variable 
+				if(ec.getVariable(iterVarName) == null || !(ec.getVariable(iterVarName) instanceof IntObject))
+					throw new DMLRuntimeException("Iterable predicate variable " + iterVarName + " must remain of type scalar int.");
 				
-				symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
-				ec.setSymbolTable(symb);
-				//_variables = pb._variables;
+				//increment of iterVar (changes  in loop body get discarded)
+				iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
 			}
-			
-			// update the iterable predicate variable 
-			if(symb.getVariable(iterVarName) == null || !(symb.getVariable(iterVarName) instanceof IntObject))
-				throw new DMLRuntimeException("Iterable predicate variable " + iterVarName + " must remain of type scalar int.");
-			
-			//increment of iterVar (changes  in loop body get discarded)
-			iterVar = new IntObject( iterVarName, iterVar.getIntValue()+incr.getIntValue() );
 		}
+		catch (Exception e)
+		{
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating for program block", e);
+		}
+		
+		//execute exit instructions
 		try {
 			executeInstructions(_exitInstructions, ec);	
 		}
 		catch (Exception e){
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating for program block exit instructions", e);
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating for exit instructions", e);
 		}
 	}
 
+	/**
+	 * 
+	 * @param pos
+	 * @param instructions
+	 * @param ec
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
 		ScalarObject tmp = null;
 		IntObject ret = null;
 		
-		SymbolTable symb = ec.getSymbolTable();
-		
 		try
 		{
 			if( _iterablePredicateVars[pos] != null )
 			{
 				//probe for scalar variables
-				Data ldat = symb.getVariable( _iterablePredicateVars[pos] );
+				Data ldat = ec.getVariable( _iterablePredicateVars[pos] );
 				if( ldat != null && ldat instanceof ScalarObject )
 					tmp = (ScalarObject)ldat;
 				else //handle literals
@@ -248,15 +246,6 @@ public class ForProgramBlock extends ProgramBlock
 		}
 		
 		return ret;
-	}
-	
-	@Override
-	public SymbolTable createSymbolTable() {
-		SymbolTable st = new SymbolTable(true);
-		for (int i=0; i < _childBlocks.size(); i++) {
-			st.addChildTable(_childBlocks.get(i).createSymbolTable());
-		}
-		return st;
 	}
 
 	public String printBlockErrorLocation(){

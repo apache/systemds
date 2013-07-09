@@ -51,6 +51,7 @@ public class FunctionProgramBlock extends ProgramBlock {
 		return _childBlocks;
 	}
 	
+	@Override
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
@@ -70,34 +71,17 @@ public class FunctionProgramBlock extends ProgramBlock {
 		}
 		*/
 		
-		SymbolTable symb = ec.getSymbolTable();
-		
 		// for each program block
-		for (int i=0; i < this._childBlocks.size(); i++){
-			
-			SymbolTable childSymb = symb.getChildTable(i);
-			childSymb.copy_variableMap(symb.get_variableMap());
-			ec.setSymbolTable(childSymb);
-
-			ProgramBlock pb = this._childBlocks.get(i);
-			
-			//pb._variables = new LocalVariableMap();
-			//pb.setVariables(_variables);
-			
-			try {
+		try {			
+			for( ProgramBlock pb : _childBlocks )
 				pb.execute(ec);
-			}
-			catch (Exception e){
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function body", e);
-			}
-			
-			symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
-			ec.setSymbolTable(symb);
-			//_variables = pb._variables;
+		}
+		catch (Exception e){
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating function program block", e);
 		}
 		
 		// check return values
-		checkOutputParameters(symb.get_variableMap());
+		checkOutputParameters(ec.getVariables());
 	}
 	
 	/**
@@ -118,15 +102,6 @@ public class FunctionProgramBlock extends ProgramBlock {
 				LOG.warn("Function output "+ varName +" has wrong value type: "+dat.getValueType()+".");
 			   
 		}
-	}
-	
-	@Override
-	public SymbolTable createSymbolTable() {
-		SymbolTable st = new SymbolTable(true);
-		for (int i=0; i < _childBlocks.size(); i++) {
-			st.addChildTable(_childBlocks.get(i).createSymbolTable());
-		}
-		return st;
 	}
 	
 	public void printMe() {

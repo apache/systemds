@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -18,15 +18,15 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) 
+	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
 
 		long begin, st, tread, tcompute, twrite, ttotal;
 		
 		begin = System.currentTimeMillis();
 		// Read input matrices
-        MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = symb.getMatrixInput(input2.get_name());
+        MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
 		tread = System.currentTimeMillis() - begin;
         
 		st = System.currentTimeMillis();
@@ -39,10 +39,10 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		st = System.currentTimeMillis();
 		// Release the memory occupied by input matrices
 		matBlock1 = matBlock2 = null;
-		symb.releaseMatrixInput(input1.get_name());
-		symb.releaseMatrixInput(input2.get_name());
+		ec.releaseMatrixInput(input1.get_name());
+		ec.releaseMatrixInput(input2.get_name());
 		// Attach result matrix with MatrixObject associated with output_name
-		symb.setMatrixOutput(output_name, soresBlock);
+		ec.setMatrixOutput(output_name, soresBlock);
         soresBlock = null;
 		
         twrite = System.currentTimeMillis()-st;

@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
@@ -99,10 +98,7 @@ public class OptimizationWrapper
 		findParForProgramBlocks(prog, rtprog, sbs, pbs);
 		
 		// Create an empty symbol table
-		// TODO: whenever this function is used, re-evaluate to see if an empty symbol table is OK
-		SymbolTable symb = rtprog.createSymbolTable();
 		ExecutionContext ec = new ExecutionContext();
-		ec.setSymbolTable(symb);
 		
 		//optimize each top-level parfor pb independently
 		for( Entry<Long, ParForProgramBlock> entry : pbs.entrySet() )
@@ -208,7 +204,7 @@ public class OptimizationWrapper
 			//* clone of variables in order to allow for statistics propagation across DAGs
 			//(tid=0, because deep copies created after opt)
 			try{
-				LocalVariableMap tmp = (LocalVariableMap) ec.getSymbolTable().get_variableMap().clone();
+				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
 				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0);
 			}catch(Exception ex){
 				throw new DMLRuntimeException(ex);

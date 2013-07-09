@@ -299,7 +299,7 @@ public class ProgramRecompiler
 				if( ret )
 				{
 					//construct new instructions
-					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getSymbolTable().get_variableMap(), 0);
+					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(sb.get_hops(), ec.getVariables(), 0);
 					pb.setInstructions( newInst );   
 				}
 			}

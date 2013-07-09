@@ -1,7 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -18,13 +18,13 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	}
 
 	@Override 
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;
 		
-		ScalarObject so1 = symb.getScalarInput( input1.get_name(), input1.get_valueType() );
-		ScalarObject so2 = symb.getScalarInput(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
+		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType() );
 		
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String buffer = "";
@@ -58,6 +58,6 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		}
 		
 		// 3) Put the result value into ProgramBlock
-		symb.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.get_name(), sores);
 	}
 }

@@ -7,7 +7,6 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 
 public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 {
@@ -68,20 +67,6 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		ret[0] = _prog;
 		ret[1] = _rtprog;
 		return ret;
-	}
-	
-	
-	public long putSymbolTable( StatementBlock sb, ProgramBlock pb, SymbolTable symb, OptNode n )
-	{
-		long id = _idSeq.getNextID();
-		
-		_id_hlprog.put(id, sb);
-		_id_rtprog.put(id, pb);
-		_id_symb.put(id, symb);
-		_id_optnode.put(id, n);
-		n.setID(id);
-		
-		return id;
 	}
 	
 	public Hops getMappedHop( long id )

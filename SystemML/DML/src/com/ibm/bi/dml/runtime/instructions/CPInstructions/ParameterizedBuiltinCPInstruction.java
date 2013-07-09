@@ -3,7 +3,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -91,7 +91,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 	
 	@Override 
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;
@@ -100,31 +100,31 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			SimpleOperator op = (SimpleOperator) optr;
 			double result =  op.fn.execute(params);
 			sores = new DoubleObject(result);
-			symb.setScalarOutput(output.get_name(), sores);
+			ec.setScalarOutput(output.get_name(), sores);
 		} 
 		else if ( opcode.equalsIgnoreCase("groupedagg") ) {
 			// acquire locks
-			MatrixBlock target = symb.getMatrixInput(params.get("target"));
-			MatrixBlock groups = symb.getMatrixInput(params.get("groups"));
+			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			MatrixBlock groups = ec.getMatrixInput(params.get("groups"));
 			MatrixBlock weights= null;
 			if ( params.get("weights") != null )
-				weights = symb.getMatrixInput(params.get("weights"));
+				weights = ec.getMatrixInput(params.get("weights"));
 			
 			// compute the result
 			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), optr));
 			
-			symb.setMatrixOutput(output.get_name(), soresBlock);
+			ec.setMatrixOutput(output.get_name(), soresBlock);
 			// release locks
 			target = groups = weights = null;
-			symb.releaseMatrixInput(params.get("target"));
-			symb.releaseMatrixInput(params.get("groups"));
+			ec.releaseMatrixInput(params.get("target"));
+			ec.releaseMatrixInput(params.get("groups"));
 			if ( params.get("weights") != null )
-				symb.releaseMatrixInput(params.get("weights"));
+				ec.releaseMatrixInput(params.get("weights"));
 			
 		}
 		else if ( opcode.equalsIgnoreCase("rmempty") ) {
 			// acquire locks
-			MatrixBlock target = symb.getMatrixInput(params.get("target"));
+			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 			
 			// compute the result
 			String margin = params.get("margin");
@@ -137,8 +137,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
 			
 			//release locks
-			symb.setMatrixOutput(output.get_name(), soresBlock);
-			symb.releaseMatrixInput(params.get("target"));
+			ec.setMatrixOutput(output.get_name(), soresBlock);
+			ec.releaseMatrixInput(params.get("target"));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

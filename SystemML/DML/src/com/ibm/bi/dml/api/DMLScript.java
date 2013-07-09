@@ -38,7 +38,6 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
@@ -668,7 +667,7 @@ public class DMLScript {
 			initHadoopExecution( config );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
-			rtprog.execute (new LocalVariableMap (), new ExecutionContext());  
+			rtprog.execute( new ExecutionContext() );  
 		}
 		finally //ensure cleanup/shutdown
 		{			
@@ -731,11 +730,9 @@ public class DMLScript {
 			ExecutionContext ec = new ExecutionContext(con);
 			ec.setDebug(false);
 	
-			LocalVariableMap vm = new LocalVariableMap ();
-			ec.getSymbolTable().set_variableMap(vm);
 			con.connect();
 			long time = System.currentTimeMillis();
-			pr.execute (vm, ec);
+			pr.execute(ec);
 			long end = System.currentTimeMillis() - time;
 			System.out.println("Control program took " + ((double)end / 1000) + " seconds");
 			con.disconnect();

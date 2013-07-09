@@ -5,7 +5,7 @@ import java.util.HashMap;
 import com.ibm.bi.dml.lops.Tertiary;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -58,10 +58,10 @@ public class TertiaryCPInstruction extends ComputationCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) 
+	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		MatrixBlock matBlock1 = (MatrixBlock) symb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock1 = (MatrixBlock) ec.getMatrixInput(input1.get_name());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;
 		
@@ -72,26 +72,26 @@ public class TertiaryCPInstruction extends ComputationCPInstruction{
 		switch(ctableOp) {
 		case CTABLE_TRANSFORM:
 			// F=ctable(A,B,W)
-			matBlock2 = (MatrixBlock) symb.getMatrixInput(input2.get_name());
-			wtBlock = (MatrixBlock) symb.getMatrixInput(input3.get_name());
+			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
+			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, wtBlock, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
-			matBlock2 = (MatrixBlock) symb.getMatrixInput(input2.get_name());
-			cst1 = symb.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
+			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
+			cst1 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
-			cst1 = symb.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
-			cst2 = symb.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
+			cst2 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
-			wtBlock = (MatrixBlock) symb.getMatrixInput(input3.get_name());
-			cst1 = symb.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
+			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
+			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap);
 			break;
 		
@@ -102,14 +102,14 @@ public class TertiaryCPInstruction extends ComputationCPInstruction{
 		matBlock1 = matBlock2 = wtBlock = null;
 		
 		if(input1.get_dataType() == DataType.MATRIX)
-			symb.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input1.get_name());
 		if(input2.get_dataType() == DataType.MATRIX)
-			symb.releaseMatrixInput(input2.get_name());
+			ec.releaseMatrixInput(input2.get_name());
 		if(input3.get_dataType() == DataType.MATRIX)
-			symb.releaseMatrixInput(input3.get_name());
+			ec.releaseMatrixInput(input3.get_name());
 		
 		resultBlock = new MatrixBlock(ctableMap);
-		symb.setMatrixOutput(output.get_name(), resultBlock);
+		ec.setMatrixOutput(output.get_name(), resultBlock);
 		ctableMap.clear();
 		resultBlock = null;
 	}

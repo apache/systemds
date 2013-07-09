@@ -72,7 +72,6 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	@Override
 	public void execute(ExecutionContext ec) throws DMLRuntimeException 
 	{
-		SymbolTable symb = ec.getSymbolTable();
 		_runID = _idSeq.getNextID();
 		
 		ExternalFunctionInvocationInstruction inst = null;
@@ -82,7 +81,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		{
 			try {
 				inst = (ExternalFunctionInvocationInstruction)_inst.get(i);
-				executeInstruction( symb, inst );
+				executeInstruction( ec, inst );
 			}
 			catch (Exception e){
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction " + i + " in external function programBlock. inst: " + inst.toString(), e);
@@ -90,7 +89,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		}
 		
 		// check return values
-		checkOutputParameters(symb.get_variableMap());
+		checkOutputParameters(ec.getVariables());
 	}
 	
 	/**
@@ -101,7 +100,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * @throws NimbleCheckedRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public void executeInstruction(SymbolTable symb, ExternalFunctionInvocationInstruction inst) throws DMLRuntimeException 
+	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) throws DMLRuntimeException 
 	{
 		String className = inst.getClassName();
 		String configFile = inst.getConfigFile();
@@ -128,7 +127,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 
 		// add inputs to this package function based on input parameter
 		// and their mappings.
-		setupInputs(func, inst.getInputParams(), symb.get_variableMap());
+		setupInputs(func, inst.getInputParams(), ec.getVariables());
 		func.setConfiguration(configFile);
 		func.setBaseDir(_baseDir);
 		
@@ -137,7 +136,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		
 		// verify output of function execution matches declaration
 		// and add outputs to variableMapping and Metadata
-		verifyAndAttachOutputs(symb, func, inst.getOutputParams());
+		verifyAndAttachOutputs(ec, func, inst.getOutputParams());
 	}
 	
 

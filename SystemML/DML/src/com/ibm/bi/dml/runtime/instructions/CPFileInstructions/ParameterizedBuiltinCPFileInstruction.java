@@ -25,7 +25,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
@@ -94,7 +94,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 	}
 	
 	@Override 
-	public void processInstruction(SymbolTable symb) 
+	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		String opcode = InstructionUtils.getOpCode(instString);
@@ -102,8 +102,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		if ( opcode.equalsIgnoreCase("rmempty") ) 
 		{
 			// get inputs
-			MatrixObject src = (MatrixObject)symb.getVariable( params.get("target") );
-			MatrixObject out = (MatrixObject)symb.getVariable( output.get_name() );
+			MatrixObject src = (MatrixObject)ec.getVariable( params.get("target") );
+			MatrixObject out = (MatrixObject)ec.getVariable( output.get_name() );
 			String margin = params.get("margin");
 			
 			// export input matrix (if necessary)
@@ -114,7 +114,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			out = rm.execute();
 		
 			//put output
-			symb.setVariable(output.get_name(), out);
+			ec.setVariable(output.get_name(), out);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

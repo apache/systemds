@@ -29,7 +29,6 @@ import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -124,19 +123,15 @@ public class ProgramConverter
 	/**
 	 * Creates a deep copy of the given execution context.
 	 * For rt_platform=Hadoop, execution context has a symbol table.
+	 * @throws CloneNotSupportedException 
 	 */
-	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec, ProgramBlock pb) {
-		ExecutionContext copy_ec = new ExecutionContext();
-		
-		// Create an empty symbol table according to the nested program structure given by <code>pb</code> 
-		SymbolTable copy_symb = pb.createSymbolTable();
-		
-		// Copy the variables corresponding to top-level program block
-		copy_symb.get_variableMap().putAll(ec.getSymbolTable().get_variableMap());
-		
-		copy_ec.setSymbolTable(copy_symb);
-		
-		return copy_ec;
+	public static ExecutionContext createDeepCopyExecutionContext(ExecutionContext ec) 
+		throws CloneNotSupportedException 
+	{
+		ExecutionContext cpec = new ExecutionContext(false);
+		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
+	
+		return cpec;
 	}
 	
 	/**
@@ -857,8 +852,7 @@ public class ProgramConverter
 		
 		if( ec != null )
 		{
-			SymbolTable symb = ec.getSymbolTable();
-			LocalVariableMap vars = symb.get_variableMap();
+			LocalVariableMap vars = ec.getVariables();
 			ret = serializeVariables( vars );	
 		}
 		else
@@ -1357,16 +1351,8 @@ public class ProgramConverter
 		String spbs = st.nextToken();
 		spbs = spbs.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction 
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(spbs, prog, id);
+		
 		body.setChildBlocks( pbs );
-
-		//construct (empty) symbol tables for all the child blocks
-		SymbolTable symb = ec.getSymbolTable();
-		for(int i=0; i < pbs.size(); i++) {
-			symb.addChildTable(pbs.get(i).createSymbolTable());
-		}
-
-		//attach symbol table to execution context
-		ec.setSymbolTable(symb);
 		body.setEc( ec );
 		
 		return body;		
@@ -1987,10 +1973,8 @@ public class ProgramConverter
 		if( !lin.equals( EMPTY ) )
 		{
 			LocalVariableMap vars = parseVariables(lin);
-			SymbolTable symb = new SymbolTable(true);
-			symb.set_variableMap( vars );
-			
-			ec = new ExecutionContext( symb );
+			ec = new ExecutionContext( false );
+			ec.setVariables(vars);
 		}
 		
 		return ec;

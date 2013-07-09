@@ -1,6 +1,6 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -16,12 +16,12 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 	}
 
 	@Override 
-	public void processInstruction(SymbolTable symb) 
+	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(instString);
 		
-		ScalarObject so = symb.getScalarInput( input1.get_name(), input1.get_valueType() );
+		ScalarObject so = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
 		
 		ScalarObject sores = null;
 		
@@ -61,6 +61,6 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 			sores = (ScalarObject) new DoubleObject(rval);
 		}
 		
-		symb.setScalarOutput(output.get_name(), sores);
+		ec.setScalarOutput(output.get_name(), sores);
 	}
 }

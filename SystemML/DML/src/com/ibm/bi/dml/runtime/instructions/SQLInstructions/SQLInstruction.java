@@ -35,7 +35,7 @@ public class SQLInstruction extends SQLInstructionBase {
 				break;
 			start = to + 2;
 			String name = prepSQL.substring(from+2, to);
-			prepSQL = prepSQL.replace("##" + name + "##", ec.getSymbolTable().getVariableString(name, true));
+			prepSQL = prepSQL.replace("##" + name + "##", ec.getVariableString(name, true));
 		}
 		return prepSQL;
 	}

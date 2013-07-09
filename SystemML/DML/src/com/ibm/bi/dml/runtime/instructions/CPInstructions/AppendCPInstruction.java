@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -52,12 +52,12 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb)
+	public void processInstruction(ExecutionContext ec)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
-		MatrixBlock matBlock2 = symb.getMatrixInput(input2.get_name());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
 		
 		//check input dimensions
 		if(matBlock1.getNumRows() != matBlock2.getNumRows())
@@ -80,11 +80,11 @@ public class AppendCPInstruction extends BinaryCPInstruction{
 		
 		//set output
 		String output_name = output.get_name();
-		symb.setMatrixOutput(output_name, ret);
+		ec.setMatrixOutput(output_name, ret);
 
 		//release inputs 
-		symb.releaseMatrixInput(input1.get_name());
-		symb.releaseMatrixInput(input2.get_name());
+		ec.releaseMatrixInput(input1.get_name());
+		ec.releaseMatrixInput(input2.get_name());
 	
 		//System.out.println("Finish Append with output col size = "+ret.getNumColumns());
 	}

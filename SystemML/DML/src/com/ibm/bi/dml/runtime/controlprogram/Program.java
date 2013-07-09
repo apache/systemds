@@ -81,45 +81,17 @@ public class Program {
 		return _programBlocks;
 	}
 
-	public void execute(LocalVariableMap varMap, ExecutionContext ec)
-	throws DMLRuntimeException, DMLUnsupportedOperationException
+	public void execute(ExecutionContext ec)
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		//populate initial symbol table
-		//_programVariables.putAll (varMap);
-		
-		SymbolTable symb = createSymbolTable();
-		symb.copy_variableMap(varMap);
-		
-		for (int i=0; i<_programBlocks.size(); i++)
+		try
 		{
-			
-			// execute each top-level program block
-			ProgramBlock pb = _programBlocks.get(i);
-
-			//pb.setVariables(_programVariables);
-			SymbolTable childSymb = symb.getChildTable(i);
-			childSymb.copy_variableMap(symb.get_variableMap());
-			ec.setSymbolTable(childSymb);
-			
-			try {
+			for (ProgramBlock pb : _programBlocks )
 				pb.execute(ec);
-			}
-			catch(Exception e){
-				throw new DMLRuntimeException(pb.printBlockErrorLocation(), e);
-			}
-			
-			//_programVariables = pb.getVariables();
-			symb.set_variableMap( ec.getSymbolTable().get_variableMap() );
-			ec.setSymbolTable(symb);
 		}
-	}
-	
-	public SymbolTable createSymbolTable() {
-		SymbolTable st = new SymbolTable(true);
-		for (int i=0; i < _programBlocks.size(); i++) {
-			st.addChildTable(_programBlocks.get(i).createSymbolTable());
+		catch(Exception e){
+			throw new DMLRuntimeException(e);
 		}
-		return st;
 	}
 	
 	/*public void cleanupCachedVariables() throws CacheStatusException

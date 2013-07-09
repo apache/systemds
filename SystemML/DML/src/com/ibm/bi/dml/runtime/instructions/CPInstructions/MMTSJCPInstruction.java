@@ -3,7 +3,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -53,19 +53,19 @@ public class MMTSJCPInstruction extends UnaryCPInstruction
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb)
+	public void processInstruction(ExecutionContext ec)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//get inputs
-		MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
 
 		//execute operations 
 		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMult(new MatrixBlock(), _type );
 		
 		//set output and release inputs
 		String output_name = output.get_name();
-		symb.setMatrixOutput(output_name, ret);
-		symb.releaseMatrixInput(input1.get_name());
+		ec.setMatrixOutput(output_name, ret);
+		ec.releaseMatrixInput(input1.get_name());
 	}
 	
 	public MMTSJType getMMTSJType()

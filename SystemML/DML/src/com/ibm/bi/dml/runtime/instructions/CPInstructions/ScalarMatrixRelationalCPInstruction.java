@@ -1,7 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
@@ -19,7 +19,7 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 	}
 
 	@Override
-	public void processInstruction(SymbolTable symb) 
+	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
 		
 		CPOperand mat, scalar;
@@ -32,8 +32,8 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 			mat = input2;
 		}
 		
-		MatrixBlock matBlock = (MatrixBlock) symb.getMatrixInput(mat.get_name());
-		ScalarObject constant = (ScalarObject) symb.getScalarInput(scalar.get_name(), scalar.get_valueType());
+		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(mat.get_name());
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType());
 		
 		ScalarOperator sc_op = (ScalarOperator) optr;
 		sc_op.setConstant(constant.getDoubleValue());
@@ -42,8 +42,8 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.scalarOperations(sc_op, new MatrixBlock());
 		
 		matBlock = null;
-		symb.releaseMatrixInput(mat.get_name());
-		symb.setMatrixOutput(output_name, resultBlock);
+		ec.releaseMatrixInput(mat.get_name());
+		ec.setMatrixOutput(output_name, resultBlock);
 		resultBlock = null;
 	}
 }

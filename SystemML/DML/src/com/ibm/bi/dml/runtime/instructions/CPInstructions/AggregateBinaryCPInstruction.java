@@ -2,7 +2,7 @@ package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.COV;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -74,18 +74,16 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException{
-		
-		if(symb == null) System.err.println("Symbol table is null");
-		
+	public void processInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{	
 		String opcode = InstructionUtils.getOpCode(instString);
 		
 		long begin, st, tread, tcompute, twrite, ttotal;
 		
 		begin = System.currentTimeMillis();
-        MatrixBlock matBlock1 = symb.getMatrixInput(input1.get_name());
-        MatrixBlock matBlock2 = symb.getMatrixInput(input2.get_name());
+        MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
+        MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
 		tread = System.currentTimeMillis() - begin;
 		
 		String output_name = output.get_name(); 
@@ -102,9 +100,9 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 
 			//release inputs/outputs
 			st = System.currentTimeMillis();
-			symb.releaseMatrixInput(input1.get_name());
-			symb.releaseMatrixInput(input2.get_name());
-			symb.setMatrixOutput(output_name, soresBlock);
+			ec.releaseMatrixInput(input1.get_name());
+			ec.releaseMatrixInput(input2.get_name());
+			ec.setMatrixOutput(output_name, soresBlock);
 			twrite = System.currentTimeMillis()-st;
 			
 			ttotal = System.currentTimeMillis()-begin;
@@ -120,25 +118,25 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction{
 				covobj = matBlock1.covOperations(cov_op, matBlock2);
 				
 				matBlock1 = matBlock2 = null;
-				symb.releaseMatrixInput(input1.get_name());
-				symb.releaseMatrixInput(input2.get_name());
+				ec.releaseMatrixInput(input1.get_name());
+				ec.releaseMatrixInput(input2.get_name());
 			}
 			else 
 			{
 				// Weighted: cov.mvar0.mvar1.weights.out
-		        MatrixBlock wtBlock = symb.getMatrixInput(input3.get_name());
+		        MatrixBlock wtBlock = ec.getMatrixInput(input3.get_name());
 				
 				covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
 				
 				matBlock1 = matBlock2 = wtBlock = null;
-				symb.releaseMatrixInput(input1.get_name());
-				symb.releaseMatrixInput(input2.get_name());
-				symb.releaseMatrixInput(input3.get_name());
+				ec.releaseMatrixInput(input1.get_name());
+				ec.releaseMatrixInput(input2.get_name());
+				ec.releaseMatrixInput(input3.get_name());
 			}
 			double val = covobj.getRequiredResult(optr);
 			DoubleObject ret = new DoubleObject(output_name, val);
 			
-			symb.setScalarOutput(output_name, ret);
+			ec.setScalarOutput(output_name, ret);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode in Instruction: " + toString());

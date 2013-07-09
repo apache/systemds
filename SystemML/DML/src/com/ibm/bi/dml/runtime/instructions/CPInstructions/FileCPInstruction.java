@@ -1,7 +1,8 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
-import com.ibm.bi.dml.runtime.controlprogram.SymbolTable;
+
+import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.RemoveFile;
 import com.ibm.bi.dml.runtime.functionobjects.RenameFile;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -76,7 +77,7 @@ public class FileCPInstruction extends CPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(SymbolTable symb) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		
 		try {
 		switch(code) {

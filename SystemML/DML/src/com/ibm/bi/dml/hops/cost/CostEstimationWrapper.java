@@ -74,17 +74,17 @@ public class CostEstimationWrapper
 		LOG.debug("Finished estimation in "+time.stop()+"ms.");
 		return costs;
 	}
-		
+	
 	/**
 	 * 
 	 * @param hops
-	 * @param vars
+	 * @param ec
 	 * @return
-	 * @throws DMLUnsupportedOperationException 
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 * @throws LopsException 
-	 * @throws HopsException 
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws IOException
 	 */
 	public static double getTimeEstimate( ArrayList<Hops> hops, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException, IOException

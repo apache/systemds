@@ -180,7 +180,8 @@ public abstract class CostEstimator
 					{
 						FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
 						String fkey = finst.getNamespace()+Program.KEY_DELIM+finst.getFunctionName();
-						if( !memoFunc.contains(fkey) ) //awareness of recursive functions
+						//awareness of recursive functions, missing program
+						if( !memoFunc.contains(fkey) && pb.getProgram()!=null ) 
 						{
 							if(LOG.isDebugEnabled())
 								LOG.debug("Begin Function "+fkey);

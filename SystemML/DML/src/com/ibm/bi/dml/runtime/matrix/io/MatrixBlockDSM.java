@@ -3360,13 +3360,6 @@ public class MatrixBlockDSM extends MatrixValue{
 			default:
 				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}
-		/*	
-			if(op.aggOp.correctionLocation==1)
-				tempCellIndex.row++;
-			else if(op.aggOp.correctionLocation==2)
-				tempCellIndex.column++;
-			else
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	*/
 		}
 		if(result==null)
 			result=new MatrixBlockDSM(tempCellIndex.row, tempCellIndex.column, false);
@@ -3771,52 +3764,55 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	
-	
-	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) {
-		
-		if(correctionLocation==CorrectionLocationType.NONE || correctionLocation==CorrectionLocationType.INVALID)
-			return;
-		
-		int step=1;
-		if(correctionLocation==CorrectionLocationType.LASTTWOROWS || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
-			step=2;
-		
-		if(correctionLocation==CorrectionLocationType.LASTROW || correctionLocation==CorrectionLocationType.LASTTWOROWS)
+	/**
+	 * 
+	 * @param correctionLocation
+	 */
+	public void dropLastRowsOrColums(CorrectionLocationType correctionLocation) 
+	{
+		//do nothing 
+		if(   correctionLocation==CorrectionLocationType.NONE 
+	       || correctionLocation==CorrectionLocationType.INVALID )
 		{
-			
-			if(sparse)
-			{
-				if(sparseRows!=null)
-				{
-					for(int i=1; i<=step; i++)
-					{
-						if(sparseRows[rlen-i]!=null)
-							this.nonZeros-=sparseRows[rlen-i].size();
-					}
-				}
-			}else
-			{
-				if(denseBlock!=null)
-				{
-					for(int i=rlen*(clen-step); i<rlen*clen; i++)
-					{
-						if(denseBlock[i]!=0)
-							this.nonZeros--;
-					}
-				}
-			}
-			//just need to shrink the dimension, the deleted rows won't be accessed
-			this.rlen-=step;
+			return;
 		}
 		
-		if(correctionLocation==CorrectionLocationType.LASTCOLUMN || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+		//determine number of rows/cols to be removed
+		int step = ( correctionLocation==CorrectionLocationType.LASTTWOROWS 
+				    || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS) ? 2 : 1;
+		
+		//e.g., colSums, colMeans, colMaxs, colMeans
+		if(   correctionLocation==CorrectionLocationType.LASTROW 
+		   || correctionLocation==CorrectionLocationType.LASTTWOROWS )
 		{
-			if(sparse)
+			if( sparse ) //SPARSE
+			{
+				if(sparseRows!=null)
+					for(int i=1; i<=step; i++)
+						if(sparseRows[rlen-i]!=null)
+							this.nonZeros-=sparseRows[rlen-i].size();
+			}
+			else //DENSE
+			{
+				if(denseBlock!=null)
+					for(int i=(rlen-step)*clen; i<rlen*clen; i++)
+						if(denseBlock[i]!=0)
+							this.nonZeros--;
+			}
+			
+			//just need to shrink the dimension, the deleted rows won't be accessed
+			rlen -= step;
+		}
+		
+		//e.g., rowSums, rowsMeans, rowsMaxs, rowsMeans
+		if(   correctionLocation==CorrectionLocationType.LASTCOLUMN 
+		   || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS )
+		{
+			if(sparse) //SPARSE
 			{
 				if(sparseRows!=null)
 				{
 					for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-					{
 						if(sparseRows[r]!=null)
 						{
 							int newSize=sparseRows[r].searchIndexesFirstGTE(clen-step);
@@ -3826,9 +3822,9 @@ public class MatrixBlockDSM extends MatrixValue{
 								sparseRows[r].truncate(newSize);
 							}
 						}
-					}
 				}
-			}else
+			}
+			else //DENSE
 			{
 				if(this.denseBlock!=null)
 				{
@@ -3853,7 +3849,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					}
 				}
 			}
-			this.clen-=step;
+			
+			clen -= step;
 		}
 	}
 	

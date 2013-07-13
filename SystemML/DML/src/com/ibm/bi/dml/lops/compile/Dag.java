@@ -1320,7 +1320,7 @@ public class Dag<N extends Lops> {
 
 				String inst_string = "";
 
-				// Lops with aribitrary number of inputs (ParameterizedBuiltin, GroupedAggregate)
+				// Lops with arbitrary number of inputs (ParameterizedBuiltin, Aggregate)
 				// are handled separately, by simply passing ONLY the output variable to getInstructions()
 				if (node.getType() == Lops.Type.ParameterizedBuiltin
 						|| node.getType() == Lops.Type.GroupedAgg ){
@@ -2227,13 +2227,15 @@ public class Dag<N extends Lops> {
 	 * @return
 	 * @throws LopsException 
 	 */
-	OutputInfo getOutputInfo(N node, boolean cellModeOverride) throws LopsException {
-		OutputInfo oinfo = null;
-		
+	OutputInfo getOutputInfo(N node, boolean cellModeOverride) 
+		throws LopsException 
+	{
 		if ( node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP)
 			return null;
-		
+	
+		OutputInfo oinfo = null;
 		OutputParameters oparams = node.getOutputParameters();
+		
 		if (oparams.isBlocked_representation()) {
 			if ( !cellModeOverride )
 				oinfo = OutputInfo.BinaryBlockOutputInfo;
@@ -2278,9 +2280,9 @@ public class Dag<N extends Lops> {
 		} else if ( node.getType() == Type.CombineTertiary) {
 			oinfo = OutputInfo.WeightedPairOutputInfo;
 		} else if (node.getType() == Type.CentralMoment
-				|| node.getType() == Type.CoVariance 
-				|| node.getType() == Type.GroupedAgg ) {
-			// CMMR ang GroupedAggMR always operate in "cell mode",
+				|| node.getType() == Type.CoVariance )  
+		{
+			// CMMR always operate in "cell mode",
 			// and the output is always in cell format
 			oinfo = OutputInfo.BinaryCellOutputInfo;
 		}

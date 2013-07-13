@@ -255,7 +255,15 @@ public class TertiaryOp extends Hops {
 							get_dataType(), get_valueType(), et);
 					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
 					tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+						|| et == ExecType.CP ) {
+						
+						if( et == ExecType.CP ){
+							//force blocked output in CP (see below)
+							tertiary.getOutputParameters().setDimensions(-1, -1, 1000, 1000, -1);
+						}
+						
+						//tertiary opt, w/o reblock in CP
 						set_lops(tertiary);
 					}
 					else {

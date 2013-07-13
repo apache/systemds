@@ -101,7 +101,8 @@ public class ParameterizedBuiltinOp extends Hops {
 			else if (_op == ParamBuiltinOp.GROUPEDAGG) {
 				
 				ExecType et = optFindExecType();
-				if ( et == ExecType.MR ) {
+				if ( et == ExecType.MR ) 
+				{
 					// construct necessary lops: combineBinary/combineTertiary and
 					// groupedAgg
 	
@@ -190,7 +191,8 @@ public class ParameterizedBuiltinOp extends Hops {
 	
 					set_lops(reblock);
 				}
-				else {
+				else //CP 
+				{
 					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
 							get_dataType(), get_valueType(), et);
 					// output dimensions are unknown at compilation time
@@ -198,10 +200,20 @@ public class ParameterizedBuiltinOp extends Hops {
 					grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					// introduce a reblock lop only if it is NOT single_node execution
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
+					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+						|| et == ExecType.CP ) 
+					{
+						if( et == ExecType.CP ){
+							//force blocked output in CP (see below)
+							grp_agg.getOutputParameters().setDimensions(-1, 1, 1000, 1000, -1);
+						}
+						
+						//grouped agg, w/o reblock in CP
 						set_lops(grp_agg);
 					}
-					else {
+					else 
+					{
+						//insert reblock binarycell->binaryblock in MR
 						ReBlock reblock = null;
 						try {
 							reblock = new ReBlock(

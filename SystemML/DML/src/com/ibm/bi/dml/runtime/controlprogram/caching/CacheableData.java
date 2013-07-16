@@ -42,9 +42,10 @@ public abstract class CacheableData extends Data
 {
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
-	public static final long CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
-	public static final double CACHING_BUFFER_SIZE = 0.1; 
+	public static final long 	CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
+	public static final double 	CACHING_BUFFER_SIZE = 0.1; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
+	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
 	public static final boolean CACHING_STATS = false;
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)

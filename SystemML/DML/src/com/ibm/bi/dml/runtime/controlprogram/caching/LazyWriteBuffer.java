@@ -79,8 +79,10 @@ public class LazyWriteBuffer
 				}
 				
 				//allocate mem (if necessary) and lock
-				//if( buff==null )
-				buff = new byte[(int)lSize];
+				if( CacheableData.CACHING_BUFFER_PAGECACHE )
+					buff = PageCache.getPage((int)lSize);
+				if( buff==null )
+					buff = new byte[(int)lSize];
 				bbuff = new ByteBuffer(buff);
 		
 				//put placeholder into buffer
@@ -121,6 +123,8 @@ public class LazyWriteBuffer
 			{
 				_size -= ldata.data.length; 
 				requiresDelete = false;
+				if( CacheableData.CACHING_BUFFER_PAGECACHE )
+					PageCache.putPage(ldata.data);
 			}
 		}
 		
@@ -184,6 +188,8 @@ public class LazyWriteBuffer
 		_mData = new HashMap<String, ByteBuffer>();
 		_mQueue = new LinkedList<String>();		
 		_size = 0;
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.init();
 	}
 	
 	/**
@@ -193,6 +199,8 @@ public class LazyWriteBuffer
 	{
 		_mData = null;
 		_mQueue = null;
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.clear();
 	}
 	
 }

@@ -176,29 +176,31 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in=cachedValues.getFirst(input);
-		if(in==null)
-			return;
+		for(IndexedMatrixValue in: cachedValues.get(input))
+		{
+			if(in==null)
+				continue;
 		
-		//allocate space for the output value
-		IndexedMatrixValue out;
-		if(input==output)
-			out=tempValue;
-		else
-			out=cachedValues.holdPlace(output, valueClass);
-		
-	/*	String opcode = InstructionUtils.getOpCode(instString);
-		// TODO: hack to support trace. Need to remove it in future.
-		if ( opcode.equals("uatrace") || opcode.equals("uaktrace") || opcode.equals("rdiagM2V") )
-			brlen = bclen = DMLTranslator.DMLBlockSize;
-	*/	
-		//process instruction
-		OperationsOnMatrixValues.performAggregateUnary(in.getIndexes(), in.getValue(), 
-				out.getIndexes(), out.getValue(), ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
+			//allocate space for the output value
+			IndexedMatrixValue out;
+			if(input==output)
+				out=tempValue;
+			else
+				out=cachedValues.holdPlace(output, valueClass);
+			
+		/*	String opcode = InstructionUtils.getOpCode(instString);
+			// TODO: hack to support trace. Need to remove it in future.
+			if ( opcode.equals("uatrace") || opcode.equals("uaktrace") || opcode.equals("rdiagM2V") )
+				brlen = bclen = DMLTranslator.DMLBlockSize;
+		*/	
+			//process instruction
+			OperationsOnMatrixValues.performAggregateUnary(in.getIndexes(), in.getValue(), 
+					out.getIndexes(), out.getValue(), ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);
+		}
 	}
 
 }

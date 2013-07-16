@@ -37,41 +37,43 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 		
 		for(byte output: outputIndexes.get(index))
 		{
-			IndexedMatrixValue result=cachedValues.getFirst(output);
-			if(result==null)
-				continue;
-			
-			//output the left matrix
-			if(aggBinInput1s.contains(output))
+			for(IndexedMatrixValue result:cachedValues.get(output))
 			{
-				for(long j=0; j<numRepeats.get(output); j++)
+				if(result==null)
+					continue;
+				
+				//output the left matrix
+				if(aggBinInput1s.contains(output))
 				{
-					triplebuffer.setIndexes(result.getIndexes().getRowIndex(), j+1, result.getIndexes().getColumnIndex());
+					for(long j=0; j<numRepeats.get(output); j++)
+					{
+						triplebuffer.setIndexes(result.getIndexes().getRowIndex(), j+1, result.getIndexes().getColumnIndex());
+						taggedValue.setBaseObject(result.getValue());
+						taggedValue.setTag(output);
+						out.collect(triplebuffer, taggedValue);
+					//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
+					}
+				}else if(aggBinInput2s.contains(output))//output the right matrix
+				{
+					for(long i=0; i<numRepeats.get(output); i++)
+					{
+						triplebuffer.setIndexes(i+1, result.getIndexes().getColumnIndex(), result.getIndexes().getRowIndex());
+						taggedValue.setBaseObject(result.getValue());
+						taggedValue.setTag(output);
+						out.collect(triplebuffer, taggedValue);
+					//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
+					}
+				}else //output other matrix that are not involved in aggregate binary
+				{
+					triplebuffer.setIndexes(result.getIndexes().getRowIndex(), result.getIndexes().getColumnIndex(), -1);
+					////////////////////////////////////////
+				//	taggedValueBuffer.getBaseObject().copy(result.getValue());
 					taggedValue.setBaseObject(result.getValue());
+					////////////////////////////////////////
 					taggedValue.setTag(output);
 					out.collect(triplebuffer, taggedValue);
 				//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 				}
-			}else if(aggBinInput2s.contains(output))//output the right matrix
-			{
-				for(long i=0; i<numRepeats.get(output); i++)
-				{
-					triplebuffer.setIndexes(i+1, result.getIndexes().getColumnIndex(), result.getIndexes().getRowIndex());
-					taggedValue.setBaseObject(result.getValue());
-					taggedValue.setTag(output);
-					out.collect(triplebuffer, taggedValue);
-				//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
-				}
-			}else //output other matrix that are not involved in aggregate binary
-			{
-				triplebuffer.setIndexes(result.getIndexes().getRowIndex(), result.getIndexes().getColumnIndex(), -1);
-				////////////////////////////////////////
-			//	taggedValueBuffer.getBaseObject().copy(result.getValue());
-				taggedValue.setBaseObject(result.getValue());
-				////////////////////////////////////////
-				taggedValue.setTag(output);
-				out.collect(triplebuffer, taggedValue);
-			//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 			}
 		}	
 	}

@@ -955,6 +955,13 @@ public class MatrixBlockDSM extends MatrixValue{
 		return denseBlock;
 	}
 	
+	public SparseRow[] getSparseRows()
+	{
+		if(!sparse)
+			return null;
+		return sparseRows;
+	}
+	
 	@Deprecated
 	public HashMap<CellIndex, Double> getSparseMap()
 	{

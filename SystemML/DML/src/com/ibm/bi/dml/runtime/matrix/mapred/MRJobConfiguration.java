@@ -29,6 +29,9 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AddDummyWeightConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
+import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToRowBlockConverter;
+import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToRowBlockConverter;
+import com.ibm.bi.dml.runtime.matrix.io.TextCellToRowBlockConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToTextConverter;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.IdenticalConverter;
@@ -60,6 +63,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -269,9 +273,87 @@ public class MRJobConfiguration {
 	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
 			int brlen, int bclen)
 	{
-		return getConverterClass(inputinfo, targetToBlock, brlen, bclen, false);
+		if(targetToBlock)
+			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.BLOCK);
+		else
+			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL);
 	}
 	
+	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
+			int brlen, int bclen, boolean targetToWeightedCell)
+	{
+		assert(!targetToBlock || !targetToWeightedCell);
+		if(targetToWeightedCell)
+			return getConverterClass(inputinfo, brlen, bclen, ConvertTarget.WEIGHTEDCELL);
+		else
+			return getConverterClass(inputinfo, targetToBlock, brlen, bclen);
+	}
+	
+	public static enum ConvertTarget{CELL, BLOCK, WEIGHTEDCELL, CSVWRITE}
+	
+	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, int brlen, int bclen, ConvertTarget target)
+	{
+
+		Class<? extends Converter> converterClass=IdenticalConverter.class;
+		if(inputinfo.inputValueClass.equals(MatrixCell.class))
+		{
+			switch (target)
+			{
+			case CELL:
+				converterClass=IdenticalConverter.class;
+				break;
+			case BLOCK:
+				throw new RuntimeException("cannot convert binary cell to binary block representation implicitly");
+			case WEIGHTEDCELL:
+				converterClass=AddDummyWeightConverter.class;
+				break;
+			case CSVWRITE:
+				converterClass=BinaryCellToRowBlockConverter.class;
+				break;
+			}
+			
+		}else if(inputinfo.inputValueClass.equals(MatrixBlock.class))
+		{
+			switch (target)
+			{
+			case CELL:
+				converterClass=BinaryBlockToBinaryCellConverter.class;
+				break;
+			case BLOCK:
+				converterClass=IdenticalConverter.class;
+				break;
+			case WEIGHTEDCELL:
+				converterClass=AddDummyWeightConverter.class;
+				break;
+			case CSVWRITE:
+				converterClass=BinaryBlockToRowBlockConverter.class;
+				break;
+			}
+		}else if(inputinfo.inputValueClass.equals(Text.class))
+		{
+			switch (target)
+			{
+			case CELL:
+				converterClass=TextToBinaryCellConverter.class;
+				break;
+			case BLOCK:
+				if(brlen>1 || bclen>1)
+					throw new RuntimeException("cannot convert text cell to binary block representation implicitly");
+				else
+					converterClass=TextToBinaryCellConverter.class;
+				break;
+			case WEIGHTEDCELL:
+				converterClass=AddDummyWeightConverter.class;
+				break;
+			case CSVWRITE:
+				converterClass=TextCellToRowBlockConverter.class;
+				break;
+			}
+		}
+	
+		return converterClass;
+	}
+	/*
 	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
 			int brlen, int bclen, boolean targetToWeightedCell)
 	{
@@ -305,7 +387,7 @@ public class MRJobConfiguration {
 			converterClass=IdenticalConverter.class;
 		
 		return converterClass;
-	}
+	}*/
 	
 	/**
 	 * Unique working dirs required for thread-safe submission of parallel jobs;
@@ -1374,7 +1456,8 @@ public class MRJobConfiguration {
 			for(MRInstruction ins: insReducer)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction)
+				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction
+						|| ins instanceof RangeBasedReIndexInstruction ||ins instanceof ReorgInstruction)
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 

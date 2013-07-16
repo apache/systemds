@@ -78,25 +78,29 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			OutputCollector<Writable, Writable> out) throws IOException
 	{
 		//output the key value pair for the left matrix
-		IndexedMatrixValue result=cachedValues.getFirst(aggBinInstruction.input1);
-		if(result!=null)
+		for(IndexedMatrixValue result:cachedValues.get(aggBinInstruction.input1))
 		{
-			taggedIndexes.setTag(tagForLeft);
-			taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
-					result.getIndexes().getRowIndex());
-			out.collect(taggedIndexes, result.getValue());
-		//	System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+			if(result!=null)
+			{
+				taggedIndexes.setTag(tagForLeft);
+				taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
+						result.getIndexes().getRowIndex());
+				out.collect(taggedIndexes, result.getValue());
+			//	System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+			}
 		}
 		
 		//output the key value pair for the right matrix
-		result=cachedValues.getFirst(aggBinInstruction.input2);
-		if(result!=null)
+		for(IndexedMatrixValue result:cachedValues.get(aggBinInstruction.input2))
 		{
-			taggedIndexes.setTag(tagForRight);
-			taggedIndexes.setIndexes(result.getIndexes().getRowIndex(), 
-					result.getIndexes().getColumnIndex());
-			out.collect(taggedIndexes, result.getValue());
-			//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+			if(result!=null)
+			{
+				taggedIndexes.setTag(tagForRight);
+				taggedIndexes.setIndexes(result.getIndexes().getRowIndex(), 
+						result.getIndexes().getColumnIndex());
+				out.collect(taggedIndexes, result.getValue());
+				//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+			}
 		}
 	}
 }

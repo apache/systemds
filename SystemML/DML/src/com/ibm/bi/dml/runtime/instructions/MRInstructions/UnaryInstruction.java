@@ -46,25 +46,26 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in=cachedValues.getFirst(input);
-		if(in==null)
-			return;
-		
-		//allocate space for the output value
-		IndexedMatrixValue out;
-		if(input==output)
-			out=tempValue;
-		else
-			out=cachedValues.holdPlace(output, valueClass);
-		
-		//process instruction
-		out.getIndexes().setIndexes(in.getIndexes());
-		OperationsOnMatrixValues.performUnaryIgnoreIndexes(in.getValue(), out.getValue(), (UnaryOperator)optr);
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
-		
+		for(IndexedMatrixValue in: cachedValues.get(input))
+		{
+			if(in==null)
+				continue;
+			
+			//allocate space for the output value
+			IndexedMatrixValue out;
+			if(input==output)
+				out=tempValue;
+			else
+				out=cachedValues.holdPlace(output, valueClass);
+			
+			//process instruction
+			out.getIndexes().setIndexes(in.getIndexes());
+			OperationsOnMatrixValues.performUnaryIgnoreIndexes(in.getValue(), out.getValue(), (UnaryOperator)optr);
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);
+		}
 	}
 
 }

@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruct
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -199,10 +200,10 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		tempValue=new IndexedMatrixValue(valueClass);
 		zeroInput=new IndexedMatrixValue(valueClass);
 		
-		byte[] diagm2vIndexes=MRJobConfiguration.getIntermediateMatrixIndexes(job);
-		if(diagm2vIndexes!=null)
+		byte[] immediateIndexes=MRJobConfiguration.getIntermediateMatrixIndexes(job);
+		if(immediateIndexes!=null)
 		{
-			for(byte index: diagm2vIndexes)
+			for(byte index: immediateIndexes)
 				dimensions.put(index, MRJobConfiguration.getIntermediateMatrixCharactristics(job, index));
 		}
 	}
@@ -278,7 +279,9 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction || ins instanceof RangeBasedReIndexInstruction)
+
+		if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction 
+				|| ins instanceof RangeBasedReIndexInstruction || ins instanceof ReorgInstruction)
 		{
 			byte input=((UnaryMRInstructionBase) ins).input;
 			MatrixCharacteristics dim=dimensions.get(input);
@@ -295,5 +298,6 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		}
 		else
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, -1, -1);
+	
 	}
 }

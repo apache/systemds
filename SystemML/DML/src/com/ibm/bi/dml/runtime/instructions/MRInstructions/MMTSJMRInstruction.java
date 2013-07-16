@@ -67,25 +67,30 @@ public class MMTSJMRInstruction extends UnaryInstruction
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{		
-		MatrixValue in = cachedValues.getFirst(input).getValue();
-		
-		//allocate space for the output value
-		IndexedMatrixValue iout = null;
-		if(output==input)
-			iout=tempValue;
-		else
-			iout=cachedValues.holdPlace(output, valueClass);
-		iout.getIndexes().setIndexes(1, 1);
-		MatrixValue out = iout.getValue();
-		
-		//process instruction
-		if( in instanceof MatrixBlock && out instanceof MatrixBlock )
-			((MatrixBlock) in).transposeSelfMatrixMult((MatrixBlock)out, _type );
-		else
-			throw new DMLUnsupportedOperationException("Types "+in.getClass()+" and "+out.getClass()+" incompatible with "+MatrixBlock.class);
-		
-		//put the output value in the cache
-		if(iout==tempValue)
-			cachedValues.add(output, iout);
+		for(IndexedMatrixValue imv: cachedValues.get(input))
+		{
+			if(imv==null)
+				continue;
+			MatrixValue in = imv.getValue();
+			
+			//allocate space for the output value
+			IndexedMatrixValue iout = null;
+			if(output==input)
+				iout=tempValue;
+			else
+				iout=cachedValues.holdPlace(output, valueClass);
+			iout.getIndexes().setIndexes(1, 1);
+			MatrixValue out = iout.getValue();
+			
+			//process instruction
+			if( in instanceof MatrixBlock && out instanceof MatrixBlock )
+				((MatrixBlock) in).transposeSelfMatrixMult((MatrixBlock)out, _type );
+			else
+				throw new DMLUnsupportedOperationException("Types "+in.getClass()+" and "+out.getClass()+" incompatible with "+MatrixBlock.class);
+			
+			//put the output value in the cache
+			if(iout==tempValue)
+				cachedValues.add(output, iout);
+		}
 	}
 }

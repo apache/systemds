@@ -108,36 +108,38 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in=cachedValues.getFirst(input);
-		if(in==null)
-			return;
-		
-		tempRange=getSelectedRange(in, blockRowFactor, blockColFactor);
-		if(tempRange.rowStart==-1 && complementary)//just selection operation
-			return;
-		
-		if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
+		for(IndexedMatrixValue in: cachedValues.get(input))
 		{
-			cachedValues.add(output, in);
-			//System.out.println("just write down: "+in);
-			return;
+			if(in==null)
+				continue;
+		
+			tempRange=getSelectedRange(in, blockRowFactor, blockColFactor);
+			if(tempRange.rowStart==-1 && complementary)//just selection operation
+				return;
+			
+			if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
+			{
+				cachedValues.add(output, in);
+				//System.out.println("just write down: "+in);
+				return;
+			}
+			
+			//allocate space for the output value
+			IndexedMatrixValue out;
+			if(input==output)
+				out=tempValue;
+			else
+				out=cachedValues.holdPlace(output, valueClass);
+			
+			//process instruction
+			
+			OperationsOnMatrixValues.performZeroOut(in.getIndexes(), in.getValue(), 
+					out.getIndexes(), out.getValue(), tempRange, complementary);
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);
 		}
-		
-		//allocate space for the output value
-		IndexedMatrixValue out;
-		if(input==output)
-			out=tempValue;
-		else
-			out=cachedValues.holdPlace(output, valueClass);
-		
-		//process instruction
-		
-		OperationsOnMatrixValues.performZeroOut(in.getIndexes(), in.getValue(), 
-				out.getIndexes(), out.getValue(), tempRange, complementary);
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
 		
 	}
 	

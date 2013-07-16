@@ -49,36 +49,38 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
 		//right now this only deals with appending matrix whith number of column <= blockColFactor
-		IndexedMatrixValue in1=cachedValues.getFirst(input1);
-		if(in1==null)
-			return;
-		//check if this is a boundary block
-		long lastBlockColIndex=offset/blockColFactor;
-		if(offset%blockColFactor!=0)
-			lastBlockColIndex++;
-		if(in1.getIndexes().getColumnIndex()!=lastBlockColIndex)
-			cachedValues.add(output, in1);
-		else
+		for(IndexedMatrixValue in1:cachedValues.get(input1))
 		{
-			MatrixValue value_in2=MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1);
-			
-			//MatrixValue value_in2=cachedValues.getFirst(input2).getValue();
-			//allocate space for the output value
-			ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
-			IndexedMatrixValue first=cachedValues.holdPlace(output, valueClass);
-			first.getIndexes().setIndexes(in1.getIndexes());
-			outlist.add(first);
-			
-			if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>blockColFactor)
+			if(in1==null)
+				continue;
+			//check if this is a boundary block
+			long lastBlockColIndex=offset/blockColFactor;
+			if(offset%blockColFactor!=0)
+				lastBlockColIndex++;
+			if(in1.getIndexes().getColumnIndex()!=lastBlockColIndex)
+				cachedValues.add(output, in1);
+			else
 			{
-				IndexedMatrixValue second=cachedValues.holdPlace(output, valueClass);
-				second.getIndexes().setIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1);
-				outlist.add(second);
+				MatrixValue value_in2=MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1);
+				
+				//MatrixValue value_in2=cachedValues.getFirst(input2).getValue();
+				//allocate space for the output value
+				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
+				IndexedMatrixValue first=cachedValues.holdPlace(output, valueClass);
+				first.getIndexes().setIndexes(in1.getIndexes());
+				outlist.add(first);
+				
+				if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>blockColFactor)
+				{
+					IndexedMatrixValue second=cachedValues.holdPlace(output, valueClass);
+					second.getIndexes().setIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1);
+					outlist.add(second);
+				}
+	
+				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, 
+					blockRowFactor, blockColFactor, true, 0);
+			
 			}
-
-			OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, 
-				blockRowFactor, blockColFactor, true, 0);
-		
 		}
 	}
 	

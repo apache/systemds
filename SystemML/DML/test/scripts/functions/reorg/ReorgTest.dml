@@ -1,0 +1,4 @@
+A=read($1, rows=1, cols=$2, format="text")
+B=diag(A)
+C=B+7
+write(C, $3, format="text")

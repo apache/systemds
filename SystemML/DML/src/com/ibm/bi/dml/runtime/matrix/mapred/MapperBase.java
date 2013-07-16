@@ -435,19 +435,21 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		//apply reblock instructions
 		for(ReblockInstruction ins: reblock_instructions.get(index))
 		{
-			IndexedMatrixValue inValue=cachedValues.getFirst(ins.input);
-			if(inValue==null)
-				continue;
-			long bi=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getRowIndex(),ins.brlen);
-			long bj=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
-			indexBuffer.setIndexes(bi, bj);
-			
-			int ci=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getRowIndex(), ins.brlen);
-			int cj=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
-			partialBuffer.getBaseObject().set(ci, cj, ((MatrixCell)inValue.getValue()).getValue());
-			partialBuffer.setTag(ins.output);
-			out.collect(indexBuffer, partialBuffer);
-		//	System.out.println("in Mapper, "+inValue+" --> "+indexBuffer+": "+partialBuffer);
+			for(IndexedMatrixValue inValue:cachedValues.get(ins.input))
+			{
+				if(inValue==null)
+					continue;
+				long bi=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getRowIndex(),ins.brlen);
+				long bj=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
+				indexBuffer.setIndexes(bi, bj);
+				
+				int ci=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getRowIndex(), ins.brlen);
+				int cj=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
+				partialBuffer.getBaseObject().set(ci, cj, ((MatrixCell)inValue.getValue()).getValue());
+				partialBuffer.setTag(ins.output);
+				out.collect(indexBuffer, partialBuffer);
+			//	System.out.println("in Mapper, "+inValue+" --> "+indexBuffer+": "+partialBuffer);
+			}
 		}
 	}
 	

@@ -4,6 +4,7 @@ import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -54,47 +55,44 @@ public class ReorgInstruction extends UnaryMRInstructionBase {
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		IndexedMatrixValue in=cachedValues.getFirst(input);
-		if(in==null)
-			return;
-		/*
-		MatrixCharacteristics dim=dimensions.get(input);
-		
-		int startRow=0, startColumn=0, length=0;
-		
-		
-		if(((ReorgOperator)optr).fn==Reorg.SupportedOperation.REORG_MATRIX_DIAG)
+		for(IndexedMatrixValue in: cachedValues.get(input))
 		{
-			double rowMin=in.getIndexes().getRowIndex()*dim.numRowsPerBlock;
-			double columnMin=in.getIndexes().getColumnIndex()*dim.numColumnsPerBlock;
-			double left=Math.max(rowMin, columnMin);
-			double right=Math.min(rowMin+in.getValue().getNumRows(), columnMin+in.getValue().getNumColumns());
-			if(left>=right)
-				return;	
-			startRow=(int)(left-rowMin);
-			startColumn=(int)(left-columnMin);
-			length=(int)(right-left);
-		}*/
-		
-		//TODO: cannot handle diag matrix to vector
-		int startRow=0, startColumn=0, length=0;
-		
-		//allocate space for the output value
-		IndexedMatrixValue out;
-		if(input==output)
-			out=tempValue;
-		else
-			out=cachedValues.holdPlace(output, valueClass);
-		
-		//process instruction
-		OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
-				out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
-				startRow, startColumn, length);
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
-		
+			if(in==null)
+				continue;
+			int startRow=0, startColumn=0, length=0;
+			
+			//allocate space for the output value
+			IndexedMatrixValue out;
+			if(input==output)
+				out=tempValue;
+			else
+				out=cachedValues.holdPlace(output, valueClass);
+			
+			//process instruction
+			OperationsOnMatrixValues.performReorg(in.getIndexes(), in.getValue(), 
+					out.getIndexes(), out.getValue(), ((ReorgOperator)optr),
+					startRow, startColumn, length);
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);
+			
+			//special handling for vector to matrix diag to make sure the missing 0' are accounted for 
+			//(only for block representation)
+			if(valueClass.equals(MatrixBlock.class) && ((ReorgOperator)optr).fn==MaxIndex.getMaxIndexFnObject())
+			{
+				long diagIndex=out.getIndexes().getRowIndex();//row index is equal to the col index
+				for(long rc=1; rc<diagIndex; rc++)
+				{
+					IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
+					emptyIndexValue.getIndexes().setIndexes(rc, diagIndex);
+					emptyIndexValue.getValue().reset(blockRowFactor, out.getValue().getNumColumns(), true);
+					emptyIndexValue=cachedValues.holdPlace(output, valueClass);
+					emptyIndexValue.getIndexes().setIndexes(diagIndex, rc);
+					emptyIndexValue.getValue().reset(out.getValue().getNumRows(), blockColFactor, true);
+				}
+			}
+		}
 	}
 
 

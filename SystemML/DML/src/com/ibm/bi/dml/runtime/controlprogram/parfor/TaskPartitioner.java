@@ -51,7 +51,7 @@ public abstract class TaskPartitioner
 	 * 
 	 * @return
 	 */
-	public abstract int createTasks( LocalTaskQueue queue )
+	public abstract int createTasks( LocalTaskQueue<Task> queue )
 		throws DMLRuntimeException;
 
 	

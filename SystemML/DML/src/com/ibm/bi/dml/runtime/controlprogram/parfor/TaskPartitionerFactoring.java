@@ -93,7 +93,7 @@ public class TaskPartitionerFactoring extends TaskPartitioner
 	}
 
 	@Override
-	public int createTasks(LocalTaskQueue queue) 
+	public int createTasks(LocalTaskQueue<Task> queue) 
 		throws DMLRuntimeException 
 	{		
 		int numCreatedTasks=0;

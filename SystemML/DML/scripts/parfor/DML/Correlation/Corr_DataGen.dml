@@ -1,0 +1,7 @@
+#Example Usecase Parson Correlation 
+
+m = $1;
+n = $2;
+
+D = Rand( rows=m, cols=n );
+write(D,"./mboehm/exp/in/D",format="binary");

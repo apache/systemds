@@ -110,7 +110,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		if(sparse)
 		{
 			if(sparseRows==null)
-				return lrlen*4 + 9;
+				return lrlen*4 + 9; //empty block
 			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
 				return lrlen*lclen*8 + 9;	
 			else
@@ -118,7 +118,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		}else
 		{
 			if(denseBlock==null)
-				return 9;
+				return lrlen*4 + 9; //empty block
 			//if it should be sparse
 			else if(lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT)
 				return lrlen*4 + lnonZeros*12 + 9;

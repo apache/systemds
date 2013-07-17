@@ -1016,7 +1016,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		switch( dataPartitioner )
 		{
 			case LOCAL:
-				dp = new DataPartitionerLocal(dpf, -1);
+				dp = new DataPartitionerLocal(dpf, -1, _numThreads);
 				break;
 			case REMOTE_MR:
 				int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);

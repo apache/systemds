@@ -22,7 +22,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
@@ -64,7 +63,16 @@ public class DataPartitionerLocal extends DataPartitioner
 	private IDSequence _seq = null;
 	private MatrixBlock _reuseBlk = null;
 	
-	public DataPartitionerLocal(PDataPartitionFormat dpf, int n) 
+	private int _par = -1;
+	
+	/**
+	 * 
+	 * @param dpf
+	 * @param n
+	 * @param par -1 for serial otherwise number of threads, can be ignored by implementation
+	 * @throws DMLRuntimeException
+	 */
+	public DataPartitionerLocal(PDataPartitionFormat dpf, int n, int par) 
 		throws DMLRuntimeException 
 	{
 		super(dpf, n);
@@ -74,6 +82,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
 		
 		_seq = new IDSequence();
+		_par = (par > 0) ? par : 1;
 	}
 	
 	@Override
@@ -173,7 +182,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnamesPartitions = new File(fnameStaging).list();	
 			if(PARALLEL) 
 			{
-				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				int len = Math.min(fnamesPartitions.length, _par);
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
@@ -271,7 +280,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnamesPartitions = new File(fnameStaging).list();			
 			if(PARALLEL) 
 			{
-				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				int len = Math.min(fnamesPartitions.length, _par);
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
@@ -364,7 +373,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnamesPartitions = new File(fnameStaging).list();			
 			if(PARALLEL) 
 			{
-				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				int len = Math.min(fnamesPartitions.length, _par);
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
@@ -479,7 +488,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnamesPartitions = new File(fnameStaging).list();			
 			if(PARALLEL) 
 			{
-				int len = Math.min(fnamesPartitions.length, InfrastructureAnalyzer.getLocalParallelism()*2);
+				int len = Math.min(fnamesPartitions.length, _par);
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
@@ -844,5 +853,5 @@ public class DataPartitionerLocal extends DataPartitioner
 			writeBinaryBlockSequenceFileToHDFS( job, fnameNew, stagingDir, true );	
 		}	
 	}
-
+	
 }

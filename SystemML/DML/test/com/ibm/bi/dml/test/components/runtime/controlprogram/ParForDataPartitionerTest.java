@@ -529,7 +529,7 @@ public class ParForDataPartitionerTest
 			
 			DataPartitioner dpart = null;
 			if( dp == PDataPartitioner.LOCAL )
-				dpart = new DataPartitionerLocal(format, _n);
+				dpart = new DataPartitionerLocal(format, _n, 4);
 			else if( dp == PDataPartitioner.REMOTE_MR )
 				dpart = new DataPartitionerRemoteMR(format, _n, 4, 4, 3, 1, false);
 			

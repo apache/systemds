@@ -9,7 +9,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
@@ -70,17 +69,17 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	}
 	
 	//TODO at Shirish: please review if DMLTranslator.Blocksize is right here, it is a configuration property and hence cannot be used as a static variable in a MR context
-	public static int computePartitionID(long rowBlockIndex, long colBlockIndex, PDataPartitionFormat pformat, int psize) throws DMLRuntimeException {
+	public static int computePartitionID(long rowBlockIndex, long colBlockIndex, int rowBlockSize, int colBlockSize, PDataPartitionFormat pformat, int psize) throws DMLRuntimeException {
 		int pfile = -1; // partition file ID
 		switch(pformat) {
 		case NONE:
 			return -1;
 		case ROW_BLOCK_WISE_N:
-			pfile = (int) (((rowBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1;
+			pfile = (int) (((rowBlockIndex-1)*rowBlockSize)/psize) + 1;
 			break;
 		
 		case COLUMN_BLOCK_WISE_N:
-			pfile = (int) (((colBlockIndex-1)*DMLTranslator.DMLBlockSize)/psize) + 1;
+			pfile = (int) (((colBlockIndex-1)*colBlockSize)/psize) + 1;
 			break;
 		
 		default:
@@ -91,23 +90,23 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 	}
 	
 	
-	public static MatrixValue getDataFromDistributedCache(byte input, int distCache_index, long rowBlockIndex, long colBlockIndex) throws DMLRuntimeException {
+	public static MatrixValue getDataFromDistributedCache(byte input, int distCache_index, long rowBlockIndex, long colBlockIndex, int rowBlockSize, int colBlockSize) throws DMLRuntimeException {
 		
 		IndexedMatrixValue imv = distCacheValues.get(input);
 
-		int partID = computePartitionID(rowBlockIndex, colBlockIndex, inputPartitionFormats[input], inputPartitionSizes[input]);
+		int partID = computePartitionID(rowBlockIndex, colBlockIndex, rowBlockSize, colBlockSize, inputPartitionFormats[input], inputPartitionSizes[input]);
 		//int cachedPartID = 
 		boolean readNewPartition = true;
 		if ( imv != null ) {
 			MatrixIndexes partIdx = imv.getIndexes();
 			
 			// cached partition's range (from distCacheValues)
-			int part_st = (int) (partID-1)*inputPartitionSizes[input];
-			int part_end = part_st + (int) Math.min(partID*inputPartitionSizes[input], distCacheNumRows[distCache_index]-part_st)-1;
+			//int part_st = (int) (partID-1)*inputPartitionSizes[input];
+			//int part_end = part_st + (int) Math.min(partID*inputPartitionSizes[input], distCacheNumRows[distCache_index]-part_st)-1;
 			
 			// requested range
-			int req_st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize);
-			int req_end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-1;
+			//int req_st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize);
+			//int req_end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-1;
 			//if ( req_st < req_end && req_st >= part_st && req_end <= part_end ) {
 			//	// requested range can be served from distCacheValues, and no need to load a new partition
 			//	readNewPartition = false; 
@@ -130,8 +129,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			    			distCacheFiles[distCache_index].toString(), InputInfo.BinaryBlockInputInfo, 
 			    			distCacheNumRows[distCache_index], // use rlens 
 			    			distCacheNumColumns[distCache_index], 
-			    			DMLTranslator.DMLBlockSize, 
-			    			DMLTranslator.DMLBlockSize, 1.0, !MRBaseForCommonInstructions.isJobLocal );
+			    			rowBlockSize, 
+			    			colBlockSize, 1.0, !MRBaseForCommonInstructions.isJobLocal );
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}
@@ -141,7 +140,8 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 				data = DataConverter.readPartitionFromDistCache(
 						distCacheFiles[distCache_index].toString(), 
 						!MRBaseForCommonInstructions.isJobLocal, 
-						distCacheNumRows[distCache_index], distCacheNumColumns[distCache_index], 
+						distCacheNumRows[distCache_index], distCacheNumColumns[distCache_index],
+						rowBlockSize, colBlockSize,
 						partID, inputPartitionSizes[input]);
 				idx = new MatrixIndexes(partID,1);
 			}
@@ -153,7 +153,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		return imv.getValue();
 	}
 	
-	public static MatrixValue readBlockFromDistributedCache(byte input, long rowBlockIndex, long colBlockIndex) 
+	public static MatrixValue readBlockFromDistributedCache(byte input, long rowBlockIndex, long colBlockIndex, int rowBlockSize, int colBlockSize) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//find cache index for input
@@ -167,23 +167,23 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		if(distCache_index == -1)
 			return null;
 
-		MatrixValue mv = getDataFromDistributedCache(input, distCache_index, rowBlockIndex, colBlockIndex);
+		MatrixValue mv = getDataFromDistributedCache(input, distCache_index, rowBlockIndex, colBlockIndex, rowBlockSize, colBlockSize);
 		
 		int part_rl, st, end;
 		if ( inputPartitionFlags[input] == false ) {
-			st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize);
-			end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-1;
+			st = (int) ((rowBlockIndex-1)*rowBlockSize);
+			end = (int) Math.min(rowBlockIndex*rowBlockSize, distCacheNumRows[distCache_index])-1;
 		}
 		else {
-			part_rl = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize/inputPartitionSizes[input])*inputPartitionSizes[input];
-			st = (int) ((rowBlockIndex-1)*DMLTranslator.DMLBlockSize - part_rl);
-			end = (int) Math.min(rowBlockIndex*DMLTranslator.DMLBlockSize, distCacheNumRows[distCache_index])-part_rl-1;
+			part_rl = (int) ((rowBlockIndex-1)*rowBlockSize/inputPartitionSizes[input])*inputPartitionSizes[input];
+			st = (int) ((rowBlockIndex-1)*rowBlockSize - part_rl);
+			end = (int) Math.min(rowBlockIndex*rowBlockSize, distCacheNumRows[distCache_index])-part_rl-1;
 		}
 	
 
 		MatrixBlock mb = new MatrixBlock(
-				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumRows[distCache_index]-(rowBlockIndex-1)*DMLTranslator.DMLBlockSize)), 
-				(int)Math.min(DMLTranslator.DMLBlockSize, (distCacheNumColumns[distCache_index]-(colBlockIndex-1)*DMLTranslator.DMLBlockSize)), false);
+				(int)Math.min(rowBlockSize, (distCacheNumRows[distCache_index]-(rowBlockIndex-1)*rowBlockSize)), 
+				(int)Math.min(colBlockSize, (distCacheNumColumns[distCache_index]-(colBlockIndex-1)*colBlockSize)), false);
 		mb = (MatrixBlock) ((MatrixBlockDSM)mv).sliceOperations(st+1, end+1, 1, 1, mb);
 
 			

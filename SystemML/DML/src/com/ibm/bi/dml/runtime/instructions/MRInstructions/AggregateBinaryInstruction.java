@@ -62,7 +62,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase {
 		MatrixValue vector=null;
 		if ( in2 == null ) {
 			//vector = MRBaseForCommonInstructions.loadDataFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1); // MRBaseForCommonInstructions.distCacheValues.get(input2);
-			vector = MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1); // MRBaseForCommonInstructions.distCacheValues.get(input2);
+			vector = MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1, blockRowFactor, blockColFactor); // MRBaseForCommonInstructions.distCacheValues.get(input2);
 			if ( vector == null )
 				throw new DMLRuntimeException("Unexpected: vector read from distcache is null!");
 			in2 = new IndexedMatrixValue(new MatrixIndexes(in1.getIndexes().getColumnIndex(),1), vector);

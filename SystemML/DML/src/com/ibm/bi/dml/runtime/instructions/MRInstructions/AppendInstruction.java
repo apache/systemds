@@ -61,7 +61,7 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 				cachedValues.add(output, in1);
 			else
 			{
-				MatrixValue value_in2=MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1);
+				MatrixValue value_in2=MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor);
 				
 				//MatrixValue value_in2=cachedValues.getFirst(input2).getValue();
 				//allocate space for the output value

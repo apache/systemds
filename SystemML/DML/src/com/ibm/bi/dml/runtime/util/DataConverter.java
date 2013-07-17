@@ -29,7 +29,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
@@ -295,13 +294,13 @@ public class DataConverter
 	 * @throws DMLRuntimeException
 	 */
 	public static MatrixBlock readPartitionFromDistCache(String dir, boolean localFS, 
-			long rows, long cols,
+			long rows, long cols, int rowBlockSize, int colBlockSize,
 			int partID, int partSize) throws DMLRuntimeException {
 		
 		dir = dir + "/" + partID;
 		
 		try {
-			MatrixBlock partition = readMatrixFromHDFS(dir, InputInfo.BinaryBlockInputInfo, partSize, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, localFS);
+			MatrixBlock partition = readMatrixFromHDFS(dir, InputInfo.BinaryBlockInputInfo, partSize, 1, rowBlockSize, colBlockSize, localFS);
 			System.out.println("Reading complete...");
 			return partition;
 		} catch (IOException e) {

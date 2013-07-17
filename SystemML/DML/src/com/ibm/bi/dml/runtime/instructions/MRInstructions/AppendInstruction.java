@@ -46,10 +46,14 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
+		if( blkList == null ) 
+			return;
 		
 		//right now this only deals with appending matrix whith number of column <= blockColFactor
-		for(IndexedMatrixValue in1:cachedValues.get(input1))
+		for(IndexedMatrixValue in1 : blkList)
 		{
 			if(in1==null)
 				continue;

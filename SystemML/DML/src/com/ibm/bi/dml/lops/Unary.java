@@ -17,7 +17,7 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class Unary extends Lops {
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, POW, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, POW, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -169,6 +169,9 @@ public class Unary extends Lops {
 		case DIVIDE:
 			return "/";
 
+		case MODULUS:
+			return "%%";			
+			
 		case Over:
 			return "so";
 

@@ -15,7 +15,7 @@ public abstract class Expression {
 	};
 
 	public enum BinaryOp {
-		PLUS, MINUS, MULT, DIV, MATMULT, POW, INVALID
+		PLUS, MINUS, MULT, DIV, MODULUS, MATMULT, POW, INVALID
 	};
 
 	public enum RelationalOp {
@@ -110,6 +110,8 @@ public abstract class Expression {
 			return BinaryOp.MULT;
 		else if (val.equalsIgnoreCase("/"))
 			return BinaryOp.DIV;
+		else if (val.equalsIgnoreCase("%%"))
+			return BinaryOp.MODULUS;
 		else if (val.equalsIgnoreCase("^"))
 			return BinaryOp.POW;
 		else if (val.equalsIgnoreCase("%*%"))

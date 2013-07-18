@@ -1,0 +1,6 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.ElementwiseModulusTest.java
+
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+B = read("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
+C = A %% B;
+write(C, "$$outdir$$c", format="text");

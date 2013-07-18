@@ -213,6 +213,7 @@ TOKEN :
 	| <MINUS  		: "-">
 	| <MULT  		: "*">
 	| <DIV  		: "/">
+	| <MODULUS      : "%%">
 	| <MATRIXMULT 	: "%*%">
 	| <POWER  		: "^">
 	| <LESSEQUAL  	: "<=">
@@ -1581,7 +1582,7 @@ Expression MultDivExpression() :
 	expr = MatrixMultExpression() 
  	(
    		{Expression left, right; Expression.BinaryOp bop = null;}
-   		(t = <MULT> | t = <DIV>)  {bop = Expression.getBinaryOp(t.image); }
+   		(t = <MULT> | t = <DIV> | t = <MODULUS>)  {bop = Expression.getBinaryOp(t.image); }
    		right = MatrixMultExpression() 
    		{
 		    left = expr;

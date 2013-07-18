@@ -8,6 +8,7 @@ import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -57,6 +58,9 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new BinaryInstruction(new BinaryOperator(Divide.getDivideFnObject()), in1, in2, out, str);
 		}
+		else if ( opcode.equalsIgnoreCase("%%") ) {
+			return new BinaryInstruction(new BinaryOperator(Modulus.getModulusFnObject()), in1, in2, out, str);
+		}	
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
 		}

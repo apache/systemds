@@ -1,0 +1,19 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.ScalarModulusTest.java
+
+$$vardeclaration$$
+
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorLeft = Vector %% $$divisor$$;
+write(VectorLeft, "$$outdir$$vector_left", format="text");
+
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+VectorRight = $$dividend$$ %% Vector;
+write(VectorRight, "$$outdir$$vector_right", format="text");
+
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixLeft = Matrix %% $$divisor$$;
+write(MatrixLeft, "$$outdir$$matrix_left", format="text");
+
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+MatrixRight = $$dividend$$ %% Matrix;
+write(MatrixRight, "$$outdir$$matrix_right", format="text");

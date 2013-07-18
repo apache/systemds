@@ -8,6 +8,7 @@ import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -62,6 +63,9 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 		} 
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new ScalarInstruction(new RightScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
+		} 
+		else if ( opcode.equalsIgnoreCase("%%") ) {
+			return new ScalarInstruction(new RightScalarOperator(Modulus.getModulusFnObject(), cst), in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("so") ) {
 			return new ScalarInstruction(new LeftScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);

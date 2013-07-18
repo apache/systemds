@@ -1,0 +1,8 @@
+# junit test class: com.ibm.bi.dml.test.integration.functions.binary.scalar.ModulusTest.java
+
+$$readhelper$$
+
+$$vardeclaration$$
+Computation = $$op1$$ %% $$op2$$;
+ComputationHelper = Computation * Helper;
+write(ComputationHelper, "$$outdir$$computed", format="text");

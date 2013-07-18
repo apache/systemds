@@ -9,6 +9,7 @@ import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
@@ -101,6 +102,8 @@ public class BinaryCPInstruction extends ComputationCPInstruction{
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
 		else if(opcode.equalsIgnoreCase("/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
+		else if(opcode.equalsIgnoreCase("%%"))
+			return new BinaryOperator(Modulus.getModulusFnObject());
 		else if(opcode.equalsIgnoreCase("^"))
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("max") ) {
@@ -137,6 +140,11 @@ public class BinaryCPInstruction extends ComputationCPInstruction{
 				return new LeftScalarOperator(Divide.getDivideFnObject(), default_constant);
 			else return new RightScalarOperator(Divide.getDivideFnObject(), default_constant);
 		}  
+		else if ( opcode.equalsIgnoreCase("%%") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(Modulus.getModulusFnObject(), default_constant);
+			else return new RightScalarOperator(Modulus.getModulusFnObject(), default_constant);
+		}  		
 		//operations for which only matrix-scalar makes sense
 		else if ( opcode.equalsIgnoreCase("^") ){
 			return new RightScalarOperator(Power.getPowerFnObject(), default_constant);

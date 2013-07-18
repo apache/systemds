@@ -1,0 +1,9 @@
+
+
+a = matrix(0, rows = 1, cols = 5);
+
+parfor(i in 1:5) {
+  a[1,i] = 5;
+}
+
+print(castAsScalar(a[1,2]));

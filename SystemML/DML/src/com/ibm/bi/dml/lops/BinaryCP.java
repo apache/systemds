@@ -20,7 +20,7 @@ import com.ibm.bi.dml.utils.LopsException;
 public class BinaryCP extends Lops  
 {
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE,
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		LOG,POW,MAX,MIN,PRINT,
@@ -86,6 +86,8 @@ public class BinaryCP extends Lops
 			opString += "*"; break;
 		case DIVIDE:
 			opString += "/"; break;
+		case MODULUS:
+			opString += "%%"; break;	
 		case POW:	
 			opString += "^"; break;
 			

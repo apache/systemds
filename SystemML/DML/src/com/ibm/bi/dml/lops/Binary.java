@@ -15,7 +15,7 @@ import com.ibm.bi.dml.utils.LopsException;
 public class Binary extends Lops 
 {
 	public enum OperationTypes {
-		ADD, SUBTRACT, MULTIPLY, DIVIDE,
+		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		MAX, MIN, NOTSUPPORTED};	
@@ -93,6 +93,8 @@ public class Binary extends Lops
 			return "*";
 		case DIVIDE:
 			return "/";
+		case MODULUS:
+			return "%%";				
 		
 		/* Relational */
 		case LESS_THAN:

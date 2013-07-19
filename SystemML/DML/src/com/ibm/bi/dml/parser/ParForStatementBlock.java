@@ -149,8 +149,10 @@ public class ParForStatementBlock extends ForStatementBlock
 				LOG.trace("PARFOR: non-local "+di._name+": "+di.getDataType().toString()+" with rowDim = "+di.getDim1()); 
 		
 		//normal validate via ForStatement (sequential)
-		//NOTE: validate/dependency checking of nested parfor-loops happens at this point
-		//NOTE: validate includes also constant propagation for from, to, incr expressions
+		//NOTES:
+		// * validate/dependency checking of nested parfor-loops happens at this point
+		// * validate includes also constant propagation for from, to, incr expressions
+		// * this includes also function inlining
 		VariableSet vs = super.validate(dmlProg, ids, constVars);
 		
 		//check of correctness of specified parfor parameter names and 

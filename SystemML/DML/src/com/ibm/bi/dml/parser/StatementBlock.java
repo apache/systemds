@@ -13,20 +13,22 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class StatementBlock extends LiveVariableAnalysis{
-
+public class StatementBlock extends LiveVariableAnalysis
+{
+	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
+	protected static IDSequence _seq = new IDSequence();
+		
 	protected DMLProgram _dmlProg; 
 	protected ArrayList<Statement> _statements;
 	ArrayList<Hops> _hops = null;
 	ArrayList<Lops> _lops = null;
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
-	
-	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
 	
 	public StatementBlock(){
 		_dmlProg = null;
@@ -373,7 +375,10 @@ public class StatementBlock extends LiveVariableAnalysis{
 					throw new LanguageException(fcall.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
-				String prefix = new Integer(fblock.hashCode()).toString() + "_";
+				
+				//MB: we cannot use the hash since multiple interleaved inlined functions should be independent.
+				//String prefix = new Integer(fblock.hashCode()).toString() + "_";
+				String prefix = _seq.getNextID() + "_";
 				
 				if (fstmt.getBody().size() > 1){
 					LOG.error(sourceExpr.printErrorLocation() + "rewritable function can only have 1 statement block");

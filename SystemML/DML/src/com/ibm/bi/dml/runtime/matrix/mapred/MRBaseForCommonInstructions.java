@@ -10,6 +10,7 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -291,6 +292,13 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		}else if(ins instanceof AppendInstruction)
 		{
 			byte input=((AppendInstruction) ins).input1;
+			MatrixCharacteristics dim=dimensions.get(input);
+			if(dim==null)
+				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
+			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+		}
+		else if ( ins instanceof AggregateBinaryInstruction ) {
+			byte input = ((AggregateBinaryInstruction)ins).input1;
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");

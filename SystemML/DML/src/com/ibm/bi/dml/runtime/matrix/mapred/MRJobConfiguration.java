@@ -1352,7 +1352,7 @@ public class MRJobConfiguration {
 			for(MRInstruction ins: insMapper)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
-				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction)
+				if(ins instanceof ZeroOutInstruction || ins instanceof AggregateUnaryInstruction|| ins instanceof RangeBasedReIndexInstruction || ins instanceof ReorgInstruction)
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
@@ -1361,6 +1361,12 @@ public class MRJobConfiguration {
 				}else if(ins instanceof AppendInstruction)
 				{
 					AppendInstruction tempIns=(AppendInstruction) ins;
+					setIntermediateMatrixCharactristics(job, tempIns.input1, 
+							dims.get(tempIns.input1));
+					intermediateMatrixIndexes.add(tempIns.input1);
+				}else if(ins instanceof AggregateBinaryInstruction)
+				{
+					AggregateBinaryInstruction tempIns=(AggregateBinaryInstruction) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input1, 
 							dims.get(tempIns.input1));
 					intermediateMatrixIndexes.add(tempIns.input1);

@@ -1,14 +1,15 @@
 # Arguments
 # 1st arg: X (one column time series)
-# 2nd arg: p (non-seasonal AR order)
-# 3rd arg: d (non-seasonal differencing order)
-# 4th arg: q (non-seasonal MA order)
-# 5th arg: P (seasonal AR order)
-# 6th arg: D (seasonal differencing order)
-# 7th arg: Q (seasonal MA order)
-# 8th arg: s (period in terms of number of time-steps)
-# 9th arg: 0/1 (1 means include.mean)
-# 10th arg: file name to store learnt parameters
+# 2nd arg: max_func_invoc
+# 3rd arg: p (non-seasonal AR order)
+# 4th arg: d (non-seasonal differencing order)
+# 5th arg: q (non-seasonal MA order)
+# 6th arg: P (seasonal AR order)
+# 7th arg: D (seasonal differencing order)
+# 8th arg: Q (seasonal MA order)
+# 9th arg: s (period in terms of number of time-steps)
+# 10th arg: 0/1 (1 means include.mean)
+# 11th arg: file name to store learnt parameters
 
 #changing to additive sar since R's arima seems to do that
 
@@ -60,20 +61,22 @@ arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer p, Integer P, I
 #input col of time series data
 X = read($1)
 
+max_func_invoc = $2
+
 #non-seasonal order
-p = $2
-d = $3
-q = $4
+p = $3
+d = $4
+q = $5
 
 #seasonal order
-P = $5
-D = $6
-Q = $7
+P = $6
+D = $7
+Q = $8
 
 #length of the season
-s = $8
+s = $9
 
-include_mean = $9
+include_mean = $10
 
 num_rows = nrow(X)
 
@@ -149,8 +152,6 @@ for(i3 in 1:ncol(simplex)){
 	num_func_invoc = num_func_invoc + 1
 }
 
-#make these top level params?
-max_func_invoc = 100
 tol = 1.5 * 10^(-8) * castAsScalar(objvals[1,1])
 
 continue = 1
@@ -232,4 +233,4 @@ if(include_mean == 1){
 	best_point = tmp
 }
 
-write(best_point, $10, format="text")
+write(best_point, $11, format="text")

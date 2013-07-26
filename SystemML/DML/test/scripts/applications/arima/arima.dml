@@ -144,13 +144,11 @@ for(i in 2:ncol(simplex)){
 num_func_invoc = 0
 
 objvals = Rand(rows=1, cols=ncol(simplex), min=0, max=0)
-for(i3 in 1:ncol(simplex)){
-#parfor(i3 in 1:ncol(simplex)){
-	#this parfor should work
-	arima_css_objval = arima_css(simplex[,i3], Z, p, P, q, Q, s)
-	objvals[1,i3] = arima_css_objval*one
-	num_func_invoc = num_func_invoc + 1
+parfor(i3 in 1:ncol(simplex)){
+	arima_css_obj_val = arima_css(simplex[,i3], Z, p, P, q, Q, s)
+	objvals[1,i3] = arima_css_obj_val
 }
+num_func_invoc = num_func_invoc + ncol(simplex)
 
 tol = 1.5 * 10^(-8) * castAsScalar(objvals[1,1])
 
@@ -212,14 +210,14 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
 		}else{
 			if(obj_x_r >= worst_obj_val){
 				best_point = simplex[,best_index]
-				for(i4 in 1:ncol(simplex)){
-				#parfor(i4 in 1:ncol(simplex)){
-					#this parfor should work
-					simplex[,i4] = (simplex[,i4] + best_point)/2
-					#because dml can't handle function calls in an expression
-					tmp = arima_css(simplex[,i4], Z, p, P, q, Q, s)
-					objvals[1,i4] = tmp
+				parfor(i4 in 1:ncol(simplex)){
+					if(i4 != best_index){
+						simplex[,i4] = (simplex[,i4] + best_point)/2
+						tmp = arima_css(simplex[,i4], Z, p, P, q, Q, s)
+						objvals[1,i4] = tmp*one
+					}
 				}
+				num_func_invoc = num_func_invoc + ncol(simplex) - 1
 			}
 		}
 	}

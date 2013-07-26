@@ -147,8 +147,8 @@ num_func_invoc = 0
 objvals = matrix(0, 1, ncol(simplex))
 for(i3 in 1:ncol(simplex)){
   objvals[1,i3] = arima_css(matrix(simplex[,i3], nrow(simplex), 1), Z, p, P, q, Q, s)
-  num_func_invoc = num_func_invoc + 1
 }
+num_func_invoc = num_func_invoc + ncol(simplex)
 
 tol = 1.5 * 10^(-8) * objvals[1,1]
 
@@ -212,10 +212,13 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
       if(obj_x_r >= worst_obj_val){
         best_point = simplex[,best_index]
 
-	for(i4 in 1:ncol(simplex)){
-          simplex[,i4] = (simplex[,i4] + best_point)/2
-	  objvals[1,i4] = arima_css(matrix(simplex[,i4], nrow(simplex), 1), Z, p, P, q, Q, s)
-	}
+		for(i4 in 1:ncol(simplex)){
+			if(i4 != best_index){
+	          simplex[,i4] = (simplex[,i4] + best_point)/2
+			  objvals[1,i4] = arima_css(matrix(simplex[,i4], nrow(simplex), 1), Z, p, P, q, Q, s)
+			}
+		}
+		num_func_invoc = num_func_invoc + ncol(simplex) - 1
       }
     }
   }

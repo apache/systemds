@@ -1,0 +1,10 @@
+dynProject = externalFunction(Matrix[Double] B, Matrix[Double] c)
+             return (Matrix[Double] PD) 
+             implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicProjectMatrixCP",exectype="mem")  
+
+X = read($1, rows=$3, cols=$4, format="text");
+c = read($2, rows=1, cols=$5, format="text");
+
+Y = dynProject(X, c);
+
+write(Y, $6);   

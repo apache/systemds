@@ -1,164 +1,43 @@
 package com.ibm.bi.dml.parser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-
-import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.utils.LanguageException;
-
 
 public class CVStatement extends Statement {
 	
-	private ArrayList<String> _inputNames;	
-	private PartitionParams _pp;
-	private MetaLearningFunctionParameters _params;
-	private AGG _agg;
+	private FunctionCallIdentifier 	_inputs 				= null;
+	
+	private HashMap<String,String>	_partitionParams		= null; 
+	private FunctionCallIdentifier 	_partitionOutputs 		= null;
+	
+	private FunctionCallIdentifier 	_trainFunctionCall 		= null;
+	private FunctionCallIdentifier 	_trainFunctionOutputs 	= null;
+	
+	private FunctionCallIdentifier 	_testFunctionCall		= null;
+	private FunctionCallIdentifier 	_testFunctionOutputs 	= null;
+	
+	private Identifier 	_aggFunctionCall 		= null;
+	private FunctionCallIdentifier 	_aggFunctionOutputs 	= null;
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for CVStatement");
 	}
 	
-	public enum AGG {
-		sum, avg
-	};
-
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append(_pp.toString());
-		sb.append("train: " + _params.getTrainFunctionName());
-		sb.append("test: " + _params.getTestFunctionName());
-		sb.append("agg: " + _agg);
+		sb.append("crossval " 	+_inputs.toString());
+		sb.append("partition " 	+ _partitionParams.toString() 	+ " as " + _partitionOutputs.toString());
+		sb.append("train " 		+ _trainFunctionCall.toString() + " as " + _trainFunctionOutputs.toString()); 
+		sb.append("test " 		+ _testFunctionCall.toString() 	+ " as " + _testFunctionOutputs.toString()); 
+		sb.append("aggregate "  + _aggFunctionCall.toString()	+ " as " + _aggFunctionOutputs.toString());
 		sb.append("\n");
 		return sb.toString();
 	}
 
-	public ArrayList<String> getInputNames(){
-		return _inputNames;
-	}
+	public CVStatement() {
 	
-	public void initializePartitionParams(HashMap<String, String> map) {
-		// Initialize _pp using map; //TODO: handle column sampling 
-		if(map.containsKey("method") == false || map.containsKey("element") == false) {
-			LOG.error("Error in cv statement: Need to specify both method and element!");
-			System.exit(1);
-		}
-		String element = map.get("element");
-		LOG.debug("$$$$$$$ cv element is " + element + ", type is " + map.get("method") + " $$$$$$$$$$");
-		
-		// case: k-fold
-		if (map.get("method").equals("kfold")) {
-			int numFolds, numRowGroups, numColGroups;
-			
-			if (element.equals("row")) {
-				numFolds = (new Integer(map.get("numfolds"))).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.kfold,
-						PartitionParams.PartitionType.row, numFolds, -1);
-			} 
-			else if (element.equals("submatrix")) {
-				numRowGroups = (new Integer(map.get("numrowgroups"))).intValue();
-				numColGroups = (new Integer(map.get("numcolgroups"))).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.kfold,
-						PartitionParams.PartitionType.submatrix, numRowGroups, numColGroups);
-			} 
-			else if (element.equals("cell")) {
-				LOG.error("Partitioning method currently unsupported in the framework");
-				System.exit(-1);
-			}
-			else {
-				LOG.error("kfold with column not supported!");
-				System.exit(1);
-			}
-		}//end if kfold
-
-		else if (map.get("method").equals("holdout")) {
-			double frac;
-			int numIterations = 1;
-			if (element.equals("row")) {
-				frac = new Double(map.get("frac")).doubleValue();
-				numIterations = new Integer(map.get("numiterations")).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.holdout,
-						PartitionParams.PartitionType.row, frac, -1);
-				_pp.numIterations = numIterations;
-			}			
-			else if (element.equals("column")) {
-				LOG.error("Column sampling for CV doesn't make sense; not supported!");
-				System.exit(1);
-				/*frac = new Double(map.get("frac")).doubleValue();
-				numIterations = new Integer(map.get("numiterations")).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.holdout,
-						PartitionParams.PartitionType.row, frac, -1);
-				_pp.numIterations = numIterations;
-				_pp.isColumn = true;
-				//since it is columnar, check if it is supervised or not (default is yes)
-				if(map.containsKey("supervised")) {
-					if(map.get("supervised").equals("yes"))
-						_pp.isSupervised = true;
-					else if(map.get("supervised").equals("no"))
-						_pp.isSupervised = 	false;
-					else {
-						System.out.println("Unrecognized value for supervised!");
-						System.exit(1);
-					}
-				}
-				else {
-					System.out.println("Need to specify if supervised or not for column!");
-					System.exit(1);
-				}*/
-			}
-			else if (element.equals("submatrix")) {
-				LOG.error("Partitioning method currently unsupported in the framework");
-				System.exit(-1);
-			}
-			else if (element.equals("cell")) {
-				frac = (new Double(map.get("frac"))).doubleValue();
-				numIterations = new Integer(map.get("numiterations")).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.holdout,
-						PartitionParams.PartitionType.cell, frac, -1);
-				_pp.numIterations = numIterations;
-			}
-		}//end if holdout
-		else if (map.get("method").equals("bootstrap")) {
-			if (element.equals("row")) {
-				double frac = new Double(map.get("frac")).doubleValue();
-				int numIterations = new Integer(map.get("numiterations")).intValue();
-				_pp = new PartitionParams(_inputNames, PartitionParams.CrossvalType.bootstrap,
-						PartitionParams.PartitionType.row, frac, -1);
-				_pp.numIterations = numIterations;
-			} 
-			else {
-				LOG.error("Bootstrapping supported only for row partitions");
-				System.exit(-1);
-			}
-		}
-		if(map.containsKey("replicate")) {
-			if(map.get("replicate").equals("true")) {
-				_pp.toReplicate = true;
-				LOG.debug ("$$$$$$$$ Replication set to true $$$$$$$$");
-			}
-		}
-		_pp.partitionOutputs = new ArrayList<String>();
-		_pp.partitionOutputs = _params.getPartitionReturnParams();
-		_pp.sfmapfile = "cv-" + System.currentTimeMillis() + "-hashfile";
-	}
-
-	/**
-	 * 
-	 * @param input 	name of the data being cross-validated
-	 * @param map 	 	stores the partition parameters
-	 * @param params 	CV operator parameters -- listed below:
-	 * 
-	 */
-	public CVStatement(ArrayList<String> inputs, HashMap<String, String> map, MetaLearningFunctionParameters params) {
-		_inputNames = inputs;
-		_params = params;			
-		initializePartitionParams(map);
-		LOG.debug("Input[0] is " + inputs.get(0));
-	}
-
-	public PartitionParams getPartitionParams() {
-		return _pp;
 	}
 
 	@Override
@@ -178,8 +57,8 @@ public class CVStatement extends Statement {
 	@Override
 	public VariableSet variablesRead() {
 		VariableSet set = new VariableSet();
-		for (String input : _inputNames){
-			set.addVariable(input, new DataIdentifier(input));
+		for (Expression input : _inputs.getParamExpressions()){
+			set.addVariables(input.variablesRead());
 		}
 		return set;
 	}
@@ -188,12 +67,81 @@ public class CVStatement extends Statement {
 	// only update 
 	public VariableSet variablesUpdated() {
 		VariableSet set = new VariableSet();
-		for (String var : _params.getErrorAggReturnParams())
-			set.addVariable(var, new DataIdentifier(var));
+		for (Expression output : _aggFunctionOutputs.getParamExpressions())
+			set.addVariables(output.variablesUpdated());
 		return set;
 	}
 
-	public MetaLearningFunctionParameters getFunctionParameters() {
-		return _params;
+	public FunctionCallIdentifier get_inputs() {
+		return _inputs;
 	}
-}
+
+	public void set_inputs(FunctionCallIdentifier inputs) {
+		_inputs = inputs;
+	}
+
+	public HashMap<String, String> get_partitionParams() {
+		return _partitionParams;
+	}
+
+	public void set_partitionParams(HashMap<String, String> partitionParams) {
+		_partitionParams = partitionParams;
+	}
+
+	public FunctionCallIdentifier get_partitionOutputs() {
+		return _partitionOutputs;
+	}
+
+	public void set_partitionOutputs(FunctionCallIdentifier partitionOutputs) {
+		_partitionOutputs = partitionOutputs;
+	}
+
+	public FunctionCallIdentifier get_trainFunctionCall() {
+		return _trainFunctionCall;
+	}
+
+	public void set_trainFunctionCall(FunctionCallIdentifier trainFunctionCall) {
+		_trainFunctionCall = trainFunctionCall;
+	}
+
+	public FunctionCallIdentifier get_trainFunctionOutputs() {
+		return _trainFunctionOutputs;
+	}
+
+	public void set_trainFunctionOutputs(FunctionCallIdentifier trainFunctionOutputs) {
+		_trainFunctionOutputs = trainFunctionOutputs;
+	}
+
+	public FunctionCallIdentifier get_testFunctionCall() {
+		return _testFunctionCall;
+	}
+
+	public void set_testFunctionCall(FunctionCallIdentifier testFunctionCall) {
+		_testFunctionCall = testFunctionCall;
+	}
+
+	public FunctionCallIdentifier get_testFunctionOutputs() {
+		return _testFunctionOutputs;
+	}
+
+	public void set_testFunctionOutputs(FunctionCallIdentifier testFunctionOutputs) {
+		_testFunctionOutputs = testFunctionOutputs;
+	}
+
+	public Identifier get_aggFunctionCall() {
+		return _aggFunctionCall;
+	}
+
+	public void set_aggFunctionCall(Identifier aggFunctionCall) {
+		_aggFunctionCall = aggFunctionCall;
+	}
+
+	public FunctionCallIdentifier get_aggFunctionOutputs() {
+		return _aggFunctionOutputs;
+	}
+
+	public void set_aggFunctionOutputs(FunctionCallIdentifier aggFunctionOutputs) {
+		_aggFunctionOutputs = aggFunctionOutputs;
+	}
+
+} // end class

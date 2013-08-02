@@ -14,8 +14,8 @@ import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -146,8 +146,9 @@ public abstract class CostEstimator
 				ret += rGetTimeEstimate(pb2, vars, stats, memoFunc);
 		}
 		else if( pb instanceof CVProgramBlock
-				|| pb instanceof ELProgramBlock
-				|| pb instanceof ELUseProgramBlock)
+				//|| pb instanceof ELProgramBlock
+				//|| pb instanceof ELUseProgramBlock
+				)
 		{
 			//do nothing
 		}

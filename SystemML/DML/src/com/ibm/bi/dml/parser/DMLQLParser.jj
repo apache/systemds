@@ -180,14 +180,18 @@ TOKEN :
 	| <WRITEMATRIX 	: "write">
 	| <READMM		: "readMM" >
 	| <WRITEMM		: "writeMM" >
-	| <READ_MATRIX	: "read.matrix" >
-	| <WRITE_MATRIX	: "write.matrix" >
+	| <READ_CSV		: "read.csv" >
+	| <WRITE_CSV	: "write.csv" >
 	| < MATRIX		: "matrix" >
 
 	// RESERVED KEYWORDS -- required for meta-learning
  	| <BUILD_ENSEMBLE	: "build ensemble" >
 	| <USE_ENSEMBLE 	: "use ensemble" >
 	| <CROSSVAL 		: "crossval">
+	| <AGGREGATE   	: "aggregate">
+	| <TRAIN	   	: "train" >
+	| <TEST			: "test" >
+	| <PARTITION	: "partition" >
 
 	// RESERVED KEYWORDS -- required to support import / packages -- NOT common to R
 	//| <IMPORT 		: "import"> 
@@ -197,7 +201,7 @@ TOKEN :
 	| <AS  			: "as">
 
 	// RESERVED KEYWORDS -- could be eliminated, may cause issue with lookahead
-	| <SEQ 		: "seq">  
+	//| <SEQ 		: "seq">  
 
 	//|<NEXT  	: "next">
 	//|<BREAK  	: "break">
@@ -312,8 +316,8 @@ DMLProgram __inputInternal() :
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
 			|  LOOKAHEAD(CVStatement())					current = CVStatement()
-			| LOOKAHEAD(ELStatement())					current = ELStatement()
-			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			//| LOOKAHEAD(ELStatement())					current = ELStatement()
+			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 		)
 		{
 			StatementBlock sb = null;
@@ -330,20 +334,20 @@ DMLProgram __inputInternal() :
 				sb = new IfStatementBlock(); 
 			} 
 			else if (current instanceof CVStatement) {
-			  	LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+			  	//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-			  	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//			  	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//sb = new ELUseStatementBlock();
+//			}   
 			else if (current instanceof FunctionStatement) {
 				sb = new FunctionStatementBlock();
 			}
@@ -479,7 +483,7 @@ ImportStatement ImportStatement() :
 		importStmt.setFilePath(dequotedString);
 	}
 
-		[<AS> t4 = <ID> {importStmt.setNamespace(t4.image);}] [<SEMICOLON>]
+		["as" t4 = <ID> {importStmt.setNamespace(t4.image);}] [<SEMICOLON>]
 
 	{ 
 		// track position for start / end token tStart
@@ -533,8 +537,8 @@ FunctionStatement FunctionStatement() :
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
 			| LOOKAHEAD(CVStatement())					current = CVStatement()
-			| LOOKAHEAD(ELStatement())					current = ELStatement()
-			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+//			| LOOKAHEAD(ELStatement())					current = ELStatement()
+//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 		)
 
 		{
@@ -552,20 +556,20 @@ FunctionStatement FunctionStatement() :
 				sb = new IfStatementBlock(); 
 			}
 			else if (current instanceof CVStatement) {
-			  	LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+			  	//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-			    LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//			    LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//sb = new ELUseStatementBlock();
+//			}   
 			else if (current instanceof FunctionStatement) {
 			  	LOG.error(current.printErrorLocation() + "Nested function definitions are not supported ");
 				throw new ParseException(current.printErrorLocation() + "Nested function definitions are not supported ");
@@ -638,7 +642,7 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 HashMap <String,String > ReadGenericParamList() :
 {
 	HashMap<String,String > map = new HashMap<String,String >() ;
-	Token t1 = null, t2 = null;
+	Token t1 = null, t2 = null, t4 = null;
 	IntIdentifier intid = null;
 	DoubleIdentifier doubleid = null;
 	BooleanIdentifier boolid = null;
@@ -649,29 +653,27 @@ HashMap <String,String > ReadGenericParamList() :
 		
 }
 {
-	tStart = <LEFTPAREN> t1 = <ID> <ASSIGN>
+		tStart = <LEFTPAREN>
 	(
-		LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
-		| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
-		| boolid = BooleanConstant()  { map.put(t1.image, boolid.toString());     }
-		| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
-		| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
-	)
-	
-	(
-		< COMMA > t1 = < ID > <ASSIGN>
-
+		{t4 = null;}
+		t1 = <ID> <ASSIGN>
 		(
-			LOOKAHEAD(2) intid = IntConstant() { map.put( t1.image, intid.toString());}
-			| doubleid = DoubleConstant()    { map.put( t1.image, doubleid.toString());}
-			| boolid = BooleanConstant()     { map.put( t1.image, boolid.toString());} 
-			| t2 = <SQL_STRING_LITERAL>      { map.put( t1.image, dequoteStr('\'',t2.image));}
-			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put( t1.image, dequoteStr('\"',t2.image));}
+			LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
+			| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
+			| boolid = BooleanConstant()  { map.put(t1.image, boolid.toString());     }
+			| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
+			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
 		)
+		(t4 = <COMMA>)?
 	)*
+
 	tEnd = <RIGHTPAREN>
 	
 	{
+		if (t4 != null){
+			LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
+			throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
+		}
 		// track position for start / end token tStart
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;
@@ -747,19 +749,6 @@ Vector<DataIdentifier> ReadTypedArgList() :
 		return params;
 	}
 }
-
-ArrayList<String> ReadList() :
-{
-	ArrayList<String> params = new ArrayList<String>() ;
-	Token t1 = null, t2=null ;
-} 
-{
-	<LEFTPAREN> 
-		t1 = <ID> {params.add(t1.image);} (<COMMA> t2 = <ID> {params.add(t2.image);})*
-	<RIGHTPAREN> 
-	{return params;}
-}
-
 
 ArrayList<ArrayList<Expression>> ReadIndexList() :
 {
@@ -913,8 +902,8 @@ IfStatement IfStatement() :
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
 			| LOOKAHEAD(CVStatement())					current = CVStatement()
-			| LOOKAHEAD(ELStatement())					current = ELStatement()
-			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+//			| LOOKAHEAD(ELStatement())					current = ELStatement()
+//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
 
 	   	)
 		{
@@ -940,20 +929,20 @@ IfStatement IfStatement() :
 				throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
 			}
 			else if (current instanceof CVStatement) {
-				LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-			  	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-			    LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//			  	//LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//			    //LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				sb = new ELUseStatementBlock();
+//			}   
 			else {
 				sb = new StatementBlock();
 			}
@@ -985,8 +974,8 @@ IfStatement IfStatement() :
 				| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 				| LOOKAHEAD(IfStatement())					current = IfStatement()
 				| LOOKAHEAD(CVStatement())					current = CVStatement()
-				| LOOKAHEAD(ELStatement())					current = ELStatement()
-				| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+//				| LOOKAHEAD(ELStatement())					current = ELStatement()
+//				| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
    
    			)
    			{
@@ -1013,20 +1002,20 @@ IfStatement IfStatement() :
 			  	}
 			  	
 			    else if (current instanceof CVStatement) {
-					LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-					throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-					//sb = new CVStatementBlock();
+					//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+					//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in function definition");
+					sb = new CVStatementBlock();
 				}
-				else if (current instanceof ELStatement) {
-					LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-					throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-					//sb = new ELStatementBlock();
-				}
-				else if (current instanceof ELUseStatement) {
-					LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-					throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-					//sb = new ELUseStatementBlock();
-				}   
+//				else if (current instanceof ELStatement) {
+//					LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//					throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in function definition");
+//					//sb = new ELStatementBlock();
+//				}
+//				else if (current instanceof ELUseStatement) {
+//					LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//					throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in function definition");
+//					//sb = new ELUseStatementBlock();
+//				}   
 			    else {
 			    	sb = new StatementBlock();
 			    }
@@ -1080,8 +1069,8 @@ ForStatement ForStatement() :
    			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
    			| LOOKAHEAD(IfStatement())					current = IfStatement()
 			| LOOKAHEAD(CVStatement())					current = CVStatement()
-			| LOOKAHEAD(ELStatement())					current = ELStatement()
-			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+//			| LOOKAHEAD(ELStatement())					current = ELStatement()
+//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
 		)
 		{
@@ -1108,20 +1097,20 @@ ForStatement ForStatement() :
 			}
 
 			else if (current instanceof CVStatement) {
-				LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//sb = new ELUseStatementBlock();
+//			}   
 			else {
 				sb = new StatementBlock();
 			}
@@ -1173,8 +1162,8 @@ ParForStatement ParForStatement() :
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
 			| LOOKAHEAD(CVStatement())					current = CVStatement()
-			| LOOKAHEAD(ELStatement())					current = ELStatement()
-			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+//			| LOOKAHEAD(ELStatement())					current = ELStatement()
+//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
  		)
  		{
@@ -1201,20 +1190,20 @@ ParForStatement ParForStatement() :
 			}
 
 			else if (current instanceof CVStatement) {
-				LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//sb = new ELUseStatementBlock();
+//			}   
 			
 			else {
 				sb = new StatementBlock();
@@ -1266,8 +1255,8 @@ WhileStatement WhileStatement() :
 			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
 			| LOOKAHEAD(IfStatement())					current = IfStatement()
  			| LOOKAHEAD(CVStatement())					current = CVStatement()
- 			| LOOKAHEAD(ELStatement())					current = ELStatement()
- 			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+// 			| LOOKAHEAD(ELStatement())					current = ELStatement()
+// 			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
  
 		)
 		{
@@ -1294,20 +1283,20 @@ WhileStatement WhileStatement() :
 			}
 
 			else if (current instanceof CVStatement) {
-				LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
-				//sb = new CVStatementBlock();
+				//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in DML");
+				sb = new CVStatementBlock();
 			}
-			else if (current instanceof ELStatement) {
-				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-				//sb = new ELStatementBlock();
-			}
-			else if (current instanceof ELUseStatement) {
-				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-				//sb = new ELUseStatementBlock();
-			}   
+//			else if (current instanceof ELStatement) {
+//				LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+//				//sb = new ELStatementBlock();
+//			}
+//			else if (current instanceof ELUseStatement) {
+//				LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+//				//sb = new ELUseStatementBlock();
+//			}   
 		  	else {
 	   			sb = new StatementBlock();
 	  		}
@@ -1346,7 +1335,7 @@ IterablePredicate IterablePredicate() :
 {
 	tStart = <LEFTPAREN>
 
- 	iterVar = Identifier() tIn = <ID> (  exprParams = ColonDelimitedExpression() | (tSeq = <SEQ> fci = FunctionCall()) )
+ 	iterVar = Identifier() tIn = <ID> (   LOOKAHEAD(ColonDelimitedExpression()) exprParams = ColonDelimitedExpression() | (tSeq = <ID> fci = FunctionCall()) )
    	(<COMMA> paramName = <ID> <ASSIGN> (paramVal = <INTEGER> | paramVal = <ID>) { parforParamValues.put(paramName.image, paramVal.image); } )*
 	{
 
@@ -1354,6 +1343,9 @@ IterablePredicate IterablePredicate() :
             LOG.error(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\""); 
 			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, token after variable must be \"in\""); 
 		}
+		if (tSeq != null && !tSeq.image.equals("seq")){
+			LOG.error(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 
+			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 		} 
    		if (fci == null && exprParams == null){   		    LOG.error(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
   			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
 		}
@@ -2022,7 +2014,7 @@ InputStatement InputStatement() :
 				throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
 			}
   	  	}
-	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_MATRIX> ) <LEFTPAREN>
+	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_CSV> ) <LEFTPAREN>
 		t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
 				
 		//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
@@ -2040,12 +2032,12 @@ InputStatement InputStatement() :
 		    StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
 		}
-		/*
-		else if (tRead.image.equals("read.matrix")){
-		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED);
+		
+		else if (tRead.image.equals("read.csv")){
+		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
 		}
-		*/
+		
 		
  		is.setIdentifier(id);
  		id.setDimensions(is);
@@ -2074,7 +2066,7 @@ OutputStatement OutputStatement() :
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	(tStart = <WRITEMATRIX> | tStart = <WRITEMM> | tStart = <WRITE_MATRIX> ) <LEFTPAREN>
+	(tStart = <WRITEMATRIX> | tStart = <WRITEMM> | tStart = <WRITE_CSV> ) <LEFTPAREN>
 		fn = Identifier() { os = new OutputStatement(fn, Expression.DataOp.WRITE); } <COMMA>
     	t2 = Expression() { os.addExprParam(Statement.IO_FILENAME,t2,false); }
      	(
@@ -2093,8 +2085,8 @@ OutputStatement OutputStatement() :
 
 			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
 		}
-		else if (tWrite.image.equals("write.matrix")){
-			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+		else if (tWrite.image.equals("write.csv")){
+			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
 			os.addExprParam(Statement.FORMAT_TYPE, delimitedExpr, false);
 		}	
 		blp = tStart.beginLine;
@@ -2154,7 +2146,7 @@ RandStatement RandStatement() :
 	}
 	(
 
-		( t1 = <ID>  <ASSIGN>)? t2 = Expression()
+		( LOOKAHEAD(3) t1 = <ID>  <ASSIGN>)? t2 = Expression()
 		{
 			// handle Matrix(...) different from Rand(...)
 			String tNameStr = tName.image;  
@@ -2179,7 +2171,7 @@ RandStatement RandStatement() :
 	}
 }
 
-
+/*
 ELStatement ELStatement() :
 {
 	Token t = null, tOn = null, tPartition = null, tTrain = null, tTest = null;
@@ -2198,29 +2190,29 @@ ELStatement ELStatement() :
 
 }
 {
-	<BUILD_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
- 	tPartition = <ID> partitionParams = ReadGenericParamList() 												  tAs_1	= <ID> partitionOutputs = ReadList()
-	tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  			  tAs_2 = <ID> trainFunctionOutputs = ReadList()
-	[LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   tAs_3 = <ID> testFunctionOutputs  = ReadList()]
+	<BUILD_ENSEMBLE> //t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+ 	//tPartition = <ID> partitionParams = ReadGenericParamList() 												  tAs_1	= <ID> partitionOutputs = ReadList()
+	//tTrain = <ID> t = <ID> {  trainFunctionName = t.image;  } trainFunctionParams = ReadList()  			  tAs_2 = <ID> trainFunctionOutputs = ReadList()
+	//[LOOKAHEAD(2) tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList()   tAs_3 = <ID> testFunctionOutputs  = ReadList()]
 
  	{
 		// verify that "as" tokens have correct value
-		if (!"on".equals(tOn)) throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for build ensemble -- should be \"build ensemble <name> on (data list)\"");
-		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for build ensemble -- should be \"(partition params) as (partition outputs)\"");
-		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
-		if (tAs_3 != null &&  !"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+//		if (!"on".equals(tOn)) throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for build ensemble -- should be \"build ensemble <name> on (data list)\"");
+//		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for build ensemble -- should be \"(partition params) as (partition outputs)\"");
+//		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+//		if (tAs_3 != null &&  !"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for build ensemble -- should be \"(error agg params) as (error agg outputs)\"");
 	
-		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-				testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-				partitionOutputs, 
-				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+//		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+//				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+//				testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+//				partitionOutputs, 
+//				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
 
-		return new ELStatement(eNameStr, dataList, partitionParams, params) ;
+		return null; //new ELStatement(eNameStr, dataList, partitionParams, params) ;
 	}
 }
-
-
+*/
+/*
 ELUseStatement ELUseStatement() :
 {
 	Token t = null, aggfunc = null, tOn = null, tTest = null, tAgg = null;
@@ -2236,77 +2228,72 @@ ELUseStatement ELUseStatement() :
  
 }
 {
-	<USE_ENSEMBLE> t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
-    tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList() tAs_1 = <ID> testFunctionOutputs     = ReadList()
- 	tAgg  = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() 						  tAs_2 = <ID> errorAggFunctionOutputs = ReadList()
+	<USE_ENSEMBLE> //t = <ID> { eNameStr = t.image; } tOn = <ID> dataList = ReadList()
+   // tTest = <ID>  t = <ID> { testFunctionName  = t.image;  } testFunctionParams  = ReadList() tAs_1 = <ID> testFunctionOutputs     = ReadList()
+ //	tAgg  = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() 						  tAs_2 = <ID> errorAggFunctionOutputs = ReadList()
 
 	{
-		CVStatement.AGG agg = null ;
-		if("sum".equals(aggfunc.image))
-			agg = CVStatement.AGG.sum ;
-		else if("avg".equals(aggfunc.image))
-			agg = CVStatement.AGG.avg ;
+//		CVStatement.AGG agg = null ;
+//		if("sum".equals(aggfunc.image))
+//			agg = CVStatement.AGG.sum ;
+//		else if("avg".equals(aggfunc.image))
+//			agg = CVStatement.AGG.avg ;
 
 		// verify that "as" tokens have correct value
-		if (!"on".equals(tOn))   throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for use ensemble -- should be \"use ensemble <name> on (data list)\"");
-		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for use ensemble -- should be \"(test params) as (test outputs)\"");
-		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for use ensemble -- should be \"(error agg params) as (error agg outputs)\"");
+//		if (!"on".equals(tOn))   throw new ParseException(printErrorLocation(tOn.beginLine, tOn.beginColumn) + "incorrect syntax for use ensemble -- should be \"use ensemble <name> on (data list)\"");
+//		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for use ensemble -- should be \"(test params) as (test outputs)\"");
+//		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for use ensemble -- should be \"(error agg params) as (error agg outputs)\"");
 	
-		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
-     	  		testFunctionName,  testFunctionParams,  testFunctionOutputs, 
-       			partitionOutputs, 
-       			agg, errorAggFunctionParams, errorAggFunctionOutputs); 
+//		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
+//				trainFunctionName, trainFunctionParams, trainFunctionOutputs, 
+//     	  		testFunctionName,  testFunctionParams,  testFunctionOutputs, 
+//      		partitionOutputs, 
+//       		agg, errorAggFunctionParams, errorAggFunctionOutputs); 
 
-		return new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
+		return null; //new ELUseStatement(eNameStr, dataList, partitionParams, params) ;
  	}
 
 }
-
+*/
 
 CVStatement CVStatement() :
 {
-	Token t;
-	String trainFunctionName = null, testFunctionName = null ;
-	ArrayList<String> inputs = new ArrayList<String>(), partitionOutputs = new ArrayList<String>(),
-	trainFunctionParams = new ArrayList<String>(),trainFunctionOutputs = new ArrayList<String>(),
-	testFunctionParams = new ArrayList<String>(), testFunctionOutputs = new ArrayList<String>(),
-	errorAggFunctionParams = new ArrayList<String>(), errorAggFunctionOutputs = new ArrayList<String>();
+	FunctionCallIdentifier 	inputs 					= null;
+	HashMap<String,String>	partitionParams			= null; 
+	FunctionCallIdentifier 	partitionOutputs 		= null;
+	DataIdentifier 			trainFunctionCall 		= null;
+	FunctionCallIdentifier 	trainFunctionOutputs 	= null;
+	DataIdentifier 			testFunctionCall		= null;
+	FunctionCallIdentifier 	testFunctionOutputs 	= null;
+	DataIdentifier 			aggFunctionCall 		= null;
+	DataIdentifier 			aggFunctionOutputs 		= null;
 
-	CVStatement.AGG agg = null ;
-	HashMap<String,String> partitionParams ;
-
-	Token 	aggfunc = null;
-	Token	tPartition = null, tAs_1 = null;
-	Token	tTrain = null, tAs_2 = null;
-	Token   tTest = null,  tAs_3 = null;
-	Token	tAgg = null,   tAs_4 = null;
+	Token 	aggfunc 	= null;
+	Token	tPartition 	= null, tAs_1 = null;
+	Token	tTrain 		= null, tAs_2 = null;
+	Token   tTest 		= null, tAs_3 = null;
+	Token	tAgg 		= null, tAs_4 = null;
+	
 }
 {
-	<CROSSVAL> inputs = ReadList()
- 	tPartition = <ID> partitionParams = ReadGenericParamList() 									  tAs_1 = <ID> partitionOutputs = ReadList()
- 	tTrain     = <ID> t = <ID> { trainFunctionName = t.image; } trainFunctionParams = ReadList()  tAs_2 = <ID> trainFunctionOutputs = ReadList()
- 	tTest  = <ID>  t = <ID> { testFunctionName  = t.image; }    testFunctionParams  = ReadList()  tAs_3 = <ID> testFunctionOutputs  = ReadList()
- 	tAgg   = <ID> (aggfunc = <ID>) errorAggFunctionParams = ReadList() 							  tAs_4 = <ID> errorAggFunctionOutputs = ReadList()
+	"crossval"  inputs = FunctionCall()
+ 	"partition" partitionParams = ReadGenericParamList() "as" partitionOutputs		= FunctionCall()
+	"train"		trainFunctionCall = Identifier() 		 "as" trainFunctionOutputs 	= FunctionCall()
+ 	"test"		testFunctionCall  = Identifier() 		 "as" testFunctionOutputs  	= FunctionCall()
+ 	"aggregate" aggFunctionCall   = Identifier()  		 "as" aggFunctionOutputs 	= FunctionCall()[<SEMICOLON>]
 
  	{
-		if("sum".equals(aggfunc.image))
-    		agg = CVStatement.AGG.sum;
-   		else if("avg".equals(aggfunc.image))
-    		agg = CVStatement.AGG.avg;
-
-		// verify that "as" tokens have correct value
-		if (!"as".equals(tAs_1)) throw new ParseException(printErrorLocation(tAs_1.beginLine, tAs_1.beginColumn) + "incorrect syntax for crossval -- should be \"(partition params) as (partition outputs)\"");
-		if (!"as".equals(tAs_2)) throw new ParseException(printErrorLocation(tAs_2.beginLine, tAs_2.beginColumn) + "incorrect syntax for crossval -- should be \"(train params) as (train outputs)\"");
-		if (!"as".equals(tAs_3)) throw new ParseException(printErrorLocation(tAs_3.beginLine, tAs_3.beginColumn) + "incorrect syntax for crossval -- should be \"(test params) as (test outputs)\"");
-		if (!"as".equals(tAs_4)) throw new ParseException(printErrorLocation(tAs_4.beginLine, tAs_4.beginColumn) + "incorrect syntax for crossval -- should be \"(error agg params) as (error agg outputs)\"");
-	
-		MetaLearningFunctionParameters params = new MetaLearningFunctionParameters(
-				trainFunctionName, trainFunctionParams, trainFunctionOutputs,
-				testFunctionName,  testFunctionParams,  testFunctionOutputs,
-				partitionOutputs,
-				agg, errorAggFunctionParams, errorAggFunctionOutputs); 
-
-		return new CVStatement(inputs, partitionParams, params) ;
+ 	  	CVStatement cvs = new CVStatement();
+ 	  	cvs.set_inputs(inputs);
+		cvs.set_partitionParams(partitionParams);
+		cvs.set_partitionOutputs(partitionOutputs);
+		cvs.set_trainFunctionCall((FunctionCallIdentifier)trainFunctionCall);
+		cvs.set_trainFunctionOutputs(trainFunctionOutputs);
+		cvs.set_testFunctionCall((FunctionCallIdentifier) testFunctionCall);
+		cvs.set_testFunctionOutputs(testFunctionOutputs);
+		cvs.set_aggFunctionCall((Identifier)aggFunctionCall);
+		cvs.set_aggFunctionOutputs((FunctionCallIdentifier)aggFunctionOutputs); 
+		return cvs;
  	}
+ 	
 }

@@ -22,12 +22,13 @@ public abstract class Statement {
 	public static final String FORMAT_TYPE 						= "format";
 	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
 	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
-	//public static final String FORMAT_TYPE_VALUE_DELIMITED		= "delimited";
+	public static final String FORMAT_TYPE_VALUE_CSV			= "csv";
 	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
 	
-	//public static final String FORMAT_DELIMITER = "sep";
-	public static final String HAS_HEADER_ROW = "header";
-	
+	public static final String DELIM_DELIMITER = "sep";
+	public static final String DELIM_HAS_HEADER_ROW = "header";
+	public static final String DELIM_FILL = "fill";
+	public static final String DELIM_DEFAULT = "default";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -45,10 +46,7 @@ public abstract class Statement {
 	
 	public static final String SOURCE  	= "source";
 	public static final String SETWD 	= "setwd";
-	
-	
-	
-	
+
 	public static final String MATRIX_DATA_TYPE = "matrix";
 	public static final String SCALAR_DATA_TYPE = "scalar";
 	

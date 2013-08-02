@@ -13,8 +13,8 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -501,61 +501,61 @@ public class DMLProgram {
 			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
 		}
 		
-		else if (sb instanceof ELStatementBlock) {
-			// handle EL case
-			ELStatementBlock esb = ((ELStatementBlock)sb) ;
-			
-			ELProgramBlock epb = null; // new ELProgramBlock( prog, esb.getPartitionParams(), ((ELStatement)esb.getStatement(0)).getFunctionParameters(), config) ;		
-		
-			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (esb.get_lops() != null && esb.get_lops().size() > 0){
-				
-				// DAGs for Lops
-				dag = new Dag<Lops>();
-				
-				for (Lops l : esb.get_lops()) {
-					l.addToDag(dag);
-				}
-				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, config);
-				for (Instruction i : instruct) {
-					epb.addInstruction(i);
-				}
-			}
-
-			retPB = epb;
-			
-			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
-		}
-		
-		else if (sb instanceof ELUseStatementBlock) {
-			// handle EL Use case
-			ELUseStatementBlock eusb = ((ELUseStatementBlock)sb) ;
-			
-			ELUseProgramBlock eupb = null; //new ELUseProgramBlock( prog, eusb.getPartitionParams(), ((ELUseStatement)eusb.getStatement(0)).getFunctionParameters(), config) ;		
-		
-			// check there are actually Lops in to process (loop stmt body will not have any)
-			if (eusb.get_lops() != null && eusb.get_lops().size() > 0){
-				
-				// DAGs for Lops
-				dag = new Dag<Lops>();
-				
-				for (Lops l : eusb.get_lops()) {
-					l.addToDag(dag);
-				}
-				// Instructions for Lobs DAGs
-				instruct = dag.getJobs(sb, config);
-				for (Instruction i : instruct) {
-					eupb.addInstruction(i);
-				}
-			}
-
-			retPB = eupb;
-			
-			// add location information
-			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
-		}
+//		else if (sb instanceof ELStatementBlock) {
+//			// handle EL case
+//			ELStatementBlock esb = ((ELStatementBlock)sb) ;
+//			
+//			ELProgramBlock epb = null; // new ELProgramBlock( prog, esb.getPartitionParams(), ((ELStatement)esb.getStatement(0)).getFunctionParameters(), config) ;		
+//		
+//			// check there are actually Lops in to process (loop stmt body will not have any)
+//			if (esb.get_lops() != null && esb.get_lops().size() > 0){
+//				
+//				// DAGs for Lops
+//				dag = new Dag<Lops>();
+//				
+//				for (Lops l : esb.get_lops()) {
+//					l.addToDag(dag);
+//				}
+//				// Instructions for Lobs DAGs
+//				instruct = dag.getJobs(sb, config);
+//				for (Instruction i : instruct) {
+//					epb.addInstruction(i);
+//				}
+//			}
+//
+//			retPB = epb;
+//			
+//			// add location information
+//			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+//		}
+//		
+//		else if (sb instanceof ELUseStatementBlock) {
+//			// handle EL Use case
+//			ELUseStatementBlock eusb = ((ELUseStatementBlock)sb) ;
+//			
+//			ELUseProgramBlock eupb = null; //new ELUseProgramBlock( prog, eusb.getPartitionParams(), ((ELUseStatement)eusb.getStatement(0)).getFunctionParameters(), config) ;		
+//		
+//			// check there are actually Lops in to process (loop stmt body will not have any)
+//			if (eusb.get_lops() != null && eusb.get_lops().size() > 0){
+//				
+//				// DAGs for Lops
+//				dag = new Dag<Lops>();
+//				
+//				for (Lops l : eusb.get_lops()) {
+//					l.addToDag(dag);
+//				}
+//				// Instructions for Lobs DAGs
+//				instruct = dag.getJobs(sb, config);
+//				for (Instruction i : instruct) {
+//					eupb.addInstruction(i);
+//				}
+//			}
+//
+//			retPB = eupb;
+//			
+//			// add location information
+//			retPB.setAllPositions(sb.getBeginLine(), sb.getBeginColumn(), sb.getEndLine(), sb.getEndColumn());
+//		}
 		else {
 	
 			// handle general case
@@ -727,8 +727,9 @@ public class DMLProgram {
 		}		
 		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			    || pb instanceof CVProgramBlock
-				|| pb instanceof ELProgramBlock
-				|| pb instanceof ELUseProgramBlock)
+			//	|| pb instanceof ELProgramBlock
+			//	|| pb instanceof ELUseProgramBlock
+			    )
 		{
 			//do nothing
 		}
@@ -792,8 +793,9 @@ public class DMLProgram {
 			((IfProgramBlock)pb).addExitInstruction(inst);
 		else if (   pb instanceof FunctionProgramBlock  //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			     || pb instanceof CVProgramBlock
-			     || pb instanceof ELProgramBlock
-			     || pb instanceof ELUseProgramBlock)
+			     //|| pb instanceof ELProgramBlock
+			     //|| pb instanceof ELUseProgramBlock
+			     )
 			; //do nothing
 		else 
 		{
@@ -858,8 +860,9 @@ public class DMLProgram {
 		}		
 		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			    || pb instanceof CVProgramBlock
-				|| pb instanceof ELProgramBlock
-				|| pb instanceof ELUseProgramBlock)
+				//|| pb instanceof ELProgramBlock
+				//|| pb instanceof ELUseProgramBlock
+				)
 		{
 			//do nothing
 		}

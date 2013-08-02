@@ -99,8 +99,7 @@ public class DataExpression extends Expression {
 		}
 		else if (_endLine == value.getEndLine() && _endColumn < value.getEndColumn()){
 			_endColumn = value.getEndColumn();
-		}
-		
+		}		
 	}
 	
 	public void removeVarParam(String name) {
@@ -132,8 +131,7 @@ public class DataExpression extends Expression {
 		switch (this.getOpCode()) {
 		
 		case READ:
-			
-			
+					
 			if (getVarParam(Statement.DATATYPEPARAM) != null && !(getVarParam(Statement.DATATYPEPARAM) instanceof StringIdentifier)){
 				
 				LOG.error(this.printErrorLocation() + "for read statement, parameter " + Statement.DATATYPEPARAM + " can only be a string. " +
@@ -152,18 +150,18 @@ public class DataExpression extends Expression {
 						|| getVarParam(Statement.ROWBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) != null
 						|| getVarParam(Statement.FORMAT_TYPE) != null
-						//|| getVarParam(Statement.FORMAT_DELIMITER) != null	
-						|| getVarParam(Statement.HAS_HEADER_ROW) != null) {
+						|| getVarParam(Statement.DELIM_DELIMITER) != null	
+						|| getVarParam(Statement.DELIM_HAS_HEADER_ROW) != null
+						|| getVarParam(Statement.DELIM_FILL) != null
+						|| getVarParam(Statement.DELIM_DEFAULT) != null){
 					
 					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.");
 					
 					throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-			
 				}
 			}
-			
 			
 			JSONObject configObject = null;	
 
@@ -225,22 +223,20 @@ public class DataExpression extends Expression {
 				}
 			}
 			
-			/*
 			// check if file is delimited format
-			if (formatTypeString == null) { //  && getVarParam(Statement.READROWPARAM) != null  && getVarParam(Statement.READCOLPARAM) != null ){
+			if (formatTypeString == null) {
 			
 				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
-				boolean isDelimitedFormat = false;checkHasDelimitedFormat(origFilename); 
+				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
 				
 				if (isDelimitedFormat){
-					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_DELIMITED));
-					formatTypeString = Statement.FORMAT_TYPE_VALUE_DELIMITED;
+					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV));
+					formatTypeString = Statement.FORMAT_TYPE_VALUE_CSV;
 					inferredFormatType = true;
 					shouldReadMTD = false;
-				}
-				
+				}	
 			}
-			*/
+			
 				
 			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)){
 				/*
@@ -350,12 +346,12 @@ public class DataExpression extends Expression {
 					}	
 				}
 			}
-			/*
-			else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
+			
+			else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
 			
 				 // Handle delimited file format
 				 // 
-				 // 1) only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
 				 //  
 				 // 2) open the file
 				 //
@@ -367,19 +363,19 @@ public class DataExpression extends Expression {
 				//		as ONLY valid parameters
 				if (inferredFormatType == false){
 					for (String key : _varParams.keySet()){
-						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) || key.equals(Statement.HAS_HEADER_ROW) || key.equals(Statement.FORMAT_DELIMITER) || key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM))){
+						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) || key.equals(Statement.DELIM_HAS_HEADER_ROW) || key.equals(Statement.DELIM_DELIMITER) || key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM))){
 							
-							LOG.error(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
+							LOG.error(this.printErrorLocation() + "Invalid parameters in read.csv statement: " +
 									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																				   + Statement.HAS_HEADER_ROW   + "," 
-																				   + Statement.FORMAT_DELIMITER + "," 
+																				   + Statement.DELIM_HAS_HEADER_ROW   + "," 
+																				   + Statement.DELIM_DELIMITER + "," 
 																				   + Statement.READROWPARAM     + "," 
 																				   + Statement.READCOLPARAM);
 							
-							throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read.matrix statement: " +
+							throw new LanguageException(this.printErrorLocation() + "Invalid parameters in read.csv statement: " +
 									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																				   + Statement.HAS_HEADER_ROW   + "," 
-																				   + Statement.FORMAT_DELIMITER + "," 
+																				   + Statement.DELIM_HAS_HEADER_ROW   + "," 
+																				   + Statement.DELIM_DELIMITER + "," 
 																				   + Statement.READROWPARAM     + "," 
 																				   + Statement.READCOLPARAM,
 																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -387,15 +383,26 @@ public class DataExpression extends Expression {
 					}
 				}
 				
-				// if no delimiter mentioned, set to default value of ","
-				if (getVarParam(Statement.FORMAT_DELIMITER) == null){
-					addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
+				// DEFAULT for "sep" : ","
+				if (getVarParam(Statement.DELIM_DELIMITER) == null){
+					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(","));
 				}
 				
-				// deafult, assume no  header row present
-				if (getVarParam(Statement.HAS_HEADER_ROW) == null){
-					addVarParam(Statement.HAS_HEADER_ROW, new StringIdentifier("false"));
+				// DEFAULT for "default": 0
+				if (getVarParam(Statement.DELIM_DELIMITER) == null){
+					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(","));
 				}
+				
+				// DEFAULT for "header": boolean false
+				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
+					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(false));
+				}
+				
+				// DEFAULT for "fill": boolean false
+				if (getVarParam(Statement.DELIM_FILL) == null){
+					addVarParam(Statement.DELIM_FILL,new BooleanIdentifier(false));
+				}
+				
 				
 				if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
 					
@@ -405,8 +412,9 @@ public class DataExpression extends Expression {
 					throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
 							+  " must specify both row and column dimensions ");
 				}
-			}
-			*/
+			} // else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
+			
+			
 			configObject = null;
 			
 			if (shouldReadMTD){
@@ -445,7 +453,7 @@ public class DataExpression extends Expression {
 		        else {
 		        	LOG.warn("Metadata file: " + new Path(filename) + " not provided");
 		        }
-			}
+			} 
 	        
 	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
 			
@@ -500,8 +508,8 @@ public class DataExpression extends Expression {
 					format = 1;
 				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
 					format = 2;
-				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET)) 
-					//	|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)) 
+				} else if ( getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) 
+							|| getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)) 
 				{
 					format = 1;
 				} else {
@@ -584,11 +592,11 @@ public class DataExpression extends Expression {
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			//if (getVarParam(Statement.FORMAT_TYPE) == null) || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_DELIMITED)){
-				//if (getVarParam(Statement.FORMAT_DELIMITER) == null){
-				//	addVarParam(Statement.FORMAT_DELIMITER, new StringIdentifier(","));
-				//}
-			//}
+			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
+				if (getVarParam(Statement.DELIM_DELIMITER) == null){
+					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(","));
+				}
+			}
 			
 			if (getVarParam(Statement.IO_FILENAME) instanceof BinaryExpression){
 				BinaryExpression expr = (BinaryExpression)getVarParam(Statement.IO_FILENAME);
@@ -1301,11 +1309,8 @@ public class DataExpression extends Expression {
 	}
 	
 	
-
-	/*
-	 public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
+	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
 	 
-		
 
         // if the MTD file exists, 
 		//JSONObject mtdObject = readMetadataFile(filename);
@@ -1352,16 +1357,13 @@ public class DataExpression extends Expression {
 				in.close();
 			
 				// check if there are delimited values "
-				// will infer malformed 
-				if (getVarParam(Statement.FORMAT_DELIMITER) != null)
+				if (getVarParam(Statement.DELIM_DELIMITER) != null)
 					return true;
 				else {
 					String defaultDelimiter = ",";
 					boolean lineHasDelimiters = headerLine.contains(defaultDelimiter);
 					return lineHasDelimiters;
 				}
-				
-
 			}
 			else {
 				return false;
@@ -1371,7 +1373,7 @@ public class DataExpression extends Expression {
 			return false;
 		}
 	}
-	*/
+	
 	
 	
 } // end class

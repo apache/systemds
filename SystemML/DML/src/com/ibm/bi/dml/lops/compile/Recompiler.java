@@ -20,8 +20,8 @@ import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
+//import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -380,8 +380,9 @@ public class Recompiler
 		}		
 		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 			    || pb instanceof CVProgramBlock
-				|| pb instanceof ELProgramBlock
-				|| pb instanceof ELUseProgramBlock)
+				//|| pb instanceof ELProgramBlock
+				//|| pb instanceof ELUseProgramBlock
+				)
 		{
 			//do nothing
 		}

@@ -3,7 +3,6 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.lops.CrossvalLop;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.MetaLearningFunctionParameters;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -13,17 +12,14 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class CrossvalOp extends Hops {
 
-	MetaLearningFunctionParameters _params ;
-
 	private CrossvalOp() {
 		//default constructor for clone
 	}
 	
-	public CrossvalOp(String l, DataType dt, ValueType vt, PartitionOp input, MetaLearningFunctionParameters params) {
+	public CrossvalOp(String l, DataType dt, ValueType vt, PartitionOp input) {
 		super(Hops.Kind.CrossvalOp, l, dt, vt);
 		getInput().add(input) ;
 		input.getParent().add(this) ;
-		this._params = params ;
 	}
 
 	@Override
@@ -49,7 +45,7 @@ public class CrossvalOp extends Hops {
 	public Lops constructLops() throws HopsException, LopsException {
 		if(get_lops() == null) {
 			Lops pLop = getInput().get(0).constructLops() ;
-			CrossvalLop cvlop = new CrossvalLop(pLop, _params) ;
+			CrossvalLop cvlop = new CrossvalLop(pLop) ;
 			cvlop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(cvlop) ;
 		}

@@ -307,6 +307,7 @@ public class ResultMergeRemoteReducer
 					
 					//scan for compare object (incl result merge if compare available)
 					double[][] aCompare = null;
+					boolean appendOnly = false;
 					int blockListCnt = 0;
 					while( valueList.hasNext() ) {
 						TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next();
@@ -324,9 +325,10 @@ public class ResultMergeRemoteReducer
 								{
 									mbOut = new MatrixBlock();
 									mbOut.copy( bVal );
+									appendOnly = mbOut.isInSparseFormat();
 								}
 								else
-									mergeWithComp(mbOut, bVal, aCompare);
+									mergeWithComp(mbOut, bVal, aCompare, appendOnly);
 							}
 						}
 					}
@@ -339,10 +341,18 @@ public class ResultMergeRemoteReducer
 						{
 							mbOut = new MatrixBlock();
 							mbOut.copy( tmp );
+							appendOnly = mbOut.isInSparseFormat();
 						}
 						else
-							mergeWithComp(mbOut, tmp, aCompare);
+							mergeWithComp(mbOut, tmp, aCompare, appendOnly);
 					}
+					
+					//sort sparse due to append-only
+					if( appendOnly )
+						mbOut.sortSparseRows();
+					
+					//change sparsity if required after 
+					mbOut.examSparsity(); 
 					
 					//cleanup working dir
 					LocalFileUtils.cleanupWorkingDirectory( _stagingDir );
@@ -350,6 +360,7 @@ public class ResultMergeRemoteReducer
 				//without compare
 				else
 				{
+					boolean appendOnly = false;
 					while( valueList.hasNext() )  
 					{
 						TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next(); 
@@ -358,12 +369,20 @@ public class ResultMergeRemoteReducer
 						{
 							mbOut = new MatrixBlock();
 							mbOut.copy( tmp );
+							appendOnly = mbOut.isInSparseFormat();
 						}
 						else
 						{
-							mergeWithoutComp(mbOut, tmp);	
+							mergeWithoutComp(mbOut, tmp, appendOnly);	
 						}
 					}				
+					
+					//sort sparse due to append-only
+					if( appendOnly )
+						mbOut.sortSparseRows();
+					
+					//change sparsity if required after 
+					mbOut.examSparsity(); 
 				}
 				
 				out.collect(key, mbOut);

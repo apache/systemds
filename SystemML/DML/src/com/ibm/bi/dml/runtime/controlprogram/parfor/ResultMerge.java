@@ -69,18 +69,22 @@ public abstract class ResultMerge
 	 * 
 	 * @param out initially empty block
 	 * @param in 
+	 * @param appendOnly 
 	 * @throws DMLRuntimeException 
 	 */
-	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in ) 
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
 		throws DMLRuntimeException
 	{
 		if( in.isInSparseFormat() ) //sparse input format
 		{
 			SparseCellIterator iter = in.getSparseCellIterator();
-			while( iter.hasNext() )
+			while( iter.hasNext() ) 
 			{
 				IJV cell = iter.next();
-				out.quickSetValue(cell.i, cell.j, cell.v);
+				if( appendOnly )
+					out.appendValue(cell.i, cell.j, cell.v);
+				else
+					out.quickSetValue(cell.i, cell.j, cell.v);
 			}
 		}
 		else //dense input format
@@ -94,13 +98,14 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{
 						double value = in.getValueDenseUnsafe(i,j); //input value
-						if( value != 0  ) 					       //for all nnz
-							out.quickSetValue( i, j, value );	
+						if( value != 0  ){ 					       //for all nnz
+							if(appendOnly)
+								out.appendValue( i, j, value );
+							else
+								out.quickSetValue( i, j, value );
+						}
 					}
 		}	
-		
-		//change sparsity if required
-		out.examSparsity(); 
 	}
 
 	/**
@@ -109,7 +114,7 @@ public abstract class ResultMerge
 	 * @param in
 	 * @throws DMLRuntimeException 
 	 */
-	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
+	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare, boolean appendOnly ) 
 		throws DMLRuntimeException
 	{
 		//NOTE: always iterate over entire block in order to compare all values
@@ -123,8 +128,12 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{	
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
-						if( value != compare[i][j] )  //for new values only (div)
-							out.quickSetValue( i, j, value );	
+						if( value != compare[i][j] ) {  //for new values only (div)
+							if(appendOnly)
+								out.appendValue( i, j, value );
+							else
+								out.quickSetValue( i, j, value );	
+						}
 					}
 		}
 		else //dense input format
@@ -137,13 +146,14 @@ public abstract class ResultMerge
 					for( int j=0; j<cols; j++ )
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
-					    if( value != compare[i][j] )  //for new values only (div)
-					    	out.quickSetValue( i, j, value );	
+					    if( value != compare[i][j] ) { //for new values only (div)
+					    	if( appendOnly )
+					    		out.appendValue( i, j, value );
+					    	else
+					    		out.quickSetValue( i, j, value );	
+					    }
 					}
 		}	
-		
-		//change sparsity if required 
-		out.examSparsity(); 
 	}
 	
 

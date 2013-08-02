@@ -765,29 +765,48 @@ public class ResultMergeLocalFile extends ResultMerge
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = LocalFileUtils.readMatrixBlockFromLocal( dir2+"/"+lnames2[0] );
+							boolean appendOnly = mb.isInSparseFormat();
 							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
 							
 							String[] lnames = dir.list();
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
-								mergeWithComp(mb, tmp, compare);
+								mergeWithComp(mb, tmp, compare, appendOnly);
 							}
+							
+							//sort sparse due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
 							String[] lnames = dir.list();
+							boolean appendOnly = false;
 							for( String lname : lnames )
 							{
 								if( mb == null )
+								{
 									mb = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
+									appendOnly = mb.isInSparseFormat();
+								}
 								else
 								{
 									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
-									mergeWithoutComp(mb, tmp);
+									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}	
+							
+							//sort sparse due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 					}
 					else
@@ -861,29 +880,48 @@ public class ResultMergeLocalFile extends ResultMerge
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
+							boolean appendOnly = mb.isInSparseFormat();
 							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
 							
 							String[] lnames = dir.list();
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-								mergeWithComp(mb, tmp, compare);
+								mergeWithComp(mb, tmp, compare, appendOnly);
 							}
+							
+							//sort sparse and exam sparsity due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
 							String[] lnames = dir.list();
+							boolean appendOnly = false;
 							for( String lname : lnames )
 							{
 								if( mb == null )
+								{
 									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
+									appendOnly = mb.isInSparseFormat();
+								}
 								else
 								{
 									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-									mergeWithoutComp(mb, tmp);
+									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}	
+							
+							//sort sparse due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 					}
 
@@ -991,29 +1029,48 @@ public class ResultMergeLocalFile extends ResultMerge
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
 							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
+							boolean appendOnly = mb.isInSparseFormat();
 							double[][] compare = DataConverter.convertToDoubleMatrix(mb);
 							
 							String[] lnames = dir.list();
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-								mergeWithComp(mb, tmp, compare);
+								mergeWithComp(mb, tmp, compare, appendOnly);
 							}
+							
+							//sort sparse due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 						else //WITHOUT COMPARE BLOCK
 						{
 							//copy all non-zeros from all workers
 							String[] lnames = dir.list();
+							boolean appendOnly = false;
 							for( String lname : lnames )
 							{
 								if( mb == null )
+								{
 									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
+									appendOnly = mb.isInSparseFormat();
+								}
 								else
 								{
 									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-									mergeWithoutComp(mb, tmp);
+									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}	
+							
+							//sort sparse due to append-only
+							if( appendOnly )
+								mb.sortSparseRows();
+							
+							//change sparsity if required after 
+							mb.examSparsity(); 
 						}
 					}
 					

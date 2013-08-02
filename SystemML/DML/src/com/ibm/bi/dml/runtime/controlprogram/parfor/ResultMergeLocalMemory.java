@@ -49,7 +49,10 @@ public class ResultMergeLocalMemory extends ResultMerge
 			MatrixBlock outMB = _output.acquireRead();
 			
 			//get old output matrix from cache for compare
-			MatrixBlock outMBNew = new MatrixBlock(outMB.getNumRows(), outMB.getNumColumns(), outMB.isInSparseFormat());
+			int estnnz = outMB.getNumRows()*outMB.getNumColumns();
+			MatrixBlock outMBNew = new MatrixBlock(outMB.getNumRows(), outMB.getNumColumns(), 
+					                               outMB.isInSparseFormat(), estnnz);
+			boolean appendOnly = outMBNew.isInSparseFormat();
 			
 			//create compare matrix if required (existing data in result)
 			_compare = createCompareMatrix(outMB);
@@ -67,13 +70,21 @@ public class ResultMergeLocalMemory extends ResultMerge
 					
 					MatrixBlock inMB = in.acquireRead();	
 					
-					merge( outMBNew, inMB );
+					merge( outMBNew, inMB, appendOnly );
 					
 					in.release();
 					flagMerged = true;
 				}
 			}
-
+		
+			//sort sparse due to append-only
+			if( appendOnly )
+				outMBNew.sortSparseRows();
+			
+			//change sparsity if required after 
+			outMBNew.examSparsity(); 
+			
+			//create output
 			if( flagMerged )
 			{		
 				//create new output matrix 
@@ -253,18 +264,18 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 * @param in
 	 * @throws DMLRuntimeException 
 	 */
-	private void merge( MatrixBlock out, MatrixBlock in ) 
+	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) 
 		throws DMLRuntimeException
 	{
 		if( _compare == null )
-			mergeWithoutComp(out, in);
+			mergeWithoutComp(out, in, appendOnly);
 		else
-			mergeWithComp(out, in, _compare);
+			mergeWithComp(out, in, _compare, appendOnly);
 	}
 	
 	
 	/**
-	 * 
+	 * NOTE: only used if matrix in dense
 	 */
 	private class ResultMergeWorker implements Runnable
 	{
@@ -286,8 +297,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.getVarName()+" (fname="+_inMO.getFileName()+")");
 				
 				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
-				merge( _outMB, inMB );
-				_inMO.release();
+				merge( _outMB, inMB, false );
+				_inMO.release(); 
 			}
 			catch(Exception ex)
 			{

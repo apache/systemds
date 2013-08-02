@@ -155,8 +155,10 @@ public class OptimizerRuleBased extends Optimizer
 		
 		_cost = est;
 		
-		LOG.debug(getOptMode()+" OPT: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")" );
-		
+		//debug and warnings output
+		LOG.debug(getOptMode()+" OPT: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")." );
+		if( _rnk<=0 || _rk<=0 )
+			LOG.warn(getOptMode()+" OPT: Optimize for inactive cluster (num_nodes="+_rnk+", num_map_slots="+_rk+")." );
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
@@ -640,6 +642,8 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	/**
+	 * NOTE: if MAX_REPLICATION_FACTOR_PARTITIONING is set larger than 10, co-location may
+	 * throw warnings per split since this exceeds "max block locations"
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException 
@@ -1008,9 +1012,13 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			setTaskPartitioner( pn, PTaskPartitioner.FACTORING_CMAX );
 		}
-		else
+		else if( _N/4 >= pn.getK() ) //to prevent imbalance due to ceiling
 		{
 			setTaskPartitioner( pn, PTaskPartitioner.FACTORING );
+		}
+		else
+		{
+			setTaskPartitioner( pn, PTaskPartitioner.NAIVE );
 		}
 	}
 	

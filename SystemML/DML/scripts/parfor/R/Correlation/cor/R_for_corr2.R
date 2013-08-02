@@ -17,5 +17,5 @@ for( i in 1:(n-1) )
    }
 }   
 
-save(R, file = "/local2/mboehm/parforOut.dat");
+save(R, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(R, "CsparseMatrix"), "./tmpout/R");

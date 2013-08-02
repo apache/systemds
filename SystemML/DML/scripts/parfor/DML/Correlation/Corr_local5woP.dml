@@ -1,0 +1,29 @@
+#Example Usecase Parson Correlation 
+
+m = $1;
+n = $2;
+
+D = read( "./mboehm/exp/in/D" );
+R = matrix( 0, rows=n, cols=n );
+
+parfor( i in 1:(n-1), par=5, opt=NONE, taskpartitioner=FACTORING )
+{
+   X = D[,i]; 
+
+   m2X = centralMoment(X,2);
+   sigmaX = sqrt(m2X * (m/(m-1.0)) );
+   
+   for( j in (i+1):n)             
+   {  
+      Y = D[,j];    
+
+      m2Y = centralMoment(Y,2);
+      sigmaY = sqrt(m2Y * (m/(m-1.0)) );      
+      
+      covXY = cov(X,Y);
+      
+      R[i,j] = covXY / (sigmaX*sigmaY);       
+   }
+}          
+
+write(R,"./mboehm/exp/out/R", format="binary");

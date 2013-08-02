@@ -29,5 +29,5 @@ for( i in 1:length(Rtmp) )
   R[ X[1], X[2] ] <- X[3];
 }
 
-save(R, file = "/local2/mboehm/parforOut.dat");
+save(R, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(R, "CsparseMatrix"), "./tmpout/R");

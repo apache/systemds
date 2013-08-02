@@ -6,7 +6,7 @@ n = $2;
 D = read( "./mboehm/exp/in/D" );
 R = matrix( 0, rows=n, cols=n );
 
-parfor( i in 1:(n-1), par=6, opt=NONE, taskpartitioner=FACTORING )
+parfor( i in 1:(n-1), par=5, opt=NONE, taskpartitioner=FACTORING, datapartitioner=REMOTE_MR )
 {
    X = D[,i]; 
 

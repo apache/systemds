@@ -21,5 +21,5 @@ for( i in 1:nc )
    R[,i] <- beta;
 }   
 
-save(R, file = "/local2/mboehm/parforOut.dat");
+save(R, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(R, "CsparseMatrix"), "./tmpout/R");

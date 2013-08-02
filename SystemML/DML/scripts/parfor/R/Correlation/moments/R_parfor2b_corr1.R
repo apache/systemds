@@ -3,11 +3,11 @@ library("Matrix")
 library("doSNOW");
 
 hosts <- c(
-	rep("dml1", as.numeric(args[3])),
-  rep("dml2", as.numeric(args[3])), 
-	rep("dml3", as.numeric(args[3])), 
+	rep("dml1", (as.numeric(args[3])-1)),
+       rep("dml2", (as.numeric(args[3])-1)), 
+	rep("dml3", (as.numeric(args[3])-1)), 
 	rep("dml4", (as.numeric(args[3])-1)),
-	rep("dml5", as.numeric(args[3]))
+	rep("dml5", (as.numeric(args[3])-1))
 	)
 cl<-makeCluster(hosts, type = "SOCK")
 registerDoSNOW(cl)
@@ -44,7 +44,7 @@ for( i in 1:length(Rtmp) )
   R[ X[1], X[2] ] = X[3];
 }
 
-save(R, file = "/local2/mboehm/parforOut.dat");
+save(R, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(R, "CsparseMatrix"), "./tmpout/R");
 
 stopCluster(cl)

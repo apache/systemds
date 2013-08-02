@@ -25,5 +25,5 @@ foreach( i=1:nc, .combine=cbind, .multicombine=TRUE, .maxcombine=500 ) %dopar%{
 }   
 )
 
-save(R, file = "/local2/mboehm/parforOut.dat");
+save(R, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(R, "CsparseMatrix"), "./tmpout/R");

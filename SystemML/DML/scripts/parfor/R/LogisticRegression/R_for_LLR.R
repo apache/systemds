@@ -20,6 +20,9 @@ N = nrow(X)
 D = ncol(X)
 numModels = nrow(params);
 
+# transpose training data
+tX = t(X);
+
 # initialize variable to store computed models
 wModels = matrix( 0, D, numModels );
 
@@ -27,10 +30,7 @@ for( i in 1:numModels )
 {
   # retrieve regularizer and weights from parameter settings	
    regul <- as.numeric( params[i,1] );
-   wt <- as.numeric( params[i,2] );
-
-   # transpose training data
-   tX <- t(X); 
+   wt <- as.numeric( params[i,2] ); 
    
    C <- regul * ((y==1) + wt * (y==-1));
    
@@ -224,7 +224,7 @@ for( i in 1:numModels )
    wModels[,i] <- as.matrix(w);
 }
 
-save(wModels, file = "/local2/mboehm/parforOut.dat");
+save(wModels, file = "/local2/mboehm/parforOut.dat", compress=FALSE);
 #writeMM(as(wModels, "CsparseMatrix"), "./tmpout/W");
 
 

@@ -1,0 +1,7 @@
+m = $1;
+n = $2;
+
+D = Rand(rows=m, cols=n); 
+Y = Rand(rows=m, cols=1);
+write(D,"./mboehm/exp/in/D",format="binary");
+write(Y,"./mboehm/exp/in/Y",format="binary");

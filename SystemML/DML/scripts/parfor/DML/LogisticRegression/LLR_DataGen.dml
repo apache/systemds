@@ -62,12 +62,12 @@ if($5==0) # DML
    write(w, "./mboehm/exp/in/w", format="binary")
    write(X, "./mboehm/exp/in/x", format="binary")
    write(Y, "./mboehm/exp/in/y", format="binary")
-   write(params, "./mboehm/exp/in/params", format="text");
+   write(params, "./mboehm/exp/in/params", format="binary");
 }
 if( $5==1 ) # R
 {
-   write(w, "./mboehm/exp/in/w.mtx", format="mm")
-   write(X, "./mboehm/exp/in/x.mtx", format="mm")
-   write(Y, "./mboehm/exp/in/y.mtx", format="mm")
-   write(params, "./mboehm/exp/in/params.mtx", format="mm");
+   write(w, "./mboehm/exp/in2/w.mtx", format="mm")
+   write(X, "./mboehm/exp/in2/x.mtx", format="mm")
+   write(Y, "./mboehm/exp/in2/y.mtx", format="mm")
+   write(params, "./mboehm/exp/in2/params.mtx", format="mm");
 }

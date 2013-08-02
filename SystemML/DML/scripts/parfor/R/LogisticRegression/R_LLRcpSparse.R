@@ -1,7 +1,7 @@
 args <- commandArgs(TRUE)
 library("Matrix")
 
-X = readMM("./mboehm/exp/in/x.mtx");
-y = readMM("./mboehm/exp/in/y.mtx");
-params = readMM("./mboehm/exp/in/params.mtx");
-save(X, y, params, file = "/local2/mboehm/parforIn.dat");
+X = readMM("/local2/mboehm/llr/x.mtx");
+y = readMM("/local2/mboehm/llr/y.mtx");
+params = readMM("/local2/mboehm/llr/params.mtx");
+save(X, y, params, file = "/local2/mboehm/parforIn.dat", compress=FALSE);

@@ -219,7 +219,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected long                _ID           = -1;
 	protected int                 _IDPrefix     = -1;
 	protected ArrayList<String>  _resultVars      = null;
-	protected ArrayList<Boolean> _resultVarsState = null;
 	protected IDSequence         _resultVarsIDSeq = null;
 	
 	// local parworker data
@@ -511,9 +510,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_EXECMODE,        _execMode.ordinal());
 		}
 		
-		//preserve result variables of cleanup
-		pinResultVariables(ec);
-		//_resultVarsState = pinVariables(_resultVars); //TODO consolidate
+		//preserve shared input/result variables of cleanup
+		ArrayList<String> varList = ec.getVarList();
+		HashMap<String, Boolean> varState = ec.pinVariables(varList);
 		
 		try 
 		{		
@@ -536,10 +535,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			throw new DMLRuntimeException("PARFOR: Failed to execute loop in parallel.",ex);
 		}
 		
-		//clear result variables 
-		unpinResultVariables(ec);
-		//unpinVariables(_resultVars,_resultVarsState); TODO consolidate
-
+		//reset state of shared input/result variables 
+		ec.unpinVariables(varList, varState);
+		
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		ec.setVariable(iterVarName, iterVar);
@@ -770,40 +768,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		}			
 	}	
 	
-	/**
-	 * Pin state of result variables before execution.
-	 */
-	private void pinResultVariables(ExecutionContext ec)
-	{
-		_resultVarsState = new ArrayList<Boolean>();
-		
-		for( String var : _resultVars )
-		{
-			Data dat = ec.getVariable(var);
-			if( dat instanceof MatrixObject )
-			{
-				MatrixObject mo = (MatrixObject)dat;
-				_resultVarsState.add( mo.isCleanupEnabled() );
-				mo.enableCleanup(false); 
-			}
-		}
-	}
-	
-	/**
-	 * Unpin (revert) state of result variables after execution.
-	 */
-	private void unpinResultVariables(ExecutionContext ec)
-	{
-		for( int i=0; i<_resultVars.size(); i++ )
-		{
-			String var = _resultVars.get(i);
-			Data dat = ec.getVariable(var);
-			if( dat instanceof MatrixObject )
-				((MatrixObject)dat).enableCleanup(_resultVarsState.get(i));
-		}
-		
-		_resultVarsState = null;
-	}
 	
 	/**
 	 * Cleanup result variables of parallel workers after result merge.

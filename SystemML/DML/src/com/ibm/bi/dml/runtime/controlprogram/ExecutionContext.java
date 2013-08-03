@@ -149,6 +149,7 @@ public class ExecutionContext
 	}
 	
 	public MatrixBlock getMatrixInput(String varName) throws DMLRuntimeException {
+		
 		try {
 			MatrixObject mobj = (MatrixObject) this.getVariable(varName);
 			return mobj.acquireRead();
@@ -227,6 +228,9 @@ public class ExecutionContext
 	 * objects is not cleared and the corresponding HDFS files are not 
 	 * deleted (through rmvar instructions). 
 	 * 
+	 * This is necessary for: function input variables, parfor result variables, 
+	 * parfor shared inputs that are passed to functions.
+	 * 
 	 * The function returns the OLD "clean up" state of matrix objects.
 	 */
 	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
@@ -238,7 +242,7 @@ public class ExecutionContext
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 			{
-				//System.out.println("pin ("+_ID+") "+var);
+				//System.out.println("pin "+var);
 				MatrixObject mo = (MatrixObject)dat;
 				varsState.put( var, mo.isCleanupEnabled() );
 				mo.enableCleanup(false); 
@@ -264,11 +268,22 @@ public class ExecutionContext
 	{
 		for( String var : varList)
 		{
-			//System.out.println("unpin ("+_ID+") "+var);
-			
+			//System.out.println("unpin "+var);
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).enableCleanup(varsState.get(var));
 		}
+	}
+	
+	/**
+	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
+	 * 
+	 * @return
+	 */
+	public ArrayList<String> getVarList()
+	{
+		ArrayList<String> varlist = new ArrayList<String>();
+		varlist.addAll(_variables.keySet());	
+		return varlist;
 	}
 }

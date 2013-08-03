@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
@@ -91,20 +92,20 @@ public class PerfTestTool
 {
 	//internal parameters
 	public static final boolean READ_STATS_ON_STARTUP  = false;
-	public static final int     TEST_REPETITIONS       = 20; //FIXME 3 
+	public static final int     TEST_REPETITIONS       = 10; 
 	public static final int     NUM_SAMPLES_PER_TEST   = 11; 
 	public static final int     MODEL_MAX_ORDER        = 2;
 	public static final boolean MODEL_INTERCEPT        = true;
 	
 	public static final long    MIN_DATASIZE           = 1000;
-	public static final long    MAX_DATASIZE           = 10000000; //FIXME 1000000
-	public static final long    DEFAULT_DATASIZE       = (MAX_DATASIZE-MIN_DATASIZE)/2;
+	public static final long    MAX_DATASIZE           = 1000000; 
+	public static final long    DEFAULT_DATASIZE       = 500000;//(MAX_DATASIZE-MIN_DATASIZE)/2;
 	public static final long    DATASIZE_MR_SCALE      = 20;
 	public static final double  MIN_DIMSIZE            = 1;
 	public static final double  MAX_DIMSIZE            = 1000; 
 	public static final double  MIN_SPARSITY           = 0.1;
 	public static final double  MAX_SPARSITY           = 1.0;
-	public static final double  DEFAULT_SPARSITY       = (MAX_SPARSITY-MIN_SPARSITY)/2;
+	public static final double  DEFAULT_SPARSITY       = 0.5;//(MAX_SPARSITY-MIN_SPARSITY)/2;
 	public static final double  MIN_SORT_IO_MEM        = 10;
 	public static final double  MAX_SORT_IO_MEM        = 500;
 	public static final double  DEFAULT_SORT_IO_MEM    = 256; //BI: default 256MB, hadoop: default 100MB
@@ -330,6 +331,9 @@ public class PerfTestTool
 		{
 			Timing time = new Timing();
 			time.start();
+			
+			//init caching
+			LazyWriteBuffer.init();
 			
 			//register all testdefs and instructions
 			registerTestConfigurations();
@@ -724,7 +728,7 @@ public class PerfTestTool
 			ainst.add( inst.getValue() );
 			pb.setInstructions(ainst);
 			
-			ExecutionContext ec = new ExecutionContext( false );
+			ExecutionContext ec = new ExecutionContext( true );
 			
 			//foreach registered test configuration
 			for( Integer defID : testDefIDs )
@@ -1010,7 +1014,7 @@ public class PerfTestTool
 			 	case EXEC_TIME: 
 			 		Timing time = new Timing(); 
 			 		time.start();
-			 		pb.execute( null );
+			 		pb.execute( ec );
 			 		value = time.stop();
 			 		break;
 			 	case MEMORY_USAGE:
@@ -1018,7 +1022,7 @@ public class PerfTestTool
 			 		mo.measureStartMem();
 			 		Thread t = new Thread(mo);
 			 		t.start();
-			 		pb.execute( null );
+			 		pb.execute( ec );
 			 		mo.setStopped();
 			 		value = mo.getMaxMemConsumption();
 			 		t.join();

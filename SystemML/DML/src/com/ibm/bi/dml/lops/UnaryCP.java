@@ -33,9 +33,7 @@ public class UnaryCP extends Lops {
 		this.addInput(input);
 		input.addOutput(this);
 
-		/*
-		 * This lop is executed in control program.
-		 */
+		//This lop is executed in control program.
 		boolean breaksAlignment = false; // this does not carry any information
 											// for this lop
 		boolean aligner = false;
@@ -143,6 +141,15 @@ public class UnaryCP extends Lops {
 		sb.append( get_dataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( get_valueType() );
+		
+		//check for print literal
+		Lops inputLop = getInputs().get(0);
+		if( (operation == OperationTypes.PRINT || operation == OperationTypes.PRINT2) &&
+			inputLop instanceof Data )
+		{
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( ((Data)inputLop).isLiteral() );
+		}
 		
 		return sb.toString();
 

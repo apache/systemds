@@ -7,26 +7,37 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
-public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
-	public ScalarBuiltinCPInstruction(Operator op,
-									  CPOperand in,
-									  CPOperand out,
-									  String instr){
-		super(op, in, out, 1, instr);
+public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
+{	
+	private boolean _literal = false;
+	
+	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr)
+	{
+		this(op, in, out, instr, false);
 	}
-
+	
+	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr, boolean literal)
+	{
+		super(op, in, out, 1, instr);
+		_literal = literal;
+	}
+	
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException {
-		
+		throws DMLRuntimeException 
+	{	
 		String opcode = InstructionUtils.getOpCode(instString);
-		
-		ScalarObject so = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
-		
-		ScalarObject sores = null;
-		
 		SimpleOperator dop = (SimpleOperator) optr;
+		ScalarObject sores = null;
+		ScalarObject so = null;
+		
+		//get the scalar input 
+		if( _literal )
+			so = new StringObject( input1.get_name() ); 
+		else	
+			so = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
 			
+		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String outString = "";
 			switch (input1.get_valueType()) {
@@ -53,9 +64,7 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 			sores = new StringObject(so.getStringValue());
 		}
 		else {
-			/*
-			 * Inputs for all builtins other than PRINT are treated as DOUBLE.
-			 */
+			//Inputs for all builtins other than PRINT are treated as DOUBLE.
 			double rval;
 			rval = dop.fn.execute(so.getDoubleValue());
 			sores = (ScalarObject) new DoubleObject(rval);
@@ -63,4 +72,5 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction{
 		
 		ec.setScalarOutput(output.get_name(), sores);
 	}
+
 }

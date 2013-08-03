@@ -5,6 +5,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
@@ -31,9 +32,34 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 		throws DMLRuntimeException, DMLUnsupportedOperationException {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseUnaryInstruction(str, in, out);
 		
-		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = null;
+		ValueFunction func = null;
+		
+		if( parts.length==4 ) //print, print2
+		{
+			opcode = parts[0];
+			boolean literal = Boolean.parseBoolean(parts[3]);
+			if( literal )
+				in.set_name(parts[1]);
+			else
+				in.split(parts[1]);
+			out.split(parts[2]);
+			func = Builtin.getBuiltinFnObject(opcode);
+			
+			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str, literal);
+		}
+		else //2+1, general case
+		{
+			opcode = parseUnaryInstruction(str, in, out);
+			func = Builtin.getBuiltinFnObject(opcode);
+			
+			if(in.get_dataType() == DataType.SCALAR)
+				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str);
+			else if(in.get_dataType() == DataType.MATRIX)
+				return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, str);
+		}
 		
 		/*
 	    int _arity = parts.length - 2;
@@ -56,13 +82,6 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
 		*/
-		
-		// Determine appropriate Function Object based on opcode
-			
-		if(in.get_dataType() == DataType.SCALAR)
-			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str);
-		else if(in.get_dataType() == DataType.MATRIX)
-			return new MatrixBuiltinCPInstruction(new UnaryOperator(func), in, out, str);
 		
 		return null;
 	}

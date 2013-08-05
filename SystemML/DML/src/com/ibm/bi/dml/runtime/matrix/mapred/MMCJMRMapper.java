@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -77,30 +78,32 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 			byte tagForLeft, byte tagForRight, TaggedFirstSecondIndexes taggedIndexes,
 			OutputCollector<Writable, Writable> out) throws IOException
 	{
+		ArrayList<IndexedMatrixValue> blkList1 = cachedValues.get(aggBinInstruction.input1);
+		ArrayList<IndexedMatrixValue> blkList2 = cachedValues.get(aggBinInstruction.input2);
+		
 		//output the key value pair for the left matrix
-		for(IndexedMatrixValue result:cachedValues.get(aggBinInstruction.input1))
-		{
-			if(result!=null)
-			{
-				taggedIndexes.setTag(tagForLeft);
-				taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
-						result.getIndexes().getRowIndex());
-				out.collect(taggedIndexes, result.getValue());
-			//	System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
-			}
-		}
+		if( blkList1 != null )
+			for(IndexedMatrixValue result:blkList1)
+				if(result!=null)
+				{
+					taggedIndexes.setTag(tagForLeft);
+					taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
+							result.getIndexes().getRowIndex());
+					out.collect(taggedIndexes, result.getValue());
+				//	System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+				}
+		
 		
 		//output the key value pair for the right matrix
-		for(IndexedMatrixValue result:cachedValues.get(aggBinInstruction.input2))
-		{
-			if(result!=null)
-			{
-				taggedIndexes.setTag(tagForRight);
-				taggedIndexes.setIndexes(result.getIndexes().getRowIndex(), 
-						result.getIndexes().getColumnIndex());
-				out.collect(taggedIndexes, result.getValue());
-				//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
-			}
-		}
+		if( blkList2 != null )
+			for(IndexedMatrixValue result:blkList2)
+				if(result!=null)
+				{
+					taggedIndexes.setTag(tagForRight);
+					taggedIndexes.setIndexes(result.getIndexes().getRowIndex(), 
+							result.getIndexes().getColumnIndex());
+					out.collect(taggedIndexes, result.getValue());
+					//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+				}
 	}
 }

@@ -120,43 +120,23 @@ public class CacheDataOutput implements DataOutput
     /////////////////////////////////////////
     // Custom implementation for arrays
     /////////////////////////////////////////	
-	private static final int BLOCK_NVALS = 512;
-	private static final int BLOCK_NBYTES = BLOCK_NVALS*8;
 	
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
 	{
-		if( _bufflen >=  BLOCK_NBYTES) //blockwise if buffer large enough
+		long tmp = -1;
+		
+		for( int i=0; i<len; i++ )
 		{
-			long tmp = -1;
-			int i, j;
-			
-			//process full blocks of BLOCK_NVALS values 
-			for( i=0; i<len-BLOCK_NVALS; i+=BLOCK_NVALS )
-			{
-				for( j=0; j<BLOCK_NVALS; j++ )
-				{
-					tmp = Double.doubleToLongBits(varr[i+j]);
-					_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
-					_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-					_buff[_count++] = (byte)((tmp       ) & 0xFF);	
-				}
-			}
-			
-			//process remaining values of the last block
-			//(not relevant for performance, since at most BLOCK_NVALS-1 values)
-			for(  ; i<len; i++ )
-				writeDouble(varr[i]);
-		}
-		else //value wise (general case for small buffers)
-		{
-			for( int i=0; i<len; i++ )
-				writeDouble(varr[i]);
+			tmp = Double.doubleToLongBits(varr[i]);
+			_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
+			_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
+			_buff[_count++] = (byte)((tmp       ) & 0xFF);	
 		}
 	}
 }

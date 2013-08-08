@@ -1,7 +1,7 @@
 args <- commandArgs(TRUE)
 library(Matrix)
 
-arima_css = function(w, X, p, P, q, Q, s){
+arima_css = function(w, X, p, P, q, Q, s, useJacobi){
   b = matrix(X[,2:ncol(X)], nrow(X), ncol(X)-1)%*%w
 
   R = matrix(0, nrow(X), nrow(X))
@@ -23,26 +23,46 @@ arima_css = function(w, X, p, P, q, Q, s){
       R[(1+err_ind_s):nrow(R),1:(ncol(R)-err_ind_s)] = R[(1+err_ind_s):nrow(R),1:(ncol(R)-err_ind_s)] + diag(d_s)
     }
   }
-  
-  check = sum(ifelse(rowSums(abs(R)) >= 1, 1, 0))
-  if(check > 0){
-    print("R is not diagonal dominant. Suggest switching to an exact solver.")
-  }
 
   max_iter = 100
   tol = 0.01
 
   y_hat = matrix(0, nrow(X), 1)
   iter = 0
-  diff = tol+1.0
-  while(iter < max_iter & diff > tol){
-    y_hat_new = matrix(b - R%*%y_hat, nrow(y_hat), 1)
-    diff = sum((y_hat_new-y_hat)*(y_hat_new-y_hat))
-    y_hat = y_hat_new
-    iter = iter + 1
+  
+  if(useJacobi == 1){
+  	check = sum(ifelse(rowSums(abs(R)) >= 1, 1, 0))
+  	if(check > 0){
+  	  print("R is not diagonal dominant. Suggest switching to an exact solver.")
+  	}
+  	diff = tol+1.0
+  	while(iter < max_iter & diff > tol){
+  	  y_hat_new = matrix(b - R%*%y_hat, nrow(y_hat), 1)
+  	  diff = sum((y_hat_new-y_hat)*(y_hat_new-y_hat))
+  	  y_hat = y_hat_new
+  	  iter = iter + 1
+  	}
+  }else{
+  	ones = rep(1, nrow(X))
+  	A = R + diag(ones)
+  	Z = t(A)%*%A
+  	y = t(A)%*%b
+  	r = -y
+  	p = -r
+  	norm_r2 = sum(r*r)
+  	while(iter < max_iter & norm_r2 > tol){
+ 	 	q = Z%*%p 
+  		alpha = norm_r2 / sum(p*q)
+  		y_hat = y_hat + alpha * p
+  		old_norm_r2 = norm_r2
+  		r = r + alpha * q
+  		norm_r2 = sum(r * r)
+  		beta = norm_r2 / old_norm_r2
+  		p = -r + beta * p
+  		iter = iter + 1
+  	}
   }
-  print(paste("Inner loop", iter, ":", diff))
-
+  
   errs = X[,1] - y_hat
   obj = sum(errs*errs)
 
@@ -68,6 +88,8 @@ Q = as.integer(args[8])
 s = as.integer(args[9])
 
 include_mean = as.integer(args[10])
+
+useJacobi = as.integer(args[11])
 
 num_rows = nrow(X)
 
@@ -146,7 +168,7 @@ num_func_invoc = 0
 
 objvals = matrix(0, 1, ncol(simplex))
 for(i3 in 1:ncol(simplex)){
-  objvals[1,i3] = arima_css(matrix(simplex[,i3], nrow(simplex), 1), Z, p, P, q, Q, s)
+  objvals[1,i3] = arima_css(matrix(simplex[,i3], nrow(simplex), 1), Z, p, P, q, Q, s, useJacobi)
 }
 num_func_invoc = num_func_invoc + ncol(simplex)
 
@@ -154,7 +176,7 @@ tol = 1.5 * 10^(-8) * objvals[1,1]
 
 continue = 1
 while(continue == 1 & num_func_invoc <= max_func_invoc) {
-  print(paste(num_func_invoc, max_func_invoc))
+  #print(paste(num_func_invoc, max_func_invoc))
   best_index = 1
   worst_index = 1
   for(i in 2:ncol(objvals)){
@@ -180,12 +202,12 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
   c = (rowSums(simplex) - simplex[,worst_index])/(nrow(simplex))
 
   x_r = 2*c - simplex[,worst_index]
-  obj_x_r = arima_css(matrix(x_r, nrow(simplex), 1), Z, p, P, q, Q, s)
+  obj_x_r = arima_css(matrix(x_r, nrow(simplex), 1), Z, p, P, q, Q, s, useJacobi)
   num_func_invoc = num_func_invoc + 1
 
   if(obj_x_r < best_obj_val){
     x_e = 2*x_r - c
-    obj_x_e = arima_css(matrix(x_e, nrow(simplex), 1), Z, p, P, q, Q, s)
+    obj_x_e = arima_css(matrix(x_e, nrow(simplex), 1), Z, p, P, q, Q, s, useJacobi)
     num_func_invoc = num_func_invoc + 1
 
     if(obj_x_r <= obj_x_e){
@@ -202,7 +224,7 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
     }
 
     x_c_in = (simplex[,worst_index] + c)/2
-    obj_x_c_in = arima_css(matrix(x_c_in, nrow(simplex), 1), Z, p, P, q, Q, s)
+    obj_x_c_in = arima_css(matrix(x_c_in, nrow(simplex), 1), Z, p, P, q, Q, s, useJacobi)
     num_func_invoc = num_func_invoc + 1
     
     if(obj_x_c_in < objvals[1,worst_index]){
@@ -215,7 +237,7 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
 		for(i4 in 1:ncol(simplex)){
 			if(i4 != best_index){
 	          simplex[,i4] = (simplex[,i4] + best_point)/2
-			  objvals[1,i4] = arima_css(matrix(simplex[,i4], nrow(simplex), 1), Z, p, P, q, Q, s)
+			  objvals[1,i4] = arima_css(matrix(simplex[,i4], nrow(simplex), 1), Z, p, P, q, Q, s, useJacobi)
 			}
 		}
 		num_func_invoc = num_func_invoc + ncol(simplex) - 1
@@ -226,10 +248,10 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
 
 best_point = matrix(simplex[,best_index], nrow(simplex), 1)
 if(include_mean == 1){
-  tmp = matrix(0, totcols+1, 1)
+  tmp = matrix(0, totcols, 1)
   tmp[1:nrow(best_point),1] = best_point
   tmp[nrow(tmp),1] = mu
   best_point = tmp
 }
 
-writeMM(as(best_point, "CsparseMatrix"), paste(args[11], "learnt.model", sep=""))
+writeMM(as(best_point, "CsparseMatrix"), paste(args[12], "learnt.model", sep=""))

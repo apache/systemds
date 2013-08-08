@@ -20,9 +20,9 @@ public class ArimaTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "applications/arima/";
 	private final static String TEST_ArimaTest = "arima";
 	
-	private int max_func_invoc, p, d, q, P, D, Q, s, include_mean;
+	private int max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi;
 	
-	public ArimaTest(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean){
+	public ArimaTest(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean, int useJacobi){
 		this.max_func_invoc = m;
 		this.p = p;
 		this.d = d;
@@ -32,11 +32,13 @@ public class ArimaTest extends AutomatedTestBase {
 		this.Q = Q;
 		this.s = s;
 		this.include_mean = include_mean;
+		this.useJacobi = useJacobi;
 	}
 	
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] { { 10, 1, 0, 1, 0, 0, 0, 24, 0}, { 10, 1, 1, 1, 1, 1, 1, 24, 1}};
+		Object[][] data = new Object[][] { //{ 10, 1, 0, 1, 0, 0, 0, 24, 0, 0}, 
+										   { 10, 1, 1, 1, 1, 1, 1, 24, 1, 1}};
 		return Arrays.asList(data);
 	}
 	
@@ -58,14 +60,16 @@ public class ArimaTest extends AutomatedTestBase {
 		
 		programArgs = new String[]{"-args", ArimaTest_HOME + INPUT_DIR + "col.mtx",
 											""+max_func_invoc, ""+p, ""+d, ""+q, 
-											""+P, ""+D, ""+Q, ""+s, ""+include_mean,
+											""+P, ""+D, ""+Q, ""+s, 
+											""+include_mean, ""+useJacobi,
 											ArimaTest_HOME + OUTPUT_DIR + "learnt.model"};
 		
 		fullRScriptName = ArimaTest_HOME + TEST_ArimaTest + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " 
-			   + ArimaTest_HOME + INPUT_DIR + " " 
+			   + ArimaTest_HOME + INPUT_DIR 
 			   + " " + max_func_invoc + " " + p + " " + d + " " + q
-			   + " " + P + " " + D + " " + Q + " " + s + " " + include_mean
+			   + " " + P + " " + D + " " + Q + " " + s 
+			   + " " + include_mean + " " + useJacobi
 			   + " " + ArimaTest_HOME + EXPECTED_DIR;
 	
 		loadTestConfiguration(config);

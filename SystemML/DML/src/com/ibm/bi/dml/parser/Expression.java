@@ -37,7 +37,7 @@ public abstract class Expression {
 	};
 	
 	public enum DataOp {
-		READ, WRITE, RAND, INVALID	
+		READ, WRITE, RAND, MATRIX, INVALID	
 	}
 
 	public enum FunctCallOp {

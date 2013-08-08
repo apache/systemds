@@ -20,6 +20,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.BinaryOp;
+import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.utils.LanguageException;
 import java.util.ArrayList;
 import org.apache.commons.logging.Log;
@@ -165,7 +166,9 @@ TOKEN :
 	| <WHILE  	: "while">
 	| <FOR  	: "for">
 	| <TRUE  	: "true">
+	| <TRUE_C   : "TRUE">
 	| <FALSE  	: "false">
+	| <FALSE_C  : "FALSE">
 	| <NULL  	: "null">
 	| <FUNCTION : "function">
 
@@ -1843,7 +1846,7 @@ BooleanIdentifier BooleanConstant() :
 }
 {
     (
-  		((t = <TRUE>) | (t =<FALSE>))
+  		((t = <TRUE>) | (t =<FALSE>) | t= <TRUE_C> | t= <FALSE_C>)
   		{
    			id = new BooleanIdentifier(Boolean.parseBoolean(t.image));
    			id.setDimensions(0,0);
@@ -2132,8 +2135,11 @@ RandStatement RandStatement() :
 {
 	RandStatement rs = null;
 	DataIdentifier id = null;
-	Token t1 = null, tName = null;
-	Expression t2 = null;
+	Token t1 = null, t2 = null, tName = null;
+	Expression expr = null;
+	String tNameStr = null;
+	HashMap<String,Expression > namedParams = new HashMap<String,Expression>();
+	ArrayList<Expression > unnamedParams = new ArrayList<Expression>();
 	
 	Token tEnd = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
@@ -2141,32 +2147,102 @@ RandStatement RandStatement() :
 }
 {
 	id = Identifier() <ASSIGN> (tName = <RAND> | tName = <MATRIX>) <LEFTPAREN>
-	{
-		rs = new RandStatement(id);
-	}
+	
 	(
-
-		( LOOKAHEAD(3) t1 = <ID>  <ASSIGN>)? t2 = Expression()
+		{t2 = null;}
+		(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
 		{
-			// handle Matrix(...) different from Rand(...)
-			String tNameStr = tName.image;  
-			if (tNameStr.equals("matrix"))			{				rs.addExprParam("min", t2);
-				rs.addExprParam("max", t2);	
+			if (t1 != null){
+				namedParams.put(t1.image, expr);
+			}	
+			else {
+			   unnamedParams.add(expr);
 			}
-			else			{
-			  rs.addExprParam(t1.image, t2);
-			}
+			t1 = null;	
 		}
-		( <COMMA> (t1 = <ID> <ASSIGN>) t2 = Expression() { rs.addExprParam(t1.image, t2); })*
-	)
-	tEnd = <RIGHTPAREN> [<SEMICOLON>]
+	)*
+	tEnd = <RIGHTPAREN>[<SEMICOLON>]  
+
 	{
-		blp = id.getBeginLine();
-		bcp = id.getBeginColumn();
+		if (t2 != null){
+			LOG.error(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
+			throw new ParseException(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
+		}
+	}
+	
+	
+	{
+		blp = tName.beginLine;
+		bcp = tName.beginColumn;
 		elp = tEnd.beginLine;
 		ecp = tEnd.beginColumn;
+		rs = new RandStatement(id);
 		rs.setAllPositions(blp, bcp, elp, ecp);
-		rs.setRandDefault();
+
+		tNameStr = tName.image;
+		if (tNameStr.equals("matrix"))
+		{		
+			rs.setOpCode(DataOp.MATRIX);
+	
+			// check whether named or unnamed parameters are used
+			if (unnamedParams.size() > 1)			{				if (namedParams.size() > 0)				{					// throw exception -- cannot mix named and unnamed parameters
+					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
+					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
+	
+				}
+				if (unnamedParams.size() < 3)
+				{					// throw exception -- for matrix, must specify at least 3 arguments (in order): data, rows, cols)
+					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+	
+				}
+
+				// assume: data, rows, cols, [byRow], [dimNames]
+				rs.addMatrixExprParam(Statement.RAND_DATA,unnamedParams.get(0));
+				rs.addMatrixExprParam(Statement.RAND_ROWS,unnamedParams.get(1));
+				rs.addMatrixExprParam(Statement.RAND_COLS,unnamedParams.get(2));
+				if (unnamedParams.size() >= 4){
+					rs.addMatrixExprParam(Statement.RAND_BY_ROW,unnamedParams.get(3));
+				}
+				if (unnamedParams.size() == 5){
+					rs.addMatrixExprParam(Statement.RAND_DIMNAMES,unnamedParams.get(4));
+				}				if (unnamedParams.size() > 5){					// throw exception -- for matrix, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname
+					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+	
+				}
+				   
+			}
+			else			{				// handle named params
+				if (unnamedParams.size() == 1){					rs.addMatrixExprParam(Statement.RAND_DATA, unnamedParams.get(0));
+				}
+				
+				for (String name : namedParams.keySet()){					rs.addMatrixExprParam(name, namedParams.get(name)); 
+				}
+			}
+		}
+			
+			
+		else
+		{
+			rs.setOpCode(DataOp.RAND);
+			if (unnamedParams.size() != 0){				// throw parsing exception -- for Rand Statment all arguments must be named parameters
+				LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for Rand Statment all arguments must be named parameters");
+				throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for Rand Statment all arguments must be named parameters");	
+			}
+
+			// move named parameters to RandStatment
+			for (String name : namedParams.keySet()){
+				rs.addRandExprParam(name, namedParams.get(name)); 
+			}
+		}
+
+
+
+		if (rs.getOpCode().equals(DataOp.RAND))		{			rs.getSource().setRandDefault();
+		}
+		else		{			rs.getSource().setMatrixDefault();
+		}
 		return rs;
 	}
 }

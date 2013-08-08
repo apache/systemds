@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -11,6 +12,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.json.java.JSONObject;
 
@@ -55,6 +57,45 @@ public class DataExpression extends Expression {
 		return retVal;
 	}
 
+	public void setMatrixDefault(){
+		if (getVarParam(Statement.RAND_BY_ROW) == null){
+			addVarParam(Statement.RAND_BY_ROW, new BooleanIdentifier(false));
+		}
+	}
+	
+	public void setRandDefault(){
+		if (getVarParam(Statement.RAND_ROWS)== null){
+			IntIdentifier id = new IntIdentifier(1L);
+			addVarParam(Statement.RAND_ROWS, 	id);
+		}
+		if (getVarParam(Statement.RAND_COLS)== null){
+			IntIdentifier id = new IntIdentifier(1L);
+            addVarParam(Statement.RAND_COLS, 	id);
+		}
+		if (getVarParam(Statement.RAND_MIN)== null){
+			DoubleIdentifier id = new DoubleIdentifier(0.0);
+			addVarParam(Statement.RAND_MIN, id);
+		}
+		if (getVarParam(Statement.RAND_MAX)== null){
+			DoubleIdentifier id = new DoubleIdentifier(1.0);
+			addVarParam(Statement.RAND_MAX, id);
+		}
+		if (getVarParam(Statement.RAND_SPARSITY)== null){
+			DoubleIdentifier id = new DoubleIdentifier(1.0);
+			addVarParam(Statement.RAND_SPARSITY,	id);
+		}
+		if (getVarParam(Statement.RAND_SEED)== null){
+			IntIdentifier id = new IntIdentifier(RandOp.UNSPECIFIED_SEED);
+			addVarParam(Statement.RAND_SEED, id);
+		}
+		if (getVarParam(Statement.RAND_PDF)== null){
+			StringIdentifier id = new StringIdentifier(RandStatement.RAND_PDF_UNIFORM);
+			addVarParam(Statement.RAND_PDF, id);
+		}
+		//setIdentifierProperties();
+	}
+	
+	
 	public void setOpCode(DataOp op) {
 		_opcode = op;
 	}
@@ -118,12 +159,27 @@ public class DataExpression extends Expression {
 			throws LanguageException {
 		
 		// validate all input parameters
-		for ( String s : getVarParams().keySet() ) {
+		Set<String> varParamKeySet = getVarParams().keySet();
+		for ( String s : varParamKeySet ) {
 			getVarParam(s).validateExpression(ids, currConstVars);
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
+			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(Statement.RAND_DATA)) {
 				LOG.error(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.");
 				throw new LanguageException(this.printErrorLocation() + "Non-scalar data types are not supported for data expression.", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
+			
+			// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
+			Expression dataParam = getVarParam(Statement.RAND_DATA);
+			if (dataParam == null && getOpCode().equals(DataOp.MATRIX)){
+				LOG.error(this.printErrorLocation() + "for matrix, must define data parameter");
+				throw new LanguageException(this.printErrorLocation() + "for matrix, must defined data parameter", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			if (dataParam != null && dataParam.getOutput().getDataType() == DataType.SCALAR && dataParam instanceof ConstIdentifier){
+				 
+				// replace DataOp MATRIX with RAND -- Rand handles matrix generation for Scalar values
+				// replace data parameter with min / max within Rand case below
+				this.setOpCode(DataOp.RAND);
+			}		
+				
 		}	
 					
 		// IMPORTANT: for each operation, one must handle unnamed parameters
@@ -635,8 +691,47 @@ public class DataExpression extends Expression {
 			}
 			break;
 
-		case RAND: 
+			case RAND: 
 			
+			Expression dataParam = getVarParam(Statement.RAND_DATA);
+			if (dataParam != null){
+			
+				
+				
+				if (dataParam instanceof IntIdentifier){
+					
+					// update min expr with new IntIdentifier 
+					long roundedValue = ((IntIdentifier)dataParam).getValue();
+					Expression minExpr = new DoubleIdentifier(roundedValue);
+					minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					addVarParam(RandStatement.RAND_MIN, minExpr);
+					addVarParam(RandStatement.RAND_MAX, minExpr);
+				}
+				// handle double constant 
+				else if (dataParam instanceof DoubleIdentifier){
+	
+					// update col expr with new IntIdentifier (rounded down)
+					double roundedValue = ((DoubleIdentifier)dataParam).getValue();
+					Expression minExpr = new DoubleIdentifier(roundedValue);
+					minExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					addVarParam(RandStatement.RAND_MIN, minExpr);
+					addVarParam(RandStatement.RAND_MAX, minExpr);				
+				}
+				else {
+					LOG.error(this.printErrorLocation() + "for matrix statement, parameter " 
+							+ Statement.RAND_DATA + " cannot have value type String or Boolean. ");
+							
+					 
+					throw new LanguageException(this.printErrorLocation() + "for matrix statement, parameter " 
+							+ Statement.RAND_DATA + " cannot have value type String or Boolean. ");
+				}
+				removeVarParam(Statement.RAND_DATA);
+				removeVarParam(Statement.RAND_BY_ROW);
+				this.setRandDefault();
+			}
+			
+				
+				
 			for (String key : _varParams.keySet()){
 				boolean found = false;
 				for (String name : RandStatement.RAND_VALID_PARAM_NAMES){
@@ -1001,6 +1096,260 @@ public class DataExpression extends Expression {
 			}
 			
 			break;
+			
+			case MATRIX: 
+			
+			this.setMatrixDefault();
+				
+			for (String key : _varParams.keySet()){
+				boolean found = false;
+				for (String name : RandStatement.MATRIX_VALID_PARAM_NAMES){
+					if (name.equals(key))
+					found = true;
+				}
+				if (!found){
+					
+					LOG.error(this.printErrorLocation() + "unexpected parameter \"" + key +
+							"\". Legal parameters for matrix statement are " 
+							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_DATA 	
+							+ ", " + RandStatement.RAND_ROWS		+ ", " + RandStatement.RAND_COLS
+							+ ", " + RandStatement.RAND_BY_ROW ); //  + ", " + RandStatement.RAND_DIMNAMES);
+					
+					
+					throw new LanguageException(this.printErrorLocation() + "unexpected parameter \"" + key +
+							"\". Legal parameters for matrix statement are " 
+							+ "(capitalization-sensitive): " 	+ RandStatement.RAND_DATA 	
+							+ ", " + RandStatement.RAND_ROWS		+ ", " + RandStatement.RAND_COLS
+							+ ", " + RandStatement.RAND_BY_ROW );//   + ", " + RandStatement.RAND_DIMNAMES);
+				}
+			}
+			//TODO: Leo Need to check with Doug about the data types
+			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
+			if (!(getVarParam(Statement.RAND_DATA) instanceof DataIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_DATA + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_DATA + " has incorrect data type");
+			}
+			if (getVarParam(RandStatement.RAND_ROWS) != null && (getVarParam(RandStatement.RAND_ROWS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_ROWS) instanceof BooleanIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_ROWS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_ROWS + " has incorrect data type");
+			}
+				
+			if (getVarParam(RandStatement.RAND_COLS) != null && (getVarParam(RandStatement.RAND_COLS) instanceof StringIdentifier || getVarParam(RandStatement.RAND_COLS) instanceof BooleanIdentifier)){
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_COLS + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_COLS + " has incorrect data type");
+			}
+				
+			if ( !(getVarParam(RandStatement.RAND_BY_ROW) instanceof BooleanIdentifier)) {
+				LOG.error(this.printErrorLocation() + "for matrix statement " + RandStatement.RAND_BY_ROW + " has incorrect data type");
+				throw new LanguageException(this.printErrorLocation() + "for Rand statement " + RandStatement.RAND_BY_ROW + " has incorrect data type");
+			}
+			
+			rowsLong = -1L; 
+			colsLong = -1L;
+
+			///////////////////////////////////////////////////////////////////
+			// HANDLE ROWS
+			///////////////////////////////////////////////////////////////////
+			rowsExpr = getVarParam(RandStatement.RAND_ROWS);
+			if (rowsExpr != null){
+				if (rowsExpr instanceof IntIdentifier) {
+					if  (((IntIdentifier)rowsExpr).getValue() >= 1 ) {
+						rowsLong = ((IntIdentifier)rowsExpr).getValue();
+					}
+					else {
+						
+						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+						
+						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + ((IntIdentifier)rowsExpr).getValue());
+					}
+				}
+				else if (rowsExpr instanceof DoubleIdentifier) {
+					if  (((DoubleIdentifier)rowsExpr).getValue() >= 1 ) {
+						rowsLong = new Double((Math.floor(((DoubleIdentifier)rowsExpr).getValue()))).longValue();
+					}
+					else {
+						
+						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
+						
+						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + rowsExpr.toString());
+					}		
+				}
+				else if (rowsExpr instanceof DataIdentifier && !(rowsExpr instanceof IndexedIdentifier)) {
+					
+					// check if the DataIdentifier variable is a ConstIdentifier
+					String identifierName = ((DataIdentifier)rowsExpr).getName();
+					if (currConstVars.containsKey(identifierName)){
+						
+						// handle int constant
+						ConstIdentifier constValue = currConstVars.get(identifierName);
+						if (constValue instanceof IntIdentifier){
+							
+							// check rows is >= 1 --- throw exception
+							if (((IntIdentifier)constValue).getValue() < 1){
+								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								
+								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							}
+							// update row expr with new IntIdentifier 
+							long roundedValue = ((IntIdentifier)constValue).getValue();
+							rowsExpr = new IntIdentifier(roundedValue);
+							rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+							rowsLong = roundedValue; 
+						}
+						// handle double constant 
+						else if (constValue instanceof DoubleIdentifier){
+							
+							if (((DoubleIdentifier)constValue).getValue() < 1.0){
+								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								
+								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							}
+							// update row expr with new IntIdentifier (rounded down)
+							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+							rowsExpr = new IntIdentifier(roundedValue);
+							rowsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RandStatement.RAND_ROWS, rowsExpr);
+							rowsLong = roundedValue; 
+							
+						}
+						else {
+							// exception -- rows must be integer or double constant
+							LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							
+							throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						}
+					}
+					else {
+						// handle general expression
+						rowsExpr.validateExpression(ids, currConstVars);
+					}
+				}	
+				else {
+					// handle general expression
+					rowsExpr.validateExpression(ids, currConstVars);
+				}
+			}
+	
+			///////////////////////////////////////////////////////////////////
+			// HANDLE COLUMNS
+			///////////////////////////////////////////////////////////////////
+			
+			colsExpr = getVarParam(RandStatement.RAND_COLS);
+			if (colsExpr != null){
+				if (colsExpr instanceof IntIdentifier) {
+					if  (((IntIdentifier)colsExpr).getValue() >= 1 ) {
+						colsLong = ((IntIdentifier)colsExpr).getValue();
+					}
+					else {
+						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+						
+						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+					}
+				}
+				else if (colsExpr instanceof DoubleIdentifier) {
+					if  (((DoubleIdentifier)colsExpr).getValue() >= 1 ) {
+						colsLong = new Double((Math.floor(((DoubleIdentifier)colsExpr).getValue()))).longValue();
+					}
+					else {
+						LOG.error(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+						
+						throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign rows a long " +
+								"(integer) value >= 1 -- attempted to assign value: " + colsExpr.toString());
+					}		
+				}
+				else if (colsExpr instanceof DataIdentifier && !(colsExpr instanceof IndexedIdentifier)) {
+					
+					// check if the DataIdentifier variable is a ConstIdentifier
+					String identifierName = ((DataIdentifier)colsExpr).getName();
+					if (currConstVars.containsKey(identifierName)){
+						
+						// handle int constant
+						ConstIdentifier constValue = currConstVars.get(identifierName);
+						if (constValue instanceof IntIdentifier){
+							
+							// check cols is >= 1 --- throw exception
+							if (((IntIdentifier)constValue).getValue() < 1){
+								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							}
+							// update col expr with new IntIdentifier 
+							long roundedValue = ((IntIdentifier)constValue).getValue();
+							colsExpr = new IntIdentifier(roundedValue);
+							colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RandStatement.RAND_COLS, colsExpr);
+							colsLong = roundedValue; 
+						}
+						// handle double constant 
+						else if (constValue instanceof DoubleIdentifier){
+							
+							if (((DoubleIdentifier)constValue).getValue() < 1){
+								LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+								
+								throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+										"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							}
+							// update col expr with new IntIdentifier (rounded down)
+							long roundedValue = new Double (Math.floor(((DoubleIdentifier)constValue).getValue())).longValue();
+							colsExpr = new IntIdentifier(roundedValue);
+							colsExpr.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							addVarParam(RandStatement.RAND_COLS, colsExpr);
+							colsLong = roundedValue; 
+							
+						}
+						else {
+							// exception -- rows must be integer or double constant
+							LOG.error(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+							
+							throw new LanguageException(this.printErrorLocation() + "In matrix statement, can only assign cols a long " +
+									"(integer) value >= 1 -- attempted to assign value: " + constValue.toString());
+						}
+					}
+					else {
+						// handle general expression
+						colsExpr.validateExpression(ids, currConstVars);
+					}
+						
+				}	
+				else {
+					// handle general expression
+					colsExpr.validateExpression(ids, currConstVars);
+				}
+			}	
+			_output.setFormatType(FormatType.BINARY);
+			_output.setDataType(DataType.MATRIX);
+			_output.setValueType(ValueType.DOUBLE);
+			_output.setDimensions(rowsLong, colsLong);
+				
+			if (_output instanceof IndexedIdentifier){
+				((IndexedIdentifier) _output).setOriginalDimensions(_output.getDim1(), _output.getDim2());
+			}
+			//_output.computeDataType();
+
+			if (_output instanceof IndexedIdentifier){
+				LOG.warn(this.printWarningLocation() + "Output for matrix Statement may have incorrect size information");
+			}
+			
+			break;
+			
+	
 		default:
 			LOG.error(this.printErrorLocation() + "Unsupported Data expression"
 					+ this.getOpCode());

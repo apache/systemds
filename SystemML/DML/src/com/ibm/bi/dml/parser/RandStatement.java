@@ -2,7 +2,6 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -12,7 +11,10 @@ public class RandStatement extends Statement
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
 	{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF}; 
-
+	
+	public static final String[] MATRIX_VALID_PARAM_NAMES = 
+	{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS};
+	
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	
 	// target identifier which will hold the random object
@@ -55,39 +57,6 @@ public class RandStatement extends Statement
 		_paramsExpr = new DataExpression(DataOp.RAND);
 	}
 	
-
-	public void setRandDefault(){
-		if (_paramsExpr.getVarParam(RAND_ROWS)== null){
-			IntIdentifier id = new IntIdentifier(1L);
-			_paramsExpr.addVarParam(RAND_ROWS, 	id);
-		}
-		if (_paramsExpr.getVarParam(RAND_COLS)== null){
-			IntIdentifier id = new IntIdentifier(1L);
-            _paramsExpr.addVarParam(RAND_COLS, 	id);
-		}
-		if (_paramsExpr.getVarParam(RAND_MIN)== null){
-			DoubleIdentifier id = new DoubleIdentifier(0.0);
-			_paramsExpr.addVarParam(RAND_MIN, id);
-		}
-		if (_paramsExpr.getVarParam(RAND_MAX)== null){
-			DoubleIdentifier id = new DoubleIdentifier(1.0);
-			_paramsExpr.addVarParam(RAND_MAX, id);
-		}
-		if (_paramsExpr.getVarParam(RAND_SPARSITY)== null){
-			DoubleIdentifier id = new DoubleIdentifier(1.0);
-			_paramsExpr.addVarParam(RAND_SPARSITY,	id);
-		}
-		if (_paramsExpr.getVarParam(RAND_SEED)== null){
-			IntIdentifier id = new IntIdentifier(RandOp.UNSPECIFIED_SEED);
-			_paramsExpr.addVarParam(RAND_SEED, id);
-		}
-		if (_paramsExpr.getVarParam(RAND_PDF)== null){
-			StringIdentifier id = new StringIdentifier(RAND_PDF_UNIFORM);
-			_paramsExpr.addVarParam(RAND_PDF, id);
-		}
-		//setIdentifierProperties();
-	}
-	
 	// class getter methods
 	public DataIdentifier getIdentifier(){ return _id; }
 
@@ -98,12 +67,24 @@ public class RandStatement extends Statement
 	public void setExprParams(DataExpression paramsExpr) {
 		_paramsExpr = paramsExpr;
 	}
+	public void removeExprParam(String name){
+		_paramsExpr.removeVarParam(name);
+	}
 	
 	public DataExpression getSource(){
 		return _paramsExpr;
 	}
 	
-	public void addExprParam(String paramName, Expression paramValue) throws ParseException
+	public DataOp getOpCode(){
+		return _paramsExpr.getOpCode();
+	}
+	
+	public void setOpCode(DataOp op){
+		_paramsExpr.setOpCode(op);
+	}
+	
+	
+	public void addRandExprParam(String paramName, Expression paramValue) throws ParseException
 	{
 		// check name is valid
 		boolean found = false;
@@ -140,6 +121,48 @@ public class RandStatement extends Statement
 		
 	}
 
+	public void addMatrixExprParam(String paramName, Expression paramValue) throws ParseException
+	{
+		// check name is valid
+		boolean found = false;
+		if (paramName != null ){
+			for (String name : MATRIX_VALID_PARAM_NAMES){
+				if (name.equals(paramName)) {
+					found = true;
+					break;
+				}			
+			}
+		}
+		if (!found){
+			
+			LOG.error(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for  matrix statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_DATA + ", " + RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_BY_ROW);
+			
+			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for  matrix statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_DATA + ", " + RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_BY_ROW);
+		}
+		if (_paramsExpr.getVarParam(paramName) != null){
+			LOG.error(paramValue.printErrorLocation() + "attempted to add matrix statement parameter " + paramValue + " more than once");
+			throw new ParseException(paramValue.printErrorLocation() + "attempted to add matrix statement parameter " + paramValue + " more than once");
+		}
+		// Process the case where user provides double values to rows or cols
+		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+		else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier){
+			paramValue = new IntIdentifier((int)((DoubleIdentifier)paramValue).getValue());
+		}
+			
+		// add the parameter to expression list
+		paramValue.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		_paramsExpr.addVarParam(paramName,paramValue);
+		
+	}
+	
 	@Override
 	public boolean controlStatement() { return false; }
 
@@ -182,19 +205,32 @@ public class RandStatement extends Statement
     public String toString()
     {
         StringBuffer sb = new StringBuffer();
-        sb.append(_id.getName() + " = Rand( ");
-        sb.append(  "rows=" + _paramsExpr.getVarParam(RAND_ROWS).toString());
-        sb.append(", cols=" + _paramsExpr.getVarParam(RAND_COLS).toString());
-        sb.append(", min="  + _paramsExpr.getVarParam(RAND_MIN).toString());
-        sb.append(", max="  + _paramsExpr.getVarParam(RAND_MAX).toString());
-        sb.append(", sparsity=" + _paramsExpr.getVarParam(RAND_SPARSITY).toString());
-        sb.append(", pdf=" +      _paramsExpr.getVarParam(RAND_PDF).toString());
-        if (_paramsExpr.getVarParam(RAND_SEED) instanceof IntIdentifier && ((IntIdentifier)_paramsExpr.getVarParam(RAND_SEED)).getValue() == -1L)
-        	sb.append(", seed=RANDOM");
-        else
-        	sb.append(", seed=" + _paramsExpr.getVarParam(RAND_SEED).toString());
-        sb.append(" );");
-        return sb.toString();
+        if (_paramsExpr.getOpCode().equals(DataOp.RAND)){
+        	sb.append(_id.getName() + " = Rand( ");
+        	sb.append(  "rows=" + _paramsExpr.getVarParam(RAND_ROWS).toString());
+        	sb.append(", cols=" + _paramsExpr.getVarParam(RAND_COLS).toString());
+        	sb.append(", min="  + _paramsExpr.getVarParam(RAND_MIN).toString());
+        	sb.append(", max="  + _paramsExpr.getVarParam(RAND_MAX).toString());
+        	sb.append(", sparsity=" + _paramsExpr.getVarParam(RAND_SPARSITY).toString());
+        	sb.append(", pdf=" +      _paramsExpr.getVarParam(RAND_PDF).toString());
+        	if (_paramsExpr.getVarParam(RAND_SEED) instanceof IntIdentifier && ((IntIdentifier)_paramsExpr.getVarParam(RAND_SEED)).getValue() == -1L)
+        		sb.append(", seed=RANDOM");
+        	else
+        		sb.append(", seed=" + _paramsExpr.getVarParam(RAND_SEED).toString());
+        	sb.append(" );");
+        }
+        else {
+        	sb.append(_id.getName() + " = matrix( ");
+        	sb.append(  "data=" + _paramsExpr.getVarParam(RAND_DATA).toString());
+        	if (_paramsExpr.getVarParam(RAND_ROWS) != null)
+        		sb.append(", rows=" + _paramsExpr.getVarParam(RAND_ROWS).toString());
+        	if (_paramsExpr.getVarParam(RAND_COLS) != null)
+        		sb.append(", cols=" + _paramsExpr.getVarParam(RAND_COLS).toString());
+        	sb.append(", byrow="  + _paramsExpr.getVarParam(RAND_BY_ROW).toString());
+        	if (_paramsExpr.getVarParam(RAND_DIMNAMES) != null)
+        		sb.append(", dimnames=" + _paramsExpr.getVarParam(RAND_DIMNAMES).toString());
+        }
+        	return sb.toString();
     }
 
     @Override

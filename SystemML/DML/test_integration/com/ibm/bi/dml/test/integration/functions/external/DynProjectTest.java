@@ -87,7 +87,7 @@ public class DynProjectTest extends AutomatedTestBase
 		
 		long seed = System.nanoTime();
         double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
-        double[][] c = round(getRandomMatrix(1, size, 1-0.5, rows+0.5, 1, seed));
+        double[][] c = round(getRandomMatrix(1, size, 1-0.49, rows+0.49, 1, seed));
         
         writeInputMatrix("X", X, true);
         writeInputMatrix("c", c, true);
@@ -110,7 +110,7 @@ public class DynProjectTest extends AutomatedTestBase
 	{
 		for(int i=0; i<data.length; i++)
 			for(int j=0; j<data[i].length; j++)
-				data[i][j]=Math.floor(data[i][j]);
+				data[i][j]=Math.round(data[i][j]);
 		return data;
 	}
 }

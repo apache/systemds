@@ -8,8 +8,8 @@
 # such that Prob [Binom(n, p1) <= m-1] = 0.975
 # and       Prob [Binom(n, p2) <= m  ] = 0.025
 binomQuantile =
-    function (matrix[double] n_vector, matrix[double] m_vector, matrix[double] alpha_vector)
-    return (matrix[double] p_vector)
+    function (Matrix[double] n_vector, Matrix[double] m_vector, Matrix[double] alpha_vector)
+    return (Matrix[double] p_vector)
 {
     num_rows = nrow (n_vector);
     p_min = Rand (rows = num_rows, cols = 1, min = 0.0, max = 0.0);
@@ -36,8 +36,8 @@ binomQuantile =
 # edited by M. Abramowitz and I.A. Stegun, U.S. Nat-l Bureau of Standards,
 # 10th print (Dec 1972), Sec. 26.5.8-26.5.9, p. 944
 binomProb =
-    function (matrix[double] n_vector, matrix[double] m_vector, matrix[double] p_vector)
-    return (matrix[double] result)
+    function (Matrix[double] n_vector, Matrix[double] m_vector, Matrix[double] p_vector)
+    return (Matrix[double] result)
 {
     num_rows = nrow (n_vector);
     num_iterations = 100;
@@ -134,7 +134,7 @@ binomProb =
 # Computes the logarithm of the factorial of x >= 0 via the Gamma function 
 # From paper: C. Lanczos "A Precision Approximation of the Gamma Function",
 # Journal of the SIAM: Numerical Analysis, Series B, Vol. 1, 1964, pp. 86-96
-logFactorial = function (matrix[double] x) return (matrix[double] logfact)
+logFactorial = function (Matrix[double] x) return (Matrix[double] logfact)
 {
     y = 1.000000000178;
     y = y + 76.180091729406 / (x + 1);

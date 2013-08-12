@@ -1,0 +1,506 @@
+# 10K Dataset w/ 4-fold CV
+#    Total time:		5.933374000000001 sec.
+#    Number of executed MR Jobs:	0.
+# hadoop jar SystemML.jar -f CV_LogisticRegression.dml -args itau/logreg/X_10k_10 itau/logreg/y_10k 4 0 50 1000.0 1.0 1.0 1.0 1.0
+
+# 200K Dataset w/ 4-fold CV
+#    Total time:		66.17157 sec.
+#    Number of executed MR Jobs:	4.
+# hadoop jar SystemML.jar -f CV_LogisticRegression.dml -args itau/logreg/X_200k_50 itau/logreg/y_200k 4 0 50 1000.0 1.0 1.0 1.0 1.0
+
+
+#X = Rand(rows=1000000, cols=100);
+#y = Rand(rows=1000000, cols=1);
+X = read( $1 );
+y = read( $2 );
+m = nrow( X );
+n = ncol( X );
+
+k = $3;
+
+#parameters for model training
+intercept = $4
+maxiter = $5
+C = $6
+
+#parameters for model scoring
+value_TP = $7;
+cost_FP  = $8;
+value_TN = $9;
+cost_FN  = $10;
+
+
+P = Rand(rows=m, cols=1, min=0.0, max=1.0, pdf = "uniform");
+P = round(0.5+P*k);
+
+ones = matrix(1, rows=1, cols=n);
+stats = matrix(0, rows=k, cols=40); #k-folds x 40-stats
+   
+parfor( i in 1:k )
+{
+   #prepare train/test fold projections
+   vPxi = ppred( P, i, "==" );
+   mPxi = (vPxi %*% ones);   
+   #nvPxi = ppred( P, i, "!=" );
+   #nmPxi = (nvPxi %*% ones);  #note: inefficient for sparse data  
+
+   #create train/test folds
+   Xi = X * mPxi;  #  Create the TEST set with 1/k of all the rows
+   yi = y * vPxi;  #  Create the labels for the TEST set
+   nXi = X - Xi;   #  Create the TRAINING set with (k-1)/k of the rows
+   nyi = y - yi;   #  Create the labels for the TRAINING set
+   Xyi = append(Xi,yi); #keep alignment on removeEmpty
+   Xyi = removeEmpty( target=Xyi, margin="rows" );
+   Xi = Xyi[ , 1:n];
+   yi = Xyi[ , n+1];   
+   nXyi = append(nXi,nyi); #keep alignment on removeEmpty
+   nXyi = removeEmpty( target=nXyi, margin="rows" );
+   nXi = nXyi[ , 1:n];
+   nyi = nXyi[ , n+1];
+
+   #train logistic regession model per fold, use the TRAINING set
+   wi = logisticRegression( nXi, nyi, intercept, maxiter, C );
+
+   #score logistic regression model per fold, use both the TRAINING and the TEST sets
+   score = scoreLogRegModel(nXi, nyi, wi, Xi, yi, value_TP, cost_FP, value_TN, cost_FN );
+   
+   stats[i,] = score;
+}
+
+# printed output of stats
+z = printFoldStatistics( stats );
+
+
+################################################################################
+
+logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_intercept, Integer in_maxiter, Double in_C)
+  return (Matrix[double] ret)
+{
+  # internal parameters
+  tol = 0.001
+  eta0 = 0.0001
+  eta1 = 0.25
+  eta2 = 0.75
+  sigma1 = 0.25
+  sigma2 = 0.5
+  sigma3 = 4.0
+  psi = 0.1 
+  
+  # read training data files
+  intercept = in_intercept
+  
+  D = ncol(X)
+  #initialize w
+  w = Rand(rows=D, cols=1, min=0.0, max=0.0);
+  zeros_D = Rand(rows = D, cols = 1, min = 0.0, max = 0.0);
+  
+  if (intercept == 1) {
+   num_samples = nrow(X);
+   ones  = Rand(rows=num_samples, cols=1, min=1, max=1, pdf="uniform");
+   X = append(X, ones);
+   zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
+   w = t(append(t(w), zero_matrix));
+   zeros_D = t(append(t(zeros_D), zero_matrix));
+  }
+  
+  N = nrow(X)
+  
+  maxiter = in_maxiter
+  maxinneriter = 1000
+  
+  C = in_C
+  
+  e = Rand(rows=1, cols=1, min=1.0, max=1.0); 
+  o = X %*% w
+  logistic = 1.0/(1.0 + exp( -y * o))
+  
+  obj = 0.5 * t(w) %*% w + C*sum(-log(logistic))
+  grad = w + C*t(X) %*% ((logistic - 1)*y)
+  logisticD = logistic*(1-logistic)
+  delta = sqrt(sum(grad*grad))
+  
+  # number of iterations
+  iter = 0
+  
+  # starting point for CG
+  
+  # VS: change
+  zeros_N = Rand(rows = N, cols = 1, min = 0.0, max = 0.0);
+  
+  # boolean for convergence check
+  
+  converge = (delta < tol) | (iter > maxiter)
+  norm_r2 = sum(grad*grad)
+  
+  # VS: change
+  norm_grad = sqrt(norm_r2)
+  norm_grad_initial = norm_grad
+  
+  alpha = t(w) %*% w
+  alpha2 = alpha
+  
+  while(!converge) {
+   
+   norm_grad = sqrt(sum(grad*grad))
+   
+   #print("-- Outer Iteration = " + iter)
+   objScalar = castAsScalar(obj)
+   #print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
+   
+   # SOLVE TRUST REGION SUB-PROBLEM
+   s = zeros_D
+   os = zeros_N
+   r = -grad
+   d = r
+   inneriter = 0
+   innerconverge = ( sqrt(sum(r*r)) <= psi * norm_grad) 
+   while (!innerconverge) {
+       inneriter = inneriter + 1
+    norm_r2 = sum(r*r)
+    od = X %*% d
+    Hd = d + C*(t(X) %*% (logisticD*od))
+    alpha_deno = t(d) %*% Hd 
+    alpha = norm_r2 / alpha_deno
+   
+    s = s + castAsScalar(alpha) * d
+    os = os + castAsScalar(alpha) * od
+  
+    sts = t(s) %*% s
+    delta2 = delta*delta 
+    stsScalar = castAsScalar(sts)
+    
+    shouldBreak = false;  # to mimic "break" in the following 'if' condition
+    if (stsScalar > delta2) {
+        #print("      --- cg reaches trust region boundary")
+     s = s - castAsScalar(alpha) * d
+     os = os - castAsScalar(alpha) * od
+     std = t(s) %*% d
+     dtd = t(d) %*% d
+     sts = t(s) %*% s
+     rad = sqrt(std*std + dtd*(delta2 - sts))
+     stdScalar = castAsScalar(std)
+     
+     tau = 0; #TODO
+     if(stdScalar >= 0) {
+      tau = (delta2 - sts)/(std + rad)
+     } 
+     else {
+      tau = (rad - std)/dtd
+     }
+        
+     s = s + castAsScalar(tau) * d
+     os = os + castAsScalar(tau) * od
+     r = r - castAsScalar(tau) * Hd
+     
+     #break
+     shouldBreak = true;
+     innerconverge = true;
+    
+    } 
+    
+    if (!shouldBreak) {
+     r = r - castAsScalar(alpha) * Hd
+     old_norm_r2 = norm_r2 
+     norm_r2 = sum(r*r)
+     beta = norm_r2/old_norm_r2
+     d = r + beta*d
+     innerconverge = (sqrt(norm_r2) <= psi * norm_grad) | (inneriter > maxinneriter)
+    }
+   }  
+   
+   #print("      --- Inner CG Iteration =  " + inneriter)
+   # END TRUST REGION SUB-PROBLEM
+   # compute rho, update w, obtain delta
+   gs = t(s) %*% grad
+   qk = -0.5*(gs - (t(s) %*% r))
+   
+   wnew = w + s 
+   onew = o + os
+   logisticnew = 1.0/(1.0 + exp(-y * onew ))
+   objnew = 0.5 * t(wnew) %*% wnew + C * sum(-log(logisticnew))
+   
+   actred = (obj - objnew)
+   actredScalar = castAsScalar(actred)
+   rho = actred / qk
+   qkScalar = castAsScalar(qk)
+   rhoScalar = castAsScalar(rho);
+   snorm = sqrt(sum( s * s ))
+  
+   #print("     Actual    = " + actredScalar)
+   #print("     Predicted = " + qkScalar)
+   
+   if (iter==0) {
+      delta = min(delta, snorm)
+   }
+   alpha2 = objnew - obj - gs
+   alpha2Scalar = castAsScalar(alpha2)
+   if (alpha2Scalar <= 0) {
+      alpha = sigma3*e
+   } 
+   else {
+      ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)  
+      alpha = ascalar*e
+   }
+  
+   if (rhoScalar > eta0) {
+    
+    w = wnew
+    o = onew
+    grad = w + C*t(X) %*% ((logisticnew - 1) * y )
+    norm_grad = sqrt(sum(grad*grad))
+    logisticD = logisticnew * (1 - logisticnew)
+    obj = objnew 
+   } 
+  
+   alphaScalar = castAsScalar(alpha)
+   if (rhoScalar < eta0){
+    delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
+   }
+   else {
+    if (rhoScalar < eta1){
+     delta = max(sigma1 * delta, min( alphaScalar  * snorm, sigma2 * delta))
+    }
+    else { 
+     if (rhoScalar < eta2) {
+      delta = max(sigma1 * delta, min( alphaScalar * snorm, sigma3 * delta))
+     }
+     else {
+      delta = max(delta, min( alphaScalar * snorm, sigma3 * delta))
+     }
+    }
+   } 
+   
+   o2 = y * o
+   correct = sum(ppred(o2, 0, ">"))
+   accuracy = correct*100.0/N 
+   iter = iter + 1
+   #converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
+   converge = (norm_grad < tol) | (iter > maxiter)
+  
+   #print("     Delta =  " + delta)
+   #print("     Training Accuracy =  " +  accuracy)
+   #print("     Correct =  " + correct)
+   #print("     OuterIter =  " + iter)
+   #print("     Converge =  " + converge)
+  } 
+  
+
+  ret = w; #return
+}
+
+
+################################################################################
+
+scoreLogRegModel = function (Matrix[double] X_train, Matrix[double] y_train, Matrix[double] w_train, 
+                               Matrix[double] X_test, Matrix[double] y_test,
+                               double value_TP, double cost_FP, double value_TN, double cost_FN )
+    return (Matrix[double] stats)
+#   X_train  = training-set feature matrix file
+#   y_train  = training-set label vector file (each label is -1 or +1)
+#   w_train  = training-set logistic regression weights file; may have an intercept weight at the end
+#   X_test   = test-set feature matrix file
+#   y_test   = test-set label vector file
+#   value_TP = the value of a true positive (label +1 predicted as +1)
+#   cost_FP  = the cost of a false positive (label -1 predicted as +1), enter as a positive number
+#   value_TN = the value of a true negative (label -1 predicted as -1)
+#   cost_FN  = the cost of a false negative (label +1 predicted as -1), enter as a positive number
+#   fold     = the row in the output matrix that should contain all statistics
+#   num_folds= the number of folds = the number of rows in the output matrix
+{
+    one = matrix(1, rows=1, cols=1);
+    stats = matrix(0, rows=1, cols=40);
+
+    num_train_records = nrow (X_train);
+    num_test_records = nrow (X_test);
+    num_features = ncol (X_test);
+
+    w = w_train;
+    if (nrow (w) == 1) {
+        w = t(w);
+    }
+
+    b = 0.0;
+    if (nrow (w) > num_features) {
+        b = castAsScalar (w [num_features + 1, 1]);
+    }
+
+# TRAINING DATA - ESTIMATE PROBABILITIES:
+# Estimate the label probabilities and assign predicted labels to maximize the estimated $-value
+
+    linear_train = X_train %*% w [1:num_features, 1] + b;
+    prob_train = 1.0 / (1.0 + exp (- linear_train));
+    est_value_POS_train = value_TP * prob_train - cost_FP * (1.0 - prob_train);
+    est_value_NEG_train = value_TN * (1.0 - prob_train) - cost_FN * prob_train;
+    y_train_pred = 2 * ppred (est_value_POS_train, est_value_NEG_train, ">") - 1;
+
+# Compute the estimated number of true/false positives/negatives
+
+    est_num_TP_train = sum ((y_train_pred + 1) * prob_train) / 2;
+    est_num_FP_train = sum ((y_train_pred + 1) * (1 - prob_train)) / 2;
+    est_num_TN_train = sum ((1 - y_train_pred) * (1 - prob_train)) / 2;
+    est_num_FN_train = sum ((1 - y_train_pred) * prob_train) / 2;
+
+    stats [1,  1] = one*est_num_TP_train;
+    stats [1,  2] = one*est_num_FP_train;
+    stats [1,  3] = one*est_num_TN_train;
+    stats [1,  4] = one*est_num_FN_train;
+
+# Compute the estimated precision, recall = sensitivity, specificity, and value
+
+    est_precision_train = 100.0 * est_num_TP_train / (est_num_TP_train + est_num_FP_train);
+    est_recall_train = 100.0 * est_num_TP_train / (est_num_TP_train + est_num_FN_train);
+    est_specificity_train = 100.0 * est_num_TN_train / (est_num_TN_train + est_num_FP_train);
+    est_value_train = 
+        est_num_TP_train * value_TP - est_num_FP_train * cost_FP + est_num_TN_train * value_TN - est_num_FN_train * cost_FN;
+
+    stats [1,  5] = one*est_precision_train;
+    stats [1,  6] = one*est_recall_train;
+    stats [1,  7] = one*est_specificity_train;
+    stats [1,  8] = one*est_value_train;
+
+# TRAINING DATA - COMPARE WITH ACTUAL LABELS:
+# Compute the actual number of true/false positives/negatives
+
+    num_TP_train = sum ((y_train_pred + 1) * (y_train + 1)) / 4;
+    num_FP_train = sum ((y_train_pred + 1) * (1 - y_train)) / 4;
+    num_TN_train = sum ((1 - y_train_pred) * (1 - y_train)) / 4;
+    num_FN_train = sum ((1 - y_train_pred) * (y_train + 1)) / 4;
+
+    stats [1, 11] = one*num_TP_train;
+    stats [1, 12] = one*num_FP_train;
+    stats [1, 13] = one*num_TN_train;
+    stats [1, 14] = one*num_FN_train;
+
+# Compute the actual precision, recall = sensitivity, specificity, and value
+
+    precision_train = 100.0 * num_TP_train / (num_TP_train + num_FP_train);
+    recall_train = 100.0 * num_TP_train / (num_TP_train + num_FN_train);
+    specificity_train = 100.0 * num_TN_train / (num_TN_train + num_FP_train);
+    value_train = num_TP_train * value_TP - num_FP_train * cost_FP + num_TN_train * value_TN - num_FN_train * cost_FN;
+
+    stats [1, 15] = one*precision_train;
+    stats [1, 16] = one*recall_train;
+    stats [1, 17] = one*specificity_train;
+    stats [1, 18] = one*value_train;
+
+# TEST DATA - ESTIMATE PROBABILITIES:
+# Estimate the label probabilities and assign predicted labels to maximize the estimated value
+
+    linear_test = X_test %*% w [1:num_features, 1] + b;
+    prob_test = 1.0 / (1.0 + exp (- linear_test));
+    est_value_POS_test = value_TP * prob_test - cost_FP * (1.0 - prob_test);
+    est_value_NEG_test = value_TN * (1.0 - prob_test) - cost_FN * prob_test;
+    y_test_pred = 2 * ppred (est_value_POS_test, est_value_NEG_test, ">") - 1;
+
+# Compute the estimated number of true/false positives/negatives
+
+    est_num_TP_test = sum ((y_test_pred + 1) * prob_test) / 2;
+    est_num_FP_test = sum ((y_test_pred + 1) * (1 - prob_test)) / 2;
+    est_num_TN_test = sum ((1 - y_test_pred) * (1 - prob_test)) / 2;
+    est_num_FN_test = sum ((1 - y_test_pred) * prob_test) / 2;
+
+    stats [1, 21] = one*est_num_TP_test;
+    stats [1, 22] = one*est_num_FP_test;
+    stats [1, 23] = one*est_num_TN_test;
+    stats [1, 24] = one*est_num_FN_test;
+
+# Compute the estimated precision, recall = sensitivity, specificity, and value
+
+    est_precision_test = 100.0 * est_num_TP_test / (est_num_TP_test + est_num_FP_test);
+    est_recall_test = 100.0 * est_num_TP_test / (est_num_TP_test + est_num_FN_test);
+    est_specificity_test = 100.0 * est_num_TN_test / (est_num_TN_test + est_num_FP_test);
+    est_value_test = est_num_TP_test * value_TP - est_num_FP_test * cost_FP + est_num_TN_test * value_TN - est_num_FN_test * cost_FN;
+
+    stats [1, 25] = one*est_precision_test;
+    stats [1, 26] = one*est_recall_test;
+    stats [1, 27] = one*est_specificity_test;
+    stats [1, 28] = one*est_value_test;
+
+# TEST DATA - COMPARE WITH ACTUAL LABELS:
+# Compute the actual number of true/false positives/negatives
+
+    num_TP_test = sum ((y_test_pred + 1) * (y_test + 1)) / 4;
+    num_FP_test = sum ((y_test_pred + 1) * (1 - y_test)) / 4;
+    num_TN_test = sum ((1 - y_test_pred) * (1 - y_test)) / 4;
+    num_FN_test = sum ((1 - y_test_pred) * (y_test + 1)) / 4;
+
+    stats [1, 31] = one*num_TP_test;
+    stats [1, 32] = one*num_FP_test;
+    stats [1, 33] = one*num_TN_test;
+    stats [1, 34] = one*num_FN_test;
+
+# Compute the actual precision, recall = sensitivity, specificity, and value
+
+    precision_test = 100.0 * num_TP_test / (num_TP_test + num_FP_test);
+    recall_test = 100.0 * num_TP_test / (num_TP_test + num_FN_test);
+    specificity_test = 100.0 * num_TN_test / (num_TN_test + num_FP_test);
+    value_test = num_TP_test * value_TP - num_FP_test * cost_FP + num_TN_test * value_TN - num_FN_test * cost_FN;
+
+    stats [1, 35] = one*precision_test;
+    stats [1, 36] = one*recall_test;
+    stats [1, 37] = one*specificity_test;
+    stats [1, 38] = one*value_test;
+
+}
+
+
+printFoldStatistics = function (Matrix[double] stats ) return( Integer err )
+{
+    stats_avg = round (colMeans(stats) * 10000.0) / 10000.0;
+    stats_max = round (colMaxs (stats) * 10000.0) / 10000.0;
+    stats_min = round (colMins (stats) * 10000.0) / 10000.0;
+/*    
+    print ("Training Data, Model-estimated statistics:");
+    print ("    True Positives:  Min = " + castAsScalar (stats_min [1,  1]) + ",  Avg = " + castAsScalar (stats_avg [1,  1]) + ",  Max = " + castAsScalar (stats_max [1,  1]));
+    print ("   False Positives:  Min = " + castAsScalar (stats_min [1,  2]) + ",  Avg = " + castAsScalar (stats_avg [1,  2]) + ",  Max = " + castAsScalar (stats_max [1,  2]));
+    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1,  3]) + ",  Avg = " + castAsScalar (stats_avg [1,  3]) + ",  Max = " + castAsScalar (stats_max [1,  3]));
+    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1,  4]) + ",  Avg = " + castAsScalar (stats_avg [1,  4]) + ",  Max = " + castAsScalar (stats_max [1,  4]));
+    print ("       Precision %:  Min = " + castAsScalar (stats_min [1,  5]) + ",  Avg = " + castAsScalar (stats_avg [1,  5]) + ",  Max = " + castAsScalar (stats_max [1,  5]));
+    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1,  6]) + ",  Avg = " + castAsScalar (stats_avg [1,  6]) + ",  Max = " + castAsScalar (stats_max [1,  6]));
+    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1,  7]) + ",  Avg = " + castAsScalar (stats_avg [1,  7]) + ",  Max = " + castAsScalar (stats_max [1,  7]));
+    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1,  8]) + ",  Avg = " + castAsScalar (stats_avg [1,  8]) + ",  Max = " + castAsScalar (stats_max [1,  8]));
+    print (" ");
+    if (1==1) {
+      print(" ")
+    }
+*/
+    print ("Training Data, Label comparison statistics:");
+    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 11]) + ",  Avg = " + castAsScalar (stats_avg [1, 11]) + ",  Max = " + castAsScalar (stats_max [1, 11]));
+    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 12]) + ",  Avg = " + castAsScalar (stats_avg [1, 12]) + ",  Max = " + castAsScalar (stats_max [1, 12]));
+    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 13]) + ",  Avg = " + castAsScalar (stats_avg [1, 13]) + ",  Max = " + castAsScalar (stats_max [1, 13]));
+    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 14]) + ",  Avg = " + castAsScalar (stats_avg [1, 14]) + ",  Max = " + castAsScalar (stats_max [1, 14]));
+    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 15]) + ",  Avg = " + castAsScalar (stats_avg [1, 15]) + ",  Max = " + castAsScalar (stats_max [1, 15]));
+    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 16]) + ",  Avg = " + castAsScalar (stats_avg [1, 16]) + ",  Max = " + castAsScalar (stats_max [1, 16]));
+    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 17]) + ",  Avg = " + castAsScalar (stats_avg [1, 17]) + ",  Max = " + castAsScalar (stats_max [1, 17]));
+    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 18]) + ",  Avg = " + castAsScalar (stats_avg [1, 18]) + ",  Max = " + castAsScalar (stats_max [1, 18]));
+    print (" ");
+    if (1==1) {
+      print(" ")
+    }
+/*
+    print ("TEST Data, Model-estimated statistics:");
+    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 21]) + ",  Avg = " + castAsScalar (stats_avg [1, 21]) + ",  Max = " + castAsScalar (stats_max [1, 21]));
+    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 22]) + ",  Avg = " + castAsScalar (stats_avg [1, 22]) + ",  Max = " + castAsScalar (stats_max [1, 22]));
+    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 23]) + ",  Avg = " + castAsScalar (stats_avg [1, 23]) + ",  Max = " + castAsScalar (stats_max [1, 23]));
+    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 24]) + ",  Avg = " + castAsScalar (stats_avg [1, 24]) + ",  Max = " + castAsScalar (stats_max [1, 24]));
+    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 25]) + ",  Avg = " + castAsScalar (stats_avg [1, 25]) + ",  Max = " + castAsScalar (stats_max [1, 25]));
+    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 26]) + ",  Avg = " + castAsScalar (stats_avg [1, 26]) + ",  Max = " + castAsScalar (stats_max [1, 26]));
+    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 27]) + ",  Avg = " + castAsScalar (stats_avg [1, 27]) + ",  Max = " + castAsScalar (stats_max [1, 27]));
+    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 28]) + ",  Avg = " + castAsScalar (stats_avg [1, 28]) + ",  Max = " + castAsScalar (stats_max [1, 28]));
+    print (" ");
+    if (1==1) {
+      print(" ")
+    }
+*/
+    print ("TEST Data, Label comparison statistics:");
+    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 31]) + ",  Avg = " + castAsScalar (stats_avg [1, 31]) + ",  Max = " + castAsScalar (stats_max [1, 31]));
+    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 32]) + ",  Avg = " + castAsScalar (stats_avg [1, 32]) + ",  Max = " + castAsScalar (stats_max [1, 32]));
+    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 33]) + ",  Avg = " + castAsScalar (stats_avg [1, 33]) + ",  Max = " + castAsScalar (stats_max [1, 33]));
+    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 34]) + ",  Avg = " + castAsScalar (stats_avg [1, 34]) + ",  Max = " + castAsScalar (stats_max [1, 34]));
+    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 35]) + ",  Avg = " + castAsScalar (stats_avg [1, 35]) + ",  Max = " + castAsScalar (stats_max [1, 35]));
+    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 36]) + ",  Avg = " + castAsScalar (stats_avg [1, 36]) + ",  Max = " + castAsScalar (stats_max [1, 36]));
+    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 37]) + ",  Avg = " + castAsScalar (stats_avg [1, 37]) + ",  Max = " + castAsScalar (stats_max [1, 37]));
+    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 38]) + ",  Avg = " + castAsScalar (stats_avg [1, 38]) + ",  Max = " + castAsScalar (stats_max [1, 38]));
+
+    err = 0;
+}

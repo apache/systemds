@@ -1,0 +1,15 @@
+-f test/scripts/applications/validation/genRandData4MultiClassSVM.dml -args 100000 500 5 5 "test/scripts/applications/validation/test/W" "test/scripts/applications/validation/test/X" "test/scripts/applications/validation/test/y" 0 0 0.1
+
+-f test/scripts/applications/validation/CV_MultiClassSVM.sasha.dml -args "test/scripts/applications/validation/test/X" "test/scripts/applications/validation/test/y" 4 0 2 500 0.001 0.01
+
+
+
+
+
+-f test/scripts/applications/validation/genRandData4LogisticRegression.dml -args 100000 100 1 1 test/scripts/applications/validation/test/w test/scripts/applications/validation/test/X test/scripts/applications/validation/test/y 0 0 0.1
+
+-f test/scripts/applications/validation/CV_LogisticRegression.dml -args "test/scripts/applications/validation/test/X" "test/scripts/applications/validation/test/y" 4 0 100 1000.0 1.0 1.0 1.0 1.0
+
+
+
+-f test/scripts/applications/ctableStats/wilson_score.dml -exec singlenode -args "test/scripts/applications/ctableStats/wilson_test_input.mtx" 7 "test/scripts/applications/ctableStats/wilson_test_output.mtx"

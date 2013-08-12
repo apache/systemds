@@ -1,0 +1,93 @@
+# Testing the Cholesky script:
+
+print ("Running Cholesky...");
+A = Rand (rows = 1000, cols = 990, min = -5.0, max = 5.0);
+A = A %*% t(A);
+
+# B = read("test/scripts/applications/glmReg/simple_matrix.mtx", rows=5, cols=5, format="text");
+# B = B %*% t(B);
+# 
+# A = B;
+# A [3, ] = B [5, ];
+# A [5, ] = B [3, ];
+# B = A;
+# B [, 3] = A [, 5];
+# B [, 5] = A [, 3];
+# A = B;
+# A [1, ] = B [4, ];
+# A [4, ] = B [1, ];
+# B = A;
+# B [, 1] = A [, 4];
+# B [, 4] = A [, 1];
+# A = B;
+
+# for (i in 1:5) {
+#     for (j in 1:5) {
+#         print ("A [" + i + ", " + j + "] = " + castAsScalar (A [i, j]));
+#     }
+# }
+
+A_Chol = A;
+error_Chol = 0.00000001;
+
+### BEGIN CHOLESKY EMBED ###
+
+    G_Chol = A_Chol;
+    sz_Chol = nrow (A_Chol);
+    random_vector = Rand (rows = sz_Chol, cols = 1, min = 0.0, max = 1.0);
+    mask = Rand (rows = sz_Chol, cols = 1, min = 1.0, max = 1.0);
+    unity_matrix = diag (mask);
+    P_Chol = unity_matrix;
+    r_Chol = 1;
+    end_Chol_loop = 0;
+    while (r_Chol <= sz_Chol & end_Chol_loop == 0)
+    {
+        end_Chol_loop = 1;
+        masked_diagonal = mask [, 1] * diag (G_Chol);
+        largest_diagonal_element = max (masked_diagonal);
+        
+        if (largest_diagonal_element > error_Chol)
+        {
+            end_Chol_loop = 0;
+            e_pivot_raw = random_vector * ppred (masked_diagonal, largest_diagonal_element, "==");
+            e_pivot = ppred (e_pivot_raw, max (e_pivot_raw), "==");
+            
+            e_change = (P_Chol %*% e_pivot) - unity_matrix [, r_Chol];
+            P_Chol = P_Chol - e_change %*% t(e_change) %*% P_Chol;
+
+            pivot_vector = (mask / sqrt (largest_diagonal_element)) * (G_Chol %*% e_pivot);
+            tmp_M = diag (pivot_vector) %*% (mask - e_pivot / 2.0) %*% t(e_pivot);
+            G_Chol = G_Chol + tmp_M + t(tmp_M) - pivot_vector %*% t(pivot_vector);
+
+            mask = mask - e_pivot;
+            r_Chol = r_Chol + 1;
+        }
+    }
+    r_Chol = r_Chol - 1;
+    
+    L = Rand (rows = sz_Chol, cols = sz_Chol, min = 0.0, max = 0.0);
+    mask = Rand (rows = sz_Chol, cols = 1, min = 1.0, max = 1.0);
+    zero_cell = Rand (rows = 1, cols = 1, min = 0.0, max = 0.0);
+    for (i in 1:r_Chol)
+    {
+        L [, i] = mask;
+        mask [i, 1] = zero_cell;
+    }
+    G_Chol = L * (P_Chol %*% G_Chol %*% t(P_Chol));
+
+### END CHOLESKY EMBED ###
+
+G = G_Chol;
+P = P_Chol;
+rank = r_Chol;
+
+# for (i in 1:5) {
+#     for (j in 1:5) {
+#         print ("G [" + i + ", " + j + "] = " + castAsScalar (G [i, j]));
+#     }
+# }
+
+B = t(P) %*% G %*% t(G) %*% P;
+norm = sum (abs (A));
+error = sum (abs (A - B));
+print ("Rank = " + rank + ";  ||A|| = " + norm + ";  ||A - G G^T|| = " + error);

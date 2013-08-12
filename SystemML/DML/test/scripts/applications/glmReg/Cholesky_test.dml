@@ -1,0 +1,48 @@
+# dml-path "test/scripts/applications/glmReg";
+# import Cholesky;
+
+setwd ("test/scripts/applications/glmReg");
+source ("Cholesky.dml");
+
+
+# Testing the Cholesky script:
+
+print ("Running Cholesky...");
+A = Rand (rows = 1000, cols = 990, min = -5.0, max = 5.0);
+A = A %*% t(A);
+
+# B = read("test/scripts/applications/glmReg/simple_matrix.mtx", rows=5, cols=5, format="text");
+# B = B %*% t(B);
+# 
+# A = B;
+# A [3, ] = B [5, ];
+# A [5, ] = B [3, ];
+# B = A;
+# B [, 3] = A [, 5];
+# B [, 5] = A [, 3];
+# A = B;
+# A [1, ] = B [4, ];
+# A [4, ] = B [1, ];
+# B = A;
+# B [, 1] = A [, 4];
+# B [, 4] = A [, 1];
+# A = B;
+
+# for (i in 1:5) {
+#     for (j in 1:5) {
+#         print ("A [" + i + ", " + j + "] = " + castAsScalar (A [i, j]));
+#     }
+# }
+
+[G, P, rank] = get_Cholesky (A, 0.00000001);
+
+# for (i in 1:5) {
+#     for (j in 1:5) {
+#         print ("G [" + i + ", " + j + "] = " + castAsScalar (G [i, j]));
+#     }
+# }
+
+B = t(P) %*% G %*% t(G) %*% P;
+norm = sum (abs (A));
+error = sum (abs (A - B));
+print ("Rank = " + rank + ";  ||A|| = " + norm + ";  ||A - G G^T|| = " + error);

@@ -1,0 +1,157 @@
+# CTCI_ODDS.DML: TWO-ATTRIBUTE CONTINGENCY TABLE ODDS-RATIO CONFIDENCE INTERVAL ANALYSIS
+# Computes 95% confidence intervals for odds ratios using a Gaussian approximation for log-odds
+# INPUT  1: Dataset as an (N x 2) matrix, input file path/name
+#       Rows: Individual data points
+#      Col 1: Partition attribute (e.g. US State code), must be positive integer
+#      Col 2: Label attribute (e.g. positive/negative/neutral), must be positive integer
+# INPUT  2: Number of data points N (i.e. input matrix size, rows)
+# INPUT  3: "Null" label code, 0 if there is no "null" label
+# INPUT  4: Output Matrix file path/name
+# OUTPUT 1: Output Matrix with the following information:
+#       Rows: One row per each distinct pair (partition, label) excluding "null" label
+#     Col  1: Partition attribute value
+#     Col  2: Label attribute value
+#     Col  3: Number of data points with this (partition, label) pair
+#     Col  4: Number of data points with the same partition, but a different label
+#     Col  5: Number of data points with a different partition, but the same label
+#     Col  6: Number of data points with a different partition and a different label
+#     Col  7: The odds ratio
+#     Col  8: Small side of 95%-confidence interval for the odds ratio
+#     Col  9: Large side of 95%-confidence interval for the odds ratio
+#     Col 10: How many sigmas away the log-odds ratio is from zero
+#     Col 11: Chi-squared statistic
+#     Col 12: Cramer's V * 100%
+#     Col 13: Log-odds ratio P-value * 100%
+#     Col 14: Chi-squared P-value * 100%
+#     Col 15: Percentage (out of 100) of data points in this paritition to have this label
+#     Col 16: Small side of 95%-confid. int-l of above percentage, Wilson Score
+#     Col 17: Large side of 95%-confid. int-l of above percentage, Wilson Score
+#     Col 18: Percentage (out of 100) of data points overall to have this label
+#     Col 19: Small side of 95%-confid. int-l of above percentage, Wilson Score
+#     Col 20: Large side of 95%-confid. int-l of above percentage, Wilson Score
+#     Col 21: Percentage (out of 100) of data points overall to lie in this partition
+#     Col 22: Small side of 95%-confid. int-l of above percentage, Wilson Score
+#     Col 23: Large side of 95%-confid. int-l of above percentage, Wilson Score
+#
+# EXAMPLE:
+# hadoop jar SystemML.jar -f PATH/ctci_odds.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_odds_test_output.mtx
+
+powerOfTen = 10000;      # CONSTANT FOR ROUNDING THE RESULTS
+print ("BEGIN CTABLE ANALYSIS SCRIPT");
+print ("Reading the input matrix...");
+InData = read ($1, rows = $2, cols = 2, format = "text");
+numPoints = $2;
+print ("Computing the contingency table...");
+CT = ctable (InData [, 1], InData [, 2]);
+# DEBUG LINE ONLY: write (CT, "test/scripts/applications/ctableStats/ctci_test_CT.mtx", format="text");
+print ("Preparing for the output tables...");
+nullLabel = $3;
+numPartitions = nrow (CT);
+numLabels = ncol (CT);
+numOutRows = numPartitions * numLabels;
+if (nullLabel > 0 & nullLabel <= numLabels) {
+    numOutRows = numOutRows - numPartitions;
+}
+cntPartitions = rowSums (CT);
+cntLabels = t(colSums (CT));
+OutMtx = Rand (rows = numOutRows, cols = 23, min = 0, max = 0);
+idx = 0;
+zero = Rand (rows = 1, cols = 1, min = 0, max = 0);
+for (iLabel in 1:numLabels)
+{
+    if (iLabel != nullLabel)
+    {
+        if (1==1) {
+            print ("Processing label " + iLabel + ":");
+        }
+        for (iPartition in 1:numPartitions)
+        {
+            idx = idx + 1;
+            OutMtx [idx,  1] = iPartition + zero;
+            OutMtx [idx,  2] = iLabel + zero;
+
+            n11 = CT [iPartition, iLabel];
+            n01 = cntPartitions [iPartition, 1] - CT [iPartition, iLabel];
+            n10 = cntLabels [iLabel, 1] -  CT [iPartition, iLabel];
+            n00 = numPoints - cntPartitions [iPartition, 1] - cntLabels [iLabel, 1] + CT [iPartition, iLabel];
+            odds_ratio = n11 * n00 / (n01 * n10);
+            sigma_log_odds_ratio = sqrt (1.0 / n00 + 1.0 / n01 + 1.0 / n10 + 1.0 / n11);
+            odds_ratio_interval_small = odds_ratio / exp (1.96 * sigma_log_odds_ratio);
+            odds_ratio_interval_large = odds_ratio * exp (1.96 * sigma_log_odds_ratio);
+            num_sigmas_away = abs (log (odds_ratio) / sigma_log_odds_ratio);
+            chi_diff = n00 * n11 - n01 * n10;
+            chi_denom = (n00 + n01) * (n10 + n11) * (n00 + n10) * (n01 + n11);
+            chi_square = (n00 + n01 + n10 + n11) * chi_diff * chi_diff / chi_denom;
+            cramers_V = sqrt (chi_square / (n00 + n01 + n10 + n11));
+
+            OutMtx [idx,  3] = n11;
+            OutMtx [idx,  4] = n01;
+            OutMtx [idx,  5] = n10;
+            OutMtx [idx,  6] = n00;
+            OutMtx [idx,  7] = round (odds_ratio * powerOfTen) / powerOfTen;
+            OutMtx [idx,  8] = round (odds_ratio_interval_small * powerOfTen) / powerOfTen;
+            OutMtx [idx,  9] = round (odds_ratio_interval_large * powerOfTen) / powerOfTen;
+            OutMtx [idx, 10] = round (num_sigmas_away * powerOfTen) / powerOfTen;
+            OutMtx [idx, 11] = round (chi_square * powerOfTen) / powerOfTen;
+            OutMtx [idx, 12] = round (100.0 * cramers_V * powerOfTen) / powerOfTen;
+            
+            gauss_pts = Rand (rows = 2, cols = 1, min = 0, max = 0);
+            gauss_pts [1, 1] = - num_sigmas_away;
+            gauss_pts [2, 1] = - sqrt (chi_square);
+            gauss_probs = gaussian_probability (gauss_pts);
+            pval_odds = gauss_probs [1, 1] * 2.0;
+            pval_chi2 = gauss_probs [2, 1] * 2.0;
+            
+            OutMtx [idx, 13] = round (100.0 * pval_odds * powerOfTen) / powerOfTen;
+            OutMtx [idx, 14] = round (100.0 * pval_chi2 * powerOfTen) / powerOfTen;
+
+            m_cnt = Rand (rows = 3, cols = 1, min = 0, max = 0);
+            n_cnt = Rand (rows = 3, cols = 1, min = 0, max = 0);
+            m_cnt [1, 1] = CT [iPartition, iLabel];
+            n_cnt [1, 1] = cntPartitions [iPartition, 1];
+            m_cnt [2, 1] = cntLabels [iLabel, 1];
+            n_cnt [2, 1] = numPoints + zero;
+            m_cnt [3, 1] = cntPartitions [iPartition, 1];
+            n_cnt [3, 1] = numPoints + zero;
+            [ratios, conf_interval_small, conf_interval_large] = wilson_confidence (n_cnt, m_cnt);
+            OutMtx [idx, 15] = round (100.0 * ratios [1, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 16] = round (100.0 * conf_interval_small [1, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 17] = round (100.0 * conf_interval_large [1, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 18] = round (100.0 * ratios [2, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 19] = round (100.0 * conf_interval_small [2, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 20] = round (100.0 * conf_interval_large [2, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 21] = round (100.0 * ratios [3, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 22] = round (100.0 * conf_interval_small [3, 1] * powerOfTen) / powerOfTen;
+            OutMtx [idx, 23] = round (100.0 * conf_interval_large [3, 1] * powerOfTen) / powerOfTen;
+}   }   }
+
+print ("Writing the output matrix...");
+write (OutMtx, $4, format="text");
+print ("END CTABLE ANALYSIS SCRIPT");
+
+wilson_confidence = function (Matrix[double] n, Matrix[double] m)
+return (Matrix[double] ratio, Matrix[double] conf_left, Matrix[double] conf_right)
+{
+    z = 1.96;      # 97.5% normal percentile, for 95% confidence interval
+    z_sq_n = z * z * n;
+    qroot = sqrt (z_sq_n * (m * (n - m) + z_sq_n / 4));
+    midpt = n * m + z_sq_n / 2;
+    denom = n * n + z_sq_n;
+    ratio = m / n;
+    conf_left  = (midpt - qroot) / denom;
+    conf_right = (midpt + qroot) / denom;
+}
+
+gaussian_probability = function (Matrix[double] vector_of_points)
+    return (Matrix[double] vector_of_probabilities)
+{
+    t_gp = 1.0 / (1.0 + abs (vector_of_points) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
+    erf_gp = 1.0 - t_gp * ( 0.254829592 
+                 + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
+                 + t_gp * ( 1.421413741 # U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299
+                 + t_gp * (-1.453152027 
+                 + t_gp *   1.061405429)))) * exp (- vector_of_points * vector_of_points / 2.0);
+    erf_gp = erf_gp * 2.0 * (ppred (vector_of_points, 0.0, ">") - 0.5);
+    vector_of_probabilities = 0.5 + 0.5 * erf_gp;
+}
+

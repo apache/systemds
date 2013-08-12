@@ -1,0 +1,87 @@
+# Implements the k-Means clustering algorithm
+# INPUT 1: Input file name for X input data (data records)
+# INPUT 2: The number k of centroids
+# INPUT 3: Output file name for the centroids
+# Example: hadoop jar SystemML.jar -f kMeans.dml -args X_input_file 5 centroids_file
+
+print( "Performing initialization..." );
+
+# X : matrix of data points as rows
+X = read( $1 );
+
+num_records = nrow( X );
+num_features = ncol( X );
+num_centroids = $2;
+
+one_per_record = matrix( 1.0, rows = num_records, cols = 1);
+one_per_feature = matrix( 1.0, rows = num_features, cols = 1);
+one_per_centroid = matrix( 1.0, rows = num_centroids, cols = 1);
+
+# Y : matrix of centroids as rows
+Y = matrix( 0.0, rows = num_centroids, cols = num_features );
+# D : matrix of squared distances from X rows to Y rows, up to a Y-independent term
+D = matrix( 0.0, rows = num_records, cols = num_centroids );
+
+print( "Taking a data sample to compute the convergence criterion..." );
+
+X_sample = X;
+sample_size = 1000;
+if (num_records > sample_size)
+{
+   # Sample approximately 1000 records (Bernoulli sampling) 
+   P = Rand( rows = num_records, cols = 1, min = 0.0, max = 1.0 );
+   P = ppred( P * num_records, sample_size, "<=" );
+   X_sample = X * (P %*% t( one_per_feature ));
+   X_sample = removeEmpty( target = X_sample, margin = "rows" );
+}
+
+sample_size = nrow( X_sample );
+one_per_sample = matrix( 1.0, rows = sample_size, cols = 1 );
+
+# Compute eps for the convergence criterion as the average square distance
+# between records in the sample times a small number
+
+eps = 0.0000001 * 
+    sum (one_per_sample %*% t( rowSums( X_sample * X_sample ) ) 
+    + rowSums( X_sample * X_sample ) %*% t( one_per_sample ) 
+    - 2.0 * X_sample %*% t( X_sample )) / (sample_size * sample_size);
+
+# Start iterations
+
+centroid_change = 10.0 + eps;
+iter_count = 0;
+print ("Starting the iterations...");
+
+while (centroid_change > eps)
+{
+    iter_count = iter_count + 1;
+    old_Y = matrix( 0.0, rows = num_centroids, cols = num_features );
+    if ( iter_count == 1 
+        | ( centroid_change != centroid_change )             #  Check if
+        | ( ( centroid_change == centroid_change + 1 )       #  centroid_change
+            & ( centroid_change == 2 * centroid_change ) ) ) #  is a "NaN"
+    {
+        # Start anew, by setting D to a random matrix
+        D = Rand (rows = num_records, cols = num_centroids, min = 0.0, max = 1.0);
+    } else {
+        old_Y = Y;
+        # Euclidean squared distances from records (X rows) to centroids (Y rows)
+        # without a redundant Y-independent term
+        D = one_per_record %*% t(rowSums (Y * Y)) - 2.0 * X %*% t(Y);
+    }
+    # Find the closest centroid for each record
+    P = ppred (D, rowMins (D) %*% t(one_per_centroid), "<=");
+    # If some records belong to multiple centroids, share them equally
+    P = P / (rowSums (P) %*% t(one_per_centroid));
+    # Normalize the columns of P to compute record weights for new centroids
+    P = P / (one_per_record %*% colSums (P));
+    # Compute new centroids as weighted averages over the records
+    Y = t(P) %*% X;
+    # Measure the squared difference between old and new centroids
+    centroid_change = sum ( (Y - old_Y) * (Y - old_Y) ) / num_centroids;
+    print ("Iteration " + iter_count + ":  centroid_change = " + centroid_change);
+}
+
+print( "Writing out the centroids..." );
+write( Y, $3, format = "text" );
+print( "Done." );

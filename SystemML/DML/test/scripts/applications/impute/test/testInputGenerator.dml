@@ -1,0 +1,131 @@
+# Generates synthetic data to try inputeGaussMCMC.dml
+# How To Run:
+#
+# 
+# hadoop jar SystemML.jar -f test/scripts/applications/impute/test/testInputGenerator.dml -exec singlenode
+#    -args test/scripts/applications/impute/test/initial_reports test/scripts/applications/impute/test/CReps 
+#        test/scripts/applications/impute/test/RegresValueMap test/scripts/applications/impute/test/RegresParamMap
+
+num_terms = 40;   # The number of term reports, feel free to change
+num_attrs = 6;    # 4 regular attributes, 1 total cost, 1 auxiliary ("macroeconomic")
+num_frees = 4;    # We estimate the last report, which has 4 degrees of freedom
+num_factors = 4;  # In regressions: x[t] ~ x[t-1], (x[t-1] - x[t-2]), total_cost[t]
+
+# We have one regression equation per term, except the first two terms,
+# for each attribute except the auxiliary attribute:
+num_reg_eqs = (num_terms - 2) * (num_attrs - 1);
+
+# All regression equations for the same attribute share the same parameters,
+# regardless of the term: 
+num_params  = num_factors * (num_attrs - 1);
+
+# GENERATE THE INITIAL REPORTS MATRIX (with the last term report set to 0.0)
+
+initial_reports_matrix = matrix (0.0, rows = num_attrs, cols = num_terms);
+
+# We assume that the terms are quarterly.
+# Auxiliary attribute is = sqrt(1.1)^t, a steady exponential growth of 21% a year.
+# The total cost regresses on the auxiliary attribute and shows a combination of
+# exponential and cyclic behavior year after year.
+
+zero = matrix (0.0, rows = 1, cols = 1);
+
+initial_reports_matrix [6, 1] = zero + 1; # auxiliary attribute
+for (t in 2 : num_terms) {
+    initial_reports_matrix [6, t] = initial_reports_matrix [6, t-1] * sqrt (1.1);
+}
+
+initial_reports_matrix [1, 1] = zero + 1 * 0.4615107865026;
+initial_reports_matrix [2, 1] = zero + 1 * 0.0270996863066;
+initial_reports_matrix [3, 1] = zero + 1 * 0.3772761445953;
+initial_reports_matrix [4, 1] = zero + 1 * 0.1341133825954;
+initial_reports_matrix [5, 1] = zero + 1; # total cost attribute
+
+initial_reports_matrix [1, 2] = zero + 2 * 0.3281440348352;
+initial_reports_matrix [2, 2] = zero + 2 * 0.0345738029588;
+initial_reports_matrix [3, 2] = zero + 2 * 0.4052452565031;
+initial_reports_matrix [4, 2] = zero + 2 * 0.2320369057028;
+initial_reports_matrix [5, 2] = zero + 2; # total cost attribute
+
+for (t in 3 : (num_terms - 1))
+{
+    initial_reports_matrix [5, t] = 
+        - 1.1 *  initial_reports_matrix [5, t-1] 
+        + 1.1 * (initial_reports_matrix [5, t-1] - initial_reports_matrix [5, t-2])
+        + 3.0 * (initial_reports_matrix [6, t]);
+
+    initial_reports_matrix [1, t] = 
+          0.45 *  initial_reports_matrix [1, t-1] 
+        + 0.00 * (initial_reports_matrix [1, t-1] - initial_reports_matrix [1, t-2])
+        + 0.2243041078721 * (initial_reports_matrix [5, t]);
+
+    initial_reports_matrix [2, t] = 
+          0.00 *  initial_reports_matrix [2, t-1] 
+        + 0.45 * (initial_reports_matrix [2, t-1] - initial_reports_matrix [2, t-2])
+        + 0.0417492985298 * (initial_reports_matrix [5, t]);
+
+    initial_reports_matrix [3, t] = 
+        - 0.40 *  initial_reports_matrix [3, t-1] 
+        + 0.00 * (initial_reports_matrix [3, t-1] - initial_reports_matrix [3, t-2])
+        + 0.4807004854222 * (initial_reports_matrix [5, t]);
+
+    initial_reports_matrix [4, t] =
+        - 0.20 * initial_reports_matrix [4, t-1] 
+        + 0.30 * (initial_reports_matrix [4, t-1] - initial_reports_matrix [4, t-2])
+        + 0.2549604916594 * (initial_reports_matrix [5, t]);
+}
+
+# GENERATE A LINEAR MAP FROM FREE VARIABLES TO THE REPORTS
+
+CReps = matrix (0.0, rows = (num_terms * num_attrs), cols = num_frees);
+CReps [(num_terms-1) * num_attrs + 1, 1] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 2, 2] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 3, 3] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 4, 4] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 5, 1] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 5, 2] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 5, 3] = 1.0 + zero;
+CReps [(num_terms-1) * num_attrs + 5, 4] = 1.0 + zero;
+
+# GENERATE A LINEAR MAP FROM REPORTS TO REGRESSION FACTORS
+
+RegresValueMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = (num_terms * num_attrs));
+
+for (t in 3 : num_terms) {
+    for (i in 1 : (num_attrs - 2)) {
+        reg_index = ((t-3)*(num_attrs-1)-1 + i) * num_factors;
+        RegresValueMap [reg_index + 1, (t-1) * num_attrs + i] =  1.0 + zero;  # First factor is x[t]
+        RegresValueMap [reg_index + 2, (t-2) * num_attrs + i] =  1.0 + zero;  # Second factor is x[t-1]
+        RegresValueMap [reg_index + 3, (t-2) * num_attrs + i] =  1.0 + zero;  # Third factor is
+        RegresValueMap [reg_index + 3, (t-3) * num_attrs + i] = -1.0 + zero;  #   x[t-1] - x[t-2]
+        RegresValueMap [reg_index + 4, (t-1) * num_attrs + 5] =  1.0 + zero;  # 4th factor = total_cost[t]
+    }
+    # For the total cost itself, the regression is almost the same, except the last line:
+    reg_index = ((t-3)*(num_attrs-1)-1 + 5) * num_factors;
+    RegresValueMap [reg_index + 1, (t-1) * num_attrs + 5] =  1.0 + zero;  # First factor is x[t]
+    RegresValueMap [reg_index + 2, (t-2) * num_attrs + 5] =  1.0 + zero;  # Second factor is x[t-1]
+    RegresValueMap [reg_index + 3, (t-2) * num_attrs + 5] =  1.0 + zero;  # Third factor is
+    RegresValueMap [reg_index + 3, (t-3) * num_attrs + 5] = -1.0 + zero;  #   x[t-1] - x[t-2]
+    RegresValueMap [reg_index + 4, (t-1) * num_attrs + 6] =  1.0 + zero;  # 4th factor = auxiliary[t]
+}
+
+# GENERATE A LINEAR MAP FROM PARAMETERS TO REGRESSION FACTORS
+
+RegresParamMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = num_params);
+
+for (t in 3 : num_terms) {
+    for (i in 1 : (num_attrs - 1)) {
+        reg_index = ((t-3)*(num_attrs-1)-1 + i) * num_factors;
+        RegresParamMap [reg_index + 1, 0 * (num_attrs-1) + i] = 1.0 + zero;
+        RegresParamMap [reg_index + 2, 1 * (num_attrs-1) + i] = 1.0 + zero;
+        RegresParamMap [reg_index + 3, 2 * (num_attrs-1) + i] = 1.0 + zero;
+        RegresParamMap [reg_index + 4, 3 * (num_attrs-1) + i] = 1.0 + zero;
+    }
+}
+
+# WRITE OUT ALL GENERATED MATRICES
+
+write (initial_reports_matrix, $1, format="text");
+write (CReps, $2, format="text");
+write (RegresValueMap, $3, format="text");
+write (RegresParamMap, $4, format="text");

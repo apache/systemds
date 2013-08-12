@@ -1,0 +1,101 @@
+# generates random data to test linear logistic regression
+
+# 100K dataset
+# hadoop jar SystemML.jar -f genRandData4LogisticRegression.dml -args 100000 500 0.0 5.0 itau/logreg/w_100k itau/logreg/X_100k_500 itau/logreg/y_100k 0 0 0.01
+
+# 1M dataset
+# hadoop jar SystemML.jar -f genRandData4LogisticRegression.dml -args 1000000 1000 0.0 5.0 itau/logreg/w_1m itau/logreg/X_1m_1k /logreg/y_1m 0 0 0.0001
+
+# $1 is number of samples
+# $2 is number of features (independent variables)
+# $3 is the mean of the linear form (w^T X)
+# $4 is the st.dev. of the linear form (w^T X)
+# $5 is location to store generated weights
+# $6 is location to store generated data
+# $7 is location to store generated labels
+# $8 addNoise. if 0 then no noise is added, to add noise set this to 1
+# $9 is 0 if no intercept and 1 if there is intercept
+# $10 controls sparsity in the generated data
+
+numSamples = $1
+numFeatures = $2
+meanLF = $3
+sigmaLF = $4
+addNoise = $8
+b = $9
+
+X = Rand (rows=numSamples, cols=numFeatures, min=-1, max=2, pdf="uniform", seed=0, sparsity=$10);
+w = Rand (rows=numFeatures, cols=1, min=-1, max=1, pdf="uniform", seed=0)
+
+if (b != 0) {
+	b_mat = Rand (rows=numSamples, cols=1, min=1, max=1);
+    X = append (X, b_mat);
+    numFeatures_plus_one = numFeatures + 1;
+    w = Rand (rows=numFeatures_plus_one, cols=1, min=-1, max=1, pdf="uniform", seed=0);
+}
+
+[w, new_sigmaLF] = scaleWeights (X, w, meanLF, sigmaLF);
+if (sigmaLF != new_sigmaLF) {
+    print ("The standard deviation requirement on the linear form is TOO TIGHT!");
+    print ("We relaxed sigmaLF from " + sigmaLF + " to " + new_sigmaLF + "."); 
+}
+ot = X %*% w;
+
+if (b != 0) {
+    X = X [, 1:numFeatures];
+}
+
+emp_meanLF = sum (ot) / numSamples;
+emp_sigmaLF = sqrt (sum (ot * ot) / numSamples - emp_meanLF * emp_meanLF);
+print ("Empirical meanLF = " + emp_meanLF + ";   Empirical sigmaLF = " + emp_sigmaLF);
+
+prob = 1 / (1 + exp (- ot));
+
+if(addNoise == 1){
+	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
+}else{
+	print("this data generator generates the same dataset for both noise=0 and noise=1")
+	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
+	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
+}
+
+print ("nrow(prob) = " + nrow(prob) + ", ncol(prob) = " + ncol(prob) + ";  nrow(r) = " + nrow(r) + ", ncol(r) = " + ncol(r));
+
+Y = 1 - 2*ppred(prob, r, "<")
+
+write (w, $5, format="text");
+write (X, $6, format="binary");
+write (Y, $7, format="binary");
+
+
+# Shifts and scales the weights to ensure the desired statistics for Linear Form = w^T X
+# Used in data and/or weight generation in the testing of GLM, Logistic Regression etc.
+# new_sigmaLF == sigmaLF if successful, new_sigmaLF > sigmaLF if had to relax this constraint
+scaleWeights = 
+    function (Matrix[double] X_data, Matrix[double] w_unscaled, double meanLF, double sigmaLF)
+    return (Matrix[double] w_scaled, double new_sigmaLF)
+{
+    numFeatures = nrow (w_unscaled);
+    W_ext = Rand (rows = numFeatures, cols = 2, min = 1, max = 1);
+    W_ext [, 1] = w_unscaled;
+    S1 = colSums (X_data %*% W_ext);
+    TF = Rand (rows = 2, cols = 2, min = 1, max = 1);
+    TF [1, 1] = S1 [1, 1] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [1, 2] = S1 [1, 2];
+    TF [2, 1] = S1 [1, 2] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [2, 2] = - S1 [1, 1];
+    TF = W_ext %*% TF;
+    Q = t(TF) %*% t(X_data) %*% X_data %*% TF;
+    Q [1, 1] = Q [1, 1] - nrow (X_data) * meanLF * meanLF;
+    new_sigmaLF = sigmaLF;
+    discr = castAsScalar (Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1] - nrow (X_data) * Q [2, 2] * sigmaLF * sigmaLF);
+    if (discr > 0.0) {
+        new_sigmaLF = sqrt (castAsScalar ((Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1]) / (nrow (X_data) * Q [2, 2])));
+        discr = -0.0;
+    }
+    t = Rand (rows = 2, cols = 1, min = 1, max = 1);
+    t [2, 1] = (- Q [1, 2] + sqrt (- discr)) / Q [2, 2];
+    w_scaled = TF %*% t;
+}
+
+

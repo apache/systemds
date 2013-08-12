@@ -1,0 +1,305 @@
+# 10 K Dataset w/ k-fold CV
+# hadoop jar SystemML.jar -f CV_MultiClassSVM.sasha.dml -args $INPUT_DIR/X $INPUT_DIR/y num_folds intercept num_classes max_num_iterations tolerance regularization
+#                                                             $1           $2           $3        $4        $5          $6                 $7        $8
+# EXAMPLE: hadoop jar SystemML.jar -f CV_MultiClassSVM.sasha.dml -args itau/svm/X_10k_10 itau/svm/y_10k 4 0 5 100 0.001 1.0
+
+
+#X = Rand(rows=1000000, cols=100);
+#y = Rand(rows=1000000, cols=1);
+X = read( $1 );
+y = read( $2 );
+m = nrow( X );
+n = ncol( X );
+
+k = $3;
+
+#parameters for model training
+is_intercept = $4;
+number_of_classes = $5;
+max_num_iterations = $6;
+tolerance = $7;
+regularization_coeff = $8;
+
+P = Rand(rows=m, cols=1, min=0.0, max=1.0, pdf = "uniform");
+P = round(0.5+P*k);
+
+ones = matrix(1, rows=1, cols=n);
+stats = matrix(0, rows=k, cols=40); #k-folds x 40-stats
+   
+parfor( i in 1:k )
+{
+    #prepare train/test fold projections
+    vPxi = ppred( P, i, "==" );
+    mPxi = (vPxi %*% ones);   
+    #nvPxi = ppred( P, i, "!=" );
+    #nmPxi = (nvPxi %*% ones);  #note: inefficient for sparse data  
+
+    #create train/test folds
+    Xi = X * mPxi;  #  Create the TEST set with 1/k of all the rows
+    yi = y * vPxi;  #  Create the labels for the TEST set
+    nXi = X - Xi;   #  Create the TRAINING set with (k-1)/k of the rows
+    nyi = y - yi;   #  Create the labels for the TRAINING set
+    Xyi = append(Xi,yi); #keep alignment on removeEmpty
+    Xyi = removeEmpty( target=Xyi, margin="rows" );
+    Xi = Xyi[ , 1:n];
+    yi = Xyi[ , n+1];   
+    nXyi = append(nXi,nyi); #keep alignment on removeEmpty
+    nXyi = removeEmpty( target=nXyi, margin="rows" );
+    nXi = nXyi[ , 1:n];
+    nyi = nXyi[ , n+1];
+
+    check_Xi = sum(Xi)
+    if(check_Xi == 0) {
+	    print("Xi has no non-zeros")
+    } else {
+        #train multiclass SVM model per fold, use the TRAINING set
+        wi = multiClassSVM (nXi, nyi, is_intercept, number_of_classes, max_num_iterations, tolerance, regularization_coeff);
+   
+        #score multiclass SVM model per fold, use both the TRAINING and the TEST sets
+        
+        score = scoreMultiClassSVM (nXi, nyi, wi, Xi, yi);
+        stats [i, ] = score;
+    }
+}
+
+# printed output of stats
+z = printFoldStatistics( stats );
+
+
+
+################################################################################
+
+multiClassSVM = function (Matrix[double] X, Matrix[double] Y, Integer intercept, Integer num_classes, Integer max_iterations, Double epsilon, Double lambda)
+  return (Matrix[double] ret)
+{
+# Implements multiclass C-SVM with squared slack variables, uses one-against-the-rest binary classifiers
+ 
+num_samples = nrow(X)
+num_features = ncol(X)
+
+if (intercept == 1) {
+ ones  = Rand(rows=num_samples, cols=1, min=1, max=1, pdf="uniform");
+ X = append(X, ones);
+}
+
+iter_class = 1
+
+Y_local = 2 * ppred(Y, iter_class, "==") - 1
+w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
+if (intercept == 1) {
+ zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
+ w_class = t(append(t(w_class), zero_matrix));
+}
+
+g_old = t(X) %*% Y_local
+s = g_old
+iter = 0
+continue = 1
+while(continue == 1)  {
+  # minimizing primal obj along direction s
+  step_sz = 0
+  Xd = X %*% s
+  wd = lambda * sum(w_class * s)
+  dd = lambda * sum(s * s)
+  continue1 = 1
+  while(continue1 == 1){
+   tmp_w = w_class + step_sz*s
+   out = 1 - Y_local * (X %*% tmp_w)
+   sv = ppred(out, 0, ">")
+   out = out * sv
+   g = wd + step_sz*dd - sum(out * Y_local * Xd)
+   h = dd + sum(Xd * sv * Xd)
+   step_sz = step_sz - g/h
+   if (g*g/h < 0.0000000001){
+    continue1 = 0
+   }
+  }
+ 
+  #update weights
+  w_class = w_class + step_sz*s
+ 
+  out = 1 - Y_local * (X %*% w_class)
+  sv = ppred(out, 0, ">")
+  out = sv * out
+  obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
+  g_new = t(X) %*% (out * Y_local) - lambda * w_class
+
+  tmp = sum(s * g_old)
+  
+  train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+  print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
+   
+  if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
+   continue = 0
+  }
+ 
+  #non-linear CG step
+  be = sum(g_new * g_new)/sum(g_old * g_old)
+  s = be * s + g_new
+  g_old = g_new
+
+  iter = iter + 1
+ }
+
+
+w = w_class
+iter_class = iter_class + 1
+
+while(iter_class <= num_classes){
+ Y_local = 2 * ppred(Y, iter_class, "==") - 1
+# w_class = Rand(rows=num_features, cols=1, min=0, max=0, pdf="uniform")
+ w_class = Rand(rows=ncol(X), cols=1, min=0, max=0, pdf="uniform")
+ if (intercept == 1) {
+ 	zero_matrix = Rand(rows=1, cols=1, min=0.0, max=0.0);
+ 	w_class = t(append(t(w_class), zero_matrix));
+ }
+ 
+ g_old = t(X) %*% Y_local
+ s = g_old
+
+ iter = 0
+ continue = 1
+ while(continue == 1)  {
+  # minimizing primal obj along direction s
+  step_sz = 0
+  Xd = X %*% s
+  wd = lambda * sum(w_class * s)
+  dd = lambda * sum(s * s)
+  continue1 = 1
+  while(continue1 == 1){
+   tmp_w = w_class + step_sz*s
+   out = 1 - Y_local * (X %*% tmp_w)
+   sv = ppred(out, 0, ">")
+   out = out * sv
+   g = wd + step_sz*dd - sum(out * Y_local * Xd)
+   h = dd + sum(Xd * sv * Xd)
+   step_sz = step_sz - g/h
+   if (g*g/h < 0.0000000001){
+    continue1 = 0
+   }
+  }
+ 
+  #update weights
+  w_class = w_class + step_sz*s
+ 
+  out = 1 - Y_local * (X %*% w_class)
+  sv = ppred(out, 0, ">")
+  out = sv * out
+  obj = 0.5 * sum(out * out) + lambda/2 * sum(w_class * w_class)
+  g_new = t(X) %*% (out * Y_local) - lambda * w_class
+
+  tmp = sum(s * g_old)
+  
+  train_acc = sum(ppred(Y_local*(X%*%w_class), 0, ">="))/num_samples*100
+  print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
+   
+  if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)){
+   continue = 0
+  }
+ 
+  #non-linear CG step
+  be = sum(g_new * g_new)/sum(g_old * g_old)
+  s = be * s + g_new
+  g_old = g_new
+
+  iter = iter + 1
+ }
+
+ w = append(w, w_class) 
+ iter_class = iter_class + 1
+}
+
+  ret = w; #return
+}
+
+
+################################################################################
+
+
+scoreMultiClassSVM  = function (Matrix[double] X_train, Matrix[double] y_train, Matrix[double] W_train, 
+                                Matrix[double] X_test, Matrix[double] y_test)
+    return (Matrix[double] stats)
+#   X_train     = training-set feature matrix file
+#   y_train     = training-set class label vector file
+#   W_train     = training-set SVM weights MATRIX (not vector!) file; may have intercept weights as the last row
+#   X_test      = test-set feature matrix file
+#   y_test      = test-set class label vector file
+{
+    one = matrix(1, rows=1, cols=1);
+    stats = matrix(0, rows=1, cols=40);
+
+    num_train_records = nrow (X_train);
+    num_test_records = nrow (X_test);
+    num_features = ncol (X_test);
+    num_classes = ncol (W_train);
+
+    b = Rand(rows=1, cols=num_classes, min=0, max=0, pdf="uniform");
+    if (nrow (W_train) > num_features) {
+        b = W_train [num_features + 1, ];
+    }
+
+    W = W_train [1:num_features, ];
+
+    ones_train = Rand(rows=num_train_records, cols=1, min=1, max=1, pdf="uniform");
+    ones_test  = Rand(rows=num_test_records,  cols=1, min=1, max=1, pdf="uniform");
+    scores_train = X_train %*% W + ones_train %*% b;
+    scores_test  = X_test  %*% W + ones_test  %*% b;
+    y_train_pred = rowIndexMax (scores_train);
+    y_test_pred  = rowIndexMax (scores_test);
+    correct_train= ppred (y_train_pred, y_train, "==");
+    correct_test = ppred (y_test_pred,  y_test,  "==");
+
+# TRAINING DATA - COMPARE WITH ACTUAL LABELS:
+# Compute the actual number of true/false predictions
+
+    num_TP_train = sum (correct_train);
+    num_FP_train = sum (1 - correct_train);
+
+    stats [1, 11] = one*num_TP_train;
+    stats [1, 12] = one*num_FP_train;
+
+# Compute the actual precision
+
+    precision_train = 100.0 * num_TP_train / (num_TP_train + num_FP_train);
+
+    stats [1, 15] = one*precision_train;
+
+# TEST DATA - COMPARE WITH ACTUAL LABELS:
+# Compute the actual number of true/false positives/negatives
+
+    num_TP_test = sum (correct_test);
+    num_FP_test = sum (1 - correct_test);
+
+    stats [1, 31] = one*num_TP_test;
+    stats [1, 32] = one*num_FP_test;
+
+# Compute the actual precision
+
+    precision_test = 100.0 * num_TP_test / (num_TP_test + num_FP_test);
+
+    stats [1, 35] = one*precision_test;
+}
+
+
+printFoldStatistics = function (Matrix[double] stats ) return( Integer err )
+{
+    stats_avg = round (colMeans(stats) * 10000.0) / 10000.0;
+    stats_max = round (colMaxs (stats) * 10000.0) / 10000.0;
+    stats_min = round (colMins (stats) * 10000.0) / 10000.0;
+    
+    print ("Training Data, Label comparison statistics:");
+    print ("    True Matches:  Min = " + castAsScalar (stats_min [1, 11]) + ",  Avg = " + castAsScalar (stats_avg [1, 11]) + ",  Max = " + castAsScalar (stats_max [1, 11]));
+    print ("   False Matches:  Min = " + castAsScalar (stats_min [1, 12]) + ",  Avg = " + castAsScalar (stats_avg [1, 12]) + ",  Max = " + castAsScalar (stats_max [1, 12]));
+    print ("     Precision %:  Min = " + castAsScalar (stats_min [1, 15]) + ",  Avg = " + castAsScalar (stats_avg [1, 15]) + ",  Max = " + castAsScalar (stats_max [1, 15]));
+
+    print (" ");
+    if (1==1) {
+      print(" ")
+    }
+    print ("TEST Data, Label comparison statistics:");
+    print ("    True Matches:  Min = " + castAsScalar (stats_min [1, 31]) + ",  Avg = " + castAsScalar (stats_avg [1, 31]) + ",  Max = " + castAsScalar (stats_max [1, 31]));
+    print ("   False Matches:  Min = " + castAsScalar (stats_min [1, 32]) + ",  Avg = " + castAsScalar (stats_avg [1, 32]) + ",  Max = " + castAsScalar (stats_max [1, 32]));
+    print ("     Precision %:  Min = " + castAsScalar (stats_min [1, 35]) + ",  Avg = " + castAsScalar (stats_avg [1, 35]) + ",  Max = " + castAsScalar (stats_max [1, 35]));
+
+    err = 0;
+}

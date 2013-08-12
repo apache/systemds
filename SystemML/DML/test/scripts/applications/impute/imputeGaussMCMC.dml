@@ -1,0 +1,399 @@
+# Implements the MCMC algorithm for imputation of missing data into a time-series of "reports".
+# Each report is a fixed-size vector of attribute values; reports come out each year/quarter/month ("term").
+# Hard linear equality constraints restrict values in/across the reports, e.g. total cost = sum of all costs.
+# Soft linear regression constraints define dependencies between values in/across the reports.
+# Linear regression parameters are unknown and sampled together with the missing values in the reports.
+#
+# INPUT 1: Initial reports matrix [1 : num_attrs, 1 : num_terms] with missing values usually set to zero,
+#          but it MUST BE CONSISTENT with hard constraints! Set some missing values to nonzero if needed.
+#          There are "num_terms" reports in the matrix, each having "num_attrs" attribute values.
+#
+# INPUT 2: Sparse matrix [1 : (num_terms * num_attrs), 1 : num_frees] that defines a linear map from
+#          "free" variables to the reports matrix. A tensor of size (num_terms * num_attrs * num_frees)
+#          where the reports matrix is stretched into a column-vector [1 : (num_terms * num_attrs)].
+#          Term = t, attribute = i  -->  index = (t-1) * num_attrs + i
+#
+# INPUT 3: Sparse matrix [1 : (num_reg_eqs * num_factors), 1 : (num_terms * num_attrs)] that defines
+#          a linear map from the stretched matrix of reports to the stretched matrix of regression factors.
+#
+# INPUT 4: Sparse vector [1 : (num_reg_eqs * num_factors), 1] that defines "default regression factors"
+#          (if nonzero) to be added to the regression factors before they are multiplied by parameters.
+#
+# INPUT 5: Sparse matrix [1 : (num_reg_eqs * num_factors), 1 : num_params] that defines a linear map
+#          from the vector of parameters to the stretched matrix of regression factors.
+#
+# INPUT 6: Sparse vector [1 : (num_reg_eqs * num_factors), 1] that defines default regression coefficients
+#          (if nonzero) to be added to the parameters (if any) before being multiplied by regression factors.
+#
+# INPUT 7: A vector [1 : num_reg_eqs, 1] of scale multipliers, one per regression
+#
+# INPUT 8 : Number of factors in a regression equation, including the estimated value
+# INPUT 9 : Number of burn-in  full iterations (that sample each variable and each parameter once)
+# INPUT 10: Number of observed full iterations (that sample each variable and each parameter once)
+#
+# INPUT 11: Output file name and path for the average MCMC reports table
+# INPUT 12: Output file for debugging (currently: the average parameters vector)
+#
+# Example:
+# hadoop jar SystemML.jar -f test/scripts/applications/impute/imputeGaussMCMC.dml -exec singlenode -args
+#    test/scripts/applications/impute/initial_reports
+#    test/scripts/applications/impute/CReps
+#    test/scripts/applications/impute/RegresValueMap
+#    test/scripts/applications/impute/RegresFactorDefault
+#    test/scripts/applications/impute/RegresParamMap
+#    test/scripts/applications/impute/RegresCoeffDefault
+#    test/scripts/applications/impute/RegresScaleMult
+#    4 200 1000
+#    test/scripts/applications/impute/output_reports
+#    test/scripts/applications/impute/debug_info
+
+
+print ("START ImputeGaussMCMC");
+print ("Reading the input files...");
+
+initial_reports = read ($1);
+dReps = vectorize (initial_reports);
+CReps = read ($2);
+
+num_terms = ncol (initial_reports);   # Number of periods for which reports are produced
+num_attrs = nrow (initial_reports);   # Number of attribute values per each term report
+num_frees = ncol (CReps);   # Number of free variables used to describe all consistent reports
+
+# We assume that all report-series consistent with hard constraints form an affine set:
+#     reports = CReps %*% freeVars + dReps
+# Here "freeVars" is a vector of "free variables" (degrees of freedom), "CReps" is a linear mapping,
+# and "dReps" are the default values for the reports that correspond to the initial reports matrix.
+
+RegresValueMap = read ($3);
+RegresFactorDefault = read ($4);
+RegresParamMap = read ($5); 
+RegresCoeffDefault = read ($6); 
+RegresScaleMult = read ($7);
+tRegresScaleMult = t(RegresScaleMult);
+
+num_factors = $8;   # Number of factors in each regression equation, including the estimated value
+num_reg_eqs = nrow (RegresParamMap) / num_factors;   # Number of regression equations
+num_params  = ncol (RegresParamMap);   # Number of parameters used in all regressions
+num_burnin_iterations = $9;
+num_observed_iterations = $10;
+
+num_opt_iter = 20;
+print ("Performing initial optimization (" + num_opt_iter + " alternating CG steps)...");
+
+freeVars = matrix (0.0, rows = num_frees, cols = 1);
+params = matrix (1.0, rows = num_params, cols = 1);
+reports = CReps %*% freeVars + dReps;
+
+regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+bilinear_vector = regresValues * regresParams;
+bilinear_form = matricize (bilinear_vector, num_factors);
+bilinear_form_value = sum (tRegresScaleMult * colSums (bilinear_form) * colSums (bilinear_form));
+    
+opt_iter = 1;
+is_step_params = 1;
+is_opt_converged = 0;
+
+print ("Before optimization:    Initial bilinear form value = " + bilinear_form_value);
+        
+
+while (is_opt_converged == 0)
+{
+    deg = is_step_params * num_params + (1 - is_step_params) * num_frees;
+
+    # Compute gradient
+
+    gradient = matrix (0.0, rows = deg, cols = 1);
+    for (i in 1:deg)
+    {
+        if (is_step_params == 1) {
+            bilinear_vector = regresValues * RegresParamMap [, i];
+        } else {
+            bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
+        }
+        bilinear_updater = matricize (bilinear_vector, num_factors);
+        q_minus_1 = sum (tRegresScaleMult * colSums (bilinear_form - bilinear_updater) * colSums (bilinear_form - bilinear_updater));
+        q_plus_1  = sum (tRegresScaleMult * colSums (bilinear_form + bilinear_updater) * colSums (bilinear_form + bilinear_updater));
+        gradient [i, 1] = 0.5 * (q_plus_1 - q_minus_1) + gradient [i, 1];
+    }
+    
+    # Make a few conjugate gradient steps
+    
+    shift_vector = matrix (0.0, rows = deg, cols = 1);
+    residual = gradient;
+    p = - residual;
+    norm_r2 = sum (residual * residual);
+
+    for (j in 1:3)
+    {
+        q = matrix (0.0, rows = deg, cols = 1);
+        for (i in 1:deg) # Want: q = A %*% p;
+        {
+            if (is_step_params == 1) {
+                bilinear_vector = regresValues * RegresParamMap [, i];
+            } else {
+                bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
+            }
+            bilinear_updater_1 = matricize (bilinear_vector, num_factors);
+
+            if (is_step_params == 1) {
+                bilinear_vector = regresValues * (RegresParamMap %*% p);
+            } else {
+                bilinear_vector = (RegresValueMap %*% CReps %*% p) * regresParams;
+            }
+            bilinear_updater_p = matricize (bilinear_vector, num_factors);
+            
+            quadratic_plus_1  = 
+                sum (tRegresScaleMult * colSums (bilinear_form + bilinear_updater_1) * colSums (bilinear_form + bilinear_updater_1));
+            quadratic_plus_p  = 
+                sum (tRegresScaleMult * colSums (bilinear_form + bilinear_updater_p) * colSums (bilinear_form + bilinear_updater_p));
+            quadratic_plus_both = 
+                sum (tRegresScaleMult * colSums (bilinear_form + bilinear_updater_1 + bilinear_updater_p) * colSums (bilinear_form + bilinear_updater_1 + bilinear_updater_p));
+            q [i, 1] = (quadratic_plus_both - quadratic_plus_1 - quadratic_plus_p + bilinear_form_value) + q [i, 1];
+        }
+        
+        alpha = norm_r2 / castAsScalar (t(p) %*% q);
+        shift_vector = shift_vector + alpha * p;
+        old_norm_r2 = norm_r2;
+        residual = residual + alpha * q;
+        norm_r2 = sum (residual * residual);
+        p = - residual + (norm_r2 / old_norm_r2) * p;
+    }
+
+    if (is_step_params == 1) {
+        params = params + shift_vector;
+        regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+    } else {
+        freeVars = freeVars + shift_vector;
+        reports = CReps %*% freeVars + dReps;
+        regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+    }
+    
+    # Update the bilinear form and check convergence
+
+    if (is_step_params == 1) {
+        old_bilinear_form_value = bilinear_form_value;
+    }
+    bilinear_vector = regresValues * regresParams;
+    bilinear_form = matricize (bilinear_vector, num_factors);
+    bilinear_form_value = sum (tRegresScaleMult * colSums (bilinear_form) * colSums (bilinear_form));
+    
+    if (is_step_params == 1) {
+        print ("Optimization step " + opt_iter + " (params) :  bilinear form value = " + bilinear_form_value);
+    } else {
+        print ("Optimization step " + opt_iter + " (reports):  bilinear form value = " + bilinear_form_value);
+    }
+    
+    is_step_params = 1 - is_step_params;
+    opt_iter = opt_iter + 1;
+
+    if (is_step_params == 1 & opt_iter > num_opt_iter) {
+        is_opt_converged = 1;
+    }
+}
+
+print ("Performing MCMC initialization...");
+
+num_iter = num_burnin_iterations + num_observed_iterations;
+dim_sample = num_frees + num_params;
+sample_ones = matrix (1.0, rows = dim_sample, cols = 1);
+
+# Generate a random permutation matrix for the sampling order of freeVars and params
+
+SampleOrder = diag (sample_ones);
+num_swaps = 10 * dim_sample;
+rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
+left_swap  = round (0.5 + dim_sample * rnd);
+rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
+right_swap = round (0.5 + dim_sample * rnd);
+for (swap_i in 1:num_swaps) {
+    l = castAsScalar (left_swap  [swap_i, 1]);
+    r = castAsScalar (right_swap [swap_i, 1]);
+    if (l != r) {
+        tmp_row = SampleOrder [l, ];
+        SampleOrder [l, ] = SampleOrder [r, ];
+        SampleOrder [r, ] = tmp_row;
+    }
+}
+
+isVar = colSums (SampleOrder [1 : num_frees, ]);
+sum_of_observed_reports = matrix (0.0, rows = num_attrs, cols = num_terms);
+sum_of_observed_params = matrix (0.0, rows = num_params, cols = 1);
+
+num_of_observed_reports = 0;
+pi = 3.1415926535897932384626433832795;
+zero = matrix (0.0, rows = 1, cols = 1);
+
+# Starting MCMC iterations
+
+for (iter in 1:num_iter)
+{
+    # Initialize (bi-)linear forms
+    
+    regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+    regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+    bilinear_form_vector = regresValues * regresParams;
+    bilinear_form = matricize (bilinear_form_vector, num_factors);
+    bilinear_form_value = sum (tRegresScaleMult * colSums (bilinear_form) * colSums (bilinear_form));
+
+    if (iter <= num_burnin_iterations) {
+        print ("MCMC iteration " + iter + " (burn-in) :  bilinear form value = " + bilinear_form_value);
+    } else {
+        print ("MCMC iteration " + iter + " (observed):  bilinear form value = " + bilinear_form_value);
+    }
+    
+    # Create a normally distributed random sample
+    
+    dim_half_sample = castAsScalar (round (dim_sample / 2 + 0.1 + zero));
+    rnd1 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
+    rnd2 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
+    rnd_normal_1 = sqrt (- 2.0 * log (rnd1)) * sin (2 * pi * rnd2);
+    rnd_normal_2 = sqrt (- 2.0 * log (rnd1)) * cos (2 * pi * rnd2);
+    rnd_normal = matrix (0.0, rows = dim_sample, cols = 1);
+    rnd_normal [1 : dim_half_sample, ] = rnd_normal_1;
+    rnd_normal [(dim_sample - dim_half_sample + 1) : dim_sample, ] = rnd_normal_2;
+        
+    # Initialize updaters
+    
+    freeVars_updater = freeVars * 0.0;
+    params_updater = params * 0.0;
+    regresValues_updater = regresValues * 0.0;
+    regresParams_updater = regresParams * 0.0;
+    bilinear_updater_vector = bilinear_form_vector * 0.0;
+    
+    # Perform the sampling
+
+    for (idx in 1:dim_sample)
+    {
+        # Generate the sample unit-vector and updaters
+        
+        if (castAsScalar (isVar [1, idx]) > 0.5) {
+            freeVars_updater = SampleOrder [1 : num_frees, idx];
+            regresValues_updater = RegresValueMap %*% CReps %*% freeVars_updater;
+            bilinear_updater_vector = regresValues_updater * regresParams;
+        } else {
+            params_updater = SampleOrder [(num_frees + 1) : dim_sample, idx];
+            regresParams_updater = RegresParamMap %*% params_updater;
+            bilinear_updater_vector = regresValues * regresParams_updater;
+        }
+        bilinear_updater = matricize (bilinear_updater_vector, num_factors);
+            
+        # Compute the quadratic by three shift-points: -1, 0, +1
+        
+        bilinear_form_value = sum (tRegresScaleMult * colSums (bilinear_form) * colSums (bilinear_form));
+        q_minus_1 = sum (tRegresScaleMult * colSums (bilinear_form - bilinear_updater) * colSums (bilinear_form - bilinear_updater));
+        q_plus_1  = sum (tRegresScaleMult * colSums (bilinear_form + bilinear_updater) * colSums (bilinear_form + bilinear_updater));
+        coeff_b = (q_plus_1 - q_minus_1) / 2.0;
+        coeff_a = (q_plus_1 + q_minus_1) / 2.0 - bilinear_form_value;
+
+# BEGIN DEBUG INSERT
+# mmm = 1;
+# if (castAsScalar (isVar [1, idx]) > 0.5) {
+# for (iii in 2:num_frees) {if (castAsScalar (freeVars_updater [iii, 1] - freeVars_updater [mmm, 1]) > 0) {mmm = iii;}}
+# print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a);
+# } else {
+# for (iii in 2:num_params) {if (castAsScalar (params_updater [iii, 1] - params_updater [mmm, 1]) > 0) {mmm = iii;}}
+# print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a);
+# }
+# END DEBUG INSERT
+
+        # Find the mean and the sigma for f(x) ~ exp (- (ax^2 + bx + c)),
+        # then compute the shift to get the new sample
+            
+        mean_shift  = - coeff_b / (2.0 * coeff_a);
+        sigma_shift = 1.0 / sqrt (2.0 * coeff_a);
+        shift = mean_shift + sigma_shift * castAsScalar (rnd_normal [idx, 1]);
+            
+        # Perform the updates
+
+        bilinear_form = bilinear_form + shift * bilinear_updater;
+        if (castAsScalar (isVar [1, idx]) > 0.5) {
+            freeVars = freeVars + shift * freeVars_updater;
+            regresValues = regresValues + shift * regresValues_updater;
+        } else {
+            params = params + shift * params_updater;
+            regresParams = regresParams + shift * regresParams_updater;
+        }
+    }
+    
+    # Update / adjust the reports and the parameters
+    
+    reports = CReps %*% freeVars + dReps;
+    reports_matrix = matricize (reports, num_attrs);
+    
+    # Make an observation of the reports and/or the parameters
+    
+    if (iter > num_burnin_iterations)
+    {
+        sum_of_observed_reports = sum_of_observed_reports + reports_matrix;
+        num_of_observed_reports = num_of_observed_reports + 1;
+
+        sum_of_observed_params = sum_of_observed_params + params;
+    }
+
+
+v1 =castAsScalar(round(reports_matrix[ 1,num_terms]));
+v2 =castAsScalar(round(reports_matrix[ 2,num_terms]));
+v3 =castAsScalar(round(reports_matrix[ 3,num_terms]));
+v4 =castAsScalar(round(reports_matrix[ 4,num_terms]));
+v5 =castAsScalar(round(reports_matrix[ 5,num_terms]));
+v8 =castAsScalar(round(reports_matrix[ 8,num_terms]));
+v9 =castAsScalar(round(reports_matrix[ 9,num_terms]));
+v10=castAsScalar(round(reports_matrix[10,num_terms]));
+v16=castAsScalar(round(reports_matrix[16,num_terms]));
+v19=castAsScalar(round(reports_matrix[19,num_terms]));
+print (
+" Sample = 1:" + v1 + ", 2:" + v2 + ", 3:" + v3 + ", 4:" + v4 + ", 5:" + v5 +
+", 8:" + v8 + ", 9:" + v9 + ", 10:" + v10 + ", 16:" + v16 + ", 19:" + v19);
+
+}
+
+print ("Writing out the results...");
+
+avg_reports_matrix = sum_of_observed_reports / num_of_observed_reports;
+avg_params = sum_of_observed_params / num_of_observed_reports;
+write (avg_reports_matrix, $11, format="text");
+write (avg_params, $12, format="text");
+
+print ("END ImputeGaussMCMC");
+
+
+
+
+# Outputs a column vector that consists of the columns of the input matrix in sequential order
+# NEEDS TO BE PARALLELIZED
+vectorize = function (Matrix[double] M) return (Matrix[double] v)
+{
+    n_rows = nrow (M);
+    n_cols = ncol (M);
+    n = n_rows * n_cols;
+    v = matrix (0.0, rows = n, cols = 1);
+    for (i in 1:n_cols) {
+        left_row = n_rows * (i-1) + 1;
+        right_row = n_rows * i;
+        v [left_row : right_row, 1] = M [, i];
+    }
+}
+
+# Takes a column vector, splits it into columns of "n_rows" in each, and combines into a matrix
+# NEEDS TO BE PARALLELIZED
+matricize = function (Matrix[double] v, int n_rows) return (Matrix[double] M)
+{
+    zero = matrix (0.0, rows = 1, cols = 1);
+    n = nrow (v);
+    n_cols = castAsScalar (round (zero + (n / n_rows)));
+    if (n_cols * n_rows < n) {
+        n_cols = n_cols + 1;
+    }
+    M = matrix (0.0, rows = n_rows, cols = n_cols);
+    for (i in 1:n_cols) {
+        left_row = n_rows * (i-1) + 1;
+        right_row = n_rows * i;
+        if (right_row <= n) {
+            M [, i] = v [left_row : right_row, 1];
+        } else {
+            new_right = n - left_row + 1;
+            M [1 : new_right, i] = v [left_row : n, 1];
+        }
+    }
+}

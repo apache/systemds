@@ -1,0 +1,124 @@
+# Computes 95% confidence intervals for binomial ratios using Wilson Score and Exact Score
+# INPUT 1: Matrix [rows, 2] of integer counts (m, n) where 0 <= m <= n
+# INPUT 2: The number of rows
+# INPUT 3: The output file
+# OUTPUT : Matrix [rows, 15] of doubles, containing the following information:
+#     (m / sum(m), Wilson 95%-conf.left, Wilson 95%-conf.right, Exact 95%-conf.left, Exact 95%-conf.right, 
+#      n / sum(n), Wilson 95%-conf.left, Wilson 95%-conf.right, Exact 95%-conf.left, Exact 95%-conf.right, 
+#      m / n,      Wilson 95%-conf.left, Wilson 95%-conf.right, Exact 95%-conf.left, Exact 95%-conf.right)
+# PLEASE BE AWARE THAT FOR EXTREMELY SMALL COUNTS THE WILSON INTERVALS WILL BE WRONG! THEY USE GAUSSIAN APPROXIMATION!
+# EXAMPLE: wilson_score.dml -args "test/scripts/applications/ctableStats/wilson_test_input.mtx" 7 "test/scripts/applications/ctableStats/wilson_test_output.mtx"
+
+setwd ("test/scripts/applications/ctableStats");
+source ("Binomial.dml");
+
+# test_n = Rand (rows = 1, cols = 1, min = 6, max = 6);
+# test_m = Rand (rows = 1, cols = 1, min = 0, max = 0);
+# test_p = Rand (rows = 1, cols = 1, min = 0.00421, max = 0.00421);
+# [alpha] = binomProb (test_n, test_m, test_p);
+# print ("TEST:  Prob [Binom (" + castAsScalar (test_n) + ", " + castAsScalar (test_p) + ") <= " + castAsScalar (test_m) + "]  =  " + castAsScalar (alpha));
+
+print ("BEGIN WILSON SCORE SCRIPT");
+print ("Reading X...");
+X = read ($1, rows = $2, cols = 2, format = "text");
+num_rows = $2;
+print ("Performing the computation...");
+
+M = X [, 1];
+N = X [, 2];
+blahh = Rand (rows = num_rows, cols = 1, min = 1.0, max = 1.0);
+sum_M = blahh * sum(M);
+sum_N = blahh * sum(N);
+
+[p_m_sum, l_m_sum_wilson, r_m_sum_wilson] = wilson_confidence (sum_M, M);
+[p_n_sum, l_n_sum_wilson, r_n_sum_wilson] = wilson_confidence (sum_N, N);
+[p_m_n, l_m_n_wilson, r_m_n_wilson] = wilson_confidence (N, M);
+
+M_minus_1 = M - 1;
+N_minus_1 = N - 1;
+big_alpha   = 0.975 * blahh;
+small_alpha = 0.025 * blahh;
+
+[l_m_sum_exact]   = binomQuantile (sum_M, M_minus_1, big_alpha);
+[r_m_sum_exact]   = binomQuantile (sum_M, M, small_alpha);
+[l_n_sum_exact]   = binomQuantile (sum_N, N_minus_1, big_alpha);
+[r_n_sum_exact]   = binomQuantile (sum_N, N, small_alpha);
+[l_m_n_exact]     = binomQuantile (N, M_minus_1, big_alpha);
+[r_m_n_exact]     = binomQuantile (N, M, small_alpha);
+
+result = Rand (rows = num_rows, cols = 15, min = 0.0, max = 0.0);
+result [,  1] = p_m_sum;
+result [,  2] = l_m_sum_wilson;
+result [,  3] = r_m_sum_wilson;
+result [,  4] = l_m_sum_exact;
+result [,  5] = r_m_sum_exact;
+result [,  6] = p_n_sum;
+result [,  7] = l_n_sum_wilson;
+result [,  8] = r_n_sum_wilson;
+result [,  9] = l_n_sum_exact;
+result [, 10] = r_n_sum_exact;
+result [, 11] = p_m_n;
+result [, 12] = l_m_n_wilson;
+result [, 13] = r_m_n_wilson;
+result [, 14] = l_m_n_exact;
+result [, 15] = r_m_n_exact;
+
+print ("M / sum(M)  RESULTS:  Wilson, Exact");
+
+for (i in 1:num_rows) {
+    p1  = castAsScalar (round (result [i,  1] * 100000) / 1000);
+    lw1 = castAsScalar (round (result [i,  2] * 100000) / 1000);
+    rw1 = castAsScalar (round (result [i,  3] * 100000) / 1000);
+    le1 = castAsScalar (round (result [i,  4] * 100000) / 1000);
+    re1 = castAsScalar (round (result [i,  5] * 100000) / 1000);
+    print ("Row " + i + ":   "
+        + castAsScalar (M [i, 1]) + "/" + castAsScalar (sum_M [i, 1]) + " = " 
+        + p1 + "%  [" + lw1 + "%, " + rw1 + "%]   [" + le1 + "%, " + re1 + "%]");
+}
+
+print ("N / sum(N)  RESULTS:  Wilson, Exact");
+
+for (i in 1:num_rows) {
+    p2  = castAsScalar (round (result [i,  6] * 100000) / 1000);
+    lw2 = castAsScalar (round (result [i,  7] * 100000) / 1000);
+    rw2 = castAsScalar (round (result [i,  8] * 100000) / 1000);
+    le2 = castAsScalar (round (result [i,  9] * 100000) / 1000);
+    re2 = castAsScalar (round (result [i, 10] * 100000) / 1000);
+    print ("Row " + i + ":   "
+        + castAsScalar (N [i, 1]) + "/" + castAsScalar (sum_N [i, 1]) + " = " 
+        + p2 + "%  [" + lw2 + "%, " + rw2 + "%]   [" + le2 + "%, " + re2 + "%]   ");
+}
+
+print ("M / N  RESULTS:  Wilson, Exact");
+
+for (i in 1:num_rows) {
+    p3  = castAsScalar (round (result [i, 11] * 100000) / 1000);
+    lw3 = castAsScalar (round (result [i, 12] * 100000) / 1000);
+    rw3 = castAsScalar (round (result [i, 13] * 100000) / 1000);
+    le3 = castAsScalar (round (result [i, 14] * 100000) / 1000);
+    re3 = castAsScalar (round (result [i, 15] * 100000) / 1000);
+    print ("Row " + i + ":   "
+        + castAsScalar (M [i, 1]) + "/" + castAsScalar (    N [i, 1]) + " = " 
+        + p3 + "%  [" + lw3 + "%, " + rw3 + "%]   [" + le3 + "%, " + re3 + "%]   ");
+}
+
+
+
+print ("Writing the results...");
+write (result, $3, format = "text");
+print ("END WILSON SCORE SCRIPT");
+
+
+wilson_confidence = function (Matrix[double] n, Matrix[double] m)
+return (Matrix[double] ratio, Matrix[double] conf_left, Matrix[double] conf_right)
+{
+    z = 1.96;      # 97.5% normal percentile, for 95% confidence interval
+    z_sq_n = z * z * n;
+    qroot = sqrt (z_sq_n * (m * (n - m) + z_sq_n / 4));
+    midpt = n * m + z_sq_n / 2;
+    denom = n * n + z_sq_n;
+    ratio = m / n;
+    conf_left  = (midpt - qroot) / denom;
+    conf_right = (midpt + qroot) / denom;
+}
+

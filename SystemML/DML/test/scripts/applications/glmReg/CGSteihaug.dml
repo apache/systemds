@@ -1,0 +1,99 @@
+# Apply Conjugate Gradient - Steihaug algorithm in order to approximately minimize
+# 0.5 z^T (X^T diag(w) X + lambda) z + (g + lambda * beta)^T z
+# under constraint:  ||z|| <= trust_delta.  Here A = X^T diag(w) X.
+# See Alg. 7.2 on p. 171 of "Numerical Optimization" 2nd ed. by Nocedal and Wright
+
+# THE CG-STEIHAUG PROCEDURE SCRIPT:
+get_CG_Steihaug_point =
+    function (Matrix[double] A_CG, Matrix[double] g_CG, Matrix[double] beta_CG, double trust_delta_CG, double lambda_CG)
+# Matrix[double] X_CG, Matrix[double] w_CG, 
+    return (Matrix[double] z_CG, double neg_log_l_change_CG, int reached_trust_boundary_CG)
+{
+    trust_delta_sq_CG = trust_delta_CG * trust_delta_CG;
+    size_CG = nrow (g_CG);
+    z_CG = Rand (rows = size_CG, cols = 1, min = 0, max = 0);
+    neg_log_l_change_CG = 0.0;
+    reached_trust_boundary_CG = 0;
+    g_reg_CG = g_CG + lambda_CG * beta_CG;
+    r_CG = g_reg_CG;
+    p_CG = -r_CG;
+    rr_CG = sum(r_CG * r_CG);
+    eps_CG = rr_CG * min (0.25, sqrt (rr_CG));
+    converged_CG = 0;
+    if (rr_CG < eps_CG) {
+        converged_CG = 1;
+    }
+    
+    # A_CG = t(X_CG) %*% diag (w_CG) %*% X_CG;
+
+    max_iteration_CG = size_CG;
+    i_CG = 0;
+    while (converged_CG == 0)
+    {
+        q_CG = (A_CG %*% p_CG) + lambda_CG * p_CG;
+        pq_CG = sum (p_CG * q_CG);
+        if (pq_CG <= 0) {
+            pp_CG = sum (p_CG * p_CG);  
+            if (pp_CG > 0) {
+                [z_CG, neg_log_l_change_CG] = 
+                    get_trust_boundary_point (g_reg_CG, z_CG, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq_CG);
+                reached_trust_boundary_CG = 1;
+            } else {
+                neg_log_l_change_CG = 0.5 * sum (z_CG * (r_CG + g_reg_CG));
+            }
+            converged_CG = 1;
+        }
+        if (converged_CG == 0) {
+            alpha_CG = rr_CG / pq_CG;
+            new_z_CG = z_CG + alpha_CG * p_CG;
+            if (sum(new_z_CG * new_z_CG) >= trust_delta_sq_CG) {
+                pp_CG = sum (p_CG * p_CG);  
+                [z_CG, neg_log_l_change_CG] = 
+                    get_trust_boundary_point (g_reg_CG, z_CG, p_CG, q_CG, r_CG, pp_CG, pq_CG, trust_delta_sq_CG);
+                reached_trust_boundary_CG = 1;
+                converged_CG = 1;
+            }
+            if (converged_CG == 0) {
+                z_CG = new_z_CG;
+                old_rr_CG = rr_CG;
+                r_CG = r_CG + alpha_CG * q_CG;
+                rr_CG = sum(r_CG * r_CG);
+                i_CG = i_CG + 1;
+                if (i_CG == max_iteration_CG | rr_CG < eps_CG) {
+                    neg_log_l_change_CG = 0.5 * sum (z_CG * (r_CG + g_reg_CG));
+                    reached_trust_boundary_CG = 0;
+                    converged_CG = 1;
+                }
+                if (converged_CG == 0) {
+                    p_CG = -r_CG + (rr_CG / old_rr_CG) * p_CG;
+                }
+            }
+        }
+    }
+}
+# END CG-STEIHAUG PROCEDURE SCRIPT
+
+# Below is an auxiliary function used twice inside the CG-STEIHAUG loop:
+get_trust_boundary_point = 
+    function (Matrix[double] g_auxCG, Matrix[double] z_auxCG, Matrix[double] p_auxCG, 
+              Matrix[double] q_auxCG, Matrix[double] r_auxCG, double pp_auxCG, double pq_auxCG, 
+              double trust_delta_sq_auxCG)
+    return (Matrix[double] new_z_auxCG, double f_change_auxCG)
+{
+    zz_auxCG = sum (z_auxCG * z_auxCG);  pz_auxCG = sum (p_auxCG * z_auxCG);
+    sq_root_d_auxCG = sqrt (pz_auxCG * pz_auxCG - pp_auxCG * (zz_auxCG - trust_delta_sq_auxCG));
+    tau_auxCG_1 = (- pz_auxCG + sq_root_d_auxCG) / pp_auxCG;
+    tau_auxCG_2 = (- pz_auxCG - sq_root_d_auxCG) / pp_auxCG;
+    zq_auxCG = sum (z_auxCG * q_auxCG);  gp_auxCG = sum (g_auxCG * p_auxCG);
+    f_extra_auxCG = 0.5 * sum (z_auxCG * (r_auxCG + g_auxCG));
+    f_change_auxCG_1 = f_extra_auxCG + (0.5 * tau_auxCG_1 * pq_auxCG + zq_auxCG + gp_auxCG) * tau_auxCG_1;
+    f_change_auxCG_2 = f_extra_auxCG + (0.5 * tau_auxCG_2 * pq_auxCG + zq_auxCG + gp_auxCG) * tau_auxCG_2;
+    if (f_change_auxCG_1 < f_change_auxCG_2) {
+        new_z_auxCG = z_auxCG + (tau_auxCG_1 * p_auxCG);
+        f_change_auxCG = f_change_auxCG_1;
+    }
+    else {
+        new_z_auxCG = z_auxCG + (tau_auxCG_2 * p_auxCG);
+        f_change_auxCG = f_change_auxCG_2;
+    }
+}

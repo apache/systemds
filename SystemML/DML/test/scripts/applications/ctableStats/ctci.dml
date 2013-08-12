@@ -1,0 +1,124 @@
+# CTCI.DML: TWO-ATTRIBUTE CONTINGENCY TABLE CONFIDENCE INTERVAL ANALYSIS for categorical data
+# Computes 95% confidence intervals for binomial ratios using both Wilson and Exact Scores
+# INPUT  1: Dataset as an (N x 2) matrix, input file path/name
+#       Rows: Individual data points
+#      Col 1: Partition attribute (e.g. US State code), must be positive integer
+#      Col 2: Label attribute (e.g. positive/negative/neutral), must be positive integer
+# INPUT  2: Number of data points N (i.e. input matrix size, rows)
+# INPUT  3: "Null" label code, 0 if there is no "null" label
+# INPUT  4: Head Matrix output file path/name
+# INPUT  5: Body Matrix output file path/name
+# OUTPUT 1: Head Matrix with per-label information:
+#       Rows: One row per each distinct code of the label attribute (1, 2, 3, ...)
+#      Col 1: First column index of the Body Matrix block for this label, or 0 if "null"
+#      Col 2: Overall number of data points with this label
+#      Col 3: Percentage (out of 100) of data points to have this label
+# OUTPUT 2: Body Matrix with per-partition statistics:
+#       Rows: One row per each distinct code of the partition attribute (1, 2, 3, ...)
+#    Columns: Arranged in blocks with the same schema, one block per each non-null label,
+#             with the first column index specified in the Head Matrix
+#    Block Col  0:  Number of points, i.e. the count, with this label in the given partition
+#    Block Col  1:  Percentage (out of 100) of points to have the label vs. all in the partition
+#    Block Col  2:  Small side, 95% confid. int-l (of above percentage), Wilson Score
+#    Block Col  3:  Large side, 95% confid. int-l (of above percentage), Wilson Score
+#    Block Col  4:  Small side, 95% confid. int-l (of above percentage), Exact Binomial Score
+#    Block Col  5:  Large side, 95% confid. int-l (of above percentage), Exact Binomial Score
+#    Block Col  6:  Percentage (out of 100) of points to lie in the partition vs. all with the label
+#    Block Col  7:  Small side, 95% confid. int-l (of above percentage), Wilson Score
+#    Block Col  8:  Large side, 95% confid. int-l (of above percentage), Wilson Score
+#    Block Col  9:  Small side, 95% confid. int-l (of above percentage), Exact Binomial Score
+#    Block Col 10:  Large side, 95% confid. int-l (of above percentage), Exact Binomial Score
+#    Block Col 11-99:  RESERVED and set to zero
+#
+# EXAMPLE:
+# hadoop jar SystemML.jar -f PATH/ctci.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_test_head.mtx PATH/ctci_test_body.mtx
+
+setwd ("test/scripts/applications/ctableStats"); # SET TO THE SCRIPT FOLDER
+source ("Binomial.dml"); # THIS SCRIPT SHOULD BE THERE TOO
+powerOfTen = 10000;      # CONSTANT FOR ROUNDING THE RESULTS
+
+print ("BEGIN CTABLE ANALYSIS SCRIPT");
+print ("Reading the input matrix...");
+InData = read($1, rows = $2, cols = 2, format = "text");
+print ("Computing the contingency table...");
+CT = ctable (InData [, 1], InData [, 2]);
+# DEBUG LINE ONLY: write (CT, "test/scripts/applications/ctableStats/ctci_test_CT.mtx", format="text");
+print ("Preparing for the output tables...");
+nullLabel = $3;
+numPartitions = nrow (CT);
+numLabels = ncol (CT);
+cntPartitions = rowSums (CT);
+cntLabels = t(colSums (CT));
+numBodyBlocks = numLabels;
+for (iLabel in 1:numLabels) {
+    if (iLabel == nullLabel) {
+        numBodyBlocks = numBodyBlocks - 1;
+}   }
+numBodyCols = numBodyBlocks * 100;
+HeadMtx = Rand (rows = numLabels, cols = 3, min = 0, max = 0);
+HeadMtx [, 2] = cntLabels;
+HeadMtx [, 3] = 100.0 * cntLabels / sum (cntLabels);
+BodyMtx = Rand (rows = numPartitions, cols = numBodyCols, min = 0, max = 0);
+zeros = Rand (rows = numPartitions, cols = 1, min = 0, max = 0);
+zero = Rand (rows = 1, cols = 1, min = 0, max = 0);
+big_alpha   = 0.975 + zeros;
+small_alpha = 0.025 + zeros;
+iBlock = 0;
+for (iLabel in 1:numLabels)
+{
+    if (iLabel != nullLabel) {
+        if (1==1) {
+            print ("Processing label " + iLabel + ":");
+        }
+        fCol = 1 + iBlock * 100;
+        HeadMtx [iLabel, 1] = fCol + zero;
+        cntPartitionsWithLabel = CT [, iLabel];
+        BodyMtx [, fCol] = cntPartitionsWithLabel;
+
+        print ("    (partition & label) / (all partition) ratios...");
+        
+        cntPartitionsWithLabel_minus_1 = cntPartitionsWithLabel - 1;
+        [ratio1, left_conf_wilson1, right_conf_wilson1] = 
+            wilson_confidence (cntPartitions, cntPartitionsWithLabel);
+        [left_conf_exact1] = binomQuantile (cntPartitions, cntPartitionsWithLabel_minus_1, big_alpha);
+        [right_conf_exact1] = binomQuantile (cntPartitions, cntPartitionsWithLabel, small_alpha);
+        
+        BodyMtx [, fCol + 1] = round (ratio1 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 2] = round (left_conf_wilson1 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 3] = round (right_conf_wilson1 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 4] = round (left_conf_exact1 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 5] = round (right_conf_exact1 * 100.0 * powerOfTen) / powerOfTen;
+        
+        print ("    (partition & label) / (all label) ratios...");
+        
+        cntThisLabel = zeros + castAsScalar (cntLabels [iLabel, 1]);
+        [ratio2, left_conf_wilson2, right_conf_wilson2] = 
+            wilson_confidence (cntThisLabel, cntPartitionsWithLabel);
+        [left_conf_exact2] = binomQuantile (cntThisLabel, cntPartitionsWithLabel_minus_1, big_alpha);
+        [right_conf_exact2] = binomQuantile (cntThisLabel, cntPartitionsWithLabel, small_alpha);
+        
+        BodyMtx [, fCol + 6] = round (ratio2 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 7] = round (left_conf_wilson2 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 8] = round (right_conf_wilson2 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol + 9] = round (left_conf_exact2 * 100.0 * powerOfTen) / powerOfTen;
+        BodyMtx [, fCol +10] = round (right_conf_exact2 * 100.0 * powerOfTen) / powerOfTen;
+        
+        iBlock = iBlock + 1;
+}   }
+print ("Writing the output matrices...");
+write (HeadMtx, $4, format="text");
+write (BodyMtx, $5, format="text");
+print ("END CTABLE ANALYSIS SCRIPT");
+
+wilson_confidence = function (Matrix[double] n, Matrix[double] m)
+return (Matrix[double] ratio, Matrix[double] conf_left, Matrix[double] conf_right)
+{
+    z = 1.96;      # 97.5% normal percentile, for 95% confidence interval
+    z_sq_n = z * z * n;
+    qroot = sqrt (z_sq_n * (m * (n - m) + z_sq_n / 4));
+    midpt = n * m + z_sq_n / 2;
+    denom = n * n + z_sq_n;
+    ratio = m / n;
+    conf_left  = (midpt - qroot) / denom;
+    conf_right = (midpt + qroot) / denom;
+}

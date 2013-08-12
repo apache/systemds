@@ -1,0 +1,34 @@
+# Note this script is externalized to customer, please do not change w/o consulting component owner.
+
+# 100k Dataset:
+# hadoop jar SystemML.jar -f MultiClassSVMScore.dml -args itau/svm/X_100k_500 1 itau/svm/y_100k 0 itau/svm/w_100k_1 itau/svm/X_100k_500_scores itau/svm/X_100k_500_predicted_y itau/svm/X_100k_500_correct_percentage
+
+## 5M Dataset:
+## hadoop jar SystemML.jar -f MultiClassSVM.dml -args itau/svm/X_5m_5k itau/svm/y_5m 0 2 0.001 1.0 100 itau/svm/w_100k_1
+
+# Invocation command
+# hadoop jar SystemML.jar -f MultiClassSVMScore.dml -args X y_specified y intercept W scores predicted_y correct_percentage
+
+X = read($1);
+intercept = $4;
+W = read($5);
+
+Nt = nrow(X);
+num_classes = ncol(W)
+b = Rand(rows=1, cols=num_classes, min=0, max=0, pdf="uniform")
+n=ncol(X);
+if (intercept == 1) {
+ b = W[n+1,]
+}
+ones = Rand(rows=Nt, cols=1, min=1, max=1, pdf="uniform")
+scores = X %*% W[1:n,] + ones %*% b;
+write(scores, $6, format="text");
+
+predicted_y = rowIndexMax(scores);
+write(predicted_y, $7, format="text");
+
+if ($2 == 1) {
+	y = read($3);
+    correct_percentage = sum(ppred(predicted_y - y, 0, "==")) / Nt * 100;
+	write(correct_percentage, $8);
+	}

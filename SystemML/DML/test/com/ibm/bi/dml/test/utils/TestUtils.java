@@ -624,12 +624,15 @@ public class TestUtils {
 		HashMap<CellIndex, Double> second = m1;
 		String namefirst = name2;
 		String namesecond = name1;
+		boolean flag = true;
+		
 		/** to ensure that always the matrix with more nnz is iterated */
 		if (m1.size() > m2.size()) {
 			first = m1;
 			second = m2;
 			namefirst = name1;
 			namesecond = name2;
+			flag=false;
 		}
 
 		int countErrorWithinTolerance = 0;
@@ -654,7 +657,10 @@ public class TestUtils {
 				countErrorIdentical++;
 				if (!compareCellValue(first.get(index), second.get(index), tolerance)) {
 					countErrorWithinTolerance++;
-					System.out.println(index+": "+first.get(index)+" <--> "+second.get(index));
+					if(!flag)
+						System.out.println(index+": "+first.get(index)+" <--> "+second.get(index));
+					else 
+						System.out.println(index+": "+second.get(index)+" <--> "+first.get(index));
 				}
 			} else {
 				countIdentical++;

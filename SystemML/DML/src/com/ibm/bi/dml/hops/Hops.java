@@ -282,6 +282,17 @@ abstract public class Hops {
 		return _input;
 	}
 
+	/**
+	 * Create bidirectional links
+	 * 
+	 * @param h
+	 */
+	public void addInput( Hops h )
+	{
+		_input.add(h);
+		h._parent.add(this);
+	}
+	
 	public Hops(Kind k, String l, DataType dt, ValueType vt) {
 		_kind = k;
 		set_name(l);
@@ -919,8 +930,8 @@ abstract public class Hops {
 		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX
 	};
 
-	public enum ReorgOp {
-		TRANSPOSE, DIAG_V2M, DIAG_M2V
+	public enum ReOrgOp {
+		TRANSPOSE, DIAG_V2M, DIAG_M2V, RESHAPE
 	};
 
 	public enum ParamBuiltinOp {
@@ -969,12 +980,13 @@ abstract public class Hops {
 		HopsAgg2Lops.put(AggOp.MEAN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Mean);
 	}
 
-	static public HashMap<Hops.ReorgOp, com.ibm.bi.dml.lops.Transform.OperationTypes> HopsTransf2Lops;
+	static public HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes> HopsTransf2Lops;
 	static {
-		HopsTransf2Lops = new HashMap<Hops.ReorgOp, com.ibm.bi.dml.lops.Transform.OperationTypes>();
-		HopsTransf2Lops.put(ReorgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
-		HopsTransf2Lops.put(ReorgOp.DIAG_V2M, com.ibm.bi.dml.lops.Transform.OperationTypes.VectortoDiagMatrix);
+		HopsTransf2Lops = new HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes>();
+		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
+		HopsTransf2Lops.put(ReOrgOp.DIAG_V2M, com.ibm.bi.dml.lops.Transform.OperationTypes.VectortoDiagMatrix);
 		//HopsTransf2Lops.put(ReorgOp.DIAG_M2V, dml.lops.Transform.OperationTypes.MatrixtoDiagVector);
+		HopsTransf2Lops.put(ReOrgOp.RESHAPE, com.ibm.bi.dml.lops.Transform.OperationTypes.ReshapeMatrix);
 
 	}
 
@@ -1187,13 +1199,13 @@ abstract public class Hops {
 		HopsAgg2String.put(AggOp.MEAN, "mean");
 	}
 
-	static public HashMap<Hops.ReorgOp, String> HopsTransf2String;
+	static public HashMap<Hops.ReOrgOp, String> HopsTransf2String;
 	static {
-		HopsTransf2String = new HashMap<Hops.ReorgOp, String>();
-		HopsTransf2String.put(ReorgOp.TRANSPOSE, "T");
-	//	HopsTransf2String.put(ReorgOp.APPEND, "APP");
-		HopsTransf2String.put(ReorgOp.DIAG_M2V, "diagM2V");
-		HopsTransf2String.put(ReorgOp.DIAG_V2M, "diagV2M");
+		HopsTransf2String = new HashMap<ReOrgOp, String>();
+		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
+		HopsTransf2String.put(ReOrgOp.DIAG_M2V, "diagM2V");
+		HopsTransf2String.put(ReOrgOp.DIAG_V2M, "diagV2M");
+		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
 	}
 
 	static public HashMap<DataOpTypes, String> HopsData2String;
@@ -1300,6 +1312,35 @@ abstract public class Hops {
 	 * Update the output size information for this hop.
 	 */
 	public abstract void refreshSizeInformation();
+	
+	/**
+	 * Util function for refreshing scalar rows input parameter.
+	 */
+	protected void refreshRowsParameterInformation( Hops input )
+	{
+		if( input instanceof UnaryOp )
+		{
+			if( ((UnaryOp)input).get_op() == Hops.OpOp1.NROW )
+				set_dim1(input.getInput().get(0).get_dim1());
+			else if ( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL )
+				set_dim1(input.getInput().get(0).get_dim2());
+		}
+	}
+	
+	/**
+	 * Util function for refreshing scalar cols input parameter.
+	 */
+	protected void refreshColsParameterInformation( Hops input )
+	{
+		if( input instanceof UnaryOp )
+		{
+			if( ((UnaryOp)input).get_op() == Hops.OpOp1.NROW  )
+				set_dim2(input.getInput().get(0).get_dim1());
+			else if( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL  )
+				set_dim2(input.getInput().get(0).get_dim2());
+		}
+	}
+	
 	
 	/**
 	 * 

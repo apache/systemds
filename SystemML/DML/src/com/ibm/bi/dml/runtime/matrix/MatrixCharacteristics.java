@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruc
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
@@ -171,7 +172,14 @@ public class MatrixCharacteristics{
 			ReblockInstruction realIns=(ReblockInstruction)ins;
 			MatrixCharacteristics in_dim=dims.get(realIns.input);
 			dim_out.set(in_dim.numRows, in_dim.numColumns, realIns.brlen, realIns.bclen);
-		}else if(ins instanceof ScalarInstruction 
+		}
+		else if( ins instanceof MatrixReshapeMRInstruction )
+		{
+			MatrixReshapeMRInstruction mrinst = (MatrixReshapeMRInstruction) ins;
+			MatrixCharacteristics in_dim=dims.get(mrinst.input);
+			dim_out.set(mrinst.getNumRows(),mrinst.getNumColunms(),in_dim.get_rows_per_block(), in_dim.get_cols_per_block(), in_dim.getNonZeros());
+		}
+		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
 				||(ins instanceof UnaryInstruction && !(ins instanceof MMTSJMRInstruction))
 				|| ins instanceof RandInstruction

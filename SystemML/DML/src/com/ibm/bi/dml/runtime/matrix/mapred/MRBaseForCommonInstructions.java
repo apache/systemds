@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruc
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -201,11 +202,20 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 		tempValue=new IndexedMatrixValue(valueClass);
 		zeroInput=new IndexedMatrixValue(valueClass);
 		
+		//matrix characteristics inputs/outputs
+		byte[] inputIX = MRJobConfiguration.getInputIndexesInMapper(job);
+		for( byte ix : inputIX )
+			dimensions.put(ix, MRJobConfiguration.getMatrixCharacteristicsForInput(job, ix));	
+		byte[] outputIX = MRJobConfiguration.getOutputIndexesInMapper(job);
+		for( byte ix : outputIX )
+			dimensions.put(ix, MRJobConfiguration.getMatrixCharacteristicsForOutput(job, ix));	
+		
+		//matrix characteristics intermediates
 		byte[] immediateIndexes=MRJobConfiguration.getIntermediateMatrixIndexes(job);
 		if(immediateIndexes!=null)
 		{
 			for(byte index: immediateIndexes)
-				dimensions.put(index, MRJobConfiguration.getIntermediateMatrixCharactristics(job, index));
+				dimensions.put(index, MRJobConfiguration.getIntermediateMatrixCharactristics(job, index));			
 		}
 	}
 	
@@ -289,7 +299,20 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
-		}else if(ins instanceof AppendInstruction)
+		}
+		else if( ins instanceof MatrixReshapeMRInstruction )
+		{
+			MatrixReshapeMRInstruction mrins = (MatrixReshapeMRInstruction) ins;
+			byte input = mrins.input;
+			byte output = mrins.output;
+			MatrixCharacteristics dimIn=dimensions.get(input);
+			MatrixCharacteristics dimOut=dimensions.get(output);
+			if(dimIn==null || dimOut==null)
+				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
+			mrins.setMatrixCharacteristics(dimIn, dimOut);
+			mrins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
+		}
+		else if(ins instanceof AppendInstruction)
 		{
 			byte input=((AppendInstruction) ins).input1;
 			MatrixCharacteristics dim=dimensions.get(input);

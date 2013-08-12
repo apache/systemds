@@ -12,6 +12,7 @@ import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
@@ -547,6 +548,20 @@ public class Recompiler
 			if( dat2!=null && dat2 instanceof ScalarObject )
 				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
 		}
+		else if (    hop instanceof ReorgOp 
+				 && ((ReorgOp)(hop)).getReOrgOp()==Hops.ReOrgOp.RESHAPE )
+		{
+			ReorgOp d = (ReorgOp) hop;
+			String name1 = d.getInput().get(1).get_name(); //rows
+			String name2 = d.getInput().get(2).get_name(); //cols
+			Data dat1 = vars.get(name1);
+			Data dat2 = vars.get(name2);
+			if( dat1!=null && dat1 instanceof ScalarObject )
+				d.set_dim1( ((ScalarObject)dat1).getLongValue() );
+			if( dat2!=null && dat2 instanceof ScalarObject )
+				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
+		}
+		
 		
 		hop.refreshSizeInformation();
 		

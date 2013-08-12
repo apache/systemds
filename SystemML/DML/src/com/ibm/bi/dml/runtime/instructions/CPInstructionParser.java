@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstruction;
@@ -147,7 +148,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
-			
+		
+		String2CPInstructionType.put( "rshape"   , CPINSTRUCTION_TYPE.MatrixReshape);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -200,6 +202,9 @@ public class CPInstructionParser extends InstructionParser {
 			
 		case Reorg:
 			return (CPInstruction) ReorgCPInstruction.parseInstruction(str);
+			
+		case MatrixReshape:
+			return (CPInstruction) MatrixReshapeCPInstruction.parseInstruction(str);	
 
 		case Append:
 			return (CPInstruction) AppendCPInstruction.parseInstruction(str);

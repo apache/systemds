@@ -766,6 +766,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}
 										
 				case Reorg: //opcodes: r', rdiagV2M
+				case MatrixReshape: //opcodes: rshape
 					if( leftSparse )
 						return d1m * d1n * d1s;
 					else
@@ -835,8 +836,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 								       DEFAULT_NFLOP_CP * d3m * d2m;
 						}
 						
-					}
-					
+					}	
 					return 0;
 					
 				case Sort: //opcodes: sort
@@ -878,9 +878,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 							       + d1m * d1n * d1s * d1n * d1s; //core tsmm
 					}					
 					return 0;
-					
+				
 				case INVALID:
 					return 0;
+				
 				default: 
 					throw new DMLRuntimeException("CostEstimator: unsupported instruction type: "+optype);
 			}

@@ -386,8 +386,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public void print()
 	{
-		System.out.println("spathanks" +
-				"rse? = "+sparse);
+		System.out.println("sparse = "+sparse);
 		if(!sparse)
 			System.out.println("nonzeros = "+nonZeros);
 		for(int i=0; i<rlen; i++)
@@ -1784,7 +1783,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 
 	//allocate space if sparseRows[r] doesnot exist
-	private void adjustSparseRows(int r)
+	protected void adjustSparseRows(int r)
 	{
 		if(sparseRows==null)
 			sparseRows=new SparseRow[rlen];
@@ -2060,7 +2059,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			return;
 		
 		for( SparseRow arow : sparseRows )
-			if( arow!=null && arow.size()>0 )
+			if( arow!=null && arow.size()>1 )
 				arow.sort();
 	}
 	
@@ -5166,6 +5165,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return this;
 	}
 
+	@Deprecated
 	public static MatrixBlockDSM getRandomSparseMatrix(int rows, int cols, double sparsity, long seed)
 	{
 		Random random=new Random(seed);
@@ -5189,6 +5189,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		return m;
 	}
 	
+	@Deprecated
 	public static MatrixBlock1D getRandomSparseMatrix1D(int rows, int cols, double sparsity, long seed)
 	{
 		Random random=new Random(seed);

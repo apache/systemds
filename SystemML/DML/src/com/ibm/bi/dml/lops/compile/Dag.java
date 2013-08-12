@@ -1365,6 +1365,14 @@ public class Dag<N extends Lops> {
 								node.getInputs().get(2).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					}
+					else if (node.getInputs().size() == 4) {
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getInputs().get(2).getOutputParameters().getLabel(),
+								node.getInputs().get(3).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					}
 					else if (node.getInputs().size() == 5) {
 						inst_string = node.getInstructions(
 								node.getInputs().get(0).getOutputParameters().getLabel(),
@@ -3086,7 +3094,17 @@ public class Dag<N extends Lops> {
 
 				return output_index;
 
-			} else
+			}
+			else if (inputIndices.size() == 4) {
+				int output_index = start_index[0];
+				start_index[0]++;
+				otherInstructionsReducer.add(node.getInstructions(
+						inputIndices.get(0), inputIndices.get(1),
+						inputIndices.get(2), inputIndices.get(3), output_index));
+				nodeIndexMapping.put(node, output_index);
+				return output_index;
+			}
+			else
 				throw new LopsException("Invalid number of inputs to a lop: "
 						+ inputIndices.size());
 		}
@@ -3309,7 +3327,15 @@ public class Dag<N extends Lops> {
 															  inputIndices.get(1), 
 															  inputIndices.get(2), 
 															  output_index));
-			
+			else if ( node.getInputs().size() == 4) {
+				// Example: Reshape
+				instructionsInMapper.add(node.getInstructions(
+						inputIndices.get(0),
+						inputIndices.get(1),
+						inputIndices.get(2),
+						inputIndices.get(3),
+						output_index ));
+			}			
 			else if ( node.getInputs().size() == 5) {
 				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u]
 				instructionsInMapper.add(node.getInstructions(

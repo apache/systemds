@@ -714,6 +714,12 @@ public class MRJobConfiguration {
 		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get("mapred.tip.id");
 	}
 	
+	public static byte[] getInputIndexesInMapper(JobConf job)
+	{
+		String[] istrs=job.get(MAPFUNC_INPUT_MATRICIES_INDEXES_CONFIG).split(Instruction.INSTRUCTION_DELIM);
+		return stringArrayToByteArray(istrs);
+	}
+	
 	public static byte[] getOutputIndexesInMapper(JobConf job)
 	{
 		String[] istrs=job.get(OUTPUT_INDEXES_IN_MAPPER_CONFIG).split(Instruction.INSTRUCTION_DELIM);
@@ -1358,7 +1364,19 @@ public class MRJobConfiguration {
 					setIntermediateMatrixCharactristics(job, tempIns.input, 
 							dims.get(tempIns.input));
 					intermediateMatrixIndexes.add(tempIns.input);
-				}else if(ins instanceof AppendInstruction)
+				}
+				/*if(ins instanceof MatrixReshapeMRInstruction)
+				{
+					MatrixReshapeMRInstruction tempIns=(MatrixReshapeMRInstruction) ins;
+					MatrixCharacteristics mcIn = dims.get(tempIns.input);
+					setIntermediateMatrixCharactristics(job, tempIns.input, mcIn);
+					intermediateMatrixIndexes.add(tempIns.input);
+					
+					//TODO
+					setIntermediateMatrixCharactristics(job, tempIns.output, new MatrixCharacteristics(tempIns.getNumRows(),tempIns.getNumColunms(),mcIn.get_rows_per_block(), mcIn.get_cols_per_block(), mcIn.getNonZeros()));
+					intermediateMatrixIndexes.add(tempIns.output);
+				}*/
+				else if(ins instanceof AppendInstruction)
 				{
 					AppendInstruction tempIns=(AppendInstruction) ins;
 					setIntermediateMatrixCharactristics(job, tempIns.input1, 
@@ -1525,6 +1543,16 @@ public class MRJobConfiguration {
 		dim.numColumns=job.getLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
 		dim.numRowsPerBlock=job.getInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
 		dim.numColumnsPerBlock=job.getInt(OUTPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
+		return dim;
+	}
+	
+	public static MatrixCharacteristics getMatrixCharacteristicsForInput(JobConf job, byte tag)
+	{
+		MatrixCharacteristics dim=new MatrixCharacteristics();
+		dim.numRows=job.getLong(INPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, 0);
+		dim.numColumns=job.getLong(INPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, 0);
+		dim.numRowsPerBlock=job.getInt(INPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, 1);
+		dim.numColumnsPerBlock=job.getInt(INPUT_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1);
 		return dim;
 	}
 	

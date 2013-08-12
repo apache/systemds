@@ -14,10 +14,13 @@ import com.ibm.bi.dml.utils.LopsException;
 
 public class Transform extends Lops
 {
+	public enum OperationTypes {
+		Transpose,
+		VectortoDiagMatrix,
+		ReshapeMatrix
+	};
 	
-	public enum OperationTypes {Transpose,VectortoDiagMatrix};
-	
-	OperationTypes operation = null;
+	private OperationTypes operation = null;
 	
 	/**
 	 * Constructor when we have one input.
@@ -58,7 +61,11 @@ public class Transform extends Lops
 			lps.addCompatibility(JobType.REBLOCK_TEXT);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
+			if( op == OperationTypes.ReshapeMatrix )
+				//reshape should be executed in map because we have potentially large intermediate data and want to exploit the combiner.
+				this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+			else
+				this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			// <code>breaksAlignment</code> is not meaningful when <code>Transform</code> executes in CP. 
@@ -67,8 +74,6 @@ public class Transform extends Lops
 			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
-	
-	
 
 	@Override
 	public String toString() {
@@ -96,11 +101,17 @@ public class Transform extends Lops
 			// Transform a vector into a diagonal matrix
 			return "rdiagV2M";
 		
+		case ReshapeMatrix:
+			// Transform a vector into a diagonal matrix
+			return "rshape";
+				
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				
 		}
 	}
+	
+	//CP instructions
 	
 	@Override
 	public String getInstructions(String input1, String output) 
@@ -125,7 +136,49 @@ public class Transform extends Lops
 		
 		return sb.toString();
 	}
+
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) 
+		throws LopsException 
+	{
+		//only used for reshape
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		
+		//rows, cols, byrow
+		String[] inputX = new String[]{input2,input3,input4};
+		for( int i=1; i<=(inputX.length); i++ ) {
+			Lops ltmp = getInputs().get(i);
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( inputX[i-1] );
+			sb.append( DATATYPE_PREFIX );
+			sb.append( ltmp.get_dataType() );
+			sb.append( VALUETYPE_PREFIX );
+			sb.append( ltmp.get_valueType() );				
+		}
+		
+		//output
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
+	}
 	
+	//MR instructions
 
 	@Override 
 	public String getInstructions(int input_index, int output_index) 
@@ -141,6 +194,65 @@ public class Transform extends Lops
 		sb.append( getInputs().get(0).get_dataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( getInputs().get(0).get_valueType() ); 
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+		
+		return sb.toString();
+	}
+	
+	@Override 
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) 
+		throws LopsException
+	{
+		//only used for reshape
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index1 );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() ); 
+		
+		//rows		
+		Lops input2 = getInputs().get(1); 
+		String rowsString = input2.getOutputParameters().getLabel();
+		if ( (input2.getExecLocation() == ExecLocation.Data &&
+				 !((Data)input2).isLiteral()) || !(input2.getExecLocation() == ExecLocation.Data )){
+			rowsString = Lops.VARIABLE_NAME_PLACEHOLDER + rowsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+		}
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( rowsString );
+		
+		//cols
+		Lops input3 = getInputs().get(2); 
+		String colsString = input3.getOutputParameters().getLabel();
+		if ( input3.getExecLocation() == ExecLocation.Data 
+				&& !((Data)input3).isLiteral() || !(input3.getExecLocation() == ExecLocation.Data )) {
+			colsString = Lops.VARIABLE_NAME_PLACEHOLDER + colsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+		}
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( colsString );
+		
+		//byrow
+		Lops input4 = getInputs().get(3); 
+		String byrowString = input4.getOutputParameters().getLabel();
+		if ( input4.getExecLocation() == ExecLocation.Data 
+				&& !((Data)input4).isLiteral() || !(input4.getExecLocation() == ExecLocation.Data ) ){
+			throw new LopsException(this.printErrorLocation() + "Parameter 'byRow' must be a literal for a matrix operation.");
+		}
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( byrowString );
+		
+		//output
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( output_index );
 		sb.append( DATATYPE_PREFIX );

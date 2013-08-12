@@ -22,8 +22,7 @@ import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
- * Defines the HOP for calling a function from a DML script. Handles both
- * internal and external functions.
+ * Defines the HOP for calling an internal function (with custom parameters) from a DML script. 
  * 
  */
 public class ParameterizedBuiltinOp extends Hops {

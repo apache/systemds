@@ -219,22 +219,10 @@ public class RandOp extends Hops
 		Hops input2 = getInput().get(_paramIndexMap.get("cols")); //cols
 
 		//refresh rows information
-		if( input1 instanceof UnaryOp )
-		{
-			if( ((UnaryOp)input1).get_op() == Hops.OpOp1.NROW )
-				set_dim1(input1.getInput().get(0).get_dim1());
-			else if ( ((UnaryOp)input1).get_op() == Hops.OpOp1.NCOL )
-				set_dim1(input1.getInput().get(0).get_dim2());
-		}
+		refreshRowsParameterInformation(input1);
 		
 		//refresh cols information
-		if( input2 instanceof UnaryOp )
-		{
-			if( ((UnaryOp)input2).get_op() == Hops.OpOp1.NROW  )
-				set_dim2(input2.getInput().get(0).get_dim1());
-			else if( ((UnaryOp)input2).get_op() == Hops.OpOp1.NCOL  )
-				set_dim2(input2.getInput().get(0).get_dim2());
-		}
+		refreshColsParameterInformation(input2);
 	}
 	
 

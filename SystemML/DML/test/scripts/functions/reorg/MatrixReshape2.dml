@@ -1,0 +1,4 @@
+X = read($1, rows=$2, cols=$3, format="text");
+
+Y = matrix(X, rows=$4, cols=$5, byrow=false);
+write(Y, $6, format="text");  

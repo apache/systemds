@@ -194,7 +194,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			break;
 			
 		case RMEMPTY:
-
+		{
 			//check existence and correctness of arguments
 			Expression target = getVarParam("target");
 			if( target==null ) {
@@ -222,9 +222,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier {
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			output.setDimensions(-1, -1);
-
+			
 			break;
+		}
 
+			
 		default:
 			
 			throw new LanguageException(this.printErrorLocation() + "Unsupported parameterized function "

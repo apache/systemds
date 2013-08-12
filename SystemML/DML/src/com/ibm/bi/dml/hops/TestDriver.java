@@ -98,7 +98,7 @@ public class TestDriver {
 
 		a.set_dim1(200);
 		a.set_dim2(1000);
-		Hops b = new ReorgOp("B", DataType.MATRIX, ValueType.DOUBLE, Hops.ReorgOp.TRANSPOSE, a);
+		Hops b = new ReorgOp("B", DataType.MATRIX, ValueType.DOUBLE, Hops.ReOrgOp.TRANSPOSE, a);
 		b.set_dim1(1000);
 		b.set_dim2(200);
 	//	Hops c = new BinaryOp("C", DataType.MATRIX, ValueType.DOUBLE, OpOp2.PLUS, a, b);

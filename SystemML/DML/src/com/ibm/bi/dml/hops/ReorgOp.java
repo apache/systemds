@@ -17,53 +17,48 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
 
-
-/* Reorg (cell) operation: aij
+/**
+ *  Reorg (cell) operation: aij
  * 		Properties: 
- * 			Symbol: ', diag
+ * 			Symbol: ', diag, reshape
  * 			1 Operand
  * 	
  * 		Semantic: change indices (in mapper or reducer)
+ * 
+ * 
+ *  NOTE MB: reshape integrated here because (1) ParameterizedBuiltinOp requires name-value pairs for params
+ *  and (2) most importantly semantic of reshape is exactly a reorg op. 
  */
 
 public class ReorgOp extends Hops {
 
-	ReorgOp op;
+	ReOrgOp op;
 
 	private ReorgOp() {
 		//default constructor for clone
 	}
 	
-	public ReorgOp(String l, DataType dt, ValueType vt, ReorgOp o, Hops inp) {
+	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, Hops inp) {
 		super(Kind.ReorgOp, l, dt, vt);
 		op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
 	}
 
-	public ReorgOp(String l, DataType dt, ValueType vt, ReorgOp o, Hops inp1, Hops inp2) {
-		super(Kind.ReorgOp, l, dt, vt);
-		
+	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, Hops inp1, Hops inp2) {
+		super(Kind.ReorgOp, l, dt, vt);		
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 	}
-	
-	public void printMe() throws HopsException {
-		if (LOG.isDebugEnabled()){
-			if (get_visited() != VISIT_STATUS.DONE) {
-				super.printMe();
-				LOG.debug("  Operation: " + op);
-				for (Hops h : getInput()) {
-					h.printMe();
-				}
-			}
-			set_visited(VISIT_STATUS.DONE);
-		}
-	}
 
+	public ReOrgOp getReOrgOp()
+	{
+		return op;
+	}
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -151,6 +146,59 @@ public class ReorgOp extends Hops {
 					set_lops(transform1);
 					break;
 				}
+				case RESHAPE:
+				{
+					if( et==ExecType.MR )
+					{
+						Transform transform1 = new Transform(
+								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
+								get_dataType(), get_valueType(), et);
+						transform1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
+						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						for( int i=1; i<=3; i++ ) //rows, cols, byrow
+						{
+							Lops ltmp = getInput().get(i).constructLops();
+							transform1.addInput(ltmp);
+							ltmp.addOutput(transform1);
+						}
+						transform1.setLevel(); //force order of added lops
+						
+						Group group1 = new Group(
+								transform1, Group.OperationTypes.Sort, DataType.MATRIX,
+								get_valueType());
+						group1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+						Aggregate agg1 = new Aggregate(
+								group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
+								get_valueType(), et);
+						agg1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());		
+						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						set_lops(agg1);
+					}
+					else //CP
+					{
+						Transform transform1 = new Transform(
+								getInput().get(0).constructLops(), HopsTransf2Lops.get(op), 
+								get_dataType(), get_valueType(), et);
+						transform1.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());	
+						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						for( int i=1; i<=3; i++ ) //rows, cols, byrow
+						{
+							Lops ltmp = getInput().get(i).constructLops();
+							transform1.addInput(ltmp);
+							ltmp.addOutput(transform1);
+						}
+						transform1.setLevel(); //force order of added lops
+						
+						set_lops(transform1);
+					}
+				}
 			}
 		}
 		
@@ -175,13 +223,14 @@ public class ReorgOp extends Hops {
 										this.get_dataType());
 
 			String sql = null;
-			if (this.op == ReorgOp.TRANSPOSE) {
+			if (this.op == ReOrgOp.TRANSPOSE) {
 				sql = String.format(SQLLops.TRANSPOSEOP, input.get_sqllops().get_tableName());
-			} else if (op == ReorgOp.DIAG_M2V) {
+			} else if (op == ReOrgOp.DIAG_M2V) {
 				sql = String.format(SQLLops.DIAG_M2VOP, input.get_sqllops().get_tableName());
-			} else if (op == ReorgOp.DIAG_V2M) {
+			} else if (op == ReOrgOp.DIAG_V2M) {
 				sql = String.format(SQLLops.DIAG_V2M, input.get_sqllops().get_tableName());
 			}
+			//TODO reshape
 			
 			sqllop.set_properties(getProperties(input));
 			sqllop.set_sql(sql);
@@ -190,6 +239,7 @@ public class ReorgOp extends Hops {
 		}
 		return this.get_sqllops();
 	}
+	
 	private SQLLopProperties getProperties(Hops input)
 	{
 		SQLLopProperties prop = new SQLLopProperties();
@@ -207,50 +257,68 @@ public class ReorgOp extends Hops {
 	
 	// TRANSPOSE, DIAG_V2M, DIAG_M2V, APPEND
 	@Override
-	public double computeMemEstimate() {
+	public double computeMemEstimate() 
+	{
 		Hops input = getInput().get(0);
 		
-		switch(op) {
-		case TRANSPOSE:
-			// input is a [k1,k2] matrix and output is a [k2,k1] matrix
-			// although nnz and dims do not change, we need to compute mem based on our sparse row representation
-			if( dimsKnown() ){
-				double spt = (input.getNnz()>0)? ((double)input.getNnz())/input.get_dim1()/input.get_dim2() : 1.0;
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim2(), input.get_dim1(), spt);	
-			}
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-			break;
-			
-		case DIAG_V2M:
-			// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
-			// In the worst case, #nnz in output = k => sparsity = 1/k
-			if( dimsKnown() ){
-				long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(k, k, (double)1/k); 
-			}
-			else 
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-
-			break;
-			
-		case DIAG_M2V:
-			// input is [k,k] matrix and output is [k,1] matrix
-			// #nnz in the output is likely to be k (a dense matrix)			
-			if( dimsKnown() )
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), 1, 1.0); 
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-			break;
-		
-	/*	case APPEND:
-			// always get a worst-case estimate for append!
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-			break;*/
-			
+		switch(op) 
+		{
+			case TRANSPOSE:
+				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
+				// although nnz and dims do not change, we need to compute mem based on our sparse row representation
+				if( dimsKnown() ){
+					double spt = (input.getNnz()>0)? ((double)input.getNnz())/input.get_dim1()/input.get_dim2() : 1.0;
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim2(), input.get_dim1(), spt);	
+				}
+				else
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				
+				break;
+				
+			case DIAG_V2M:
+				// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
+				// In the worst case, #nnz in output = k => sparsity = 1/k
+				if( dimsKnown() ){
+					long k = (input.get_dim1() > 1 ? input.get_dim1() : input.get_dim2());   
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(k, k, (double)1/k); 
+				}
+				else 
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+	
+				break;
+				
+			case DIAG_M2V:
+				// input is [k,k] matrix and output is [k,1] matrix
+				// #nnz in the output is likely to be k (a dense matrix)			
+				if( dimsKnown() )
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input.get_dim1(), 1, 1.0); 
+				else
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				
+				break;
+				
+			case RESHAPE:
+				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
+				// although nnz and num cells do not change, we need to compute mem based on our sparse row representation
+				
+				//preparation step
+				if( !dimsKnown() && input.dimsKnown() ) {
+					//reshape allows to infer dimensions if input and at least one dimension is known
+					//TODO MB: @Doug: should we move this to the language level?
+					if(_dim1 > 0) 
+						_dim2 = (input._dim1*input._dim2)/_dim1;
+					else if(_dim2 > 0)	
+						_dim1 = (input._dim1*input._dim2)/_dim2; 
+				} 
+				
+				if( dimsKnown() ){
+					double spt = (input.getNnz()>0)? ((double)input.getNnz())/input.get_dim1()/input.get_dim2() : 1.0;
+					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), spt);	
+				}
+				else
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				
+				break;
 		}
 		
 		_memEstimate = getInputOutputSize();
@@ -294,31 +362,36 @@ public class ReorgOp extends Hops {
 		switch(op) 
 		{
 			case TRANSPOSE:
+			{
 				set_dim1(input1.get_dim2());
 				set_dim2(input1.get_dim1());
 				setNnz(input1.getNnz());
 				break;
-				
+			}	
 			case DIAG_V2M:
+			{
 				// input is a [1,k] or [k,1] matrix, and output is [kxk] matrix
 				int maxDim = (int) Math.max(input1.get_dim1(), input1.get_dim2());
 				set_dim1(maxDim);
 				set_dim2(maxDim);
 				break;
-				
+			}	
 			case DIAG_M2V:
+			{
 				// input is [k,k] matrix and output is [k,1] matrix
 				set_dim1(input1.get_dim1());
 				set_dim2(1);								
+				break;		
+			}
+			case RESHAPE:
+			{
+				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
+				Hops input2 = getInput().get(1); //rows 
+				Hops input3 = getInput().get(2); //cols 
+				refreshRowsParameterInformation(input2); //refresh rows
+ 				refreshColsParameterInformation(input3); //refresh cols
 				break;
-		/*	
-			case APPEND:
-				Hops input2 = getInput().get(1);
-				set_dim1( input1.get_dim1() );
-				set_dim2( input1.get_dim2() + input2.get_dim2() );
-				setNnz( input1.getNnz() + input2.getNnz() );
-				break;
-		*/		
+			}
 		}	
 	}
 	
@@ -334,5 +407,21 @@ public class ReorgOp extends Hops {
 		ret.op = op;
 		
 		return ret;
+	}
+	
+	
+	@Override
+	public void printMe() throws HopsException 
+	{
+		if (LOG.isDebugEnabled()){
+			if (get_visited() != VISIT_STATUS.DONE) {
+				super.printMe();
+				LOG.debug("  Operation: " + op);
+				for (Hops h : getInput()) {
+					h.printMe();
+				}
+			}
+			set_visited(VISIT_STATUS.DONE);
+		}
 	}
 }

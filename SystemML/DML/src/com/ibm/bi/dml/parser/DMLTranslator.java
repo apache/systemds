@@ -31,6 +31,7 @@ import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hops.OpOp2;
 import com.ibm.bi.dml.hops.Hops.OpOp3;
 import com.ibm.bi.dml.hops.Hops.ParamBuiltinOp;
+import com.ibm.bi.dml.hops.Hops.ReOrgOp;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -1953,7 +1954,7 @@ public class DMLTranslator {
 					rs.getIdentifier()._dim2 = ((IntIdentifier)colsExpr).getValue();
 				}
 				
-				RandOp rand = (RandOp)processExpression(source, target, _ids);
+				Hops rand = processExpression(source, target, _ids);
 				rand.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
 				_ids.put(target.getName(), rand);
@@ -2628,6 +2629,15 @@ public class DMLTranslator {
 			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
 			currBuiltinOp = new RandOp(target, paramHops);
 			break;
+		
+		case MATRIX:
+			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),ReOrgOp.RESHAPE,
+					                  paramHops.get(Statement.RAND_DATA));
+			currBuiltinOp.addInput( paramHops.get(Statement.RAND_ROWS));
+			currBuiltinOp.addInput( paramHops.get(Statement.RAND_COLS));
+			currBuiltinOp.addInput( paramHops.get(Statement.RAND_BY_ROW));
+			break;
+			
 			
 		default:
 			throw new ParseException(source.printErrorLocation() + 
@@ -2842,7 +2852,7 @@ public class DMLTranslator {
 
 		case TRANS:
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-					Hops.ReorgOp.TRANSPOSE, expr);
+					Hops.ReOrgOp.TRANSPOSE, expr);
 			// currBop = new AggUnaryOp(targetName,AggOp.SUM,TransfOp.ColKey,
 			// expr);
 			break;
@@ -2856,10 +2866,10 @@ public class DMLTranslator {
 			// If either of the input is a vector, then output is a matrix
 			if (expr.get_dim1() == 1  || expr.get_dim2() == 1) {
 				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-						Hops.ReorgOp.DIAG_V2M, expr);
+						Hops.ReOrgOp.DIAG_V2M, expr);
 			} else {
 				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
-						Hops.ReorgOp.DIAG_M2V, expr);
+						Hops.ReOrgOp.DIAG_M2V, expr);
 			}
 			break;
 			

@@ -369,6 +369,11 @@ public abstract class Lops {
 	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
+	
+	/** Method should be overridden if needed **/
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
 
 	/** Method should be overridden if needed **/
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) throws LopsException {
@@ -382,6 +387,11 @@ public abstract class Lops {
 	
 	/** Method should be overridden if needed **/
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	/** Method should be overridden if needed **/
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 

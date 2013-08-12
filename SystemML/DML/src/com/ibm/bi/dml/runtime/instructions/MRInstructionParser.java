@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstructio
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -144,8 +145,10 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
 		String2MRInstructionType.put( "rangeReIndexForLeft"  , MRINSTRUCTION_TYPE.RangeReIndex);
 		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
-		
+
+		//misc
 		String2MRInstructionType.put( "append"  , MRINSTRUCTION_TYPE.Append);
+		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 	}
 	
 	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -226,6 +229,8 @@ public class MRInstructionParser extends InstructionParser {
 			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);
 		case ZeroOut:
 			return (MRInstruction) ZeroOutInstruction.parseInstruction(str);
+		case MatrixReshape:
+			return (MRInstruction) MatrixReshapeMRInstruction.parseInstruction(str);	
 			
 		case INVALID:
 		default: 

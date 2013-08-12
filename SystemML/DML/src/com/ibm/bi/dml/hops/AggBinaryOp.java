@@ -314,15 +314,15 @@ public class AggBinaryOp extends Hops {
 		Hops in1 = getInput().get(0);
 		Hops in2 = getInput().get(1);
 		
-		if(    in1 instanceof com.ibm.bi.dml.hops.ReorgOp 
-			&& ((com.ibm.bi.dml.hops.ReorgOp)in1).op == Hops.ReorgOp.TRANSPOSE 
+		if(    in1 instanceof ReorgOp 
+			&& ((ReorgOp)in1).op == ReOrgOp.TRANSPOSE 
 			&& in1.getInput().get(0) == in2 )
 		{
 			ret = MMTSJType.LEFT;
 		}
 		
-		if(    in2 instanceof com.ibm.bi.dml.hops.ReorgOp 
-			&& ((com.ibm.bi.dml.hops.ReorgOp)in2).op == Hops.ReorgOp.TRANSPOSE 
+		if(    in2 instanceof ReorgOp 
+			&& ((ReorgOp)in2).op == ReOrgOp.TRANSPOSE 
 			&& in2.getInput().get(0) == in1 )
 		{
 			ret = MMTSJType.RIGHT;

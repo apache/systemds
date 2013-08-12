@@ -57,9 +57,14 @@ public class DataExpression extends Expression {
 		return retVal;
 	}
 
+	/**
+	 * By default we use rowwise matrix reshape according to our internal dense/sparse matrix representations.
+	 * ByRow specifies both input and output orientation. Note that this is different from R, where inputs are 
+	 * always read by-column and the default for byRow is by-column as well.
+	 */
 	public void setMatrixDefault(){
 		if (getVarParam(Statement.RAND_BY_ROW) == null){
-			addVarParam(Statement.RAND_BY_ROW, new BooleanIdentifier(false));
+			addVarParam(Statement.RAND_BY_ROW, new BooleanIdentifier(true));
 		}
 	}
 	

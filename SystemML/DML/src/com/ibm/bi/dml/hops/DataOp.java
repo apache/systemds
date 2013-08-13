@@ -480,6 +480,10 @@ public class DataOp extends Hops {
 		{
 			checkAndSetForcedPlatform();
 
+			//additional check for write only
+			if( get_dataType()==DataType.SCALAR )
+				_etypeForced = ExecType.CP;
+			
 			if( _etypeForced != null ) 			
 			{
 				_etype = _etypeForced;

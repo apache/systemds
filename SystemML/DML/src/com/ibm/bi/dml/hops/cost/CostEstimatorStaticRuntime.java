@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -208,7 +209,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 */
 	private Object[] extractMRInstStatistics( String inst, VarStats[] stats ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
-	{		
+	{
 		Object[] ret = new Object[2]; //stats, attrs
 		VarStats[] vs = new VarStats[3];
 		String[] attr = null; 
@@ -296,7 +297,18 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				if( vs[2] == null ) //scalar input
 					vs[2] = _scalarStats;
 			}
-			
+			else if( mrinst instanceof PickByCountInstruction )
+			{
+				PickByCountInstruction pinst = (PickByCountInstruction) mrinst;
+				vs[0] = stats[ pinst.input1 ];
+				vs[2] = stats[ pinst.output ];
+				if( vs[0] == null ) //scalar input, 
+					vs[0] = _scalarStats;
+				if( vs[1] == null ) //scalar input, 
+					vs[1] = _scalarStats;
+				if( vs[2] == null ) //scalar input
+					vs[2] = _scalarStats;
+			}
 		}
 		
 		//maintain var status (CP output always inmem)

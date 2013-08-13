@@ -37,7 +37,8 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 			UnaryOperator unary = new UnaryOperator(com.ibm.bi.dml.runtime.functionobjects.Builtin.getBuiltinFnObject(opcode));
 			return new UnaryInstruction(unary, in, out, str);
 		}
-		return null;
+		else 
+			return new UnaryInstruction(null, in, out, str);
 	}
 
 	@Override

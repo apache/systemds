@@ -149,7 +149,12 @@ public class MRInstructionParser extends InstructionParser {
 		//misc
 		String2MRInstructionType.put( "append"  , MRINSTRUCTION_TYPE.Append);
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
+		
+		//dummy (pseudo instructions)
+		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
+		
 	}
+	
 	
 	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
 		if ( str == null || str.isEmpty() )
@@ -225,12 +230,18 @@ public class MRInstructionParser extends InstructionParser {
 	
 		case GroupedAggregate:
 			return (MRInstruction) GroupedAggregateInstruction.parseInstruction(str);
+		
 		case RangeReIndex:
 			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);
+		
 		case ZeroOut:
 			return (MRInstruction) ZeroOutInstruction.parseInstruction(str);
+		
 		case MatrixReshape:
 			return (MRInstruction) MatrixReshapeMRInstruction.parseInstruction(str);	
+		
+		case Sort: //workaround for dummy MR sort instruction
+			return (MRInstruction)UnaryInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

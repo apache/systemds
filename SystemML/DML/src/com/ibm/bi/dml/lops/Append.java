@@ -39,8 +39,11 @@ public class Append extends Lops{
 		if ( et == ExecType.MR ) {
 			//confirm this
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.REBLOCK_TEXT);
-			lps.addCompatibility(JobType.REBLOCK_BINARY);
+			
+			//TODO MB @Shirish: please review; disabled compatibility to reblock because even with 'setupDistributedCache' 
+			//        (and partitioning information) in ReblockMR, this fails due to matrix block vs matrix cell
+			//lps.addCompatibility(JobType.REBLOCK_TEXT);
+			//lps.addCompatibility(JobType.REBLOCK_BINARY);
 			this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 		}
 		else {

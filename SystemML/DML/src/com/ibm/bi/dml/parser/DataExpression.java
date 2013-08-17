@@ -286,7 +286,7 @@ public class DataExpression extends Expression {
 			
 			// check if file is delimited format
 			if (formatTypeString == null) {
-			
+					
 				String origFilename = getVarParam(Statement.IO_FILENAME).toString();
 				boolean isDelimitedFormat = checkHasDelimitedFormat(origFilename); 
 				
@@ -1542,7 +1542,7 @@ public class DataExpression extends Expression {
 				retVal =  JSONObject.parse(br);	
 			} catch (Exception e){
 				LOG.error(this.printErrorLocation() + "error parsing MTD file with path " + pt.toString() + ": " + e.toString());
-				throw new LanguageException(this.printErrorLocation() + "error parsing with path " + pt.toString() + ": " + e.toString());
+				throw new LanguageException(this.printErrorLocation() + "error parsing MTD with path " + pt.toString() + ": " + e.toString());
 	        }
 		}
 			
@@ -1666,11 +1666,15 @@ public class DataExpression extends Expression {
 	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
 	 
 
-        // if the MTD file exists, 
-		//JSONObject mtdObject = readMetadataFile(filename);
-        //if (mtdObject != null)
-        //	return false;
-        	
+        // if the MTD file exists, check the format is not binary 
+		JSONObject mtdObject = readMetadataFile(filename + ".mtd");
+        if (mtdObject != null){
+        	String formatTypeString = (String)mtdObject.get(Statement.FORMAT_TYPE);
+        	if (formatTypeString == null || formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_BINARY) ){
+        		return false;
+        	}
+        }
+           
 		boolean exists = false;
 		FileSystem fs = null;
 		

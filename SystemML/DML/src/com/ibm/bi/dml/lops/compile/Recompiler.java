@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.hops.ReorgOp;
@@ -86,8 +87,9 @@ public class Recompiler
 			for( Hops hopRoot : hops )
 				rUpdateStatistics( hopRoot, vars );
 			Hops.resetVisitStatus(hops);
+			MemoTable memo = new MemoTable();
 			for( Hops hopRoot : hops )
-				hopRoot.refreshMemEstimates(); 
+				hopRoot.refreshMemEstimates(memo); 
 			
 			// construct lops
 			Dag<Lops> dag = new Dag<Lops>();
@@ -142,7 +144,7 @@ public class Recompiler
 			hops.resetVisitStatus();
 			rUpdateStatistics( hops, vars );
 			hops.resetVisitStatus();
-			hops.refreshMemEstimates(); 		
+			hops.refreshMemEstimates(new MemoTable()); 		
 			
 			// construct lops
 			Dag<Lops> dag = new Dag<Lops>();
@@ -549,7 +551,7 @@ public class Recompiler
 				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
 		}
 		else if (    hop instanceof ReorgOp 
-				 && ((ReorgOp)(hop)).getReOrgOp()==Hops.ReOrgOp.RESHAPE )
+				 && ((ReorgOp)(hop)).getOp()==Hops.ReOrgOp.RESHAPE )
 		{
 			ReorgOp d = (ReorgOp) hop;
 			String name1 = d.getInput().get(1).get_name(); //rows
@@ -627,7 +629,8 @@ public class Recompiler
 				}
 			}
 		}
-
+		
+		
 		return ret;
 	}
 

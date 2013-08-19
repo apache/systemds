@@ -117,6 +117,18 @@ public class MatrixCharacteristics{
 		return nonZero;
 	}
 	
+	public boolean dimsKnown() {
+		return ( numRows > 0 && numColumns > 0 );
+	}
+	
+	public boolean rowsKnown() {
+		return ( numRows > 0 );
+	}
+
+	public boolean colsKnown() {
+		return ( numColumns > 0 );
+	}
+	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
 			MatrixCharacteristics dim_out) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

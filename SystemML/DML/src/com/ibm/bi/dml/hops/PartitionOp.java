@@ -67,14 +67,27 @@ public class PartitionOp extends Hops {
 	}
 	
 	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		return OptimizerUtils.INVALID_SIZE;
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return OptimizerUtils.INVALID_SIZE;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		return null;
+	}
+	
+	@Override
 	public boolean allowsAllExecTypes()
 	{
 		return false;
-	}
-
-	@Override
-	public double computeMemEstimate() {
-		return OptimizerUtils.INVALID_SIZE;
 	}
 	
 	@Override

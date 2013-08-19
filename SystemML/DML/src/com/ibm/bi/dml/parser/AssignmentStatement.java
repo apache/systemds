@@ -86,18 +86,18 @@ public class AssignmentStatement extends Statement{
 		
 		if( OptimizerUtils.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS )
 		{
-			//TODO
+			//TODO additional candidates (currently, not enabled because worst-case estimates usually reasonable)
 			//if( _source.toString().contains(Expression.DataOp.RAND.toString()) )
 			//	ret = true;	
-			
-			//TODO enable this for groupedAggregate after resolved reblock issue
 			//if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG.toString()) )
 			//	ret = true;	
+			//if( _source.toString().contains(Expression.ParameterizedBuiltinFunctionOp.RMEMPTY.toString()) )
+			//	ret = true;	
 			
+			//recompilation hook after ctable because worst estimates usually too conservative 
+			//(despite propagating worst-case estimates, especially if we not able to propagate sparsity)
 			if( _source.toString().contains(Expression.BuiltinFunctionOp.CTABLE.toString()) ) 
 				ret = true;
-			
-
 		}
 		//System.out.println(_source +": "+ret);
 		

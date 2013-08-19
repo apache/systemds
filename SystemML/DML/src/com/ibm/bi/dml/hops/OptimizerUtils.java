@@ -286,8 +286,15 @@ public class OptimizerUtils
 	 * @param n -- ncol(B)
 	 * @return
 	 */
-	public static double matMultSparsity(double sp1, double sp2, long m, long k, long n) {
-		return (1 - Math.pow(1-sp1*sp2, k) );
+	public static double getMatMultSparsity(double sp1, double sp2, long m, long k, long n, boolean worstcase) 
+	{
+		if( worstcase ){
+			double nnz1 = sp1 * m * k;
+			double nnz2 = sp2 * k * n;
+			return Math.min(1, nnz1/m) * Math.min(1, nnz2/n);
+		}
+		else
+			return (1 - Math.pow(1-sp1*sp2, k) );
 	}
 	
 	/**
@@ -297,36 +304,77 @@ public class OptimizerUtils
 	 * @param sp2 -- sparsity of B
 	 * @param op -- binary operation
 	 * @return
+	 * 
+	 * NOTE: append has specific computation
 	 */
-	public static double binaryOpSparsity(double sp1, double sp2, OpOp2 op) {
-		switch(op) {
+	public static double getBinaryOpSparsity(double sp1, double sp2, OpOp2 op, boolean worstcase) 
+	{
+		// default is worst-case estimate for robustness
+		double ret = 1.0;
 		
-		case PLUS:
-		case MINUS:
-			// result[i,j] != 0 iff A[i,j] !=0 || B[i,j] != 0
-			// worst case estimate = sp1+sp2
-			return (1 - (1-sp1)*(1-sp2)); 
-		
-		case MULT:
-			// result[i,j] != 0 iff A[i,j] !=0 && B[i,j] != 0
-			// worst case estimate = min(sp1,sp2)
-			return sp1 * sp2;  
+		if( worstcase )
+		{
+			switch(op) 
+			{
+				case PLUS:
+				case MINUS:
+				case LESS: 
+				case GREATER:
+				case NOTEQUAL:
+				case MIN:
+				case MAX:
+				case OR:
+					ret = Math.min(1, sp1 + sp2); break;
+				case MULT:
+				case AND:
+					ret = Math.min(sp1, sp2); break;
+				case DIV:
+				case MODULUS:
+				case POW:
+					ret = sp1; break; 
+				//case EQUAL: //doesnt work on worstcase estimates, but on 
+				//	ret = 1-Math.abs(sp1-sp2); break;	
+				
+				default:
+					ret = 1.0;
+			}
+		}
+		else
+		{
+			switch(op) {
 			
-		case DIV:
-			return 1.0; // worst case estimate
+			case PLUS:
+			case MINUS:
+				// result[i,j] != 0 iff A[i,j] !=0 || B[i,j] != 0
+				// worst case estimate = sp1+sp2
+				return (1 - (1-sp1)*(1-sp2)); 
 			
-		case LESS: 
-		case LESSEQUAL:
-		case GREATER:
-		case GREATEREQUAL:
-		case EQUAL: 
-		case NOTEQUAL:
-			return 1.0; // purely data-dependent operations, and hence worse-case estimate
-			
-		//MIN, MAX, AND, OR, LOG, POW
+			case MULT:
+				// result[i,j] != 0 iff A[i,j] !=0 && B[i,j] != 0
+				// worst case estimate = min(sp1,sp2)
+				return sp1 * sp2;  
+				
+			case DIV:
+				return 1.0; // worst case estimate
+				
+			case LESS: 
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL: 
+			case NOTEQUAL:
+				return 1.0; // purely data-dependent operations, and hence worse-case estimate
+				
+			//MIN, MAX, AND, OR, LOG, POW
+			}
 		}
 		
-		return 1.0; // default is worst-case estimate for robustness
+		return ret; 
+	}
+	
+	public static double getSparsity( long dim1, long dim2, long nnz )
+	{
+		return ((double)nnz)/dim1/dim2;
 	}
 	
 	public static String toMB(double inB) {

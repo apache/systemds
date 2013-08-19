@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
@@ -39,13 +40,18 @@ import com.ibm.bi.dml.utils.LopsException;
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
 
-public class AggBinaryOp extends Hops {
+public class AggBinaryOp extends Hops 
+{
+	private OpOp2 innerOp;
+	private AggOp outerOp;
 
-	OpOp2 innerOp;
-	AggOp outerOp;
-
-	private enum MMultMethod { CPMM, RMM, DIST_MVMULT, TSMM, CP };
-	
+	private enum MMultMethod { 
+		CPMM,     //cross-product matrix multiplication
+		RMM,      //replication matrix multiplication
+		DIST_MV,  //distributed cache matrix vector multiplication
+		TSMM,     //transpose-self matrix multiplication
+		CP        //in-memory matrix multiplication
+	};
 	
 	private AggBinaryOp() {
 		//default constructor for clone
@@ -60,6 +66,9 @@ public class AggBinaryOp extends Hops {
 		getInput().add(1, in2);
 		in1.getParent().add(this);
 		in2.getParent().add(this);
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
 	}
 	
 	public boolean isMatrixMultiply () {
@@ -80,7 +89,8 @@ public class AggBinaryOp extends Hops {
 	
 	/**
 	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
-	 *       and existing mem estimate advantageous in terms of consistency hops/lops 
+	 *       and existing mem estimate advantageous in terms of consistency hops/lops,
+	 *       and some special cases internally materialize the transpose for better cache locality  
 	 */
 	public Lops constructLops() throws HopsException, LopsException {
 
@@ -115,7 +125,7 @@ public class AggBinaryOp extends Hops {
 								mmtsj);
 					// System.out.println("Method = " + method);
 					
-					if ( method == MMultMethod.DIST_MVMULT) {
+					if ( method == MMultMethod.DIST_MV) {
 						Lops vector_in = getInput().get(1).constructLops();
 						
 						if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
@@ -225,6 +235,70 @@ public class AggBinaryOp extends Hops {
 		}
 	}
 
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		//NOTES:  
+		// * The estimate for transpose-self is the same as for normal matrix multiplications
+		//   because (1) this decouples the decision of TSMM over default MM and (2) some cases
+		//   of TSMM internally materialize the transpose for efficiency.
+		// * All matrix multiplications internally use dense output representations for efficiency.
+		//   This is reflected in our conservative memory estimate. However, we additionally need 
+		//   to account for potential final dense/sparse transformations via processing mem estimates.
+		double sparsity = 1.0;
+		/*
+		if( isMatrixMultiply() ) {	
+			if( nnz < 0 ){
+				Hops input1 = getInput().get(0);
+				Hops input2 = getInput().get(1);
+				if( input1.dimsKnown() && input2.dimsKnown() )
+				{
+					double sp1 = (input1.getNnz()>0) ? OptimizerUtils.getSparsity(input1.get_dim1(), input1.get_dim2(), input1.getNnz()) : 1.0;
+					double sp2 = (input2.getNnz()>0) ? OptimizerUtils.getSparsity(input2.get_dim1(), input2.get_dim2(), input2.getNnz()) : 1.0;
+					sparsity = OptimizerUtils.getMatMultSparsity(sp1, sp2, input1.get_dim1(), input1.get_dim2(), input2.get_dim2(), true);	
+				}
+			}
+			else //sparsity known (e.g., inferred from worst case estimates)
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		}
+		*/
+		//currently always estimated as dense in order to account for dense intermediate without unnecessary overestimation 
+		double ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		
+		return ret;
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		double ret = 0;
+		
+		//account for potential final dense-sparse transformation (worst-case sparse representation)
+		if( dim2 > MatrixBlock.SKINNY_MATRIX_TURN_POINT )
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, MatrixBlock.SPARCITY_TURN_POINT);
+		
+		return ret;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+	
+		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+		if( mc[0].rowsKnown() && mc[1].colsKnown() ) {
+			ret = new long[3];
+			ret[0] = mc[0].get_rows();
+			ret[1] = mc[1].get_cols();
+			double sp1 = (mc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[0].get_rows(), mc[0].get_cols(), mc[0].getNonZeros()) : 1.0; 
+			double sp2 = (mc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[1].get_rows(), mc[1].get_cols(), mc[1].getNonZeros()) : 1.0; 			
+			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], mc[0].get_cols(), ret[1], true));
+		}
+		
+		return ret;
+	}
+	
+	
 	private boolean isOuterProduct() {
 		if ( getInput().get(0).isVector() && getInput().get(1).isVector() ) {
 			if ( getInput().get(0).get_dim1() == 1 && getInput().get(0).get_dim1() > 1
@@ -243,38 +317,6 @@ public class AggBinaryOp extends Hops {
 	}
 	
 	@Override
-	public double computeMemEstimate() {
-		
-		//NOTES:  
-		// * The estimate for transpose-self is the same as for normal matrix multiplications
-		//   because (1) this decouples the decision of TSMM over default MM and (2) some cases
-		//   of TSMM internally materialize the transpose for efficiency.
-		// * All matrix multiplications internally use dense output representations for efficiency.
-		//   This is already reflected in our conservative memory estimate. However, we additionallz need 
-		//   to account for potential final dense/sparse transformations via processing mem estimates.
-		
-		if (dimsKnown() && isMatrixMultiply()) {
-			Hops input1 = getInput().get(0);
-			Hops input2 = getInput().get(1);
-			double outputSparsity = OptimizerUtils.matMultSparsity( input1.getSparsity(), input2.getSparsity(), 
-																	input1.get_dim1(), input1.get_dim2(), input2.get_dim2());
-
-			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
-			
-			//account for potential final dense-sparse transformation (worst-case sparse representation)
-			if( get_dim2() > MatrixBlock.SKINNY_MATRIX_TURN_POINT )
-				_processingMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), MatrixBlock.SPARCITY_TURN_POINT);
-			
-		} else {
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-		}
-		
-		_memEstimate = getInputOutputSize();
-		
-		return _memEstimate;
-	}
-
-	@Override
 	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
@@ -285,11 +327,8 @@ public class AggBinaryOp extends Hops {
 		}
 		else 
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+			{
 				_etype = findExecTypeByMemEstimate();
 			}
 			// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
@@ -303,6 +342,10 @@ public class AggBinaryOp extends Hops {
 			{
 				_etype = ExecType.MR;
 			}
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();			
 		}
 		return _etype;
 	}
@@ -315,14 +358,14 @@ public class AggBinaryOp extends Hops {
 		Hops in2 = getInput().get(1);
 		
 		if(    in1 instanceof ReorgOp 
-			&& ((ReorgOp)in1).op == ReOrgOp.TRANSPOSE 
+			&& ((ReorgOp)in1).getOp() == ReOrgOp.TRANSPOSE 
 			&& in1.getInput().get(0) == in2 )
 		{
 			ret = MMTSJType.LEFT;
 		}
 		
 		if(    in2 instanceof ReorgOp 
-			&& ((ReorgOp)in2).op == ReOrgOp.TRANSPOSE 
+			&& ((ReorgOp)in2).getOp() == ReOrgOp.TRANSPOSE 
 			&& in2.getInput().get(0) == in1 )
 		{
 			ret = MMTSJType.RIGHT;
@@ -363,7 +406,7 @@ public class AggBinaryOp extends Hops {
 			// Choose DIST_MVMULT if the "dense" vector fits in memory.
 			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
 			if ( vec_size < 0.9 * OptimizerUtils.getMemBudget(false) )
-				return MMultMethod.DIST_MVMULT;
+				return MMultMethod.DIST_MV;
 		}
 		
 		// If the dimensions are unknown at compilation time, 
@@ -787,26 +830,7 @@ public class AggBinaryOp extends Hops {
 			}
 		}
 	}
-	
-/*	public void refreshDims()
-	{
-		//TODO
-		Hops input1 = getInput().get(0);
-		Hops input2 = getInput().get(1);
-		
-		if( isMatrixMultiply() )
-		{
-				set_dim1(input1.get_dim1());
-				set_dim2(input2.get_dim2());
-		}
-		
-		input1.set_visited(VISIT_STATUS.NOTVISITED);
-		input2.set_visited(VISIT_STATUS.NOTVISITED);
-		
-		refreshMemEstimates();
-		
-	}*/
-	
+
 	@Override
 	public void refreshSizeInformation()
 	{

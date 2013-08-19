@@ -198,30 +198,43 @@ public class LiteralOp extends Hops {
 	}
 	
 	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double ret = 0;
+		switch(this.get_valueType()) 
+		{
+			case INT:
+				ret = OptimizerUtils.INT_SIZE; break;
+			case DOUBLE:
+				ret = OptimizerUtils.DOUBLE_SIZE; break;
+			case BOOLEAN:
+				ret = OptimizerUtils.BOOLEAN_SIZE; break;
+			case STRING: 
+				ret = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
+			case OBJECT:
+				ret = OptimizerUtils.DEFAULT_SIZE; break;
+		}
+		
+		return ret;
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		return null;
+	}
+	
+	@Override
 	public boolean allowsAllExecTypes()
 	{
 		return false;
-	}
-
-	@Override
-	public double computeMemEstimate() {
-		
-		switch(this.get_valueType()) {
-		case INT:
-			_outputMemEstimate = OptimizerUtils.INT_SIZE; break;
-		case DOUBLE:
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE; break;
-		case BOOLEAN:
-			_outputMemEstimate = OptimizerUtils.BOOLEAN_SIZE; break;
-		case STRING: 
-			_outputMemEstimate = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
-		case OBJECT:
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE; break;
-		}
-		
-		_memEstimate = getInputOutputSize();
-		return _memEstimate;
-	}
+	}	
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {

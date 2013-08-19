@@ -177,14 +177,9 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double Eta, Doub
     varY = centralMoment(Y,2) * W/(W-1.0)
 
     # category-wise (frequencies, means, variances)
-    CFreqs = Y;
-    CMeans = Y;
-    CVars = Y; 
-    if( nrow(Y)>0 ){
-       CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
-       CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
-       CVars = groupedAggregate(target=Y, groups=A, fn="variance");
-    }
+    CFreqs = groupedAggregate(target=Y, groups=A, fn="count"); 
+    CMeans = groupedAggregate(target=Y, groups=A, fn="mean");
+    CVars = groupedAggregate(target=Y, groups=A, fn="variance");
 
     # number of categories
     R = nrow(CFreqs);

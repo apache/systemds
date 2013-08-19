@@ -6,6 +6,8 @@ import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLSelectStatement;
@@ -420,51 +422,67 @@ public class DataOp extends Hops {
 	public boolean allowsAllExecTypes()
 	{
 		return false;
+	}	
+	
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double ret = 0;
+		
+		if ( get_dataType() == DataType.SCALAR ) 
+		{
+			switch(this.get_valueType()) 
+			{
+				case INT:
+					ret = OptimizerUtils.INT_SIZE; break;
+				case DOUBLE:
+					ret = OptimizerUtils.DOUBLE_SIZE; break;
+				case BOOLEAN:
+					ret = OptimizerUtils.BOOLEAN_SIZE; break;
+				case STRING: 
+					// by default, it estimates the size of string[100]
+					ret = 100 * OptimizerUtils.CHAR_SIZE; break;
+				case OBJECT:
+					ret = OptimizerUtils.DEFAULT_SIZE; break;
+			}
+		}
+		else //MATRIX 
+		{
+			if(   _dataop == DataOpTypes.PERSISTENTREAD 
+			   || _dataop == DataOpTypes.TRANSIENTREAD ) 
+			{
+				double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+			}
+			// output memory estimate is not required for "write" nodes (just input)
+		}
+		
+		return ret;
 	}
 	
 	@Override
-	public double computeMemEstimate() {
-		
-		if ( get_dataType() == DataType.SCALAR ) {
-			switch(this.get_valueType()) {
-			case INT:
-				_outputMemEstimate = OptimizerUtils.INT_SIZE; break;
-			case DOUBLE:
-				_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE; break;
-			case BOOLEAN:
-				_outputMemEstimate = OptimizerUtils.BOOLEAN_SIZE; break;
-			case STRING: 
-				// by default, it estimates the size of string[100]
-				_outputMemEstimate = 100 * OptimizerUtils.CHAR_SIZE; break;
-			case OBJECT:
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE; break;
-			}
-		}
-		else {
-			if (_dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD ) {
-				if( dimsKnown() )
-				{
-					if ( getNnz() > 0 ) {
-						_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, (double)_nnz/(_dim1*_dim2));
-					}
-					else {
-						_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, OptimizerUtils.DEF_SPARSITY);
-					}
-				}
-				else {
-					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-				}
-			}
-			else {
-				// memory estimate is not required for "write" nodes
-				// as a placeholder, we simply use input's estimate
-				_outputMemEstimate = 0;
-			}
-		}
-		_memEstimate = getInputOutputSize();
-		
-		return _memEstimate;
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return LocalFileUtils.BUFFER_SIZE;
 	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+		
+		if(   _dataop == DataOpTypes.PERSISTENTWRITE
+			|| _dataop == DataOpTypes.TRANSIENTWRITE ) 
+		{
+			MatrixCharacteristics mc = memo.getAllInputStats(getInput().get(0));
+			if( mc.dimsKnown() )
+				ret = new long[]{ mc.get_rows(), mc.get_cols(), mc.getNonZeros() };
+		}
+		
+		return ret;
+	}
+	
+	
 	
 	@Override
 	protected ExecType optFindExecType() 
@@ -490,10 +508,6 @@ public class DataOp extends Hops {
 			}
 			else 
 			{
-				//mark for recompile (forever)
-				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-					setRequiresRecompile();
-				
 				if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
 				{
 					_etype = findExecTypeByMemEstimate();
@@ -507,6 +521,10 @@ public class DataOp extends Hops {
 				{
 					_etype = ExecType.MR;
 				}
+				
+				//mark for recompile (forever)
+				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+					setRequiresRecompile();
 			}
 		}
 	    else //READ

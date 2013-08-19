@@ -59,14 +59,27 @@ public class CrossvalOp extends Hops {
 	}
 
 	@Override
-	public boolean allowsAllExecTypes()
-	{
-		return false;
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		return OptimizerUtils.INVALID_SIZE;
 	}
 	
 	@Override
-	public double computeMemEstimate() {
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
 		return OptimizerUtils.INVALID_SIZE;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		return null;
+	}
+	
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return false;
 	}
 	
 	@Override

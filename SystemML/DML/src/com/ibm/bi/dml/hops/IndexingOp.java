@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationMode;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
@@ -10,6 +9,7 @@ import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
 
@@ -155,30 +155,34 @@ public class IndexingOp extends Hops {
 	}
 	
 	@Override
-	public double computeMemEstimate() {
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
 		
-		Hops input = getInput().get(0);
-		
-		if (dimsKnown()) {
-			// Indexing does not affect the sparsity, and the 
-			// output sparsity is same as that of the input 
-			_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), input.getSparsity() );
-		} else {
-			if ( OptimizerUtils.getOptMode() == OptimizationMode.ROBUST ){
-				// In the worst case, indexing returns the entire matrix
-				// therefore, worst case estimate is the size of input matrix 
-				
-				// use dimensions of "input" instead of input.getOutputSize()
-				_outputMemEstimate = OptimizerUtils.estimateSize(input.get_dim1(), input.get_dim2(), input.getSparsity() ); //input.getOutputSize();
-			}
-			else if ( OptimizerUtils.getOptMode() == OptimizationMode.AGGRESSIVE ) {
-				// In an average case, we expect indexing will touch 10% of data. 
-				_outputMemEstimate = 0.1 * input.getOutputSize();
-			}
+		Hops input = getInput().get(0); //original matrix
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		if( mc != null ) 
+		{
+			//worst-case is input size, but dense
+			ret = new long[]{mc.get_rows(), mc.get_cols(), -1};
+			if( _rowLowerEqualsUpper ) ret[0]=1;
+			if( _colLowerEqualsUpper ) ret[1]=1;	
 		}
 		
-		_memEstimate = getInputOutputSize();
-		return _memEstimate;
+		return ret;
 	}
 
 	@Override
@@ -190,10 +194,6 @@ public class IndexingOp extends Hops {
 			_etype = _etypeForced;
 		else
 		{	
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -201,6 +201,10 @@ public class IndexingOp extends Hops {
 				_etype = ExecType.CP;
 			else
 				_etype = ExecType.MR;
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}

@@ -172,15 +172,27 @@ abstract public class Hops {
 		return ret;
 	}
 	
+	protected double getIntermediateSize() {
+		return _processingMemEstimate;
+	}
+	
 	/**
+	 * NOTES:
+	 * * Purpose: Whenever the output dimensions / sparsity of a hop are unknown, this hop
+	 *   should store its worst-case output statistics (if known) in that table. Subsequent
+	 *   hops can then
+	 * * Invocation: Intended to be called for ALL root nodes of one Hops DAG with the same
+	 *   (initially empty) memo table.
 	 * 
+	 * @param memo	
 	 * @return
 	 */
 	public double getMemEstimate()
 	{
 		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 			if ( ! isMemEstimated() ) {
-				computeMemEstimate();
+				LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
+				computeMemEstimate( null );
 			}
 			return _memEstimate;
 		}
@@ -204,13 +216,123 @@ abstract public class Hops {
 	}
 
 	/**
-	 * Computes the estimate of memory required to store the output of this hop in memory. 
-	 * Note that it DOES NOT include the memory needed for its inputs.
+	 * Computes the estimate of memory required to store the input/output of this hop in memory. 
+	 * This is the default implementation (orchestration of hop-specific implementation) 
+	 * that should suffice for most hops. If a hop requires more control, this method should
+	 * be overwritten with awareness of (1) output estimates, and (2) propagation of worst-case
+	 * matrix characteristics (dimensions, sparsity).  
+	 * 
+	 * TODO remove memo table and, on constructor refresh, inference in refresh, single compute mem,
+	 * maybe general computeMemEstimate, flags to indicate if estimate or not. 
 	 * 
 	 * @return computed estimate
 	 */
-	public abstract double computeMemEstimate();
+	protected void computeMemEstimate( MemoTable memo )
+	{
+		long[] wstats = null; 
+		
+		//output size estimate
+		switch( get_dataType() )
+		{
+			case SCALAR:
+			{
+				if( get_valueType()== ValueType.DOUBLE) //default case
+					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
+				else //literalops, dataops
+					_outputMemEstimate = computeOutputMemEstimate(_dim1, _dim2, _nnz);
+				break;
+			}
+			case MATRIX:
+			{
+				if( dimsKnown() ) { //nnz should be known as well, if applicable (see refreshSizeInformation)
+					//1) compute mem estimate based on known dimensions/sparsity (dense if sparsity unknown)
+					long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2); 
+					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				}
+				else if( memo.hasInputStatistics(this) )
+				{
+					//2) infer the output stats
+					wstats = inferOutputCharacteristics(memo);
+					if( wstats != null )
+					{
+						//2a) use worst case characteristics to estimate mem
+						long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
+						_outputMemEstimate = computeOutputMemEstimate( wstats[0], wstats[1], lnnz );
+						
+						//propagate worst-case estimate
+						memo.memoizeStatistics(getHopID(), wstats[0], wstats[1], wstats[2]);
+					}
+					else
+					{
+						//System.out.println("could not infer output characteristics for "+this.getOpString());
+						
+						//2b) unknown output size
+						_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+					}
+				}
+				else {
+					//System.out.println("no stats for "+this.getOpString());
+					
+					//3) unknown output size 
+					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				}
+				break;
+			}
+			case OBJECT:
+			case UNKNOWN:
+			{
+				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
+				break;
+			}
+		}
+		
+		//intermediate size estimate
+		if( dimsKnown() ) { //incl scalar output
+			long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2);
+			_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+		}
+		else if( wstats!=null ) {
+			long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
+			_processingMemEstimate = computeIntermediateMemEstimate( wstats[0], wstats[1], lnnz );
+		}
+		
+		//final estimate (sum of inputs/intermediates/output)
+		_memEstimate = getInputOutputSize();
+	}
 
+	
+	/**
+	 * Computes the hop-specific output memory estimate in bytes. Should be 0 if not
+	 * applicable. 
+	 * 
+	 * @param dim1
+	 * @param dim2
+	 * @param nnz
+	 * @return
+	 */
+	protected abstract double computeOutputMemEstimate( long dim1, long dim2, long nnz );
+
+	/**
+	 * Computes the hop-specific intermediate memory estimate in bytes. Should be 0 if not
+	 * applicable.
+	 * 
+	 * @param dim1
+	 * @param dim2
+	 * @param nnz
+	 * @return
+	 */
+	protected abstract double computeIntermediateMemEstimate( long dim1, long dim2, long nnz );
+
+	/**
+	 * Computes the output matrix characteristics (rows, cols, nnz) based on worst-case output
+	 * and/or input estimates. Should return null if dimensions are unknown.
+	 * 
+	 * @param memo
+	 * @return
+	 */
+	protected abstract long[] inferOutputCharacteristics( MemoTable memo );
+
+	
 	
 	/**
 	 * This function is used only for sanity check.
@@ -231,12 +353,12 @@ abstract public class Hops {
 	 * current hop pointed by <code>this</code>.
 	 * 
 	 */
-	public void refreshMemEstimates() {
+	public void refreshMemEstimates( MemoTable memo ) {
 		if (get_visited() == VISIT_STATUS.DONE)
 			return;
 		for (Hops h : this.getInput())
-			h.refreshMemEstimates();
-		this.computeMemEstimate();
+			h.refreshMemEstimates( memo );
+		this.computeMemEstimate( memo );
 		this.set_visited(VISIT_STATUS.DONE);
 	}
 
@@ -325,6 +447,11 @@ abstract public class Hops {
 		return _nnz;
 	}
 	
+	/**
+	 * Should not be used because this might return a too aggressive sparsity estimate.
+	 * @return
+	 */
+	@Deprecated
 	public double getSparsity() {
 		
 		if ( _dataType == DataType.SCALAR )
@@ -404,7 +531,7 @@ abstract public class Hops {
 					// insert reblock after the hop
 					ReblockOp r = new ReblockOp(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					r.computeMemEstimate();
+					r.computeMemEstimate(null);
 					r.set_visited(Hops.VISIT_STATUS.DONE);
 				
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
@@ -430,7 +557,7 @@ abstract public class Hops {
 
 						ReblockOp r = new ReblockOp(this);
 						r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						r.computeMemEstimate();
+						r.computeMemEstimate(null);
 						r.set_visited(Hops.VISIT_STATUS.DONE);
 					}
 

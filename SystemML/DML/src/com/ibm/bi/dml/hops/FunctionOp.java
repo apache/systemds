@@ -77,17 +77,36 @@ public class FunctionOp extends Hops
 	}
 
 	@Override
-	public double computeMemEstimate() 
+	public void computeMemEstimate( MemoTable memo ) 
 	{
+		//overwrites default hops behavior
+		
 		if( _type == FunctionType.DML )
 			_memEstimate = 1; //minimal mem estimate
 		else if( _type == FunctionType.EXTERNAL_MEM )
-			_memEstimate = getInputSize();
+			_memEstimate = 2* getInputSize(); //in/out
 		else if(    _type == FunctionType.EXTERNAL_FILE || _type == FunctionType.UNKNOWN )
 			_memEstimate = CostEstimatorHops.DEFAULT_MEM_MR;
-		
-		return _memEstimate;
 	}
+	
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		throw new RuntimeException("Invalid call of inferOutputCharacteristics in FunctionOp.");
+	}
+	
 
 	@Override
 	public Lops constructLops() 

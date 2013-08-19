@@ -5,6 +5,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
@@ -141,16 +142,32 @@ public class ReblockOp extends Hops {
 	{
 		return false;
 	}
-
+	
 	@Override
-	public double computeMemEstimate() {
-		
-		_outputMemEstimate = getInput().get(0).getOutputSize();
-		
-		_memEstimate = getInputOutputSize();
-		return _memEstimate;
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+		
+		Hops input = getInput().get(0);
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		if( mc != null ) 
+			ret = new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
+		
+		return ret;
+	}
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {

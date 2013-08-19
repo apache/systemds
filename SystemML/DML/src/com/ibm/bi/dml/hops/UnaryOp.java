@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -51,6 +52,9 @@ public class UnaryOp extends Hops {
 		inp.getParent().add(this);
 
 		_op = o;
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
 	}
 
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
@@ -449,40 +453,67 @@ public class UnaryOp extends Hops {
 	}
 	
 	@Override
+	public void computeMemEstimate(MemoTable memo)
+	{
+		//overwrites default hops behavior
+		super.computeMemEstimate(memo);
+		
+		if( _op == Hops.OpOp1.NROW || _op == Hops.OpOp1.NCOL ) //specific case for meta data ops
+		{
+			_memEstimate = OptimizerUtils.INT_SIZE;
+			//_outputMemEstimate = OptimizerUtils.INT_SIZE;
+			//_processingMemEstimate = 0;
+		}
+	}
+
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		double ret = 0;
+		
+		if ( _op == OpOp1.IQM ) {
+			// buffer (=2*input_size) and output (=input_size) for SORT operation
+			// getMemEstimate works for both cases of known dims and worst-case stats
+			ret = getInput().get(0).getMemEstimate() * 3; 
+		}
+		
+		return ret;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+	
+		Hops input = getInput().get(0);
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		if( mc.dimsKnown() ) {
+			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
+				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
+			{
+				ret = new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
+			}
+			else 
+				ret = new long[]{mc.get_rows(), mc.get_cols(), -1};	
+		}
+		
+		return ret;
+	}
+	
+
+	@Override
 	public boolean allowsAllExecTypes()
 	{
 		return true;
 	}
 	
-	//MINUS, NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
-	@Override
-	public double computeMemEstimate() {
-		
-		if ( get_dataType() == DataType.SCALAR ) {
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
-		}
-		else {
-			// If output is a Matrix then this operation is of type (B = op(A))
-			// Dimensions of B are same as that of A, and sparsity may/maynot change
-			// The size of input is a good estimate 
-			if ( dimsKnown() )
-				_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, getInput().get(0).getSparsity());
-			else 
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-		}
-		
-		if ( _op == OpOp1.IQM ) {
-			_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation
-		}
-		
-		if( _op == Hops.OpOp1.NROW || _op == Hops.OpOp1.NCOL ) //specific case for meta data ops
-			_memEstimate = OptimizerUtils.INT_SIZE;
-		else
-			_memEstimate = getInputOutputSize();
-		
-		return _memEstimate;
-	}
-
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
@@ -492,10 +523,6 @@ public class UnaryOp extends Hops {
 			_etype = _etypeForced;		
 		else 
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -504,6 +531,10 @@ public class UnaryOp extends Hops {
 				_etype = ExecType.CP;
 			else 
 				_etype = ExecType.MR;
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
@@ -522,6 +553,11 @@ public class UnaryOp extends Hops {
 			Hops input = getInput().get(0);
 			set_dim1( input.get_dim1() );
 			set_dim2( input.get_dim2() );
+			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
+				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
+			{
+				setNnz( input.getNnz() );
+			}
 		}
 	}
 	

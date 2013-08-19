@@ -75,6 +75,9 @@ public class RandOp extends Hops
 			index++;
 		}
 		sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
 	}
 	
 	@Override
@@ -166,26 +169,33 @@ public class RandOp extends Hops
 	}	
 	
 	@Override
-	public double computeMemEstimate() 
-	{	
-		if( dimsKnown() )
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double ret = 0;
+		
+		Hops min = getInput().get(_paramIndexMap.get("min")); //min 
+		Hops max = getInput().get(_paramIndexMap.get("max")); //max
+		if(    min instanceof LiteralOp && min.get_name().equals("0")
+			&& max instanceof LiteralOp && max.get_name().equals("0"))
 		{
-			Hops min = getInput().get(_paramIndexMap.get("min")); //min 
-			Hops max = getInput().get(_paramIndexMap.get("max")); //max
-			if(    min instanceof LiteralOp && min.get_name().equals("0")
-				&& max instanceof LiteralOp && max.get_name().equals("0"))
-			{
-				_outputMemEstimate = OptimizerUtils.estimateSizeEmptyBlock(get_dim1(), get_dim2());
-			}
-			else
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(get_dim1(), get_dim2(), sparsity);
+			ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 		}
 		else
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-		_memEstimate = getInputOutputSize();
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 		
-		return _memEstimate;
+		return ret;
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		return null;
 	}
 	
 	@Override
@@ -197,10 +207,6 @@ public class RandOp extends Hops
 			_etype = _etypeForced;
 		else 
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -208,7 +214,11 @@ public class RandOp extends Hops
 				_etype = ExecType.CP;
 			else
 				_etype = ExecType.MR;
-			}
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
+		}
 		return _etype;
 	}
 	
@@ -223,6 +233,10 @@ public class RandOp extends Hops
 		
 		//refresh cols information
 		refreshColsParameterInformation(input2);
+		
+		//refresh nnz information
+		if( dimsKnown() )
+			_nnz = (long) (_dim1 * _dim2 * sparsity);
 	}
 	
 

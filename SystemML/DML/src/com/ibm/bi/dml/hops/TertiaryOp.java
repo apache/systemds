@@ -20,6 +20,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.ISQLSelect;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
@@ -608,65 +609,90 @@ public class TertiaryOp extends Hops {
 	{
 		return true;
 	}
-	
+
 	@Override
-	public double computeMemEstimate() {
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{
+		//only quantile and ctable produce matrices
 		
-		if ( get_dataType() == DataType.SCALAR ) {
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
-		}
-		else {
-			switch(op) {
+		double sparsity = 1.0;
+		
+		switch(op) 
+		{
 			case CTABLE:
 				// since the dimensions of both inputs must be the same, checking for one input is sufficient
-				int index = -1;
-				if ( getInput().get(0).dimsKnown() ) 
-					index = 0;
-				else if ( getInput().get(1).dimsKnown() )
-					index = 1;
-				else 
-					index = -1;  // dims are unknown
-				
-				if ( index >= 0 ) {
-					// Output dimensions are completely data dependent. In the worst case, 
-					// #categories in each attribute = #rows (e.g., an ID column, say EmployeeID).
-
-					// both inputs are one-dimensional matrices with exact same dimensions, m = size of longer dimension
-					long m = (getInput().get(index).get_dim1() > 1 ? getInput().get(index).get_dim1() : getInput().get(index).get_dim2());
-					
-					// C=ctable(A,B)
-					//   worst case dimensions of C = [m,m]
-					//   worst case #nnz in C = m => sparsity = 1/m
-					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(m, m, (double)1/m); 
-				}
-				else {
-					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-				}
+				//   worst case dimensions of C = [m,m]
+				//   worst case #nnz in C = m => sparsity = 1/m
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, (nnz<=dim1)?nnz:dim1); 
 				break;
 			
 			case QUANTILE:
 				// This part of the code is executed only when a vector of quantiles are computed
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
-				if ( dimsKnown() ) {
-					_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, 1);
-					_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation
-				}
-				else { 
-					_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-					_processingMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-				}
-				
+				sparsity = 1.0;
 				break;
 			
 			default:
 				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
-			}
 		}
 		
-		_memEstimate = getInputOutputSize();
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+
 		
-		return _memEstimate;
 	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		double ret = 0;
+		if( op == OpOp3.CTABLE ){
+			// hashmap for ctable computation, num distinct counts, worst-case dim1 
+			ret =  2*4 * dim1 + //hash table (worst-case overhead 2x)
+				   32 * dim1; //values: 2xint,1xObject
+		}
+		else if ( op == OpOp3.QUANTILE ) {
+			// buffer (=2*input_size) and output (=input_size) for SORT operation
+			// getMemEstimate works for both cases of known dims and worst-case stats
+			ret = getInput().get(0).getMemEstimate() * 3;  
+		}
+		
+		return ret;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+	
+		MatrixCharacteristics mc[] = memo.getAllInputStats(getInput());
+		
+		switch(op) 
+		{
+			case CTABLE:
+				// since the dimensions of both inputs must be the same, checking for one input is sufficient
+				if( mc[0].dimsKnown() || mc[1].dimsKnown() ) {
+					// Output dimensions are completely data dependent. In the worst case, 
+					// #categories in each attribute = #rows (e.g., an ID column, say EmployeeID).
+					// both inputs are one-dimensional matrices with exact same dimensions, m = size of longer dimension
+					long m = (mc[0].dimsKnown())
+					          ? (mc[0].get_rows() > 1 ? mc[0].get_rows() : mc[0].get_cols() )
+							  : (mc[1].get_rows() > 1 ? mc[1].get_rows() : mc[1].get_cols() );
+					ret = new long[]{m, m, m};
+				}
+				break;
+			
+			case QUANTILE:
+				if( mc[2].dimsKnown() )
+					return new long[]{mc[2].get_rows(), 1, mc[2].get_rows()};
+				break;
+			
+			default:
+				throw new RuntimeException("Memory for operation (" + op + ") can not be estimated.");
+		}
+				
+		return ret;
+	}
+	
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
@@ -676,11 +702,7 @@ public class TertiaryOp extends Hops {
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;
 		else
-		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
+		{	
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -692,6 +714,10 @@ public class TertiaryOp extends Hops {
 				_etype = ExecType.CP;
 			else
 				_etype = ExecType.MR;
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
@@ -714,7 +740,7 @@ public class TertiaryOp extends Hops {
 				case QUANTILE:
 					// This part of the code is executed only when a vector of quantiles are computed
 					// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
-					// TODO
+					// TODO qx1
 					break;	
 					
 				default:

@@ -13,6 +13,7 @@ import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
 
@@ -171,7 +172,16 @@ public class LeftIndexingOp  extends Hops {
 		}
 		return get_lops();
 	}
-
+	
+	/**
+	 * @return true if the right hand side of the indexing operation is a
+	 *         literal.
+	 */
+	private boolean isRightHandSideScalar() {
+		Hops rightHandSide = getInput().get(1);
+		return (rightHandSide.get_dataType() == DataType.SCALAR);
+	}
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -199,28 +209,22 @@ public class LeftIndexingOp  extends Hops {
 	{
 		return false;
 	}
-	
+
 	@Override
-	public double computeMemEstimate() {
+	public void computeMemEstimate( MemoTable memo ) 
+	{
+		//overwrites default hops behavior
+		super.computeMemEstimate(memo);	
 		
-		//1) output mem estimate
-		if ( dimsKnown() ) {
-			// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
-			// However, the sparsity might change -- TODO: we can not handle the change in sparsity, for now
-			_outputMemEstimate = OptimizerUtils.estimateSize(_dim1, _dim2, getInput().get(0).getSparsity());
-		}
-		else {
-			_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-		}
-		
-		//2) operation mem estimate
-		if( dimsKnown() && !getInput().get(1).dimsKnown() ) { 
-			
+		//changed final estimate (infer and use input size)
+		Hops rhM = getInput().get(1);
+		MatrixCharacteristics mcRhM = memo.getAllInputStats(rhM);
+		//TODO also use worstcase estimate for output
+		if( dimsKnown() && !(rhM.dimsKnown()||mcRhM.dimsKnown()) ) 
+		{ 
 			// unless second input is single cell / row vector / column vector
 			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
-			
 			double subSize = -1;
-			
 			if( _rowLowerEqualsUpper && _colLowerEqualsUpper )
 				subSize = OptimizerUtils.estimateSize(1, 1, 1.0);	
 			else if( _rowLowerEqualsUpper )
@@ -233,15 +237,37 @@ public class LeftIndexingOp  extends Hops {
 			_memEstimate = getInputSize(0) //original matrix (left)
 			               + subSize // new submatrix (right)
 			               + _outputMemEstimate; //output size (output)
-		}
-		else
-		{
-			//default case
-			_memEstimate = getInputOutputSize();
-		}
-		
-		return _memEstimate;
+		}		
 	}
+	
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		// The dimensions of the left indexing output is same as that of the first input i.e., getInput().get(0)
+		// However, the sparsity might change -- we can not handle the change in sparsity, for now
+		double sparsity = 1.0;
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+	
+		Hops input = getInput().get(0);
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		if( mc.dimsKnown() ) 
+			ret = new long[]{mc.get_rows(), mc.get_cols(), -1};
+		
+		return ret;
+	}
+	
 	
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
@@ -252,10 +278,6 @@ public class LeftIndexingOp  extends Hops {
 			_etype = _etypeForced;
 		else 
 		{	
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 				checkAndModifyRecompilationStatus();
@@ -264,6 +286,10 @@ public class LeftIndexingOp  extends Hops {
 				_etype = ExecType.CP;
 			else 
 				_etype = ExecType.MR;
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
@@ -311,13 +337,5 @@ public class LeftIndexingOp  extends Hops {
 		
 		return ret;
 	}
-	
-	/**
-	 * @return true if the right hand side of the indexing operation is a
-	 *         literal.
-	 */
-	private boolean isRightHandSideScalar() {
-		Hops rightHandSide = getInput().get(1);
-		return (rightHandSide.get_dataType() == DataType.SCALAR);
-	}
+
 }

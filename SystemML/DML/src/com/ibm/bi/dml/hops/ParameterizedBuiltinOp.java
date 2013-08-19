@@ -16,6 +16,7 @@ import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.utils.HopsException;
 import com.ibm.bi.dml.utils.LopsException;
@@ -61,6 +62,9 @@ public class ParameterizedBuiltinOp extends Hops {
 			_paramIndexMap.put(s, index);
 			index++;
 		}
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
 	}
 
 	@Override
@@ -272,71 +276,70 @@ public class ParameterizedBuiltinOp extends Hops {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{	
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		//CDF always known because 
+		
+		long[] ret = null;
+	
+		Hops input = getInput().get(_paramIndexMap.get("target"));	
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+
+		if (   _op == ParamBuiltinOp.GROUPEDAGG ) { 
+			// Output dimensions are completely data dependent. In the worst case, 
+			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
+			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
+			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
+			// get the size of longer dimension
+			long m = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
+			if ( m > 1 )
+			{
+				ret = new long[]{m, 1, m};
+			}
+		}
+		else if (   _op == ParamBuiltinOp.RMEMPTY ) 
+		{ 
+			// similar to groupedagg because in the worst-case ouputsize eq inputsize
+			// #nnz is exactly the same as in the input but sparsity can be higher if dimensions.
+			// change (denser output).
+			if ( mc.dimsKnown() )
+				ret= new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()}; 
+		}
+		
+		return ret;
+	}
 	
 	@Override
 	public boolean allowsAllExecTypes()
 	{
 		return false;
 	}
-
-	@Override
-	public double computeMemEstimate() {
-		
-		if ( _op == ParamBuiltinOp.CDF ) {
-			// currently, only CDF produces a scalar
-			if ( _dataType == DataType.SCALAR ) 
-				_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
-			else
-				throw new RuntimeException("Memory estimates for CDF w/ Matrices are not defined yet!");
-		}
-		else if (   _op == ParamBuiltinOp.GROUPEDAGG ) { 
-			// Output dimensions are completely data dependent. In the worst case, 
-			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
-			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
-			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
-			
-			Hops target = getInput().get(_paramIndexMap.get("target"));
-			
-			// get the size of longer dimension
-			long m = (target.get_dim1() > 1 ? target.get_dim1() : target.get_dim2()); 
-			if ( m > 1 )
-				// Output is always a one-dimensional matrix
-				_outputMemEstimate = OptimizerUtils.estimateSize(m, 1, 1.0);
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-		}
-		else if (   _op == ParamBuiltinOp.RMEMPTY ) { 
-			// similar to groupedagg because in the worst-case ouputsize eq inputsize
-			Hops target = getInput().get(_paramIndexMap.get("target"));
-			long rows = target.get_dim1();
-			long cols = target.get_dim2(); 
-			long nnz = target.getNnz();
-			if ( rows > 0 && cols > 0 )
-				_outputMemEstimate = OptimizerUtils.estimateSize( rows, cols, ((double)nnz)/(rows*cols) );
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-		}
-		else {
-			throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
-		}
-		_memEstimate = getInputOutputSize();
-		return _memEstimate;
-	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
-		
+	protected ExecType optFindExecType() 
+		throws HopsException 
+	{
 		checkAndSetForcedPlatform();
 
 		if( _etypeForced != null ) 			
 			_etype = _etypeForced;	
 		else 
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
 			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -346,6 +349,10 @@ public class ParameterizedBuiltinOp extends Hops {
 				else
 					_etype = ExecType.MR;
 			}
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
@@ -360,16 +367,19 @@ public class ParameterizedBuiltinOp extends Hops {
 				break;
 			
 			case GROUPEDAGG:  
-				//do nothing; output dimensions are completely data dependent and dim2=1 always known
+				//output dimension dim1 is completely data dependent 
+				set_dim2( 1 );
 				break;
 			
 			case RMEMPTY: 
+				//one output dimension dim1 or dim2 is completely data dependent 
 				Hops target = getInput().get(_paramIndexMap.get("target"));
 				String margin = getInput().get(_paramIndexMap.get("margin")).toString();
 				if( margin.equals("rows") )
 					set_dim2( target.get_dim2() );
 				else if (margin.equals("cols"))
 					set_dim1( target.get_dim1() );
+				setNnz( target.getNnz() );
 				break;
 		}
 	}

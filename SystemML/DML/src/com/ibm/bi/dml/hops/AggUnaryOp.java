@@ -9,6 +9,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -264,33 +265,33 @@ public class AggUnaryOp extends Hops {
 	}
 
 	@Override
-	public double computeMemEstimate() {
-		
-		if (get_dataType() == DataType.SCALAR)
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
-		else {
-			if (dimsKnown()) {
-				Hops input = getInput().get(0);
-				double inputSparsity = input.getSparsity();
-				double outputSparsity = OptimizerUtils.DEF_SPARSITY;
-				
-				if ( _direction == Direction.Col )
-					outputSparsity = inputSparsity * input.get_dim2();
-				else // ( _direction == Direction.Row )
-					outputSparsity = inputSparsity * input.get_dim1();
-					
-				// result is a one-dimensional vector
-				_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
-			}
-			else {
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			}
-		}
-		
-		_memEstimate = getInputOutputSize();
-		
-		return _memEstimate;
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
+	
+	@Override
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		return 0;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+	
+		Hops input = getInput().get(0);
+		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		if( _direction == Direction.Col && mc.colsKnown() ) 
+			ret = new long[]{1, mc.get_cols(), -1};
+		else if( _direction == Direction.Row && mc.rowsKnown() )
+			ret = new long[]{mc.get_rows(), 1, -1};
+		
+		return ret;
+	}
+	
 
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
@@ -301,11 +302,8 @@ public class AggUnaryOp extends Hops {
 			_etype = _etypeForced;
 		else
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() )
-				setRequiresRecompile();
-			
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+			{
 				_etype = findExecTypeByMemEstimate();
 			}
 			// Choose CP, if the input dimensions are below threshold or if the input is a vector
@@ -313,23 +311,13 @@ public class AggUnaryOp extends Hops {
 				_etype = ExecType.CP;
 			else 
 				_etype = ExecType.MR;
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown() && _etype==ExecType.MR )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
-	
-	/*
-	public void refreshDims()
-	{
-		//TODO
-		Hops input1 = getInput().get(0);
-		
-		set_dim1(input1.get_dim1());
-		set_dim2(input1.get_dim2());
-		
-		input1.set_visited(VISIT_STATUS.NOTVISITED);
-		refreshMemEstimates();
-		
-	}*/
 	
 	@Override
 	public void refreshSizeInformation()

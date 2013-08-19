@@ -21,6 +21,7 @@ import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLCondition;
 import com.ibm.bi.dml.sql.sqllops.SQLJoin;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
@@ -58,6 +59,9 @@ public class BinaryOp extends Hops {
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
 	}
 
 	public Lops constructLops() throws HopsException {
@@ -397,7 +401,7 @@ public class BinaryOp extends Hops {
 	
 						group1 = group2 = null;
 	
-						// Both operands are Matrixes
+						// Both operands are matrices
 						group1 = new Group(getInput().get(0).constructLops(),
 								Group.OperationTypes.Sort, get_dataType(),
 								get_valueType());
@@ -1032,51 +1036,106 @@ public class BinaryOp extends Hops {
 	}
 
 	@Override
-	public boolean allowsAllExecTypes()
-	{
-		return true;
+	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
+	{		
+		double ret = 0;
+		
+		//preprocessing step (recognize unknowns)
+		if( dimsKnown() && _nnz<0 ) //never after inference
+			nnz = -1; 
+		
+		if(op==OpOp2.APPEND && !OptimizerUtils.ALLOW_DYN_RECOMPILATION ) {	
+			ret = OptimizerUtils.DEFAULT_SIZE;
+		}
+		else
+		{
+			double sparsity = 1.0;
+			if( nnz < 0 ){ //check for exactly known nnz
+				Hops input1 = getInput().get(0);
+				Hops input2 = getInput().get(1);
+				if( input1.dimsKnown() && input2.dimsKnown() )
+				{
+					double sp1 = (input1.getNnz()>0 && input1.get_dataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.get_dim1(), input1.get_dim2(), input1.getNnz()) : 1.0;
+					double sp2 = (input2.getNnz()>0 && input2.get_dataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input2.get_dim1(), input2.get_dim2(), input2.getNnz()) : 1.0;
+					sparsity = OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true);	
+				}
+			}
+			else //e.g., for append,pow or after inference
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+			
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+		}
+		
+		
+		return ret;
 	}
 	
 	@Override
-	public double computeMemEstimate() {
-		
-		if (get_dataType() == DataType.SCALAR) {
-			_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
-		}
-		else if(op==OpOp2.APPEND)
-		{
-			// input are two matrices [k,k1], [k,k2] and output is [k,k1+k2]
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && dimsKnown() ) {
-				Hops input1 = getInput().get(0);
-				// always get a worst-case estimate for append if no dynamic recompilation
-				Hops input2 = getInput().get(1);
-				long ncols = input1.get_dim2() + input2.get_dim2();
-				double spa = (input1.getNnz()>0&&input2.getNnz()>0)? ((double)(input1.getNnz()+input2.getNnz()))/input1.get_dim1()/ncols : 1.0;
-				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(input1.get_dim1(), ncols, spa);
-			}
-			else
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			
-		}
-		else {
-			Hops input1 = getInput().get(0);
-			Hops input2 = getInput().get(1);
-			
-			if (dimsKnown()) {
-				double outputSparsity = OptimizerUtils.binaryOpSparsity(input1.getSparsity(), input2.getSparsity(), op);
-				_outputMemEstimate = OptimizerUtils.estimateSize(get_dim1(), get_dim2(), outputSparsity);
-			}
-			else {
-				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
-			}
-		}
-		
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	{
+		double ret = 0;
 		if ( op == OpOp2.QUANTILE || op == OpOp2.IQM ) {
-			_processingMemEstimate = getInput().get(0).getMemEstimate() * 3; // buffer (=2*input_size) and output (=input_size) for SORT operation 
+			// buffer (=2*input_size) and output (=input_size) for SORT operation 
+			// getMemEstimate works for both cases of known dims and worst-case
+			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
-		_memEstimate = getInputOutputSize();
 		
-		return _memEstimate;
+		return ret;
+	}
+	
+	@Override
+	protected long[] inferOutputCharacteristics( MemoTable memo )
+	{
+		long[] ret = null;
+		
+		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+		Hops input1 = getInput().get(0);
+		Hops input2 = getInput().get(1);		
+		DataType dt1 = input1.get_dataType();
+		DataType dt2 = input2.get_dataType();
+		
+		if( op== OpOp2.APPEND )
+		{
+			if( mc[0].dimsKnown() && mc[1].dimsKnown() ) 
+				ret = new long[]{mc[0].get_rows(), mc[0].get_cols()+mc[1].get_cols(), mc[0].getNonZeros() + mc[1].getNonZeros()};
+		}
+		else //general case
+		{
+			long ldim1, ldim2;
+			double sp1 = 1.0, sp2 = 1.0;
+			
+			if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR && mc[0].dimsKnown() )
+			{
+				ldim1 = mc[0].get_rows();
+				ldim2 = mc[0].get_cols();
+			}
+			else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
+			{
+				ldim1 = mc[1].get_rows();
+				ldim2 = mc[1].get_cols();
+			}
+			else //MATRIX - MATRIX 
+			{
+				ldim1 = (mc[0].get_rows()>0) ? mc[0].get_rows() : mc[1].get_rows();
+				ldim2 = (mc[0].get_cols()>0) ? mc[0].get_cols() : mc[1].get_cols();
+				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
+				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
+			}
+			
+			if( ldim1>0 && ldim2>0 )
+			{
+				long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, true));
+				ret = new long[]{ldim1, ldim2, lnnz};
+			}
+		}
+
+		return ret;
+	}
+
+	@Override
+	public boolean allowsAllExecTypes()
+	{
+		return true;
 	}
 	
 	@Override
@@ -1088,12 +1147,8 @@ public class BinaryOp extends Hops {
 			_etype = _etypeForced;
 		else 
 		{
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && (!dimsKnown() || op == OpOp2.APPEND) )
-				setRequiresRecompile();
-
-			
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+			{
 				_etype = findExecTypeByMemEstimate();
 			}
 			else
@@ -1131,6 +1186,10 @@ public class BinaryOp extends Hops {
 				if( _etype == null )
 					_etype = ExecType.MR;
 			}
+		
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown()&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
+				setRequiresRecompile();
 		}
 		return _etype;
 	}
@@ -1147,32 +1206,46 @@ public class BinaryOp extends Hops {
 		{
 			//do nothing always known
 		}
-		else 
+		else //MATRIX OUTPUT
 		{
-			if( !(op == OpOp2.QUANTILE) )
+			//TODO quantile
+			if( op== OpOp2.APPEND )
 			{
-				//PLUS, MINUS, MULT, DIV
-				if ( dt1 == DataType.MATRIX ) 
-				{
-					set_dim1(input1.get_dim1());
-					set_dim2(input1.get_dim2());
-				}
-				else if ( dt2 == DataType.MATRIX ) 
-				{
-					set_dim1(input2.get_dim1());
-					set_dim2(input2.get_dim2());
-				}
-				else
-				{
-					set_dim1(0);
-					set_dim2(0);
-				}
-			}else if(op== OpOp2.APPEND)
-			{
-				set_dim1( input1.get_dim1() );
+				set_dim1( (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1() );
 				set_dim2( input1.get_dim2() + input2.get_dim2() );
-				
 				setNnz( input1.getNnz() + input2.getNnz() );
+			}
+			else //general case
+			{
+				long ldim1, ldim2, lnnz1 = -1, lnnz2 = -1;
+				
+				if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR )
+				{
+					ldim1 = input1.get_dim1();
+					ldim2 = input1.get_dim2();
+					lnnz1 = input1.getNnz();
+				}
+				else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
+				{
+					ldim1 = input2.get_dim1();
+					ldim2 = input2.get_dim2();	
+					lnnz2 = input2.getNnz();
+				}
+				else //MATRIX - MATRIX 
+				{
+					ldim1 = (input1.get_dim1()>0) ? input1.get_dim1() : input2.get_dim1();
+					ldim2 = (input1.get_dim2()>0) ? input1.get_dim2() : input2.get_dim2();
+					lnnz1 = input1.getNnz();
+					lnnz2 = input2.getNnz();
+				}
+				
+				set_dim1( ldim1 );
+				set_dim2( ldim2 );
+				
+				//update nnz only if we can ensure exact results, 
+				//otherwise propagated via worst-case estimates
+				if(op == OpOp2.POW)
+					setNnz( lnnz1 );
 			}
 		}	
 	}

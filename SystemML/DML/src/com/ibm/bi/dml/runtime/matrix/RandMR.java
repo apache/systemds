@@ -93,6 +93,8 @@ public class RandMR
 		Well1024a bigrand=new Well1024a();
 		String randInsStr="";
 		int numblocks=0;
+		int maxbrlen=-1, maxbclen=-1;
+		
 		for(int i = 0; i < randInstructions.length; i++)
 		{
 			randInsStr=randInsStr+Lops.INSTRUCTION_DELIMITOR+randInstructions[i];
@@ -120,6 +122,9 @@ public class RandMR
 			clens[i]=ins.cols;
 			brlens[i] = ins.rowsInBlock;
 			bclens[i] = ins.colsInBlock;
+			maxbrlen = Math.max(maxbrlen, brlens[i]);
+			maxbclen = Math.max(maxbclen, bclens[i]);
+			
 			for(long r = 0; r < ins.rows; r += brlens[i])
 			{
 				long curBlockRowSize = Math.min(brlens[i], (ins.rows - r));
@@ -179,9 +184,9 @@ public class RandMR
 			job.setInt("dfs.replication", replication);
 			
 			JobClient client=new JobClient(job);
-			int capcity=client.getClusterStatus().getMaxMapTasks()-client.getClusterStatus().getMapTasks();
+			int capacity=client.getClusterStatus().getMaxMapTasks();
 			int dfsblocksize=job.getInt("dfs.block.size", 67108864);
-			int nmapers=Math.min((int)(8*1024*1024*(long)numblocks/(long)dfsblocksize), capcity);
+			int nmapers=Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/(long)dfsblocksize), capacity);
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer

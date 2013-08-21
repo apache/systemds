@@ -1,4 +1,6 @@
 A=read($1, rows=1, cols=$2, format="text")
 B=diag(A)
-C=B+7
+C=matrix(1, rows=nrow(B), cols=ncol(B));
+D=B%*%C
+C=B+D
 write(C, $3, format="text")

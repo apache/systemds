@@ -90,7 +90,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 					taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
 							result.getIndexes().getRowIndex());
 					out.collect(taggedIndexes, result.getValue());
-				//	System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
+					//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
 				}
 		
 		

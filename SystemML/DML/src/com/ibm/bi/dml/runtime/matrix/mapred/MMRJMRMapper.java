@@ -51,7 +51,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 						taggedValue.setBaseObject(result.getValue());
 						taggedValue.setTag(output);
 						out.collect(triplebuffer, taggedValue);
-					//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
+						//System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 					}
 				}else if(aggBinInput2s.contains(output))//output the right matrix
 				{
@@ -61,7 +61,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 						taggedValue.setBaseObject(result.getValue());
 						taggedValue.setTag(output);
 						out.collect(triplebuffer, taggedValue);
-					//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
+						//System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 					}
 				}else //output other matrix that are not involved in aggregate binary
 				{
@@ -72,7 +72,7 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 					////////////////////////////////////////
 					taggedValue.setTag(output);
 					out.collect(triplebuffer, taggedValue);
-				//	System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
+					//System.out.println("output to reducer: "+triplebuffer+"\n"+taggedValue);
 				}
 			}
 		}	

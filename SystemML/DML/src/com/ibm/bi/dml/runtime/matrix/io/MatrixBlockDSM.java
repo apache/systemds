@@ -55,6 +55,8 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	public static final int SKINNY_MATRIX_TURN_POINT=4;//based on math
 	
+	public static final byte EMPTY_BLOCK=0, SPARSE_BLOCK=1, DENSE_BLOCK=2;
+	
 	protected int rlen;
 	protected int clen;
 	protected boolean sparse;
@@ -109,8 +111,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		
 		if(sparse)
 		{
-			if(sparseRows==null)
-				return lrlen*4 + 9; //empty block
+			if(sparseRows==null || lnonZeros==0)
+				return 9; //empty block
 			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
 				return lrlen*lclen*8 + 9;	
 			else
@@ -118,7 +120,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		}else
 		{
 			if(denseBlock==null)
-				return lrlen*4 + 9; //empty block
+				return 9; //empty block
 			//if it should be sparse
 			else if(lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT)
 				return lrlen*4 + lnonZeros*12 + 9;
@@ -2192,11 +2194,24 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void readFields(DataInput in) throws IOException {
 		rlen=in.readInt();
 		clen=in.readInt();
-		sparse=in.readBoolean();
-		if(sparse)
+		byte format=in.readByte();
+		switch(format)
+		{
+		case SPARSE_BLOCK:
+			sparse=true;
 			readSparseBlock(in);
-		else
+			break;
+		case DENSE_BLOCK:
+			sparse=false;
 			readDenseBlock(in);
+			break;
+		case EMPTY_BLOCK:
+			sparse=true;
+			reset();
+			break;
+		default:
+			throw new IOException("invalid format, need to be 0, 1, or 2 but reads "+format);
+		}
 	}
 
 	private void readDenseBlock(DataInput in) throws IOException {
@@ -2263,13 +2278,14 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	private void writeEmptyBlock(DataOutput out) throws IOException
 	{
-		out.writeBoolean(true);
-		for(int r=0; r<rlen; r++)
-			out.writeInt(0);
+		out.writeByte(EMPTY_BLOCK);
+		//out.writeBoolean(true);
+		//for(int r=0; r<rlen; r++)
+		//	out.writeInt(0);
 	}
 	
 	private void writeDenseBlock(DataOutput out) throws IOException {
-		out.writeBoolean(sparse);
+		out.writeByte(DENSE_BLOCK);
 		
 		int limit=rlen*clen;
 		if( out instanceof FastBufferedDataOutputStream )
@@ -2282,7 +2298,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	private void writeSparseBlock(DataOutput out) throws IOException {
-		out.writeBoolean(sparse);
+		out.writeByte(SPARSE_BLOCK);
 		int r=0;
 		for(;r<Math.min(rlen, sparseRows.length); r++)
 		{
@@ -2306,7 +2322,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	}
 	
 	private void writeSparseToDense(DataOutput out) throws IOException {
-		out.writeBoolean(false);
+		out.writeByte(DENSE_BLOCK);
 		for(int i=0; i<rlen; i++)
 			for(int j=0; j<clen; j++)
 				out.writeDouble(quickGetValue(i, j));
@@ -2320,7 +2336,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			return;
 		}
 		
-		out.writeBoolean(true);
+		out.writeByte(SPARSE_BLOCK);
 		int start=0;
 		for(int r=0; r<rlen; r++)
 		{
@@ -5211,7 +5227,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		String ret="sparse? = "+sparse+"\n" ;
 		ret+="nonzeros = "+nonZeros+"\n";
 		ret+="size: "+rlen+" X "+clen+"\n";
-		boolean toprint=true;
+		boolean toprint=false;
 		if(!toprint)
 			return "sparse? = "+sparse+"\nnonzeros = "+nonZeros+"\nsize: "+rlen+" X "+clen+"\n";
 		if(sparse)

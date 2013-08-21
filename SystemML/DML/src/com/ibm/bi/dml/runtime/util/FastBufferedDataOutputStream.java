@@ -130,7 +130,10 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 
 	@Override
 	public void writeByte(int v) throws IOException {
-		throw new IOException("Not supported.");
+		if (_count+1 > _bufflen) {
+		    flushBuffer();
+		}
+		_buff[_count++] = (byte)((v) & 0xFF);	
 	}
 
 	@Override

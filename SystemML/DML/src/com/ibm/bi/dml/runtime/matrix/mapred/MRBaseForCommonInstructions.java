@@ -227,7 +227,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase{
  		collectFinalMultipleOutputs.collectOutput(indexes, value, i, reporter);
 		resultsNonZeros[i]+=value.getNonZeros();
 		//TODO: remove redundant code
-		//System.out.println(indexes+"\n"+value);
+		//System.out.println("output "+i+", "+indexes+"\n"+value);
 		//LOG.info("~~ output: "+indexes+"\n"+value);
 		if ( resultDimsUnknown[i] == (byte) 1 ) {
 			// compute dimensions for the resulting matrix

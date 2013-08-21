@@ -78,7 +78,7 @@ public class CacheDataOutput implements DataOutput
 
 	@Override
 	public void writeByte(int v) throws IOException {
-		throw new IOException("Not supported.");
+		_buff[_count++] = (byte)((v) & 0xFF);	
 	}
 
 	@Override

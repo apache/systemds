@@ -22,13 +22,13 @@ public class DiagV2MTest extends AutomatedTestBase{
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ReorgTest", new TestConfiguration(TEST_DIR, "ReorgTest", 
+		addTestConfiguration("DiagV2MTest", new TestConfiguration(TEST_DIR, "DiagV2MTest", 
 				new String[] {"C"}));
 	}
 	
 	public void commonReorgTest(RUNTIME_PLATFORM platform)
 	{
-		TestConfiguration config = getTestConfiguration("ReorgTest");
+		TestConfiguration config = getTestConfiguration("DiagV2MTest");
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
@@ -38,10 +38,10 @@ public class DiagV2MTest extends AutomatedTestBase{
           
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String RI_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = RI_HOME + "ReorgTest" + ".dml";
+		fullDMLScriptName = RI_HOME + "DiagV2MTest" + ".dml";
 		programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
 				Long.toString(cols), RI_HOME + OUTPUT_DIR + "C" };
-		fullRScriptName = RI_HOME + "ReorgTest" + ".R";
+		fullRScriptName = RI_HOME + "DiagV2MTest" + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
 
@@ -81,12 +81,12 @@ public class DiagV2MTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	public void testReorgMR() {
+	public void testDiagV2MMR() {
 		commonReorgTest(RUNTIME_PLATFORM.HADOOP);
 	}   
 	
 	@Test
-	public void testReorgCP() {
+	public void testDiagV2MCP() {
 		commonReorgTest(RUNTIME_PLATFORM.SINGLE_NODE);
 	}   
 }

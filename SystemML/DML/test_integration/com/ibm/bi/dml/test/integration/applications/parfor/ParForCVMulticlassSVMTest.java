@@ -19,14 +19,14 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		
 	//script parameters
 	private final static int rows = 1200;
-	private final static int cols = 70;
+	private final static int cols = 70; 
 	
-	private final static double sparsity1 = 0.7;
+	private final static double sparsity1 = 1.0;
 	private final static double sparsity2 = 0.1;
 	
 	private final static int k = 4;
 	private final static int intercept = 0;
-	private final static int numclasses = 2;
+	private final static int numclasses = 3;
 	private final static double epsilon = 0.001;
 	private final static double lambda = 1.0;
 	private final static int maxiter = 100;
@@ -100,7 +100,8 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 				                        Double.toString(epsilon),
 				                        Double.toString(lambda),
 				                        Integer.toString(maxiter),
-				                        HOME + OUTPUT_DIR + "R" };
+				                        HOME + OUTPUT_DIR + "stats",
+				                        HOME + INPUT_DIR + "P"};
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       HOME + INPUT_DIR + " " + Integer.toString(k) + " " + Integer.toString(intercept) 
@@ -112,13 +113,16 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		double sparsity = (sparse)? sparsity2 : sparsity1;
 		
 		//generate actual dataset
-		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, System.currentTimeMillis()); 
-		double[][] y = round(getRandomMatrix(rows, 1, 0.5, numclasses+0.5, sparsity, System.currentTimeMillis())); 
+		double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
+		double[][] y = round(getRandomMatrix(rows, 1, 0.51, numclasses+0.49, 1.0, 7)); 
+		double[][] P = round(getRandomMatrix(rows, 1, 0.51, k+0.49, 1.0, 3)); 
 
 		MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,-1,-1);
 		writeInputMatrixWithMTD("X", X, true, mc1);
 		MatrixCharacteristics mc2 = new MatrixCharacteristics(rows,1,-1,-1);
-		writeInputMatrixWithMTD("y", y, true,mc2);		
+		writeInputMatrixWithMTD("y", y, true, mc2);		
+		MatrixCharacteristics mc3 = new MatrixCharacteristics(rows,1,-1,-1);
+		writeInputMatrixWithMTD("P", P, true, mc3);		
 		
 		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, -1);
@@ -133,7 +137,7 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 	
 	private double[][] round(double[][] data) {
 		for(int i=0; i<data.length; i++)
-			data[i][0]=Math.floor(data[i][0]);
+			data[i][0]=Math.round(data[i][0]);
 		return data;
 	}
 }

@@ -16,8 +16,9 @@ lambda = $9
 maxiter = $10
 
 #CV
-P = Rand(rows=m, cols=1, min=0.0, max=1.0, pdf = "uniform");
-P = round(0.5+P*k);
+#P = Rand(rows=m, cols=1, min=0.0, max=1.0, pdf = "uniform");
+#P = round(0.5+P*k);
+P = read($12, rows=$3, cols=1);
 
 ones = matrix(1, rows=1, cols=n);
 stats = matrix(0, rows=k, cols=1); #k-folds x 1-stats

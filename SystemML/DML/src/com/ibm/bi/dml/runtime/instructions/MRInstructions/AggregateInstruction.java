@@ -69,11 +69,11 @@ public class AggregateInstruction extends UnaryMRInstructionBase {
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if (opcode.equalsIgnoreCase("arimax")){
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("amax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			return new AggregateInstruction(agg, in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("amin") ) {

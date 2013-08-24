@@ -3347,7 +3347,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), maxcolumn, j);
 					double newMaxValue = quickGetValue(i, j);
 					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
-						    
+						   
+					//System.out.println("currV="+currMaxValue+",newV="+newMaxValue+",newIX="+newMaxIndex+",update="+update);
 					if(update == 1){
 						result.quickSetValue(i, 0, newMaxIndex);
 						result.quickSetValue(i, 1, newMaxValue);
@@ -4337,7 +4338,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
 		
 		// Determine the number of groups
-		double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+		double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
 		double d;
 		if ( sparse ) {
 			for ( int i=0; i < sparseRows.length; i++ ) {

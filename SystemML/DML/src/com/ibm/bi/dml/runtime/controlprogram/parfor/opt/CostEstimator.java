@@ -185,7 +185,7 @@ public abstract class CostEstimator
 	protected double getMaxEstimate( TestMeasure measure, ArrayList<OptNode> nodes ) 
 		throws DMLRuntimeException
 	{
-		double max = Double.MIN_VALUE;
+		double max = Double.MIN_VALUE; //smallest positive value
 		for( OptNode n : nodes )
 		{
 			double tmp = getEstimate( measure, n );

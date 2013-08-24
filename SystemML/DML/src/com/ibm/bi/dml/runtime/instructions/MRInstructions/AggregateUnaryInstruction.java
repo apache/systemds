@@ -114,7 +114,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uamax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 			// return new AggregateUnaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in, out, str);
@@ -146,7 +146,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		} 
@@ -157,7 +157,7 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uacmax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryInstruction(aggun, in, out, str);
 		} 

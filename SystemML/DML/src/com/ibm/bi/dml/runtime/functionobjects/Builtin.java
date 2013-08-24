@@ -217,8 +217,8 @@ public class Builtin extends ValueFunction {
 			return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
 		case MIN:
 			return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
-		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
-		
+		case MAXINDEX: 
+			return (in1 >= in2) ? 1 : 0;
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");

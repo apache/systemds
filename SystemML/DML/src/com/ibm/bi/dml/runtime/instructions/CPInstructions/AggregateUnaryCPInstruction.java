@@ -138,7 +138,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uamax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 			// return new AggregateUnaryCPInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in, out, str);
@@ -170,13 +170,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		
 		else if (opcode.equalsIgnoreCase("uarimax") ) {
-			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		}
@@ -188,7 +188,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction{
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uacmax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.MIN_VALUE, Builtin.getBuiltinFnObject("max"));
+			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 

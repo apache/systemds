@@ -3091,9 +3091,13 @@ public class DMLTranslator {
 	}
 		
 	public void setIdentifierParams(Hops h, Identifier id) {
-		h.set_dim1(id.getDim1());
-		h.set_dim2(id.getDim2());
-		h.setNnz(id.getNnz());
+		//TODO discuss with Doug
+		if( id.getDim1()> 0 )
+			h.set_dim1(id.getDim1());
+		if( id.getDim2()> 0 )
+			h.set_dim2(id.getDim2());
+		if( id.getNnz()> -1 )
+			h.setNnz(id.getNnz());
 		h.set_rows_in_block(id.getRowsInBlock());
 		h.set_cols_in_block(id.getColumnsInBlock());
 	}

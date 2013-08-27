@@ -17,6 +17,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.utils.HopsException;
@@ -192,7 +193,7 @@ abstract public class Hops {
 		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
 			if ( ! isMemEstimated() ) {
 				LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
-				computeMemEstimate( null );
+				computeMemEstimate( new MemoTable() ); 
 			}
 			return _memEstimate;
 		}
@@ -384,7 +385,7 @@ abstract public class Hops {
 			et = ExecType.MR;
 			c = '*';
 		}
-		
+
 		if (LOG.isDebugEnabled()){
 			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
 			//System.out.println(s);
@@ -1452,6 +1453,10 @@ abstract public class Hops {
 			else if ( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL )
 				set_dim1(input.getInput().get(0).get_dim2());
 		}
+		else if ( input instanceof LiteralOp ) //TODO discuss with Doug
+		{
+			set_dim1(UtilFunctions.parseToLong(input.get_name()));
+		}
 	}
 	
 	/**
@@ -1465,6 +1470,10 @@ abstract public class Hops {
 				set_dim2(input.getInput().get(0).get_dim1());
 			else if( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL  )
 				set_dim2(input.getInput().get(0).get_dim2());
+		}
+		else if ( input instanceof LiteralOp ) //TODO discuss with Doug
+		{
+			set_dim2(UtilFunctions.parseToLong(input.get_name()));
 		}
 	}
 	

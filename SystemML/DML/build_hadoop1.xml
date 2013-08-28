@@ -33,6 +33,7 @@
 	</path>
 		
 	<path id="OWN.classpath">
+		<pathelement location="${build.ownlib}/hadoop-core-1.1.1.jar" />  
 		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
 		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->          
 <!--	<pathelement location="${build.ownlib}/lapack_simple.jar" /> -->  <!-- for eigen value decomposition -->
@@ -50,8 +51,6 @@
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
 	<path id="HADOOP.local.classpath">
-		<pathelement location="${hadoop.local.path}/share/hadoop/common/hadoop-common-2.0.4-alpha.jar" />
-		<pathelement location="${hadoop.local.path}/share/hadoop/mapreduce/hadoop-mapreduce-client-core-2.0.4-alpha.jar" />
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-configuration-1.6.jar" /> 
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-lang-2.5.jar" />
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/jackson-core-asl-1.8.8.jar" />

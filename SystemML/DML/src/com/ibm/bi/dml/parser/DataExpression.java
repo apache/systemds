@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.utils.LanguageException;
 import com.ibm.json.java.JSONObject;
 
@@ -90,7 +90,7 @@ public class DataExpression extends Expression {
 			addVarParam(Statement.RAND_SPARSITY,	id);
 		}
 		if (getVarParam(Statement.RAND_SEED)== null){
-			IntIdentifier id = new IntIdentifier(RandOp.UNSPECIFIED_SEED);
+			IntIdentifier id = new IntIdentifier(DataGenOp.UNSPECIFIED_SEED);
 			addVarParam(Statement.RAND_SEED, id);
 		}
 		if (getVarParam(Statement.RAND_PDF)== null){
@@ -538,7 +538,7 @@ public class DataExpression extends Expression {
 				
 				if ( getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null){
 					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
-					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + filename, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
 				}
 				if (getVarParam(Statement.READROWPARAM) instanceof ConstIdentifier && getVarParam(Statement.READCOLPARAM) instanceof ConstIdentifier)  {

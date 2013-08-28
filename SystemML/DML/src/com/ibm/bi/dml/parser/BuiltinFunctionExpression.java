@@ -461,6 +461,52 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			break;
 
+		case SEQ:
+			checkScalarParam(_first);
+			checkScalarParam(_second);
+			if ( _third != null ) {
+				checkNumParameters(3);
+				checkScalarParam(_third);
+			}
+			else
+				checkNumParameters(2);
+			
+			// check if dimensions can be inferred
+			long dim1=-1, dim2=1;
+			if ( isConstant(_first) && isConstant(_second) && (_third != null ? isConstant(_third) : true) ) {
+				double from, to, incr;
+				boolean neg;
+				try {
+					from = getDoubleValue(_first);
+					to = getDoubleValue(_second);
+					
+					// Setup the value of increment
+					// default value: 1 if from <= to; -1 if from > to
+					neg = (from > to);
+					if(_third == null) {
+						_third = new DoubleIdentifier((neg? -1.0 : 1.0));
+					}
+					incr = getDoubleValue(_third); // (_third != null ? getDoubleValue(_third) : (neg? -1:1) );
+					
+				}
+				catch (LanguageException e) {
+					throw new LanguageException("Arguments for seq() must be numeric.");
+				}
+
+				if (neg != (incr < 0))
+					throw new LanguageException("Wrong sign for the increment in a call to seq()");
+				
+				// Both end points of the range must included i.e., [from,to] both inclusive.
+				// Note that, "to" is included only if (to-from) is perfectly divisible by incr
+				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0) 
+				dim1 = 1 + (long)Math.floor((to-from)/incr); 
+				//System.out.println("seq("+from+","+to+","+incr+") -> dims("+dim1+","+dim2+")");
+			}
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(dim1, dim2);
+			output.setBlockDimensions(0, 0);
+			break;
+			
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -483,6 +529,18 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		return;
 	}
 
+	private boolean isConstant(Expression expr) {
+		return ( expr instanceof ConstIdentifier );
+	}
+	
+	private double getDoubleValue(Expression expr) throws LanguageException {
+		if ( expr instanceof DoubleIdentifier )
+			return ((DoubleIdentifier)expr).getValue();
+		else if ( expr instanceof IntIdentifier)
+			return ((IntIdentifier)expr).getValue();
+		else
+			throw new LanguageException("Expecting a numeric value.");
+	}
 	private boolean isMathFunction() {
 		switch (this.getOpCode()) {
 		case COS:
@@ -746,6 +804,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			 bifop = Expression.BuiltinFunctionOp.CENTRALMOMENT;
 		else if (functionName.equals("cov"))
 			bifop = Expression.BuiltinFunctionOp.COVARIANCE;
+		else if (functionName.equals("seq"))
+			bifop = Expression.BuiltinFunctionOp.SEQ;
 		else
 			return null;
 		

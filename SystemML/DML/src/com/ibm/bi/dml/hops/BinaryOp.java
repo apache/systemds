@@ -64,6 +64,10 @@ public class BinaryOp extends Hops {
 		refreshSizeInformation();
 	}
 
+	public OpOp2 getOp() {
+		return op;
+	}
+	
 	public Lops constructLops() throws HopsException {
 
 		if (get_lops() == null) {

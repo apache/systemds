@@ -34,6 +34,10 @@ public class DoubleIdentifier extends ConstIdentifier {
 		return _val;
 	}
 	
+	public void setValue(double v) {
+		_val = v;
+	}
+	
 	public String toString(){
 		return Double.toString(_val);
 	}

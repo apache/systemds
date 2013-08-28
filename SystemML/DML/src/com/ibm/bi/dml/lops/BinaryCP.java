@@ -26,7 +26,7 @@ public class BinaryCP extends Lops
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
 		Over,
-		MATMULT
+		MATMULT, SEQINCR
 	}
 	
 	OperationTypes operation;
@@ -129,6 +129,11 @@ public class BinaryCP extends Lops
 		
 		case MATMULT:
 			opString += "ba+*";
+			break;
+			
+		case SEQINCR:
+			opString += "seqincr";
+			break;
 			
 /*			String mminst = opString + OPERAND_DELIMITOR + 
 			input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
@@ -137,7 +142,6 @@ public class BinaryCP extends Lops
 
 			return mminst;
 */
-			break;
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for BinaryScalar operator: " + operation);

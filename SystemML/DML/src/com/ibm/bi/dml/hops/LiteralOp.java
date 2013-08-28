@@ -15,8 +15,8 @@ import com.ibm.bi.dml.utils.HopsException;
 
 public class LiteralOp extends Hops {
 
-	private double value_double;
-	private long value_long;
+	private double value_double = Double.NaN;
+	private long value_long = Long.MAX_VALUE;
 	private String value_string;
 	private boolean value_boolean;
 
@@ -247,6 +247,16 @@ public class LiteralOp extends Hops {
 	public void refreshSizeInformation()
 	{
 		//do nothing; it is a scalar
+	}
+	
+	public double getDoubleValue() throws HopsException {
+		if ( get_valueType() == ValueType.INT ) {
+			return value_long;
+		}
+		else if ( get_valueType() == ValueType.DOUBLE ) 
+			return value_double;
+		else
+			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Double.");
 	}
 	
 	@Override

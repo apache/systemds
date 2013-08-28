@@ -15,11 +15,11 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
@@ -364,8 +364,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		if( rdInst!=null && rdInst.length()>0 ) {
 			rdInst = replaceInstructionPatch(rdInst);
-			RandInstruction[] ins = MRInstructionParser.parseRandInstructions(rdInst);
-			for( RandInstruction inst : ins )
+			DataGenMRInstruction[] ins = MRInstructionParser.parseDataGenInstructions(rdInst);
+			for( DataGenMRInstruction inst : ins )
 				for( byte ix : inst.getAllIndexes() )
 					ixMap.add(ix);
 		}

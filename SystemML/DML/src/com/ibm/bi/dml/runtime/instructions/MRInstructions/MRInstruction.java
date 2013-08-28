@@ -11,7 +11,7 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public abstract class MRInstruction extends Instruction {
 
-	public enum MRINSTRUCTION_TYPE { INVALID, Append, Aggregate, ArithmeticBinary, AggregateBinary, AggregateUnary, Rand, CSVReblock,
+	public enum MRINSTRUCTION_TYPE { INVALID, Append, Aggregate, ArithmeticBinary, AggregateBinary, AggregateUnary, Rand, Seq, CSVReblock,
 		Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTertiary, PickByCount, 
 		Tertiary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut, MMTSJ, MatrixReshape, Sort }; 
 	

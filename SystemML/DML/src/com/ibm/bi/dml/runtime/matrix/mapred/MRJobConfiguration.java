@@ -25,13 +25,32 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.meta.PartitionParams;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionParser;
+import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AddDummyWeightConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
+import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToRowBlockConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToRowBlockConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToRowBlockConverter;
-import com.ibm.bi.dml.runtime.matrix.io.TextCellToRowBlockConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryCellToTextConverter;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.IdenticalConverter;
@@ -44,33 +63,16 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.MultipleOutputCommitter;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.io.TextCellToRowBlockConverter;
 import com.ibm.bi.dml.runtime.matrix.io.TextToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.WeightedCellToSortInputConverter;
+import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
 import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
+import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.*;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
-import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
-import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 
 public class MRJobConfiguration {
 	
@@ -833,9 +835,9 @@ public class MRJobConfiguration {
 	}
 	
 	// TODO: check Rand
-	public static RandInstruction[] getRandInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static DataGenMRInstruction[] getDataGenInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException {
 		String str=job.get(RAND_INSTRUCTIONS_CONFIG);
-		return MRInstructionParser.parseRandInstructions(str);
+		return MRInstructionParser.parseDataGenInstructions(str);
 	}
 	
 	public static AggregateBinaryInstruction[] getAggregateBinaryInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException
@@ -1331,7 +1333,7 @@ public class MRJobConfiguration {
 		}
 	}
 	
-	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String randInstructions,
+	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
 			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -1342,11 +1344,11 @@ public class MRJobConfiguration {
 					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i));
 			dims.put(i, dim);
 		}
-		RandInstruction[] randIns = null;
-		randIns = MRInstructionParser.parseRandInstructions(randInstructions);
-		if(randIns!=null)
+		DataGenMRInstruction[] dataGenIns = null;
+		dataGenIns = MRInstructionParser.parseDataGenInstructions(dataGenInstructions);
+		if(dataGenIns!=null)
 		{
-			for(RandInstruction ins: randIns)
+			for(DataGenMRInstruction ins: dataGenIns)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
 			}
@@ -1618,9 +1620,9 @@ public class MRJobConfiguration {
 		for(byte b: inputIndexes)
 			indexesInMapper.add(b);
 		
-		RandInstruction[] randIns = null;
-		randIns = MRInstructionParser.parseRandInstructions(randInstructions);
-		getIndexes(randIns, indexesInMapper);
+		DataGenMRInstruction[] dataGenIns = null;
+		dataGenIns = MRInstructionParser.parseDataGenInstructions(randInstructions);
+		getIndexes(dataGenIns, indexesInMapper);
 		
 	//	System.out.println("indexes used in the mapper: "+indexesInMapper);
 		Instruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);

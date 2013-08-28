@@ -44,6 +44,11 @@ public abstract class Statement {
 	public static final String RAND_SEED    =  "seed";
 	public static final String RAND_PDF		=  "pdf";
 	
+	// parameter names for seq()
+	public static final String SEQ_FROM = "from"; 
+	public static final String SEQ_TO   = "to";
+	public static final String SEQ_INCR	= "incr";
+	
 	public static final String RAND_BY_ROW 	 =  "byrow";	 
 	public static final String RAND_DIMNAMES =  "dimnames";
 	public static final String RAND_DATA 	 =  "data";

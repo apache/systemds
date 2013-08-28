@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.lops.Rand;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.RandStatement;
@@ -29,10 +29,13 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * 
  * 
  */
-public class RandOp extends Hops
+public class DataGenOp extends Hops
 {
 	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
 	public static final long UNSPECIFIED_SEED = -1;
+	
+	// defines the specific data generation method -- random matrix or sequence
+	DataGenMethod method;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -50,7 +53,7 @@ public class RandOp extends Hops
 	/** this is used for mem estimate */
 	private double sparsity;
 	
-	private RandOp() {
+	private DataGenOp() {
 		//default constructor for clone
 	}
 	
@@ -60,10 +63,10 @@ public class RandOp extends Hops
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public RandOp(DataIdentifier id, HashMap<String, Hops> inputParameters){
-		super(Kind.RandOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
-		
+	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hops> inputParameters){
+		super(Kind.DataGenOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
 		this.id = id;
+		this.method = mthd;
 				
 		int index = 0;
 		for (String s : inputParameters.keySet()) {
@@ -74,15 +77,20 @@ public class RandOp extends Hops
 			_paramIndexMap.put(s, index);
 			index++;
 		}
-		sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
-		
+		if ( mthd == DataGenMethod.RAND )
+			sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
+
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
 	
 	@Override
 	public String getOpString() {
-		return "rand";
+		return "datagen_" + method;
+	}
+	
+	public DataGenMethod getDataGenMethod() {
+		return method;
 	}
 	
 	@Override
@@ -105,7 +113,7 @@ public class RandOp extends Hops
 						.constructLops());
 			}
 			
-			Rand rnd = new Rand(id, inputLops,
+			DataGen rnd = new DataGen(method, id, inputLops,
 					scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
 		   					          Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR,
 					get_dataType(), get_valueType(), et);
@@ -173,16 +181,20 @@ public class RandOp extends Hops
 	{		
 		double ret = 0;
 		
-		Hops min = getInput().get(_paramIndexMap.get("min")); //min 
-		Hops max = getInput().get(_paramIndexMap.get("max")); //max
-		if(    min instanceof LiteralOp && min.get_name().equals("0")
-			&& max instanceof LiteralOp && max.get_name().equals("0"))
-		{
-			ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
+		if ( method == DataGenMethod.RAND ) {
+			Hops min = getInput().get(_paramIndexMap.get("min")); //min 
+			Hops max = getInput().get(_paramIndexMap.get("max")); //max
+			if(    min instanceof LiteralOp && min.get_name().equals("0")
+				&& max instanceof LiteralOp && max.get_name().equals("0"))
+			{
+				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
+			}
+			else
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 		}
-		else
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
-		
+		else {
+			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+		}
 		return ret;
 	}
 	
@@ -197,7 +209,7 @@ public class RandOp extends Hops
 	{
 		return null;
 	}
-	
+
 	@Override
 	protected ExecType optFindExecType() throws HopsException {
 		
@@ -225,14 +237,93 @@ public class RandOp extends Hops
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(_paramIndexMap.get("rows")); //rows 
-		Hops input2 = getInput().get(_paramIndexMap.get("cols")); //cols
-
-		//refresh rows information
-		refreshRowsParameterInformation(input1);
 		
-		//refresh cols information
-		refreshColsParameterInformation(input2);
+		Hops input1 = null;  
+		Hops input2 = null; 
+		Hops input3 = null;
+
+		if ( method == DataGenMethod.RAND ) {
+			input1 = getInput().get(_paramIndexMap.get("rows")); //rows
+			input2 = getInput().get(_paramIndexMap.get("cols")); //cols
+			
+			//refresh rows information
+			refreshRowsParameterInformation(input1);
+			
+			//refresh cols information
+			refreshColsParameterInformation(input2);
+		}
+		else if (method == DataGenMethod.SEQ ) {
+			input1 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_FROM));
+			input2 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_TO)); 
+			input3 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_INCR)); 
+
+			double from, to, incr;
+			from = to = incr = Double.NaN;
+			boolean fromKnown, toKnown, incrKnown;
+			fromKnown = toKnown = incrKnown = false;
+			
+			try {
+				if ( input1.getKind() == Kind.LiteralOp ) {
+					from = ((LiteralOp)input1).getDoubleValue();
+					fromKnown = true;
+				}
+				else if ( input1.getKind() == Kind.UnaryOp ) {
+					if( ((UnaryOp)input1).get_op() == Hops.OpOp1.NROW ) {
+						from = input1.getInput().get(0).get_dim1();
+						fromKnown = true;
+					}
+					else if ( ((UnaryOp)input1).get_op() == Hops.OpOp1.NCOL ) {
+						from = input1.getInput().get(0).get_dim2();
+						fromKnown = true;
+					}
+				}
+				
+				if ( input2.getKind() == Kind.LiteralOp ) {
+					to = ((LiteralOp)input2).getDoubleValue();
+					toKnown = true;
+				}
+				else if ( input2.getKind() == Kind.UnaryOp ) {
+					if( ((UnaryOp)input2).get_op() == Hops.OpOp1.NROW ) {
+						to = input2.getInput().get(0).get_dim1();
+						toKnown = true;
+					}
+					else if ( ((UnaryOp)input2).get_op() == Hops.OpOp1.NCOL ) {
+						to = input2.getInput().get(0).get_dim2();
+						toKnown = true;
+					}
+				}
+				
+				if ( input3.getKind() == Kind.LiteralOp ) {
+					incr = ((LiteralOp)input3).getDoubleValue();
+					incrKnown = true;
+				}
+				else if ( input3.getKind() == Kind.UnaryOp ) {
+					if( ((UnaryOp)input3).get_op() == Hops.OpOp1.NROW ) {
+						incr = input3.getInput().get(0).get_dim1();
+						incrKnown = true;
+					}
+					else if ( ((UnaryOp)input3).get_op() == Hops.OpOp1.NCOL ) {
+						incr = input3.getInput().get(0).get_dim2();
+						incrKnown = true;
+					}
+				}
+				else if (input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hops.OpOp2.SEQINCR && fromKnown && toKnown) {
+					if ( from >= to )
+						incr = -1.0;
+					else 
+						incr = 1.0;
+					incrKnown = true;
+				}
+				
+				if ( fromKnown && toKnown && incrKnown ) {
+					set_dim1(1 + (long)Math.floor((to-from)/incr));
+					set_dim2(1);
+				}
+			} catch (HopsException e) {
+				// TODO Auto-generated catch block
+				throw new RuntimeException(e);
+			}
+		}
 		
 		//refresh nnz information
 		if( dimsKnown() )
@@ -253,12 +344,13 @@ public class RandOp extends Hops
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		RandOp ret = new RandOp();	
+		DataGenOp ret = new DataGenOp();	
 		
 		//copy generic attributes
 		ret.clone(this, false);
 		
 		//copy specific attributes
+		ret.method = method;
 		ret.id = id;
 		ret.sparsity = sparsity;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();

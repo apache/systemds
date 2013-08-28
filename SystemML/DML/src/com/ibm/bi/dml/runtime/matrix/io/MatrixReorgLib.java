@@ -824,7 +824,7 @@ public class MatrixReorgLib
 		{
 			//create input matrix
 			MatrixBlockDSM mb = new MatrixBlock();
-			mb = mb.getNormalRandomSparseMatrix(5000, 5000, 1.0, 7);
+			mb = mb.getNormalRandomSparseMatrixOLD(5000, 5000, 1.0, 7);
 			mb.examSparsity();
 			//mb.print();
 			

@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.MMRJMR;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.RandMR;
+import com.ibm.bi.dml.runtime.matrix.DataGenMR;
 import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -103,7 +103,7 @@ public class RunMRJobs {
 				 break;
 
 			case RAND:
-				ret = RandMR.runJob(inst, 
+				ret = DataGenMR.runJob(inst, 
 						rdInst.split(Lops.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos());

@@ -11,9 +11,10 @@ import org.junit.Test;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.Hops;
 import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.hops.DataGenOp;
+import com.ibm.bi.dml.hops.Hops.DataGenMethod;
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.lops.Rand;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -41,9 +42,9 @@ public class RandOpTest {
 	@Test
 	public void testConstructLops() throws HopsException, LopsException {
 		setupConfiguration();
-		RandOp ro = getRandOpInstance();
+		DataGenOp ro = getRandOpInstance();
 		Lops lop = ro.constructLops();
-		if (!(lop instanceof Rand))
+		if (!(lop instanceof DataGen))
 			fail("Lop is not instance of Rand LOP");
 		assertEquals(NUM_ROWS, lop.getOutputParameters().getNum_rows()
 				.longValue());
@@ -74,7 +75,7 @@ public class RandOpTest {
 		}
 	}
 
-	private RandOp getRandOpInstance() {
+	private DataGenOp getRandOpInstance() {
 		DataIdentifier id = new DataIdentifier("A");
 		id.setFormatType(FormatType.BINARY);
 		id.setValueType(ValueType.DOUBLE);
@@ -96,7 +97,7 @@ public class RandOpTest {
 		inputParameters.put("pdf", pdf);
 		inputParameters.put("rows", rows);
 		inputParameters.put("cols", cols);
-		RandOp rand = new RandOp(id, inputParameters);
+		DataGenOp rand = new DataGenOp(DataGenMethod.RAND, id, inputParameters);
 		rand.set_dim1(id.getDim1());
 		rand.set_dim2(id.getDim2());
 		rand.setNnz(id.getNnz());

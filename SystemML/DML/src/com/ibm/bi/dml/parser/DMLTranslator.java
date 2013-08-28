@@ -20,12 +20,13 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
-import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hops.AggOp;
+import com.ibm.bi.dml.hops.Hops.DataGenMethod;
 import com.ibm.bi.dml.hops.Hops.DataOpTypes;
 import com.ibm.bi.dml.hops.Hops.Direction;
 import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
@@ -2654,7 +2655,7 @@ public class DMLTranslator {
 			
 		case RAND:
 			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
-			currBuiltinOp = new RandOp(target, paramHops);
+			currBuiltinOp = new DataGenOp(DataGenMethod.RAND, target, paramHops);
 			break;
 		
 		case MATRIX:
@@ -3081,6 +3082,18 @@ public class DMLTranslator {
 					Hops.OpOp2.IQM, expr, expr2);
 			}
 			break;	
+		
+		case SEQ:
+			HashMap<String,Hops> randParams = new HashMap<String,Hops>();
+			randParams.put(Statement.SEQ_FROM, expr);
+			randParams.put(Statement.SEQ_TO, expr2);
+			if ( expr3 == null ) {
+				expr3 = new BinaryOp(Statement.SEQ_INCR, DataType.SCALAR, ValueType.DOUBLE, Hops.OpOp2.SEQINCR, expr, expr2);
+				//throw new ParseException("Unable to search for increment field in seq()."); //randParams.put(Statement.SEQ_INCR, new LiteralOp("defaultIncr", Double.NaN));
+			}
+			randParams.put(Statement.SEQ_INCR, expr3);
+			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
+			break;
 			
 		default:
 			break;

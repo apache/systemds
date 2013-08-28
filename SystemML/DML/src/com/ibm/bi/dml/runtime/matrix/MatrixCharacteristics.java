@@ -12,6 +12,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryMRInstructionBas
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -21,6 +22,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstr
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase;
@@ -191,10 +193,15 @@ public class MatrixCharacteristics{
 			MatrixCharacteristics in_dim=dims.get(mrinst.input);
 			dim_out.set(mrinst.getNumRows(),mrinst.getNumColunms(),in_dim.get_rows_per_block(), in_dim.get_cols_per_block(), in_dim.getNonZeros());
 		}
+		else if(ins instanceof RandInstruction
+				|| ins instanceof SeqInstruction
+				) {
+			DataGenMRInstruction dataIns=(DataGenMRInstruction)ins;
+			dim_out.set(dims.get(dataIns.input));
+		}
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
 				||(ins instanceof UnaryInstruction && !(ins instanceof MMTSJMRInstruction))
-				|| ins instanceof RandInstruction
 				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;

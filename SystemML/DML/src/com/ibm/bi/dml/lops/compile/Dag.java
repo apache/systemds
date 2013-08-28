@@ -17,8 +17,10 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.Hops.DataGenMethod;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.OutputParameters;
@@ -1323,7 +1325,8 @@ public class Dag<N extends Lops> {
 				// Lops with arbitrary number of inputs (ParameterizedBuiltin, Aggregate)
 				// are handled separately, by simply passing ONLY the output variable to getInstructions()
 				if (node.getType() == Lops.Type.ParameterizedBuiltin
-						|| node.getType() == Lops.Type.GroupedAgg ){
+						|| node.getType() == Lops.Type.GroupedAgg 
+						|| (node.getType() == Lops.Type.RandLop && ((DataGen)node).getDataGenMethod() == DataGenMethod.SEQ)){
 					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
 				} 
 				// Lops with arbitrary number of inputs and outputs are handled

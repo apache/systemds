@@ -72,7 +72,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "/"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "%%"   , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "^"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
-
+		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPINSTRUCTION_TYPE.BooleanBinary);
 		String2CPInstructionType.put( "||"   , CPINSTRUCTION_TYPE.BooleanBinary);
@@ -127,6 +127,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "write" 		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);
 		//String2CPInstructionType.put( "setfilename" , CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "seqincr" 	,CPINSTRUCTION_TYPE.Variable); 
 
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
@@ -137,6 +138,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "append", CPINSTRUCTION_TYPE.Append);
 		
 		String2CPInstructionType.put( "Rand"  , CPINSTRUCTION_TYPE.Rand);
+		String2CPInstructionType.put( "seq"  , CPINSTRUCTION_TYPE.Rand);
 		String2CPInstructionType.put( "ctable", CPINSTRUCTION_TYPE.Tertiary);
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);

@@ -7,13 +7,17 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.RandOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
+import com.ibm.bi.dml.hops.Hops.DataGenMethod;
+import com.ibm.bi.dml.hops.Hops.Kind;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
@@ -70,6 +74,7 @@ public class Recompiler
 	{
 		ArrayList<Instruction> newInst = null;
 
+		//long begin = System.nanoTime();
 		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
 			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
@@ -107,6 +112,8 @@ public class Recompiler
 		if( tid != 0 ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
 		
+		//recompileTime += (System.nanoTime()-begin);
+		//recompileCount++;
 		return newInst;
 	}
 	
@@ -535,20 +542,96 @@ public class Recompiler
 			//else 
 			//	System.out.println("Warning: missing statistics for "+varName);
 		}
-		else if ( hop instanceof RandOp )
+		else if ( hop instanceof DataGenOp )
 		{
-			RandOp d = (RandOp) hop;
+			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
-			int ix1 = params.get(RandStatement.RAND_ROWS);
-			int ix2 = params.get(RandStatement.RAND_COLS);
-			String name1 = d.getInput().get(ix1).get_name();
-			String name2 = d.getInput().get(ix2).get_name();
-			Data dat1 = vars.get(name1);
-			Data dat2 = vars.get(name2);
-			if( dat1!=null && dat1 instanceof ScalarObject )
-				d.set_dim1( ((ScalarObject)dat1).getLongValue() );
-			if( dat2!=null && dat2 instanceof ScalarObject )
-				d.set_dim2( ((ScalarObject)dat2).getLongValue() );
+			if ( d.getDataGenMethod() == DataGenMethod.RAND ) {
+				int ix1 = params.get(RandStatement.RAND_ROWS);
+				int ix2 = params.get(RandStatement.RAND_COLS);
+				String name1 = d.getInput().get(ix1).get_name();
+				String name2 = d.getInput().get(ix2).get_name();
+				Data dat1 = vars.get(name1);
+				Data dat2 = vars.get(name2);
+				if( dat1!=null && dat1 instanceof ScalarObject )
+					d.set_dim1( ((ScalarObject)dat1).getLongValue() );
+				if( dat2!=null && dat2 instanceof ScalarObject )
+					d.set_dim2( ((ScalarObject)dat2).getLongValue() );
+			} 
+			else if ( d.getDataGenMethod() == DataGenMethod.SEQ ) {
+				
+				int ix1 = params.get(RandStatement.SEQ_FROM);
+				int ix2 = params.get(RandStatement.SEQ_TO);
+				int ix3 = params.get(RandStatement.SEQ_INCR);
+				
+				Hops from_hop = d.getInput().get(ix1);
+				Hops to_hop   = d.getInput().get(ix2);
+				Hops incr_hop = d.getInput().get(ix3);
+				
+				double from = 0, to=0, incr=0;
+				boolean fromKnown=false, toKnown=false, incrKnown=false;
+				try {
+					// from
+					if ( from_hop.getKind() == Kind.LiteralOp ) {
+						from = ((LiteralOp)from_hop).getDoubleValue();
+						fromKnown = true;
+					}
+					else {
+						String name = d.getInput().get(ix1).get_name();
+						Data dat = vars.get(name);
+						if( dat!=null && dat instanceof ScalarObject ) {
+							from = ((ScalarObject)dat).getDoubleValue();
+							fromKnown = true;
+						}
+					}
+					
+					// to
+					if ( to_hop.getKind() == Kind.LiteralOp ) {
+						to = ((LiteralOp)to_hop).getDoubleValue();
+						toKnown = true;
+					}
+					else {
+						String name = d.getInput().get(ix2).get_name();
+						Data dat = vars.get(name);
+						if( dat!=null && dat instanceof ScalarObject ) {
+							to = ((ScalarObject)dat).getDoubleValue();
+							toKnown = true;
+						}
+					}
+					
+					// incr
+					if ( incr_hop.getKind() == Kind.LiteralOp ) {
+						incr = ((LiteralOp)incr_hop).getDoubleValue();
+						incrKnown = true;
+					}
+					else if ( incr_hop.getKind() == Kind.BinaryOp && ((BinaryOp)incr_hop).getOp() == Hops.OpOp2.SEQINCR && fromKnown && toKnown) {
+						if ( from >= to )
+							incr = -1.0;
+						else
+							incr = 1.0;
+						incrKnown = true;
+					}
+					else {
+						String name = d.getInput().get(ix3).get_name();
+						Data dat = vars.get(name);
+						if( dat!=null && dat instanceof ScalarObject ) {
+							incr = ((ScalarObject)dat).getDoubleValue();
+							incrKnown = true;
+						}
+					}
+					
+					if ( fromKnown && toKnown && incrKnown ) {
+						d.set_dim1( 1 + (long)Math.floor((to-from)/incr) );
+						d.set_dim2( 1 );
+					}
+					
+				} catch(HopsException e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Unexpect data generation method: " + d.getDataGenMethod());
+			}
 		}
 		else if (    hop instanceof ReorgOp 
 				 && ((ReorgOp)(hop)).getOp()==Hops.ReOrgOp.RESHAPE )

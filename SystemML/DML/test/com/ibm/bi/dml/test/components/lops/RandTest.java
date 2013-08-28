@@ -6,10 +6,11 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.hops.Hops.DataGenMethod;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.lops.Rand;
+import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
@@ -33,7 +34,7 @@ public class RandTest {
     
     @Test
     public void testGetInstructionsIntInt() throws LopsException {
-        Rand randLop = getRandInstance();
+        DataGen randLop = getRandInstance();
 
         assertEquals("MR"+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + 
         		com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "0" + 
@@ -51,7 +52,7 @@ public class RandTest {
                 randLop.getInstructions(0, 1));
     }
     
-    private Rand getRandInstance() throws LopsException {
+    private DataGen getRandInstance() throws LopsException {
         DataIdentifier id = new DataIdentifier("A");
         id.setFormatType(FormatType.BINARY);
         id.setValueType(ValueType.DOUBLE);
@@ -74,7 +75,7 @@ public class RandTest {
         inputParametersLops.put("pdf", pdf);
         inputParametersLops.put("rows", rows);
         inputParametersLops.put("cols", cols);
-        return new Rand(id, inputParametersLops, DIR,
+        return new DataGen(DataGenMethod.RAND, id, inputParametersLops, DIR,
         		DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
     }
 

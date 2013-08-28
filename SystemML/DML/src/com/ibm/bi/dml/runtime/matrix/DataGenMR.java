@@ -2,7 +2,6 @@ package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.PrintWriter;
 import java.util.HashSet;
-import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,13 +15,18 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.hops.RandOp;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -30,16 +34,17 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.RandMapper;
+import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 /**
  * <p>Rand MapReduce job which creates random objects.</p>
  * 
  */
-public class RandMR
+public class DataGenMR
 {
 	/**
 	 * <p>Starts a Rand MapReduce job which will produce one or more random objects.</p>
@@ -61,96 +66,165 @@ public class RandMR
 	 * @return matrix characteristics for each random object
 	 * @throws Exception if an error occurres in the MapReduce phase
 	 */
-	private static final Log LOG = LogFactory.getLog(RandMR.class.getName());
+	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
 	
-	public static JobReturn runJob(MRJobInstruction inst, String[] randInstructions, 
+	public static JobReturn runJob(MRJobInstruction inst, String[] dataGenInstructions, 
 			String instructionsInMapper, String aggInstructionsInReducer, String otherInstructionsInReducer, 
 			int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
 		JobConf job;
-		job = new JobConf(RandMR.class);
-		job.setJobName("Rand-MR");
+		job = new JobConf(DataGenMR.class);
+		job.setJobName("DataGen-MR");
 		
 		//whether use block representation or cell representation
 		MRJobConfiguration.setMatrixValueClass(job, true);
 		
 		
-		byte[] realIndexes=new byte[randInstructions.length];
+		byte[] realIndexes=new byte[dataGenInstructions.length];
 		for(byte b=0; b<realIndexes.length; b++)
 			realIndexes[b]=b;
 		
-		String[] inputs=new String[randInstructions.length];
-		InputInfo[] inputInfos = new InputInfo[randInstructions.length];
-		long[] rlens=new long[randInstructions.length];
-		long[] clens=new long[randInstructions.length];
-		int[] brlens=new int[randInstructions.length];
-		int[] bclens=new int[randInstructions.length];
+		String[] inputs=new String[dataGenInstructions.length];
+		InputInfo[] inputInfos = new InputInfo[dataGenInstructions.length];
+		long[] rlens=new long[dataGenInstructions.length];
+		long[] clens=new long[dataGenInstructions.length];
+		int[] brlens=new int[dataGenInstructions.length];
+		int[] bclens=new int[dataGenInstructions.length];
 		
 		FileSystem fs = FileSystem.get(job);
-		Random random=new Random();
-		Well1024a bigrand=new Well1024a();
-		String randInsStr="";
+		String dataGenInsStr="";
 		int numblocks=0;
 		int maxbrlen=-1, maxbclen=-1;
 		
-		for(int i = 0; i < randInstructions.length; i++)
+		for(int i = 0; i < dataGenInstructions.length; i++)
 		{
-			randInsStr=randInsStr+Lops.INSTRUCTION_DELIMITOR+randInstructions[i];
-			RandInstruction ins=(RandInstruction)RandInstruction.parseInstruction(randInstructions[i]);
-			inputs[i]=ins.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
-			FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
-			PrintWriter pw = new PrintWriter(fsOut);
+			dataGenInsStr=dataGenInsStr+Lops.INSTRUCTION_DELIMITOR+dataGenInstructions[i];
 			
-			//for obj reuse and preventing repeated buffer re-allocations
-			StringBuilder sb = new StringBuilder();
+			MRInstruction mrins = MRInstructionParser.parseSingleInstruction(dataGenInstructions[i]);
+			MRINSTRUCTION_TYPE mrtype = mrins.getMRInstructionType();
+			DataGenMRInstruction genInst = (DataGenMRInstruction) mrins;
 			
-			//seed generation
-			long lSeed = ins.seed;
-			if(lSeed == RandOp.UNSPECIFIED_SEED)
-				lSeed = RandOp.generateRandomSeed();
-			random.setSeed(lSeed);
-			int[] seeds=new int[32];
-			for(int s=0; s<seeds.length; s++)
-				seeds[s]=random.nextInt();
-			bigrand.setSeed(seeds);
-			
-			LOG.trace("Processing RandMR with seed = "+lSeed+".");
+			rlens[i]  = genInst.rows;
+			clens[i]  = genInst.cols;
+			brlens[i] = genInst.rowsInBlock;
+			bclens[i] = genInst.colsInBlock;
 
-			rlens[i]=ins.rows;
-			clens[i]=ins.cols;
-			brlens[i] = ins.rowsInBlock;
-			bclens[i] = ins.colsInBlock;
-			maxbrlen = Math.max(maxbrlen, brlens[i]);
-			maxbclen = Math.max(maxbclen, bclens[i]);
-			
-			for(long r = 0; r < ins.rows; r += brlens[i])
-			{
-				long curBlockRowSize = Math.min(brlens[i], (ins.rows - r));
-				for(long c = 0; c < ins.cols; c += bclens[i])
-				{
-					long curBlockColSize = Math.min(bclens[i], (ins.cols - c));
+			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) {
+				RandInstruction randInst = (RandInstruction) mrins;
+				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
+				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
+				PrintWriter pw = new PrintWriter(fsOut);
+				
+				//for obj reuse and preventing repeated buffer re-allocations
+				StringBuilder sb = new StringBuilder();
+				
+				//seed generation
+				Well1024a bigrand = RandCPInstruction.setupSeedsForRand(randInst.seed);
+				for(long r = 0; r < rlens[i]; r += brlens[i]) {
+					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
+					for(long c = 0; c < clens[i]; c += bclens[i])
+					{
+						long curBlockColSize = Math.min(bclens[i], (clens[i] - c));
+						
+						sb.append((r / brlens[i]) + 1);
+						sb.append(',');
+						sb.append((c / bclens[i]) + 1);
+						sb.append(',');
+						sb.append(curBlockRowSize);
+						sb.append(',');
+						sb.append(curBlockColSize);
+						sb.append(',');
+						sb.append(bigrand.nextLong());
+						pw.println(sb.toString());
+						sb.setLength(0);
+						numblocks++;
+					}
+				}
+				pw.close();
+				fsOut.close();
+				inputInfos[i] = InputInfo.TextCellInputInfo;
+			}
+			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
+				SeqInstruction seqInst = (SeqInstruction) mrins;
+				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".seqinput";
+				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
+				PrintWriter pw = new PrintWriter(fsOut);
+				
+				//for obj reuse and preventing repeated buffer re-allocations
+				StringBuilder sb = new StringBuilder();
+				
+				double from = seqInst.fromValue;
+				double to = seqInst.toValue;
+				double incr = seqInst.incrValue;
+				
+				// Correctness checks on (from, to, incr)
+				boolean neg = (from > to);
+				if ( incr == 0 )
+					throw new DMLRuntimeException("Invalid value for \"increment\" in seq().");
+				
+				if (neg != (incr < 0) )
+					throw new DMLRuntimeException("Wrong sign for the increment in a call to seq()");
+				
+				// Compute the number of rows in the sequence
+				long numrows = 1 + (long)Math.floor((to-from)/incr);
+				if ( rlens[i] > 0 ) {
+					if ( numrows != rlens[i] )
+						throw new DMLRuntimeException("Unexpected error while processing sequence instruction. Expected number of rows does not match given number: " + rlens[i] + " != " + numrows);
+				}
+				else {
+					rlens[i] = numrows;
+				}
+				
+				if ( clens[i] >0 && clens[i] != 1)
+					throw new DMLRuntimeException("Unexpected error while processing sequence instruction. Number of columns (" + clens[i] + ") must be equal to 1.");
+				else 
+					clens[i] = 1;
+				
+				double temp = from;
+				int bid_i, bid_j;
+				double block_from, block_to;
+				for(long r = 0; r < rlens[i]; r += brlens[i]) {
+					long curBlockRowSize = Math.min(brlens[i], (rlens[i] - r));
 					
-					sb.append((r / brlens[i]) + 1);
+					// block (bid_i,bid_j) generates a sequence from the interval [block_from, block_to] (inclusive of both end points of the interval) 
+					bid_i = (int) ((r / brlens[i]) + 1);
+					bid_j = 1;
+					block_from = temp;
+					block_to   = temp+(curBlockRowSize-1)*incr;
+					temp = block_to + incr; // next block starts from here
+					
+					sb.append(bid_i);
 					sb.append(',');
-					sb.append((c / bclens[i]) + 1);
+					sb.append(bid_j);
 					sb.append(',');
+					/*
+					// Need not include block size while generating seq()
 					sb.append(curBlockRowSize);
 					sb.append(',');
-					sb.append(curBlockColSize);
+					sb.append(1);
+					sb.append(',');*/
+					sb.append(block_from);
 					sb.append(',');
-					sb.append(bigrand.nextLong());
+					sb.append(block_to);
+					sb.append(',');
+					sb.append(incr);
+					
 					pw.println(sb.toString());
+					//System.out.println("MapTask " + r + ": " + sb.toString());
 					sb.setLength(0);
 					numblocks++;
 				}
+				
+				pw.close();
+				fsOut.close();
+				inputInfos[i] = InputInfo.TextCellInputInfo;
+			} else {
+				throw new DMLRuntimeException("Unexpected Data Generation Instruction Type: " + mrtype );
 			}
-			pw.close();
-			fsOut.close();
-			inputInfos[i] = InputInfo.TextCellInputInfo;
 		}
-		randInsStr=randInsStr.substring(1);//remove the first ","
+		dataGenInsStr=dataGenInsStr.substring(1);//remove the first ","
 		RunningJob runjob;
 		MatrixCharacteristics[] stats;
 		try{
@@ -168,7 +242,7 @@ public class RandMR
 			MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
 			
 			//set up the rand Instructions
-			MRJobConfiguration.setRandInstructions(job, randInsStr);
+			MRJobConfiguration.setRandInstructions(job, dataGenInsStr);
 			
 			//set up unary instructions that will perform in the mapper
 			MRJobConfiguration.setInstructionsInMapper(job, instructionsInMapper);
@@ -190,9 +264,9 @@ public class RandMR
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer
-			HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  randInsStr, instructionsInMapper, null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
+			HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  dataGenInsStr, instructionsInMapper, null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 			
-			MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, randInsStr,
+			MatrixChar_N_ReducerGroups ret=MRJobConfiguration.computeMatrixCharacteristics(job, realIndexes, dataGenInsStr,
 					instructionsInMapper, null, aggInstructionsInReducer, null, otherInstructionsInReducer, 
 					resultIndexes, mapoutputIndexes, false);
 			stats=ret.stats;
@@ -215,11 +289,13 @@ public class RandMR
 				}
 			}
 			
+			boolean mayContainCtable = instructionsInMapper.contains("ctabletransform") ||instructionsInMapper.contains("groupedagg") ; 
+			
 			//set up the multiple output files, and their format information
-			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, true);
+			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, outputInfos, true, mayContainCtable);
 			
 			// configure mapper and the mapper output key value pairs
-			job.setMapperClass(RandMapper.class);
+			job.setMapperClass(DataGenMapper.class);
 			if(numReducers==0)
 			{
 				job.setMapOutputKeyClass(Writable.class);

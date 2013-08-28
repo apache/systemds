@@ -51,7 +51,7 @@ public class VariableCPInstruction extends CPInstruction {
 		_uniqueVarID  = new IDSequence(true); 
 	}
 	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, CastAsMatrixVariable, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName
+		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, CastAsMatrixVariable, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName, SequenceIncrement
 	}
 	
 	VariableOperationCode opcode;
@@ -105,6 +105,9 @@ public class VariableCPInstruction extends CPInstruction {
 		
 		else if ( str.equalsIgnoreCase("setfilename") ) 
 			return VariableOperationCode.SetFileName;
+		
+		else if ( str.equalsIgnoreCase("seqincr") ) 
+			return VariableOperationCode.SequenceIncrement;
 		
 		else
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
@@ -166,6 +169,7 @@ public class VariableCPInstruction extends CPInstruction {
 		case InMemValuePick:
 		case Write:
 		case SetFileName:
+		case SequenceIncrement:
 			return 3;
 		default:
 			return 2;
@@ -313,6 +317,14 @@ public class VariableCPInstruction extends CPInstruction {
 			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN); // file name
 			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN); // option: remote or local
 			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
+			break;
+		
+		case SequenceIncrement:
+			in1 = new CPOperand(parts[1]);
+			in2 = new CPOperand(parts[2]);
+			out = new CPOperand(parts[3]);
+			break;
+				
 		}
 		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str);
 	}
@@ -664,6 +676,19 @@ public class VariableCPInstruction extends CPInstruction {
 			} else{
 				throw new DMLRuntimeException("Invalid data type (" + input1.get_dataType() + ") in SetFileName instruction: " + instString);
 			}
+			break;
+			
+		case SequenceIncrement:
+			ScalarObject fromObj = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+			ScalarObject toObj = ec.getScalarInput(input2.get_name(), input2.get_valueType());
+			double ret = Double.NaN;
+			if ( fromObj.getDoubleValue() >= toObj.getDoubleValue() )
+				ret = -1.0;
+			else
+				ret = 1.0;
+			ScalarObject incrObj = (ScalarObject) new DoubleObject(ret);
+			ec.setVariable(output.get_name(), incrObj);
+
 			break;
 			
 		default:

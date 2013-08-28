@@ -478,5 +478,13 @@ public abstract class Lops {
 			int leftColDim, int output) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
-	
+
+	public String parseLabelForInstruction(Lops iLop) {
+		String ret = iLop.getOutputParameters().getLabel();
+		if ( (iLop.getExecLocation() == ExecLocation.Data &&
+				 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data )){
+			ret = Lops.VARIABLE_NAME_PLACEHOLDER + ret + Lops.VARIABLE_NAME_PLACEHOLDER;
+		}
+		return ret;
+	}
 }

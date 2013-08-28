@@ -16,8 +16,8 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -56,7 +56,7 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	protected int[] lastblockclens=null;
 	
 	//rand instructions that need to be performed in mapper
-	protected Vector<RandInstruction> rand_instructions=new Vector<RandInstruction>();
+	protected Vector<DataGenMRInstruction> dataGen_instructions=new Vector<DataGenMRInstruction>();
 	
 	//instructions that need to be performed in mapper
 	protected Vector<Vector<MRInstruction>> mapper_instructions=new Vector<Vector<MRInstruction>>();
@@ -220,13 +220,13 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 		//get input converter information
 		inputConverter=MRJobConfiguration.getInputConverter(job, representativeMatrixes.get(0));
 		
-		RandInstruction[] allRandIns;
+		DataGenMRInstruction[] allDataGenIns;
 		MRInstruction[] allMapperIns;
 		ReblockInstruction[] allReblockIns;
 		CSVReblockInstruction[] allCSVReblockIns;
 		
 		try {
-			allRandIns = MRJobConfiguration.getRandInstructions(job);
+			allDataGenIns = MRJobConfiguration.getDataGenInstructions(job);
 			
 			//parse the instructions on the matrices that this file represent
 			allMapperIns=MRJobConfiguration.getInstructionsInMapper(job);
@@ -316,25 +316,25 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 			set.clear();
 			set.add(representativeMatrixes.get(i));
 			
-			//collect the relavent rand instructions for this representative matrix
-			Vector<RandInstruction> randsForThisMatrix=new Vector<RandInstruction>();
-			if(allRandIns!=null)
+			//collect the relavent datagen instructions for this representative matrix
+			Vector<DataGenMRInstruction> dataGensForThisMatrix=new Vector<DataGenMRInstruction>();
+			if(allDataGenIns!=null)
 			{
-				for(RandInstruction ins:allRandIns)
+				for(DataGenMRInstruction ins:allDataGenIns)
 				{
 					if(set.contains(ins.input))
 					{
-						randsForThisMatrix.add(ins);
+						dataGensForThisMatrix.add(ins);
 						set.add(ins.output);
 					}
 				}
 			}
-			if(randsForThisMatrix.size()>1)
+			if(dataGensForThisMatrix.size()>1)
 				throw new RuntimeException("only expects at most one rand instruction per input");
-			if(randsForThisMatrix.isEmpty())
-				rand_instructions.add(null);
+			if(dataGensForThisMatrix.isEmpty())
+				dataGen_instructions.add(null);
 			else
-				rand_instructions.add(randsForThisMatrix.firstElement());
+				dataGen_instructions.add(dataGensForThisMatrix.firstElement());
 						
 			//collect the relavent instructions for this representative matrix
 			Vector<MRInstruction> opsForThisMatrix=new Vector<MRInstruction>();

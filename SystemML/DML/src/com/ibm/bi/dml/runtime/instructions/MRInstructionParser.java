@@ -12,6 +12,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -22,6 +23,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstr
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReorgInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ScalarInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.TertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ZeroOutInstruction;
@@ -110,8 +112,9 @@ public class MRInstructionParser extends InstructionParser {
 		String2MRInstructionType.put( "r'"      , MRINSTRUCTION_TYPE.Reorg);
 		String2MRInstructionType.put( "rdiagV2M", MRINSTRUCTION_TYPE.Reorg);
 		
-		// RAND Instruction Opcodes 
+		// DataGen Instruction Opcodes 
 		String2MRInstructionType.put( "Rand"   , MRINSTRUCTION_TYPE.Rand);
+		String2MRInstructionType.put( "seq"   , MRINSTRUCTION_TYPE.Seq);
 		
 		// REBLOCK Instruction Opcodes 
 		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);
@@ -194,6 +197,9 @@ public class MRInstructionParser extends InstructionParser {
 		
 		case Rand:
 			return (MRInstruction) RandInstruction.parseInstruction(str);
+			
+		case Seq:
+			return (MRInstruction) SeqInstruction.parseInstruction(str);
 			
 		case Reblock:
 			return (MRInstruction) ReblockInstruction.parseInstruction(str);
@@ -345,17 +351,17 @@ public class MRInstructionParser extends InstructionParser {
 		return inst;
 	}
 	
-	public static RandInstruction[] parseRandInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
+	public static DataGenMRInstruction[] parseDataGenInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		RandInstruction[] inst=null;
+		DataGenMRInstruction[] inst=null;
 		if(str!=null && !str.isEmpty())
 		{
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
-			inst = new RandInstruction[strlist.length];
+			inst = new DataGenMRInstruction[strlist.length];
 			
 			for(int i=0; i < strlist.length; i++)
 			{
-				inst[i] = (RandInstruction) RandInstruction.parseInstruction( strlist[i] );
+				inst[i] = (DataGenMRInstruction) InstructionParser.parseSingleInstruction(strlist[i]);
 			}
 		}
 		return inst;

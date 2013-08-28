@@ -2,6 +2,7 @@ package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.Expression.DataOp;
 import com.ibm.bi.dml.utils.LanguageException;
 
@@ -57,6 +58,39 @@ public class RandStatement extends Statement
 		_paramsExpr = new DataExpression(DataOp.RAND);
 	}
 	
+
+	public void setRandDefault(){
+		if (_paramsExpr.getVarParam(RAND_ROWS)== null){
+			IntIdentifier id = new IntIdentifier(1L);
+			_paramsExpr.addVarParam(RAND_ROWS, 	id);
+		}
+		if (_paramsExpr.getVarParam(RAND_COLS)== null){
+			IntIdentifier id = new IntIdentifier(1L);
+            _paramsExpr.addVarParam(RAND_COLS, 	id);
+		}
+		if (_paramsExpr.getVarParam(RAND_MIN)== null){
+			DoubleIdentifier id = new DoubleIdentifier(0.0);
+			_paramsExpr.addVarParam(RAND_MIN, id);
+		}
+		if (_paramsExpr.getVarParam(RAND_MAX)== null){
+			DoubleIdentifier id = new DoubleIdentifier(1.0);
+			_paramsExpr.addVarParam(RAND_MAX, id);
+		}
+		if (_paramsExpr.getVarParam(RAND_SPARSITY)== null){
+			DoubleIdentifier id = new DoubleIdentifier(1.0);
+			_paramsExpr.addVarParam(RAND_SPARSITY,	id);
+		}
+		if (_paramsExpr.getVarParam(RAND_SEED)== null){
+			IntIdentifier id = new IntIdentifier(DataGenOp.UNSPECIFIED_SEED);
+			_paramsExpr.addVarParam(RAND_SEED, id);
+		}
+		if (_paramsExpr.getVarParam(RAND_PDF)== null){
+			StringIdentifier id = new StringIdentifier(RAND_PDF_UNIFORM);
+			_paramsExpr.addVarParam(RAND_PDF, id);
+		}
+		//setIdentifierProperties();
+	}
+	
 	// class getter methods
 	public DataIdentifier getIdentifier(){ return _id; }
 
@@ -98,6 +132,12 @@ public class RandStatement extends Statement
 		}
 		if (!found){
 			
+			LOG.error(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+					"\". Legal parameters for Rand statement are " 
+					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
+					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
+					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
+			
 			throw new ParseException(paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
@@ -105,6 +145,7 @@ public class RandStatement extends Statement
 					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF);
 		}
 		if (_paramsExpr.getVarParam(paramName) != null){
+			LOG.error(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
 			throw new ParseException(paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
 		}
 		// Process the case where user provides double values to rows or cols

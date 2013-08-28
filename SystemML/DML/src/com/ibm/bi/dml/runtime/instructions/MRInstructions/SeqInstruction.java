@@ -11,29 +11,25 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class RandInstruction extends DataGenMRInstruction
+public class SeqInstruction extends DataGenMRInstruction
 {
-	public double minValue;
-	public double maxValue;
-	public double sparsity;
-	public String probabilityDensityFunction;
-	public long seed=0;
+	public double fromValue;
+	public double toValue;
+	public double incrValue;
 	
-	public RandInstruction ( Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double minValue, double maxValue,
-				double sparsity, long seed, String probabilityDensityFunction, String baseDir, String istr ) {
-		super(op, DataGenMethod.RAND, in, out, rows, cols, rpb, cpb, baseDir);
-		mrtype = MRINSTRUCTION_TYPE.Rand;
-		this.minValue = minValue;
-		this.maxValue = maxValue;
-		this.sparsity = sparsity;
-		this.seed = seed;
-		this.probabilityDensityFunction = probabilityDensityFunction;
+	public SeqInstruction ( Operator op, byte in, byte out, long rows, long cols, int rpb, int cpb, double fromValue, double toValue,
+				double incrValue, String baseDir, String istr ) {
+		super(op, DataGenMethod.SEQ, in, out, rows, cols, rpb, cpb, baseDir);
+		mrtype = MRINSTRUCTION_TYPE.Seq;
+		this.fromValue = fromValue;
+		this.toValue = toValue;
+		this.incrValue = incrValue;
 		instString = istr;
 	}
 	
 	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields ( str, 12 );
+		InstructionUtils.checkNumFields ( str, 10 );
 
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
@@ -44,14 +40,12 @@ public class RandInstruction extends DataGenMRInstruction
 		long cols = Double.valueOf(parts[4]).longValue();
 		int rpb = Integer.parseInt(parts[5]);
 		int cpb = Integer.parseInt(parts[6]);
-		double minValue = Double.parseDouble(parts[7]);
-		double maxValue = Double.parseDouble(parts[8]);
-		double sparsity = Double.parseDouble(parts[9]);
-		long seed = Long.parseLong(parts[10]);
-		String pdf = parts[11];
-		String baseDir = parts[12];
+		double fromValue = Double.parseDouble(parts[7]);
+		double toValue = Double.parseDouble(parts[8]);
+		double incrValue = Double.parseDouble(parts[9]);
+		String baseDir = parts[10];
 		
-		return new RandInstruction(op, input, output, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, baseDir, str);
+		return new SeqInstruction(op, input, output, rows, cols, rpb, cpb, fromValue, toValue, incrValue, baseDir, str);
 	}
 
 	@Override

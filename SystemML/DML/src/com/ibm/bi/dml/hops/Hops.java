@@ -33,7 +33,7 @@ abstract public class Hops {
 	public static long CPThreshold = 2000;
 	
 	public enum Kind {
-		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, RandOp, GenericFunctionOp, 
+		UnaryOp, BinaryOp, AggUnaryOp, AggBinaryOp, ReorgOp, Reblock, DataOp, LiteralOp, PartitionOp, CrossvalOp, DataGenOp, GenericFunctionOp, 
 		TertiaryOp, ParameterizedBuiltinOp, Indexing, FunctionOp
 	};
 
@@ -1047,7 +1047,7 @@ abstract public class Hops {
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, APPEND, INVALID
+		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, INVALID
 	};
 
 	// Operations that require 3 operands
@@ -1060,6 +1060,10 @@ abstract public class Hops {
 
 	public enum ReOrgOp {
 		TRANSPOSE, DIAG_V2M, DIAG_M2V, RESHAPE
+	};
+	
+	public enum DataGenMethod {
+		RAND, SEQ, INVALID
 	};
 
 	public enum ParamBuiltinOp {
@@ -1170,6 +1174,7 @@ abstract public class Hops {
 		HopsOpOp2LopsBS.put(OpOp2.LOG, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.PRINT);
+		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.SEQINCR);
 	}
 
 	static public HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;

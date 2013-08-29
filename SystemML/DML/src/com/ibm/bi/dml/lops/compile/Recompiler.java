@@ -19,6 +19,7 @@ import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hops.DataGenMethod;
 import com.ibm.bi.dml.hops.Hops.Kind;
 import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -36,6 +37,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -116,6 +118,58 @@ public class Recompiler
 		//recompileCount++;
 		return newInst;
 	}
+
+	/**
+	 * 
+	 * @param hops
+	 * @param tid
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static ArrayList<Instruction> recompileHopsDag2CP( ArrayList<Hops> hops, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<Instruction> newInst = null;
+
+		//long begin = System.nanoTime();
+		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		{	
+			// clear existing lops
+			Hops.resetVisitStatus(hops);
+			for( Hops hopRoot : hops )
+				rClearLops( hopRoot );
+
+			// update exec type
+			Hops.resetVisitStatus(hops);
+			for( Hops hopRoot : hops )
+				rSetExecType( hopRoot, ExecType.CP );
+			Hops.resetVisitStatus(hops);
+			
+			// construct lops
+			Dag<Lops> dag = new Dag<Lops>();
+			for( Hops hopRoot : hops )
+			{
+				Lops lops = hopRoot.constructLops();
+				lops.addToDag(dag);
+			}		
+
+			// construct instructions
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
+		}
+		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
+		//recompileTime += (System.nanoTime()-begin);
+		//recompileCount++;
+		return newInst;
+	}
+
 	
 	/**
 	 * Note: This overloaded method is required for predicate instructions because
@@ -191,7 +245,30 @@ public class Recompiler
 		{
 			throw new DMLRuntimeException("Unable to recompile program block hierarchy.", ex);
 		}
-	}	
+	}
+	
+	/**
+	 * 
+	 * @param pbs
+	 * @param tid
+	 * @throws DMLRuntimeException
+	 */
+	public static void recompileProgramBlockHierarchy2CP( ArrayList<ProgramBlock> pbs, long tid ) 
+		throws DMLRuntimeException
+	{
+		try 
+		{
+			synchronized( pbs )
+			{
+				for( ProgramBlock pb : pbs )
+					rRecompileProgramBlock2CP(pb, tid);
+			}
+		}
+		catch(Exception ex)
+		{
+			throw new DMLRuntimeException("Unable to recompile program block hierarchy to CP.", ex);
+		}
+	}
 	
 	/**
 	 * 
@@ -347,7 +424,7 @@ public class Recompiler
 				rUpdateFunctionNames(c, pid);
 		
 		hop.set_visited(VISIT_STATUS.DONE);
-	}	
+	}
 	
 	
 	//////////////////////////////
@@ -366,7 +443,8 @@ public class Recompiler
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, long tid ) throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
+	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, long tid ) 
+		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
@@ -410,6 +488,60 @@ public class Recompiler
 				
 				//propagate stats across hops (should be executed on clone of vars)
 				Recompiler.extractDAGOutputStatistics(sb.get_hops(), vars);
+			}
+		}
+		
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @param tid
+	 * @throws HopsException
+	 * @throws DMLRuntimeException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	private static void rRecompileProgramBlock2CP( ProgramBlock pb, long tid ) 
+		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			for (ProgramBlock pb2 : tmp.getChildBlocks())
+				rRecompileProgramBlock2CP(pb2, tid);
+		}
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+				rRecompileProgramBlock2CP(pb2, tid);
+			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
+				rRecompileProgramBlock2CP(pb2, tid);
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{ 
+			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+				rRecompileProgramBlock2CP(pb2, tid);
+		}		
+		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			    || pb instanceof CVProgramBlock
+				//|| pb instanceof ELProgramBlock
+				//|| pb instanceof ELUseProgramBlock
+				)
+		{
+			//do nothing
+		}
+		else 
+		{	
+			StatementBlock sb = pb.getStatementBlock();
+			if(	sb != null && OptTreeConverter.containsMRJobInstruction(pb))
+			{
+				ArrayList<Instruction> tmp = pb.getInstructions();
+				tmp = Recompiler.recompileHopsDag2CP(sb.get_hops(), tid);
+				pb.setInstructions( tmp );
 			}
 		}
 		
@@ -655,6 +787,28 @@ public class Recompiler
 		
 		hop.set_visited(VISIT_STATUS.DONE);
 	}
+	
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param pid
+	 */
+	public static void rSetExecType( Hops hop, ExecType etype )
+	{
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		//update function names
+		hop.setForcedExecType(etype);
+		
+		if( hop.getInput() != null )
+			for( Hops c : hop.getInput() )
+				rSetExecType(c, etype);
+		
+		hop.set_visited(VISIT_STATUS.DONE);
+	}
+	
 
 	/**
 	 * Returns true iff (1) all instruction are reblock instructions and (2) all

@@ -21,6 +21,7 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -587,7 +588,60 @@ public class OptTreeConverter
 	 * @param pb
 	 * @return
 	 */
-	private static boolean containsMRJobInstruction( ProgramBlock pb )
+	public static boolean rContainsMRJobInstruction( ProgramBlock pb )
+	{
+		boolean ret = false;
+		
+		if (pb instanceof WhileProgramBlock)
+		{
+			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
+				ret = rContainsMRJobInstruction(pb2);
+				if( ret ) return ret;
+			}
+		}
+		else if (pb instanceof IfProgramBlock)
+		{
+			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
+				ret = rContainsMRJobInstruction(pb2);
+				if( ret ) return ret;
+			}
+			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
+				ret = rContainsMRJobInstruction(pb2);
+				if( ret ) return ret;
+			}
+		}
+		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
+		{ 
+			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
+				ret = rContainsMRJobInstruction(pb2);
+				if( ret ) return ret;
+			}
+		}		
+		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+			    || pb instanceof CVProgramBlock
+				//|| pb instanceof ELProgramBlock
+				//|| pb instanceof ELUseProgramBlock
+				)
+		{
+			//do nothing
+		}
+		else 
+		{
+			ret = containsMRJobInstruction(pb);
+		}
+
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	public static boolean containsMRJobInstruction( ProgramBlock pb )
 	{
 		boolean ret = false;
 		for( Instruction inst : pb.getInstructions() )

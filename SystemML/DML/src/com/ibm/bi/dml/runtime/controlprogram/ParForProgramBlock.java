@@ -17,6 +17,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
@@ -181,6 +182,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
+	public static final boolean FORCE_CP_ON_REMOTE_MR       = true;
 	
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_MR_results.dat"; 
@@ -689,7 +691,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void executeRemoteParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
-		/* Step 1) serialize child PB and inst
+		/* Step 0) check and recompile MR inst
+		 * Step 1) serialize child PB and inst
 		 * Step 2) create tasks
 		 *         serialize tasks
 		 * Step 3) submit MR Jobs and wait for results                        
@@ -703,6 +706,14 @@ public class ParForProgramBlock extends ForProgramBlock
 			time.start();
 		}
 		
+		// Step 0) check and compile to CP (if forced remote parfor)
+		if( FORCE_CP_ON_REMOTE_MR && _optMode == POptMode.NONE )
+		{
+			//tid = 0  because replaced in remote parworker
+			if( !checkMRAndRecompileToCP(0) )
+				LOG.warn("Forced recompile of parfor body to CP instructions failed.");
+		}
+			
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single job,
 		//        cannot reuse serialized string, since variables are serialized as well.
@@ -1029,6 +1040,34 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		return rm;
 	}
+	
+	/**
+	 * 
+	 * @param tid
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private boolean checkMRAndRecompileToCP(long tid) 
+		throws DMLRuntimeException
+	{
+		//no MR instructions, ok
+		if( !OptTreeConverter.rContainsMRJobInstruction(this) )
+			return true;
+		
+		//no statement block, failed
+		if( _sb == null ) {
+			LOG.warn("Missing parfor statement block for recompile.");
+			return false;
+		}
+		
+		//try recompile MR instructions to CP
+		Recompiler.recompileProgramBlockHierarchy2CP(_childBlocks, tid);
+		
+		return !OptTreeConverter.rContainsMRJobInstruction(this);
+	}
+	
+	
+	
 	
 	/**
 	 * 

@@ -110,6 +110,9 @@ public class DataGenMR
 			clens[i]  = genInst.cols;
 			brlens[i] = genInst.rowsInBlock;
 			bclens[i] = genInst.colsInBlock;
+			
+			maxbrlen = Math.max(maxbrlen, brlens[i]);
+			maxbclen = Math.max(maxbclen, bclens[i]);
 
 			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) {
 				RandInstruction randInst = (RandInstruction) mrins;

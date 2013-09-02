@@ -49,6 +49,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	//default external parameter values
 	private static HashMap<String, String> _paramDefaults;
+	private static HashMap<String, String> _paramDefaults2; //for constrained opt
 	
 	//internal parameter values
 	private static final boolean NORMALIZE                 = false; //normalize FOR from to incr
@@ -95,6 +96,16 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( RESULT_MERGE,      String.valueOf(PResultMerge.LOCAL_AUTOMATIC) );
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
 		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.RULEBASED) );
+		
+		_paramDefaults2 = new HashMap<String, String>(); //OPT_MODE always specified
+		_paramDefaults2.put( CHECK,             "1" );
+		_paramDefaults2.put( PAR,               "-1" );
+		_paramDefaults2.put( TASK_PARTITIONER,  String.valueOf(PTaskPartitioner.UNSPECIFIED) );
+		_paramDefaults2.put( TASK_SIZE,         "-1" );
+		_paramDefaults2.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.UNSPECIFIED) );
+		_paramDefaults2.put( RESULT_MERGE,      String.valueOf(PResultMerge.UNSPECIFIED) );
+		_paramDefaults2.put( EXEC_MODE,         String.valueOf(PExecMode.UNSPECIFIED) );
+		
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();
@@ -168,11 +179,17 @@ public class ParForStatementBlock extends ForStatementBlock
 					throw new LanguageException("PARFOR: The specified parameter '"+key+"' is no valid parfor parameter.");
 				}
 			//set defaults for all non-specified values
+			//(except if CONSTRAINT optimizer, in order to distinguish specified parameters)
+			boolean constrained = (params.containsKey( OPT_MODE ) && params.get( OPT_MODE ).equals(POptMode.CONSTRAINED.toString()));
 			for( String key : _paramNames )
 				if( !params.containsKey(key) )
 				{
+					if( constrained )
+					{
+						params.put(key, _paramDefaults2.get(key));
+					}
 					//special treatment for degree of parallelism
-					if( key.equals(PAR) && params.containsKey(EXEC_MODE) 
+					else if( key.equals(PAR) && params.containsKey(EXEC_MODE) 
 						&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
 					{
 						params.put(key, String.valueOf(InfrastructureAnalyzer.getRemoteParallelMapTasks()));

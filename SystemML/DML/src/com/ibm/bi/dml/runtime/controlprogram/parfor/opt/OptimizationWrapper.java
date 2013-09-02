@@ -362,6 +362,9 @@ public class OptimizationWrapper
 			case RULEBASED:
 				opt = new OptimizerRuleBased();
 				break;	
+			case CONSTRAINED:
+				opt = new OptimizerConstrained();
+				break;	
 			default:
 				throw new DMLRuntimeException("Undefined optimizer: '"+otype+"'.");
 		}

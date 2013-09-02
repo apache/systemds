@@ -41,10 +41,7 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction {
 		{
 			opcode = parts[0];
 			boolean literal = Boolean.parseBoolean(parts[3]);
-			if( literal )
-				in.set_name(parts[1]);
-			else
-				in.split(parts[1]);
+			in.split(parts[1]);
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			

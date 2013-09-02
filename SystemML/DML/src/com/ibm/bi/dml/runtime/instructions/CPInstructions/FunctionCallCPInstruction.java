@@ -199,4 +199,18 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	{
 		return _boundOutputParamNames;
 	}
+	
+	/**
+	 * 
+	 * @param fname
+	 */
+	public void setFunctionName(String fname)
+	{
+		//update instruction string
+		String oldfname = _functionName;
+		instString = instString.replaceAll(oldfname, fname);
+		
+		//set attribute
+		_functionName = fname;
+	}
 }

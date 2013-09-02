@@ -3,6 +3,7 @@ package com.ibm.bi.dml.lops.compile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +34,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -57,7 +59,7 @@ import com.ibm.bi.dml.utils.LopsException;
  * 
  */
 public class Recompiler 
-{
+{	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
 	
 	/**
@@ -130,7 +132,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag2CP( ArrayList<Hops> hops, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag2Forced( ArrayList<Hops> hops, long tid, ExecType et ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -146,7 +148,7 @@ public class Recompiler
 			// update exec type
 			Hops.resetVisitStatus(hops);
 			for( Hops hopRoot : hops )
-				rSetExecType( hopRoot, ExecType.CP );
+				rSetExecType( hopRoot, et );
 			Hops.resetVisitStatus(hops);
 			
 			// construct lops
@@ -248,12 +250,15 @@ public class Recompiler
 	}
 	
 	/**
+	 * Method to recompile program block hierarchy to forced execution time. This affects also
+	 * referenced functions and chains of functions. Use et==null in order to release the forced 
+	 * exec type.
 	 * 
 	 * @param pbs
 	 * @param tid
 	 * @throws DMLRuntimeException
 	 */
-	public static void recompileProgramBlockHierarchy2CP( ArrayList<ProgramBlock> pbs, long tid ) 
+	public static void recompileProgramBlockHierarchy2Forced( ArrayList<ProgramBlock> pbs, long tid, HashSet<String> fnStack, ExecType et ) 
 		throws DMLRuntimeException
 	{
 		try 
@@ -261,7 +266,7 @@ public class Recompiler
 			synchronized( pbs )
 			{
 				for( ProgramBlock pb : pbs )
-					rRecompileProgramBlock2CP(pb, tid);
+					rRecompileProgramBlock2Forced(pb, tid, fnStack, et);
 			}
 		}
 		catch(Exception ex)
@@ -503,31 +508,36 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static void rRecompileProgramBlock2CP( ProgramBlock pb, long tid ) 
+	private static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) 
 		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
 			for (ProgramBlock pb2 : tmp.getChildBlocks())
-				rRecompileProgramBlock2CP(pb2, tid);
+				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
-				rRecompileProgramBlock2CP(pb2, tid);
+				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
-				rRecompileProgramBlock2CP(pb2, tid);
+				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
-				rRecompileProgramBlock2CP(pb2, tid);
+				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}		
-		else if (  pb instanceof FunctionProgramBlock //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
-			    || pb instanceof CVProgramBlock
+		else if (  pb instanceof FunctionProgramBlock )//includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+		{
+			FunctionProgramBlock tmp = (FunctionProgramBlock)pb;
+			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
+		}
+		else if	( pb instanceof CVProgramBlock
 				//|| pb instanceof ELProgramBlock
 				//|| pb instanceof ELUseProgramBlock
 				)
@@ -537,11 +547,35 @@ public class Recompiler
 		else 
 		{	
 			StatementBlock sb = pb.getStatementBlock();
-			if(	sb != null && OptTreeConverter.containsMRJobInstruction(pb))
+			
+			//recompile hops dag to CP (opt: don't recompile if CP and no MR inst)
+			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb)) )
 			{
 				ArrayList<Instruction> tmp = pb.getInstructions();
-				tmp = Recompiler.recompileHopsDag2CP(sb.get_hops(), tid);
+				tmp = Recompiler.recompileHopsDag2Forced(sb.get_hops(), tid, et);
 				pb.setInstructions( tmp );
+			}
+			
+			//recompile functions
+			if( OptTreeConverter.containsFunctionCallInstruction(pb) )
+			{
+				ArrayList<Instruction> tmp = pb.getInstructions();
+				for( Instruction inst : tmp )
+					if( inst instanceof FunctionCallCPInstruction )
+					{
+						FunctionCallCPInstruction func = (FunctionCallCPInstruction)inst;
+						String fname = func.getFunctionName();
+						String fnamespace = func.getNamespace();
+						String fKey = fnamespace+Program.KEY_DELIM+fname;
+						
+						if( !fnStack.contains(fKey) ) //memoization for multiple calls, recursion
+						{
+							fnStack.add(fKey);
+							
+							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnamespace, fname);
+							rRecompileProgramBlock2Forced(fpb, tid, fnStack, et); //recompile chains of functions
+						}
+					}
 			}
 		}
 		

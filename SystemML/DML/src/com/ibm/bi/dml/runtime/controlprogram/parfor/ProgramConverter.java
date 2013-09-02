@@ -463,7 +463,8 @@ public class ProgramConverter
 		//note: instructions not used by function program block
 	
 		return copy;
-	}	
+	}
+
 	
 	/**
 	 * Creates a deep copy of an array of instructions and replaces the placeholders of parworker
@@ -721,14 +722,21 @@ public class ProgramConverter
 		return rSerializeFunctionProgramBlocks( fpb, cand );
 	}
 	
-	public static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand )
+	/**
+	 * 
+	 * @param pbs
+	 * @param cand
+	 * @throws DMLRuntimeException
+	 */
+	public static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand ) 
+		throws DMLRuntimeException
 	{
 		for( ProgramBlock pb : pbs )
 		{
 			if( pb instanceof WhileProgramBlock )
 			{
 				WhileProgramBlock wpb = (WhileProgramBlock) pb;
-				rFindSerializationCandidates(wpb.getChildBlocks(), cand);			
+				rFindSerializationCandidates(wpb.getChildBlocks(), cand );			
 			}
 			else if ( pb instanceof ForProgramBlock || pb instanceof ParForProgramBlock )
 			{
@@ -748,7 +756,15 @@ public class ProgramConverter
 					if( inst instanceof FunctionCallCPInstruction )
 					{
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
-						cand.add( fci.getNamespace() + Program.KEY_DELIM + fci.getFunctionName() );
+						String fkey = fci.getNamespace() + Program.KEY_DELIM + fci.getFunctionName();
+						if( !cand.contains(fkey) ) //memoization for multiple calls, recursion
+						{
+							cand.add( fkey ); //add to candidates
+							
+							//investigate chains of function calls
+							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fci.getNamespace(), fci.getFunctionName());
+							rFindSerializationCandidates(fpb.getChildBlocks(), cand);
+						}
 					}
 			}
 		}

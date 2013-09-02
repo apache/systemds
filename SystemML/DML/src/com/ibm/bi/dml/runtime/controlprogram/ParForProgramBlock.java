@@ -15,7 +15,7 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.LopProperties;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
@@ -53,7 +53,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTree;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.ProgramRecompiler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -93,7 +92,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	// execution modes
 	public enum PExecMode{
 		LOCAL,      //local (master) multi-core execution mode
-		REMOTE_MR	//remote (MR cluster) execution mode	
+		REMOTE_MR,	//remote (MR cluster) execution mode	
+		UNSPECIFIED
 	}
 
 	// task partitioner
@@ -104,6 +104,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		FACTORING,  //factoring task partitioner  
 		FACTORING_CMIN,  //constrained factoring task partitioner, uses tasksize as min constraint
 		FACTORING_CMAX,  //constrained factoring task partitioner, uses tasksize as max constraint
+		UNSPECIFIED
 	}
 	
 	public enum PDataPartitionFormat {
@@ -114,7 +115,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		COLUMN_WISE,
 		COLUMN_BLOCK_WISE,
 		COLUMN_BLOCK_WISE_N,
-		BLOCK_WISE_M_N;
+		BLOCK_WISE_M_N,
+		UNSPECIFIED;
 
 		/**
 		 * Note: Robust version of valueOf in order to return NONE without exception
@@ -146,23 +148,26 @@ public class ParForProgramBlock extends ForProgramBlock
 	public enum PDataPartitioner {
 		NONE,       // no data partitioning
 		LOCAL,      // local file based partition split on master node
-		REMOTE_MR   // remote partition split using a reblock MR job 
+		REMOTE_MR,  // remote partition split using a reblock MR job 
+		UNSPECIFIED
   	}
 
 	public enum PResultMerge {
 		LOCAL_MEM,  // in-core (in-memory) result merge (output and one input at a time)
 		LOCAL_FILE, // out-of-core result merge (file format dependent)
 		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix 
-		REMOTE_MR // remote parallel result merge
+		REMOTE_MR, // remote parallel result merge
+		UNSPECIFIED,
 	}
 	
 	//optimizer
 	public enum POptMode{
 		NONE,       //no optimization, use defaults and specified parameters
 		RULEBASED, //some simple rule-based rewritings (affects only parfor PB) - similar to HEURISTIC but no exec time estimates
+		CONSTRAINED, //same as rule-based but with given params as constraints
 		HEURISTIC, //some simple cost-based rewritings (affects only parfor PB)
 		GREEDY,     //greedy cost-based optimization algorithm (potentially local optimum, affects all instructions)
-		FULL_DP    //full cost-based optimization algorithm (global optimum, affects all instructions)				
+		FULL_DP,    //full cost-based optimization algorithm (global optimum, affects all instructions)				
 	}
 		
 	// internal parameters
@@ -472,8 +477,6 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
-							if( OptimizerRuleBased.getRIXExecType(moVar, dpf) == LopProperties.ExecType.CP_FILE )
-								dp.disableBinaryCell();
 							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
 							ec.setVariable(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
@@ -707,11 +710,11 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
-		if( FORCE_CP_ON_REMOTE_MR && _optMode == POptMode.NONE )
+		boolean flagForced = false;
+		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE || (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_MR)) )
 		{
 			//tid = 0  because replaced in remote parworker
-			if( !checkMRAndRecompileToCP(0) )
-				LOG.warn("Forced recompile of parfor body to CP instructions failed.");
+			flagForced = checkMRAndRecompileToCP(0);
 		}
 			
 		// Step 1) init parallel workers (serialize PBs)
@@ -770,7 +773,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		//consolidate results into global symbol table
 		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations , numExecutedTasks, 
 				                    ret.getVariables() );
-
+		if( flagForced ) //see step 0
+			releaseForcedRecompile(0);
+		
 		if( MONITOR ) 
 		{
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
@@ -1042,6 +1047,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	/**
+	 * Recompile program block hierarchy to forced CP if MR instructions or functions.
+	 * Returns true if recompile was necessary and possible
 	 * 
 	 * @param tid
 	 * @return
@@ -1051,8 +1058,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws DMLRuntimeException
 	{
 		//no MR instructions, ok
-		if( !OptTreeConverter.rContainsMRJobInstruction(this) )
-			return true;
+		if( !OptTreeConverter.rContainsMRJobInstruction(this, true) )
+			return false;
 		
 		//no statement block, failed
 		if( _sb == null ) {
@@ -1061,12 +1068,22 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 		
 		//try recompile MR instructions to CP
-		Recompiler.recompileProgramBlockHierarchy2CP(_childBlocks, tid);
-		
-		return !OptTreeConverter.rContainsMRJobInstruction(this);
+		HashSet<String> fnStack = new HashSet<String>();
+		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
+		return true;
 	}
 	
-	
+	/**
+	 * 
+	 * @param tid
+	 * @throws DMLRuntimeException
+	 */
+	private void releaseForcedRecompile(long tid) 
+		throws DMLRuntimeException
+	{
+		HashSet<String> fnStack = new HashSet<String>();
+		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, null);
+	}
 	
 	
 	/**

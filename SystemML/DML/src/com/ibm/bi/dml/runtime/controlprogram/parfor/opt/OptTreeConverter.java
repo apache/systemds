@@ -426,7 +426,7 @@ public class OptTreeConverter
 			int N = fpb.getNumIterations();
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? String.valueOf(N) : 
 															  String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
-			
+
 			switch(fpb.getExecMode())
 			{
 				case LOCAL:
@@ -435,6 +435,8 @@ public class OptTreeConverter
 				case REMOTE_MR:
 					node.setExecType(ExecType.MR);
 					break;
+				case UNSPECIFIED:
+					node.setExecType(null);
 			}
 			
 			if( !topLevel )
@@ -461,6 +463,7 @@ public class OptTreeConverter
 			node.addParam(ParamType.DATA_PARTITIONER, lparams.get(ParForStatementBlock.DATA_PARTITIONER));
 			node.addParam(ParamType.TASK_PARTITIONER, lparams.get(ParForStatementBlock.TASK_PARTITIONER));
 			node.addParam(ParamType.RESULT_MERGE, lparams.get(ParForStatementBlock.RESULT_MERGE));
+			//TODO task size
 		}
 		else //last level program block
 		{
@@ -588,7 +591,7 @@ public class OptTreeConverter
 	 * @param pb
 	 * @return
 	 */
-	public static boolean rContainsMRJobInstruction( ProgramBlock pb )
+	public static boolean rContainsMRJobInstruction( ProgramBlock pb, boolean inclFunctions )
 	{
 		boolean ret = false;
 		
@@ -596,7 +599,7 @@ public class OptTreeConverter
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
 			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
-				ret = rContainsMRJobInstruction(pb2);
+				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
@@ -604,11 +607,11 @@ public class OptTreeConverter
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
-				ret = rContainsMRJobInstruction(pb2);
+				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
-				ret = rContainsMRJobInstruction(pb2);
+				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
@@ -616,7 +619,7 @@ public class OptTreeConverter
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
 			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
-				ret = rContainsMRJobInstruction(pb2);
+				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}		
@@ -630,7 +633,8 @@ public class OptTreeConverter
 		}
 		else 
 		{
-			ret = containsMRJobInstruction(pb);
+			ret =   containsMRJobInstruction(pb)
+			      | (inclFunctions && containsFunctionCallInstruction(pb));
 		}
 
 		return ret;
@@ -653,6 +657,24 @@ public class OptTreeConverter
 
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	public static boolean containsFunctionCallInstruction( ProgramBlock pb )
+	{
+		boolean ret = false;
+		for( Instruction inst : pb.getInstructions() )
+			if( inst instanceof FunctionCallCPInstruction )
+			{
+				ret = true;
+				break;
+			}
+
+		return ret;
+	}	
 	
 	
 	/**

@@ -13,12 +13,10 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -243,35 +241,7 @@ public class ReduceBase extends MRBaseForCommonInstructions{
 		//	System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
 		}
 	}
-	
-	protected void processReblockInReducer(MatrixIndexes indexes, Iterator<TaggedPartialBlock> values, 
-			HashMap<Byte, MatrixCharacteristics> dimensions)
-	{
-		while(values.hasNext())
-		{
-			TaggedPartialBlock partial=values.next();
-		//	System.out.println("in Reducer: "+indexes+": "+partial);
-			Byte tag=partial.getTag();
-			
-			//there only one block in the cache for this output
-			IndexedMatrixValue block=cachedValues.getFirst(tag);
-			
-			if(block==null)
-			{
-				block=cachedValues.holdPlace(tag, valueClass);
-				int brlen=dimensions.get(tag).numRowsPerBlock;
-				int bclen=dimensions.get(tag).numColumnsPerBlock;
-				int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getRowIndex()-1)*brlen);
-				int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getColumnIndex()-1)*bclen);
-				block.getValue().reset(realBrlen, realBclen);
-				block.getIndexes().setIndexes(indexes);
-			}
-			int row=partial.getBaseObject().getRowIndex();
-			int column=partial.getBaseObject().getColumnIndex();
-			if(row>=0 && column >=0)
-				block.getValue().setValue(row, column, partial.getBaseObject().getValue());
-		}
-	}
+
 	
 	//process one aggregate instruction
 /*	private void processAggregateHelp(MatrixIndexes indexes, TaggedMatrixValue tagged, 

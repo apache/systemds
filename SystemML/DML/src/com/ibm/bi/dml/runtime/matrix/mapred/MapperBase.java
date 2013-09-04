@@ -21,13 +21,10 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
@@ -418,38 +415,13 @@ public abstract class MapperBase extends MRBaseForCommonInstructions{
 	}
 
 	protected void processMapperInstructionsForMatrix(int index) 
-	throws IOException
+		throws IOException
 	{
 		//apply all mapper instructions
 		try {
 			processMixedInstructions(mapper_instructions.get(index));
 		} catch (Exception e) {
 			throw new IOException(e);
-		}
-	}
-	
-	protected void processReblockInMapperAndOutput(int index, MatrixIndexes indexBuffer,
-			TaggedPartialBlock partialBuffer, OutputCollector<Writable, Writable> out) 
-	throws IOException
-	{
-		//apply reblock instructions
-		for(ReblockInstruction ins: reblock_instructions.get(index))
-		{
-			for(IndexedMatrixValue inValue:cachedValues.get(ins.input))
-			{
-				if(inValue==null)
-					continue;
-				long bi=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getRowIndex(),ins.brlen);
-				long bj=UtilFunctions.blockIndexCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
-				indexBuffer.setIndexes(bi, bj);
-				
-				int ci=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getRowIndex(), ins.brlen);
-				int cj=UtilFunctions.cellInBlockCalculation(inValue.getIndexes().getColumnIndex(),ins.bclen);
-				partialBuffer.getBaseObject().set(ci, cj, ((MatrixCell)inValue.getValue()).getValue());
-				partialBuffer.setTag(ins.output);
-				out.collect(indexBuffer, partialBuffer);
-			//	System.out.println("in Mapper, "+inValue+" --> "+indexBuffer+": "+partialBuffer);
-			}
 		}
 	}
 	

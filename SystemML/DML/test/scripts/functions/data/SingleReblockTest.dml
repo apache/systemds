@@ -1,0 +1,2 @@
+A = read( $1 );
+write(A, $2, format="binary");

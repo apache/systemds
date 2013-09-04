@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -12,96 +13,151 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
-
+/**
+ * 
+ * 
+ */
 public class ReblockMapper extends MapperBase 
-implements Mapper<Writable, Writable, Writable, Writable>
+	implements Mapper<Writable, Writable, Writable, Writable>
 {
-	private MatrixIndexes indexBuffer=new MatrixIndexes();
-	private TaggedPartialBlock partialBuffer=new TaggedPartialBlock();
-	private boolean firsttime=true;
-	private OutputCollector<Writable, Writable> cachedCollector;
-	private boolean outputDummyRecord=false;
-	private HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
+	//state of reblock mapper
+	private boolean outputDummyRecords = false;
+	private OutputCollector<Writable, Writable> cachedCollector = null;
+	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<Byte, MatrixCharacteristics>();
+
+	//reblock buffer
+	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<Byte,ReblockBuffer>();
+	private int buffersize =-1;
+	
+	
 	@Override
-	public void map(Writable rawKey, Writable rawValue,
-			OutputCollector<Writable, Writable> out, Reporter reporter)
-			throws IOException {
-		if(firsttime)
-		{
-			cachedCollector=out;
-			firsttime=false;
-		}
+	public void map(Writable rawKey, Writable rawValue, OutputCollector<Writable, Writable> out, Reporter reporter)
+		throws IOException 
+	{
+		cachedCollector = out;
 		commonMap(rawKey, rawValue, out, reporter);
 	}
 	
 	@Override
-	public void configure(JobConf job) {
-		MRJobConfiguration.setMatrixValueClass(job, false);
+	public void configure(JobConf job) 
+	{
+		MRJobConfiguration.setMatrixValueClass(job, false); //worst-case
 		super.configure(job);
-		outputDummyRecord=MapReduceTool.getUniqueKeyPerTask(job, true).equals("0");
-		if(outputDummyRecord)
+		outputDummyRecords = MapReduceTool.getUniqueKeyPerTask(job, true).equals("0");
+		
+		try 
 		{
-			//System.out.println("outputDummyRecord is true! in "+MapReduceTool.getUniqueKeyPerTask(job, true));
-			//parse the reblock instructions 
-			ReblockInstruction[] reblockInstructions;
-			try {
-				reblockInstructions = MRJobConfiguration.getReblockInstructions(job);
-			} catch (DMLUnsupportedOperationException e) {
-				throw new RuntimeException(e);
-			} catch (DMLRuntimeException e) {
-				throw new RuntimeException(e);
-			}
+			ReblockInstruction[] reblockInstructions = MRJobConfiguration.getReblockInstructions(job);
+		
+			//get dimension information
 			for(ReblockInstruction ins: reblockInstructions)
 				dimensions.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+		
+			//compute reblock buffer size
+			buffersize = ReblockBuffer.DEFAULT_BUFFER_SIZE/reblock_instructions.size();
+		} 
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
 		}
 	}
 
+	@Override
 	public void close() throws IOException
 	{
 		super.close();
-		if(!outputDummyRecord || cachedCollector==null)
+		
+		//flush buffered data
+		for( Entry<Byte,ReblockBuffer> e : buffer.entrySet() )
+		{
+			ReblockBuffer rbuff = e.getValue();
+			rbuff.flushBuffer(e.getKey(), cachedCollector);
+		}
+		
+		//handle empty block output (on first task)
+		if( !outputDummyRecords || cachedCollector==null )
 			return;
-		partialBuffer.getBaseObject().set(-1, -1, 0);
-		long r, c;
-		long rlen, clen;
-		int brlen, bclen;
+		MatrixIndexes tmpIx = new MatrixIndexes();
+		TaggedAdaptivePartialBlock tmpVal = new TaggedAdaptivePartialBlock();
+		AdaptivePartialBlock apb = new AdaptivePartialBlock(new PartialBlock(-1,-1,0));
+		tmpVal.setBaseObject(apb);
 		for(Entry<Byte, MatrixCharacteristics> e: dimensions.entrySet())
 		{
-			partialBuffer.setTag(e.getKey());
-			rlen=e.getValue().numRows;
-			clen=e.getValue().numColumns;
-			brlen=e.getValue().numRowsPerBlock;
-			bclen=e.getValue().numColumnsPerBlock;
-			r=1;
-			for(long i=0; i<rlen; i+=brlen)
-			{
-				c=1;
-				for(long j=0; j<clen; j+=bclen)
+			tmpVal.setTag(e.getKey());
+			long rlen=e.getValue().numRows;
+			long clen=e.getValue().numColumns;
+			int brlen=e.getValue().numRowsPerBlock;
+			int bclen=e.getValue().numColumnsPerBlock;
+			
+			for(long i=0, r=1; i<rlen; i+=brlen, r++)
+				for(long j=0, c=1; j<clen; j+=bclen, c++)
 				{
-					indexBuffer.setIndexes(r, c);
-					cachedCollector.collect(indexBuffer, partialBuffer);
-				//	System.out.println("in mapper: "+indexBuffer+": "+partialBuffer);
-					c++;
+					tmpIx.setIndexes(r, c);
+					cachedCollector.collect(tmpIx, tmpVal);
 				}
-				r++;
-			}
 		}
 	}
 	
 	@Override
 	protected void specialOperationsForActualMap(int index,
 			OutputCollector<Writable, Writable> out, Reporter reporter)
-			throws IOException {
+		throws IOException 
+	{
+		//note: invoked from MapperBase for each cell 
+		
 		//apply all instructions
 		processMapperInstructionsForMatrix(index);
 		
 		//apply reblock instructions and output
-		processReblockInMapperAndOutput(index, indexBuffer, partialBuffer, out);
+		processReblockInMapperAndOutput(index, out);
+	}
+	
+	/**
+	 * 
+	 * @param index
+	 * @param indexBuffer
+	 * @param partialBuffer
+	 * @param out
+	 * @throws IOException
+	 */
+	protected void processReblockInMapperAndOutput(int index, OutputCollector<Writable, Writable> out) 
+		throws IOException
+	{
+		for(ReblockInstruction ins : reblock_instructions.get(index))
+		{
+			ArrayList<IndexedMatrixValue> ixvList = cachedValues.get(ins.input);
+			if( ixvList!=null ) {
+				for(IndexedMatrixValue inValue : ixvList )
+				{
+					if(inValue==null)
+						continue;
+					
+					//get buffer
+					ReblockBuffer rbuff = buffer.get(ins.output);
+					if( rbuff==null )
+					{
+						MatrixCharacteristics mc = dimensions.get(ins.output);
+						rbuff = new ReblockBuffer( buffersize, mc.get_rows(), mc.get_cols(), ins.brlen, ins.bclen );
+						buffer.put(ins.output, rbuff);
+					}
+					
+					//append cell to buffer
+					rbuff.appendCell( inValue.getIndexes().getRowIndex(), 
+							          inValue.getIndexes().getColumnIndex(), 
+							          ((MatrixCell)inValue.getValue()).getValue() );
+
+					//flush buffer if necessary
+					if( rbuff.getSize() >= rbuff.getCapacity() )
+						rbuff.flushBuffer( ins.output, out );		
+				}
+			}
+		}
 	}
 }

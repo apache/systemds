@@ -5,33 +5,39 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-
+/**
+ * 
+ * 
+ */
 public class ReblockReducer extends ReduceBase 
-implements Reducer<MatrixIndexes, TaggedPartialBlock, MatrixIndexes, MatrixBlock>{
-	private HashMap<Byte, MatrixCharacteristics> dimensions=new HashMap<Byte, MatrixCharacteristics>();
+	implements Reducer<MatrixIndexes, TaggedAdaptivePartialBlock, MatrixIndexes, MatrixBlock>
+{
+	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<Byte, MatrixCharacteristics>();
 	
-	public void reduce(MatrixIndexes indexes, Iterator<TaggedPartialBlock> values,
+	@Override
+	public void reduce(MatrixIndexes indexes, Iterator<TaggedAdaptivePartialBlock> values,
 			OutputCollector<MatrixIndexes, MatrixBlock> out, Reporter reporter)
-			throws IOException {
-		
+			throws IOException 
+	{	
 		long start=System.currentTimeMillis();
 		
 		commonSetup(reporter);
-		
 		cachedValues.reset();
 		
 		//process the reducer part of the reblock operation
@@ -46,19 +52,94 @@ implements Reducer<MatrixIndexes, TaggedPartialBlock, MatrixIndexes, MatrixBlock
 		reporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 	}
 	
-	public void configure(JobConf job) {
+	@Override
+	public void configure(JobConf job) 
+	{
 		MRJobConfiguration.setMatrixValueClass(job, true);
 		super.configure(job);
-		//parse the reblock instructions 
-		ReblockInstruction[] reblockInstructions;
-		try {
-			reblockInstructions = MRJobConfiguration.getReblockInstructions(job);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
-		} catch (DMLRuntimeException e) {
+		
+		try 
+		{
+			//parse the reblock instructions 
+			ReblockInstruction[] reblockInstructions = MRJobConfiguration.getReblockInstructions(job);			
+			for(ReblockInstruction ins: reblockInstructions)
+				dimensions.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+		} 
+		catch(Exception e) 
+		{
 			throw new RuntimeException(e);
 		}
-		for(ReblockInstruction ins: reblockInstructions)
-			dimensions.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+	}
+	
+	/**
+	 * 
+	 * @param indexes
+	 * @param values
+	 * @param dimensions
+	 */
+	protected void processReblockInReducer(MatrixIndexes indexes, Iterator<TaggedAdaptivePartialBlock> values, 
+			HashMap<Byte, MatrixCharacteristics> dimensions)
+	{
+		while(values.hasNext())
+		{
+			TaggedAdaptivePartialBlock partial=values.next();
+			Byte tag=partial.getTag();
+			
+			//there only one block in the cache for this output
+			IndexedMatrixValue block = cachedValues.getFirst(tag);
+			if(block==null)
+			{
+				block=cachedValues.holdPlace(tag, valueClass); //sparse block
+				int brlen=dimensions.get(tag).numRowsPerBlock;
+				int bclen=dimensions.get(tag).numColumnsPerBlock;
+				int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getRowIndex()-1)*brlen);
+				int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getColumnIndex()-1)*bclen);
+				block.getValue().reset(realBrlen, realBclen);
+				block.getIndexes().setIndexes(indexes);
+			}
+			
+			//merge blocks
+			AdaptivePartialBlock srcBlk = partial.getBaseObject();
+			if( srcBlk.isBlocked() ) //BINARY BLOCK
+			{
+				try 
+				{
+					MatrixBlock out = (MatrixBlock)block.getValue(); //always block output
+					MatrixBlock in = srcBlk.getMatrixBlock();
+					if( in.isInSparseFormat() ) //SPARSE
+					{
+						SparseCellIterator iter = in.getSparseCellIterator();
+						while( iter.hasNext() )
+						{
+							IJV cell = iter.next();
+							out.quickSetValue(cell.i, cell.j, cell.v);
+						}
+					}
+					else //DENSE
+					{
+						for( int i=0; i<in.getNumRows(); i++ )
+							for( int j=0; j<in.getNumColumns(); j++ )
+							{
+								double val = in.getValueDenseUnsafe(i, j);
+								if( val != 0 )
+									out.quickSetValue(i, j, val);
+							}
+					}
+					out.examSparsity();  //speedup subsequent usage
+				} 
+				catch (DMLRuntimeException e) 
+				{
+					throw new RuntimeException(e);
+				}
+			}
+			else //BINARY CELL
+			{
+				PartialBlock pb = srcBlk.getPartialBlock();
+				int row = pb.getRowIndex();
+				int column = pb.getColumnIndex();
+				if(row>=0 && column >=0)
+					block.getValue().setValue(row, column, pb.getValue());	
+			}
+		}
 	}
 }

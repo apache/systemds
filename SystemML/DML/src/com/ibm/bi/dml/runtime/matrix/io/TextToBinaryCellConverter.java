@@ -17,44 +17,32 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 	private boolean toIgnore=false;
 
 	@Override
-	public void convert(LongWritable k1, Text v1) {
-		
-		String str=v1.toString();
+	public void convert(LongWritable k1, Text v1) 
+	{	
+		String str = v1.toString().trim();
 		//added to support matrix market format
-		if(str.startsWith("%%"))
+		if(str.startsWith("%"))
 		{
-			toIgnore=true;
+			if(str.startsWith("%%"))
+				toIgnore=true;
 			hasValue=false;
 			return;
 		}
-		else if(str.startsWith("%"))
-		{
-			hasValue=false;
-			return;
-		}else if(toIgnore)
+		else if(toIgnore)
 		{
 			toIgnore=false;
 			hasValue=false;
 			return;
 		}
-		
-		String cellStr = str.toString().trim();							
-		StringTokenizer st = new StringTokenizer(cellStr, " ");
+									
+		StringTokenizer st = new StringTokenizer(str, " ");
 		indexes.setIndexes( Long.parseLong(st.nextToken()), 
 				            Long.parseLong(st.nextToken()) );
 		value.setValue( Double.parseDouble(st.nextToken()) );
 		hasValue = true;
 		
-		/* FIXME,
-		String[] strs=str.split(" ");
-		if(strs.length==1)
-			strs=str.split(",");
-		indexes.setIndexes(Long.parseLong(strs[0]), Long.parseLong(strs[1]));
-		value.setValue(Double.parseDouble(strs[2]));
-		hasValue=true;
-		*/
 	}
-
+	
 	@Override
 	public boolean hasNext() {
 		return hasValue;

@@ -1,0 +1,4 @@
+A1 = read( $1 );
+A2 = read( $2 );
+write(A1, $3, format="binary");
+write(A2, $4, format="binary");

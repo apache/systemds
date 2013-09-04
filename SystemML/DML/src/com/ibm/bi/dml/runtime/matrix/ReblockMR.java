@@ -16,7 +16,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.TaggedPartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReblockReducer;
@@ -110,8 +110,8 @@ public class ReblockMR {
 		
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(ReblockMapper.class);
-		job.setMapOutputKeyClass(MatrixIndexes.class);
-		job.setMapOutputValueClass(TaggedPartialBlock.class);
+		job.setMapOutputKeyClass(MatrixIndexes.class); //represent key offsets for block
+		job.setMapOutputValueClass(TaggedAdaptivePartialBlock.class); //binary cell/block
 		
 		//configure reducer
 		job.setReducerClass(ReblockReducer.class);

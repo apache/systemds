@@ -40,8 +40,10 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_Redu
  * outputInfos: output format information for the output matrices
  */
 
-public class ReblockMR {
+public class ReblockMR 
+{
 	private static final Log LOG = LogFactory.getLog(ReblockMR.class.getName());
+	
 	public static JobReturn runJob(MRJobInstruction inst, String[] inputs, InputInfo[] inputInfos, long[] rlens, long[] clens, 
 			int[] brlens, int[] bclens, String instructionsInMapper, String reblockInstructions, 
 			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, 
@@ -57,7 +59,8 @@ public class ReblockMR {
 			realIndexes[b]=b;
 		
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, false, brlens, bclens);
+		//(internally used input converters: text2bc for text, identity for binary inputs)
+		MRJobConfiguration.setUpMultipleInputsReblock(job, realIndexes, inputs, inputInfos, brlens, bclens);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);

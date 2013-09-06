@@ -594,9 +594,9 @@ public class DataExpression extends Expression {
 				}
 				
 				// block dimensions must be -1x-1 when format="text"
-				// and they must be 1000x1000 when format="binary"
-				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))
-						|| (format == 2 && (_output.getRowsInBlock() != DMLTranslator.DMLBlockSize || _output.getColumnsInBlock() != DMLTranslator.DMLBlockSize))){
+				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
+				// because we automatically introduce reblocks if blocksizes don't match
+				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))	){
 					
 					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");

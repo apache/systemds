@@ -31,7 +31,7 @@ public class FullReblockTest extends AutomatedTestBase
 	private final static int colsM = 1100; 
 	private final static int rowsV = rowsM*colsM;
 	private final static int colsV = 1; 
-	private final static int blocksize = 1000;
+	private final static int blocksize = 1000; 
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.3;
 	
@@ -129,6 +129,80 @@ public class FullReblockTest extends AutomatedTestBase
 		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.MR);
 	}
 	
+	//binary block
+	
+	@Test
+	public void testBinaryBlockSingleMDenseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeMSparseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleVDenseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeVSparseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMDenseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMSparseCP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.CP);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleMDenseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.MR);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeMSparseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.MR);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleVDenseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.MR);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeVSparseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.MR);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMDenseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.MR);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMSparseMR() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.MR);
+	}
+	
 	/*
 	@Test
 	public void testBinaryCellSingleDenseCP() 
@@ -194,8 +268,9 @@ public class FullReblockTest extends AutomatedTestBase
 				double[][] A1 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
 				double[][] A2 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed2);
 		        
-		        writeMatrix(A1, HOME + INPUT_DIR + "A1", oi, rows, cols, blocksize, blocksize);
-		        writeMatrix(A2, HOME + INPUT_DIR + "A2", oi, rows, cols, blocksize, blocksize);
+				//force binary reblock for 999 to match 1000
+		        writeMatrix(A1, HOME + INPUT_DIR + "A1", oi, rows, cols, blocksize-1, blocksize-1);
+		        writeMatrix(A2, HOME + INPUT_DIR + "A2", oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
 		        double[][] C1 = readMatrix(HOME + OUTPUT_DIR + "C1", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
 		        double[][] C2 = readMatrix(HOME + OUTPUT_DIR + "C2", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
@@ -207,8 +282,9 @@ public class FullReblockTest extends AutomatedTestBase
 			{
 				long seed1 = System.nanoTime();
 		        double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
-		        
-		        writeMatrix(A, HOME + INPUT_DIR + "A", oi, rows, cols, blocksize, blocksize);
+
+				//force binary reblock for 999 to match 1000
+		        writeMatrix(A, HOME + INPUT_DIR + "A", oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
 		        double[][] C = readMatrix(HOME + OUTPUT_DIR + "C", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
 				
@@ -259,7 +335,6 @@ public class FullReblockTest extends AutomatedTestBase
 	private void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols ) 
 		throws DMLRuntimeException, IOException
 	{
-		System.out.println(fname);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);

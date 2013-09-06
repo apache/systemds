@@ -12,9 +12,11 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ReblockBuffer 
@@ -41,6 +43,8 @@ public class ReblockBuffer
 	
 	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  )
 	{
+		//System.out.println("Creating reblock buffer of size "+buffersize);
+		
 		_bufflen = buffersize;
 		_count = 0;
 		
@@ -54,13 +58,70 @@ public class ReblockBuffer
 		_bclen = bclen;
 	}
 	
+	/**
+	 * 
+	 * @param r
+	 * @param c
+	 * @param v
+	 */
 	public void appendCell( long r, long c, double v )
 	{
 		_buffRows[ _count ] = r;
 		_buffCols[ _count ] = c;
 		_buffVals[ _count ] = v;
-		
 		_count++;
+	}
+	
+	/**
+	 * 
+	 * @param r_offset
+	 * @param c_offset
+	 * @param inBlk
+	 * @param index
+	 * @param out
+	 * @throws IOException
+	 */
+	public void appendBlock(long r_offset, long c_offset, MatrixBlock inBlk, byte index, OutputCollector<Writable, Writable> out ) 
+		throws IOException
+	{
+		if( inBlk.isInSparseFormat() ) //SPARSE
+		{
+			SparseCellIterator iter = inBlk.getSparseCellIterator();
+			while( iter.hasNext() )
+			{
+				IJV cell = iter.next();
+				_buffRows[ _count ] = r_offset + cell.i;
+				_buffCols[ _count ] = c_offset + cell.j;
+				_buffVals[ _count ] = cell.v;
+				_count++;
+				
+				//check and flush if required
+				if( _count ==_bufflen )
+					flushBuffer(index, out);
+			}
+		}
+		else //DENSE
+		{
+			//System.out.println("dense merge with ro="+r_offset+", co="+c_offset);
+			int rlen = inBlk.getNumRows();
+			int clen = inBlk.getNumColumns();
+			for( int i=0; i<rlen; i++ )
+				for( int j=0; j<clen; j++ )
+				{
+					double val = inBlk.getValueDenseUnsafe(i, j);
+					if( val !=0 )
+					{
+						_buffRows[ _count ] = r_offset + i;
+						_buffCols[ _count ] = c_offset + j;
+						_buffVals[ _count ] = val;
+						_count++;
+						
+						//check and flush if required
+						if( _count ==_bufflen )
+							flushBuffer(index, out);
+					}
+				}
+		}
 	}
 	
 	public int getSize()
@@ -82,6 +143,9 @@ public class ReblockBuffer
 	public void flushBuffer( byte index, OutputCollector<Writable, Writable> out ) 
 		throws IOException
 	{
+		if( _count == 0 )
+			return;
+		
 		//Timing time = new Timing();
 		//time.start();
 		
@@ -106,7 +170,7 @@ public class ReblockBuffer
 		long cellSize = 24 * _count;
 		if( IX.size()>16 && blockedSize>cellSize )
 			blocked = false;
-		//System.out.println("Reblock Mapper: output in blocked="+blocked);
+		//System.out.println("Reblock Mapper: output in blocked="+blocked+", num="+IX.size());
 		
 		//Step 3)
 		TaggedAdaptivePartialBlock outTVal = new TaggedAdaptivePartialBlock();
@@ -166,8 +230,8 @@ public class ReblockBuffer
 			}
 		}
 		
-		_count = 0;
+		//System.out.println("flushed buffer (count="+_count+") in "+time.stop());
 		
-		//System.out.println("flushed buffer in "+time.stop());
+		_count = 0;
 	}
 }

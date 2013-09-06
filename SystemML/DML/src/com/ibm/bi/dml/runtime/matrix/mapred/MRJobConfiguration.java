@@ -1216,6 +1216,57 @@ public class MRJobConfiguration {
 		
 	}
 	
+	/**
+	 * Specific method because we need to set the input converter class according to the 
+	 * input infos. Note that any mapper instruction before reblock can work on binary block
+	 * if it can work on binary cell as well.
+	 * 
+	 * @param job
+	 * @param inputIndexes
+	 * @param inputs
+	 * @param inputInfos
+	 * @param inBlockRepresentation
+	 * @param brlens
+	 * @param bclens
+	 * @param setConverter
+	 * @param forCMJob
+	 * @throws Exception
+	 */
+	public static void setUpMultipleInputsReblock(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
+												  int[] brlens, int[] bclens) 
+		throws Exception
+	{
+		if(inputs.length!=inputInfos.length)
+			throw new Exception("number of inputs and inputInfos does not match");
+		
+		//set up names of the input matrices and their inputformat information
+		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
+		MRJobConfiguration.setMapFucInputMatrixIndexes(job, inputIndexes);
+		
+		for(int i=0; i<inputs.length; i++)
+			setInputInfo(job, inputIndexes[i], inputInfos[i], (inputInfos[i]==InputInfo.BinaryBlockInputInfo), brlens[i], bclens[i], false);
+		
+		//remove redundant input files
+		Vector<Path> paths=new Vector<Path>();
+		for(int i=0; i<inputs.length; i++)
+		{
+			String name=inputs[i];
+			Path p=new Path(name);
+			boolean redundant=false;
+			for(Path ep: paths)
+				if(ep.equals(p))
+				{
+					redundant=true;
+					break;
+				}
+			if(redundant)
+				continue;
+			MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
+			paths.add(p);
+		}
+	}
+	
+	
 	public static void updateResultDimsUnknown (JobConf job, byte[] updDimsUnknown) {
 		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(updDimsUnknown));
 	}

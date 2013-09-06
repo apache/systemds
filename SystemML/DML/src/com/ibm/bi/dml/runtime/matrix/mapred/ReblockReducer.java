@@ -82,37 +82,55 @@ public class ReblockReducer extends ReduceBase
 	{
 		while(values.hasNext())
 		{
-			TaggedAdaptivePartialBlock partial=values.next();
-			Byte tag=partial.getTag();
+			TaggedAdaptivePartialBlock partial = values.next();
+			Byte tag = partial.getTag();
+			AdaptivePartialBlock srcBlk = partial.getBaseObject();
 			
-			//there only one block in the cache for this output
+			//get output block (note: iterator may contain blocks of different output variables)
 			IndexedMatrixValue block = cachedValues.getFirst(tag);
-			if(block==null)
+			if(block==null )
 			{
-				block=cachedValues.holdPlace(tag, valueClass); //sparse block
-				int brlen=dimensions.get(tag).numRowsPerBlock;
-				int bclen=dimensions.get(tag).numColumnsPerBlock;
-				int realBrlen=(int)Math.min((long)brlen, dimensions.get(tag).numRows-(indexes.getRowIndex()-1)*brlen);
-				int realBclen=(int)Math.min((long)bclen, dimensions.get(tag).numColumns-(indexes.getColumnIndex()-1)*bclen);
+				MatrixCharacteristics mc = dimensions.get(tag);
+				int brlen = mc.numRowsPerBlock;
+				int bclen = mc.numColumnsPerBlock;
+				int realBrlen=(int)Math.min((long)brlen, mc.numRows-(indexes.getRowIndex()-1)*brlen);
+				int realBclen=(int)Math.min((long)bclen, mc.numColumns-(indexes.getColumnIndex()-1)*bclen);
+				block = cachedValues.holdPlace(tag, valueClass); //sparse block
 				block.getValue().reset(realBrlen, realBclen);
 				block.getIndexes().setIndexes(indexes);
 			}
+					
+			
+			//Timing time = new Timing();
+			//time.start();
 			
 			//merge blocks
-			AdaptivePartialBlock srcBlk = partial.getBaseObject();
 			if( srcBlk.isBlocked() ) //BINARY BLOCK
-			{
+			{			
 				try 
 				{
 					MatrixBlock out = (MatrixBlock)block.getValue(); //always block output
+					boolean appendOnly = out.isInSparseFormat();
 					MatrixBlock in = srcBlk.getMatrixBlock();
+					
+					//bulk copy first block
+					if( out.getNonZeros() == 0 ) { 
+						//out.copy(in);
+						block.set(indexes, in);
+						continue;
+					}
+
+					//merge copy other blocks
 					if( in.isInSparseFormat() ) //SPARSE
 					{
 						SparseCellIterator iter = in.getSparseCellIterator();
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();
-							out.quickSetValue(cell.i, cell.j, cell.v);
+							if( appendOnly )
+								out.appendValue(cell.i, cell.j, cell.v);
+							else
+								out.quickSetValue(cell.i, cell.j, cell.v);
 						}
 					}
 					else //DENSE
@@ -121,10 +139,16 @@ public class ReblockReducer extends ReduceBase
 							for( int j=0; j<in.getNumColumns(); j++ )
 							{
 								double val = in.getValueDenseUnsafe(i, j);
-								if( val != 0 )
-									out.quickSetValue(i, j, val);
+								if( val != 0 ) {
+									if( appendOnly )
+										out.appendValue(i, j, val);
+									else
+										out.quickSetValue(i, j, val);
+								}
 							}
 					}
+					if( appendOnly )
+						out.sortSparseRows();
 					out.examSparsity();  //speedup subsequent usage
 				} 
 				catch (DMLRuntimeException e) 
@@ -140,6 +164,11 @@ public class ReblockReducer extends ReduceBase
 				if(row>=0 && column >=0)
 					block.getValue().setValue(row, column, pb.getValue());	
 			}
+			
+			//System.out.println("Merged block (sparse="+(srcBlk.isBlocked()&&srcBlk.isBlocked()&&!srcBlk.getMatrixBlock().isInSparseFormat())+") in "+time.stop());
+			
 		}
+		
+		
 	}
 }

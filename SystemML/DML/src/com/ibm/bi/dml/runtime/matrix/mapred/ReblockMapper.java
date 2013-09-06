@@ -14,8 +14,10 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.AdaptivePartialBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedAdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -30,8 +32,9 @@ public class ReblockMapper extends MapperBase
 	//state of reblock mapper
 	private boolean outputDummyRecords = false;
 	private OutputCollector<Writable, Writable> cachedCollector = null;
-	private HashMap<Byte, MatrixCharacteristics> dimensions = new HashMap<Byte, MatrixCharacteristics>();
-
+	private HashMap<Byte, MatrixCharacteristics> dimensionsOut = new HashMap<Byte, MatrixCharacteristics>();
+	private HashMap<Byte, MatrixCharacteristics> dimensionsIn = new HashMap<Byte, MatrixCharacteristics>();
+	
 	//reblock buffer
 	private HashMap<Byte, ReblockBuffer> buffer = new HashMap<Byte,ReblockBuffer>();
 	private int buffersize =-1;
@@ -58,9 +61,12 @@ public class ReblockMapper extends MapperBase
 		
 			//get dimension information
 			for(ReblockInstruction ins: reblockInstructions)
-				dimensions.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+			{
+				dimensionsIn.put(ins.input, MRJobConfiguration.getMatrixCharacteristicsForInput(job, ins.input));
+				dimensionsOut.put(ins.output, MRJobConfiguration.getMatrixCharactristicsForReblock(job, ins.output));
+			}
 		
-			//compute reblock buffer size
+			//compute reblock buffer size (according to relevant rblk inst of this task only)
 			buffersize = ReblockBuffer.DEFAULT_BUFFER_SIZE/reblock_instructions.size();
 		} 
 		catch (Exception e)
@@ -88,13 +94,14 @@ public class ReblockMapper extends MapperBase
 		TaggedAdaptivePartialBlock tmpVal = new TaggedAdaptivePartialBlock();
 		AdaptivePartialBlock apb = new AdaptivePartialBlock(new PartialBlock(-1,-1,0));
 		tmpVal.setBaseObject(apb);
-		for(Entry<Byte, MatrixCharacteristics> e: dimensions.entrySet())
+		for(Entry<Byte, MatrixCharacteristics> e: dimensionsOut.entrySet())
 		{
 			tmpVal.setTag(e.getKey());
-			long rlen=e.getValue().numRows;
-			long clen=e.getValue().numColumns;
-			int brlen=e.getValue().numRowsPerBlock;
-			int bclen=e.getValue().numColumnsPerBlock;
+			MatrixCharacteristics mc = e.getValue();
+			long rlen = mc.numRows;
+			long clen = mc.numColumns;
+			int brlen = mc.numRowsPerBlock;
+			int bclen = mc.numColumnsPerBlock;
 			
 			for(long i=0, r=1; i<rlen; i+=brlen, r++)
 				for(long j=0, c=1; j<clen; j+=bclen, c++)
@@ -143,19 +150,32 @@ public class ReblockMapper extends MapperBase
 					ReblockBuffer rbuff = buffer.get(ins.output);
 					if( rbuff==null )
 					{
-						MatrixCharacteristics mc = dimensions.get(ins.output);
+						MatrixCharacteristics mc = dimensionsOut.get(ins.output);
 						rbuff = new ReblockBuffer( buffersize, mc.get_rows(), mc.get_cols(), ins.brlen, ins.bclen );
 						buffer.put(ins.output, rbuff);
 					}
 					
-					//append cell to buffer
-					rbuff.appendCell( inValue.getIndexes().getRowIndex(), 
-							          inValue.getIndexes().getColumnIndex(), 
-							          ((MatrixCell)inValue.getValue()).getValue() );
-
-					//flush buffer if necessary
-					if( rbuff.getSize() >= rbuff.getCapacity() )
-						rbuff.flushBuffer( ins.output, out );		
+					//append cells and flush buffer if required
+					MatrixValue mval = inValue.getValue();
+					if( mval instanceof MatrixBlock )
+					{
+						MatrixIndexes inIx = inValue.getIndexes();
+						MatrixCharacteristics mc = dimensionsIn.get(ins.input);
+						long row_offset = (inIx.getRowIndex()-1)*mc.get_rows_per_block() + 1;
+						long col_offset = (inIx.getColumnIndex()-1)*mc.get_cols_per_block() + 1;
+						//append entire block incl. flush on demand
+						rbuff.appendBlock(row_offset, col_offset, (MatrixBlock)mval, ins.output, out );
+					}
+					else //if( mval instanceof MatrixCell )
+					{
+						rbuff.appendCell( inValue.getIndexes().getRowIndex(), 
+								          inValue.getIndexes().getColumnIndex(), 
+								          ((MatrixCell)mval).getValue() );
+						
+						//flush buffer if necessary
+						if( rbuff.getSize() >= rbuff.getCapacity() )
+							rbuff.flushBuffer( ins.output, out );		
+					}
 				}
 			}
 		}

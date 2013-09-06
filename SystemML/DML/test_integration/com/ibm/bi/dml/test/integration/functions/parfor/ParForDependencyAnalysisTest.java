@@ -40,7 +40,7 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * * general parfor validate (e.g., expressions)
  *    48: no, 48b: err, 48c: no   
  * * functions
- *    49a: dep    
+ *    49a: dep, 49b: dep       
  */
 public class ParForDependencyAnalysisTest 
 {
@@ -246,6 +246,10 @@ public class ParForDependencyAnalysisTest
 	@Test
 	public void testDependencyAnalysis49a() { runTest("parfor49a.dml", true); }
 	
+	@Test
+	public void testDependencyAnalysis49b() { runTest("parfor49b.dml", true); }
+	
+	//TODO test for liveout but not parent, needs parser improvements first
 	
 	private void runTest( String scriptFilename, boolean expectedException )
 	{

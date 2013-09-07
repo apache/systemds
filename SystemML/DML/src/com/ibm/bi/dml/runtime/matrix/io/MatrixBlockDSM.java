@@ -5184,7 +5184,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
 		if(cols<=SKINNY_MATRIX_TURN_POINT) {
-			System.out.println(" cols less .. changing sparse from " +  sparse + " to false");
+			//System.out.println(" cols less .. changing sparse from " +  sparse + " to false");
 			sparse=false;
 		}
 		this.reset(rows, cols, sparse);

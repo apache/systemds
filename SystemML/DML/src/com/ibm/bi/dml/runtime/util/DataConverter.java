@@ -301,7 +301,7 @@ public class DataConverter
 		
 		try {
 			MatrixBlock partition = readMatrixFromHDFS(dir, InputInfo.BinaryBlockInputInfo, partSize, 1, rowBlockSize, colBlockSize, localFS);
-			System.out.println("Reading complete...");
+			//System.out.println("Reading complete...");
 			return partition;
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);

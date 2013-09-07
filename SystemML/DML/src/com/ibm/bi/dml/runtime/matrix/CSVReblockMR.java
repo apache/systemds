@@ -403,7 +403,7 @@ public class CSVReblockMR {
 				((MatrixBlock) block.getValue()).copyRowArrayToDense((int)row.indexInBlock, row.container, 0);
 			}
 			((MatrixBlock) block.getValue()).recomputeNonZeros();
-			System.out.println("block+\n"+block);
+			//System.out.println("block+\n"+block);
 		}
 		
 		public void configure(JobConf job) {

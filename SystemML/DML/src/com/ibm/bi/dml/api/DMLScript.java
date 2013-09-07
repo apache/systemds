@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -817,7 +818,7 @@ public class DMLScript {
 		String jobTracker     = job.get("mapred.job.tracker", "local");
 		String taskController = job.get("mapred.task.tracker.task-controller", "org.apache.hadoop.mapred.DefaultTaskController");
 		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
-		String perm           = job.get("dfs.permissions","null"); //note: job.get("dfs.permissions.supergroup",null);
+		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS,"null"); //note: job.get("dfs.permissions.supergroup",null);
 		URI fsURI             = FileSystem.getDefaultUri(job);
 
 		//determine security states
@@ -829,7 +830,7 @@ public class DMLScript {
 		
 		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringHashSet(groupNames) + ", "
 				        + "mapred.job.tracker = " + jobTracker + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
-				        + "fs.default.name = " + fsURI.getScheme() + ", " + "dfs.permissions = " + perm );
+				        + "fs.default.name = " + fsURI.getScheme() + ", " + MRConfigurationNames.DFS_PERMISSIONS+" = " + perm );
 
 		//print warning if permission issues possible
 		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )

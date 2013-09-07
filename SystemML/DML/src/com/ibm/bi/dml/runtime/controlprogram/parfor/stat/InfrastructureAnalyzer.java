@@ -7,6 +7,8 @@ import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
+
 /**
  * Central place for analyzing and obtaining static infrastructure properties
  * such as memory and number of logical processors.
@@ -352,7 +354,7 @@ public class InfrastructureAnalyzer
 				_localJT = jobTracker.equals("local");
 				
 				//HDFS blocksize
-				String blocksize = job.get("dfs.block.size", "134217728");
+				String blocksize = job.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
 				_blocksize = Long.parseLong(blocksize);
 			}		
 		} 

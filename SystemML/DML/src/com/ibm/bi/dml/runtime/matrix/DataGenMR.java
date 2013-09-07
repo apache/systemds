@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRCombiner;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
@@ -262,7 +263,7 @@ public class DataGenMR
 			
 			JobClient client=new JobClient(job);
 			int capacity=client.getClusterStatus().getMaxMapTasks();
-			int dfsblocksize=job.getInt("dfs.block.size", 67108864);
+			int dfsblocksize=job.getInt(MRConfigurationNames.DFS_BLOCK_SIZE, 67108864);
 			int nmapers=Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/(long)dfsblocksize), capacity);
 			job.setNumMapTasks(nmapers);
 			

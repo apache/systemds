@@ -73,16 +73,24 @@ public class DMLConfig
 		_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 	}
 	
+	/**
+	 * 
+	 * @param fileName
+	 * @throws ParseException
+	 */
+	public DMLConfig(String fileName) 
+		throws ParseException
+	{
+		this( fileName, false );
+	}
 	
 	/**
-	 * Constructor to setup a DML configuration
+	 * 
 	 * @param fileName
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws IOException
+	 * @param silent
+	 * @throws ParseException
 	 */
-
-	public DMLConfig(String fileName) 
+	public DMLConfig(String fileName, boolean silent) 
 		throws ParseException
 	{
 		config_file_name = fileName;
@@ -91,7 +99,8 @@ public class DMLConfig
 		}
 		catch (Exception e){
 		    //log error, since signature of generated ParseException doesn't allow to pass it 
-			LOG.error("Failed to parse DML config file ",e);
+			if( !silent )
+				LOG.error("Failed to parse DML config file ",e);
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
 				

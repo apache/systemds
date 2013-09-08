@@ -139,13 +139,13 @@ public class DMLScript {
 		
 		if (_optConfig != null) { // the optional config is specified
 			try { // try to get the default config first 
-				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, true);
 			} catch (Exception e) { // it is ok to not have the default
 				defaultConfig = null;
 				LOG.warn("Default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
 			}
 			try { // try to get the optional config next
-				optionalConfig = new DMLConfig(_optConfig);	
+				optionalConfig = new DMLConfig(_optConfig, false);	
 			} 
 			catch (ParseException e) { // it is not ok as the specification is wrong
 				optionalConfig = null;
@@ -166,7 +166,7 @@ public class DMLScript {
 		}
 		else { // the optional config is not specified
 			try { // try to get the default config 
-				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
 			} catch (ParseException e) { // it is not OK to not have the default
 				defaultConfig = null;
 				throw e;

@@ -77,11 +77,9 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 	protected void processMMCJInMapperAndOutput(AggregateBinaryInstruction aggBinInstruction, 
 			byte tagForLeft, byte tagForRight, TaggedFirstSecondIndexes taggedIndexes,
 			OutputCollector<Writable, Writable> out) throws IOException
-	{
-		ArrayList<IndexedMatrixValue> blkList1 = cachedValues.get(aggBinInstruction.input1);
-		ArrayList<IndexedMatrixValue> blkList2 = cachedValues.get(aggBinInstruction.input2);
-		
+	{		
 		//output the key value pair for the left matrix
+		ArrayList<IndexedMatrixValue> blkList1 = cachedValues.get(aggBinInstruction.input1);
 		if( blkList1 != null )
 			for(IndexedMatrixValue result:blkList1)
 				if(result!=null)
@@ -93,8 +91,9 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 					//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
 				}
 		
-		
 		//output the key value pair for the right matrix
+		//Note: due to cached list reuse after first flush
+		ArrayList<IndexedMatrixValue> blkList2 = cachedValues.get(aggBinInstruction.input2);
 		if( blkList2 != null )
 			for(IndexedMatrixValue result:blkList2)
 				if(result!=null)

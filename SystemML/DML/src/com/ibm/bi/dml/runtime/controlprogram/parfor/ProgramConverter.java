@@ -1763,13 +1763,11 @@ public class ProgramConverter
 	{
 		String lin = in.substring( PARFOR_PB_BEGIN.length(),in.length()-PARFOR_PB_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
-		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
 		
 		ProgramBlock pb = new ProgramBlock(prog);
 		pb.setInstructions(inst);
-		//pb.setVariables(vars);
 		
 		return pb;
 	}
@@ -1785,7 +1783,6 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> insts = new ArrayList<Instruction>();  
-		
 
 		String lin = in.substring( PARFOR_INST_BEGIN.length(),in.length()-PARFOR_INST_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin, ELEMENT_DELIM);
@@ -1793,8 +1790,16 @@ public class ProgramConverter
 		{
 			//Note that at this point only CP instructions and External function instruction can occur
 			String instStr = st.nextToken(); 
-			Instruction tmpinst = CPInstructionParser.parseSingleInstruction(instStr);
-			insts.add( tmpinst );
+			
+			try
+			{
+				Instruction tmpinst = CPInstructionParser.parseSingleInstruction(instStr);
+				insts.add( tmpinst );
+			}
+			catch(Exception ex)
+			{
+				throw new DMLRuntimeException("Failed to parse instruction: " + instStr, ex);
+			}
 		}
 		
 		return insts;

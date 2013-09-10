@@ -113,12 +113,13 @@ public class ReblockReducer extends ReduceBase
 					boolean appendOnly = out.isInSparseFormat();
 					MatrixBlock in = srcBlk.getMatrixBlock();
 					
+					//TODO investigate robustness for mulitple reblock instructions
 					//bulk copy first block
-					if( out.getNonZeros() == 0 ) { 
-						//out.copy(in);
-						block.set(indexes, in);
-						continue;
-					}
+					//if( out.getNonZeros() == 0 ) { 
+					//	//out.copy(in);
+					//	block.set(indexes, in);
+					//	continue;
+					//}
 
 					//merge copy other blocks
 					if( in.isInSparseFormat() ) //SPARSE

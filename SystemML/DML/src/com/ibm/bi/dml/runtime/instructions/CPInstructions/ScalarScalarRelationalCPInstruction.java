@@ -1,6 +1,5 @@
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -24,7 +23,7 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 		
 		BinaryOperator dop = (BinaryOperator) optr;
 		
-		if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
+		/*if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
 			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getIntValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
@@ -41,6 +40,28 @@ public class ScalarScalarRelationalCPInstruction extends RelationalBinaryCPInstr
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}
 		else if ( input1.get_valueType() == ValueType.BOOLEAN && input2.get_valueType() == ValueType.BOOLEAN ) {
+			boolean rval = dop.fn.compare ( so1.getBooleanValue(), so2.getBooleanValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else throw new DMLRuntimeException("compare(): Invalid combination of value types.");
+		*/
+		if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
+			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getIntValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else if ( so1 instanceof DoubleObject && so2 instanceof DoubleObject ) {
+			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getDoubleValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else if ( so1 instanceof IntObject && so2 instanceof DoubleObject) {
+			boolean rval = dop.fn.compare ( so1.getIntValue(), so2.getDoubleValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else if ( so1 instanceof DoubleObject && so2 instanceof IntObject ) {
+			boolean rval = dop.fn.compare ( so1.getDoubleValue(), so2.getIntValue() );
+			sores = (ScalarObject) new BooleanObject(rval); 
+		}
+		else if ( so1 instanceof BooleanObject && so2 instanceof BooleanObject ) {
 			boolean rval = dop.fn.compare ( so1.getBooleanValue(), so2.getBooleanValue() );
 			sores = (ScalarObject) new BooleanObject(rval); 
 		}

@@ -34,7 +34,7 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			String rval = dop.fn.execute(so1.getStringValue(), so2.getStringValue());
 			sores = (ScalarObject) new StringObject(rval);
 		}
-		else if ( input1.get_valueType() == ValueType.INT && input2.get_valueType() == ValueType.INT ) {
+		else if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
 			if ( dop.fn instanceof Divide || dop.fn instanceof Power ) {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
 				double rval = dop.fn.execute ( so1.getIntValue(), so2.getIntValue() );

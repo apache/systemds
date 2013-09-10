@@ -91,6 +91,11 @@ public class IfProgramBlock extends ProgramBlock {
 	public ArrayList<Instruction> getPredicate(){
 		return _predicate;
 	}
+
+	public void setPredicate(ArrayList<Instruction> predicate) {
+		_predicate = predicate;
+		_predicateResultVar = findPredicateResultVar ();
+	}
 	
 	public String getPredicateResultVar(){
 		return _predicateResultVar;

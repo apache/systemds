@@ -39,6 +39,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.MatrixIndexingCPFileInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPFileInstructions.ParameterizedBuiltinCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
@@ -474,7 +476,7 @@ public class OptTreeConverter
 			node.setExecType(ExecType.CP);
 			
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
-			if( node.isCPOnly() && containsMRJobInstruction(pb) )
+			if( node.isCPOnly() && containsMRJobInstruction(pb, false) )
 				node.setExecType(ExecType.MR);
 		}
 		
@@ -598,6 +600,8 @@ public class OptTreeConverter
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
+			ret = containsMRJobInstruction(tmp.getPredicate(), true);
+			if( ret ) return ret;
 			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
@@ -606,6 +610,8 @@ public class OptTreeConverter
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
+			ret = containsMRJobInstruction(tmp.getPredicate(), true);
+			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
@@ -618,6 +624,10 @@ public class OptTreeConverter
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
+			ret = containsMRJobInstruction(tmp.getFromInstructions(), true);
+			ret |= containsMRJobInstruction(tmp.getToInstructions(), true);
+			ret |= containsMRJobInstruction(tmp.getIncrementInstructions(), true);
+			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
@@ -633,7 +643,7 @@ public class OptTreeConverter
 		}
 		else 
 		{
-			ret =   containsMRJobInstruction(pb)
+			ret =   containsMRJobInstruction(pb, true)
 			      | (inclFunctions && containsFunctionCallInstruction(pb));
 		}
 
@@ -645,15 +655,27 @@ public class OptTreeConverter
 	 * @param pb
 	 * @return
 	 */
-	public static boolean containsMRJobInstruction( ProgramBlock pb )
+	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile )
+	{
+		return containsMRJobInstruction(pb.getInstructions(), inclCPFile);
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile )
 	{
 		boolean ret = false;
-		for( Instruction inst : pb.getInstructions() )
-			if( inst instanceof MRJobInstruction )
-			{
-				ret = true;
-				break;
-			}
+		if( instSet!=null )
+			for( Instruction inst : instSet )
+				if( inst instanceof MRJobInstruction
+					|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)))
+				{
+					ret = true;
+					break;
+				}
 
 		return ret;
 	}

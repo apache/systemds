@@ -24,9 +24,12 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -172,6 +175,41 @@ public class Recompiler
 		return newInst;
 	}
 
+	public static ArrayList<Instruction> recompileHopsDag2Forced( Hops hops, long tid, ExecType et ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<Instruction> newInst = null;
+
+		//long begin = System.nanoTime();
+		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		{	
+			// clear existing lops
+			hops.resetVisitStatus();
+			rClearLops( hops );
+
+			// update exec type
+			hops.resetVisitStatus();
+			rSetExecType( hops, et );
+			hops.resetVisitStatus();
+			
+			// construct lops
+			Dag<Lops> dag = new Dag<Lops>();
+			Lops lops = hops.constructLops();
+			lops.addToDag(dag);
+			
+			// construct instructions
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
+		}
+		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
+		//recompileTime += (System.nanoTime()-begin);
+		//recompileCount++;
+		return newInst;
+	}
+	
 	
 	/**
 	 * Note: This overloaded method is required for predicate instructions because
@@ -513,22 +551,42 @@ public class Recompiler
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
-			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			for (ProgramBlock pb2 : tmp.getChildBlocks())
+			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;
+			WhileStatementBlock sbTmp = (WhileStatementBlock)pbTmp.getStatementBlock();
+			//recompile predicate
+			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true)) )			
+				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );
+			
+			//recompile body
+			for (ProgramBlock pb2 : pbTmp.getChildBlocks())
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
-			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
+			IfProgramBlock pbTmp = (IfProgramBlock)pb;	
+			IfStatementBlock sbTmp = (IfStatementBlock)pbTmp.getStatementBlock();
+			//recompile predicate
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true)) )			
+				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );				
+			//recompile body
+			for( ProgramBlock pb2 : pbTmp.getChildBlocksIfBody() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
-			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
+			for( ProgramBlock pb2 : pbTmp.getChildBlocksElseBody() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
-			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			for( ProgramBlock pb2 : tmp.getChildBlocks() )
+			ForProgramBlock pbTmp = (ForProgramBlock)pb;	
+			ForStatementBlock sbTmp = (ForStatementBlock) pbTmp.getStatementBlock();
+			//recompile predicate
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true)) )			
+				pbTmp.setFromInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getFromHops(), tid, et) );				
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true)) )			
+				pbTmp.setToInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getToHops(), tid, et) );				
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true)) )			
+				pbTmp.setIncrementInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getIncrementHops(), tid, et) );				
+			//recompile body
+			for( ProgramBlock pb2 : pbTmp.getChildBlocks() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}		
 		else if (  pb instanceof FunctionProgramBlock )//includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
@@ -549,7 +607,7 @@ public class Recompiler
 			StatementBlock sb = pb.getStatementBlock();
 			
 			//recompile hops dag to CP (opt: don't recompile if CP and no MR inst)
-			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb)) )
+			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb, true)) )
 			{
 				ArrayList<Instruction> tmp = pb.getInstructions();
 				tmp = Recompiler.recompileHopsDag2Forced(sb.get_hops(), tid, et);

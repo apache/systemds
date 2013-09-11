@@ -159,6 +159,7 @@ public class MRJobInstruction extends Instruction
 		this(that.getJobType());
 		Class<MRJobInstruction> cla = MRJobInstruction.class;
 		
+		//copy fields
 		Field[] fields = cla.getDeclaredFields();
 		for( Field f : fields )
 		{
@@ -167,6 +168,16 @@ public class MRJobInstruction extends Instruction
 				f.set(this, f.get(that));
 		}
 		this.dimsUnknownFilePrefix.replaceAll(srcPattern, targetPattern);
+		
+		//replace rand inst strings
+		String rand = getIv_randInstructions();
+		rand = rand.replaceAll(srcPattern, targetPattern);
+		setRandInstructions(rand);
+		
+		//replace inputs/outputs (arrays)
+		inputVars = that.inputVars.clone();
+		outputVars = that.outputVars.clone();
+		iv_resultIndices = that.iv_resultIndices.clone();
 	}
 	
 	/**

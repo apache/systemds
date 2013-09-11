@@ -553,34 +553,8 @@ public class ProgramConverter
 			else if( oInst instanceof MRJobInstruction )
 			{
 				MRJobInstruction tmp = (MRJobInstruction)oInst;
-				inst = new MRJobInstruction(tmp, ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
-				
-				/*MRJobInstruction tmpNew = new MRJobInstruction(tmp.getJobType());
-				Field[] fields = cla.getDeclaredFields();
-				for( Field f : fields )
-				{
-					f.setAccessible(true);
-					if(!Modifier.isStatic(f.getModifiers()))
-						f.set(tmpNew, f.get(tmp));
-				}
-				
-				String[] in = tmp.getIv_inputs().clone();
-				String[] out = tmp.getIv_outputs().clone();
-				String rand = tmp.getIv_randInstructions();
-				if(in!=null)
-					for( int j=0;j<in.length; j++)
-						if( in[j]!=null )
-							in[j]=in[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
-				if(out!=null)
-					for( int j=0;j<out.length; j++)
-						if( out[j]!=null )
-							out[j]=out[j].replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
-				rand = rand.replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, ProgramConverter.CP_CHILD_THREAD+pid);
-				tmpNew.setIv_inputs(in);
-				tmpNew.setIv_outputs(out);	
-				tmpNew.setRandInstructions(rand);
-				
-				inst = tmpNew;*/
+				inst = new MRJobInstruction(tmp, ProgramConverter.CP_ROOT_THREAD_ID, 
+						                         ProgramConverter.CP_CHILD_THREAD+pid );
 			}
 			else
 				throw new DMLUnsupportedOperationException("Unable to clone instruction of type "+cla.toString());

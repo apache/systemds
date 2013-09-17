@@ -53,8 +53,8 @@
 	
 	<!-- only used for build from RTC or from your PC ant cmd line -->
 	<path id="HADOOP.local.classpath">
-		<pathelement location="${hadoop.local.path}/share/hadoop/common/hadoop-common-2.0.4-alpha.jar" />
-		<pathelement location="${hadoop.local.path}/share/hadoop/mapreduce/hadoop-mapreduce-client-core-2.0.4-alpha.jar" />
+		<pathelement location="${hadoop.local.path}/share/hadoop/common/hadoop-common-2.1.0-beta.jar" />
+		<pathelement location="${hadoop.local.path}/share/hadoop/mapreduce/hadoop-mapreduce-client-core-2.1.0-beta.jar" />
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-configuration-1.6.jar" /> 
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-lang-2.5.jar" />
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/jackson-core-asl-1.8.8.jar" />

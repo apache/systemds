@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -679,7 +680,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			
 			try
 			{
-				if( _margin.equals("rows") )
+				if( _margin.equals("rows") ) 
 				{
 					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
 					
@@ -688,7 +689,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 						
-						int blockRow = 0;
 						int blockRowOut = 0;
 						int currentSize = -1;
 						while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, brlen, brlen)) > 0  )
@@ -698,8 +698,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				
 							//get reuse matrix block
 							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
-							int rowPos = 0;
+							block.reset(maxRow, maxCol);
 							
+							int rowPos = 0;
+							int blockRow = Collections.min(keyMap.keySet());
 							for( ; blockRow < (int)Math.ceil(rlen/(double)brlen) && rowPos<brlen ; blockRow++)
 							{
 								if( keyMap.containsKey(blockRow) )
@@ -714,11 +716,12 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 											//copy row
 											for( int j=0; j<tmp.getNumColumns(); j++ ) {
 												double lvalue = tmp.quickGetValue(i, j);
-												block.quickSetValue(rowPos, j, lvalue);
+												if( lvalue != 0 )
+													block.quickSetValue(rowPos, j, lvalue);
 											}
 											rowPos++;
 										}
-								}							
+								}				
 								keyMap.remove(blockRow);
 							}
 							
@@ -740,7 +743,6 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
 						
-						int blockCol = 0;
 						int blockColOut = 0;
 						int currentSize = -1;
 						while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, bclen, bclen)) > 0  )
@@ -750,8 +752,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				
 							//get reuse matrix block
 							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							block.reset(maxRow, maxCol);
 							int colPos = 0;
 							
+							int blockCol = Collections.min(keyMap.keySet());
 							for( ; blockCol < (int)Math.ceil(clen/(double)bclen) && colPos<bclen ; blockCol++)
 							{
 								if( keyMap.containsKey(blockCol) )
@@ -766,7 +770,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 											//copy column
 											for( int i=0; i<tmp.getNumRows(); i++ ){
 												double lvalue = tmp.quickGetValue(i, j);
-												block.quickSetValue(i, colPos, lvalue);
+												if( lvalue != 0 )
+													block.quickSetValue(i, colPos, lvalue);
 											}
 											colPos++;
 										}

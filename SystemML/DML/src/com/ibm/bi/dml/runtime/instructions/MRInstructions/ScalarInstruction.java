@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.EqualsReturnDouble;
@@ -105,25 +107,27 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		for(IndexedMatrixValue in: cachedValues.get(input))
-		{
-			if(in==null)
-				continue;
-		
-			//allocate space for the output value
-			IndexedMatrixValue out;
-			if(input==output)
-				out=tempValue;
-			else
-				out=cachedValues.holdPlace(output, valueClass);
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
+		if( blkList != null )
+			for( IndexedMatrixValue in : blkList )
+			{
+				if(in==null)
+					continue;
 			
-			//process instruction
-			out.getIndexes().setIndexes(in.getIndexes());
-			OperationsOnMatrixValues.performScalarIgnoreIndexes(in.getValue(), out.getValue(), ((ScalarOperator)this.optr));
-			
-			//put the output value in the cache
-			if(out==tempValue)
-				cachedValues.add(output, out);
-		}
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				if(input==output)
+					out=tempValue;
+				else
+					out=cachedValues.holdPlace(output, valueClass);
+				
+				//process instruction
+				out.getIndexes().setIndexes(in.getIndexes());
+				OperationsOnMatrixValues.performScalarIgnoreIndexes(in.getValue(), out.getValue(), ((ScalarOperator)this.optr));
+				
+				//put the output value in the cache
+				if(out==tempValue)
+					cachedValues.add(output, out);
+			}
 	}
 }

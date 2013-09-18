@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
@@ -176,31 +178,34 @@ public class AggregateUnaryInstruction extends UnaryMRInstructionBase {
 			int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		for(IndexedMatrixValue in: cachedValues.get(input))
-		{
-			if(in==null)
-				continue;
-		
-			//allocate space for the output value
-			IndexedMatrixValue out;
-			if(input==output)
-				out=tempValue;
-			else
-				out=cachedValues.holdPlace(output, valueClass);
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
+		if( blkList != null )
+			for(IndexedMatrixValue in: blkList)
+			{
+				if(in==null)
+					continue;
 			
-		/*	String opcode = InstructionUtils.getOpCode(instString);
-			// TODO: hack to support trace. Need to remove it in future.
-			if ( opcode.equals("uatrace") || opcode.equals("uaktrace") || opcode.equals("rdiagM2V") )
-				brlen = bclen = DMLTranslator.DMLBlockSize;
-		*/	
-			//process instruction
-			OperationsOnMatrixValues.performAggregateUnary(in.getIndexes(), in.getValue(), 
-					out.getIndexes(), out.getValue(), ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
-			
-			//put the output value in the cache
-			if(out==tempValue)
-				cachedValues.add(output, out);
-		}
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				if(input==output)
+					out=tempValue;
+				else
+					out=cachedValues.holdPlace(output, valueClass);
+				
+			/*	String opcode = InstructionUtils.getOpCode(instString);
+				// TODO: hack to support trace. Need to remove it in future.
+				if ( opcode.equals("uatrace") || opcode.equals("uaktrace") || opcode.equals("rdiagM2V") )
+					brlen = bclen = DMLTranslator.DMLBlockSize;
+			*/	
+				
+				//process instruction
+				OperationsOnMatrixValues.performAggregateUnary(in.getIndexes(), in.getValue(), 
+						out.getIndexes(), out.getValue(), ((AggregateUnaryOperator)optr), blockRowFactor, blockColFactor);
+				
+				//put the output value in the cache
+				if(out==tempValue)
+					cachedValues.add(output, out);
+			}
 	}
 
 }

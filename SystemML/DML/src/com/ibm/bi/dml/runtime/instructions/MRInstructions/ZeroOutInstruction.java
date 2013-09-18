@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
@@ -108,38 +110,41 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase{
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		for(IndexedMatrixValue in: cachedValues.get(input))
-		{
-			if(in==null)
-				continue;
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		
-			tempRange=getSelectedRange(in, blockRowFactor, blockColFactor);
-			if(tempRange.rowStart==-1 && complementary)//just selection operation
-				return;
-			
-			if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
+		if( blkList != null )
+			for(IndexedMatrixValue in : blkList)
 			{
-				cachedValues.add(output, in);
-				//System.out.println("just write down: "+in);
-				return;
+				if(in==null)
+					continue;
+			
+				tempRange=getSelectedRange(in, blockRowFactor, blockColFactor);
+				if(tempRange.rowStart==-1 && complementary)//just selection operation
+					return;
+				
+				if(tempRange.rowStart==-1 && !complementary)//if no overlap, directly write them out
+				{
+					cachedValues.add(output, in);
+					//System.out.println("just write down: "+in);
+					return;
+				}
+				
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				if(input==output)
+					out=tempValue;
+				else
+					out=cachedValues.holdPlace(output, valueClass);
+				
+				//process instruction
+				
+				OperationsOnMatrixValues.performZeroOut(in.getIndexes(), in.getValue(), 
+						out.getIndexes(), out.getValue(), tempRange, complementary);
+				
+				//put the output value in the cache
+				if(out==tempValue)
+					cachedValues.add(output, out);
 			}
-			
-			//allocate space for the output value
-			IndexedMatrixValue out;
-			if(input==output)
-				out=tempValue;
-			else
-				out=cachedValues.holdPlace(output, valueClass);
-			
-			//process instruction
-			
-			OperationsOnMatrixValues.performZeroOut(in.getIndexes(), in.getValue(), 
-					out.getIndexes(), out.getValue(), tempRange, complementary);
-			
-			//put the output value in the cache
-			if(out==tempValue)
-				cachedValues.add(output, out);
-		}
 		
 	}
 	

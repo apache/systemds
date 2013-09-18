@@ -1,5 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
+import java.util.ArrayList;
+
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -47,26 +49,29 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		
-		for(IndexedMatrixValue in: cachedValues.get(input))
-		{
-			if(in==null)
-				continue;
-			
-			//allocate space for the output value
-			IndexedMatrixValue out;
-			if(input==output)
-				out=tempValue;
-			else
-				out=cachedValues.holdPlace(output, valueClass);
-			
-			//process instruction
-			out.getIndexes().setIndexes(in.getIndexes());
-			OperationsOnMatrixValues.performUnaryIgnoreIndexes(in.getValue(), out.getValue(), (UnaryOperator)optr);
-			
-			//put the output value in the cache
-			if(out==tempValue)
-				cachedValues.add(output, out);
-		}
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
+		
+		if( blkList != null )
+			for(IndexedMatrixValue in : blkList )
+			{
+				if(in==null)
+					continue;
+				
+				//allocate space for the output value
+				IndexedMatrixValue out;
+				if(input==output)
+					out=tempValue;
+				else
+					out=cachedValues.holdPlace(output, valueClass);
+				
+				//process instruction
+				out.getIndexes().setIndexes(in.getIndexes());
+				OperationsOnMatrixValues.performUnaryIgnoreIndexes(in.getValue(), out.getValue(), (UnaryOperator)optr);
+				
+				//put the output value in the cache
+				if(out==tempValue)
+					cachedValues.add(output, out);
+			}
 	}
 
 }

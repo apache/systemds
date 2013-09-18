@@ -79,28 +79,30 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 			IndexedMatrixValue zeroInput, int brlen, int bclen )
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{		
-		for(IndexedMatrixValue imv: cachedValues.get(input))
-		{
-			if( imv == null )
-				continue;
-			
-			//get cached blocks
-			ArrayList<IndexedMatrixValue> out = _cache;
-			//ArrayList<IndexedMatrixValue> out = cachedValues.get(output);
-
-			//process instruction
-			IndexedMatrixValue in = imv;
-			out = MatrixReorgLib.reshape(in, _mcIn.get_rows(), _mcIn.get_cols(), brlen, bclen,
-					                     out, _rows, _cols, brlen, bclen, _byrow);
-			
-			//put the output values in the output cache
-			for( IndexedMatrixValue outBlk : out )
-				cachedValues.add(output, outBlk);
-			
-			//put blocks into own cache
-			if( MatrixReorgLib.ALLOW_BLOCK_REUSE )
-				_cache = out;	
-		}
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
+		if( blkList != null )
+			for(IndexedMatrixValue imv : blkList)
+			{
+				if( imv == null )
+					continue;
+				
+				//get cached blocks
+				ArrayList<IndexedMatrixValue> out = _cache;
+				//ArrayList<IndexedMatrixValue> out = cachedValues.get(output);
+	
+				//process instruction
+				IndexedMatrixValue in = imv;
+				out = MatrixReorgLib.reshape(in, _mcIn.get_rows(), _mcIn.get_cols(), brlen, bclen,
+						                     out, _rows, _cols, brlen, bclen, _byrow);
+				
+				//put the output values in the output cache
+				for( IndexedMatrixValue outBlk : out )
+					cachedValues.add(output, outBlk);
+				
+				//put blocks into own cache
+				if( MatrixReorgLib.ALLOW_BLOCK_REUSE )
+					_cache = out;	
+			}
 	}
 	
 	public long getNumRows()

@@ -182,6 +182,22 @@ public class MatrixBlockDSM extends MatrixValue{
 		return size;
 	}
 	
+	public boolean isEmptyBlock()
+	{
+		boolean ret = false;
+		if( sparse && sparseRows==null )
+			ret = true;
+		else if( !sparse && denseBlock==null ) 	
+			ret = true;
+		if( nonZeros==0 )
+		{
+			//prevent under-estimation
+			recomputeNonZeros();
+			ret = (nonZeros==0);
+		}
+		return ret;
+	}
+	
 	public static class SparsityEstimate
 	{
 		public int estimatedNonZeros=0;
@@ -1589,7 +1605,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			MatrixValue newWithCorrection)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		assert(aggOp.correctionExists);
+		//assert(aggOp.correctionExists); 
 		MatrixBlockDSM cor=checkType(correction);
 		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
@@ -1633,19 +1649,54 @@ public class MatrixBlockDSM extends MatrixValue{
 							cor.quickSetValue(r, 0, buffer._correction);
 						}
 				}
-		}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 		{
-			
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
+			//e.g., ak+ kahan plus as used in sum, mmcj and tsmm
+			if( newWithCor.isInSparseFormat() && aggOp.sparseSafe ) //SPARSE
+			{
+				SparseRow[] bRows = newWithCor.getSparseRows();
+				if( bRows==null ) //early abort on empty block
+					return;
+				for( int r=0; r<Math.min(rlen, bRows.length); r++ )
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					buffer._correction=cor.quickGetValue(r, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
-					quickSetValue(r, c, buffer._sum);
-					cor.quickSetValue(r, c, buffer._correction);
+					SparseRow brow = bRows[r];
+					if( brow != null && brow.size() > 0 ) 
+					{
+						int blen = brow.size();
+						int[] bix = brow.getIndexContainer();
+						double[] bvals = brow.getValueContainer();
+						for( int j=0; j<blen; j++)
+						{
+							int c = bix[j];
+							buffer._sum = this.quickGetValue(r, c);
+							buffer._correction = cor.quickGetValue(r, c);
+							buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, bvals[j]);
+							quickSetValue(r, c, buffer._sum);
+							cor.quickSetValue(r, c, buffer._correction);			
+						}
+					}
 				}
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
+				
+			}
+			else //DENSE or SPARSE (!sparsesafe)
+			{
+				for(int r=0; r<rlen; r++)
+					for(int c=0; c<clen; c++)
+					{
+						buffer._sum=this.quickGetValue(r, c);
+						buffer._correction=cor.quickGetValue(r, c);
+						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
+						quickSetValue(r, c, buffer._sum);
+						cor.quickSetValue(r, c, buffer._correction);
+					}
+			}
+			
+			//change representation if required
+			//(note since ak+ on blocks is currently only applied in MR, hence no need to account for this in mem estimates)
+			examSparsity(); 
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
@@ -1691,7 +1742,7 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		assert(aggOp.correctionExists);
+		//assert(aggOp.correctionExists);
 		MatrixBlockDSM newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
@@ -1708,7 +1759,8 @@ public class MatrixBlockDSM extends MatrixValue{
 					quickSetValue(r+1, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
@@ -4897,6 +4949,8 @@ public class MatrixBlockDSM extends MatrixValue{
 		}
 		
 	}
+	
+	
 	
 	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
 	{

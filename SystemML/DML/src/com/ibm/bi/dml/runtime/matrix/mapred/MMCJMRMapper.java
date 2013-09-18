@@ -11,6 +11,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -87,7 +88,9 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 					taggedIndexes.setTag(tagForLeft);
 					taggedIndexes.setIndexes(result.getIndexes().getColumnIndex(), 
 							result.getIndexes().getRowIndex());
-					out.collect(taggedIndexes, result.getValue());
+					
+					if( !((MatrixBlock)result.getValue()).isEmptyBlock() )
+						out.collect(taggedIndexes, result.getValue());
 					//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
 				}
 		
@@ -101,7 +104,9 @@ implements Mapper<Writable, Writable, Writable, Writable>{
 					taggedIndexes.setTag(tagForRight);
 					taggedIndexes.setIndexes(result.getIndexes().getRowIndex(), 
 							result.getIndexes().getColumnIndex());
-					out.collect(taggedIndexes, result.getValue());
+					
+					if( !((MatrixBlock)result.getValue()).isEmptyBlock() ) 
+						out.collect(taggedIndexes, result.getValue());
 					//System.out.println("In Mapper: output "+taggedIndexes+" "+ result.getValue().getNumRows()+"x"+result.getValue().getNumColumns());
 				}
 	}

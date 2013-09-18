@@ -12,11 +12,13 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
@@ -64,6 +66,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>{
 	private MatrixIndexes indexesbuffer=new MatrixIndexes();
 	private RemainIndexValue remainingbuffer=null;
 	private MatrixValue valueBuffer=null;
+	
+	private boolean outputDummyRecords = false;
 	
 	private long count=0;
 	
@@ -237,6 +241,27 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>{
 			Entry<MatrixIndexes, MatrixValue> entry=it.next();
 			realWriteToCollector(entry.getKey(), entry.getValue());
 		}
+		
+		//handle empty block output (on first reduce task only)
+		if( outputDummyRecords ) //required for rejecting empty blocks in mappers
+		{
+			long rlen = dim1.numRows;
+			long clen = dim2.numColumns;
+			int brlen = dim1.numRowsPerBlock;
+			int bclen = dim2.numColumnsPerBlock;
+			MatrixIndexes tmpIx = new MatrixIndexes();
+			MatrixBlock tmpVal = new MatrixBlock();
+			for(long i=0, r=1; i<rlen; i+=brlen, r++)
+				for(long j=0, c=1; j<clen; j+=bclen, c++)
+				{
+					int realBrlen=(int)Math.min((long)brlen, rlen-(r-1)*brlen);
+					int realBclen=(int)Math.min((long)bclen, clen-(c-1)*bclen);
+					tmpIx.setIndexes(r, c);
+					tmpVal.reset(realBrlen,realBclen);
+					collectFinalMultipleOutputs.collectOutput(tmpIx, tmpVal, 0, cachedReporter);
+				}
+		}
+		
 		if(cachedReporter!=null)
 			cachedReporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 		super.close();
@@ -262,6 +287,8 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>{
 		super.configure(job);
 		if(resultIndexes.length>1)
 			throw new RuntimeException("MMCJMR only outputs one result");
+		
+		outputDummyRecords = MapReduceTool.getUniqueKeyPerTask(job, false).equals("0");
 		
 		try {
 			//valueBuffer=valueClass.newInstance();

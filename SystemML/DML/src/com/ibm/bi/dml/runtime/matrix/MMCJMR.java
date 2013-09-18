@@ -270,6 +270,7 @@ public class MMCJMR {
 		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		//configure reducer
+		// note: the alternative MMCJMRReducer is not maintained
 		job.setReducerClass(MMCJMRReducerWithAggregator.class);
 		
 		

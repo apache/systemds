@@ -9,9 +9,7 @@ import org.apache.hadoop.mapred.JobConf;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
@@ -105,7 +103,6 @@ public class MMCJMRCombinerReducerBase extends ReduceBase{
 			while(values.hasNext())
 			{
 				MatrixValue value=values.next();
-			//	System.out.println("aggregate "+indexes+" "+value);
 				if(needStartAgg)
 				{
 					buffer.reset(value.getNumRows(), value.getNumColumns(), value.isInSparseFormat());

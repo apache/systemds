@@ -1,50 +1,17 @@
 package com.ibm.bi.dml.runtime.matrix.io;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.ibm.bi.dml.runtime.util.SortUtils;
 
-public class SparseRow {
-
-	public static final int initialCapacity=16;
-	private int estimatedNzs=initialCapacity;
-	private int maxNzs=Integer.MAX_VALUE;
-	private int size=0;
-	private double[] values=null;
-	private int[] indexes=null;
-	private static final Log LOG = LogFactory.getLog(SparseRow.class.getName());
-
+public class SparseRow 
+{
+	public static final int initialCapacity = 4;
 	
-	/**
-	 * Computes the size of this {@link SparseRow} object in main memory,
-	 * in bytes, as precisely as possible.  Used for caching purposes.
-	 * 
-	 * @return the size of this object in bytes
-	 */
-	public long getObjectSizeInMemory ()
-	{
-		long all_size = 28;
-		if (values != null)
-			all_size += values.length * 8;
-		if (indexes != null)
-			all_size += indexes.length * 4;
-		return all_size;
-	}
+	private int estimatedNzs = initialCapacity;
+	private int maxNzs = Integer.MAX_VALUE;
+	private int size = 0;
+	private double[] values = null;
+	private int[] indexes = null;
 
-	public String toString()
-	{
-		String ret="";
-		for(int i=0; i<size; i++)
-			ret+=indexes[i]+": "+values[i]+"\t";
-		return ret;
-	}
-/*	public SparseRow()
-	{
-		values=new double[initialCapacity];
-		indexes=new int[initialCapacity];
-	}
-*/	
 	public SparseRow(int estnns, int maxnns)
 	{
 		if(estnns>initialCapacity)
@@ -401,6 +368,18 @@ public class SparseRow {
 	{
 		if( size<=100 || !SortUtils.isSorted(0, size, indexes) )
 			SortUtils.sort(0, size, indexes, values);
+	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	public String toString()
+	{
+		String ret="";
+		for(int i=0; i<size; i++)
+			ret+=indexes[i]+": "+values[i]+"\t";
+		return ret;
 	}
 	
 	public static void main(String[] args) throws Exception

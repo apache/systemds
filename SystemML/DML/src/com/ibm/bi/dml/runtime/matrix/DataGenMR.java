@@ -98,6 +98,7 @@ public class DataGenMR
 		String dataGenInsStr="";
 		int numblocks=0;
 		int maxbrlen=-1, maxbclen=-1;
+		double maxsparsity = -1;
 		
 		for(int i = 0; i < dataGenInstructions.length; i++)
 		{
@@ -115,12 +116,14 @@ public class DataGenMR
 			maxbrlen = Math.max(maxbrlen, brlens[i]);
 			maxbclen = Math.max(maxbclen, bclens[i]);
 
-			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) {
+			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
+			{
 				RandInstruction randInst = (RandInstruction) mrins;
 				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".randinput";//+random.nextInt();
+				maxsparsity = Math.max(maxsparsity, randInst.sparsity);
+				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 				PrintWriter pw = new PrintWriter(fsOut);
-				
 				//for obj reuse and preventing repeated buffer re-allocations
 				StringBuilder sb = new StringBuilder();
 				
@@ -150,9 +153,12 @@ public class DataGenMR
 				fsOut.close();
 				inputInfos[i] = InputInfo.TextCellInputInfo;
 			}
-			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
+			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) 
+			{
 				SeqInstruction seqInst = (SeqInstruction) mrins;
 				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".seqinput";
+				maxsparsity = 1.0; //always dense
+				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 				PrintWriter pw = new PrintWriter(fsOut);
 				
@@ -263,8 +269,10 @@ public class DataGenMR
 			
 			JobClient client=new JobClient(job);
 			int capacity=client.getClusterStatus().getMaxMapTasks();
-			int dfsblocksize=job.getInt(MRConfigurationNames.DFS_BLOCK_SIZE, 67108864);
-			int nmapers=Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/(long)dfsblocksize), capacity);
+			int dfsblocksize=job.getInt(MRConfigurationNames.DFS_BLOCK_SIZE, 134217728);
+			          
+			//nmappers: 1<=n<=capacity, TODO use maxsparsity whenever we have a way of generating sparse rand data
+			int nmapers=Math.max(Math.min((int)(8*maxbrlen*maxbclen*(long)numblocks/(long)dfsblocksize), capacity),1);
 			job.setNumMapTasks(nmapers);
 			
 			//set up what matrices are needed to pass from the mapper to reducer

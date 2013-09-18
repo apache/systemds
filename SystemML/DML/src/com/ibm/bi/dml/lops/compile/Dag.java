@@ -172,7 +172,8 @@ public class Dag<N extends Lops> {
 		/** get number of reducers from job config */
 		JobConf jConf = new JobConf();
 		DMLConfig conf = ConfigurationManager.getConfig();
-		total_reducers = jConf.getInt("mapred.reduce.tasks", conf.getIntValue(DMLConfig.NUM_REDUCERS) );
+		//total_reducers = jConf.getInt("mapred.reduce.tasks", conf.getIntValue(DMLConfig.NUM_REDUCERS) );
+		total_reducers = conf.getIntValue(DMLConfig.NUM_REDUCERS);
 	}
 
 	public ArrayList<Instruction> getJobs(DMLConfig config)

@@ -20,24 +20,28 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class PartialAggregator 
 {
-	private int fileCursor=-1;
 	private int bufferCapacity=0;
 	private int currentBufferSize=0;
-	private Path[] files=null;
 	private Pair<MatrixIndexes,MatrixValue>[] buffer = null;
 	private HashMap<MatrixIndexes,Integer> bufferMap = null;
-	private boolean rowMajor=true;
 	private long rlen=0;
 	private long clen=0;
 	private int brlen=0;
 	private int bclen=0;
-	private FileSystem fs=null;
-	private JobConf job=null;
 	private long numBlocksInRow=0;
 	private long numBlocksInColumn=0;
 	private AggregateBinaryOperator operation;
 	private Class<? extends MatrixValue> valueClass;
 
+	//local file management
+	private boolean memOnly = false; 
+	private boolean rowMajor = true;
+	private JobConf job = null;
+	private FileSystem fs = null;
+	private int fileCursor = -1;
+	private Path[] files = null;
+	
+	
 	/**
 	 * 
 	 * @param conf
@@ -59,15 +63,12 @@ public class PartialAggregator
 			AggregateBinaryOperator op, Class<? extends MatrixValue> vCls) 
 		throws InstantiationException, IllegalAccessException, IOException
 	{
-		job = conf;
-		fs = FileSystem.getLocal(job);
 		rlen = resultRlen;
 		clen = resultClen;
 		brlen = blockRlen;
 		bclen = blockClen;
 		numBlocksInRow = (long)Math.ceil((double)clen/(double)bclen);
 		numBlocksInColumn = (long)Math.ceil((double)rlen/(double)brlen);
-		rowMajor = inRowMajor;
 		operation = op;
 		valueClass = vCls;
 		
@@ -77,23 +78,29 @@ public class PartialAggregator
 		
 		//allocate space for buffer
 		//if the buffer space is already larger than the result size, don't need extra space
-		long elementSize = 77+8*blockRlen*blockClen+20+12+12+4;//matrix block, matrix index, pair, integer in the linked list
+		long elementSize = 77+8*Math.min(rlen,brlen)*Math.min(clen,bclen)+20+12+12+4;//matrix block, matrix index, pair, integer in the linked list
 		bufferCapacity = (int)Math.max(Math.min((memSize/elementSize), (numBlocksInRow*numBlocksInColumn)), 1);
 		buffer = new Pair[bufferCapacity];
 		for(int i=0; i<bufferCapacity; i++)
 			buffer[i] = new Pair<MatrixIndexes, MatrixValue>(new MatrixIndexes(), valueClass.newInstance());
 		bufferMap = new HashMap<MatrixIndexes, Integer>();
 		
-		//the list of files
+		//local file management (if necessary)
 		int n = (int)Math.ceil((double)(numBlocksInRow*numBlocksInColumn)/(double)bufferCapacity);
-		files = new Path[n];
-		String hadoopLocalDir=job.get("mapred.local.dir").split(",")[0];
-		for(int i=0; i<n; i++)
+		memOnly = (n==1);
+		if( !memOnly )
 		{
-			files[i]=new Path(hadoopLocalDir, filePrefix+"_partial_aggregator_"+i);
-			MapReduceTool.deleteFileIfExistOnLFS(files[i], job);
+			job = conf;
+			fs = FileSystem.getLocal(job);
+			rowMajor = inRowMajor;
+			files = new Path[n];
+			String hadoopLocalDir=job.get("mapred.local.dir").split(",")[0];
+			for(int i=0; i<n; i++)
+			{
+				files[i]=new Path(hadoopLocalDir, filePrefix+"_partial_aggregator_"+i);
+				MapReduceTool.deleteFileIfExistOnLFS(files[i], job);
+			}
 		}
-		
 	}
 	
 	/**
@@ -108,16 +115,19 @@ public class PartialAggregator
 	public void aggregateToBuffer(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
 		throws IOException, DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		int newFileCursor=getFileCursor(indexes);
-		if(newFileCursor>=files.length)
+		if( !memOnly )
 		{
-			throw new IOException("indexes: "+indexes+" needs to be put in file #"+newFileCursor+" which exceeds the limit: "+files.length);
-		}
-		if(fileCursor!=newFileCursor)
-		{	
-			writeBuffer();
-			fileCursor=newFileCursor;
-			loadBuffer();
+			int newFileCursor=getFileCursor(indexes);
+			if(newFileCursor>=files.length)
+			{
+				throw new IOException("indexes: "+indexes+" needs to be put in file #"+newFileCursor+" which exceeds the limit: "+files.length);
+			}
+			if(fileCursor!=newFileCursor)
+			{	
+				writeBuffer();
+				fileCursor=newFileCursor;
+				loadBuffer();
+			}
 		}
 		
 		aggregateToBufferHelp(indexes, value, leftcached);
@@ -143,14 +153,15 @@ public class PartialAggregator
 				outputs.collectOutput(buffer[ix].getKey(), buffer[ix].getValue(), j, reporter);
 				nonZeros+=buffer[ix].getValue().getNonZeros();
 			}
-			MapReduceTool.deleteFileIfExistOnHDFS(files[fileCursor], job);
+			if( !memOnly )
+				MapReduceTool.deleteFileIfExistOnHDFS(files[fileCursor], job);
 		}
 		
-		for(int i=fileCursor+1; i<files.length; i++)
-			nonZeros+=copyFileContentAndDelete(files[i], outputs, j, reporter);
-		
-		for(int i=0; i<fileCursor; i++)
-			nonZeros+=copyFileContentAndDelete(files[i], outputs, j, reporter);
+		//flush local fs buffer pages to hdfs
+		if( !memOnly )
+			for(int i=0; i<files.length; i++)
+				if( i != fileCursor ) //current cursor already flushed
+					nonZeros+=copyFileContentAndDelete(files[i], outputs, j, reporter);
 		
 		return nonZeros;
 	}
@@ -162,8 +173,9 @@ public class PartialAggregator
 	public void close() 
 		throws IOException
 	{
-		for(Path file : files)
-			MapReduceTool.deleteFileIfExistOnLFS(file, job);
+		if( !memOnly )
+			for(Path file : files)
+				MapReduceTool.deleteFileIfExistOnLFS(file, job);
 	}
 	
 	/**

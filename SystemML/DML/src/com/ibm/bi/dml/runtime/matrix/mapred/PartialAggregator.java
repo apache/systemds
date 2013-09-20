@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 
@@ -13,6 +12,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
@@ -58,6 +58,7 @@ public class PartialAggregator
 	 * @throws IllegalAccessException
 	 * @throws IOException
 	 */
+	@SuppressWarnings("unchecked")
 	public PartialAggregator(JobConf conf, long memSize, long resultRlen, long resultClen, 
 			int blockRlen, int blockClen, String filePrefix, boolean inRowMajor, 
 			AggregateBinaryOperator op, Class<? extends MatrixValue> vCls) 
@@ -71,10 +72,6 @@ public class PartialAggregator
 		numBlocksInColumn = (long)Math.ceil((double)rlen/(double)brlen);
 		operation = op;
 		valueClass = vCls;
-		
-		System.gc();
-		memSize=Math.min(memSize, Runtime.getRuntime().freeMemory());
-		memSize=(long)((double)memSize*0.8);
 		
 		//allocate space for buffer
 		//if the buffer space is already larger than the result size, don't need extra space
@@ -145,7 +142,7 @@ public class PartialAggregator
 		throws IOException
 	{
 		long nonZeros=0;
-		if(fileCursor>=0)
+		if(memOnly || fileCursor>=0)
 		{
 			//write the currentBufferSize if it is in memory
 			for( Integer ix : bufferMap.values() )
@@ -243,6 +240,9 @@ public class PartialAggregator
 		
 		if(fs.exists(files[fileCursor]))
 		{
+			currentBufferSize = LocalFileUtils.readBlockSequenceFromLocal(files[fileCursor].toString(), buffer, bufferMap);
+			
+			/*
 			SequenceFile.Reader reader=new SequenceFile.Reader(fs, files[fileCursor], job);
 			try
 			{
@@ -258,6 +258,7 @@ public class PartialAggregator
 				if( reader!=null )
 					reader.close();
 			}
+			*/
 		}
 	}
 	
@@ -272,6 +273,9 @@ public class PartialAggregator
 			return;
 		
 		//the old file will be overwritten
+		LocalFileUtils.writeBlockSequenceToLocal(files[fileCursor].toString(), buffer, currentBufferSize);
+		
+		/*
 		SequenceFile.Writer writer=new SequenceFile.Writer(fs, job, files[fileCursor], MatrixIndexes.class, valueClass);
 		try
 		{
@@ -286,6 +290,7 @@ public class PartialAggregator
 			if( writer != null )
 				writer.close();
 		}
+		*/
 	}
 
 	/**
@@ -303,6 +308,16 @@ public class PartialAggregator
 		long nonZeros=0;
 		if(fs.exists(path))
 		{
+			
+			currentBufferSize = LocalFileUtils.readBlockSequenceFromLocal(path.toString(), buffer, bufferMap);
+			for( int i=0; i<currentBufferSize; i++ )
+			{
+				outputs.collectOutput(buffer[i].getKey(), buffer[i].getValue(), j, reporter);
+				nonZeros+=buffer[i].getValue().getNonZeros();	
+			}
+			MapReduceTool.deleteFileIfExistOnHDFS(path, job);
+			
+			/*
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, job);
 			try
 			{
@@ -319,6 +334,7 @@ public class PartialAggregator
 					reader.close();
 				MapReduceTool.deleteFileIfExistOnHDFS(path, job);
 			}
+			*/
 		}
 		return nonZeros;
 	}

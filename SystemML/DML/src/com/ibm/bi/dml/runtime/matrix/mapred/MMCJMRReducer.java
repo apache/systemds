@@ -12,6 +12,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -301,7 +302,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>{
 		int blockRlen=dim1.numRowsPerBlock;
 		int blockClen=dim2.numColumnsPerBlock;
 		int elementSize=(int)Math.ceil((double)(77+8*blockRlen*blockClen+20+12)/0.75);
-		OUT_CACHE_SIZE=MRJobConfiguration.getPartialAggCacheSize(job)/elementSize;
+		OUT_CACHE_SIZE=((int)OptimizerUtils.getMemBudget(true)-MRJobConfiguration.getMMCJCacheSize(job))/elementSize;
 		outCache=new HashMap<MatrixIndexes, MatrixValue>(OUT_CACHE_SIZE);
 	}
 }

@@ -109,6 +109,25 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)((v       ) & 0xFF);
 	}
 	
+
+	@Override
+	public void writeLong(long v) 
+		throws IOException 
+	{
+		if (_count+8 > _bufflen) {
+		    flushBuffer();
+		}
+		
+		_buff[_count++] = (byte)((v >>> 56) & 0xFF);
+		_buff[_count++] = (byte)((v >>> 48) & 0xFF);
+		_buff[_count++] = (byte)((v >>> 40) & 0xFF);
+		_buff[_count++] = (byte)((v >>> 32) & 0xFF);
+		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
+		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
+		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
+		_buff[_count++] = (byte)((v       ) & 0xFF);
+	}
+	
 	@Override
 	public void writeDouble(double v) 
 		throws IOException 
@@ -153,11 +172,6 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	
 	@Override
 	public void writeFloat(float v) throws IOException {
-		throw new IOException("Not supported.");
-	}
-
-	@Override
-	public void writeLong(long v) throws IOException {
 		throw new IOException("Not supported.");
 	}
 

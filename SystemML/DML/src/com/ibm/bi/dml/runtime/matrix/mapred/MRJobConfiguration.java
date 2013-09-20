@@ -174,7 +174,7 @@ public class MRJobConfiguration {
 	
 	private static final String DIMS_UNKNOWN_FILE_PREFIX = "dims.unknown.file.prefix";
 	
-	private static final String PARTIAL_AGG_CACHE_SIZE="partial.aggregate.cache.size";
+	private static final String MMCJ_CACHE_SIZE="mmcj.cache.size";
 	
 	private static final String PARTITION_FLAGS   = "partition.flags";
 	private static final String PARTITION_FORMATS = "partition.formats";
@@ -241,14 +241,14 @@ public class MRJobConfiguration {
 		return ret;
 	}
 	
-	public static void setPartialAggCacheSize(JobConf job, int size)
+	public static void setMMCJCacheSize(JobConf job, int size)
 	{
-		job.setInt(PARTIAL_AGG_CACHE_SIZE, size);
+		job.setInt(MMCJ_CACHE_SIZE, size);
 	}
 	
-	public static int getPartialAggCacheSize(JobConf job)
+	public static int getMMCJCacheSize(JobConf job)
 	{
-		return job.getInt(PARTIAL_AGG_CACHE_SIZE, 0);
+		return job.getInt(MMCJ_CACHE_SIZE, 0);
 	}
 	
 	public static void setMatrixValueClass(JobConf job, boolean blockRepresentation)

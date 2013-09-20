@@ -9,6 +9,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -149,9 +150,10 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 			throw new RuntimeException(e);
 		} 
 		
-		int outbufferSize=MRJobConfiguration.getPartialAggCacheSize(job);
+		int cacheSize = MRJobConfiguration.getMMCJCacheSize(job);
+		int outBufferSize = (int)OptimizerUtils.getMemBudget(true) - cacheSize;
 		try {
-			aggregator=new PartialAggregator(job, (long)outbufferSize, dim1.numRows, dim2.numColumns, 
+			aggregator=new PartialAggregator(job, (long)outBufferSize, dim1.numRows, dim2.numColumns, 
 					dim1.numRowsPerBlock, dim2.numColumnsPerBlock, MapReduceTool.getGloballyUniqueName(job), (tagForLeft!=0), 
 					(AggregateBinaryOperator) aggBinInstruction.getOperator(), valueClass);
 		} catch (Exception e) {

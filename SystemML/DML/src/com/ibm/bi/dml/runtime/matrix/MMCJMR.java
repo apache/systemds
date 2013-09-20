@@ -79,84 +79,45 @@ public class MMCJMR {
 			MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown_Array, new String[]{output}, new OutputInfo[]{outputinfo}, inBlockRepresentation);
 		}
 
-		
-		//get the total amount of jvm memory
-		int partialAggCacheSize=MRJobConfiguration.getJVMMaxMemSize(job);
-		
-	//	LOG.info("total mem size: "+partialAggCacheSize);
-		
-		//take away the misc memory requirement by hadoop
-		partialAggCacheSize-=MRJobConfiguration.getMiscMemRequired(job);
-		
-		//take away some mall memory needed for run the reduce function
-		partialAggCacheSize-=300000000;//200MB
-		
-	//	LOG.info("after misc use for hadoop: "+partialAggCacheSize);
-		
 		AggregateBinaryInstruction ins=(AggregateBinaryInstruction) MRInstructionParser.parseSingleInstruction(aggBinInstrction);
 		MatrixCharacteristics dim1 = MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, ins.input1);
 		MatrixCharacteristics dim2 = MRJobConfiguration.getMatrixCharactristicsForBinAgg(job, ins.input2);
 		
-		
 		if(dim1.numRowsPerBlock>dim1.numRows)
 			dim1.numRowsPerBlock=(int) dim1.numRows;
-		
 		if(dim1.numColumnsPerBlock>dim1.numColumns)
 			dim1.numColumnsPerBlock=(int) dim1.numColumns;
-		
 		if(dim2.numRowsPerBlock>dim2.numRows)
 			dim2.numRowsPerBlock=(int) dim2.numRows;
-		
 		if(dim2.numColumnsPerBlock>dim2.numColumns)
 			dim2.numColumnsPerBlock=(int) dim2.numColumns;
-		
-		LOG.trace("dim1: "+dim1);
-		LOG.trace("dim2: "+dim2);
-		
+	
 		long blockSize1=77+8*dim1.numRowsPerBlock*dim1.numColumnsPerBlock;
 		long blockSize2=77+8*dim2.numRowsPerBlock*dim2.numColumnsPerBlock;
 		long blockSizeResult=77+8*dim1.numRowsPerBlock*dim2.numColumnsPerBlock;
 		
-	//	LOG.info("block sizes: "+blockSize1+", "+blockSize2+","+blockSizeResult);
-		
-		long cacheSize;
+		long cacheSize = -1;
 		//cache the first result
 		if(dim1.numRows<dim2.numColumns)
 		{
 			long numBlocks=(long)Math.ceil((double)dim1.numRows/(double)dim1.numRowsPerBlock);
-	//		LOG.info("numBlocks: "+numBlocks);
 			cacheSize=numBlocks*(20+blockSize1)+32;
-	//		LOG.info(numBlocks+"*(20+"+blockSize1+")+32");
 		}
 		else //cache the second result
 		{
 			long numBlocks=(long)Math.ceil((double)dim2.numColumns/(double) dim2.numColumnsPerBlock);
-	//		LOG.info("numBlocks: "+numBlocks);
 			cacheSize=numBlocks*(20+blockSize2)+32;
-	//		LOG.info(numBlocks+")*(20+"+blockSize2+")+32");
 		}
-			
-	//	LOG.info("cacheSize: "+cacheSize);
-		
-		partialAggCacheSize-=cacheSize;
-		
 		//the cached key-value pair
-		partialAggCacheSize-=Math.max(blockSize1, blockSize2);
-		
+		cacheSize += Math.max(blockSize1, blockSize2);
 		//the cached single result
-		partialAggCacheSize-=blockSizeResult;
-		
-		if(partialAggCacheSize<0)
-			partialAggCacheSize=0;
-		
-		MRJobConfiguration.setPartialAggCacheSize(job, partialAggCacheSize);
-		
-		LOG.trace("aggregator buffer size: "+partialAggCacheSize);
+		cacheSize += blockSizeResult;
+		MRJobConfiguration.setMMCJCacheSize(job, (int)cacheSize);
 		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job, ExecMode.CLUSTER); 
 		
-		
+		//run mmcj job
 		RunningJob runjob=JobClient.runJob(job);
 		
 		/* Process different counters */

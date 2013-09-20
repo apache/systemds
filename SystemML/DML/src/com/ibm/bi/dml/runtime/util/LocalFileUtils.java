@@ -9,12 +9,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lops;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
+import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class LocalFileUtils 
@@ -102,6 +106,7 @@ public class LocalFileUtils
 		}	
 	}
 	
+	
 	/**
 	 * 
 	 * @param filePathAndName
@@ -124,6 +129,7 @@ public class LocalFileUtils
 				fos.close ();	
 		}	
 	}
+
 	
 	/**
 	 * NOTE: this is an experimental method (achieves 25% improvement for dense matrices)
@@ -172,7 +178,72 @@ public class LocalFileUtils
 				fos.close();
 		}	
 	}
+
+
+	/**
+	 * 
+	 * @param filePathAndName
+	 * @param outValues
+	 * @return
+	 * @throws IOException 
+	 */
+	public static int readBlockSequenceFromLocal( String filePathAndName, Pair<MatrixIndexes,MatrixValue>[] outValues, HashMap<MatrixIndexes, Integer> outMap) 
+		throws IOException
+	{
+		FileInputStream fis = new FileInputStream( filePathAndName );
+		BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
+		DataInputStream in = new DataInputStream( bis );
+		int bufferSize = 0;
+		
+		try
+		{
+			int len = in.readInt();
+			for( int i=0; i<len; i++ )
+			{
+				outValues[i].getKey().readFields(in);
+				outValues[i].getValue().readFields(in);
+				outMap.put( outValues[i].getKey(), i );
+			}
+			bufferSize = len;
+		}
+		finally
+		{
+			if( in != null )
+				in.close();
+		}
+			
+		return bufferSize;
+	}
 	
+	/**
+	 * 
+	 * @param filePathAndName
+	 * @param inValues
+	 * @param len
+	 * @throws IOException 
+	 */
+	public static void writeBlockSequenceToLocal( String filePathAndName, Pair<MatrixIndexes,MatrixValue>[] inValues, int len ) 
+		throws IOException
+	{
+		FileOutputStream fos = new FileOutputStream( filePathAndName );
+		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
+		
+		try 
+		{
+			out.writeInt(len);
+			for( int i=0; i<len; i++ )
+			{
+				inValues[i].getKey().write(out);
+				inValues[i].getValue().write(out);
+			}
+		}
+		finally
+		{
+			if( out != null )
+				out.close ();	
+		}	
+	}
+
 
 	/**
 	 * 

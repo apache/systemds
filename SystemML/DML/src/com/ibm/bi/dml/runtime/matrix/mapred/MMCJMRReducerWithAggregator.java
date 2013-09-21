@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import org.apache.hadoop.io.Writable;
@@ -177,6 +178,7 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		//handle empty block output (on first reduce task only)
 		if( outputDummyRecords ) //required for rejecting empty blocks in mappers
 		{
+			HashMap<MatrixIndexes,Integer> bufferMap = aggregator.getBufferMap();
 			long rlen = dim1.numRows;
 			long clen = dim2.numColumns;
 			int brlen = dim1.numRowsPerBlock;
@@ -188,10 +190,13 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 				{
 					int realBrlen=(int)Math.min((long)brlen, rlen-(r-1)*brlen);
 					int realBclen=(int)Math.min((long)bclen, clen-(c-1)*bclen);
-					
 					tmpIx.setIndexes(r, c);
-					tmpVal.reset(realBrlen,realBclen);
-					collectFinalMultipleOutputs.collectOutput(tmpIx, tmpVal, 0, cachedReporter);
+					//output empty blocks if necessary
+					if( !bufferMap.containsKey(tmpIx) )
+					{
+						tmpVal.reset(realBrlen,realBclen);
+						collectFinalMultipleOutputs.collectOutput(tmpIx, tmpVal, 0, cachedReporter);
+					}
 				}
 		}
 		

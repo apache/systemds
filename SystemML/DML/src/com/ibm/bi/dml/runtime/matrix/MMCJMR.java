@@ -108,10 +108,10 @@ public class MMCJMR {
 			long numBlocks=(long)Math.ceil((double)dim2.numColumns/(double) dim2.numColumnsPerBlock);
 			cacheSize=numBlocks*(20+blockSize2)+32;
 		}
-		//the cached key-value pair
-		cacheSize += Math.max(blockSize1, blockSize2);
-		//the cached single result
-		cacheSize += blockSizeResult;
+		//add known memory consumption (will be substracted from output buffer)
+		cacheSize += 2* Math.max(blockSize1, blockSize2) //the cached key-value pair  (plus input instance)
+				  +  blockSizeResult //the cached single result
+				  +  MRJobConfiguration.getMiscMemRequired(job); //misc memory requirement by hadoop
 		MRJobConfiguration.setMMCJCacheSize(job, (int)cacheSize);
 		
 		//set unique working dir

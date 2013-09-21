@@ -142,17 +142,16 @@ public class PartialAggregator
 		throws IOException
 	{
 		long nonZeros=0;
-		if(memOnly || fileCursor>=0)
+		
+		//write the currentBufferSize if something is in memory
+		for( Integer ix : bufferMap.values() )
 		{
-			//write the currentBufferSize if it is in memory
-			for( Integer ix : bufferMap.values() )
-			{
-				outputs.collectOutput(buffer[ix].getKey(), buffer[ix].getValue(), j, reporter);
-				nonZeros+=buffer[ix].getValue().getNonZeros();
-			}
-			if( !memOnly )
-				MapReduceTool.deleteFileIfExistOnHDFS(files[fileCursor], job);
+			outputs.collectOutput(buffer[ix].getKey(), buffer[ix].getValue(), j, reporter);
+			nonZeros+=buffer[ix].getValue().getNonZeros();
 		}
+		if( !memOnly )
+			MapReduceTool.deleteFileIfExistOnHDFS(files[fileCursor], job);
+	
 		
 		//flush local fs buffer pages to hdfs
 		if( !memOnly )
@@ -212,6 +211,15 @@ public class PartialAggregator
 		buffer[currentBufferSize].getValue().copy(value);
 		bufferMap.put(buffer[currentBufferSize].getKey(), currentBufferSize);
 		currentBufferSize++;		
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public HashMap<MatrixIndexes,Integer> getBufferMap()
+	{
+		return bufferMap;
 	}
 	
 

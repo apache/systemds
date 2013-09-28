@@ -432,6 +432,17 @@ public class ReorgOp extends Hops {
 		return ret;
 	}
 	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.ReorgOp )
+			return false;
+		
+		ReorgOp that2 = (ReorgOp)that;		
+		return (   op == that2.op
+				&& getInput().get(0) == that2.getInput().get(0));
+	}
+	
 	
 	@Override
 	public void printMe() throws HopsException 

@@ -204,4 +204,16 @@ public class ReblockOp extends Hops {
 
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.Reblock )
+			return false;
+		
+		ReblockOp that2 = (ReblockOp)that;	
+		return (   _rows_in_block == that2._rows_in_block
+				&& _cols_in_block == that2._cols_in_block
+				&& getInput().get(0) == that2.getInput().get(0));
+	}
 }

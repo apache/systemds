@@ -352,4 +352,15 @@ public class AggUnaryOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.AggUnaryOp )
+			return false;
+		
+		AggUnaryOp that2 = (AggUnaryOp)that;		
+		return (   _op == that2._op
+				&& getInput().get(0) == that2.getInput().get(0));
+	}
 }

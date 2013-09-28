@@ -107,4 +107,10 @@ public class CrossvalOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		return false;
+	}
 }

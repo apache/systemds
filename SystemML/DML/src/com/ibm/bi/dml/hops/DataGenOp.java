@@ -358,4 +358,29 @@ public class DataGenOp extends Hops
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.DataGenOp )
+			return false;
+		
+		DataGenOp that2 = (DataGenOp)that;	
+		boolean ret = (  method == that2.method
+				      && sparsity == that2.sparsity
+					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+		if( ret )
+		{
+			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )
+			{
+				String key1 = e.getKey();
+				int pos1 = e.getValue();
+				int pos2 = that2._paramIndexMap.get(key1);
+				ret &= (   that2.getInput().get(pos2)!=null
+					    && getInput().get(pos1) == that2.getInput().get(pos2) );
+			}
+		}
+		
+		return ret;
+	}
 }

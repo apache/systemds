@@ -337,5 +337,22 @@ public class LeftIndexingOp  extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if(    that._kind!=Kind.Indexing 
+			&& getInput().size() != that.getInput().size() )
+		{
+			return false;
+		}
+		
+		return (  getInput().get(0) == that.getInput().get(0)
+				&& getInput().get(1) == that.getInput().get(1)
+				&& getInput().get(2) == that.getInput().get(2)
+				&& getInput().get(3) == that.getInput().get(3)
+				&& getInput().get(4) == that.getInput().get(4)
+				&& getInput().get(5) == that.getInput().get(5));
+	}
 
 }

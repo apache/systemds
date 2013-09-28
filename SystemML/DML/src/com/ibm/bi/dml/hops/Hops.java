@@ -645,6 +645,87 @@ abstract public class Hops {
 
 	}
 
+	public int rule_CommonSubexpressionElimination( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
+		throws HopsException 
+	{
+		int ret = 0;
+		if( get_visited() == Hops.VISIT_STATUS.DONE )
+			return ret;
+
+		if( getInput().size()==0 ) //LEAF NODE
+		{
+			if( this instanceof DataOp && ((DataOp)this).isRead() && !dataops.containsKey(get_name()) )
+				dataops.put(get_name(), this);
+			if( this instanceof LiteralOp && !literalops.containsKey(get_name()) )
+			{
+				literalops.put(get_name(), this);
+			}
+		}
+		else //INNER NODE
+ 		{			
+			//step 1: merge leaf nodes (data, literal)
+			for( int i=0; i<getInput().size(); i++ )
+			{
+				Hops hi = getInput().get(i);
+				if( hi instanceof DataOp && ((DataOp)hi).isRead() && dataops.containsKey(hi.get_name()) )
+				{
+					//replace child node ref
+					Hops tmp = dataops.get(hi.get_name());
+					tmp.getParent().add(this);
+					getInput().set(i, tmp);
+					ret++;
+				}
+				if( hi instanceof LiteralOp && literalops.containsKey(hi.get_name()) )
+				{
+					//replace child node ref
+					if(hi.get_valueType()==literalops.get(hi.get_name()).get_valueType())
+					{
+						Hops tmp = literalops.get(hi.get_name());
+						tmp.getParent().add(this);
+						getInput().set(i, tmp);
+						ret++;
+					}
+				}
+			}
+			
+			//step 2: merge parent nodes
+			if( getParent().size()>1 ) //multiple consumers
+			{
+				//for all pairs 
+				for( int i=0; i<getParent().size()-1; i++ )
+					for( int j=i+1; j<getParent().size(); j++ )
+					{
+						Hops h1 = getParent().get(i);
+						Hops h2 = getParent().get(j);
+						if( h1.compare(h2) ) //merge h2 into h1
+						{
+							//remove h2 from parent list
+							getParent().remove(j);
+							//replace h2 w/ h1 in h2-parent inputs
+							ArrayList<Hops> parent = h2.getParent();
+							for( Hops p : parent )
+							{
+								for( int k=0; k<p.getInput().size(); k++ )
+									if( p.getInput().get(k)==h2 )
+										p.getInput().set(k, h1);
+							}
+							ret++;
+							j--;
+						}
+					}
+						
+			}
+				
+			//step 3: process childs recursively
+			for(Hops hi : this.getInput())
+				ret+=hi.rule_CommonSubexpressionElimination(dataops, literalops);	
+		}
+		
+		this.set_visited(Hops.VISIT_STATUS.DONE);
+
+		return ret;
+	}
+	
 	public void rule_RehangTransientWriteParents(StatementBlock sb) throws HopsException {
 		if (this instanceof DataOp && ((DataOp) this).get_dataop() == DataOpTypes.TRANSIENTWRITE
 				&& !this.getParent().isEmpty()) {
@@ -1546,6 +1627,9 @@ abstract public class Hops {
 	}
 
 	public abstract Object clone() throws CloneNotSupportedException;
+	
+	public abstract boolean compare( Hops that );
+	
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for Hops

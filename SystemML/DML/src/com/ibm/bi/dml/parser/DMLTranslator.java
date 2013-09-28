@@ -421,6 +421,20 @@ public class DMLTranslator {
 		eval_rule_BlockSizeAndReblock(dmlp);
 		
 		/**
+		 * Rule: CommonSubexpressionElimination. For all statement blocks, 
+		 * eliminate common subexpressions within dags by merging equivalent
+		 * operators (same input, equal parameters) bottom-up. For the moment,
+		 * this only applies within a dag, later this should be extended across
+		 * statements block (global, inter-procedure). 
+		 */
+
+		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
+		{
+			this.resetHopsDAGVisitStatus(dmlp);
+			eval_rule_CommonSubexpressionElimination(dmlp);
+		}
+		
+		/**
 		 * Rule: Determine the optimal order of execution for a chain of
 		 * matrix multiplications Solution: Classic Dynamic Programming
 		 * Approach Currently, the approach based only on matrix dimensions
@@ -621,6 +635,103 @@ public class DMLTranslator {
 		} // end else
 		
 	} // end method
+	
+	
+	/////
+	// handle rule rule_CommonSubexpressionElimination
+	
+	/**
+	 * 
+	 * @param dmlp
+	 * @throws LanguageException
+	 * @throws HopsException
+	 */
+	private void eval_rule_CommonSubexpressionElimination(DMLProgram dmlp) 
+		throws LanguageException, HopsException
+	{	
+		// for each namespace, handle function statement blocks
+		for (String namespaceKey : dmlp.getNamespaces().keySet())
+			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
+			{
+				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+				eval_rule_CommonSubexpressionElimination(fsblock);
+			}
+		
+		// handle regular statement blocks in "main" method
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) 
+		{
+			StatementBlock current = dmlp.getStatementBlock(i);
+			eval_rule_CommonSubexpressionElimination(current);
+		}
+	}
+		
+	private void eval_rule_CommonSubexpressionElimination(StatementBlock current) 
+		throws HopsException
+	{	
+		if (current instanceof FunctionStatementBlock)
+		{
+			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
+			for (StatementBlock sb : fstmt.getBody())
+				eval_rule_CommonSubexpressionElimination(sb);
+		}
+		else if (current instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock) current;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			eval_rule_CommonSubexpressionElimination(wsb.getPredicateHops());
+			for (StatementBlock sb : wstmt.getBody())
+				eval_rule_CommonSubexpressionElimination(sb);
+		}	
+		else if (current instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) current;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			eval_rule_CommonSubexpressionElimination(isb.getPredicateHops());
+			for (StatementBlock sb : istmt.getIfBody())
+				eval_rule_CommonSubexpressionElimination(sb);
+			for (StatementBlock sb : istmt.getElseBody())
+				eval_rule_CommonSubexpressionElimination(sb);
+		}
+		else if (current instanceof ForStatementBlock)
+		{
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			eval_rule_CommonSubexpressionElimination(fsb.getFromHops());
+			eval_rule_CommonSubexpressionElimination(fsb.getToHops());
+			eval_rule_CommonSubexpressionElimination(fsb.getIncrementHops());
+			for (StatementBlock sb : fstmt.getBody())
+				eval_rule_CommonSubexpressionElimination(sb);
+		}
+		else 
+			eval_rule_CommonSubexpressionElimination(current.get_hops());
+	}
+	
+	private void eval_rule_CommonSubexpressionElimination(ArrayList<Hops> hops) 
+		throws HopsException 
+	{
+		if( hops == null )
+			return;
+		
+		HashMap<String, Hops> dataops = new HashMap<String, Hops>();
+		HashMap<String, Hops> literalops = new HashMap<String, Hops>();
+		for (Hops h : hops) 
+		{
+			int cseMerged = h.rule_CommonSubexpressionElimination(dataops, literalops);
+			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
+		}
+	}
+	
+	private void eval_rule_CommonSubexpressionElimination(Hops hops) 
+		throws HopsException 
+	{
+		if( hops == null )
+			return;
+		
+		HashMap<String, Hops> dataops = new HashMap<String, Hops>();
+		HashMap<String, Hops> literalops = new HashMap<String, Hops>();
+		int cseMerged = hops.rule_CommonSubexpressionElimination(dataops, literalops);
+		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
+	}
 	
 
 	//TODO Take nested blocks into account

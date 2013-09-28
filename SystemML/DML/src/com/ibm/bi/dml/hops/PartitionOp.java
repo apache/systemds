@@ -115,4 +115,10 @@ public class PartitionOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		return false;
+	}
 }

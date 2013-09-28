@@ -762,4 +762,17 @@ public class TertiaryOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.TertiaryOp )
+			return false;
+		
+		TertiaryOp that2 = (TertiaryOp)that;	
+		return (   op == that2.op
+				&& getInput().get(0) == that2.getInput().get(0)
+				&& getInput().get(1) == that2.getInput().get(1)
+				&& getInput().get(2) == that2.getInput().get(2));
+	}
 }

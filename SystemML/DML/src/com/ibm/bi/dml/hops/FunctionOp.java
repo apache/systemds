@@ -170,5 +170,11 @@ public class FunctionOp extends Hops
 		ret._outputs = _outputs.clone();
 		
 		return ret;
-	}	
+	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		return false;
+	}
 }

@@ -57,6 +57,13 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
 
+	/**
+	 * Enables common subexpression elimination in dags. There is however, a potential tradeoff
+	 * between computation redundancy and data transfer between MR jobs. Since, we do not reason
+	 * about transferred data yet, this rewrite rule is enabled by default.
+	 */
+	public static boolean ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
+	
 	
 	//////////////////////
 	// Optimizer types  //

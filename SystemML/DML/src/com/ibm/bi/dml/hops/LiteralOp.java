@@ -275,4 +275,10 @@ public class LiteralOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		return false;
+	}
 }

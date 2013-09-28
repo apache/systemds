@@ -574,4 +574,15 @@ public class UnaryOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.UnaryOp )
+			return false;
+		
+		UnaryOp that2 = (UnaryOp)that;		
+		return (   _op == that2._op
+				&& getInput().get(0) == that2.getInput().get(0));
+	}
 }

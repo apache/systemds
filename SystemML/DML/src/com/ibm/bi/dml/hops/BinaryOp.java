@@ -1267,4 +1267,16 @@ public class BinaryOp extends Hops {
 		
 		return ret;
 	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		if( that._kind!=Kind.BinaryOp )
+			return false;
+		
+		BinaryOp that2 = (BinaryOp)that;
+		return (   op == that2.op
+				&& getInput().get(0) == that2.getInput().get(0)
+				&& getInput().get(1) == that2.getInput().get(1));
+	}
 }

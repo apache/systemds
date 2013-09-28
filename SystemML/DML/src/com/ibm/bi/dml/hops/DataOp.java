@@ -233,6 +233,11 @@ public class DataOp extends Hops {
 	public FileFormatTypes getFormatType() {
 		return _formatType;
 	}
+	
+	public boolean isRead()
+	{
+		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD );
+	}
 
 	@Override
 	public String getOpString() {
@@ -583,5 +588,11 @@ public class DataOp extends Hops {
 		//note: no deep cp of params since read-only 
 		
 		return ret;
+	}
+	
+	@Override
+	public boolean compare( Hops that )
+	{
+		return false;
 	}
 }

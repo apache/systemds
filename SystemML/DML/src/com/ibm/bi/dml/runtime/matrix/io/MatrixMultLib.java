@@ -171,18 +171,18 @@ public class MatrixMultLib
 							//rest, not aligned to 8-blocks
 							for( int j = 0; j < bn; j++)
 								c[ cix+j ] += val * b[ bix+j ];
-							//unrolled 8-block 
-							for( int j = bn; j < n; j+=8) 
+							//unrolled 8-block
+							for( int j=bn, jix1=cix+bn, jix2=bix+bn; j < n; j+=8, jix1+=8, jix2+=8 ) 
 							{
-								c[ cix+j ]   += val * b[ bix+j ];
-								c[ cix+j+1 ] += val * b[ bix+j+1 ];
-								c[ cix+j+2 ] += val * b[ bix+j+2 ];
-								c[ cix+j+3 ] += val * b[ bix+j+3 ];
-								c[ cix+j+4 ] += val * b[ bix+j+4 ];
-								c[ cix+j+5 ] += val * b[ bix+j+5 ];
-								c[ cix+j+6 ] += val * b[ bix+j+6 ];
-								c[ cix+j+7 ] += val * b[ bix+j+7 ];
-							}	
+								c[ jix1   ] += val * b[ jix2   ];
+								c[ jix1+1 ] += val * b[ jix2+1 ];
+								c[ jix1+2 ] += val * b[ jix2+2 ];
+								c[ jix1+3 ] += val * b[ jix2+3 ];
+								c[ jix1+4 ] += val * b[ jix2+4 ];
+								c[ jix1+5 ] += val * b[ jix2+5 ];
+								c[ jix1+6 ] += val * b[ jix2+6 ];
+								c[ jix1+7 ] += val * b[ jix2+7 ];
+							}
 						}
 					}	
 			}
@@ -435,16 +435,16 @@ public class MatrixMultLib
 							for(int j = 0; j < bn; j++)
 								c[cix+j] += val * b[bix+j];
 							//unrolled 8-block 
-							for(int j = bn; j < n; j+=8)
+							for(int j=bn, jix1=cix+bn, jix2=bix+bn; j < n; j+=8, jix1+=8, jix2+=8 )
 							{
-								c[cix+j]   += val * b[bix+j];
-								c[cix+j+1] += val * b[bix+j+1];
-								c[cix+j+2] += val * b[bix+j+2];
-								c[cix+j+3] += val * b[bix+j+3];
-								c[cix+j+4] += val * b[bix+j+4];
-								c[cix+j+5] += val * b[bix+j+5];
-								c[cix+j+6] += val * b[bix+j+6];
-								c[cix+j+7] += val * b[bix+j+7];
+								c[ jix1   ] += val * b[ jix2   ];
+								c[ jix1+1 ] += val * b[ jix2+1 ];
+								c[ jix1+2 ] += val * b[ jix2+2 ];
+								c[ jix1+3 ] += val * b[ jix2+3 ];
+								c[ jix1+4 ] += val * b[ jix2+4 ];
+								c[ jix1+5 ] += val * b[ jix2+5 ];
+								c[ jix1+6 ] += val * b[ jix2+6 ];
+								c[ jix1+7 ] += val * b[ jix2+7 ];
 							}
 						}						
 					}
@@ -638,16 +638,16 @@ public class MatrixMultLib
 										for(int j = bjmax; j < bjmax+bn; j++) 
 											c[ ix3+j ]  += val * a[ ix1+j ];
 										//unrolled 8-block
-										for(int j = bjmax+bn; j < bjmin; j+=8) 
+										for(int j=bjmax+bn, jix1=ix3+bjmax+bn, jix2=ix1+bjmax+bn; j < bjmin; j+=8, jix1+=8, jix2+=8) 
 										{
-											c[ ix3+j ]    += val * a[ ix1+j ];
-											c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
-											c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
-											c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
-											c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
-											c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
-											c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
-											c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
+											c[ jix1   ]  += val * a[ jix2   ];
+											c[ jix1+1 ]  += val * a[ jix2+1 ];
+											c[ jix1+2 ]  += val * a[ jix2+2 ];
+											c[ jix1+3 ]  += val * a[ jix2+3 ];
+											c[ jix1+4 ]  += val * a[ jix2+4 ];
+											c[ jix1+5 ]  += val * a[ jix2+5 ];
+											c[ jix1+6 ]  += val * a[ jix2+6 ];
+											c[ jix1+7 ]  += val * a[ jix2+7 ];
 										}
 									}
 								}
@@ -700,16 +700,16 @@ public class MatrixMultLib
 									for(int k = 0; k < bn; k++)
 										val += a[ ix1+k ] * a[ix2+k];
 									//unrolled 8-block
-									for(int k = bn; k < n; k+=8)
+									for(int k=bn, kix1=ix1+bn, kix2=ix2+bn; k < n; k+=8, kix1+=8, kix2+=8)
 									{
-										val += a[ ix1+k ]   * a[ix2+k];
-										val += a[ ix1+k+1 ] * a[ix2+k+1];
-										val += a[ ix1+k+2 ] * a[ix2+k+2];
-										val += a[ ix1+k+3 ] * a[ix2+k+3];
-										val += a[ ix1+k+4 ] * a[ix2+k+4];
-										val += a[ ix1+k+5 ] * a[ix2+k+5];
-										val += a[ ix1+k+6 ] * a[ix2+k+6];
-										val += a[ ix1+k+7 ] * a[ix2+k+7];
+										val += a[ kix1   ] * a[ kix2   ];
+										val += a[ kix1+1 ] * a[ kix2+1 ];
+										val += a[ kix1+2 ] * a[ kix2+2 ];
+										val += a[ kix1+3 ] * a[ kix2+3 ];
+										val += a[ kix1+4 ] * a[ kix2+4 ];
+										val += a[ kix1+5 ] * a[ kix2+5 ];
+										val += a[ kix1+6 ] * a[ kix2+6 ];
+										val += a[ kix1+7 ] * a[ kix2+7 ];
 									}
 									c[ ix3+j ] = val;	
 								}

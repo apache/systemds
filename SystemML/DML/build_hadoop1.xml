@@ -153,7 +153,7 @@
 			<exclude name="com/ibm/bi/dml/test/**" />
 			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
-			<!--zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar"/--> 
+			<zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar"/> 
 			<!-- TZ: IHC 1.0.3 has commons-math-2.2.jar already, but Cloudera does not have it yet, so we need to include it for now. -->
 			<!-- TZ: To include any other jar, we need code scan and legal approval -->
 			<manifest>

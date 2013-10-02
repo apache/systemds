@@ -361,6 +361,7 @@ public class AggUnaryOp extends Hops {
 		
 		AggUnaryOp that2 = (AggUnaryOp)that;		
 		return (   _op == that2._op
+				&& _direction == that2._direction
 				&& getInput().get(0) == that2.getInput().get(0));
 	}
 }

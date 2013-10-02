@@ -430,8 +430,11 @@ public class DMLTranslator {
 
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 		{
+			//Timing time = new Timing();
+			//time.start();
 			this.resetHopsDAGVisitStatus(dmlp);
 			eval_rule_CommonSubexpressionElimination(dmlp);
+			//System.out.println("CSE: "+time.stop());
 		}
 		
 		/**
@@ -716,7 +719,9 @@ public class DMLTranslator {
 		HashMap<String, Hops> literalops = new HashMap<String, Hops>();
 		for (Hops h : hops) 
 		{
-			int cseMerged = h.rule_CommonSubexpressionElimination(dataops, literalops);
+			int cseMerged = h.rule_CommonSubexpressionElimination_MergeLeafs(dataops, literalops);
+			h.resetVisitStatus();
+			cseMerged = h.rule_CommonSubexpressionElimination(dataops, literalops);
 			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		}
 	}
@@ -729,7 +734,9 @@ public class DMLTranslator {
 		
 		HashMap<String, Hops> dataops = new HashMap<String, Hops>();
 		HashMap<String, Hops> literalops = new HashMap<String, Hops>();
-		int cseMerged = hops.rule_CommonSubexpressionElimination(dataops, literalops);
+		int cseMerged = hops.rule_CommonSubexpressionElimination_MergeLeafs(dataops, literalops);
+		hops.resetVisitStatus();
+		cseMerged = hops.rule_CommonSubexpressionElimination(dataops, literalops);
 		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 	}
 	

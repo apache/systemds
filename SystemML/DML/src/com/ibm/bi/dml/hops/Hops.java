@@ -645,7 +645,14 @@ abstract public class Hops {
 
 	}
 
-	public int rule_CommonSubexpressionElimination( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
+	/**
+	 * 
+	 * @param dataops
+	 * @param literalops
+	 * @return
+	 * @throws HopsException
+	 */
+	public int rule_CommonSubexpressionElimination_MergeLeafs( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
 		throws HopsException 
 	{
 		int ret = 0;
@@ -654,16 +661,20 @@ abstract public class Hops {
 
 		if( getInput().size()==0 ) //LEAF NODE
 		{
-			if( this instanceof DataOp && ((DataOp)this).isRead() && !dataops.containsKey(get_name()) )
-				dataops.put(get_name(), this);
-			if( this instanceof LiteralOp && !literalops.containsKey(get_name()) )
+			if( this instanceof LiteralOp )
 			{
-				literalops.put(get_name(), this);
+				if( !literalops.containsKey(get_name()) )
+					literalops.put(get_name(), this);
 			}
+			else if( this instanceof DataOp && ((DataOp)this).isRead())
+			{
+				if(!dataops.containsKey(get_name()) )
+					dataops.put(get_name(), this);
+			} 
 		}
 		else //INNER NODE
- 		{			
-			//step 1: merge leaf nodes (data, literal)
+		{
+			//merge leaf nodes (data, literal)
 			for( int i=0; i<getInput().size(); i++ )
 			{
 				Hops hi = getInput().get(i);
@@ -673,52 +684,78 @@ abstract public class Hops {
 					Hops tmp = dataops.get(hi.get_name());
 					tmp.getParent().add(this);
 					getInput().set(i, tmp);
-					ret++;
+					ret++; 
 				}
-				if( hi instanceof LiteralOp && literalops.containsKey(hi.get_name()) )
+				else if( hi instanceof LiteralOp && literalops.containsKey(hi.get_name()) )
 				{
-					//replace child node ref
-					if(hi.get_valueType()==literalops.get(hi.get_name()).get_valueType())
-					{
-						Hops tmp = literalops.get(hi.get_name());
+					Hops tmp = literalops.get(hi.get_name());
+					if(hi.get_valueType()==tmp.get_valueType())
+					{	
+						//replace child node ref
 						tmp.getParent().add(this);
 						getInput().set(i, tmp);
 						ret++;
 					}
 				}
-			}
-			
-			//step 2: merge parent nodes
-			if( getParent().size()>1 ) //multiple consumers
-			{
-				//for all pairs 
-				for( int i=0; i<getParent().size()-1; i++ )
-					for( int j=i+1; j<getParent().size(); j++ )
-					{
-						Hops h1 = getParent().get(i);
-						Hops h2 = getParent().get(j);
-						if( h1.compare(h2) ) //merge h2 into h1
-						{
-							//remove h2 from parent list
-							getParent().remove(j);
-							//replace h2 w/ h1 in h2-parent inputs
-							ArrayList<Hops> parent = h2.getParent();
-							for( Hops p : parent )
-							{
-								for( int k=0; k<p.getInput().size(); k++ )
-									if( p.getInput().get(k)==h2 )
-										p.getInput().set(k, h1);
-							}
-							ret++;
-							j--;
-						}
-					}
-						
-			}
 				
-			//step 3: process childs recursively
-			for(Hops hi : this.getInput())
-				ret+=hi.rule_CommonSubexpressionElimination(dataops, literalops);	
+				//recursive invocation (direct return on merged nodes)
+				ret += hi.rule_CommonSubexpressionElimination_MergeLeafs(dataops, literalops);		
+			}	
+		}
+		
+		this.set_visited(Hops.VISIT_STATUS.DONE);
+		return ret;
+	}
+
+	
+	public int rule_CommonSubexpressionElimination( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
+		throws HopsException 
+	{
+		int ret = 0;
+		if( get_visited() == Hops.VISIT_STATUS.DONE )
+			return ret;
+
+		//step 1: merge childs recursively first
+		for(Hops hi : this.getInput())
+			ret += hi.rule_CommonSubexpressionElimination(dataops, literalops);	
+		
+		
+		//step 2: merge parent nodes
+		if( getParent().size()>1 ) //multiple consumers
+		{
+			//for all pairs 
+			for( int i=0; i<getParent().size()-1; i++ )
+				for( int j=i+1; j<getParent().size(); j++ )
+				{
+					Hops h1 = getParent().get(i);
+					Hops h2 = getParent().get(j);
+					
+					if( h1==h2 )
+					{
+						//remove redundant h2 from parent list
+						getParent().remove(j);
+						j--;
+					}
+					else if( h1.compare(h2) ) //merge h2 into h1
+					{
+						//remove h2 from parent list
+						getParent().remove(j);
+						
+						//replace h2 w/ h1 in h2-parent inputs
+						ArrayList<Hops> parent = h2.getParent();
+						for( Hops p : parent )
+							for( int k=0; k<p.getInput().size(); k++ )
+								if( p.getInput().get(k)==h2 )
+									p.getInput().set(k, h1);
+						
+						//replace h2 w/ h1 in h2-input parents
+						for( Hops in : h2.getInput() )
+							in.getParent().remove(h2);
+						
+						ret++;
+						j--;
+					}
+				}
 		}
 		
 		this.set_visited(Hops.VISIT_STATUS.DONE);

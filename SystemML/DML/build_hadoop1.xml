@@ -98,12 +98,12 @@
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<copy includeemptydirs="false" todir="${build.folder}">
+		<!--copy includeemptydirs="false" todir="${build.folder}">
 			<fileset dir="examples">
 				<exclude name="**/*.launch" />
 				<exclude name="**/*.java" />
 			</fileset>
-		</copy>
+		</copy-->
 		<copy includeemptydirs="false" todir="${build.folder}">
 			<fileset dir="test">
 				<exclude name="**/*.launch" />

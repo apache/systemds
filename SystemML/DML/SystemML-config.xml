@@ -5,10 +5,10 @@
    <!-- hdfs tmp working directory--> 
    <scratch>scratch_space</scratch> 
 
-   <!-- compiler optimization level, valid values: 1 | 2 | 3 -->
+   <!-- compiler optimization level, valid values: 1 | 2 | 3, default: 2 -->
    <optlevel>2</optlevel>  
 
-   <!-- default number of reduce tasks per MR job -->
+   <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
    <numreducers>10</numreducers> 
 
    <!-- default block dim for binary files -->

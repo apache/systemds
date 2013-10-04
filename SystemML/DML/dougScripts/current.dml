@@ -1,2 +1,0 @@
-A = Rand(rows =10, cols = 10);
-writeMM(A,"A.mm");

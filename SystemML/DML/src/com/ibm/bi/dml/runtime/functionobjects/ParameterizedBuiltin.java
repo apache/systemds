@@ -140,6 +140,9 @@ public class ParameterizedBuiltin extends ValueFunction {
 				mean = Double.parseDouble(params.get("mean"));
 				sd = Double.parseDouble(params.get("sd"));
 			}
+			if ( sd <= 0 ) {
+				throw new DMLRuntimeException("Standard deviation for Normal distribution must be positive (" + sd + ")");
+			}
 			NormalDistributionImpl ndist = new NormalDistributionImpl(mean, sd);
 			return ndist.cumulativeProbability(quantile);
 		
@@ -150,6 +153,9 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"(e.g., q = cumulativeProbability(1.5, dist=\"exp\", mean=1.2))");
 			}
 			double exp_mean = Double.parseDouble(params.get("mean"));
+			if ( exp_mean <= 0 ) {
+				throw new DMLRuntimeException("Mean for Exponential distribution must be positive (" + exp_mean + ")");
+			}
 			ExponentialDistributionImpl expdist = new ExponentialDistributionImpl(exp_mean);
 			return expdist.cumulativeProbability(quantile);
 		
@@ -160,6 +166,10 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"(e.g., q = cumulativeProbability(1.5, dist=\"chisq\", df=20))");
 			}
 			int df = UtilFunctions.parseToInt(params.get("df"));
+			
+			if ( df <= 0 ) {
+				throw new DMLRuntimeException("Degrees of Freedom for ChiSquared distribution must be positive (" + df + ")");
+			}
 			ChiSquaredDistributionImpl chdist = new ChiSquaredDistributionImpl(df);
 			return chdist.cumulativeProbability(quantile);
 		
@@ -171,6 +181,9 @@ public class ParameterizedBuiltin extends ValueFunction {
 			}
 			int df1 = UtilFunctions.parseToInt(params.get("df1"));
 			int df2 = UtilFunctions.parseToInt(params.get("df2"));
+			if ( df1 <= 0 || df2 <= 0) {
+				throw new DMLRuntimeException("Degrees of Freedom for F-distribution must be positive (" + df1 + "," + df2 + ")");
+			}
 			FDistributionImpl fdist = new FDistributionImpl(df1, df2);
 			return fdist.cumulativeProbability(quantile);
 		case CDF_T:
@@ -180,6 +193,9 @@ public class ParameterizedBuiltin extends ValueFunction {
 						"(e.g., q = cumulativeProbability(1.5, dist=\"t\", df=10))");
 			}
 			int t_df = UtilFunctions.parseToInt(params.get("df"));
+			if ( t_df <= 0 ) {
+				throw new DMLRuntimeException("Degrees of Freedom for t-distribution must be positive (" + t_df + ")");
+			}
 			TDistributionImpl tdist = new TDistributionImpl(t_df);
 			return tdist.cumulativeProbability(quantile);
 		}

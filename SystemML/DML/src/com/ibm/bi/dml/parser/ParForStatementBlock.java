@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
@@ -26,6 +33,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.utils.LanguageException;
 
 /**
+ * 
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate
  * for checking/setting optional parfor parameters and running the loop dependency analysis.
  * 
@@ -33,6 +41,10 @@ import com.ibm.bi.dml.utils.LanguageException;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	

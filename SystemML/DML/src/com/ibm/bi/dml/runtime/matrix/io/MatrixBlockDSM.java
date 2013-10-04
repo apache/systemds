@@ -70,27 +70,64 @@ public class MatrixBlockDSM extends MatrixValue{
 	
 	protected int estimatedNNzsPerRow=-1;//only used for allocation purpose for sparse representation
 	
-	/**
-	 * Computes the size of this {@link MatrixBlockDSM} object in main memory,
-	 * in bytes, as precisely as possible.  Used for caching purposes.
-	 * 
-	 * @return the size of this object in bytes
-	 */
-	//NOTE: not required anymore
-	/*public long getObjectSizeInMemory ()
+	////////
+	// Matrix Constructors
+	//
+	
+	public MatrixBlockDSM()
 	{
-		long all_size = 32;
-		if (denseBlock != null)
-			all_size += denseBlock.length * 8;
-		if (sparseRows != null)
-		{
-			for (int i = 0; i < sparseRows.length; i++) {
-				if ( sparseRows[i] != null )
-					all_size += 8 + sparseRows [i].getObjectSizeInMemory ();
+		rlen=0;
+		clen=0;
+		sparse = true;
+		nonZeros=0;
+		maxrow = maxcolumn = 0;
+	}
+	public MatrixBlockDSM(int rl, int cl, boolean sp)
+	{
+		rlen=rl;
+		clen=cl;
+		sparse=sp;
+		nonZeros=0;
+		maxrow = maxcolumn = 0;
+	}
+	
+	public MatrixBlockDSM(int rl, int cl, boolean sp, int estnnzs)
+	{
+		this(rl, cl, sp);
+		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rl);	
+	}
+	
+	public MatrixBlockDSM(MatrixBlockDSM that)
+	{
+		this.copy(that);
+	}
+	
+	@Deprecated
+	public MatrixBlockDSM(HashMap<CellIndex, Double> map) {
+		// compute dimensions from the map
+		int nrows=0, ncols=0;
+		for (CellIndex index : map.keySet()) {
+			nrows = (nrows < index.row ? index.row : nrows);
+			ncols = (ncols < index.column ? index.column : ncols);
+		}
+		
+		rlen = nrows;
+		clen = ncols;
+		sparse = true;
+		nonZeros = 0;
+		maxrow = nrows;
+		maxcolumn = ncols;
+		estimatedNNzsPerRow=(int)Math.ceil((double)map.size()/(double)rlen);
+		
+		for (CellIndex index : map.keySet()) {
+			double d  = map.get(index).doubleValue();
+			if ( d > 0 ) {
+				this.quickSetValue(index.row-1, index.column-1, d);
+				//nonZeros++;
 			}
 		}
-		return all_size;
-	}*/
+	}
+	
 	
 	/**
 	 * NOTE: The used estimates must be kept consistent with the respective write functions. 
@@ -280,35 +317,7 @@ public class MatrixBlockDSM extends MatrixValue{
 		else
 			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
 	}
-	
-	public MatrixBlockDSM()
-	{
-		rlen=0;
-		clen=0;
-		sparse=true;
-		nonZeros=0;
-		maxrow = maxcolumn = 0;
-	}
-	public MatrixBlockDSM(int rl, int cl, boolean sp)
-	{
-		rlen=rl;
-		clen=cl;
-		sparse=sp;
-		nonZeros=0;
-		maxrow = maxcolumn = 0;
-	}
-	
-	public MatrixBlockDSM(int rl, int cl, boolean sp, int estnnzs)
-	{
-		this(rl, cl, sp);
-		estimatedNNzsPerRow=(int)Math.ceil((double)estnnzs/(double)rl);	
-	}
-	
-	public MatrixBlockDSM(MatrixBlockDSM that)
-	{
-		this.copy(that);
-	}
-	
+
 	public void init(double[][] arr, int r, int c) throws DMLRuntimeException {
 		/* This method is designed only for dense representation */
 		if ( sparse )
@@ -334,30 +343,6 @@ public class MatrixBlockDSM extends MatrixValue{
 		maxcolumn = c;
 	}
 	
-	public MatrixBlockDSM(HashMap<CellIndex, Double> map) {
-		// compute dimensions from the map
-		int nrows=0, ncols=0;
-		for (CellIndex index : map.keySet()) {
-			nrows = (nrows < index.row ? index.row : nrows);
-			ncols = (ncols < index.column ? index.column : ncols);
-		}
-		
-		rlen = nrows;
-		clen = ncols;
-		sparse = true;
-		nonZeros = 0;
-		maxrow = nrows;
-		maxcolumn = ncols;
-		estimatedNNzsPerRow=(int)Math.ceil((double)map.size()/(double)rlen);
-		
-		for (CellIndex index : map.keySet()) {
-			double d  = map.get(index).doubleValue();
-			if ( d > 0 ) {
-				this.quickSetValue(index.row-1, index.column-1, d);
-				//nonZeros++;
-			}
-		}
-	}
 	
 	public int getNumRows()
 	{
@@ -1551,13 +1536,16 @@ public class MatrixBlockDSM extends MatrixValue{
 			double[] c = result.denseBlock;
 			
 			
-			int nnz = 0;
+			//int nnz = 0;
 			for( int i=0; i<m*n; i++ )
 			{
-				c[i] = op.fn.execute(this.denseBlock[i], that.denseBlock[i]);	
-				nnz += (c[i]!=0)? 1 : 0;
+				c[i] = op.fn.execute(this.denseBlock[i], that.denseBlock[i]);
+				//HotSpot JVM bug causes crash in presence of NaNs 
+				//nnz += (c[i]!=0)? 1 : 0;
+				if( c[i] != 0 )
+					result.nonZeros++;
 			}
-			result.nonZeros = nnz;
+			//result.nonZeros = nnz;
 		}
 		else //generic case
 		{
@@ -1595,7 +1583,7 @@ public class MatrixBlockDSM extends MatrixValue{
 			tmp = sparseBinaryHelp(op, that, (MatrixBlockDSM)result);
 		else
 			tmp = denseBinaryHelp(op, that, (MatrixBlockDSM)result);
-				
+		
 		return tmp;
 	}
 	
@@ -2811,7 +2799,10 @@ public class MatrixBlockDSM extends MatrixValue{
 			for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
 			{
 				dest.denseBlock[ix] = denseBlock[i];
-				dest.nonZeros+=(dest.denseBlock[ix]!=0)?1:0;
+				//HotSpot JVM bug causes crash in presence of NaNs 
+				//dest.nonZeros+=(dest.denseBlock[ix]!=0)?1:0;
+				if( dest.denseBlock[ix] != 0 )
+					dest.nonZeros++;
 			}
 		}
 		else //general case (dense)
@@ -5662,23 +5653,24 @@ public class MatrixBlockDSM extends MatrixValue{
 	public void recomputeNonZeros()
 	{
 		nonZeros=0;
-		if(sparse)
+		if( sparse && sparseRows!=null )
 		{
-			if(sparseRows!=null)
-			{
-				for(int i=0; i<Math.min(rlen, sparseRows.length); i++)
-					if(sparseRows[i]!=null)
-						nonZeros+=sparseRows[i].size();
-			}
-		}else
+			int limit = Math.min(rlen, sparseRows.length);
+			for(int i=0; i<limit; i++)
+				if(sparseRows[i]!=null)
+					nonZeros += sparseRows[i].size();
+		}
+		else if( !sparse && denseBlock!=null )
 		{
-			if(denseBlock!=null)
+			int limit=rlen*clen;
+			for(int i=0; i<limit; i++)
 			{
-				int limit=rlen*clen;
-				for(int i=0; i<limit; i++)
-					if(denseBlock[i]!=0)
-						nonZeros++;
+				//HotSpot JVM bug causes crash in presence of NaNs 
+				//nonZeros += (denseBlock[i]!=0) ? 1 : 0;
+				if( denseBlock[i]!=0 )
+					nonZeros++;
 			}
+				
 		}
 	}
 	
@@ -5722,7 +5714,12 @@ public class MatrixBlockDSM extends MatrixValue{
 			{
 				for( int i=rl, ix=rl*clen; i<=ru; i++, ix+=clen )
 					for( int j=cl; j<=cu; j++ )
-						nnz += (denseBlock[ix+j]!=0) ? 1 : 0;
+					{
+						//HotSpot JVM bug causes crash in presence of NaNs 
+						//nnz += (denseBlock[ix+j]!=0) ? 1 : 0;
+						if( denseBlock[ix+j]!=0 )
+							nnz++;
+					}
 			}
 		}
 

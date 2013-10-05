@@ -31,6 +31,8 @@ import org.apache.hadoop.mapred.TextInputFormat;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -47,8 +49,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * 
@@ -783,7 +783,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
-								mergeWithComp(mb, tmp, compare, appendOnly);
+								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse due to append-only
@@ -898,7 +898,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-								mergeWithComp(mb, tmp, compare, appendOnly);
+								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse and exam sparsity due to append-only
@@ -1047,7 +1047,7 @@ public class ResultMergeLocalFile extends ResultMerge
 							for( String lname : lnames )
 							{
 								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
-								mergeWithComp(mb, tmp, compare, appendOnly);
+								mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse due to append-only

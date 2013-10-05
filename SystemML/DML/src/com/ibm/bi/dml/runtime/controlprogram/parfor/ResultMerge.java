@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -120,12 +120,14 @@ public abstract class ResultMerge
 	}
 
 	/**
+	 * NOTE: append only not applicable for wiht compare because output must be populated with
+	 * initial state of matrix - with append, this would result in duplicates.
 	 * 
 	 * @param out
 	 * @param in
 	 * @throws DMLRuntimeException 
 	 */
-	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare, boolean appendOnly ) 
+	protected void mergeWithComp( MatrixBlock out, MatrixBlock in, double[][] compare ) 
 		throws DMLRuntimeException
 	{
 		//NOTE: always iterate over entire block in order to compare all values
@@ -140,10 +142,7 @@ public abstract class ResultMerge
 					{	
 					    double value = in.getValueSparseUnsafe(i,j);  //input value
 						if( value != compare[i][j] ) {  //for new values only (div)
-							if(appendOnly)
-								out.appendValue( i, j, value );
-							else
-								out.quickSetValue( i, j, value );	
+					    	out.quickSetValue( i, j, value );	
 						}
 					}
 		}
@@ -158,10 +157,7 @@ public abstract class ResultMerge
 					{
 					    double value = in.getValueDenseUnsafe(i,j);  //input value
 					    if( value != compare[i][j] ) { //for new values only (div)
-					    	if( appendOnly )
-					    		out.appendValue( i, j, value );
-					    	else
-					    		out.quickSetValue( i, j, value );	
+					    	out.quickSetValue( i, j, value );	
 					    }
 					}
 		}	

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -19,7 +20,6 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Local in-memory realization of result merge. If the resulting matrix is
@@ -281,7 +281,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		if( _compare == null )
 			mergeWithoutComp(out, in, appendOnly);
 		else
-			mergeWithComp(out, in, _compare, appendOnly);
+			mergeWithComp(out, in, _compare);
 	}
 	
 	

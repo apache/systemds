@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -30,7 +31,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Remote result merge reducer that receives all worker results partitioned by
@@ -339,7 +339,7 @@ public class ResultMergeRemoteReducer
 									appendOnly = mbOut.isInSparseFormat();
 								}
 								else
-									mergeWithComp(mbOut, bVal, aCompare, appendOnly);
+									mergeWithComp(mbOut, bVal, aCompare);
 							}
 						}
 					}
@@ -355,7 +355,7 @@ public class ResultMergeRemoteReducer
 							appendOnly = mbOut.isInSparseFormat();
 						}
 						else
-							mergeWithComp(mbOut, tmp, aCompare, appendOnly);
+							mergeWithComp(mbOut, tmp, aCompare);
 					}
 					
 					//sort sparse due to append-only

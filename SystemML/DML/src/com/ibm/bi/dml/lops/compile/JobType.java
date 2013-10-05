@@ -55,6 +55,10 @@ public enum JobType
 	PARTITION		(11, "PARTITION", false, false, false),
 	DATA_PARTITION	(12, "DATAPARTITION", false, false, false);
 
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	/* Following code should not be edited when adding a new job type */
 
 	private final int id;

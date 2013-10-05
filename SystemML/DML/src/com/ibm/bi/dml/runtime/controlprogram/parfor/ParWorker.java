@@ -13,6 +13,8 @@ import java.util.LinkedList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
@@ -21,8 +23,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * Super class for master/worker pattern implementations. Central place to

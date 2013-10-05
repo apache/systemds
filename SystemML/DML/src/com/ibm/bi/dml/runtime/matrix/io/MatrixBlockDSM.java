@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.matrix.io;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -17,6 +24,8 @@ import org.apache.commons.math.random.Well1024a;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheDataOutput;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -46,12 +55,14 @@ import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
 import com.ibm.bi.dml.runtime.util.RandN;
 import com.ibm.bi.dml.runtime.util.RandNPair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class MatrixBlockDSM extends MatrixValue{
-
+public class MatrixBlockDSM extends MatrixValue
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static final double SPARCITY_TURN_POINT=0.4;//based on practial experiments on space consumption and performance
 	//protected static final Log LOG = LogFactory.getLog(MatrixBlock1D.class);
 	

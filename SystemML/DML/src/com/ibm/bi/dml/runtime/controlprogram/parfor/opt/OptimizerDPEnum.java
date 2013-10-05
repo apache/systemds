@@ -8,11 +8,11 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import com.ibm.bi.dml.parser.ParForStatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * 

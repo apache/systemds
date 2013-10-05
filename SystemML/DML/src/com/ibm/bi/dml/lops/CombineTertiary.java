@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.HashSet;
@@ -7,15 +14,18 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  * Lop to represent an combine operation -- used ONLY in the context of sort.
  */
 
-public class CombineTertiary extends Lops {
-
+public class CombineTertiary extends Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum OperationTypes {
 		PreCovWeighted, PreGroupedAggWeighted
 	}; // PreCovUnweighted,PreGroupedAggWeighted will be CombineBinary
@@ -29,8 +39,8 @@ public class CombineTertiary extends Lops {
 	 *            - operation type
 	 */
 
-	public CombineTertiary( OperationTypes op, Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt) {
-		super(Lops.Type.CombineTertiary, dt, vt);
+	public CombineTertiary( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
+		super(Lop.Type.CombineTertiary, dt, vt);
 		operation = op;
 		this.addInput(input1);
 		this.addInput(input2);
@@ -64,7 +74,7 @@ public class CombineTertiary extends Lops {
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "combinetertiary" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index1 );
@@ -98,9 +108,9 @@ public class CombineTertiary extends Lops {
 		return operation;
 	}
 
-	public static CombineTertiary constructCombineLop( OperationTypes op, Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt) {
+	public static CombineTertiary constructCombineLop( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
 
-		HashSet<Lops> set1 = new HashSet<Lops>();
+		HashSet<Lop> set1 = new HashSet<Lop>();
 		set1.addAll(input1.getOutputs());
 
 		// find intersection of input1.getOutputs() and input2.getOutputs()
@@ -109,8 +119,8 @@ public class CombineTertiary extends Lops {
 		// find intersection of the above result and input3.getOutputs()
 		set1.retainAll(input3.getOutputs());
 		
-		for (Lops lop : set1) {
-			if (lop.type == Lops.Type.CombineTertiary) {
+		for (Lop lop : set1) {
+			if (lop.type == Lop.Type.CombineTertiary) {
 				CombineTertiary combine = (CombineTertiary) lop;
 				if (combine.operation == op)
 					return (CombineTertiary) lop;

@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -5,14 +12,17 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  * Lop to perform reblock operation
  */
-public class ReBlock extends Lops 
+public class ReBlock extends Lop 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static final String OPCODE = "rblk"; 
 	
 	/**
@@ -24,9 +34,9 @@ public class ReBlock extends Lops
 	Long rows_per_block;
 	Long cols_per_block;
 
-	public ReBlock(Lops input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt) throws LopsException 
+	public ReBlock(Lop input, Long rows_per_block, Long cols_per_block, DataType dt, ValueType vt) throws LopsException 
 	{
-		super(Lops.Type.ReBlock, dt, vt);		
+		super(Lop.Type.ReBlock, dt, vt);		
 		this.addInput(input);
 		input.addOutput(this);
 		
@@ -58,7 +68,7 @@ public class ReBlock extends Lops
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index );
@@ -81,7 +91,7 @@ public class ReBlock extends Lops
 	}
 	
 	// This function is replicated in Dag.java
-	private Format getChildFormat(Lops node) throws LopsException {
+	private Format getChildFormat(Lop node) throws LopsException {
 		
 		if(node.getOutputParameters().getFile_name() != null
 				|| node.getOutputParameters().getLabel() != null)

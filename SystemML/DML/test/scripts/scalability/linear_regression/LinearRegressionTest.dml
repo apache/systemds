@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 V = read("test/scripts/applications/linear_regression/in/v", rows=19004, cols=15436, format="text");
 b = read("test/scripts/applications/linear_regression/in/b", rows=19004, cols=1, format="text");
 lambda = 0.000001;

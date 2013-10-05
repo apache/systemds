@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -33,7 +33,7 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 	//for test of sort_mr set optimizerutils mem to 0.00001 and decomment the following
 	//private final static int rows2 = 10000;//(int) (Hops.CPThreshold+1);  // # of rows in each vector (for MR instructions)
 	
-	private final static int rows2 = (int) (Hops.CPThreshold+1);  // # of rows in each vector (for MR instructions)
+	private final static int rows2 = (int) (Hop.CPThreshold+1);  // # of rows in each vector (for MR instructions)
 	private final static int cols = 30;      // # of columns in each vector  
 	
 	private final static double minVal=1;    // minimum value in each vector 

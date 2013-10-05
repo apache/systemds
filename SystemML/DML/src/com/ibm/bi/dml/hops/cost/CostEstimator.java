@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops.cost;
 
 import java.io.IOException;
@@ -10,9 +17,13 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -43,13 +54,13 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 public abstract class CostEstimator 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
 	
 	private static final int DEFAULT_NUMITER = 15;
@@ -86,7 +97,7 @@ public abstract class CostEstimator
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 */
-	public double getTimeEstimate( ArrayList<Hops> hops, LocalVariableMap vars, HashMap<String,VarStats> stats ) 
+	public double getTimeEstimate( ArrayList<Hop> hops, LocalVariableMap vars, HashMap<String,VarStats> stats ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException, IOException
 	{
 		double costs = 0;
@@ -351,7 +362,7 @@ public abstract class CostEstimator
 		String rdInst = jobinst.getIv_randInstructions();
 		if( rdInst != null && rdInst.length()>0 )
 		{
-			StringTokenizer st = new StringTokenizer(rdInst,Lops.INSTRUCTION_DELIMITOR);
+			StringTokenizer st = new StringTokenizer(rdInst,Lop.INSTRUCTION_DELIMITOR);
 			while( st.hasMoreTokens() ) //foreach rand instruction
 			{				
 				String[] parts = InstructionUtils.getInstructionParts(st.nextToken());

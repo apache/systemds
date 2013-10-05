@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.components.hops;
 
 import static org.junit.Assert.assertEquals;
@@ -9,25 +16,29 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hops.DataGenMethod;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
-public class RandOpTest {
-
+public class RandOpTest 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private static final long NUM_ROWS = 10;
 	private static final long NUM_COLS = 11;
 	private static final long NUM_ROWS_IN_BLOCK = 12;
@@ -43,7 +54,7 @@ public class RandOpTest {
 	public void testConstructLops() throws HopsException, LopsException {
 		setupConfiguration();
 		DataGenOp ro = getRandOpInstance();
-		Lops lop = ro.constructLops();
+		Lop lop = ro.constructLops();
 		if (!(lop instanceof DataGen))
 			fail("Lop is not instance of Rand LOP");
 		assertEquals(NUM_ROWS, lop.getOutputParameters().getNum_rows()
@@ -57,18 +68,18 @@ public class RandOpTest {
 		assertTrue(lop.getOutputParameters().isBlocked_representation());
 		assertEquals(Format.BINARY, lop.getOutputParameters().getFormat());
 		try {
-			assertEquals("CP" + com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "Rand" + com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "0"
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + "1"
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_ROWS
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_COLS
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_ROWS_IN_BLOCK
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + NUM_COLS_IN_BLOCK
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + MIN_VALUE
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + MAX_VALUE
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + SPARSITY
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + SEED
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + PDF
-					+ com.ibm.bi.dml.lops.Lops.OPERAND_DELIMITOR + DIR, lop
+			assertEquals("CP" + Lop.OPERAND_DELIMITOR + "Rand" + Lop.OPERAND_DELIMITOR + "0"
+					+ Lop.OPERAND_DELIMITOR + "1"
+					+ Lop.OPERAND_DELIMITOR + NUM_ROWS
+					+ Lop.OPERAND_DELIMITOR + NUM_COLS
+					+ Lop.OPERAND_DELIMITOR + NUM_ROWS_IN_BLOCK
+					+ Lop.OPERAND_DELIMITOR + NUM_COLS_IN_BLOCK
+					+ Lop.OPERAND_DELIMITOR + MIN_VALUE
+					+ Lop.OPERAND_DELIMITOR + MAX_VALUE
+					+ Lop.OPERAND_DELIMITOR + SPARSITY
+					+ Lop.OPERAND_DELIMITOR + SEED
+					+ Lop.OPERAND_DELIMITOR + PDF
+					+ Lop.OPERAND_DELIMITOR + DIR, lop
 					.getInstructions(0, 1));
 		} catch (LopsException e) {
 			fail("failed to get instructions: " + e.getMessage());
@@ -89,7 +100,7 @@ public class RandOpTest {
 		LiteralOp pdf = new LiteralOp(String.valueOf(PDF), PDF);
 		LiteralOp rows = new LiteralOp(String.valueOf(NUM_ROWS), NUM_ROWS);
 		LiteralOp cols = new LiteralOp(String.valueOf(NUM_COLS), NUM_COLS);
-		HashMap<String, Hops> inputParameters = new HashMap<String, Hops>();
+		HashMap<String, Hop> inputParameters = new HashMap<String, Hop>();
 		inputParameters.put("min", min);
 		inputParameters.put("max", max);
 		inputParameters.put("sparsity", sparsity);

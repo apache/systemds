@@ -9,16 +9,16 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -223,7 +223,7 @@ public class ForProgramBlock extends ProgramBlock
 				if( _sb!=null )
 				{
 					ForStatementBlock fsb = (ForStatementBlock)_sb;
-					Hops predHops = null;
+					Hop predHops = null;
 					if 		(pos == 1) predHops = fsb.getFromHops();
 					else if (pos == 2) predHops = fsb.getToHops();
 					else if (pos == 3) predHops = fsb.getIncrementHops();

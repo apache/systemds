@@ -1,15 +1,25 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.hops.Hop;
 
 
-public class CVStatementBlock extends StatementBlock {
-	
+public class CVStatementBlock extends StatementBlock 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		CVStatement statement = (CVStatement) getStatement(0) ;
@@ -234,7 +244,7 @@ public class CVStatementBlock extends StatementBlock {
 		return ids;	
 	}
 	
-	public ArrayList<Hops> get_hops() {
+	public ArrayList<Hop> get_hops() {
 		
 //		if (this._hops == null){
 //			

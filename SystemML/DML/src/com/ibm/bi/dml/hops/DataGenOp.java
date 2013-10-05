@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 
@@ -5,32 +12,35 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * <p>Defines a Rand-HOP.</p>
  * 
  * 
  */
-public class DataGenOp extends Hops
+public class DataGenOp extends Hop
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
 	public static final long UNSPECIFIED_SEED = -1;
 	
@@ -63,14 +73,14 @@ public class DataGenOp extends Hops
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hops> inputParameters){
+	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters){
 		super(Kind.DataGenOp, id.getName(), DataType.MATRIX, ValueType.DOUBLE);
 		this.id = id;
 		this.method = mthd;
 				
 		int index = 0;
 		for (String s : inputParameters.keySet()) {
-			Hops input = inputParameters.get(s);
+			Hop input = inputParameters.get(s);
 			getInput().add(input);
 			input.getParent().add(this);
 
@@ -94,7 +104,7 @@ public class DataGenOp extends Hops
 	}
 	
 	@Override
-	public Lops constructLops() throws HopsException, LopsException
+	public Lop constructLops() throws HopsException, LopsException
 	{
 		if(get_lops() == null)
 		{
@@ -107,15 +117,15 @@ public class DataGenOp extends Hops
 				throw new LopsException("Could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig", e);
 			}
 			
-			HashMap<String, Lops> inputLops = new HashMap<String, Lops>();
+			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
 			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue())
 						.constructLops());
 			}
 			
 			DataGen rnd = new DataGen(method, id, inputLops,
-					scratchSpaceLoc + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-		   					          Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR,
+					scratchSpaceLoc + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+		   					          Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR,
 					get_dataType(), get_valueType(), et);
 			
 			rnd.getOutputParameters().setDimensions(
@@ -182,8 +192,8 @@ public class DataGenOp extends Hops
 		double ret = 0;
 		
 		if ( method == DataGenMethod.RAND ) {
-			Hops min = getInput().get(_paramIndexMap.get("min")); //min 
-			Hops max = getInput().get(_paramIndexMap.get("max")); //max
+			Hop min = getInput().get(_paramIndexMap.get("min")); //min 
+			Hop max = getInput().get(_paramIndexMap.get("max")); //max
 			if(    min instanceof LiteralOp && min.get_name().equals("0")
 				&& max instanceof LiteralOp && max.get_name().equals("0"))
 			{
@@ -238,9 +248,9 @@ public class DataGenOp extends Hops
 	public void refreshSizeInformation()
 	{
 		
-		Hops input1 = null;  
-		Hops input2 = null; 
-		Hops input3 = null;
+		Hop input1 = null;  
+		Hop input2 = null; 
+		Hop input3 = null;
 
 		if ( method == DataGenMethod.RAND ) {
 			input1 = getInput().get(_paramIndexMap.get("rows")); //rows
@@ -268,11 +278,11 @@ public class DataGenOp extends Hops
 					fromKnown = true;
 				}
 				else if ( input1.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input1).get_op() == Hops.OpOp1.NROW ) {
+					if( ((UnaryOp)input1).get_op() == Hop.OpOp1.NROW ) {
 						from = input1.getInput().get(0).get_dim1();
 						fromKnown = true;
 					}
-					else if ( ((UnaryOp)input1).get_op() == Hops.OpOp1.NCOL ) {
+					else if ( ((UnaryOp)input1).get_op() == Hop.OpOp1.NCOL ) {
 						from = input1.getInput().get(0).get_dim2();
 						fromKnown = true;
 					}
@@ -283,11 +293,11 @@ public class DataGenOp extends Hops
 					toKnown = true;
 				}
 				else if ( input2.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input2).get_op() == Hops.OpOp1.NROW ) {
+					if( ((UnaryOp)input2).get_op() == Hop.OpOp1.NROW ) {
 						to = input2.getInput().get(0).get_dim1();
 						toKnown = true;
 					}
-					else if ( ((UnaryOp)input2).get_op() == Hops.OpOp1.NCOL ) {
+					else if ( ((UnaryOp)input2).get_op() == Hop.OpOp1.NCOL ) {
 						to = input2.getInput().get(0).get_dim2();
 						toKnown = true;
 					}
@@ -298,16 +308,16 @@ public class DataGenOp extends Hops
 					incrKnown = true;
 				}
 				else if ( input3.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input3).get_op() == Hops.OpOp1.NROW ) {
+					if( ((UnaryOp)input3).get_op() == Hop.OpOp1.NROW ) {
 						incr = input3.getInput().get(0).get_dim1();
 						incrKnown = true;
 					}
-					else if ( ((UnaryOp)input3).get_op() == Hops.OpOp1.NCOL ) {
+					else if ( ((UnaryOp)input3).get_op() == Hop.OpOp1.NCOL ) {
 						incr = input3.getInput().get(0).get_dim2();
 						incrKnown = true;
 					}
 				}
-				else if (input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hops.OpOp2.SEQINCR && fromKnown && toKnown) {
+				else if (input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) {
 					if ( from >= to )
 						incr = -1.0;
 					else 
@@ -360,7 +370,7 @@ public class DataGenOp extends Hops
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.DataGenOp )
 			return false;

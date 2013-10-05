@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.CPFileInstructions;
 
 import java.io.BufferedReader;
@@ -26,6 +33,8 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
@@ -49,8 +58,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * File-based (out-of-core) realization of remove empty for robustness because there is no
@@ -59,6 +66,10 @@ import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
  */
 public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinCPInstruction 
 {	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String istr) 
 	{
 		super(op, paramsMap, out, istr);

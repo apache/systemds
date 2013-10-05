@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.io.DataInput;
@@ -5,28 +13,21 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Vector;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapred.Reporter;
-
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
-import com.ibm.bi.dml.runtime.matrix.mapred.CollectMultipleConvertedOutputs;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class WeightedCell extends MatrixCell{
+public class WeightedCell extends MatrixCell
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected double weight=0;
 	
 	public String toString()

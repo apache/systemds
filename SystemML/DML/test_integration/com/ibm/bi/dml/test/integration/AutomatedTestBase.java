@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.integration;
 
 import static junit.framework.Assert.assertTrue;
@@ -15,6 +22,7 @@ import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -24,7 +32,6 @@ import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -40,7 +47,12 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * </ul>
  * 
  */
-public abstract class AutomatedTestBase {
+public abstract class AutomatedTestBase 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected static final String SCRIPT_DIR = "./test/scripts/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";

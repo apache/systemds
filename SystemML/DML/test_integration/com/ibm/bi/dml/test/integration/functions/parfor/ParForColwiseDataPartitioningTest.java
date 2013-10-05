@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -30,8 +30,8 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 50; 
-	private final static int cols1 = (int)Hops.CPThreshold+1;  
-	private final static int rows2 = (int)Hops.CPThreshold+1; 
+	private final static int cols1 = (int)Hop.CPThreshold+1;  
+	private final static int rows2 = (int)Hop.CPThreshold+1; 
 	private final static int cols2 = 50;  
 	
 	private final static double sparsity1 = 0.7;

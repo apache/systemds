@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # CTCI.DML: TWO-ATTRIBUTE CONTINGENCY TABLE CONFIDENCE INTERVAL ANALYSIS for categorical data
 # Computes 95% confidence intervals for binomial ratios using both Wilson and Exact Scores
 # INPUT  1: Dataset as an (N x 2) matrix, input file path/name

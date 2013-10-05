@@ -9,7 +9,6 @@ package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 public class ForStatement extends Statement

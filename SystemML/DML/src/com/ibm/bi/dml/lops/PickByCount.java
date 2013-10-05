@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -5,17 +12,20 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
 
-public class PickByCount extends Lops {
-	
+public class PickByCount extends Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	public enum OperationTypes {VALUEPICK, RANGEPICK, IQM};	
 	OperationTypes operation;
 	boolean inMemoryInput = false;
 	
 	
-	private void init(Lops input1, Lops input2, OperationTypes op, ExecType et) {
+	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
 		this.addInput(input1);
 		input1.addOutput(this);
 		
@@ -47,17 +57,17 @@ public class PickByCount extends Lops {
 	 * valuepick: first input is always a matrix, second input can either be a scalar or a matrix
 	 * rangepick: first input is always a matrix, second input is always a scalar
 	 */
-	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op) {
+	public PickByCount(Lop input1, Lop input2, DataType dt, ValueType vt, OperationTypes op) {
 		this(input1, input2, dt, vt, op, ExecType.MR);
 	}
 	
-	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
-		super(Lops.Type.PickValues, dt, vt);
+	public PickByCount(Lop input1, Lop input2, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
+		super(Lop.Type.PickValues, dt, vt);
 		init(input1, input2, op, et);
 	}
 
-	public PickByCount(Lops input1, Lops input2, DataType dt, ValueType vt, OperationTypes op, ExecType et, boolean inMemoryInput) {
-		super(Lops.Type.PickValues, dt, vt);
+	public PickByCount(Lop input1, Lop input2, DataType dt, ValueType vt, OperationTypes op, ExecType et, boolean inMemoryInput) {
+		super(Lop.Type.PickValues, dt, vt);
 		this.inMemoryInput = inMemoryInput;
 		init(input1, input2, op, et);
 	}
@@ -117,7 +127,7 @@ public class PickByCount extends Lops {
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		
 		String opString = new String ("");
 		if ( operation == OperationTypes.VALUEPICK)
@@ -170,9 +180,9 @@ public class PickByCount extends Lops {
 	public String getInstructions(String input, String output) throws LopsException {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "inmem-iqm" );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( input );
 		sb.append( DATATYPE_PREFIX );
 		sb.append( getInputs().get(0).get_dataType() );

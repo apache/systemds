@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # Solves Linear Logistic Regression using Trust Region methods. 
 # Can be adapted for L2-SVMs and more general unconstrained optimization problems also
 # setup optimization parameters (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)

@@ -1,13 +1,20 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.utils.visualize;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -16,15 +23,19 @@ import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class LopGraph {
-
-	private static String getString_dataLop(Lops lop) {
+public class LopGraph 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static String getString_dataLop(Lop lop) {
 		String s = new String("");
 
 		if ( lop.getOutputParameters().getLabel() != null ) {
@@ -43,7 +54,7 @@ public class LopGraph {
 		return s;
 	}
 
-	private static String getString_aggregateLop(Lops lop) {
+	private static String getString_aggregateLop(Lop lop) {
 		String s = new String("");
 		s += "    node" + lop.getID() + " [label=\""  + lop.getID() + ") aggr";
 
@@ -71,7 +82,7 @@ public class LopGraph {
 		return s;
 	}
 
-	private static String getString_transformLop(Lops lop) {
+	private static String getString_transformLop(Lop lop) {
 		String s = new String("");
 		s += "    node" + lop.getID() + " [label=\""  + lop.getID() + ") transform";
 
@@ -90,7 +101,7 @@ public class LopGraph {
 		return s;
 	}
 
-	private static String getString_binaryLop(Lops lop) {
+	private static String getString_binaryLop(Lop lop) {
 		String s = new String("");
 		s += "    node" + lop.getID() + " [label=\"" + lop.getID() + ") b";
 
@@ -122,10 +133,10 @@ public class LopGraph {
 		return s;
 	}
 
-	private static String prepareLopsNodeList(Lops lop) {
+	private static String prepareLopsNodeList(Lop lop) {
 		String s = new String("");
 
-		if (lop.get_visited() == Lops.VISIT_STATUS.DONE)
+		if (lop.get_visited() == Lop.VISIT_STATUS.DONE)
 			return s;
 
 		switch (lop.getType()) {
@@ -150,13 +161,13 @@ public class LopGraph {
 		}
 
 		for (int i = 0; i < lop.getInputs().size(); i++) {
-			String si = prepareLopsNodeList((Lops) lop.getInputs().get(i));
+			String si = prepareLopsNodeList(lop.getInputs().get(i));
 			s += si;
 
 			String edge = "    node" + lop.getID() + " -> node" + lop.getInputs().get(i).getID() + "; \n";
 			s += edge;
 		}
-		lop.set_visited(Lops.VISIT_STATUS.DONE);
+		lop.set_visited(Lop.VISIT_STATUS.DONE);
 		return s;
 	}
 
@@ -183,7 +194,7 @@ public class LopGraph {
 
 		if (current instanceof WhileStatementBlock) {
 			// Handle Predicate
-			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
+			Hop predicateHops = ((WhileStatementBlock) current).getPredicateHops();
 			if (predicateHops != null){
 				String predicateString = prepareLopsNodeList(predicateHops.get_lops());
 				graphString += predicateString;
@@ -223,7 +234,7 @@ public class LopGraph {
 		
 		else if (current instanceof IfStatementBlock) {
 			// Handle Predicate
-			Hops predicateHops = ((IfStatementBlock) current).getPredicateHops();
+			Hop predicateHops = ((IfStatementBlock) current).getPredicateHops();
 			String predicateString = prepareLopsNodeList(predicateHops.get_lops());
 			graphString += predicateString;
 			
@@ -238,9 +249,9 @@ public class LopGraph {
 		}
 		
 		else {
-			ArrayList<Lops> lopsDAG = current.get_lops();
+			ArrayList<Lop> lopsDAG = current.get_lops();
 			if (lopsDAG != null && lopsDAG.size() > 0) {
-				Iterator<Lops> iter = lopsDAG.iterator();
+				Iterator<Lop> iter = lopsDAG.iterator();
 				while (iter.hasNext()) {
 					String nodeList = new String("");
 					nodeList = prepareLopsNodeList(iter.next());

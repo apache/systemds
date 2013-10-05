@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops.compile;
 
 import java.io.IOException;
@@ -8,20 +15,23 @@ import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.Hops.DataGenMethod;
-import com.ibm.bi.dml.hops.Hops.Kind;
-import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.Kind;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -30,6 +40,8 @@ import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -43,7 +55,6 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -53,16 +64,16 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * 
  */
 public class Recompiler 
 {	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
 	
 	/**
@@ -76,7 +87,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hops> hops, LocalVariableMap vars, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( ArrayList<Hop> hops, LocalVariableMap vars, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -90,24 +101,24 @@ public class Recompiler
 			//TODO potentially invoke also mmchain opt, currently not many usecases 
 			
 			// clear existing lops
-			Hops.resetVisitStatus(hops);
-			for( Hops hopRoot : hops )
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
 				rClearLops( hopRoot );
 
 			// update statistics if unknown
-			Hops.resetVisitStatus(hops);
-			for( Hops hopRoot : hops )
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
 				rUpdateStatistics( hopRoot, vars );
-			Hops.resetVisitStatus(hops);
+			Hop.resetVisitStatus(hops);
 			MemoTable memo = new MemoTable();
-			for( Hops hopRoot : hops )
+			for( Hop hopRoot : hops )
 				hopRoot.refreshMemEstimates(memo); 
 			
 			// construct lops
-			Dag<Lops> dag = new Dag<Lops>();
-			for( Hops hopRoot : hops )
+			Dag<Lop> dag = new Dag<Lop>();
+			for( Hop hopRoot : hops )
 			{
-				Lops lops = hopRoot.constructLops();
+				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);
 			}		
 
@@ -135,7 +146,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag2Forced( ArrayList<Hops> hops, long tid, ExecType et ) 
+	public static ArrayList<Instruction> recompileHopsDag2Forced( ArrayList<Hop> hops, long tid, ExecType et ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -144,21 +155,21 @@ public class Recompiler
 		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
 		{	
 			// clear existing lops
-			Hops.resetVisitStatus(hops);
-			for( Hops hopRoot : hops )
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
 				rClearLops( hopRoot );
 
 			// update exec type
-			Hops.resetVisitStatus(hops);
-			for( Hops hopRoot : hops )
+			Hop.resetVisitStatus(hops);
+			for( Hop hopRoot : hops )
 				rSetExecType( hopRoot, et );
-			Hops.resetVisitStatus(hops);
+			Hop.resetVisitStatus(hops);
 			
 			// construct lops
-			Dag<Lops> dag = new Dag<Lops>();
-			for( Hops hopRoot : hops )
+			Dag<Lop> dag = new Dag<Lop>();
+			for( Hop hopRoot : hops )
 			{
-				Lops lops = hopRoot.constructLops();
+				Lop lops = hopRoot.constructLops();
 				lops.addToDag(dag);
 			}		
 
@@ -175,7 +186,7 @@ public class Recompiler
 		return newInst;
 	}
 
-	public static ArrayList<Instruction> recompileHopsDag2Forced( Hops hops, long tid, ExecType et ) 
+	public static ArrayList<Instruction> recompileHopsDag2Forced( Hop hops, long tid, ExecType et ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -193,8 +204,8 @@ public class Recompiler
 			hops.resetVisitStatus();
 			
 			// construct lops
-			Dag<Lops> dag = new Dag<Lops>();
-			Lops lops = hops.constructLops();
+			Dag<Lop> dag = new Dag<Lop>();
+			Lop lops = hops.constructLops();
 			lops.addToDag(dag);
 			
 			// construct instructions
@@ -227,7 +238,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( Hops hops, LocalVariableMap vars, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -248,8 +259,8 @@ public class Recompiler
 			hops.refreshMemEstimates(new MemoTable()); 		
 			
 			// construct lops
-			Dag<Lops> dag = new Dag<Lops>();
-			Lops lops = hops.constructLops();
+			Dag<Lop> dag = new Dag<Lop>();
+			Lop lops = hops.constructLops();
 			lops.addToDag(dag);		
 
 			// construct instructions
@@ -318,12 +329,12 @@ public class Recompiler
 	 * @param hops
 	 * @return
 	 */
-	public static boolean requiresRecompilation( ArrayList<Hops> hops )
+	public static boolean requiresRecompilation( ArrayList<Hop> hops )
 	{
 		boolean ret = false;
 		
 		if( hops != null )
-			for( Hops hop : hops )
+			for( Hop hop : hops )
 			{
 				ret |= rRequiresRecompile(hop);
 				if( ret ) break; // early abort
@@ -337,7 +348,7 @@ public class Recompiler
 	 * @param hops
 	 * @return
 	 */
-	public static boolean requiresRecompilation( Hops hops )
+	public static boolean requiresRecompilation( Hop hops )
 	{
 		boolean ret = false;
 		
@@ -377,15 +388,15 @@ public class Recompiler
 	 * @return
 	 * @throws CloneNotSupportedException
 	 */
-	public static ArrayList<Hops> deepCopyHopsDag( ArrayList<Hops> hops ) 
+	public static ArrayList<Hop> deepCopyHopsDag( ArrayList<Hop> hops ) 
 		throws CloneNotSupportedException 
 	{
-		ArrayList<Hops> ret = new ArrayList<Hops>();
+		ArrayList<Hop> ret = new ArrayList<Hop>();
 		
 		//note: need memo table over all independent DAGs in order to 
 		//account for shared transient reads (otherwise more instructions generated)
-		HashMap<Long, Hops> memo = new HashMap<Long, Hops>(); //orig ID, new clone
-		for( Hops hopRoot : hops )
+		HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
+		for( Hop hopRoot : hops )
 			ret.add(rDeepCopyHopsDag(hopRoot, memo));
 		
 		return ret;
@@ -398,10 +409,10 @@ public class Recompiler
 	 * @return
 	 * @throws CloneNotSupportedException
 	 */
-	public static Hops deepCopyHopsDag( Hops hops ) 
+	public static Hop deepCopyHopsDag( Hop hops ) 
 		throws CloneNotSupportedException 
 	{
-		HashMap<Long, Hops> memo = new HashMap<Long, Hops>(); //orig ID, new clone
+		HashMap<Long, Hop> memo = new HashMap<Long, Hop>(); //orig ID, new clone
 		return rDeepCopyHopsDag(hops, memo);
 	}
 	
@@ -412,25 +423,25 @@ public class Recompiler
 	 * @return
 	 * @throws CloneNotSupportedException
 	 */
-	private static Hops rDeepCopyHopsDag( Hops hops, HashMap<Long,Hops> memo ) 
+	private static Hop rDeepCopyHopsDag( Hop hops, HashMap<Long,Hop> memo ) 
 		throws CloneNotSupportedException
 	{
-		Hops ret = memo.get(hops.getHopID());
+		Hop ret = memo.get(hops.getHopID());
 	
 		//create clone if required 
 		if( ret == null ) 
 		{
-			ret = (Hops) hops.clone();
-			ArrayList<Hops> tmp = new ArrayList<Hops>();
+			ret = (Hop) hops.clone();
+			ArrayList<Hop> tmp = new ArrayList<Hop>();
 			
 			//create new childs
-			for( Hops in : hops.getInput() )
+			for( Hop in : hops.getInput() )
 			{
-				Hops newIn = rDeepCopyHopsDag(in, memo);
+				Hop newIn = rDeepCopyHopsDag(in, memo);
 				tmp.add(newIn);
 			}
 			//modify references of childs
-			for( Hops in : tmp )
+			for( Hop in : tmp )
 			{
 				ret.getInput().add(in);
 				in.getParent().add(ret);
@@ -443,14 +454,14 @@ public class Recompiler
 	}
 	
 
-	public static void updateFunctionNames(ArrayList<Hops> hops, long pid) 
+	public static void updateFunctionNames(ArrayList<Hop> hops, long pid) 
 	{
-		Hops.resetVisitStatus(hops);
-		for( Hops hopRoot : hops  )
+		Hop.resetVisitStatus(hops);
+		for( Hop hopRoot : hops  )
 			rUpdateFunctionNames( hopRoot, pid );
 	}
 	
-	public static void rUpdateFunctionNames( Hops hop, long pid )
+	public static void rUpdateFunctionNames( Hop hop, long pid )
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
@@ -463,7 +474,7 @@ public class Recompiler
 		}
 		
 		if( hop.getInput() != null )
-			for( Hops c : hop.getInput() )
+			for( Hop c : hop.getInput() )
 				rUpdateFunctionNames(c, pid);
 		
 		hop.set_visited(VISIT_STATUS.DONE);
@@ -644,9 +655,9 @@ public class Recompiler
 	 * @param hops
 	 * @param vars
 	 */
-	private static void extractDAGOutputStatistics(ArrayList<Hops> hops, LocalVariableMap vars)
+	private static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars)
 	{
-		for( Hops hop : hops ) //for all hop roots
+		for( Hop hop : hops ) //for all hop roots
 			if(    hop.getOpString().equals("TWrite")  //for all writes
 				&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims
 			{
@@ -688,12 +699,12 @@ public class Recompiler
 	 * @param hop
 	 * @return
 	 */
-	private static boolean rRequiresRecompile( Hops hop )
+	private static boolean rRequiresRecompile( Hop hop )
 	{	
 		boolean ret = hop.requiresRecompile();
 
 		if( hop.getInput() != null )
-			for( Hops c : hop.getInput() )
+			for( Hop c : hop.getInput() )
 			{
 				ret |= rRequiresRecompile(c);
 				if( ret ) break; // early abort
@@ -706,7 +717,7 @@ public class Recompiler
 	 * 
 	 * @param hop
 	 */
-	public static void rClearLops( Hops hop )
+	public static void rClearLops( Hop hop )
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
@@ -719,7 +730,7 @@ public class Recompiler
 		//clear all relevant lops to allow for recompilation
 		hop.set_lops(null);
 		if( hop.getInput() != null )
-			for( Hops c : hop.getInput() )
+			for( Hop c : hop.getInput() )
 				rClearLops(c);
 		
 		hop.set_visited(VISIT_STATUS.DONE);
@@ -731,7 +742,7 @@ public class Recompiler
 	 * @param vars
 	 * @throws DMLRuntimeException
 	 */
-	private static void rUpdateStatistics( Hops hop, LocalVariableMap vars ) 
+	private static void rUpdateStatistics( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )
@@ -745,7 +756,7 @@ public class Recompiler
 		//System.out.println("  nnz = "+hop.getNnz());
 
 		if( hop.getInput() != null )
-			for( Hops c : hop.getInput() )
+			for( Hop c : hop.getInput() )
 				rUpdateStatistics(c, vars);	
 		
 		if( hop instanceof DataOp )
@@ -788,9 +799,9 @@ public class Recompiler
 				int ix2 = params.get(RandStatement.SEQ_TO);
 				int ix3 = params.get(RandStatement.SEQ_INCR);
 				
-				Hops from_hop = d.getInput().get(ix1);
-				Hops to_hop   = d.getInput().get(ix2);
-				Hops incr_hop = d.getInput().get(ix3);
+				Hop from_hop = d.getInput().get(ix1);
+				Hop to_hop   = d.getInput().get(ix2);
+				Hop incr_hop = d.getInput().get(ix3);
 				
 				double from = 0, to=0, incr=0;
 				boolean fromKnown=false, toKnown=false, incrKnown=false;
@@ -828,7 +839,7 @@ public class Recompiler
 						incr = ((LiteralOp)incr_hop).getDoubleValue();
 						incrKnown = true;
 					}
-					else if ( incr_hop.getKind() == Kind.BinaryOp && ((BinaryOp)incr_hop).getOp() == Hops.OpOp2.SEQINCR && fromKnown && toKnown) {
+					else if ( incr_hop.getKind() == Kind.BinaryOp && ((BinaryOp)incr_hop).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) {
 						if ( from >= to )
 							incr = -1.0;
 						else
@@ -858,7 +869,7 @@ public class Recompiler
 			}
 		}
 		else if (    hop instanceof ReorgOp 
-				 && ((ReorgOp)(hop)).getOp()==Hops.ReOrgOp.RESHAPE )
+				 && ((ReorgOp)(hop)).getOp()==Hop.ReOrgOp.RESHAPE )
 		{
 			ReorgOp d = (ReorgOp) hop;
 			String name1 = d.getInput().get(1).get_name(); //rows
@@ -886,7 +897,7 @@ public class Recompiler
 	 * @param hop
 	 * @param pid
 	 */
-	public static void rSetExecType( Hops hop, ExecType etype )
+	public static void rSetExecType( Hop hop, ExecType etype )
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
@@ -895,7 +906,7 @@ public class Recompiler
 		hop.setForcedExecType(etype);
 		
 		if( hop.getInput() != null )
-			for( Hops c : hop.getInput() )
+			for( Hop c : hop.getInput() )
 				rSetExecType(c, etype);
 		
 		hop.set_visited(VISIT_STATUS.DONE);
@@ -934,7 +945,7 @@ public class Recompiler
 		//check only reblock inst
 		if( ret ) {
 			String shuffleInst = inst.getIv_shuffleInstructions();
-			String[] instParts = shuffleInst.split( Lops.INSTRUCTION_DELIMITOR );
+			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
 			for( String rblk : instParts )
 				if( !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) )
 				{

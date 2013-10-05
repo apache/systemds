@@ -8,14 +8,14 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * 
@@ -55,7 +55,7 @@ public class CostEstimatorHops extends CostEstimator
 			throw new DMLRuntimeException( "Testmeasure "+measure+" not supported by cost model "+CostModelType.STATIC_MEM_METRIC+"." );
 		
 		//core mem estimation (use hops estimate)
-		Hops h = _map.getMappedHop( node.getID() );
+		Hop h = _map.getMappedHop( node.getID() );
 		double value = h.getMemEstimate();
 		
 		//handle specific cases 

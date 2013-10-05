@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
@@ -11,6 +18,10 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
  */
 public class MemoTable 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private HashMap<Long, MatrixCharacteristics> _memo = null;
 	
 	public MemoTable()
@@ -35,12 +46,12 @@ public class MemoTable
 	 * @param inputs
 	 * @return
 	 */
-	public MatrixCharacteristics[] getAllInputStats( ArrayList<Hops> inputs )
+	public MatrixCharacteristics[] getAllInputStats( ArrayList<Hop> inputs )
 	{
 		MatrixCharacteristics[] ret = new MatrixCharacteristics[inputs.size()];
 		for( int i=0; i<inputs.size(); i++ )
 		{
-			Hops input = inputs.get(i);
+			Hop input = inputs.get(i);
 			
 			long dim1 = input.get_dim1();
 			long dim2 = input.get_dim2();
@@ -67,7 +78,7 @@ public class MemoTable
 		return ret;
 	}
 
-	public MatrixCharacteristics getAllInputStats( Hops input )
+	public MatrixCharacteristics getAllInputStats( Hop input )
 	{
 		MatrixCharacteristics ret = null;
 			
@@ -95,10 +106,10 @@ public class MemoTable
 		return ret;
 	}
 	
-	public boolean hasInputStatistics(Hops h) 
+	public boolean hasInputStatistics(Hop h) 
 	{
 		boolean ret = false;
-		for( Hops in : h.getInput() )
+		for( Hop in : h.getInput() )
 			if( in.dimsKnown() || _memo.containsKey(in.getHopID()) ) 
 			{
 				ret = true;

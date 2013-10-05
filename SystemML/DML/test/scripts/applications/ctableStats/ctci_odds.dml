@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # CTCI_ODDS.DML: TWO-ATTRIBUTE CONTINGENCY TABLE ODDS-RATIO CONFIDENCE INTERVAL ANALYSIS
 # Computes 95% confidence intervals for odds ratios using a Gaussian approximation for log-odds
 # INPUT  1: Dataset as an (N x 2) matrix, input file path/name

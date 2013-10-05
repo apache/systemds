@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.meta;
 
 import org.apache.hadoop.fs.Path;
@@ -23,7 +30,12 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 //NOTE: since we need the output matrix to also be in block format (1000x1000; though only 1 columns of it is occupied!),
 //we have to do an entire Map+Reduce job! If we can write output in cell format, then Map only job suffices.
 //For a partially occupied block, maxrow indicates max num rows actually present vs rlen which is blk dim in general
-public class ReconstructionJoinMR {
+public class ReconstructionJoinMR 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static JobReturn runJob(String input, InputInfo inputinfo, int numReducers, int replication,
 				int bnr, int bnc, PartitionParams pp, int foldnum, String output, long outnumrows)
 	throws Exception

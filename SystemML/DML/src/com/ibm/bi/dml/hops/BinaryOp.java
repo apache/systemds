@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
@@ -11,7 +18,7 @@ import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
@@ -32,7 +39,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLCondition.BOOLOP;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
 
 
 /* Binary (cell operations): aij + bij
@@ -42,16 +48,20 @@ import com.ibm.bi.dml.utils.HopsException;
  * 		Semantic: align indices (sort), then perform operation
  */
 
-public class BinaryOp extends Hops {
-
-	Hops.OpOp2 op;
+public class BinaryOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	Hop.OpOp2 op;
 
 	private BinaryOp() {
 		//default constructor for clone
 	}
 	
-	public BinaryOp(String l, DataType dt, ValueType vt, Hops.OpOp2 o,
-			Hops inp1, Hops inp2) {
+	public BinaryOp(String l, DataType dt, ValueType vt, Hop.OpOp2 o,
+			Hop inp1, Hop inp2) {
 		super(Kind.BinaryOp, l, dt, vt);
 		op = o;
 		getInput().add(0, inp1);
@@ -68,17 +78,17 @@ public class BinaryOp extends Hops {
 		return op;
 	}
 	
-	public Lops constructLops() throws HopsException {
+	public Lop constructLops() throws HopsException {
 
 		if (get_lops() == null) {
 
 			try {
-			if (op == Hops.OpOp2.IQM) {
+			if (op == Hop.OpOp2.IQM) {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
 					CombineBinary combine = CombineBinary.constructCombineLop(
-							OperationTypes.PreSort, (Lops) getInput().get(0)
-									.constructLops(), (Lops) getInput().get(1)
+							OperationTypes.PreSort, (Lop) getInput().get(0)
+									.constructLops(), (Lop) getInput().get(1)
 									.constructLops(), DataType.MATRIX,
 							get_valueType());
 					combine.getOutputParameters().setDimensions(
@@ -117,8 +127,8 @@ public class BinaryOp extends Hops {
 					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					PartialAggregate pagg = new PartialAggregate(pick,
-							HopsAgg2Lops.get(Hops.AggOp.SUM),
-							HopsDirection2Lops.get(Hops.Direction.RowCol),
+							HopsAgg2Lops.get(Hop.AggOp.SUM),
+							HopsDirection2Lops.get(Hop.Direction.RowCol),
 							DataType.MATRIX, get_valueType());
 
 					pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -137,7 +147,7 @@ public class BinaryOp extends Hops {
 					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
 					Aggregate agg1 = new Aggregate(group1, HopsAgg2Lops
-							.get(Hops.AggOp.SUM), DataType.MATRIX,
+							.get(Hop.AggOp.SUM), DataType.MATRIX,
 							get_valueType(), ExecType.MR);
 					agg1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(),
@@ -160,7 +170,7 @@ public class BinaryOp extends Hops {
 					binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
 					BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1,
-							HopsOpOp2LopsBS.get(Hops.OpOp2.DIV),
+							HopsOpOp2LopsBS.get(Hop.OpOp2.DIV),
 							DataType.SCALAR, get_valueType());
 					binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					binScalar2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -193,7 +203,7 @@ public class BinaryOp extends Hops {
 					set_lops(pick);
 				}
 
-			} else if (op == Hops.OpOp2.CENTRALMOMENT) {
+			} else if (op == Hop.OpOp2.CENTRALMOMENT) {
 				ExecType et = optFindExecType();
 				// The output data type is a SCALAR if central moment 
 				// gets computed in CP, and it will be MATRIX otherwise.
@@ -218,7 +228,7 @@ public class BinaryOp extends Hops {
 					set_lops(cm);
 				}
 
-			} else if (op == Hops.OpOp2.COVARIANCE) {
+			} else if (op == Hop.OpOp2.COVARIANCE) {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
 					// combineBinary -> CoVariance -> CastAsScalar
@@ -259,8 +269,8 @@ public class BinaryOp extends Hops {
 					set_lops(cov);
 				}
 
-			} else if (op == Hops.OpOp2.QUANTILE
-					|| op == Hops.OpOp2.INTERQUANTILE) {
+			} else if (op == Hop.OpOp2.QUANTILE
+					|| op == Hop.OpOp2.INTERQUANTILE) {
 				// 1st arguments needs to be a 1-dimensional matrix
 				// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 				// For INTERQUANTILE: 2nd argument is always a scalar
@@ -293,7 +303,7 @@ public class BinaryOp extends Hops {
 							getInput().get(1).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hops.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							(op == Hop.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
@@ -319,7 +329,7 @@ public class BinaryOp extends Hops {
 							getInput().get(1).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hops.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							(op == Hop.OpOp2.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 									: PickByCount.OperationTypes.RANGEPICK, et, true);
 	
 					pick.getOutputParameters().setDimensions(get_dim1(),
@@ -329,7 +339,7 @@ public class BinaryOp extends Hops {
 	
 					set_lops(pick);
 				}
-			}else if(op == Hops.OpOp2.APPEND)
+			}else if(op == Hop.OpOp2.APPEND)
 			{
 				ExecType et = optFindExecType();
 				DataType dt1 = getInput().get(0).get_dataType();
@@ -338,7 +348,7 @@ public class BinaryOp extends Hops {
 					throw new HopsException("Append can only apply to two matrices!");
 				
 				
-				Lops offset=new UnaryCP(getInput().get(0).constructLops(), 
+				Lop offset=new UnaryCP(getInput().get(0).constructLops(), 
 						UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
 				offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 				offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -455,7 +465,7 @@ public class BinaryOp extends Hops {
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + op );
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 				;
@@ -472,8 +482,8 @@ public class BinaryOp extends Hops {
 
 			GENERATES gen = determineGeneratesFlag();
 
-			Hops hop1 = this.getInput().get(0);
-			Hops hop2 = this.getInput().get(1);
+			Hop hop1 = this.getInput().get(0);
+			Hop hop2 = this.getInput().get(1);
 
 			SQLLops lop1 = hop1.constructSQLLOPs();
 			SQLLops lop2 = hop2.constructSQLLOPs();
@@ -494,7 +504,7 @@ public class BinaryOp extends Hops {
 					.get_valueType(), this.get_dataType());
 
 			if (this.get_dataType() == DataType.SCALAR && gen == GENERATES.DML)
-				sqllop.set_tableName(Lops.VARIABLE_NAME_PLACEHOLDER + sqllop.get_tableName() + Lops.VARIABLE_NAME_PLACEHOLDER);
+				sqllop.set_tableName(Lop.VARIABLE_NAME_PLACEHOLDER + sqllop.get_tableName() + Lop.VARIABLE_NAME_PLACEHOLDER);
 
 			// String sql = this.getSQLSelectCode(hop1, hop2, makeDense, name);
 			String sql = this.getSQLSelectCode(false, "");
@@ -509,7 +519,7 @@ public class BinaryOp extends Hops {
 	}
 
 	private SQLLopProperties getProperties() {
-		Hops hop1 = this.getInput().get(0);
+		Hop hop1 = this.getInput().get(0);
 	
 		SQLLopProperties prop = new SQLLopProperties();
 		JOINTYPE join = JOINTYPE.FULLOUTERJOIN;
@@ -525,15 +535,15 @@ public class BinaryOp extends Hops {
 		prop.setAggType(agg);
 		prop.setJoinType(join);
 		prop.setOpString(hop1.get_sqllops().get_tableName() + " "
-				+ Hops.HopsOpOp2String.get(op) + " "
+				+ Hop.HopsOpOp2String.get(op) + " "
 				+ hop1.get_sqllops().get_tableName());
 
 		return prop;
 	}
 
 	private SQLSelectStatement getSQLSelect() throws HopsException {
-		Hops hop1 = this.getInput().get(0);
-		Hops hop2 = this.getInput().get(1);
+		Hop hop1 = this.getInput().get(0);
+		Hop hop2 = this.getInput().get(1);
 
 		String name1 = hop1.get_sqllops().get_tableName();
 		String name2 = hop2.get_sqllops().get_tableName();
@@ -561,13 +571,13 @@ public class BinaryOp extends Hops {
 		// Is input two matrices?
 		boolean mm = (hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2
 				.get_sqllops().get_dataType() == DataType.MATRIX);
-		boolean isvalid = Hops.isSupported(this.op);
-		boolean isfunc = Hops.isFunction(this.op);
+		boolean isvalid = Hop.isSupported(this.op);
+		boolean isfunc = Hop.isFunction(this.op);
 		boolean isMaxMin = op == OpOp2.MAX || op == OpOp2.MIN;
 
 		if (!isvalid)
 			throw new HopsException(this.printErrorLocation() + "In BinaryOp Hop, Cannot create SQL for operation "
-					+ Hops.HopsOpOp2String.get(this.op));
+					+ Hop.HopsOpOp2String.get(this.op));
 
 		String operation = "";
 		String opr = SQLLops.OpOp2ToString(op);
@@ -617,13 +627,13 @@ public class BinaryOp extends Hops {
 					if (!isfunc)
 						operation = scalval + " " + opr + " " + matval;
 					else
-						operation = Hops.HopsOpOp2String.get(this.op) + "("
+						operation = Hop.HopsOpOp2String.get(this.op) + "("
 								+ scalval + ", " + matval + ")";
 				} else {
 					if (!isfunc)
 						operation = matval + " " + opr + " " + scalval;
 					else
-						operation = Hops.HopsOpOp2String.get(this.op) + "("
+						operation = Hop.HopsOpOp2String.get(this.op) + "("
 								+ matval + ", " + scalval + ")";
 				}
 			}
@@ -654,7 +664,7 @@ public class BinaryOp extends Hops {
 					operation = String.format(SQLLops.BINARYOP_PART, opr);
 			} else
 				operation = String.format(SQLLops.FUNCTIONOP_PART,
-						Hops.HopsOpOp2String.get(this.op));
+						Hop.HopsOpOp2String.get(this.op));
 
 			String op1 = SQLLops.addQuotes(hop1.get_sqllops().get_tableName());
 			String op2 = SQLLops.addQuotes(hop2.get_sqllops().get_tableName());
@@ -666,7 +676,7 @@ public class BinaryOp extends Hops {
 			else if (op == OpOp2.DIV)
 				jt = JOINTYPE.LEFTJOIN;
 
-			if (Hops.isBooleanOperation(op))
+			if (Hop.isBooleanOperation(op))
 				operation = "decode(" + operation + ",true,1,false,0)";
 
 			stmt.getColumns().add("coalesce(alias_a.row, alias_b.row) AS row");
@@ -704,7 +714,7 @@ public class BinaryOp extends Hops {
 			else if (!isfunc)
 				operation = o1 + " " + opr + " " + o2;
 			else
-				operation = String.format("%s(%s, %s)", Hops.HopsOpOp2String
+				operation = String.format("%s(%s, %s)", Hop.HopsOpOp2String
 						.get(this.op), o1, o2);
 
 			stmt.getColumns().add(
@@ -777,8 +787,8 @@ public class BinaryOp extends Hops {
 
 	private String getSQLSelectCode(boolean makeDense, String denseName)
 			throws HopsException {
-		Hops hop1 = this.getInput().get(0);
-		Hops hop2 = this.getInput().get(1);
+		Hop hop1 = this.getInput().get(0);
+		Hop hop2 = this.getInput().get(1);
 
 		String sql = null;
 
@@ -797,10 +807,10 @@ public class BinaryOp extends Hops {
 		// {
 		// min, max, log, concat, invalid, quantile, interquantile, iqm,
 		// centralMoment and covariance cannot be done that way
-		boolean isvalid = Hops.isSupported(this.op);
+		boolean isvalid = Hop.isSupported(this.op);
 
 		// But min, max and log can still be done
-		boolean isfunc = Hops.isFunction(this.op);
+		boolean isfunc = Hop.isFunction(this.op);
 		boolean isMaxMin = op == OpOp2.MAX || op == OpOp2.MIN;
 
 		/*
@@ -884,13 +894,13 @@ public class BinaryOp extends Hops {
 						if (!isfunc)
 							operation = scoal + " " + opr + " " + avalcoal;
 						else
-							operation = Hops.HopsOpOp2String.get(this.op) + "("
+							operation = Hop.HopsOpOp2String.get(this.op) + "("
 									+ scoal + ", " + avalcoal + ")";
 					} else {
 						if (!isfunc)
 							operation = s + " " + opr + " " + aval;
 						else
-							operation = Hops.HopsOpOp2String.get(this.op) + "("
+							operation = Hop.HopsOpOp2String.get(this.op) + "("
 									+ s + ", " + aval + ")";
 					}
 					if (hop1.get_sqllops().get_flag() == GENERATES.SQL)
@@ -924,13 +934,13 @@ public class BinaryOp extends Hops {
 						if (!isfunc)
 							operation = avalcoal + " " + opr + " " + scoal;
 						else
-							operation = Hops.HopsOpOp2String.get(this.op)
+							operation = Hop.HopsOpOp2String.get(this.op)
 									+ avalcoal + ", " + scoal + " )";
 					} else {
 						if (!isfunc)
 							operation = aval + " " + opr + " " + s;
 						else
-							operation = Hops.HopsOpOp2String.get(this.op) + "("
+							operation = Hop.HopsOpOp2String.get(this.op) + "("
 									+ aval + ", " + s + ")";
 					}
 
@@ -940,7 +950,7 @@ public class BinaryOp extends Hops {
 										.get_tableName());
 				}
 
-				if (Hops.isBooleanOperation(op))
+				if (Hop.isBooleanOperation(op))
 					operation = "decode(" + operation + ",true,1,false,0)";
 
 				sql = String.format(SQLLops.MATRIXSCALAROP, operation,
@@ -961,7 +971,7 @@ public class BinaryOp extends Hops {
 						operation = String.format(SQLLops.BINARYOP_PART, opr);
 				} else
 					operation = String.format(SQLLops.FUNCTIONOP_PART,
-							Hops.HopsOpOp2String.get(this.op));
+							Hop.HopsOpOp2String.get(this.op));
 
 				String op1 = hop1.get_sqllops().get_tableName();
 				String op2 = makeDense ? denseName : hop2.get_sqllops()
@@ -975,7 +985,7 @@ public class BinaryOp extends Hops {
 					join = SQLLops.LEFTJOIN;
 				}
 
-				if (Hops.isBooleanOperation(op))
+				if (Hop.isBooleanOperation(op))
 					operation = "decode(" + operation + ",true,1,false,0)";
 
 				sql = String.format(SQLLops.MATRIXMATRIXOP, operation, op1,
@@ -1010,7 +1020,7 @@ public class BinaryOp extends Hops {
 					operation = o1 + " " + opr + " " + o2;
 				else
 					operation = String.format("%s(%s, %s)",
-							Hops.HopsOpOp2String.get(this.op), o1, o2);
+							Hop.HopsOpOp2String.get(this.op), o1, o2);
 
 				String table = "";
 				if (hop1.get_sqllops().get_flag() == GENERATES.SQL)
@@ -1035,7 +1045,7 @@ public class BinaryOp extends Hops {
 			}
 		} else
 			throw new HopsException(this.printErrorLocation() + "In BinaryOp Hop, Cannot create SQL for operation "
-					+ Hops.HopsOpOp2String.get(this.op));
+					+ Hop.HopsOpOp2String.get(this.op));
 		return sql;
 	}
 
@@ -1055,8 +1065,8 @@ public class BinaryOp extends Hops {
 		{
 			double sparsity = 1.0;
 			if( nnz < 0 ){ //check for exactly known nnz
-				Hops input1 = getInput().get(0);
-				Hops input2 = getInput().get(1);
+				Hop input1 = getInput().get(0);
+				Hop input2 = getInput().get(1);
 				if( input1.dimsKnown() && input2.dimsKnown() )
 				{
 					double sp1 = (input1.getNnz()>0 && input1.get_dataType()==DataType.MATRIX) ? OptimizerUtils.getSparsity(input1.get_dim1(), input1.get_dim2(), input1.getNnz()) : 1.0;
@@ -1093,8 +1103,8 @@ public class BinaryOp extends Hops {
 		long[] ret = null;
 		
 		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
-		Hops input1 = getInput().get(0);
-		Hops input2 = getInput().get(1);		
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);		
 		DataType dt1 = input1.get_dataType();
 		DataType dt2 = input2.get_dataType();
 		
@@ -1201,8 +1211,8 @@ public class BinaryOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(0);
-		Hops input2 = getInput().get(1);		
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);		
 		DataType dt1 = input1.get_dataType();
 		DataType dt2 = input2.get_dataType();
 		
@@ -1269,7 +1279,7 @@ public class BinaryOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.BinaryOp )
 			return false;

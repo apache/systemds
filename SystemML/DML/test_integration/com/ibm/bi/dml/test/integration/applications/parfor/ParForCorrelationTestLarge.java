@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -35,8 +35,8 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 	private final static String TEST_DIR = "applications/parfor/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = (int)Hops.CPThreshold+1;  // # of rows in each vector (for MR instructions)
-	private final static int cols = (int)Hops.CPThreshold+1;      // # of columns in each vector  
+	private final static int rows = (int)Hop.CPThreshold+1;  // # of rows in each vector (for MR instructions)
+	private final static int cols = (int)Hop.CPThreshold+1;      // # of columns in each vector  
 	
 	private final static double minVal=0;    // minimum value in each vector 
 	private final static double maxVal=1000; // maximum value in each vector 

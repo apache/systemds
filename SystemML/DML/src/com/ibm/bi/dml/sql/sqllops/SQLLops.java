@@ -1,20 +1,29 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.sql.sqllops;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.hops.Hops.OpOp2;
-import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 
-//import com.ibm.jaql.lang.expr.core.AggregateExpr.AggType;
 
-
-public class SQLLops {
-
+public class SQLLops 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	// static variable to assign an unique ID to every SQLLop that is created
 	private static int UniqueSQLLopID = 0;
 	
@@ -287,7 +296,7 @@ public class SQLLops {
 	
 	public static String OpOp2ToString(OpOp2 op)
 	{
-		String opr = Hops.HopsOpOp2String.get(op);
+		String opr = Hop.HopsOpOp2String.get(op);
 		
 		//Some exceptions:
 		if(op == OpOp2.NOTEQUAL)
@@ -378,11 +387,11 @@ public class SQLLops {
 	}
 	
 	public void resetVisitStatus() {
-		if (this.get_visited() == Hops.VISIT_STATUS.NOTVISITED)
+		if (this.get_visited() == Hop.VISIT_STATUS.NOTVISITED)
 			return;
 		for(SQLLops l : this.getInputs())
 			l.resetVisitStatus();
-		this.set_visited(Hops.VISIT_STATUS.NOTVISITED);
+		this.set_visited(Hop.VISIT_STATUS.NOTVISITED);
 	}
 	
 	/**

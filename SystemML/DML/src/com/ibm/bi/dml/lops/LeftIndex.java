@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -5,11 +12,14 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
 
-public class LeftIndex extends Lops {
-
+public class LeftIndex extends Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	/**
 	 * Constructor to setup a LeftIndexing operation.
 	 * Example: A[i:j, k:l] = B;
@@ -21,7 +31,7 @@ public class LeftIndex extends Lops {
 	 * @throws LopsException
 	 */
 	
-	private void init(Lops lhsMatrix, Lops rhsMatrix, Lops rowL, Lops rowU, Lops colL, Lops colU, ExecType et) throws LopsException {
+	private void init(Lop lhsMatrix, Lop rhsMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, ExecType et) throws LopsException {
 		/*
 		 * A[i:j, k:l] = B;
 		 * B -> rhsMatrix
@@ -57,9 +67,9 @@ public class LeftIndex extends Lops {
 	}
 	
 	public LeftIndex(
-			Lops lhsInput, Lops rhsInput, Lops rowL, Lops rowU, Lops colL, Lops colU, DataType dt, ValueType vt, ExecType et)
+			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et)
 			throws LopsException {
-		super(Lops.Type.LeftIndex, dt, vt);
+		super(Lop.Type.LeftIndex, dt, vt);
 		init(lhsInput, rhsInput, rowL, rowU, colL, colU, et);
 	}
 

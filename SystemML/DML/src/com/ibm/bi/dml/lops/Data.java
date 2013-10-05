@@ -1,15 +1,21 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hops.FileFormatTypes;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 
@@ -18,8 +24,12 @@ import com.ibm.bi.dml.utils.LopsException;
  * variables, literals. Can be for both input and output. 
  */
 
-public class Data extends Lops  
+public class Data extends Lop  
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum OperationTypes {READ,WRITE};
 	
 	FileFormatTypes formatType;
@@ -27,7 +37,7 @@ public class Data extends Lops
 	boolean literal_var = false;
 	boolean transient_var = false;
 	
-	private HashMap<String, Lops> _inputParams;
+	private HashMap<String, Lop> _inputParams;
 
 	/**
 	 * Constructor to setup data lop.
@@ -40,7 +50,7 @@ public class Data extends Lops
 	 */
 	public Data(String fName, Data.OperationTypes op, String name, String literal, DataType dt, ValueType vt, boolean isTransient) 
 	{
-		super(Lops.Type.Data, dt, vt);		
+		super(Lop.Type.Data, dt, vt);		
 		operation = op;		
 		
 		if(literal != null)
@@ -67,10 +77,10 @@ public class Data extends Lops
 	// Constructor to setup data lop for read or write lops
 	// If a user wants to create a write lops, input must be provided,
 	// it will always be added to the first element of the Input Array
-	public Data(Data.OperationTypes op, Lops input, HashMap<String, Lops> 
+	public Data(Data.OperationTypes op, Lop input, HashMap<String, Lop> 
 	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient) throws LopsException 
 	{
-		super(Lops.Type.Data, dt, vt);	
+		super(Lop.Type.Data, dt, vt);	
 		operation = op;	
 		
 		if(literal != null){
@@ -96,7 +106,7 @@ public class Data extends Lops
 			input.addOutput(this);
 		}
 		
-		for (Lops lop : inputParametersLops.values()) {
+		for (Lop lop : inputParametersLops.values()) {
 			this.addInput(lop);
 			lop.addOutput(this);
 		}
@@ -124,9 +134,9 @@ public class Data extends Lops
 	 * @param type
 	 */
 	
-	public Data(String fName, Data.OperationTypes op, Lops input, String name, String literal, DataType dt, ValueType vt, boolean isTransient) 
+	public Data(String fName, Data.OperationTypes op, Lop input, String name, String literal, DataType dt, ValueType vt, boolean isTransient) 
 	{
-		super(Lops.Type.Data, dt, vt);		
+		super(Lop.Type.Data, dt, vt);		
 		operation = op;
 		
 		if(literal != null)
@@ -240,7 +250,7 @@ public class Data extends Lops
 	 * method to get inputParams 
 	 * @return
 	 */
-	public HashMap<String, Lops> getInputParams(){
+	public HashMap<String, Lop> getInputParams(){
 		return _inputParams;
 	}
 	

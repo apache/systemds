@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.ArrayList;
@@ -10,14 +17,18 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  * Base class for all Lops.
  */
 
-public abstract class Lops {
+public abstract class Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	/**
 	 * Lop types
 	 */
@@ -34,7 +45,7 @@ public abstract class Lops {
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
 
-	protected static final Log LOG =  LogFactory.getLog(Lops.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
 	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
 	private DataType _dataType;
@@ -109,7 +120,7 @@ public abstract class Lops {
 		_valueType = vt;
 	}
 
-	Lops.Type type;
+	Lop.Type type;
 
 	/**
 	 * transient indicator
@@ -121,8 +132,8 @@ public abstract class Lops {
 	 * handle to all inputs and outputs.
 	 */
 
-	ArrayList<Lops> inputs;
-	ArrayList<Lops> outputs;
+	ArrayList<Lop> inputs;
+	ArrayList<Lop> outputs;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -147,12 +158,12 @@ public abstract class Lops {
 	 * @param t
 	 */
 
-	public Lops(Type t, DataType dt, ValueType vt) {
+	public Lop(Type t, DataType dt, ValueType vt) {
 		type = t;
 		_dataType = dt; // data type of the output produced from this LOP
 		_valueType = vt; // value type of the output produced from this LOP
-		inputs = new ArrayList<Lops>();
-		outputs = new ArrayList<Lops>();
+		inputs = new ArrayList<Lop>();
+		outputs = new ArrayList<Lop>();
 		outParams = new OutputParameters();
 		lps = new LopProperties();
 	}
@@ -163,7 +174,7 @@ public abstract class Lops {
 	 * @return
 	 */
 
-	public Lops.Type getType() {
+	public Lop.Type getType() {
 		return type;
 	}
 
@@ -172,7 +183,7 @@ public abstract class Lops {
 	 * 
 	 * @return
 	 */
-	public ArrayList<Lops> getInputs() {
+	public ArrayList<Lop> getInputs() {
 		return inputs;
 	}
 
@@ -182,7 +193,7 @@ public abstract class Lops {
 	 * @return
 	 */
 
-	public ArrayList<Lops> getOutputs() {
+	public ArrayList<Lop> getOutputs() {
 		return outputs;
 	}
 
@@ -192,7 +203,7 @@ public abstract class Lops {
 	 * @param op
 	 */
 
-	public void addInput(Lops op) {
+	public void addInput(Lop op) {
 		inputs.add(op);
 	}
 
@@ -202,7 +213,7 @@ public abstract class Lops {
 	 * @param op
 	 */
 
-	public void addOutput(Lops op) {
+	public void addOutput(Lop op) {
 		outputs.add(op);
 	}
 	
@@ -226,12 +237,12 @@ public abstract class Lops {
 	public abstract String toString();
 
 	public void resetVisitStatus() {
-		if (this.get_visited() == Lops.VISIT_STATUS.NOTVISITED)
+		if (this.get_visited() == Lop.VISIT_STATUS.NOTVISITED)
 			return;
 		for (int i = 0; i < this.getInputs().size(); i++) {
 			this.getInputs().get(i).resetVisitStatus();
 		}
-		this.set_visited(Lops.VISIT_STATUS.NOTVISITED);
+		this.set_visited(Lop.VISIT_STATUS.NOTVISITED);
 	}
 
 	/**
@@ -338,10 +349,10 @@ public abstract class Lops {
 	 * 
 	 * @param dag
 	 */
-	public final void addToDag(Dag<Lops> dag) 
+	public final void addToDag(Dag<Lop> dag) 
 	{
 		if( dag.addNode(this) )
-			for( Lops l : getInputs() )
+			for( Lop l : getInputs() )
 				l.addToDag(dag);
 	}
 
@@ -479,11 +490,11 @@ public abstract class Lops {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 
-	public String parseLabelForInstruction(Lops iLop) {
+	public String parseLabelForInstruction(Lop iLop) {
 		String ret = iLop.getOutputParameters().getLabel();
 		if ( (iLop.getExecLocation() == ExecLocation.Data &&
 				 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data )){
-			ret = Lops.VARIABLE_NAME_PLACEHOLDER + ret + Lops.VARIABLE_NAME_PLACEHOLDER;
+			ret = Lop.VARIABLE_NAME_PLACEHOLDER + ret + Lop.VARIABLE_NAME_PLACEHOLDER;
 		}
 		return ret;
 	}

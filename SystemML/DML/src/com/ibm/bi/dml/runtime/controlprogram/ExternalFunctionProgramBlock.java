@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
@@ -13,7 +20,9 @@ import org.nimble.task.AbstractTask;
 import org.w3c.dom.Element;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
@@ -32,8 +41,9 @@ import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -49,12 +59,13 @@ import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
-public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
-	
+public class ExternalFunctionProgramBlock extends FunctionProgramBlock 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	protected static IDSequence _idSeq = null;
 
 	//handle to the nimble dag queue
@@ -352,13 +363,13 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 					inLabels.add(matrices.get(i).getName());
 					outLabels.add(matrices.get(i).getName() + "_extFnOutput");
 					outputs[i] = scratchSpaceLoc +
-					             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+					             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
 		                         _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Output";
 					blockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 					resultIndex[i] = (byte) i; // (matrices.size()+i);
 		
 					if (i > 0)
-						reblock += Lops.INSTRUCTION_DELIMITOR;
+						reblock += Lop.INSTRUCTION_DELIMITOR;
 		
 					reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
@@ -461,7 +472,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 					resultIndex[i] = (byte) i; //(matrices.size()+i);
 	
 					outputs[i] = scratchSpaceLoc +
-									Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
+									Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
 									_otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
 					unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 	
@@ -974,10 +985,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock {
 				//ensure unique working directory for nimble output
 				StringBuffer sb = new StringBuffer();
 				sb.append( dmlCfg.getTextValue(DMLConfig.SCRATCH_SPACE) );
-				sb.append( Lops.FILE_SEPARATOR );
-				sb.append( Lops.PROCESS_PREFIX );
+				sb.append( Lop.FILE_SEPARATOR );
+				sb.append( Lop.PROCESS_PREFIX );
 				sb.append( DMLScript.getUUID() );
-				sb.append( Lops.FILE_SEPARATOR  );
+				sb.append( Lop.FILE_SEPARATOR  );
 				sb.append( dmlCfg.getTextValue(DMLConfig.NIMBLE_SCRATCH) );			
 				((Element)config.getSystemConfig().getParameters().getElementsByTagName(DMLConfig.NIMBLE_SCRATCH).item(0))
 				                .setTextContent( sb.toString() );						

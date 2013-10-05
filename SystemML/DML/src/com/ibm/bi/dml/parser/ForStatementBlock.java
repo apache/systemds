@@ -12,10 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.lops.Lop;
 
 
 public class ForStatementBlock extends StatementBlock 
@@ -24,13 +23,13 @@ public class ForStatementBlock extends StatementBlock
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	protected Hops _fromHops        = null;
-	protected Hops _toHops          = null;
-	protected Hops _incrementHops   = null;
+	protected Hop _fromHops        = null;
+	protected Hop _toHops          = null;
+	protected Hop _incrementHops   = null;
 	
-	protected Lops _fromLops        = null;
-	protected Lops _toLops          = null;
-	protected Lops _incrementLops   = null;
+	protected Lop _fromLops        = null;
+	protected Lop _toLops          = null;
+	protected Lop _incrementLops   = null;
 
 	public IterablePredicate getIterPredicate(){
 		return ((ForStatement)_statements.get(0)).getIterablePredicate();
@@ -239,7 +238,7 @@ public class ForStatementBlock extends StatementBlock
 	
 	}
 
-	public ArrayList<Hops> get_hops() throws HopsException {
+	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the ForStatementBlock");
@@ -248,23 +247,23 @@ public class ForStatementBlock extends StatementBlock
 		return _hops;
 	}
 
-	public void setFromHops(Hops hops) { _fromHops = hops; }
-	public void setToHops(Hops hops) { _toHops = hops; }
-	public void setIncrementHops(Hops hops) { _incrementHops = hops; }
+	public void setFromHops(Hop hops) { _fromHops = hops; }
+	public void setToHops(Hop hops) { _toHops = hops; }
+	public void setIncrementHops(Hop hops) { _incrementHops = hops; }
 	
-	public Hops getFromHops()      { return _fromHops; }
-	public Hops getToHops()        { return _toHops; }
-	public Hops getIncrementHops() { return _incrementHops; }
+	public Hop getFromHops()      { return _fromHops; }
+	public Hop getToHops()        { return _toHops; }
+	public Hop getIncrementHops() { return _incrementHops; }
 
-	public void setFromLops(Lops lops) { 
+	public void setFromLops(Lop lops) { 
 		_fromLops = lops; 
 	}
-	public void setToLops(Lops lops) { _toLops = lops; }
-	public void setIncrementLops(Lops lops) { _incrementLops = lops; }
+	public void setToLops(Lop lops) { _toLops = lops; }
+	public void setIncrementLops(Lop lops) { _incrementLops = lops; }
 	
-	public Lops getFromLops()      { return _fromLops; }
-	public Lops getToLops()        { return _toLops; }
-	public Lops getIncrementLops() { return _incrementLops; }
+	public Lop getFromLops()      { return _fromLops; }
+	public Lop getToLops()        { return _toLops; }
+	public Lop getIncrementLops() { return _incrementLops; }
 
 	
 	

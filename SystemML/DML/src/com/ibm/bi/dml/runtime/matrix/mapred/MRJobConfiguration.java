@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
@@ -22,11 +30,14 @@ import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.meta.PartitionParams;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionParser;
@@ -70,12 +81,13 @@ import com.ibm.bi.dml.runtime.matrix.io.WeightedPair;
 import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
-public class MRJobConfiguration {
-	
+public class MRJobConfiguration 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	//Job configurations
 	
 	public static IDSequence seq = new IDSequence();
@@ -403,10 +415,10 @@ public class MRJobConfiguration {
 		if( isLocalJobTracker(job) )
 		{
 			StringBuilder tmp = new StringBuilder();
-			tmp.append( Lops.FILE_SEPARATOR );
-			tmp.append( Lops.PROCESS_PREFIX );
+			tmp.append( Lop.FILE_SEPARATOR );
+			tmp.append( Lop.PROCESS_PREFIX );
 			tmp.append( DMLScript.getUUID() );
-			tmp.append( Lops.FILE_SEPARATOR );
+			tmp.append( Lop.FILE_SEPARATOR );
 			tmp.append( seq.getNextID() );
 			String uniqueSubdir = tmp.toString();
 			
@@ -465,7 +477,7 @@ public class MRJobConfiguration {
 	public static void setStagingDir( JobConf job )
 	{
 		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
-		             Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR;
+		             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR;
 		job.set( "mapreduce.jobtracker.staging.root.dir", dir );
 	}
 	
@@ -1809,10 +1821,10 @@ public class MRJobConfiguration {
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
-		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lop.FILE_SEPARATOR);
 		
 		sb.append("TmpOutput"+seq.getNextID());
 		
@@ -1826,10 +1838,10 @@ public class MRJobConfiguration {
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
-		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lop.FILE_SEPARATOR);
 		
 		sb.append(SamplingSortMRInputFormat.PARTITION_FILENAME+seq.getNextID());
 		

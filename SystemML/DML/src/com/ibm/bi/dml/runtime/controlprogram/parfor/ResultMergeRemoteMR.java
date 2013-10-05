@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.JobConf;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
@@ -38,7 +39,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
 
 /**

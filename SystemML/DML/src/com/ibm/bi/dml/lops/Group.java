@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -9,8 +16,13 @@ import com.ibm.bi.dml.parser.Expression.*;
  * Lop to represent a grouping operation.
  */
 
-public class Group extends Lops  
+public class Group extends Lop  
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	
 	public enum OperationTypes {Sort};
 	
 	OperationTypes operation;
@@ -21,9 +33,9 @@ public class Group extends Lops
 	 * @param op
 	 */
 
-	public Group(Lops input, Group.OperationTypes op, DataType dt, ValueType vt) 
+	public Group(Lop input, Group.OperationTypes op, DataType dt, ValueType vt) 
 	{
-		super(Lops.Type.Grouping, dt, vt);		
+		super(Lop.Type.Grouping, dt, vt);		
 		operation = op;
 		this.addInput(input);
 		input.addOutput(this);

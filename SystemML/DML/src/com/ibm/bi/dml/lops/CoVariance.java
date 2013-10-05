@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -5,15 +12,18 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * Lop to compute covariance between two 1D matrices
  * 
  */
-public class CoVariance extends Lops {
-
-	private void init(Lops input1, Lops input2, Lops input3, ExecType et) throws LopsException {
+public class CoVariance extends Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private void init(Lop input1, Lop input2, Lop input3, ExecType et) throws LopsException {
 		this.addInput(input1);
 		input1.addOutput(this);
 
@@ -47,21 +57,21 @@ public class CoVariance extends Lops {
 	 * @throws LopsException 
 	 */
 
-	public CoVariance(Lops input1, DataType dt, ValueType vt) throws LopsException {
+	public CoVariance(Lop input1, DataType dt, ValueType vt) throws LopsException {
 		this(input1, dt, vt, ExecType.MR);
 	}
 
-	public CoVariance(Lops input1, DataType dt, ValueType vt, ExecType et) throws LopsException {
-		super(Lops.Type.CoVariance, dt, vt);
+	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) throws LopsException {
+		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, null, null, et);
 	}
 	
-	public CoVariance(Lops input1, Lops input2, DataType dt, ValueType vt, ExecType et) throws LopsException {
+	public CoVariance(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) throws LopsException {
 		this(input1, input2, null, dt, vt, et);
 	}
 	
-	public CoVariance(Lops input1, Lops input2, Lops input3, DataType dt, ValueType vt, ExecType et) throws LopsException {
-		super(Lops.Type.CoVariance, dt, vt);
+	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) throws LopsException {
+		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, input2, input3, et);
 	}
 
@@ -75,7 +85,7 @@ public class CoVariance extends Lops {
 	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input1 );
@@ -103,7 +113,7 @@ public class CoVariance extends Lops {
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input1 );
@@ -137,7 +147,7 @@ public class CoVariance extends Lops {
 	public String getInstructions(int input_index, int output_index) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index );

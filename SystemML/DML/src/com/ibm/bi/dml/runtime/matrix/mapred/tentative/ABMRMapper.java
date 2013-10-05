@@ -1,10 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.mapred.tentative;
 
 import java.io.IOException;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
@@ -18,8 +24,12 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedTripleIndexes;
 
 //assume only two inputs to this job
 public class ABMRMapper extends MapReduceBase 
-implements Mapper<MatrixIndexes, MatrixBlock, TaggedTripleIndexes, MatrixBlock>{
-	
+implements Mapper<MatrixIndexes, MatrixBlock, TaggedTripleIndexes, MatrixBlock>
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	protected Vector<Byte> representativeMatrixes=new Vector<Byte>();
 	public static final String MATRIX_NUM_ROW_PREFIX_CONFIG="matrix.num.row.";
 	public static final String MATRIX_NUM_COLUMN_PREFIX_CONFIG="matrix.num.column.";

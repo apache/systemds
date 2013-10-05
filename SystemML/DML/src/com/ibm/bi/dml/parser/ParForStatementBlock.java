@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.utils.LanguageException;
 
 /**
  * 

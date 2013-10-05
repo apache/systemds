@@ -1,10 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
@@ -12,8 +18,12 @@ import com.ibm.bi.dml.utils.LopsException;
  * used to represent CP and MR instruction but in case of MR there is
  * an additional Aggregate at the reducers.
  */
-public class MMTSJ extends Lops 
+public class MMTSJ extends Lop 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum MMTSJType {
 		NONE,
 		LEFT,
@@ -22,9 +32,9 @@ public class MMTSJ extends Lops
 	
 	private MMTSJType _type = null;
 	
-	public MMTSJ(Lops input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) 
+	public MMTSJ(Lop input1, DataType dt, ValueType vt, ExecType et, MMTSJType type) 
 	{
-		super(Lops.Type.MMTSJ, dt, vt);		
+		super(Lop.Type.MMTSJ, dt, vt);		
 		addInput(input1);
 		input1.addOutput(this);
 		_type = type;
@@ -52,7 +62,7 @@ public class MMTSJ extends Lops
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "tsmm" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index1 );

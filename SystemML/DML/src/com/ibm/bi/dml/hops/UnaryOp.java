@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
@@ -6,7 +13,7 @@ import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
@@ -24,15 +31,18 @@ import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
 
 
 /* Unary (cell operations): aij = -b
  * 		Semantic: given a value, perform the operation (in mapper or reducer)
  */
 
-public class UnaryOp extends Hops {
-
+public class UnaryOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum Position {
 		before, after, none
 	};
@@ -44,9 +54,9 @@ public class UnaryOp extends Hops {
 		//default constructor for clone
 	}
 	
-	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hops inp)
+	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp)
 			throws HopsException {
-		super(Hops.Kind.UnaryOp, l, dt, vt);
+		super(Hop.Kind.UnaryOp, l, dt, vt);
 
 		getInput().add(0, inp);
 		inp.getParent().add(this);
@@ -67,7 +77,7 @@ public class UnaryOp extends Hops {
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + _op);
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
@@ -83,17 +93,17 @@ public class UnaryOp extends Hops {
 		return s;
 	}
 
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException {
 		if (get_lops() == null) {
 			try {
 			if (get_dataType() == DataType.SCALAR) {
-				if (_op == Hops.OpOp1.IQM) {
+				if (_op == Hop.OpOp1.IQM) {
 					ExecType et = optFindExecType();
 					if ( et == ExecType.MR ) {
 						CombineUnary combine = CombineUnary
 								.constructCombineLop(
-										(Lops) getInput()
+										getInput()
 												.get(0).constructLops(),
 										DataType.MATRIX, get_valueType());
 						combine.getOutputParameters().setDimensions(
@@ -105,7 +115,7 @@ public class UnaryOp extends Hops {
 	
 						SortKeys sort = SortKeys
 								.constructSortByValueLop(
-										(Lops) combine,
+										combine,
 										SortKeys.OperationTypes.WithNoWeights,
 										DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
 	
@@ -134,8 +144,8 @@ public class UnaryOp extends Hops {
 						pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 						PartialAggregate pagg = new PartialAggregate(
-								pick, HopsAgg2Lops.get(Hops.AggOp.SUM),
-								HopsDirection2Lops.get(Hops.Direction.RowCol),
+								pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
+								HopsDirection2Lops.get(Hop.Direction.RowCol),
 								DataType.MATRIX, get_valueType());
 						
 						pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -155,7 +165,7 @@ public class UnaryOp extends Hops {
 						group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 	
 						Aggregate agg1 = new Aggregate(
-								group1, HopsAgg2Lops.get(Hops.AggOp.SUM),
+								group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
 								DataType.MATRIX, get_valueType(), ExecType.MR);
 						agg1.getOutputParameters().setDimensions(get_dim1(),
 								get_dim2(), get_rows_in_block(),
@@ -179,7 +189,7 @@ public class UnaryOp extends Hops {
 						
 						BinaryCP binScalar2 = new BinaryCP(
 								unary1, binScalar1, HopsOpOp2LopsBS
-										.get(Hops.OpOp2.DIV), DataType.SCALAR,
+										.get(Hop.OpOp2.DIV), DataType.SCALAR,
 								get_valueType());
 						binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 						
@@ -256,7 +266,7 @@ public class UnaryOp extends Hops {
 					&& gen != GENERATES.DML_TRANSIENT)
 				gen = GENERATES.DML;
 			
-			Hops input = this.getInput().get(0);
+			Hop input = this.getInput().get(0);
 			
 			SQLLops sqllop = new SQLLops(this.get_name(),
 										gen,
@@ -276,20 +286,20 @@ public class UnaryOp extends Hops {
 		return this.get_sqllops();
 	}
 	
-	private SQLLopProperties getProperties(Hops input)
+	private SQLLopProperties getProperties(Hop input)
 	{
 		SQLLopProperties prop = new SQLLopProperties();
 		prop.setJoinType(JOINTYPE.NONE);
 		prop.setAggType(AGGREGATIONTYPE.NONE);
 		
-		prop.setOpString(Hops.HopsOpOp12String.get(this._op) + "(" + input.get_sqllops().get_tableName() + ")");
+		prop.setOpString(Hop.HopsOpOp12String.get(this._op) + "(" + input.get_sqllops().get_tableName() + ")");
 		
 		return prop;
 	}
 	
 	
 	
-	private String getSQLSelectCode(Hops input) throws HopsException
+	private String getSQLSelectCode(Hop input) throws HopsException
 	{
 		String sql = null;
 
@@ -300,9 +310,9 @@ public class UnaryOp extends Hops {
 				//sqllop.set_dataType(DataType.SCALAR);
 				sql = String.format(SQLLops.CASTASSCALAROP, input.get_sqllops().get_tableName());
 			}
-			if(Hops.isFunction(this._op))
+			if(Hop.isFunction(this._op))
 			{
-				String op = Hops.HopsOpOp12String.get(this._op);
+				String op = Hop.HopsOpOp12String.get(this._op);
 				if(this._op == OpOp1.LOG)
 					op = "ln";
 				sql = String.format(SQLLops.UNARYFUNCOP, op, input.get_sqllops().get_tableName());
@@ -310,7 +320,7 @@ public class UnaryOp extends Hops {
 			//Currently there is only minus that is just added in front of the operand
 			else if(this._op == OpOp1.MINUS)
 			{
-				String op = Hops.HopsOpOp12String.get(this._op);
+				String op = Hop.HopsOpOp12String.get(this._op);
 				sql = String.format(SQLLops.UNARYOP, op, input.get_sqllops().get_tableName());
 			}
 			//Not is in SLQ not "!" but "NOT"
@@ -351,10 +361,10 @@ public class UnaryOp extends Hops {
 			else
 			{
 				//Create correct string for operation
-				if(Hops.isFunction(this._op))
-					opr = Hops.HopsOpOp12String.get(this._op) + "( " + s + " )";
+				if(Hop.isFunction(this._op))
+					opr = Hop.HopsOpOp12String.get(this._op) + "( " + s + " )";
 				else if(this._op == OpOp1.MINUS)
-					opr = Hops.HopsOpOp12String.get(this._op) + s;
+					opr = Hop.HopsOpOp12String.get(this._op) + s;
 				else if(this._op == OpOp1.NOT)
 					opr = "NOT " + s;
 
@@ -366,7 +376,7 @@ public class UnaryOp extends Hops {
 		return sql;
 	}
 	
-	private SQLSelectStatement getSQLSelect(Hops input) throws HopsException
+	private SQLSelectStatement getSQLSelect(Hop input) throws HopsException
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		
@@ -377,9 +387,9 @@ public class UnaryOp extends Hops {
 				stmt.getColumns().add("max(value) AS sval");
 				stmt.setTable(new SQLTableReference(input.get_sqllops().get_tableName()));
 			}
-			if(Hops.isFunction(this._op))
+			if(Hop.isFunction(this._op))
 			{
-				String op = Hops.HopsOpOp12String.get(this._op);
+				String op = Hop.HopsOpOp12String.get(this._op);
 				//SELECT %s(alias_a.value) as value FROM \"%s\" alias_a
 				stmt.getColumns().add("row");
 				stmt.getColumns().add("col");
@@ -389,7 +399,7 @@ public class UnaryOp extends Hops {
 			//Currently there is only minus that is just added in front of the operand
 			else if(this._op == OpOp1.MINUS)
 			{
-				String op = Hops.HopsOpOp12String.get(this._op);
+				String op = Hop.HopsOpOp12String.get(this._op);
 				//SELECT alias_a.row AS row, alias_a.col AS col, %salias_a.value FROM \"%s\" alias_a";
 				
 				stmt.getColumns().add("row");
@@ -435,10 +445,10 @@ public class UnaryOp extends Hops {
 			else
 			{
 				//Create correct string for operation
-				if(Hops.isFunction(this._op))
-					opr = Hops.HopsOpOp12String.get(this._op) + "( sval )";
+				if(Hop.isFunction(this._op))
+					opr = Hop.HopsOpOp12String.get(this._op) + "( sval )";
 				else if(this._op == OpOp1.MINUS)
-					opr = Hops.HopsOpOp12String.get(this._op) + "sval";
+					opr = Hop.HopsOpOp12String.get(this._op) + "sval";
 				else if(this._op == OpOp1.NOT)
 					opr = "NOT sval";
 				
@@ -458,7 +468,7 @@ public class UnaryOp extends Hops {
 		//overwrites default hops behavior
 		super.computeMemEstimate(memo);
 		
-		if( _op == Hops.OpOp1.NROW || _op == Hops.OpOp1.NCOL ) //specific case for meta data ops
+		if( _op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL ) //specific case for meta data ops
 		{
 			_memEstimate = OptimizerUtils.INT_SIZE;
 			//_outputMemEstimate = OptimizerUtils.INT_SIZE;
@@ -492,7 +502,7 @@ public class UnaryOp extends Hops {
 	{
 		long[] ret = null;
 	
-		Hops input = getInput().get(0);
+		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc.dimsKnown() ) {
 			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
@@ -550,7 +560,7 @@ public class UnaryOp extends Hops {
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
-			Hops input = getInput().get(0);
+			Hop input = getInput().get(0);
 			set_dim1( input.get_dim1() );
 			set_dim2( input.get_dim2() );
 			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
@@ -576,7 +586,7 @@ public class UnaryOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.UnaryOp )
 			return false;

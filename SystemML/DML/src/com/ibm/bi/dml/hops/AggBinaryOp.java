@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
@@ -5,7 +12,8 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.DataPartition;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
@@ -27,8 +35,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLCondition.BOOLOP;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)
@@ -40,8 +46,12 @@ import com.ibm.bi.dml.utils.LopsException;
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
 
-public class AggBinaryOp extends Hops 
+public class AggBinaryOp extends Hop 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private OpOp2 innerOp;
 	private AggOp outerOp;
 
@@ -58,7 +68,7 @@ public class AggBinaryOp extends Hops
 	}
 	
 	public AggBinaryOp(String l, DataType dt, ValueType vt, OpOp2 innOp,
-			AggOp outOp, Hops in1, Hops in2) {
+			AggOp outOp, Hop in1, Hop in2) {
 		super(Kind.AggBinaryOp, l, dt, vt);
 		innerOp = innOp;
 		outerOp = outOp;
@@ -92,7 +102,7 @@ public class AggBinaryOp extends Hops
 	 *       and existing mem estimate advantageous in terms of consistency hops/lops,
 	 *       and some special cases internally materialize the transpose for better cache locality  
 	 */
-	public Lops constructLops() throws HopsException, LopsException {
+	public Lop constructLops() throws HopsException, LopsException {
 
 		if (get_lops() == null) {
 			if ( isMatrixMultiply() ) {
@@ -101,7 +111,7 @@ public class AggBinaryOp extends Hops
 				
 				if ( et == ExecType.CP ) {
 					//System.out.println("Method = CP");
-					Lops matmultCP = null;
+					Lop matmultCP = null;
 					if( mmtsj == MMTSJType.NONE ) {
 						matmultCP = new BinaryCP(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
 												 BinaryCP.OperationTypes.MATMULT, get_dataType(), get_valueType());
@@ -126,7 +136,7 @@ public class AggBinaryOp extends Hops
 					// System.out.println("Method = " + method);
 					
 					if ( method == MMultMethod.DIST_MV) {
-						Lops vector_in = getInput().get(1).constructLops();
+						Lop vector_in = getInput().get(1).constructLops();
 						
 						if ( partitionVectorInDistCache(getInput().get(1)._dim1, getInput().get(1)._dim2) ) {
 							vector_in = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
@@ -226,7 +236,7 @@ public class AggBinaryOp extends Hops
 				super.printMe();
 				LOG.debug("  InnerOperation: " + innerOp);
 				LOG.debug("  OuterOperation: " + outerOp);
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 				;
@@ -354,8 +364,8 @@ public class AggBinaryOp extends Hops
 	{
 		MMTSJType ret = MMTSJType.NONE;
 		
-		Hops in1 = getInput().get(0);
-		Hops in2 = getInput().get(1);
+		Hop in1 = getInput().get(0);
+		Hop in2 = getInput().get(1);
 		
 		if(    in1 instanceof ReorgOp 
 			&& ((ReorgOp)in1).getOp() == ReOrgOp.TRANSPOSE 
@@ -468,8 +478,8 @@ public class AggBinaryOp extends Hops
 			//Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();
 			
-			Hops hop1 = this.getInput().get(0);
-			Hops hop2 = this.getInput().get(1);
+			Hop hop1 = this.getInput().get(0);
+			Hop hop2 = this.getInput().get(1);
 			
 			
 			if(this.isMatrixMultiply())
@@ -498,7 +508,7 @@ public class AggBinaryOp extends Hops
 		return this.get_sqllops();
 	}
 	
-	private SQLLopProperties getProperties(Hops hop1, Hops hop2)
+	private SQLLopProperties getProperties(Hop hop1, Hop hop2)
 	{
 		SQLLopProperties prop = new SQLLopProperties();
 		JOINTYPE join = JOINTYPE.FULLOUTERJOIN;
@@ -519,23 +529,23 @@ public class AggBinaryOp extends Hops
 		
 		prop.setAggType(agg);
 		prop.setJoinType(join);
-		prop.setOpString(Hops.HopsAgg2String.get(outerOp) + "(" 
+		prop.setOpString(Hop.HopsAgg2String.get(outerOp) + "(" 
 				+ hop1.get_sqllops().get_tableName() + " "
-				+ Hops.HopsOpOp2String.get(innerOp) + " "
+				+ Hop.HopsOpOp2String.get(innerOp) + " "
 				+ hop1.get_sqllops().get_tableName() + ")");
 		return prop;
 	}
 	
-	private SQLSelectStatement getSQLSelect(Hops hop1, Hops hop2) throws HopsException
+	private SQLSelectStatement getSQLSelect(Hop hop1, Hop hop2) throws HopsException
 	{
 		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
 			throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, Aggregates only work for two matrices");
 		
-		boolean isvalid = Hops.isSupported(this.innerOp);
+		boolean isvalid = Hop.isSupported(this.innerOp);
 		if(!isvalid)
 			throw new HopsException(this.printErrorLocation() + "In AggBinary Hop, This operation is not supported for SQL Select");
 		
-		boolean isfunc = Hops.isFunction(this.innerOp);
+		boolean isfunc = Hop.isFunction(this.innerOp);
 		
 		String inner_opr = SQLLops.OpOp2ToString(innerOp);
 
@@ -579,7 +589,7 @@ public class AggBinaryOp extends Hops
 		}
 		else
 		{
-			String outer = Hops.HopsAgg2String.get(this.outerOp);
+			String outer = Hop.HopsAgg2String.get(this.outerOp);
 
 			join.getConditions().add(new SQLCondition("alias_a.col = alias_b.row"));
 			stmt.getColumns().add("alias_a.row AS row");
@@ -593,16 +603,16 @@ public class AggBinaryOp extends Hops
 		return stmt;
 	}
 	
-	private String getSQLSelectCode(Hops hop1, Hops hop2) throws HopsException
+	private String getSQLSelectCode(Hop hop1, Hop hop2) throws HopsException
 	{
 		if(!(hop1.get_sqllops().get_dataType() == DataType.MATRIX && hop2.get_sqllops().get_dataType() == DataType.MATRIX))
 			throw new HopsException(this.printErrorLocation() + "in AggBinary Hop, error in getSQLSelectCode() -- Aggregates only work for two matrices");
 		
 		//min, max, log, quantile, interquantile and iqm cannot be done that way
-		boolean isvalid = Hops.isSupported(this.innerOp);
+		boolean isvalid = Hop.isSupported(this.innerOp);
 
 		//But min, max and log can still be done
-		boolean isfunc = Hops.isFunction(this.innerOp);
+		boolean isfunc = Hop.isFunction(this.innerOp);
 		
 		String inner_opr = SQLLops.OpOp2ToString(innerOp);
 		
@@ -644,7 +654,7 @@ public class AggBinaryOp extends Hops
 			//Here the outerOp is just appended, it can only be min or max
 			else
 			{
-				String outer = Hops.HopsAgg2String.get(this.outerOp);
+				String outer = Hop.HopsAgg2String.get(this.outerOp);
 				sql = String.format(SQLLops.AGGBINOP, outer, inner, 
 					hop1.get_sqllops().get_tableName(), join, hop2.get_sqllops().get_tableName());
 			}
@@ -685,8 +695,8 @@ public class AggBinaryOp extends Hops
 	
 	private SQLLops getMatrixMultSQLLOP(GENERATES flag) throws HopsException
 	{
-		Hops hop1 = this.getInput().get(0);
-		Hops hop2 = this.getInput().get(1);
+		Hop hop1 = this.getInput().get(0);
+		Hop hop2 = this.getInput().get(1);
 		
 		boolean m_large = hop1.get_dim1() > SQLLops.HMATRIXSPLIT;
 		boolean k_large = hop1.get_dim2() > SQLLops.VMATRIXSPLIT;
@@ -769,8 +779,8 @@ public class AggBinaryOp extends Hops
 	
 	private String getMatrixMultSQLString(String operation, String op1, String op2)
 	{
-		Hops hop1 = this.getInput().get(0);
-		Hops hop2 = this.getInput().get(1);
+		Hop hop1 = this.getInput().get(0);
+		Hop hop2 = this.getInput().get(1);
 		
 		boolean m_large = hop1.get_dim1() > SQLLops.HMATRIXSPLIT;
 		boolean k_large = hop1.get_dim2() > SQLLops.VMATRIXSPLIT;
@@ -834,8 +844,8 @@ public class AggBinaryOp extends Hops
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(0);
-		Hops input2 = getInput().get(1);
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);
 		
 		if( isMatrixMultiply() )
 		{
@@ -860,7 +870,7 @@ public class AggBinaryOp extends Hops
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.AggBinaryOp )
 			return false;

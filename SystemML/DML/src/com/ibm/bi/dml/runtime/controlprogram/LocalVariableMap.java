@@ -1,9 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 import java.util.HashMap;
 import java.util.StringTokenizer;
@@ -17,6 +24,10 @@ import java.util.Set;
  */
 public class LocalVariableMap implements Cloneable
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private static String eol = System.getProperty ("line.separator");
 	private static String ELEMENT_DELIM = com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
 	private static IDSequence _seq = new IDSequence();

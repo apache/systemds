@@ -1,12 +1,22 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops.cost;
 
 import java.util.HashSet;
 
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
@@ -25,15 +35,16 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.UnaryMRInstructionBase
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * 
  */
 public class CostEstimatorStaticRuntime extends CostEstimator
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	//time-conversion
 	private static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; //2GFLOPS
 	private static final long UNKNOWN_TIME = -1;
@@ -144,7 +155,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		for( String instCat : mapperInst )
 			if( instCat != null && instCat.length()>0 ) {
-				String[] linst = instCat.split( Lops.INSTRUCTION_DELIMITOR );
+				String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
 				for( String tmp : linst ){
 					Object[] o = extractMRInstStatistics(tmp, vs);
 					mapCosts += getInstTimeEstimate(tmp, (VarStats[])o[0], (String[])o[1]);
@@ -165,7 +176,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			//reduce instructions
 			for( String instCat : reducerInst )
 				if( instCat != null && instCat.length()>0 ) {
-					String[] linst = instCat.split( Lops.INSTRUCTION_DELIMITOR );
+					String[] linst = instCat.split( Lop.INSTRUCTION_DELIMITOR );
 					for( String tmp : linst ){
 						Object[] o = extractMRInstStatistics(tmp, vs);
 						if(InstructionUtils.getMRType(tmp)==MRINSTRUCTION_TYPE.Aggregate)

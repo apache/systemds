@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # JUnit test class: dml.test.integration.applications.L2SVMTest.java
 # command line invocation assuming $L2SVM_HOME is set to the home of the R script
 # Rscript $L2SVM_HOME/L2SVM.R $L2SVM_HOME/in/ 0.00000001 1 100 $L2SVM_HOME/expected/

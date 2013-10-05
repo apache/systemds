@@ -34,7 +34,7 @@ import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
@@ -45,11 +45,14 @@ import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -68,10 +71,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.CacheException;
 import com.ibm.bi.dml.utils.DMLException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * DML Instructions Performance Test Tool: 
@@ -441,7 +441,7 @@ public class PerfTestTool
 		// CP instructions
 		
 		//matrix multiply mmtsj
-		registerInstruction( "CP"+Lops.OPERAND_DELIMITOR+"tsmm", CPInstructionParser.parseSingleInstruction("CP"+Lops.OPERAND_DELIMITOR+"tsmm"+Lops.OPERAND_DELIMITOR+"A"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+"C"+Lops.DATATYPE_PREFIX+"MATRIX"+Lops.VALUETYPE_PREFIX+"DOUBLE"+Lops.OPERAND_DELIMITOR+MMTSJType.LEFT),
+		registerInstruction( "CP"+Lop.OPERAND_DELIMITOR+"tsmm", CPInstructionParser.parseSingleInstruction("CP"+Lop.OPERAND_DELIMITOR+"tsmm"+Lop.OPERAND_DELIMITOR+"A"+Lop.DATATYPE_PREFIX+"MATRIX"+Lop.VALUETYPE_PREFIX+"DOUBLE"+Lop.OPERAND_DELIMITOR+"C"+Lop.DATATYPE_PREFIX+"MATRIX"+Lop.VALUETYPE_PREFIX+"DOUBLE"+Lop.OPERAND_DELIMITOR+MMTSJType.LEFT),
 						     getDefaultTestDefs(), false, IOSchema.UNARY_UNARY ); 
 		
 		/*
@@ -1673,7 +1673,7 @@ public class PerfTestTool
 					
 			xsw.writeStartElement( XML_INSTRUCTION ); 
 			xsw.writeAttribute(XML_ID, String.valueOf( instID ));
-			xsw.writeAttribute(XML_NAME, instName.replaceAll(Lops.OPERAND_DELIMITOR, " "));
+			xsw.writeAttribute(XML_NAME, instName.replaceAll(Lop.OPERAND_DELIMITOR, " "));
 			
 			//foreach testdef cost function
 			for( Entry<Integer,CostFunction> cfun : inst.getValue().entrySet() )

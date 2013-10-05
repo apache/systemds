@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
@@ -8,25 +15,29 @@ import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
-abstract public class Hops {
-	protected static final Log LOG =  LogFactory.getLog(Hops.class.getName());
+public abstract class Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
 	public static boolean BREAKONSCALARS = false;
 	public static boolean SPLITLARGEMATRIXMULT = true;
@@ -56,10 +67,10 @@ abstract public class Hops {
 	protected long _cols_in_block = -1;
 	protected long _nnz = -1;
 
-	protected ArrayList<Hops> _parent = new ArrayList<Hops>();
-	protected ArrayList<Hops> _input = new ArrayList<Hops>();
+	protected ArrayList<Hop> _parent = new ArrayList<Hop>();
+	protected ArrayList<Hop> _input = new ArrayList<Hop>();
 
-	private Lops _lops = null;
+	private Lop _lops = null;
 	private SQLLops _sqllops = null;
 
 	protected ExecType _etype = null; //currently used exec type
@@ -78,10 +89,18 @@ abstract public class Hops {
 	// (in that case re-complication ensures robustness and efficiency)
 	protected boolean _requiresRecompile = false;
 	
-	protected Hops(){
+	protected Hop(){
 		//default constructor for clone
 	}
-	
+		
+	public Hop(Kind k, String l, DataType dt, ValueType vt) {
+		_kind = k;
+		set_name(l);
+		_dataType = dt;
+		_valueType = vt;
+		ID = getNextHopID();
+	}
+
 	
 	private static long getNextHopID() {
 		return UniqueHopID.getNextID();
@@ -147,7 +166,7 @@ abstract public class Hops {
 	protected double getInputOutputSize() {
 		double sum = this._outputMemEstimate;
 		sum += this._processingMemEstimate;
-		for(Hops h : _input ) {
+		for(Hop h : _input ) {
 			sum += h._outputMemEstimate;
 		}
 		return sum;
@@ -155,7 +174,7 @@ abstract public class Hops {
 	
 	protected double getInputSize() {
 		double sum = 0;
-		for(Hops h : _input ) {
+		for(Hop h : _input ) {
 			sum += h._outputMemEstimate;
 		}
 		return sum;
@@ -344,7 +363,7 @@ abstract public class Hops {
 	 */
 	public boolean checkEstimates() {
 		boolean childStatus = true;
-		for (Hops h : this.getInput())
+		for (Hop h : this.getInput())
 			childStatus = childStatus && h.checkEstimates();
 		return childStatus && (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
@@ -357,7 +376,7 @@ abstract public class Hops {
 	public void refreshMemEstimates( MemoTable memo ) {
 		if (get_visited() == VISIT_STATUS.DONE)
 			return;
-		for (Hops h : this.getInput())
+		for (Hop h : this.getInput())
 			h.refreshMemEstimates( memo );
 		this.computeMemEstimate( memo );
 		this.set_visited(VISIT_STATUS.DONE);
@@ -397,11 +416,11 @@ abstract public class Hops {
 		return et;
 	}
 
-	public ArrayList<Hops> getParent() {
+	public ArrayList<Hop> getParent() {
 		return _parent;
 	}
 
-	public ArrayList<Hops> getInput() {
+	public ArrayList<Hop> getInput() {
 		return _input;
 	}
 
@@ -410,18 +429,10 @@ abstract public class Hops {
 	 * 
 	 * @param h
 	 */
-	public void addInput( Hops h )
+	public void addInput( Hop h )
 	{
 		_input.add(h);
 		h._parent.add(this);
-	}
-	
-	public Hops(Kind k, String l, DataType dt, ValueType vt) {
-		_kind = k;
-		set_name(l);
-		_dataType = dt;
-		_valueType = vt;
-		ID = getNextHopID();
 	}
 
 	public long get_rows_in_block() {
@@ -468,7 +479,7 @@ abstract public class Hops {
 		return _kind;
 	}
 
-	abstract public Lops constructLops() throws HopsException, LopsException;
+	abstract public Lop constructLops() throws HopsException, LopsException;
 	
 	abstract public SQLLops constructSQLLOPs() throws HopsException; 
 
@@ -481,7 +492,7 @@ abstract public class Hops {
 	}
 	
 	protected boolean areDimsBelowThreshold() {
-		return (_dim1 <= Hops.CPThreshold && _dim2 <= Hops.CPThreshold );
+		return (_dim1 <= Hop.CPThreshold && _dim2 <= Hop.CPThreshold );
 	}
 	
 	protected boolean dimsKnown() {
@@ -489,21 +500,21 @@ abstract public class Hops {
 	}
 
 	
-	public static void resetVisitStatus( ArrayList<Hops> hops )
+	public static void resetVisitStatus( ArrayList<Hop> hops )
 	{
-		for( Hops hopRoot : hops )
+		for( Hop hopRoot : hops )
 			hopRoot.resetVisitStatus();
 	}
 	
 	public void resetVisitStatus() {
-		if (this.get_visited() == Hops.VISIT_STATUS.NOTVISITED)
+		if (this.get_visited() == Hop.VISIT_STATUS.NOTVISITED)
 			return;
-		for (Hops h : this.getInput())
+		for (Hop h : this.getInput())
 			h.resetVisitStatus();
 		
 		if(this.get_sqllops() != null)
 			this.get_sqllops().set_visited(VISIT_STATUS.NOTVISITED);
-		this.set_visited(Hops.VISIT_STATUS.NOTVISITED);
+		this.set_visited(Hop.VISIT_STATUS.NOTVISITED);
 	}
 
 	public void rule_BlockSizeAndReblock(int GLOBAL_BLOCKSIZE) throws HopsException {
@@ -511,8 +522,8 @@ abstract public class Hops {
 		// TODO BJR: traverse HOP DAG and insert Reblock HOPs
 
 		// Go to the source(s) of the DAG
-		for (Hops hi : this.getInput()) {
-			if (get_visited() != Hops.VISIT_STATUS.DONE)
+		for (Hop hi : this.getInput()) {
+			if (get_visited() != Hop.VISIT_STATUS.DONE)
 				hi.rule_BlockSizeAndReblock(GLOBAL_BLOCKSIZE);
 		}
 
@@ -533,7 +544,7 @@ abstract public class Hops {
 					ReblockOp r = new ReblockOp(this, GLOBAL_BLOCKSIZE, GLOBAL_BLOCKSIZE);
 					r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					r.computeMemEstimate(null);
-					r.set_visited(Hops.VISIT_STATUS.DONE);
+					r.set_visited(Hop.VISIT_STATUS.DONE);
 				
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.PERSISTENTWRITE) {
 
@@ -559,7 +570,7 @@ abstract public class Hops {
 						ReblockOp r = new ReblockOp(this);
 						r.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						r.computeMemEstimate(null);
-						r.set_visited(Hops.VISIT_STATUS.DONE);
+						r.set_visited(Hop.VISIT_STATUS.DONE);
 					}
 
 				} else if (((DataOp) this).get_dataop() == DataOp.DataOpTypes.TRANSIENTWRITE
@@ -631,7 +642,7 @@ abstract public class Hops {
 				}
 				
 				// if any input is not blocked then the output of current Hop should not be blocked
-				for ( Hops h : getInput() ) {
+				for ( Hop h : getInput() ) {
 					if ( h.get_dataType() == DataType.MATRIX && h.get_rows_in_block() == -1 && h.get_cols_in_block() == -1 ) {
 						set_rows_in_block(-1);
 						set_cols_in_block(-1);
@@ -641,7 +652,7 @@ abstract public class Hops {
 			}
 		}
 
-		this.set_visited(Hops.VISIT_STATUS.DONE);
+		this.set_visited(Hop.VISIT_STATUS.DONE);
 
 	}
 
@@ -652,11 +663,11 @@ abstract public class Hops {
 	 * @return
 	 * @throws HopsException
 	 */
-	public int rule_CommonSubexpressionElimination_MergeLeafs( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
+	public int rule_CommonSubexpressionElimination_MergeLeafs( HashMap<String, Hop> dataops, HashMap<String, Hop> literalops ) 
 		throws HopsException 
 	{
 		int ret = 0;
-		if( get_visited() == Hops.VISIT_STATUS.DONE )
+		if( get_visited() == Hop.VISIT_STATUS.DONE )
 			return ret;
 
 		if( getInput().size()==0 ) //LEAF NODE
@@ -677,18 +688,18 @@ abstract public class Hops {
 			//merge leaf nodes (data, literal)
 			for( int i=0; i<getInput().size(); i++ )
 			{
-				Hops hi = getInput().get(i);
+				Hop hi = getInput().get(i);
 				if( hi instanceof DataOp && ((DataOp)hi).isRead() && dataops.containsKey(hi.get_name()) )
 				{
 					//replace child node ref
-					Hops tmp = dataops.get(hi.get_name());
+					Hop tmp = dataops.get(hi.get_name());
 					tmp.getParent().add(this);
 					getInput().set(i, tmp);
 					ret++; 
 				}
 				else if( hi instanceof LiteralOp && literalops.containsKey(hi.get_name()) )
 				{
-					Hops tmp = literalops.get(hi.get_name());
+					Hop tmp = literalops.get(hi.get_name());
 					if(hi.get_valueType()==tmp.get_valueType())
 					{	
 						//replace child node ref
@@ -703,20 +714,20 @@ abstract public class Hops {
 			}	
 		}
 		
-		this.set_visited(Hops.VISIT_STATUS.DONE);
+		this.set_visited(Hop.VISIT_STATUS.DONE);
 		return ret;
 	}
 
 	
-	public int rule_CommonSubexpressionElimination( HashMap<String, Hops> dataops, HashMap<String, Hops> literalops ) 
+	public int rule_CommonSubexpressionElimination( HashMap<String, Hop> dataops, HashMap<String, Hop> literalops ) 
 		throws HopsException 
 	{
 		int ret = 0;
-		if( get_visited() == Hops.VISIT_STATUS.DONE )
+		if( get_visited() == Hop.VISIT_STATUS.DONE )
 			return ret;
 
 		//step 1: merge childs recursively first
-		for(Hops hi : this.getInput())
+		for(Hop hi : this.getInput())
 			ret += hi.rule_CommonSubexpressionElimination(dataops, literalops);	
 		
 		
@@ -727,8 +738,8 @@ abstract public class Hops {
 			for( int i=0; i<getParent().size()-1; i++ )
 				for( int j=i+1; j<getParent().size(); j++ )
 				{
-					Hops h1 = getParent().get(i);
-					Hops h2 = getParent().get(j);
+					Hop h1 = getParent().get(i);
+					Hop h2 = getParent().get(j);
 					
 					if( h1==h2 )
 					{
@@ -742,14 +753,14 @@ abstract public class Hops {
 						getParent().remove(j);
 						
 						//replace h2 w/ h1 in h2-parent inputs
-						ArrayList<Hops> parent = h2.getParent();
-						for( Hops p : parent )
+						ArrayList<Hop> parent = h2.getParent();
+						for( Hop p : parent )
 							for( int k=0; k<p.getInput().size(); k++ )
 								if( p.getInput().get(k)==h2 )
 									p.getInput().set(k, h1);
 						
 						//replace h2 w/ h1 in h2-input parents
-						for( Hops in : h2.getInput() )
+						for( Hop in : h2.getInput() )
 							in.getParent().remove(h2);
 						
 						ret++;
@@ -758,7 +769,7 @@ abstract public class Hops {
 				}
 		}
 		
-		this.set_visited(Hops.VISIT_STATUS.DONE);
+		this.set_visited(Hop.VISIT_STATUS.DONE);
 
 		return ret;
 	}
@@ -768,7 +779,7 @@ abstract public class Hops {
 				&& !this.getParent().isEmpty()) {
 
 			// update parents inputs with data op input
-			for (Hops p : this.getParent()) {
+			for (Hop p : this.getParent()) {
 				p.getInput().set(p.getInput().indexOf(this), this.getInput().get(0));
 			}
 
@@ -783,7 +794,7 @@ abstract public class Hops {
 			sb.get_hops().add(this);
 
 			// do the same thing for my inputs (children)
-			for (Hops hi : this.getInput()) {
+			for (Hop hi : this.getInput()) {
 				hi.rule_RehangTransientWriteParents(sb);
 			}
 		}
@@ -794,17 +805,17 @@ abstract public class Hops {
 	 * to find chains that need to be optimized.
 	 */
 	public void rule_OptimizeMMChains() throws HopsException {
-		if (this.getKind() == Hops.Kind.AggBinaryOp && ((AggBinaryOp) this).isMatrixMultiply()
-				&& this.get_visited() != Hops.VISIT_STATUS.DONE) {
+		if (this.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) this).isMatrixMultiply()
+				&& this.get_visited() != Hop.VISIT_STATUS.DONE) {
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			this.optimizeMMChain();
 		}
 
-		for (Hops hi : this.getInput())
+		for (Hop hi : this.getInput())
 			hi.rule_OptimizeMMChains();
 
-		this.set_visited(Hops.VISIT_STATUS.DONE);
+		this.set_visited(Hop.VISIT_STATUS.DONE);
 	}
 
 	/**
@@ -854,12 +865,12 @@ abstract public class Hops {
 	 * three Hops in mmChain (B,C,D), and two Hops in mmOperators (one for each
 	 * %*%) .
 	 */
-	private void mmChainRelinkHops(Hops h, int i, int j, ArrayList<Hops> mmChain, ArrayList<Hops> mmOperators,
+	private void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
 			int opIndex, int[][] split) {
 		if (i == j)
 			return;
 
-		Hops input1, input2;
+		Hop input1, input2;
 		// Set Input1 for current Hop h
 		if (i == split[i][j]) {
 			input1 = mmChain.get(i);
@@ -896,8 +907,8 @@ abstract public class Hops {
 
 	}
 
-	private void clearLinksWithinChain ( ArrayList<Hops> operators ) throws HopsException {
-		Hops op, input1, input2;
+	private void clearLinksWithinChain ( ArrayList<Hop> operators ) throws HopsException {
+		Hop op, input1, input2;
 		
 		for ( int i=0; i < operators.size(); i++ ) {
 			op = operators.get(i);
@@ -913,7 +924,7 @@ abstract public class Hops {
 		}
 	}
 
-	private long [] getDimArray ( ArrayList<Hops> chain ) throws HopsException {
+	private long [] getDimArray ( ArrayList<Hop> chain ) throws HopsException {
 		// Build the array containing dimensions from all matrices in the
 		// chain
 		
@@ -961,7 +972,7 @@ abstract public class Hops {
 		return dimArray;
 	}
 
-	private int inputCount ( Hops p, Hops h ) {
+	private int inputCount ( Hop p, Hop h ) {
 		int count = 0;
 		for ( int i=0; i < p.getInput().size(); i++ )
 			if ( p.getInput().get(i).equals(h) )
@@ -981,9 +992,9 @@ abstract public class Hops {
 		LOG.trace("MM Chain Optimization for HOP: (" + " " + getKind() + ", " + getHopID() + ", "
 					+ get_name() + ")");
 		
-		ArrayList<Hops> mmChain = new ArrayList<Hops>();
-		ArrayList<Hops> mmOperators = new ArrayList<Hops>();
-		ArrayList<Hops> tempList;
+		ArrayList<Hop> mmChain = new ArrayList<Hop>();
+		ArrayList<Hop> mmOperators = new ArrayList<Hop>();
+		ArrayList<Hop> tempList;
 
 		/*
 		 * Step-1: Identify the chain (mmChain) & clear all links among the Hops
@@ -992,7 +1003,7 @@ abstract public class Hops {
 
 		mmOperators.add(this);
 		// Initialize mmChain with my inputs
-		for (Hops hi : this.getInput()) {
+		for (Hop hi : this.getInput()) {
 			mmChain.add(hi);
 		}
 
@@ -1003,7 +1014,7 @@ abstract public class Hops {
 
 			boolean expandable = false;
 
-			Hops h = mmChain.get(i);
+			Hop h = mmChain.get(i);
 			/*
 			 * Check if mmChain[i] is expandable: 
 			 * 1) It must be MATMULT 
@@ -1013,11 +1024,11 @@ abstract public class Hops {
 			 *    (either within chain or outside the chain)
 			 */
 
-			if (h.getKind() == Hops.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
-					&& h.get_visited() != Hops.VISIT_STATUS.DONE) {
+			if (h.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) h).isMatrixMultiply()
+					&& h.get_visited() != Hop.VISIT_STATUS.DONE) {
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
-				if (h.getParent().size() > 1 || inputCount( (Hops) ((h.getParent().toArray())[0]), h) > 1 ) {
+				if (h.getParent().size() > 1 || inputCount( (Hop) ((h.getParent().toArray())[0]), h) > 1 ) {
 					expandable = false;
 					break;
 				}
@@ -1025,7 +1036,7 @@ abstract public class Hops {
 					expandable = true;
 			}
 
-			h.set_visited(Hops.VISIT_STATUS.DONE);
+			h.set_visited(Hop.VISIT_STATUS.DONE);
 
 			if ( !expandable ) {
 				i = i + 1;
@@ -1045,7 +1056,7 @@ abstract public class Hops {
 		// print the MMChain
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("Identified MM Chain: ");
-			for (Hops h : mmChain) {
+			for (Hop h : mmChain) {
 				LOG.trace("Hop " + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
 						+ h.get_dim1() + "x" + h.get_dim2());
 			}
@@ -1081,12 +1092,12 @@ abstract public class Hops {
 			s.append(_kind + " " + getHopID() + "\n");
 			s.append("  Label: " + get_name() + "; DataType: " + _dataType + "; ValueType: " + _valueType + "\n");
 			s.append("  Parent: ");
-			for (Hops h : getParent()) {
+			for (Hop h : getParent()) {
 				s.append(h.hashCode() + "; ");
 			}
 			;
 			s.append("\n  Input: ");
-			for (Hops h : getInput()) {
+			for (Hop h : getInput()) {
 				s.append(h.getHopID() + "; ");
 			}
 			
@@ -1108,11 +1119,11 @@ abstract public class Hops {
 		return _dim2;
 	}
 
-	public Lops get_lops() {
+	public Lop get_lops() {
 		return _lops;
 	}
 
-	public void set_lops(Lops lops) {
+	public void set_lops(Lop lops) {
 		_lops = lops;
 	}
 	
@@ -1210,16 +1221,16 @@ abstract public class Hops {
 
 	static public HashMap<DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes> HopsData2Lops;
 	static {
-		HopsData2Lops = new HashMap<Hops.DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes>();
+		HopsData2Lops = new HashMap<Hop.DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes>();
 		HopsData2Lops.put(DataOpTypes.PERSISTENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
 		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, com.ibm.bi.dml.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, com.ibm.bi.dml.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
 	}
 
-	static public HashMap<Hops.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
+	static public HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
 	static {
-		HopsAgg2Lops = new HashMap<Hops.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes>();
+		HopsAgg2Lops = new HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes>();
 		HopsAgg2Lops.put(AggOp.SUM, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSum);
 	//	HopsAgg2Lops.put(AggOp.SUM, dml.lops.Aggregate.OperationTypes.Sum);
 		HopsAgg2Lops.put(AggOp.TRACE, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanTrace);
@@ -1240,18 +1251,18 @@ abstract public class Hops {
 
 	}
 
-	static public HashMap<Hops.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
+	static public HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
 	static {
-		HopsDirection2Lops = new HashMap<Hops.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes>();
+		HopsDirection2Lops = new HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes>();
 		HopsDirection2Lops.put(Direction.RowCol, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.RowCol);
 		HopsDirection2Lops.put(Direction.Col, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.Col);
 		HopsDirection2Lops.put(Direction.Row, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.Row);
 
 	}
 
-	static public HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
+	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
 	static {
-		HopsOpOp2LopsB = new HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes>();
+		HopsOpOp2LopsB = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes>();
 		HopsOpOp2LopsB.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Binary.OperationTypes.ADD);
 		HopsOpOp2LopsB.put(OpOp2.MINUS, com.ibm.bi.dml.lops.Binary.OperationTypes.SUBTRACT);
 		HopsOpOp2LopsB.put(OpOp2.MULT, com.ibm.bi.dml.lops.Binary.OperationTypes.MULTIPLY);
@@ -1271,9 +1282,9 @@ abstract public class Hops {
 		HopsOpOp2LopsB.put(OpOp2.LOG, com.ibm.bi.dml.lops.Binary.OperationTypes.NOTSUPPORTED);
 	}
 
-	static public HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes> HopsOpOp2LopsBS;
+	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes> HopsOpOp2LopsBS;
 	static {
-		HopsOpOp2LopsBS = new HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes>();
+		HopsOpOp2LopsBS = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryCP.OperationTypes>();
 		HopsOpOp2LopsBS.put(OpOp2.PLUS, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.ADD);
 		HopsOpOp2LopsBS.put(OpOp2.MINUS, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.SUBTRACT);
 		HopsOpOp2LopsBS.put(OpOp2.MULT, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.MULTIPLY);
@@ -1295,9 +1306,9 @@ abstract public class Hops {
 		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, com.ibm.bi.dml.lops.BinaryCP.OperationTypes.SEQINCR);
 	}
 
-	static public HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
+	static public HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
 	static {
-		HopsOpOp2LopsU = new HashMap<Hops.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes>();
+		HopsOpOp2LopsU = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes>();
 		HopsOpOp2LopsU.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Unary.OperationTypes.ADD);
 		HopsOpOp2LopsU.put(OpOp2.MINUS, com.ibm.bi.dml.lops.Unary.OperationTypes.SUBTRACT);
 		HopsOpOp2LopsU.put(OpOp2.MULT, com.ibm.bi.dml.lops.Unary.OperationTypes.MULTIPLY);
@@ -1317,9 +1328,9 @@ abstract public class Hops {
 		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
 	}
 
-	static public HashMap<Hops.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
+	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
 	static {
-		HopsOpOp1LopsU = new HashMap<Hops.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes>();
+		HopsOpOp1LopsU = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes>();
 		HopsOpOp1LopsU.put(OpOp1.MINUS, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.NOT, com.ibm.bi.dml.lops.Unary.OperationTypes.NOT);
 		HopsOpOp1LopsU.put(OpOp1.ABS, com.ibm.bi.dml.lops.Unary.OperationTypes.ABS);
@@ -1333,9 +1344,9 @@ abstract public class Hops {
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
 
-	static public HashMap<Hops.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
 	static {
-		HopsOpOp1LopsUS = new HashMap<Hops.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes>();
+		HopsOpOp1LopsUS = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes>();
 		HopsOpOp1LopsUS.put(OpOp1.MINUS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsUS.put(OpOp1.NOT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOT);
 		HopsOpOp1LopsUS.put(OpOp1.ABS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ABS);
@@ -1354,7 +1365,7 @@ abstract public class Hops {
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ROUND);
 	}
 
-	static public HashMap<Hops.OpOp1, String> HopsOpOp12String;
+	static public HashMap<Hop.OpOp1, String> HopsOpOp12String;
 	static {
 		HopsOpOp12String = new HashMap<OpOp1, String>();	
 		HopsOpOp12String.put(OpOp1.ABS, "abs");
@@ -1376,24 +1387,24 @@ abstract public class Hops {
 		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");
 		HopsOpOp12String.put(OpOp1.TAN, "tan");
 	}
-	static public HashMap<Hops.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
+	static public HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
-		HopsParameterizedBuiltinLops = new HashMap<Hops.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
+		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 	}
 
-	static public HashMap<Hops.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format> HopsFileFormatTypes2Lops;
+	static public HashMap<Hop.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format> HopsFileFormatTypes2Lops;
 	static {
-		HopsFileFormatTypes2Lops = new HashMap<Hops.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format>();
+		HopsFileFormatTypes2Lops = new HashMap<Hop.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format>();
 		HopsFileFormatTypes2Lops.put(FileFormatTypes.BINARY, com.ibm.bi.dml.lops.OutputParameters.Format.BINARY);
 		HopsFileFormatTypes2Lops.put(FileFormatTypes.TEXT, com.ibm.bi.dml.lops.OutputParameters.Format.TEXT);
 		
 	}
 
-	static public HashMap<Hops.OpOp2, String> HopsOpOp2String;
+	static public HashMap<Hop.OpOp2, String> HopsOpOp2String;
 	static {
-		HopsOpOp2String = new HashMap<Hops.OpOp2, String>();
+		HopsOpOp2String = new HashMap<Hop.OpOp2, String>();
 		HopsOpOp2String.put(OpOp2.PLUS, "+");
 		HopsOpOp2String.put(OpOp2.MINUS, "-");
 		HopsOpOp2String.put(OpOp2.MULT, "*");
@@ -1420,9 +1431,9 @@ abstract public class Hops {
 		HopsOpOp2String.put(OpOp2.APPEND, "APP");
 	}
 	
-	static public HashMap<Hops.OpOp3, String> HopsOpOp3String;
+	static public HashMap<Hop.OpOp3, String> HopsOpOp3String;
 	static {
-		HopsOpOp3String = new HashMap<Hops.OpOp3, String>();
+		HopsOpOp3String = new HashMap<Hop.OpOp3, String>();
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
 		HopsOpOp3String.put(OpOp3.INTERQUANTILE, "interquantile");
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
@@ -1430,17 +1441,17 @@ abstract public class Hops {
 		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
 	}
 
-	static public HashMap<Hops.Direction, String> HopsDirection2String;
+	static public HashMap<Hop.Direction, String> HopsDirection2String;
 	static {
-		HopsDirection2String = new HashMap<Hops.Direction, String>();
+		HopsDirection2String = new HashMap<Hop.Direction, String>();
 		HopsDirection2String.put(Direction.RowCol, "RC");
 		HopsDirection2String.put(Direction.Col, "C");
 		HopsDirection2String.put(Direction.Row, "R");
 	}
 
-	static public HashMap<Hops.AggOp, String> HopsAgg2String;
+	static public HashMap<Hop.AggOp, String> HopsAgg2String;
 	static {
-		HopsAgg2String = new HashMap<Hops.AggOp, String>();
+		HopsAgg2String = new HashMap<Hop.AggOp, String>();
 		HopsAgg2String.put(AggOp.SUM, "+");
 		HopsAgg2String.put(AggOp.PROD, "*");
 		HopsAgg2String.put(AggOp.MIN, "min");
@@ -1450,7 +1461,7 @@ abstract public class Hops {
 		HopsAgg2String.put(AggOp.MEAN, "mean");
 	}
 
-	static public HashMap<Hops.ReOrgOp, String> HopsTransf2String;
+	static public HashMap<Hop.ReOrgOp, String> HopsTransf2String;
 	static {
 		HopsTransf2String = new HashMap<ReOrgOp, String>();
 		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
@@ -1461,7 +1472,7 @@ abstract public class Hops {
 
 	static public HashMap<DataOpTypes, String> HopsData2String;
 	static {
-		HopsData2String = new HashMap<Hops.DataOpTypes, String>();
+		HopsData2String = new HashMap<Hop.DataOpTypes, String>();
 		HopsData2String.put(DataOpTypes.PERSISTENTREAD, "PRead");
 		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
@@ -1514,7 +1525,7 @@ abstract public class Hops {
 		else
 		{
 			boolean hasWriteOutput = false;
-			for(Hops h : this.getParent())
+			for(Hop h : this.getParent())
 				if(h instanceof DataOp)
 				{
 					DataOp o = ((DataOp)h);
@@ -1567,13 +1578,13 @@ abstract public class Hops {
 	/**
 	 * Util function for refreshing scalar rows input parameter.
 	 */
-	protected void refreshRowsParameterInformation( Hops input )
+	protected void refreshRowsParameterInformation( Hop input )
 	{
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).get_op() == Hops.OpOp1.NROW )
+			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW )
 				set_dim1(input.getInput().get(0).get_dim1());
-			else if ( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL )
+			else if ( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL )
 				set_dim1(input.getInput().get(0).get_dim2());
 		}
 		else if ( input instanceof LiteralOp ) //TODO discuss with Doug
@@ -1585,13 +1596,13 @@ abstract public class Hops {
 	/**
 	 * Util function for refreshing scalar cols input parameter.
 	 */
-	protected void refreshColsParameterInformation( Hops input )
+	protected void refreshColsParameterInformation( Hop input )
 	{
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).get_op() == Hops.OpOp1.NROW  )
+			if( ((UnaryOp)input).get_op() == Hop.OpOp1.NROW  )
 				set_dim2(input.getInput().get(0).get_dim1());
-			else if( ((UnaryOp)input).get_op() == Hops.OpOp1.NCOL  )
+			else if( ((UnaryOp)input).get_op() == Hop.OpOp1.NCOL  )
 				set_dim2(input.getInput().get(0).get_dim2());
 		}
 		else if ( input instanceof LiteralOp ) //TODO discuss with Doug
@@ -1609,13 +1620,13 @@ abstract public class Hops {
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) );
-		sb.append( Lops.FILE_SEPARATOR );
-		sb.append( Lops.PROCESS_PREFIX );
+		sb.append( Lop.FILE_SEPARATOR );
+		sb.append( Lop.PROCESS_PREFIX );
 		sb.append( DMLScript.getUUID() );
-		sb.append( Lops.FILE_SEPARATOR );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( ProgramConverter.CP_ROOT_THREAD_ID );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 	
 		return sb.toString();
 	}
@@ -1626,7 +1637,7 @@ abstract public class Hops {
 	 * @param that
 	 * @throws HopsException 
 	 */
-	protected void clone( Hops that, boolean withRefs ) 
+	protected void clone( Hop that, boolean withRefs ) 
 		throws CloneNotSupportedException 
 	{
 		if( withRefs )
@@ -1645,8 +1656,8 @@ abstract public class Hops {
 		_nnz = that._nnz;
 
 		//no copy of lops (regenerated)
-		_parent = new ArrayList<Hops>();
-		_input = new ArrayList<Hops>();
+		_parent = new ArrayList<Hop>();
+		_input = new ArrayList<Hop>();
 		_lops = null;
 		_sqllops = null;
 		
@@ -1665,7 +1676,7 @@ abstract public class Hops {
 
 	public abstract Object clone() throws CloneNotSupportedException;
 	
-	public abstract boolean compare( Hops that );
+	public abstract boolean compare( Hop that );
 	
 	
 	///////////////////////////////////////////////////////////////////////////

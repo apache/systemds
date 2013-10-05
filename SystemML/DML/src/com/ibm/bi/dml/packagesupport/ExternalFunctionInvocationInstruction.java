@@ -1,7 +1,14 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.packagesupport;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Class to maintain external function invocation instructions.
@@ -12,6 +19,10 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class ExternalFunctionInvocationInstruction extends Instruction 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static final String ELEMENT_DELIM = ":";
 	
 	protected String className; // name of class that contains the function

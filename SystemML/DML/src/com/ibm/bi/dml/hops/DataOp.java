@@ -1,8 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -15,15 +23,17 @@ import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 
-public class DataOp extends Hops {
-
+public class DataOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	DataOpTypes _dataop;
 	String _fileName;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
@@ -64,7 +74,7 @@ public class DataOp extends Hops {
 
 	// WRITE operation
 	// This constructor does not support any expression in parameters
-	public DataOp(String l, DataType dt, ValueType vt, Hops in,
+	public DataOp(String l, DataType dt, ValueType vt, Hop in,
 			DataOpTypes dop, String fname) {
 		super(Kind.DataOp, l, dt, vt);
 		_dataop = dop;
@@ -81,14 +91,14 @@ public class DataOp extends Hops {
 	 * This constructor supports expressions in parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
-			DataOpTypes dop, HashMap<String, Hops> inputParameters) {
+			DataOpTypes dop, HashMap<String, Hop> inputParameters) {
 		super(Kind.DataOp, l, dt, vt);
 
 		_dataop = dop;
 
 		int index = 0;
 		for (String s : inputParameters.keySet()) {
-			Hops input = inputParameters.get(s);
+			Hop input = inputParameters.get(s);
 			getInput().add(input);
 			input.getParent().add(this);
 
@@ -105,7 +115,7 @@ public class DataOp extends Hops {
 	 *  This constructor supports expression in parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
-		DataOpTypes dop, Hops in, HashMap<String, Hops> inputParameters) {
+		DataOpTypes dop, Hop in, HashMap<String, Hop> inputParameters) {
 		super(Kind.DataOp, l, dt, vt);
 
 		_dataop = dop;
@@ -116,7 +126,7 @@ public class DataOp extends Hops {
 		if (inputParameters != null){
 			int index = 1;
 			for (String s : inputParameters.keySet()) {
-				Hops input = inputParameters.get(s);
+				Hop input = inputParameters.get(s);
 				getInput().add(input);
 				input.getParent().add(this);
 
@@ -147,11 +157,11 @@ public class DataOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException, LopsException {
 				
 		if (get_lops() == null) {
-			Lops l = null;
+			Lop l = null;
 
 			ExecType et = optFindExecType();
 			
@@ -182,7 +192,7 @@ public class DataOp extends Hops {
 			else {*/
 
 				// construct lops for all input parameters
-				HashMap<String, Lops> inputLops = new HashMap<String, Lops>();
+				HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
 				for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 					inputLops.put(cur.getKey(), getInput().get(cur.getValue())
 							.constructLops());
@@ -255,7 +265,7 @@ public class DataOp extends Hops {
 					LOG.debug(" file: " + _fileName);
 				}
 				LOG.debug(" format: " + getFormatType());
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
@@ -292,7 +302,7 @@ public class DataOp extends Hops {
 		{
 			SQLLops sqllop;
 			
-			Hops input = null;
+			Hop input = null;
 			if(this.getInput().size() > 0)
 				input = this.getInput().get(0);
 			
@@ -387,7 +397,7 @@ public class DataOp extends Hops {
 		return this.get_sqllops();
 	}
 	
-	private SQLSelectStatement getSQLSelect(Hops input)
+	private SQLSelectStatement getSQLSelect(Hop input)
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		
@@ -549,7 +559,7 @@ public class DataOp extends Hops {
 	{
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
 		{
-			Hops input1 = getInput().get(0);
+			Hop input1 = getInput().get(0);
 			set_dim1(input1.get_dim1());
 			set_dim2(input1.get_dim2());
 		}
@@ -591,7 +601,7 @@ public class DataOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		return false;
 	}

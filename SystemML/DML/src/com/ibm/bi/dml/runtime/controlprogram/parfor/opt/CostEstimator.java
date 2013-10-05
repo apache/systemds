@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Base class for all potential cost estimators

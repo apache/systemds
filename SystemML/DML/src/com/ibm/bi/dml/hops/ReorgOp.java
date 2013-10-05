@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import java.util.ArrayList;
@@ -5,7 +12,8 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -17,8 +25,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 /**
  *  Reorg (cell) operation: aij
@@ -33,15 +39,19 @@ import com.ibm.bi.dml.utils.LopsException;
  *  and (2) most importantly semantic of reshape is exactly a reorg op. 
  */
 
-public class ReorgOp extends Hops {
-
+public class ReorgOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private ReOrgOp op;
 
 	private ReorgOp() {
 		//default constructor for clone
 	}
 	
-	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, Hops inp) 
+	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, Hop inp) 
 	{
 		super(Kind.ReorgOp, l, dt, vt);
 		op = o;
@@ -52,13 +62,13 @@ public class ReorgOp extends Hops {
 		refreshSizeInformation();
 	}
 	
-	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, ArrayList<Hops> inp) 
+	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, ArrayList<Hop> inp) 
 	{
 		super(Kind.ReorgOp, l, dt, vt);
 		op = o;
 		
 		for( int i=0; i<inp.size(); i++ ) {
-			Hops in = inp.get(i);
+			Hop in = inp.get(i);
 			getInput().add(i, in);
 			in.getParent().add(this);
 		}
@@ -80,7 +90,7 @@ public class ReorgOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops()
+	public Lop constructLops()
 		throws HopsException, LopsException 
 	{
 		if (get_lops() == null) {
@@ -171,7 +181,7 @@ public class ReorgOp extends Hops {
 						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
-							Lops ltmp = getInput().get(i).constructLops();
+							Lop ltmp = getInput().get(i).constructLops();
 							transform1.addInput(ltmp);
 							ltmp.addOutput(transform1);
 						}
@@ -203,7 +213,7 @@ public class ReorgOp extends Hops {
 						transform1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						for( int i=1; i<=3; i++ ) //rows, cols, byrow
 						{
-							Lops ltmp = getInput().get(i).constructLops();
+							Lop ltmp = getInput().get(i).constructLops();
 							transform1.addInput(ltmp);
 							ltmp.addOutput(transform1);
 						}
@@ -227,7 +237,7 @@ public class ReorgOp extends Hops {
 			// Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();
 
-			Hops input = this.getInput().get(0);
+			Hop input = this.getInput().get(0);
 
 			SQLLops sqllop = new SQLLops(this.get_name(),
 										gen,
@@ -253,7 +263,7 @@ public class ReorgOp extends Hops {
 		return this.get_sqllops();
 	}
 	
-	private SQLLopProperties getProperties(Hops input)
+	private SQLLopProperties getProperties(Hop input)
 	{
 		SQLLopProperties prop = new SQLLopProperties();
 		prop.setJoinType(JOINTYPE.NONE);
@@ -281,7 +291,7 @@ public class ReorgOp extends Hops {
 	{
 		long[] ret = null;
 	
-		Hops input = getInput().get(0);
+		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 			
 		switch(op) 
@@ -365,7 +375,7 @@ public class ReorgOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(0);
+		Hop input1 = getInput().get(0);
 		
 		switch(op) 
 		{
@@ -402,8 +412,8 @@ public class ReorgOp extends Hops {
 			{
 				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
 				// #nnz in output is exactly the same as in input		
-				Hops input2 = getInput().get(1); //rows 
-				Hops input3 = getInput().get(2); //cols 
+				Hop input2 = getInput().get(1); //rows 
+				Hop input3 = getInput().get(2); //cols 
 				refreshRowsParameterInformation(input2); //refresh rows
  				refreshColsParameterInformation(input3); //refresh cols
  				setNnz(input1.getNnz());
@@ -433,7 +443,7 @@ public class ReorgOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.ReorgOp )
 			return false;
@@ -451,7 +461,7 @@ public class ReorgOp extends Hops {
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + op);
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}

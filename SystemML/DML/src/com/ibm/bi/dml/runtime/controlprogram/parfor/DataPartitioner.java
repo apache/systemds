@@ -10,9 +10,10 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -21,7 +22,6 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 /**
@@ -117,18 +117,18 @@ public abstract class DataPartitioner
 		if( !force ) //try to optimize, if format not forced
 		{
 			//check lower bound of useful data partitioning
-			if( rows < Hops.CPThreshold && cols < Hops.CPThreshold )  //or matrix already fits in mem
+			if( rows < Hop.CPThreshold && cols < Hop.CPThreshold )  //or matrix already fits in mem
 			{
 				return in;
 			}
 			
 			//check for changing to blockwise representations
-			if( _format == PDataPartitionFormat.ROW_WISE && cols < Hops.CPThreshold )
+			if( _format == PDataPartitionFormat.ROW_WISE && cols < Hop.CPThreshold )
 			{
 				LOG.debug("Changing format from "+PDataPartitionFormat.ROW_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.ROW_BLOCK_WISE;
 			}
-			if( _format == PDataPartitionFormat.COLUMN_WISE && rows < Hops.CPThreshold )
+			if( _format == PDataPartitionFormat.COLUMN_WISE && rows < Hop.CPThreshold )
 			{
 				LOG.debug("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;

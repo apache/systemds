@@ -1,9 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -18,7 +25,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLTableReference;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
 
 
 /* Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
@@ -29,8 +35,12 @@ import com.ibm.bi.dml.utils.HopsException;
  * 		Semantic: generate indices, align, aggregate
  */
 
-public class AggUnaryOp extends Hops {
-
+public class AggUnaryOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private AggOp _op;
 	private Direction _direction;
 
@@ -39,7 +49,7 @@ public class AggUnaryOp extends Hops {
 	}
 	
 	public AggUnaryOp(String l, DataType dt, ValueType vt, AggOp o,
-			Direction idx, Hops inp) {
+			Direction idx, Hop inp) {
 		super(Kind.AggUnaryOp, l, dt, vt);
 		_op = o;
 		_direction = idx;
@@ -48,7 +58,7 @@ public class AggUnaryOp extends Hops {
 		inp.getParent().add(this);
 	}
 
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException {
 		if (get_lops() == null) {
 			try {
@@ -140,7 +150,7 @@ public class AggUnaryOp extends Hops {
 				super.printMe();
 				LOG.debug("  Operation: " + _op);
 				LOG.debug("  Direction: " + _direction);
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
@@ -159,7 +169,7 @@ public class AggUnaryOp extends Hops {
 			//Check whether this is going to be an Insert or With
 			GENERATES gen = determineGeneratesFlag();
 			
-			Hops input = this.getInput().get(0);
+			Hop input = this.getInput().get(0);
 			SQLLops lop = new SQLLops(this.get_name(),
 									gen,
 									input.constructSQLLOPs(),
@@ -179,7 +189,7 @@ public class AggUnaryOp extends Hops {
 			return this.get_sqllops();
 	}
 	
-	private SQLSelectStatement getSQLSelect(Hops input)
+	private SQLSelectStatement getSQLSelect(Hop input)
 	{
 		SQLSelectStatement stmt = new SQLSelectStatement();
 		stmt.setTable(new SQLTableReference(SQLLops.addQuotes(input.get_sqllops().get_tableName()), ""));
@@ -210,7 +220,7 @@ public class AggUnaryOp extends Hops {
 		return stmt;
 	}
 	
-	private SQLLopProperties getProperties(Hops input)
+	private SQLLopProperties getProperties(Hop input)
 	{
 		SQLLopProperties prop = new SQLLopProperties();
 		JOINTYPE join = JOINTYPE.NONE;
@@ -226,12 +236,12 @@ public class AggUnaryOp extends Hops {
 		
 		prop.setAggType(agg);
 		prop.setJoinType(join);
-		prop.setOpString(Hops.HopsAgg2String.get(_op) + " " + input.get_sqllops().get_tableName());
+		prop.setOpString(Hop.HopsAgg2String.get(_op) + " " + input.get_sqllops().get_tableName());
 		
 		return prop;
 	}
 	
-	private String getSQLSelectCode(Hops input)
+	private String getSQLSelectCode(Hop input)
 	{
 		String sql = null;
 		if(this._op == AggOp.PROD)
@@ -253,7 +263,7 @@ public class AggUnaryOp extends Hops {
 		}
 		else
 		{
-			sql = String.format(SQLLops.UNARYMAXMIN, Hops.HopsAgg2String.get(this._op),input.get_sqllops().get_tableName());
+			sql = String.format(SQLLops.UNARYMAXMIN, Hop.HopsAgg2String.get(this._op),input.get_sqllops().get_tableName());
 		}
 		return sql;
 	}
@@ -282,7 +292,7 @@ public class AggUnaryOp extends Hops {
 	{
 		long[] ret = null;
 	
-		Hops input = getInput().get(0);
+		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( _direction == Direction.Col && mc.colsKnown() ) 
 			ret = new long[]{1, mc.get_cols(), -1};
@@ -324,7 +334,7 @@ public class AggUnaryOp extends Hops {
 	{
 		if (get_dataType() != DataType.SCALAR)
 		{
-			Hops input = getInput().get(0);
+			Hop input = getInput().get(0);
 			if ( _direction == Direction.Col ) //colwise computations
 			{
 				set_dim1(1);
@@ -354,7 +364,7 @@ public class AggUnaryOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.AggUnaryOp )
 			return false;

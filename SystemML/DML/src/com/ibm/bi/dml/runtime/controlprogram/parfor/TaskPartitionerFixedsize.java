@@ -10,10 +10,10 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * This naive task partitioner virtually iterates over the given FOR loop (from, to, incr),

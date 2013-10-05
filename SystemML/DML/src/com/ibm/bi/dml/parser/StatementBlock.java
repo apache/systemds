@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
@@ -9,24 +16,27 @@ import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 public class StatementBlock extends LiveVariableAnalysis
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
 	protected static IDSequence _seq = new IDSequence();
 		
 	protected DMLProgram _dmlProg; 
 	protected ArrayList<Statement> _statements;
-	ArrayList<Hops> _hops = null;
-	ArrayList<Lops> _lops = null;
+	ArrayList<Hop> _hops = null;
+	ArrayList<Lop> _lops = null;
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
 	
@@ -106,19 +116,19 @@ public class StatementBlock extends LiveVariableAnalysis
 		return _statements;
 	}
 
-	public ArrayList<Hops> get_hops() throws HopsException {
+	public ArrayList<Hop> get_hops() throws HopsException {
 		return _hops;
 	}
 
-	public ArrayList<Lops> get_lops() {
+	public ArrayList<Lop> get_lops() {
 		return _lops;
 	}
 
-	public void set_hops(ArrayList<Hops> hops) {
+	public void set_hops(ArrayList<Hop> hops) {
 		_hops = hops;
 	}
 
-	public void set_lops(ArrayList<Lops> lops) {
+	public void set_lops(ArrayList<Lop> lops) {
 		_lops = lops;
 	}
 

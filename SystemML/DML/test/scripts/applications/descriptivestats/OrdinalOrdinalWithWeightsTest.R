@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # JUnit test class: dml.test.integration.descriptivestats.BivariateOrdinalOrdinalWithWeightsTest.java
 # command line invocation assuming $OO_HOME is set to the home of the R script
 # Rscript $OO_HOME/OrdinalOrdinal.R $OO_HOME/in/ $OO_HOME/expected/

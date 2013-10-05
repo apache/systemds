@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.sql.sqllops;
 
 import java.util.ArrayList;
@@ -6,8 +13,12 @@ import com.ibm.bi.dml.sql.sqllops.SQLCondition.BOOLOP;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 
 
-public class SQLJoin implements ISQLTableReference {
-	
+public class SQLJoin implements ISQLTableReference 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	public SQLJoin()
 	{
 		conditions = new ArrayList<SQLCondition>();

@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # Note this script is externalized to customers, please do not change w/o consulting component owner.
 # How to invoke this dml script kMeans.dml?
 # Assume KMEANS2_HOME is set to the home of the dml script

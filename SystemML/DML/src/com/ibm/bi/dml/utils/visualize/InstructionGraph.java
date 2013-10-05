@@ -1,10 +1,18 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.utils.visualize;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
@@ -18,17 +26,20 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class InstructionGraph {
-	
+public class InstructionGraph 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	private static String trimHashes(String s) {
 		return (s.split("##"))[1];
 	}
 
 	private static String getInput(String inst, int index) {
-		String operand = (((inst.split(Lops.OPERAND_DELIMITOR))[index]).split(Lops.VALUETYPE_PREFIX))[0];
+		String operand = (((inst.split(Lop.OPERAND_DELIMITOR))[index]).split(Lop.VALUETYPE_PREFIX))[0];
 		if (operand.startsWith("##")) {
 			String s = trimHashes(operand);
 			if (s != null)
@@ -40,17 +51,17 @@ public class InstructionGraph {
 	}
 
 	private static String getOperator(String inst) {
-		return ((inst.split(Lops.OPERAND_DELIMITOR))[0]);
+		return ((inst.split(Lop.OPERAND_DELIMITOR))[0]);
 	}
 
 	private static ArrayList<String> getVariableNames(String str, ArrayList<String> varsIn) {
 		ArrayList<String> varsOut = new ArrayList<String>(varsIn);
 
-		for (String inst : str.split(Lops.INSTRUCTION_DELIMITOR)) {
+		for (String inst : str.split(Lop.INSTRUCTION_DELIMITOR)) {
 			if (inst.contains("Var")) {
-				for (String part : inst.split(Lops.OPERAND_DELIMITOR)) {
+				for (String part : inst.split(Lop.OPERAND_DELIMITOR)) {
 					if (part.contains("Var")) {
-						String s = (part.split(Lops.VALUETYPE_PREFIX))[0];
+						String s = (part.split(Lop.VALUETYPE_PREFIX))[0];
 						if (s.startsWith("##")) {
 							varsOut.add(trimHashes(s));
 						} else

@@ -25,10 +25,13 @@ import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -45,9 +48,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**

@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.HashSet;
@@ -8,13 +15,16 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 
-public class SortKeys extends Lops 
+public class SortKeys extends Lop 
 {
-
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum OperationTypes { WithWeights, WithNoWeights };
 	OperationTypes operation;
 	
-	private void init(Lops input1, Lops input2, OperationTypes op, ExecType et) {
+	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
 		this.addInput(input1);
 		input1.addOutput(this);
 		
@@ -40,18 +50,18 @@ public class SortKeys extends Lops
 		}
 	}
 	
-	public SortKeys(Lops input, OperationTypes op, DataType dt, ValueType vt) {
-		super(Lops.Type.SortKeys, dt, vt);		
+	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt) {
+		super(Lop.Type.SortKeys, dt, vt);		
 		init(input, null, op, ExecType.MR);
 	}
 
-	public SortKeys(Lops input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lops.Type.SortKeys, dt, vt);		
+	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.SortKeys, dt, vt);		
 		init(input, null, op, et);
 	}
 
-	public SortKeys(Lops input1, Lops input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lops.Type.SortKeys, dt, vt);		
+	public SortKeys(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.SortKeys, dt, vt);		
 		init(input1, input2, op, et);
 	}
 
@@ -71,7 +81,7 @@ public class SortKeys extends Lops
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "sort" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input );
@@ -93,21 +103,21 @@ public class SortKeys extends Lops
 	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "sort" );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( input1 );
 		sb.append( DATATYPE_PREFIX );
 		sb.append( getInputs().get(0).get_dataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( getInputs().get(0).get_valueType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( input2 );
 		sb.append( DATATYPE_PREFIX );
 		sb.append( getInputs().get(1).get_dataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( getInputs().get(1).get_valueType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( output );
 		sb.append( DATATYPE_PREFIX );
 		sb.append( get_dataType() );
@@ -120,11 +130,11 @@ public class SortKeys extends Lops
 	// This method is invoked in two cases:
 	// 1) SortKeys (both weighted and unweighted) executes in MR
 	// 2) Unweighted SortKeys executes in CP
-	public static SortKeys constructSortByValueLop(Lops input1, OperationTypes op, 
+	public static SortKeys constructSortByValueLop(Lop input1, OperationTypes op, 
 			DataType dt, ValueType vt, ExecType et) {
 		
-		for (Lops lop  : input1.getOutputs()) {
-			if ( lop.type == Lops.Type.SortKeys ) {
+		for (Lop lop  : input1.getOutputs()) {
+			if ( lop.type == Lop.Type.SortKeys ) {
 				return (SortKeys)lop;
 			}
 		}
@@ -135,16 +145,16 @@ public class SortKeys extends Lops
 	}
 
 	// This method is invoked ONLY for the case of Weighted SortKeys executing in CP
-	public static SortKeys constructSortByValueLop(Lops input1, Lops input2, OperationTypes op, 
+	public static SortKeys constructSortByValueLop(Lop input1, Lop input2, OperationTypes op, 
 			DataType dt, ValueType vt, ExecType et) {
 		
-		HashSet<Lops> set1 = new HashSet<Lops>();
+		HashSet<Lop> set1 = new HashSet<Lop>();
 		set1.addAll(input1.getOutputs());
 		// find intersection of input1.getOutputs() and input2.getOutputs();
 		set1.retainAll(input2.getOutputs());
 		
-		for (Lops lop  : set1) {
-			if ( lop.type == Lops.Type.SortKeys ) {
+		for (Lop lop  : set1) {
+			if ( lop.type == Lop.Type.SortKeys ) {
 				return (SortKeys)lop;
 			}
 		}

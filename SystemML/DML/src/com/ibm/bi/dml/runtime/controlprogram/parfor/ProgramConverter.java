@@ -17,7 +17,9 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.packagesupport.ExternalFunctionInvocationInstruction;
@@ -26,6 +28,8 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
@@ -41,7 +45,6 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
@@ -59,9 +62,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Static functionalities for 
@@ -597,7 +597,7 @@ public class ProgramConverter
 				&& Recompiler.requiresRecompilation( sb.get_hops() )  )
 			{
 				ret = new StatementBlock();
-				ArrayList<Hops> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
+				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.get_hops() );
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );
 				ret.set_hops( hops );

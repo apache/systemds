@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
@@ -7,13 +14,15 @@ import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -31,13 +40,15 @@ import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstru
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.utils.Statistics;
 
 
 public class ProgramBlock 
 {	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	
 	protected Program _prog;		// pointer to Program this ProgramBlock is part of
@@ -149,7 +160,7 @@ public class ProgramBlock
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hops hops, ValueType retType, ExecutionContext ec) 
+	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> tmp = inst;

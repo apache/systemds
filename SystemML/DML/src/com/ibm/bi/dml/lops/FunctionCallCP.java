@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 
@@ -9,21 +16,24 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  *
  */
-public class FunctionCallCP extends Lops  
+public class FunctionCallCP extends Lop  
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private String _fnamespace;
 	private String _fname;
 	private String[] _outputs;
 
-	public FunctionCallCP(ArrayList<Lops> inputs, String fnamespace, String fname, String[] outputs) 
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs) 
 	{
-		super(Lops.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
+		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
 		//note: data scalar in order to prevent generation of redundant createvar, rmvar
 		
 		_fnamespace = fnamespace;
@@ -31,7 +41,7 @@ public class FunctionCallCP extends Lops
 		_outputs = outputs;
 		
 		//wire inputs
-		for( Lops in : inputs )
+		for( Lop in : inputs )
 		{
 			addInput( in );
 			in.addOutput( this );
@@ -65,26 +75,26 @@ public class FunctionCallCP extends Lops
 		StringBuilder inst = new StringBuilder();
 		
 		inst.append("CP");
-		inst.append(Lops.OPERAND_DELIMITOR); 
+		inst.append(Lop.OPERAND_DELIMITOR); 
 		inst.append("extfunct");
-		inst.append(Lops.OPERAND_DELIMITOR);
+		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fnamespace);
-		inst.append(Lops.OPERAND_DELIMITOR);
+		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fname);
-		inst.append(Lops.OPERAND_DELIMITOR);
+		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
-		inst.append(Lops.OPERAND_DELIMITOR);
+		inst.append(Lop.OPERAND_DELIMITOR);
 		//inst.append(outputs.length);  TODO function output dataops (phase 3)
 		inst.append(_outputs.length);
 		for( String in : inputs )
 		{
-			inst.append(Lops.OPERAND_DELIMITOR);
+			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(in);
 		}
 		
 		for( String out : _outputs )
 		{
-			inst.append(Lops.OPERAND_DELIMITOR);
+			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
 		}		
 		/* TODO function output dataops (phase 3)

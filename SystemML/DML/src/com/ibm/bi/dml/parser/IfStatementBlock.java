@@ -1,20 +1,30 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class IfStatementBlock extends StatementBlock {
-	
-	private Hops _predicateHops;
-	private Lops _predicateLops = null;
+public class IfStatementBlock extends StatementBlock 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
+	private Hop _predicateHops;
+	private Lop _predicateLops = null;
 		
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
@@ -369,11 +379,11 @@ public class IfStatementBlock extends StatementBlock {
 	
 	}
 	
-	public void set_predicate_hops(Hops hops) {
+	public void set_predicate_hops(Hop hops) {
 		_predicateHops = hops;
 	}
 	
-	public ArrayList<Hops> get_hops() throws HopsException{
+	public ArrayList<Hop> get_hops() throws HopsException{
 	
 		if (_hops != null && _hops.size() > 0){
 			throw new HopsException(this.printBlockErrorLocation() + "error there should be no HOPs in IfStatementBlock");
@@ -382,15 +392,15 @@ public class IfStatementBlock extends StatementBlock {
 		return _hops;
 	}
 	
-	public Hops getPredicateHops(){
+	public Hop getPredicateHops(){
 		return _predicateHops;
 	}
 	
-	public Lops get_predicateLops() {
+	public Lop get_predicateLops() {
 		return _predicateLops;
 	}
 
-	public void set_predicateLops(Lops predicateLops) {
+	public void set_predicateLops(Lop predicateLops) {
 		_predicateLops = predicateLops;
 	}
 

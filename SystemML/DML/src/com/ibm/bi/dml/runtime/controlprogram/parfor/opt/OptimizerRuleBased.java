@@ -16,17 +16,22 @@ import java.util.HashSet;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
@@ -55,11 +60,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
-import com.ibm.bi.dml.utils.LopsException;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
@@ -321,7 +321,7 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) 
 			     && n.getExecType() == ExecType.MR )
 		{
-			Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).get_name();
 			if( cand.containsKey(inMatrix) )
 			{
@@ -490,8 +490,8 @@ public class OptimizerRuleBased extends Optimizer
 		if( opStr==null || !opStr.equals(LeftIndexingOp.OPSTRING) )
 			ret = false;
 
-		Hops h = null;
-		Hops base = null;
+		Hop h = null;
+		Hop base = null;
 		
 		if( ret ) {
 			h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
@@ -505,10 +505,10 @@ public class OptimizerRuleBased extends Optimizer
 		//check access pattern, memory budget
 		if( ret ) {
 			int dpf = 0;
-			Hops inpRowL = h.getInput().get(2);
-			Hops inpRowU = h.getInput().get(3);
-			Hops inpColL = h.getInput().get(4);
-			Hops inpColU = h.getInput().get(5);
+			Hop inpRowL = h.getInput().get(2);
+			Hop inpRowU = h.getInput().get(3);
+			Hop inpColL = h.getInput().get(4);
+			Hop inpColU = h.getInput().get(5);
 			if( (inpRowL.get_name().equals(iterVarname) && inpRowU.get_name().equals(iterVarname)) )
 				dpf = 1; //rowwise
 			if( (inpColL.get_name().equals(iterVarname) && inpColU.get_name().equals(iterVarname)) )
@@ -565,7 +565,7 @@ public class OptimizerRuleBased extends Optimizer
 	protected void recompileLIX( OptNode n, LocalVariableMap vars ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
-		Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 		
 		//set forced exec type
 		h.setForcedExecType(LopProperties.ExecType.CP);
@@ -718,7 +718,7 @@ public class OptimizerRuleBased extends Optimizer
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
 			PDataPartitionFormat dpf = PDataPartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
-			Hops h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).get_name();
 			String indexAccess = null;
 			switch( dpf )
@@ -1267,7 +1267,7 @@ public class OptimizerRuleBased extends Optimizer
 			return ( rows>=0 && cols>=0 && MatrixBlockDSM.estimateSize(rows, cols, 1.0) < memBudget/4 );
 		}
 		else
-			return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hops.CPThreshold, 2) );
+			return ( rows>=0 && cols>=0 && rows*cols < Math.pow(Hop.CPThreshold, 2) );
 	}
 
 	

@@ -9,12 +9,12 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * 

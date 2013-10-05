@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
@@ -14,6 +21,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -21,7 +29,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * CP external function program block, that overcomes the need for 
@@ -37,6 +44,10 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static String DEFAULT_FILENAME = "ext_funct";
 	private static IDSequence _defaultSeq = new IDSequence();
 	

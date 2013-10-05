@@ -1,14 +1,24 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.util.ArrayList;
 import java.util.Vector;
 
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.lops.Lop;
 
 
-public class FunctionStatement extends Statement{
-	
+public class FunctionStatement extends Statement
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	private ArrayList<StatementBlock> _body;
 	protected String _name;
 	protected Vector <DataIdentifier> _inputParams, _outputParams;
@@ -117,14 +127,14 @@ public class FunctionStatement extends Statement{
 		return new VariableSet();
 	}
 	
-	public static String[] createFunctionCallVariables( ArrayList<Lops> lops )
+	public static String[] createFunctionCallVariables( ArrayList<Lop> lops )
 	{
 		String[] ret = new String[lops.size()]; //vars in order
 		
 		for( int i=0; i<lops.size(); i++ )
 		{	
-			Lops llops = lops.get(i);
-			if( llops.getType()==Lops.Type.Data )
+			Lop llops = lops.get(i);
+			if( llops.getType()==Lop.Type.Data )
 				ret[i] = llops.getOutputParameters().getLabel(); 
 		}
 		

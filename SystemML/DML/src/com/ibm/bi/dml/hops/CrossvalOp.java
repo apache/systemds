@@ -1,23 +1,33 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.CrossvalLop;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 
-public class CrossvalOp extends Hops {
-
+public class CrossvalOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private CrossvalOp() {
 		//default constructor for clone
 	}
 	
 	public CrossvalOp(String l, DataType dt, ValueType vt, PartitionOp input) {
-		super(Hops.Kind.CrossvalOp, l, dt, vt);
+		super(Hop.Kind.CrossvalOp, l, dt, vt);
 		getInput().add(input) ;
 		input.getParent().add(this) ;
 	}
@@ -34,7 +44,7 @@ public class CrossvalOp extends Hops {
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
 				LOG.debug("  CrossvalOp: ");
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
@@ -42,9 +52,9 @@ public class CrossvalOp extends Hops {
 		}
 	}
 
-	public Lops constructLops() throws HopsException, LopsException {
+	public Lop constructLops() throws HopsException, LopsException {
 		if(get_lops() == null) {
-			Lops pLop = getInput().get(0).constructLops() ;
+			Lop pLop = getInput().get(0).constructLops() ;
 			CrossvalLop cvlop = new CrossvalLop(pLop) ;
 			cvlop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(cvlop) ;
@@ -109,7 +119,7 @@ public class CrossvalOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		return false;
 	}

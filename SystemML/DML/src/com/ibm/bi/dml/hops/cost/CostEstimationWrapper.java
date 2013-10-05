@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops.cost;
 
 import java.io.IOException;
@@ -9,18 +16,22 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 public class CostEstimationWrapper 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum CostType { 
 		NUM_MRJOBS, //based on number of MR jobs, [number MR jobs]
 		STATIC, // based on FLOPS, read/write, etc, [time in sec]      
@@ -86,7 +97,7 @@ public class CostEstimationWrapper
 	 * @throws LopsException
 	 * @throws IOException
 	 */
-	public static double getTimeEstimate( ArrayList<Hops> hops, ExecutionContext ec ) 
+	public static double getTimeEstimate( ArrayList<Hop> hops, ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException, IOException
 	{
 		Timing time = new Timing();

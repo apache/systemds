@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops.compile;
 
 import java.io.IOException;
@@ -17,12 +24,16 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.Hops.DataGenMethod;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.FunctionCallCP;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.OutputParameters;
 import com.ibm.bi.dml.lops.PartitionLop;
 import com.ibm.bi.dml.lops.PickByCount;
@@ -30,15 +41,16 @@ import com.ibm.bi.dml.lops.Unary;
 import com.ibm.bi.dml.lops.Data.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.Lops.Type;
+import com.ibm.bi.dml.lops.Lop.Type;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -51,11 +63,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 
@@ -65,8 +72,12 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  * @param <N>
  */
 
-public class Dag<N extends Lops> {
-
+public class Dag<N extends Lop> 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	static int total_reducers;
 	static String scratch = "";
 	private static final Log LOG = LogFactory.getLog(Dag.class.getName());
@@ -354,7 +365,7 @@ public class Dag<N extends Lops> {
 				// "node" is considered as updated ONLY IF the old value is not used any more
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
 				boolean hasWriteParent=false;
-				for(Lops p : node.getOutputs()) {
+				for(Lop p : node.getOutputs()) {
 					if(p.getExecLocation() == ExecLocation.Data) {
 						// if the "p" is of type Data, then it has to be a WRITE
 						hasWriteParent = true;
@@ -513,7 +524,7 @@ public class Dag<N extends Lops> {
 				
 				if ( jt == null ) {
 					// In case of Reblock, jobType depends not only on LopType but also on the format
-					if ( node.getType() == Lops.Type.ReBlock ) {
+					if ( node.getType() == Lop.Type.ReBlock ) {
 						// must differentiate between reblock lops that operate on text
 						// and binary input
 						if (getChildFormat(node) == Format.BINARY) {
@@ -613,7 +624,7 @@ public class Dag<N extends Lops> {
 		 */
 		Vector<N> nodesWithUnfinishedOutputs = new Vector<N>();
 		int[] jobIndices = {JobType.MMCJ.getId()};
-		Lops.Type[] lopTypes = { Lops.Type.MMCJ};
+		Lop.Type[] lopTypes = { Lop.Type.MMCJ};
 		
 		// TODO: SortByValue should be treated similar to MMCJ, since it can
 		// only sort one file now
@@ -900,7 +911,7 @@ public class Dag<N extends Lops> {
 					if (hasMRJobChildNode(node, execNodes)) {
 						// "node" must NOT be queued when node=group and the child that defines job is Rand
 						// this is because "group" can be pushed into the "Rand" job.
-						if (! (node.getType() == Lops.Type.Grouping && getMRJobChildNode(node,execNodes).getType() == Lops.Type.RandLop) ) {
+						if (! (node.getType() == Lop.Type.Grouping && getMRJobChildNode(node,execNodes).getType() == Lop.Type.RandLop) ) {
 							LOG.trace(indent + "Queueing node "
 										+ node.toString() + " (code 4)");
 
@@ -1222,7 +1233,7 @@ public class Dag<N extends Lops> {
 	private void processConsumersForInputs(N node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
-		for(Lops in : node.getInputs() ) {
+		for(Lop in : node.getInputs() ) {
 			processConsumers((N)in, inst, delteInst);
 			/*if ( in.removeConsumer() == 0 ) {
 				String label = in.getOutputParameters().getLabel();
@@ -1325,22 +1336,22 @@ public class Dag<N extends Lops> {
 
 				// Lops with arbitrary number of inputs (ParameterizedBuiltin, Aggregate)
 				// are handled separately, by simply passing ONLY the output variable to getInstructions()
-				if (node.getType() == Lops.Type.ParameterizedBuiltin
-						|| node.getType() == Lops.Type.GroupedAgg 
-						|| (node.getType() == Lops.Type.RandLop && ((DataGen)node).getDataGenMethod() == DataGenMethod.SEQ)){
+				if (node.getType() == Lop.Type.ParameterizedBuiltin
+						|| node.getType() == Lop.Type.GroupedAgg 
+						|| (node.getType() == Lop.Type.RandLop && ((DataGen)node).getDataGenMethod() == DataGenMethod.SEQ)){
 					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
 				} 
 				// Lops with arbitrary number of inputs and outputs are handled
 				// separately as well by passing arrays of inputs and outputs
-				else if ( node.getType() == Lops.Type.FunctionCallCP )
+				else if ( node.getType() == Lop.Type.FunctionCallCP )
 				{
 					String[] inputs = new String[node.getInputs().size()];
 					String[] outputs = new String[node.getOutputs().size()];
 					int count = 0;
-					for( Lops in : node.getInputs() )
+					for( Lop in : node.getInputs() )
 						inputs[count++] = in.getOutputParameters().getLabel();
 					count = 0;
-					for( Lops out : node.getOutputs() )
+					for( Lop out : node.getOutputs() )
 					{
 						outputs[count++] = out.getOutputParameters().getLabel();
 					}
@@ -1812,7 +1823,7 @@ public class Dag<N extends Lops> {
 	 * @throws LopsException
 	 */
 
-	private int jobType(Lops lops, ArrayList<Vector<N>> jobvec) throws LopsException {
+	private int jobType(Lop lops, ArrayList<Vector<N>> jobvec) throws LopsException {
 		for ( JobType jt : JobType.values()) {
 			int i = jt.getId();
 			if (i > 0 && jobvec.get(i) != null && jobvec.get(i).contains(lops)) {
@@ -2038,7 +2049,7 @@ public class Dag<N extends Lops> {
 				else if ( jt.allowsSingleShuffleInstruction() ) {
 					// These jobs allow a single shuffle instruction. 
 					// We should split the nodes so that a separate job is produced for each shuffle instruction.
-					Lops.Type splittingLopType = jt.getShuffleLopType();
+					Lop.Type splittingLopType = jt.getShuffleLopType();
 					
 					Vector<N> nodesForASingleJob = new Vector<N>();
 					for (int i = 0; i < jobNodes.get(index).size(); i++) {
@@ -2184,7 +2195,7 @@ public class Dag<N extends Lops> {
 		ArrayList<String> outputLabels = new ArrayList<String>();
 		LocalVariableMap outputLabelValueMapping = new LocalVariableMap ();
 
-		ArrayList<Lops> inputLops = new ArrayList<Lops>();
+		ArrayList<Lop> inputLops = new ArrayList<Lop>();
 		
 		HashMap<N, Integer> nodeIndexMapping = new HashMap<N, Integer>();
 
@@ -2347,11 +2358,11 @@ public class Dag<N extends Lops> {
 			{
 				// generate temporary filename and a variable name to hold the
 				// output produced by "rootNode"
-				oparams.setFile_name(scratch + Lops.FILE_SEPARATOR
-						+ Lops.PROCESS_PREFIX + DMLScript.getUUID()
-						+ Lops.FILE_SEPARATOR + Lops.FILE_SEPARATOR
+				oparams.setFile_name(scratch + Lop.FILE_SEPARATOR
+						+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
+						+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
 						+ ProgramConverter.CP_ROOT_THREAD_ID
-						+ Lops.FILE_SEPARATOR + "temp" + job_id.getNextID());
+						+ Lop.FILE_SEPARATOR + "temp" + job_id.getNextID());
 				oparams.setLabel("mVar" + var_index.getNextID());
 
 				// generate an instruction that creates a symbol table entry for the new variable
@@ -2382,15 +2393,15 @@ public class Dag<N extends Lops> {
 			if ( node.get_dataType() == DataType.SCALAR ) {
 				// generate assignment operations for final and transient writes
 				if ( oparams.getFile_name() == null ) {
-					String io_inst = "CP" + Lops.OPERAND_DELIMITOR + "assignvar"
-						+ Lops.OPERAND_DELIMITOR
+					String io_inst = "CP" + Lop.OPERAND_DELIMITOR + "assignvar"
+						+ Lop.OPERAND_DELIMITOR
 						+ node.getInputs().get(0).getOutputParameters().getLabel()
-						+ Lops.DATATYPE_PREFIX + node.getInputs().get(0).get_dataType()
-						+ Lops.VALUETYPE_PREFIX + node.getInputs().get(0).get_valueType()
-						+ Lops.OPERAND_DELIMITOR
+						+ Lop.DATATYPE_PREFIX + node.getInputs().get(0).get_dataType()
+						+ Lop.VALUETYPE_PREFIX + node.getInputs().get(0).get_valueType()
+						+ Lop.OPERAND_DELIMITOR
 						+ node.getOutputParameters().getLabel()
-						+ Lops.DATATYPE_PREFIX + node.get_dataType()
-						+ Lops.VALUETYPE_PREFIX + node.get_valueType();
+						+ Lop.DATATYPE_PREFIX + node.get_dataType()
+						+ Lop.VALUETYPE_PREFIX + node.get_valueType();
 					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
 				}
 				else {
@@ -2445,8 +2456,8 @@ public class Dag<N extends Lops> {
 						
 						// generate temporary filename & var name
 						String tempVarName = oparams.getLabel() + "temp";
-						String tempFileName = scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
+						String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+								   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
 								   					    "temp" + job_id.getNextID();
 						
 						//String createInst = prepareVariableInstruction("createvar", tempVarName, node.get_dataType(), node.get_valueType(), tempFileName, oparams, out.getOutInfo());
@@ -2467,8 +2478,8 @@ public class Dag<N extends Lops> {
 						String constVarName = oparams.getLabel();
 						String constFileName = tempFileName + constVarName;
 						
-						oparams.setFile_name(scratch +  Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-								   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR + 
+						oparams.setFile_name(scratch +  Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+								   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR + 
 								   					    constFileName);
 						
 						/*
@@ -2514,8 +2525,8 @@ public class Dag<N extends Lops> {
 						// part MM format file on hdfs.
 						if (oparams.getFormat() == Format.MM  )  {
 							
-							String tempFileName = scratch + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-			   					    Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR +  
+							String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+			   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
 			   					    "temp" + job_id.getNextID();
 							
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
@@ -2530,9 +2541,9 @@ public class Dag<N extends Lops> {
 							
 							// remove the variable
 							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
-									"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
-									+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
-									+ "true" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
+									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
+									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
 						} else {
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 									                oparams.getLabel(), 
@@ -2543,9 +2554,9 @@ public class Dag<N extends Lops> {
 								                 );
 							// remove the variable
 							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
-									"CP" + Lops.OPERAND_DELIMITOR + "rmfilevar" + Lops.OPERAND_DELIMITOR 
-									+ oparams.getLabel() + Lops.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lops.OPERAND_DELIMITOR 
-									+ "false" + Lops.VALUETYPE_PREFIX + "BOOLEAN"));
+									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
+									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
+									+ "false" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
 							
 						}
 						out.addPreInstruction(createvarInst);
@@ -2605,7 +2616,7 @@ public class Dag<N extends Lops> {
 		ArrayList<Instruction> variableInstructions = new ArrayList<Instruction>();
 		ArrayList<Instruction> writeInstructions = new ArrayList<Instruction>();
 		
-		ArrayList<Lops> inputLops = new ArrayList<Lops>();
+		ArrayList<Lop> inputLops = new ArrayList<Lop>();
 		
 		boolean cellModeOverride = false;
 		
@@ -2769,8 +2780,8 @@ public class Dag<N extends Lops> {
 		mr.setInputOutputLabels(getStringArray(inputLabels), getStringArray(outputLabels));
 		mr.setOutputs(resultIndicesByte);
 		mr.setDimsUnknownFilePrefix(scratch +  
-				                      Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + DMLScript.getUUID() + Lops.FILE_SEPARATOR + 
-				                      Lops.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lops.FILE_SEPARATOR );
+				                      Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+				                      Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR );
 		
 		mr.setNumberOfReducers(numReducers);
 		mr.setReplication(replication);
@@ -2795,7 +2806,7 @@ public class Dag<N extends Lops> {
 		inst.addAll(writeInstructions);
 		deleteinst.addAll(renameInstructions);
 		
-		for (Lops l : inputLops) {
+		for (Lop l : inputLops) {
 			processConsumers((N)l, rmvarinst, deleteinst);
 		}
 
@@ -2940,7 +2951,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> aggInstructionsReducer,
 			ArrayList<String> otherInstructionsReducer,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lops> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
 
 	{
 
@@ -2960,7 +2971,7 @@ public class Dag<N extends Lops> {
 		// Leo: For WRITE, since the first element from input is the real input (the other elements
 		// are parameters for the WRITE operation), so we only need to take care of the
 		// first element.
-		if (node.getType() == Lops.Type.Data && ((Data)node).getOperationType() == Data.OperationTypes.WRITE) {
+		if (node.getType() == Lop.Type.Data && ((Data)node).getOperationType() == Data.OperationTypes.WRITE) {
 			ret_val = getAggAndOtherInstructions((N) node.getInputs().get(0),
 					execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
@@ -3136,7 +3147,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings,
 			ArrayList<String> recordReaderInstructions,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lops> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
 
 	{
 
@@ -3241,7 +3252,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings,
 			ArrayList<String> instructionsInMapper,
 			HashMap<N, Integer> nodeIndexMapping, int[] start_index,
-			ArrayList<String> inputLabels, ArrayList<Lops> inputLops) throws LopsException
+			ArrayList<String> inputLabels, ArrayList<Lop> inputLops) throws LopsException
 
 	{
 
@@ -3380,7 +3391,7 @@ public class Dag<N extends Lops> {
 			ArrayList<String> inputStrings, ArrayList<InputInfo> inputInfos,
 			ArrayList<Long> numRows, ArrayList<Long> numCols,
 			ArrayList<Long> numRowsPerBlock, ArrayList<Long> numColsPerBlock,
-			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels, ArrayList<Lops> inputLops)
+			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels, ArrayList<Lop> inputLops)
 			throws LopsException {
 		// treat rand as an input.
 		if (node.getType() == Type.RandLop && execNodes.contains(node)
@@ -3418,8 +3429,8 @@ public class Dag<N extends Lops> {
 				inputStrings.add(node.getOutputParameters().getFile_name());
 			} else {
 				// use label name
-				inputStrings.add(Lops.VARIABLE_NAME_PLACEHOLDER + node.getOutputParameters().getLabel()
-						               + Lops.VARIABLE_NAME_PLACEHOLDER);
+				inputStrings.add(Lop.VARIABLE_NAME_PLACEHOLDER + node.getOutputParameters().getLabel()
+						               + Lop.VARIABLE_NAME_PLACEHOLDER);
 			}
 			//if ( node.getType() == Lops.Type.Data && ((Data)node).isTransient())
 			//	inputStrings.add("##" + node.getOutputParameters().getLabel() + "##");
@@ -3550,7 +3561,7 @@ public class Dag<N extends Lops> {
 	private void getPartitionNodes(Vector<N> execNodes, Vector<N> partitionNodes) {
 		for (int i = 0; i < execNodes.size(); i++) {
 			N node = execNodes.elementAt(i);
-			if (node.getType() == Lops.Type.PartitionLop)
+			if (node.getType() == Lop.Type.PartitionLop)
 				partitionNodes.add(node);
 		}
 	}
@@ -3562,7 +3573,7 @@ public class Dag<N extends Lops> {
 	 * @param b
 	 */
 
-	public static boolean isChild(Lops a, Lops b) {
+	public static boolean isChild(Lop a, Lop b) {
 		for (int i = 0; i < b.getInputs().size(); i++) {
 			if (b.getInputs().get(i).equals(a))
 				return true;

@@ -1,12 +1,23 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.*;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 
 
-public class CPOperand {
-
+public class CPOperand 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private String _name;
 	private ValueType _valueType;
 	private DataType _dataType;
@@ -53,7 +64,7 @@ public class CPOperand {
 	}
 	
 	public void split_by_value_type_prefix ( String str ) {
-		String[] opr = str.split(Lops.VALUETYPE_PREFIX);
+		String[] opr = str.split(Lop.VALUETYPE_PREFIX);
 		_name = opr[0];
 		_valueType = ValueType.valueOf(opr[1]);
 	}

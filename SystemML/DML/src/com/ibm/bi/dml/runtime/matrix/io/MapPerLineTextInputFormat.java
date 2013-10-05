@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.io.BufferedInputStream;
@@ -15,8 +23,11 @@ import org.apache.hadoop.mapred.TextInputFormat;
 
 // generates a single mapper for each input line
 // not intended for large files! (everything is read to create the splits)
-public class MapPerLineTextInputFormat extends TextInputFormat {
-
+public class MapPerLineTextInputFormat extends TextInputFormat 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@SuppressWarnings("deprecation")
 	public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {

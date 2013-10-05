@@ -1,7 +1,14 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops.compile;
 
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 
 
 /**
@@ -29,8 +36,8 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  * 
  */
 
-public enum JobType {
-
+public enum JobType 
+{
 	/* Add new job types to the following list */
 	// (id, name, producesIntermediateOutput, emptyInputsAllowed, allowsSingleShuffleInstruction)
 	INVALID			(-1, "INVALID", false, false, false), 
@@ -86,22 +93,22 @@ public enum JobType {
 		return allowsSingleShuffleInstruction;
 	}
 
-	public Lops.Type getShuffleLopType() throws DMLRuntimeException {
+	public Lop.Type getShuffleLopType() throws DMLRuntimeException {
 		if ( allowsSingleShuffleInstruction == false )
 			throw new DMLRuntimeException("Shuffle Lop Type is not defined for a job (" + getName() + ") with allowsSingleShuffleInstruction=false.");
 		else {
 			if ( getName().equals("MMCJ") )
-				return Lops.Type.MMCJ;
+				return Lop.Type.MMCJ;
 			else if ( getName().equals("MMRJ") )
-				return Lops.Type.MMRJ;
+				return Lop.Type.MMRJ;
 			else if ( getName().equals("SORT") )
-				return Lops.Type.SortKeys;
+				return Lop.Type.SortKeys;
 			else 
 				throw new DMLRuntimeException("Shuffle Lop Type is not defined for a job (" + getName() + ") that allows a single shuffle instruction.");
 		}
 	}
 	
-	public static JobType findJobTypeFromLopType(Lops.Type lt) {
+	public static JobType findJobTypeFromLopType(Lop.Type lt) {
 		switch(lt) {
 		case RandLop: 		return JobType.RAND;
 		

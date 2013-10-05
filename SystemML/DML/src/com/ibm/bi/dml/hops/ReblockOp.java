@@ -1,25 +1,35 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
 
 
-public class ReblockOp extends Hops {
-
+public class ReblockOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private ReblockOp() {
 		//default constructor for clone
 	}
 	
 	// Constructor that adds a Reblock Hop *AFTER* a hop (e.g. Read Hop) to
 	// produce a block size
-	public ReblockOp(Hops inp, int rows_per_block, int cols_per_block) {
+	public ReblockOp(Hop inp, int rows_per_block, int cols_per_block) {
 		super(Kind.Reblock, inp.get_name(), inp.get_dataType(), inp
 				.get_valueType());
 
@@ -37,7 +47,7 @@ public class ReblockOp extends Hops {
 		inp.getParent().add(this);
 
 		// fix input of parents
-		for (Hops p : getParent()) {
+		for (Hop p : getParent()) {
 			for (int i = 0; i < p.getInput().size(); i++) {
 				if (p.getInput().get(i) == inp) {
 					p.getInput().set(i, this);
@@ -49,7 +59,7 @@ public class ReblockOp extends Hops {
 	// Constructor that adds a Reblock Hop *BEFORE* a hop to create its block
 	// size(e.g. Write Hop)
 
-	public ReblockOp(Hops par) {
+	public ReblockOp(Hop par) {
 		super(Kind.Reblock, par.get_name(), par.get_dataType(), par
 				.get_valueType());
 
@@ -69,7 +79,7 @@ public class ReblockOp extends Hops {
 		par.getInput().add(this);
 
 		// fix parents of input
-		for (Hops in : getInput()) {
+		for (Hop in : getInput()) {
 			while (in.getParent().contains(par)) {
 				in.getParent().remove(par);
 				in.getParent().add(this);
@@ -78,7 +88,7 @@ public class ReblockOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops() throws HopsException {
+	public Lop constructLops() throws HopsException {
 		if (get_lops() == null) {
 
 			try {
@@ -106,7 +116,7 @@ public class ReblockOp extends Hops {
 	public void printMe() throws HopsException {
 		if (get_visited() != VISIT_STATUS.DONE) {
 			super.printMe();
-			for (Hops h : getInput()) {
+			for (Hop h : getInput()) {
 				h.printMe();
 			}
 		}
@@ -127,7 +137,7 @@ public class ReblockOp extends Hops {
 		
 		//Just pass the input SQLLops, there is no reblocking in Netezza,
 		//However, we have to adjust the flag
-		Hops input = this.getInput().get(0);
+		Hop input = this.getInput().get(0);
 		SQLLops lop = input.constructSQLLOPs();
 		
 		if(lop.get_flag() != GENERATES.NONE)
@@ -161,7 +171,7 @@ public class ReblockOp extends Hops {
 	{
 		long[] ret = null;
 		
-		Hops input = getInput().get(0);
+		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc != null ) 
 			ret = new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
@@ -186,7 +196,7 @@ public class ReblockOp extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(0);
+		Hop input1 = getInput().get(0);
 		set_dim1( input1.get_dim1() );
 		set_dim2( input1.get_dim2() );
 		setNnz( input1.getNnz() );
@@ -206,7 +216,7 @@ public class ReblockOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.Reblock )
 			return false;

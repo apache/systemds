@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.DataInput;
@@ -28,12 +36,15 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.Counters.Group;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
@@ -49,12 +60,14 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
-public class CSVReblockMR {
+public class CSVReblockMR 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	private static final Log LOG = LogFactory.getLog(CSVReblockMR.class.getName());
 	
 	public static final String NUM_ROWS_IN_MATRIX="num.rows.in.matrix.";

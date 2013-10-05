@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.util;
 
 import java.io.BufferedInputStream;
@@ -12,17 +19,21 @@ import java.nio.channels.FileChannel;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 public class LocalFileUtils 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	public static final int BUFFER_SIZE = 8192;
 	
 	//unique IDs per JVM for tmp files
@@ -349,10 +360,10 @@ public class LocalFileUtils
 		//create process specific sub tmp dir
 		StringBuilder sb = new StringBuilder();
 		sb.append( dirRoot );
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append( uuid );
-		sb.append(Lops.FILE_SEPARATOR);
+		sb.append(Lop.FILE_SEPARATOR);
 		_workingDir = sb.toString();
 		
 		//create process-specific staging dir if not existing
@@ -423,9 +434,9 @@ public class LocalFileUtils
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append( _workingDir );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( category );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 		
 		return sb.toString();
 	}
@@ -442,9 +453,9 @@ public class LocalFileUtils
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append( _workingDir );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( category );
-		sb.append( Lops.FILE_SEPARATOR );
+		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( "tmp" );
 		sb.append( _seq.getNextID() );
 		

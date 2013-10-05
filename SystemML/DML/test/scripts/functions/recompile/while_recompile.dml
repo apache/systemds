@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 V = Rand(rows=$1+1, cols=$2+1, min=$3, max=$3);
 Z = Rand(rows=1,cols=1,min=0,max=0);
 while( castAsScalar(V[1,1])>castAsScalar(Z[1,1]) )

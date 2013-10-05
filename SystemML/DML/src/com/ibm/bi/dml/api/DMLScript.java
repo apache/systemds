@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.api;
 
 import java.io.BufferedReader;
@@ -30,12 +37,19 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -43,7 +57,6 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -52,17 +65,16 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.NetezzaConnector;
 import com.ibm.bi.dml.sql.sqlcontrolprogram.SQLProgram;
 import com.ibm.bi.dml.utils.DMLException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
-import com.ibm.bi.dml.utils.LopsException;
 import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 import com.ibm.bi.dml.utils.visualize.DotGraph;
 
 
-public class DMLScript {
+public class DMLScript 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	//TODO: VISUALIZE option should be updated
 	public enum EXECUTION_PROPERTIES {VISUALIZE, RUNTIME_PLATFORM, CONFIG};
 	public static boolean VISUALIZE = false;
@@ -850,8 +862,8 @@ public class DMLScript {
 	{
 		//create dml-script-specific suffix
 		StringBuilder sb = new StringBuilder();
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		String dirSuffix = sb.toString();
 		

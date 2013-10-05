@@ -28,6 +28,8 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -41,8 +43,6 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * Partitions a given matrix into row or column partitions with a two pass-approach.

@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.io.IOException;
@@ -8,10 +15,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
@@ -28,16 +39,15 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.LanguageException;
-import com.ibm.bi.dml.utils.LopsException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 
-public class DMLProgram {
-
+public class DMLProgram 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private ArrayList<StatementBlock> _blocks;
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
@@ -186,8 +196,8 @@ public class DMLProgram {
 	protected ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
 		throws IOException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		Dag<Lops> dag = null; 
-		Dag<Lops> pred_dag = null;
+		Dag<Lop> dag = null; 
+		Dag<Lop> pred_dag = null;
 
 		ArrayList<Instruction> instruct;
 		ArrayList<Instruction> pred_instruct = null;
@@ -198,7 +208,7 @@ public class DMLProgram {
 		if (sb instanceof WhileStatementBlock){
 		
 			// create DAG for loop predicates
-			pred_dag = new Dag<Lops>();
+			pred_dag = new Dag<Lop>();
 			((WhileStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
@@ -258,7 +268,7 @@ public class DMLProgram {
 		else if (sb instanceof IfStatementBlock){
 		
 			// create DAG for loop predicates
-			pred_dag = new Dag<Lops>();
+			pred_dag = new Dag<Lop>();
 			((IfStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
@@ -325,9 +335,9 @@ public class DMLProgram {
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			
 			// create DAGs for loop predicates 
-			Dag<Lops> fromDag = new Dag<Lops>();
-			Dag<Lops> toDag = new Dag<Lops>();
-			Dag<Lops> incrementDag = new Dag<Lops>();
+			Dag<Lop> fromDag = new Dag<Lop>();
+			Dag<Lop> toDag = new Dag<Lop>();
+			Dag<Lop> incrementDag = new Dag<Lop>();
 			if( fsb.getFromHops()!=null )
 				fsb.getFromLops().addToDag(fromDag);
 			if( fsb.getToHops()!=null )
@@ -419,14 +429,14 @@ public class DMLProgram {
 				}				
 				StringBuffer buff = new StringBuffer();
 				buff.append(scratchSpaceLoc);
-				buff.append(Lops.FILE_SEPARATOR);
-				buff.append(Lops.PROCESS_PREFIX);
+				buff.append(Lop.FILE_SEPARATOR);
+				buff.append(Lop.PROCESS_PREFIX);
 				buff.append(DMLScript.getUUID());
-				buff.append(Lops.FILE_SEPARATOR);
+				buff.append(Lop.FILE_SEPARATOR);
 				buff.append(ProgramConverter.CP_ROOT_THREAD_ID);
-				buff.append(Lops.FILE_SEPARATOR);
+				buff.append(Lop.FILE_SEPARATOR);
 				buff.append("PackageSupport");
-				buff.append(Lops.FILE_SEPARATOR);
+				buff.append(Lop.FILE_SEPARATOR);
 				String basedir =  buff.toString();
 				
 				if( isCP )
@@ -483,9 +493,9 @@ public class DMLProgram {
 			if (cvsb.get_lops() != null && cvsb.get_lops().size() > 0){
 				
 				// DAGs for Lops
-				dag = new Dag<Lops>();
+				dag = new Dag<Lop>();
 				
-				for (Lops l : cvsb.get_lops()) {
+				for (Lop l : cvsb.get_lops()) {
 					l.addToDag(dag);
 				}
 				// Instructions for Lobs DAGs
@@ -562,12 +572,12 @@ public class DMLProgram {
 			ProgramBlock rtpb = new ProgramBlock(prog);
 		
 			// DAGs for Lops
-			dag = new Dag<Lops>();
+			dag = new Dag<Lop>();
 
 			// check there are actually Lops in to process (loop stmt body will not have any)
 			if (sb.get_lops() != null && sb.get_lops().size() > 0){
 			
-				for (Lops l : sb.get_lops()) {
+				for (Lop l : sb.get_lops()) {
 					l.addToDag(dag);
 				}
 				
@@ -681,9 +691,9 @@ public class DMLProgram {
 		//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
 		StringBuffer sb = new StringBuffer();
 		sb.append("CP");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("rmvar");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(varName);
 		String str = sb.toString();
 		Instruction inst = CPInstructionParser.parseSingleInstruction( str );
@@ -738,8 +748,8 @@ public class DMLProgram {
 			for( Instruction inst : pb.getInstructions() )
 			{
 				String instStr = inst.toString();
-				if(   instStr.contains("rmfilevar"+Lops.OPERAND_DELIMITOR+varName)
-				   || instStr.contains("rmvar"+Lops.OPERAND_DELIMITOR+varName)  )
+				if(   instStr.contains("rmfilevar"+Lop.OPERAND_DELIMITOR+varName)
+				   || instStr.contains("rmvar"+Lop.OPERAND_DELIMITOR+varName)  )
 				{
 					return true;
 				}

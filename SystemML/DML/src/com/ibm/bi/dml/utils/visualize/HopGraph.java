@@ -1,51 +1,62 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.utils.visualize;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class HopGraph {
-
-	private static String getString_dataHop(Hops h) {
+public class HopGraph 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static String getString_dataHop(Hop h) {
 		String s = new String("");
 		// assert h.getKind() == Hops.Kind.DataOp
-		if (((DataOp) h).get_dataop() == Hops.DataOpTypes.PERSISTENTREAD) {
+		if (((DataOp) h).get_dataop() == Hop.DataOpTypes.PERSISTENTREAD) {
 			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
 					+ "\", color=royalblue2 ]; \n";
-		} else if (((DataOp) h).get_dataop() == Hops.DataOpTypes.TRANSIENTREAD) {
+		} else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.TRANSIENTREAD) {
 			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
 					+ "\", color=wheat2 ]; \n";
 		}
 		// Persistent/Transient Writes
-		else if (((DataOp) h).get_dataop() == Hops.DataOpTypes.PERSISTENTWRITE) {
+		else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.PERSISTENTWRITE) {
 			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
 					+ "\", color=orangered2 ]; \n";
-		} else if (((DataOp) h).get_dataop() == Hops.DataOpTypes.TRANSIENTWRITE) {
+		} else if (((DataOp) h).get_dataop() == Hop.DataOpTypes.TRANSIENTWRITE) {
 			s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
 					+ "\", color=wheat4 ]; \n";
 		}
 		return s;
 	}
 
-	private static String getString_sinkHop(Hops h) {
+	private static String getString_sinkHop(Hop h) {
 		// h is the final result.. so, no parents
 		// asseert h.getParent().size() == 0
 		String s = new String("");
-		if (h.getKind() == Hops.Kind.DataOp) {
+		if (h.getKind() == Hop.Kind.DataOp) {
 			String sdata = getString_dataHop(h);
 			s += sdata;
 		} else {
@@ -56,10 +67,10 @@ public class HopGraph {
 		return s;
 	}
 
-	private static String getString_sourceHop(Hops h) {
+	private static String getString_sourceHop(Hop h) {
 		// asseert h.getInput().size() == 0
 		String s = new String("");
-		if (h.getKind() == Hops.Kind.DataOp) {
+		if (h.getKind() == Hop.Kind.DataOp) {
 			String sdata = getString_dataHop(h);
 			s += sdata;
 		} else {
@@ -69,10 +80,10 @@ public class HopGraph {
 		return s;
 	}
 
-	private static String prepareHopsNodeList(Hops h) {
+	private static String prepareHopsNodeList(Hop h) {
 		String s = new String("");
 
-		if (h.get_visited() == Hops.VISIT_STATUS.DONE)
+		if (h.get_visited() == Hop.VISIT_STATUS.DONE)
 			return s;
 
 		if (h.getInput().size() == 0) {
@@ -80,7 +91,7 @@ public class HopGraph {
 		} else if (h.getParent().size() == 0) {
 			s += getString_sinkHop(h);
 		} else {
-			if (h.getKind() == Hops.Kind.DataOp) {
+			if (h.getKind() == Hop.Kind.DataOp) {
 				s += getString_dataHop(h);
 			} else {
 				s += "    node" + h.getHopID() + " [label=\"" + h.getHopID() + ")" + h.get_name() + " " + h.getOpString()
@@ -88,7 +99,7 @@ public class HopGraph {
 			}
 		}
 
-		for (Hops hi : h.getInput()) {
+		for (Hop hi : h.getInput()) {
 			String si = prepareHopsNodeList(hi);
 			s += si;
 
@@ -101,7 +112,7 @@ public class HopGraph {
 		 * Hops.VISIT_STATUS.NOTVISITED) { String edge = "    node" +
 		 * h.getHopID() + " -> node" + hp.getHopID() + "; \n"; s += edge; } }
 		 */
-		h.set_visited(Hops.VISIT_STATUS.DONE);
+		h.set_visited(Hop.VISIT_STATUS.DONE);
 
 		return s;
 	}
@@ -136,7 +147,7 @@ public class HopGraph {
 		if (current instanceof WhileStatementBlock) {
 			// Handle Predicate
 			
-			Hops predicateHops = ((WhileStatementBlock) current).getPredicateHops();
+			Hop predicateHops = ((WhileStatementBlock) current).getPredicateHops();
 			if (predicateHops != null){
 				String predicateString = prepareHopsNodeList(predicateHops);
 				graphString += predicateString;
@@ -168,7 +179,7 @@ public class HopGraph {
 		
 		else if (current instanceof IfStatementBlock) {
 			// Handle Predicate
-			Hops predicateHops = ((IfStatementBlock) current).getPredicateHops();
+			Hop predicateHops = ((IfStatementBlock) current).getPredicateHops();
 			String predicateString = prepareHopsNodeList(predicateHops);
 			graphString += predicateString;
 			
@@ -184,11 +195,11 @@ public class HopGraph {
 		
 		else {
 			
-			ArrayList<Hops> hopsDAG = current.get_hops();
+			ArrayList<Hop> hopsDAG = current.get_hops();
 			if (hopsDAG !=  null && hopsDAG.size() > 0) {
-				Iterator<Hops> iter = hopsDAG.iterator();
+				Iterator<Hop> iter = hopsDAG.iterator();
 				while (iter.hasNext()) {
-					Hops h = iter.next();
+					Hop h = iter.next();
 
 					String nodeList = new String("");
 					nodeList = prepareHopsNodeList(h);

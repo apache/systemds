@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -5,11 +12,14 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.utils.LopsException;
 
-public class ZeroOut  extends Lops {
-
-	private void init(Lops inputMatrix, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et) {
+public class ZeroOut  extends Lop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et) {
 		this.addInput(inputMatrix);
 		this.addInput(rowL);
 		this.addInput(rowU);
@@ -41,16 +51,16 @@ public class ZeroOut  extends Lops {
 	}
 	
 	public ZeroOut(
-			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt)
+			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt)
 			throws LopsException {
-		super(Lops.Type.ZeroOut, dt, vt);
+		super(Lop.Type.ZeroOut, dt, vt);
 		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR);
 	}
 
 	public ZeroOut(
-			Lops input, Lops rowL, Lops rowU, Lops colL, Lops colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
+			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
 			throws LopsException {
-		super(Lops.Type.ZeroOut, dt, vt);
+		super(Lop.Type.ZeroOut, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
 	}
 	

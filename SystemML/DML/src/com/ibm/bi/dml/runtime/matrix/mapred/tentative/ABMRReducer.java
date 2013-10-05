@@ -1,16 +1,23 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.mapred.tentative;
 
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
@@ -20,13 +27,15 @@ import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedTripleIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
 public class ABMRReducer extends MapReduceBase 
-implements Reducer<TaggedTripleIndexes, MatrixBlock, MatrixIndexes, MatrixBlock>{
-
+implements Reducer<TaggedTripleIndexes, MatrixBlock, MatrixIndexes, MatrixBlock>
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static final String AGGREGATE_BINARY_OPERATION_CONFIG="aggregate.binray.operation";
 	private AggregateBinaryOperator bin_agg_op=new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()));
 	private MatrixBlock leftblock;

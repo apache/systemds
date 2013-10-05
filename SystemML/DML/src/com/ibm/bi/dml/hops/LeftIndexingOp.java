@@ -1,10 +1,17 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.LeftIndex;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.ZeroOut;
@@ -15,10 +22,13 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.utils.HopsException;
 
-public class LeftIndexingOp  extends Hops {
-
+public class LeftIndexingOp  extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static String OPSTRING = "LeftIndexing";
 	
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
@@ -44,7 +54,7 @@ public class LeftIndexingOp  extends Hops {
 		//default constructor for clone
 	}
 	
-	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrixLeft, Hops inpMatrixRight, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
+	public LeftIndexingOp(String l, DataType dt, ValueType vt, Hop inpMatrixLeft, Hop inpMatrixRight, Hop inpRowL, Hop inpRowU, Hop inpColL, Hop inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
 		super(Kind.Indexing, l, dt, vt);
 
 		getInput().add(0, inpMatrixLeft);
@@ -67,7 +77,7 @@ public class LeftIndexingOp  extends Hops {
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException {
 		if (get_lops() == null) {
 			try {
@@ -75,10 +85,10 @@ public class LeftIndexingOp  extends Hops {
 				if(et == ExecType.MR) {
 					
 					//the right matrix is reindexed
-					Lops top=getInput().get(2).constructLops();
-					Lops bottom=getInput().get(3).constructLops();
-					Lops left=getInput().get(4).constructLops();
-					Lops right=getInput().get(5).constructLops();
+					Lop top=getInput().get(2).constructLops();
+					Lop bottom=getInput().get(3).constructLops();
+					Lop left=getInput().get(4).constructLops();
+					Lop right=getInput().get(5).constructLops();
 					/*
 					//need to creat new lops for converting the index ranges
 					//original range is (a, b) --> (c, d)
@@ -89,12 +99,12 @@ public class LeftIndexingOp  extends Hops {
 					//newc=leftmatrix.row-a+1, newd=leftmatrix.row
 					*/
 					//right hand matrix
-					Lops nrow=new UnaryCP(getInput().get(0).constructLops(), 
+					Lop nrow=new UnaryCP(getInput().get(0).constructLops(), 
 									OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
-					Lops ncol=new UnaryCP(getInput().get(0).constructLops(), 
+					Lop ncol=new UnaryCP(getInput().get(0).constructLops(), 
 											OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
 					
-					Lops rightInput = null;
+					Lop rightInput = null;
 					if (isRightHandSideScalar()) {
 						//insert cast to matrix if necessary (for reuse MR runtime)
 						rightInput = new UnaryCP(getInput().get(1).constructLops(),
@@ -145,7 +155,7 @@ public class LeftIndexingOp  extends Hops {
 					
 					group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					
-					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hops.OpOp2.PLUS),
+					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hop.OpOp2.PLUS),
 							get_dataType(), get_valueType(), et);
 					
 					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -178,7 +188,7 @@ public class LeftIndexingOp  extends Hops {
 	 *         literal.
 	 */
 	private boolean isRightHandSideScalar() {
-		Hops rightHandSide = getInput().get(1);
+		Hop rightHandSide = getInput().get(1);
 		return (rightHandSide.get_dataType() == DataType.SCALAR);
 	}
 	
@@ -192,7 +202,7 @@ public class LeftIndexingOp  extends Hops {
 	public void printMe() throws HopsException {
 		if (get_visited() != VISIT_STATUS.DONE) {
 			super.printMe();
-			for (Hops h : getInput()) {
+			for (Hop h : getInput()) {
 				h.printMe();
 			}
 			;
@@ -217,7 +227,7 @@ public class LeftIndexingOp  extends Hops {
 		super.computeMemEstimate(memo);	
 		
 		//changed final estimate (infer and use input size)
-		Hops rhM = getInput().get(1);
+		Hop rhM = getInput().get(1);
 		MatrixCharacteristics mcRhM = memo.getAllInputStats(rhM);
 		//TODO also use worstcase estimate for output
 		if( dimsKnown() && !(rhM.dimsKnown()||mcRhM.dimsKnown()) ) 
@@ -260,7 +270,7 @@ public class LeftIndexingOp  extends Hops {
 	{
 		long[] ret = null;
 	
-		Hops input = getInput().get(0);
+		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc.dimsKnown() ) 
 			ret = new long[]{mc.get_rows(), mc.get_cols(), -1};
@@ -297,7 +307,7 @@ public class LeftIndexingOp  extends Hops {
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hops input1 = getInput().get(0);		
+		Hop input1 = getInput().get(0);		
 		set_dim1( input1.get_dim1() );
 		set_dim2( input1.get_dim2() );
 	}
@@ -314,7 +324,7 @@ public class LeftIndexingOp  extends Hops {
 		{
 			_requiresRecompile = false;
 			
-			Hops rInput = getInput().get(1);
+			Hop rInput = getInput().get(1);
 			if( (!rInput.dimsKnown()) && rInput instanceof DataOp  )
 			{
 				//disable recompile for this dataop (we cannot set requiresRecompile directly 
@@ -339,7 +349,7 @@ public class LeftIndexingOp  extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if(    that._kind!=Kind.Indexing 
 			&& getInput().size() != that.getInput().size() )

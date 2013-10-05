@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import java.util.HashMap;
@@ -9,7 +16,8 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.GroupedAggregate;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
@@ -18,16 +26,18 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  * Defines the HOP for calling an internal function (with custom parameters) from a DML script. 
  * 
  */
-public class ParameterizedBuiltinOp extends Hops {
-
+public class ParameterizedBuiltinOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	ParamBuiltinOp _op;
 
 	/**
@@ -48,14 +58,14 @@ public class ParameterizedBuiltinOp extends Hops {
 	 * Creates a new HOP for a function call
 	 */
 	public ParameterizedBuiltinOp(String l, DataType dt, ValueType vt,
-			ParamBuiltinOp op, HashMap<String, Hops> inputParameters) {
-		super(Hops.Kind.ParameterizedBuiltinOp, l, dt, vt);
+			ParamBuiltinOp op, HashMap<String, Hop> inputParameters) {
+		super(Hop.Kind.ParameterizedBuiltinOp, l, dt, vt);
 
 		_op = op;
 
 		int index = 0;
 		for (String s : inputParameters.keySet()) {
-			Hops input = inputParameters.get(s);
+			Hop input = inputParameters.get(s);
 			getInput().add(input);
 			input.getParent().add(this);
 
@@ -73,11 +83,11 @@ public class ParameterizedBuiltinOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops() throws HopsException, LopsException {
+	public Lop constructLops() throws HopsException, LopsException {
 		if (get_lops() == null) {
 
 			// construct lops for all input parameters
-			HashMap<String, Lops> inputlops = new HashMap<String, Lops>();
+			HashMap<String, Lop> inputlops = new HashMap<String, Lop>();
 			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 				inputlops.put(cur.getKey(), getInput().get(cur.getValue())
 						.constructLops());
@@ -115,9 +125,9 @@ public class ParameterizedBuiltinOp extends Hops {
 						CombineTertiary combine = CombineTertiary
 								.constructCombineLop(
 										com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreGroupedAggWeighted,
-										(Lops) inputlops.get("target"),
-										(Lops) inputlops.get("groups"),
-										(Lops) inputlops.get("weights"),
+										inputlops.get("target"),
+										inputlops.get("groups"),
+										inputlops.get("weights"),
 										DataType.MATRIX, get_valueType());
 	
 						// the dimensions of "combine" would be same as that of the
@@ -145,7 +155,7 @@ public class ParameterizedBuiltinOp extends Hops {
 						// combineBinary followed by groupedAgg
 						CombineBinary combine = CombineBinary.constructCombineLop(
 								OperationTypes.PreGroupedAggUnweighted,
-								(Lops) inputlops.get("target"), (Lops) inputlops
+								inputlops.get("target"), inputlops
 										.get("groups"), DataType.MATRIX,
 								get_valueType());
 	
@@ -297,7 +307,7 @@ public class ParameterizedBuiltinOp extends Hops {
 		
 		long[] ret = null;
 	
-		Hops input = getInput().get(_paramIndexMap.get("target"));	
+		Hop input = getInput().get(_paramIndexMap.get("target"));	
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 
 		if (   _op == ParamBuiltinOp.GROUPEDAGG ) { 
@@ -373,7 +383,7 @@ public class ParameterizedBuiltinOp extends Hops {
 			
 			case RMEMPTY: 
 				//one output dimension dim1 or dim2 is completely data dependent 
-				Hops target = getInput().get(_paramIndexMap.get("target"));
+				Hop target = getInput().get(_paramIndexMap.get("target"));
 				String margin = getInput().get(_paramIndexMap.get("margin")).toString();
 				if( margin.equals("rows") )
 					set_dim2( target.get_dim2() );
@@ -401,7 +411,7 @@ public class ParameterizedBuiltinOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.ParameterizedBuiltinOp )
 			return false;

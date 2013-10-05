@@ -1,10 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /*
@@ -12,8 +18,12 @@ import com.ibm.bi.dml.utils.LopsException;
  * This lop can change the keys and hence break alignment.
  */
 
-public class Transform extends Lops
+public class Transform extends Lop
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum OperationTypes {
 		Transpose,
 		VectortoDiagMatrix,
@@ -28,19 +38,19 @@ public class Transform extends Lops
 	 * @param op
 	 */
 
-	public Transform(Lops input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
-		super(Lops.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, et);
 	}
 	
-	public Transform(Lops input, Transform.OperationTypes op, DataType dt, ValueType vt) 
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) 
 	{
-		super(Lops.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, ExecType.MR);
 	}
 
-	private void init (Lops input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	private void init (Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		operation = op;
  
@@ -158,7 +168,7 @@ public class Transform extends Lops
 		//rows, cols, byrow
 		String[] inputX = new String[]{input2,input3,input4};
 		for( int i=1; i<=(inputX.length); i++ ) {
-			Lops ltmp = getInputs().get(i);
+			Lop ltmp = getInputs().get(i);
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( inputX[i-1] );
 			sb.append( DATATYPE_PREFIX );
@@ -223,27 +233,27 @@ public class Transform extends Lops
 		sb.append( getInputs().get(0).get_valueType() ); 
 		
 		//rows		
-		Lops input2 = getInputs().get(1); 
+		Lop input2 = getInputs().get(1); 
 		String rowsString = input2.getOutputParameters().getLabel();
 		if ( (input2.getExecLocation() == ExecLocation.Data &&
 				 !((Data)input2).isLiteral()) || !(input2.getExecLocation() == ExecLocation.Data )){
-			rowsString = Lops.VARIABLE_NAME_PLACEHOLDER + rowsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+			rowsString = Lop.VARIABLE_NAME_PLACEHOLDER + rowsString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		}
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( rowsString );
 		
 		//cols
-		Lops input3 = getInputs().get(2); 
+		Lop input3 = getInputs().get(2); 
 		String colsString = input3.getOutputParameters().getLabel();
 		if ( input3.getExecLocation() == ExecLocation.Data 
 				&& !((Data)input3).isLiteral() || !(input3.getExecLocation() == ExecLocation.Data )) {
-			colsString = Lops.VARIABLE_NAME_PLACEHOLDER + colsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+			colsString = Lop.VARIABLE_NAME_PLACEHOLDER + colsString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		}
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( colsString );
 		
 		//byrow
-		Lops input4 = getInputs().get(3); 
+		Lop input4 = getInputs().get(3); 
 		String byrowString = input4.getOutputParameters().getLabel();
 		if ( input4.getExecLocation() == ExecLocation.Data 
 				&& !((Data)input4).isLiteral() || !(input4.getExecLocation() == ExecLocation.Data ) ){
@@ -264,10 +274,10 @@ public class Transform extends Lops
 	}
 
 
-	public static Transform constructTransformLop(Lops input1, OperationTypes op, DataType dt, ValueType vt) {
+	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
 		
-		for (Lops lop  : input1.getOutputs()) {
-			if ( lop.type == Lops.Type.Transform ) {
+		for (Lop lop  : input1.getOutputs()) {
+			if ( lop.type == Lop.Type.Transform ) {
 				return (Transform)lop;
 			}
 		}
@@ -276,10 +286,10 @@ public class Transform extends Lops
 		return retVal;
 	}
 
-	public static Transform constructTransformLop(Lops input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		
-		for (Lops lop  : input1.getOutputs()) {
-			if ( lop.type == Lops.Type.Transform ) {
+		for (Lop lop  : input1.getOutputs()) {
+			if ( lop.type == Lop.Type.Transform ) {
 				return (Transform)lop;
 			}
 		}

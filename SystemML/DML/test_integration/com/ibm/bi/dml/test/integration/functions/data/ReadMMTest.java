@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.integration.functions.data;
 
 import static org.junit.Assert.fail;
@@ -7,15 +14,15 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
 /**
@@ -42,8 +49,12 @@ import com.ibm.bi.dml.utils.LanguageException;
  * 
  * 
  */
-public class ReadMMTest extends AutomatedTestBase {
-
+public class ReadMMTest extends AutomatedTestBase 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/data/";

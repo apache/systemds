@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.mapred.obsolete;
 
 import java.util.Vector;
@@ -16,8 +24,12 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedTripleIndexes;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
-public class ABMR {
-	
+public class ABMR 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	public static JobConf runJob(String inputs, String aggBinaryOperation, String output, 
 		int numReducers, int replication, long nr1, long nc1, long nr2, long nc2, int bnr1, int bnc1, int bnr2, int bnc2) 
 	throws Exception

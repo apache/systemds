@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.meta;
 //<Arun>
 import java.io.DataInput;
@@ -6,10 +13,13 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
-import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 
-
-public class BlockJoinMapOutputValue implements Writable {
+public class BlockJoinMapOutputValue implements Writable 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public long val1;	//used as blk.x/y for matrix read; as future row/col id in bootstrap / holdout/kfold idtable read (repl coded)
 	public int val2;	//used as foldnum for btstrp tupleswp (+ve +1) / holdout/kfold idtable read (-ve -1) / 0 for matx
 	//public MatrixBlock blk;	//blk val for matrix file read

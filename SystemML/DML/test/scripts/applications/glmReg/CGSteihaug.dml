@@ -1,3 +1,12 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
 # Apply Conjugate Gradient - Steihaug algorithm in order to approximately minimize
 # 0.5 z^T (X^T diag(w) X + lambda) z + (g + lambda * beta)^T z
 # under constraint:  ||z|| <= trust_delta.  Here A = X^T diag(w) X.

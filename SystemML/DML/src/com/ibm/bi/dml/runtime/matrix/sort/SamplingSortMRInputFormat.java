@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.sort;
 
 import java.io.IOException;
@@ -29,10 +37,14 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 
-@SuppressWarnings({ "unchecked", "deprecation" })
+@SuppressWarnings("rawtypes")
 public class SamplingSortMRInputFormat<K extends WritableComparable, V extends Writable> 
-extends SequenceFileInputFormat<K,V> {
-
+extends SequenceFileInputFormat<K,V> 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static final String PARTITION_FILENAME = "_partition.lst";
 	static final String SAMPLE_SIZE = "sort.partitions.sample";
 	private static JobConf lastConf = null;

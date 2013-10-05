@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
@@ -9,18 +16,21 @@ import com.ibm.bi.dml.parser.Expression.*;
 /**
  * Lop to perform cross product operation
  */
-public class MMRJ extends Lops 
+public class MMRJ extends Lop 
 {
-	
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	/**
 	 * Constructor to perform a cross product operation.
 	 * @param input
 	 * @param op
 	 */
 
-	public MMRJ(Lops input1, Lops input2, DataType dt, ValueType vt) 
+	public MMRJ(Lop input1, Lop input2, DataType dt, ValueType vt) 
 	{
-		super(Lops.Type.MMRJ, dt, vt);		
+		super(Lop.Type.MMRJ, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
@@ -48,7 +58,7 @@ public class MMRJ extends Lops
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "rmm" );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( input_index1 );

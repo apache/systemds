@@ -1,21 +1,31 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
-import com.ibm.bi.dml.utils.HopsException;
 
 //for now only works for range based indexing op
-public class IndexingOp extends Hops {
-
+public class IndexingOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static String OPSTRING = "Indexing";
 	
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
@@ -37,13 +47,13 @@ public class IndexingOp extends Hops {
 	}
 	
 	//right indexing doesn't really need the dimensionality of the left matrix
-	private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
+	private static Lop dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	
 	private IndexingOp() {
 		//default constructor for clone
 	}
 	
-	public IndexingOp(String l, DataType dt, ValueType vt, Hops inpMatrix, Hops inpRowL, Hops inpRowU, Hops inpColL, Hops inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
+	public IndexingOp(String l, DataType dt, ValueType vt, Hop inpMatrix, Hop inpRowL, Hop inpRowU, Hop inpColL, Hop inpColU, boolean passedRowsLEU, boolean passedColsLEU) {
 		super(Kind.Indexing, l, dt, vt);
 		/*
 		if(inpRowL==null)
@@ -73,7 +83,7 @@ public class IndexingOp extends Hops {
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException {
 		if (get_lops() == null) {
 			try {
@@ -136,7 +146,7 @@ public class IndexingOp extends Hops {
 	public void printMe() throws HopsException {
 		if (get_visited() != VISIT_STATUS.DONE) {
 			super.printMe();
-			for (Hops h : getInput()) {
+			for (Hop h : getInput()) {
 				h.printMe();
 			}
 			;
@@ -172,7 +182,7 @@ public class IndexingOp extends Hops {
 	{
 		long[] ret = null;
 		
-		Hops input = getInput().get(0); //original matrix
+		Hop input = getInput().get(0); //original matrix
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc != null ) 
 		{
@@ -214,11 +224,11 @@ public class IndexingOp extends Hops {
 	{
 		//TODO MB: generalize this.
 		
-		Hops input1 = getInput().get(0); //original matrix
-		Hops input2 = getInput().get(1); //inpRowL
-		Hops input3 = getInput().get(2); //inpRowU
-		Hops input4 = getInput().get(3); //inpColL
-		Hops input5 = getInput().get(4); //inpColU
+		Hop input1 = getInput().get(0); //original matrix
+		Hop input2 = getInput().get(1); //inpRowL
+		Hop input3 = getInput().get(2); //inpRowU
+		Hop input4 = getInput().get(3); //inpColL
+		Hop input5 = getInput().get(4); //inpColU
 		
 		//parse input information
 		boolean allRows = false;
@@ -256,7 +266,7 @@ public class IndexingOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{		
 		if(  that._kind!=Kind.Indexing 
 			&& getInput().size() != that.getInput().size() )

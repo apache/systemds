@@ -1,12 +1,22 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.io.IOException;
 
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -21,13 +31,14 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class VariableCPInstruction extends CPInstruction {
-
+public class VariableCPInstruction extends CPInstruction 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	/*
 	 * Supported Operations
 	 * --------------------
@@ -732,9 +743,9 @@ public class VariableCPInstruction extends CPInstruction {
 		// "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
 		StringBuffer sb = new StringBuffer();
 		sb.append("CP");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("rmvar");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(varName);
 		String str = sb.toString();
 
@@ -746,11 +757,11 @@ public class VariableCPInstruction extends CPInstruction {
 		// "CP+Lops.OPERAND_DELIMITOR+cpvar+Lops.OPERAND_DELIMITOR+mVar7+Lops.OPERAND_DELIMITOR+mVar8")
 		StringBuffer sb = new StringBuffer();
 		sb.append("CP");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("cpvar");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(srcVar);
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(destVar);
 		String str = sb.toString();
 
@@ -760,15 +771,15 @@ public class VariableCPInstruction extends CPInstruction {
 	private static String getBasicCreateVarString(String varName, String fileName, boolean fNameOverride, String format) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("CP");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("createvar");
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(varName); 
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(fileName);
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(fNameOverride);
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(format);
 		return sb.toString();
 	}
@@ -781,15 +792,15 @@ public class VariableCPInstruction extends CPInstruction {
 		StringBuffer sb = new StringBuffer();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.get_rows());
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.get_cols());
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.get_rows_per_block());
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.get_cols_per_block());
-		sb.append(Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
 		
 		String str = sb.toString();

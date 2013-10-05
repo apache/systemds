@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
 import java.io.File;
@@ -7,21 +14,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.CacheAssignmentException;
-import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.CacheIOException;
-import com.ibm.bi.dml.utils.CacheStatusException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 /**
@@ -40,6 +43,10 @@ import com.ibm.bi.dml.utils.configuration.DMLConfig;
  */
 public abstract class CacheableData extends Data
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	public static final long 	CACHING_THRESHOLD = 128; //obj not subject to caching if num values below threshold
@@ -150,7 +157,7 @@ public abstract class CacheableData extends Data
 	 *     to this envelope.
 	 */
 	protected abstract void restoreBlobIntoMemory()
-		throws CacheIOException, CacheAssignmentException;
+		throws CacheIOException;
 
 	/**
 	 * Low-level cache I/O method that deletes the file containing the
@@ -427,7 +434,7 @@ public abstract class CacheableData extends Data
 			case HDFS:
 				//get directory
 				dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
-				      + Lops.FILE_SEPARATOR + Lops.PROCESS_PREFIX + uuid + Lops.FILE_SEPARATOR;
+				      + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + uuid + Lop.FILE_SEPARATOR;
 				cacheEvictionHDFSFilePath = dir;
 				break;
 		}

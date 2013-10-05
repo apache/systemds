@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.components.runtime.matrix.io;
 
 import static org.junit.Assert.*;
@@ -12,16 +19,20 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock1D;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.matrix.operators.RightScalarOperator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 
-public class MatrixBlock1DTest {
-
+public class MatrixBlock1DTest 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
     @Test
     public void testReset() {
         int rows = 10;

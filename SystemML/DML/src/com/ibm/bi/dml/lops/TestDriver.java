@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.io.IOException;
@@ -7,15 +14,18 @@ import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.LopsException;
 
 
-public class TestDriver {
-
+public class TestDriver 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static void aggbinaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
 
@@ -34,7 +44,7 @@ public class TestDriver {
 
 		data3.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		data3.addToDag(dag);
 
@@ -46,7 +56,7 @@ public class TestDriver {
 
 	public static void aggunaryop() throws LopsException, IOException, DMLRuntimeException,
 			DMLUnsupportedOperationException {
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		Data data1 = new Data("scripts/example0.1.A", Data.OperationTypes.READ,
 				null, null, DataType.MATRIX, ValueType.DOUBLE, false);
@@ -94,7 +104,7 @@ public class TestDriver {
 
 		data3.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 		data3.addToDag(dag);
 
 		ArrayList<Instruction> inst = dag.getJobs(null);
@@ -118,7 +128,7 @@ public class TestDriver {
 
 		data2.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		data2.addToDag(dag);
 
@@ -155,7 +165,7 @@ public class TestDriver {
 
 		data2.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		data2.addToDag(dag);
 
@@ -180,7 +190,7 @@ public class TestDriver {
 
 		data2.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 		data2.addToDag(dag);
 		ArrayList<Instruction> inst = dag.getJobs(null);
 		printInstructions(inst);
@@ -264,7 +274,7 @@ public class TestDriver {
 		data3.printMe();
 		var4.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		data3.addToDag(dag);
 		var4.addToDag(dag);
@@ -315,7 +325,7 @@ public class TestDriver {
 
 		data3.printMe();
 
-		Dag<Lops> dag = new Dag<Lops>();
+		Dag<Lop> dag = new Dag<Lop>();
 
 		data3.addToDag(dag);
 

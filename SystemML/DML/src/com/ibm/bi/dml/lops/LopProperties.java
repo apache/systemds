@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.ArrayList;
@@ -5,7 +12,12 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
-public class LopProperties {
+public class LopProperties 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum ExecType { CP, CP_FILE, MR, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 
@@ -105,13 +117,13 @@ public class LopProperties {
 	 * Function to compute the node level in the entire Lops DAG. 
 	 *   level(v) = max( levels(v.inputs) ) + 1
 	 */
-	public void setLevel(ArrayList<Lops>  inputs) {
+	public void setLevel(ArrayList<Lop>  inputs) {
 		int level = -1;
 		if ( inputs == null || inputs.size() == 0)
 			level = 0;
 		else {
 			// find the max level among all inputs
-			for(Lops in : inputs) {
+			for(Lop in : inputs) {
 				if(level < in.getLevel() ) {
 					level = in.getLevel();
 				}
@@ -122,7 +134,7 @@ public class LopProperties {
 		setLevel(level);
 	}
 
-	public void setProperties ( ArrayList<Lops> inputs, ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
+	public void setProperties ( ArrayList<Lop> inputs, ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
 		execType = et;
 		execLoc = el;
 		breaksAlignment = ba;

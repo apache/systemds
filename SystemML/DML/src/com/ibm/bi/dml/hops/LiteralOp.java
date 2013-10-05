@@ -1,7 +1,14 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -10,11 +17,14 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
-import com.ibm.bi.dml.utils.HopsException;
 
 
-public class LiteralOp extends Hops {
-
+public class LiteralOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private double value_double = Double.NaN;
 	private long value_long = Long.MAX_VALUE;
 	private String value_string;
@@ -47,12 +57,12 @@ public class LiteralOp extends Hops {
 	}
 
 	@Override
-	public Lops constructLops()
+	public Lop constructLops()
 			throws HopsException {
 
 		if (get_lops() == null) {
 
-			Lops l = null;
+			Lop l = null;
 
 			switch (get_valueType()) {
 			case DOUBLE:
@@ -113,7 +123,7 @@ public class LiteralOp extends Hops {
 							"unexpected value type printing LiteralOp.\n");
 				}
 
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 
@@ -277,7 +287,7 @@ public class LiteralOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		return false;
 	}

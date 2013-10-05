@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops.runtime;
 
 import java.io.IOException;
@@ -11,12 +18,13 @@ import org.apache.hadoop.io.SequenceFile;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -44,11 +52,15 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 import com.ibm.bi.dml.utils.Statistics;
 
 
-public class RunMRJobs {
+public class RunMRJobs 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static boolean flagLocalModeOpt = false;
 	public enum ExecMode { LOCAL, CLUSTER, INVALID }; 
 	//private static final Log LOG = LogFactory.getLog(RunMRJobs.class.getName());
@@ -104,7 +116,7 @@ public class RunMRJobs {
 
 			case RAND:
 				ret = DataGenMR.runJob(inst, 
-						rdInst.split(Lops.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
+						rdInst.split(Lop.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos());
 				break;
@@ -404,13 +416,13 @@ public class RunMRJobs {
 	 * @throws DMLRuntimeException
 	 */
 	private static String updateInstLabels(String inst, LocalVariableMap map) throws DMLRuntimeException {
-		if ( inst.contains(Lops.VARIABLE_NAME_PLACEHOLDER) ) {
-			int skip = Lops.VARIABLE_NAME_PLACEHOLDER.toString().length();
-			while ( inst.contains(Lops.VARIABLE_NAME_PLACEHOLDER) ) {
-				int startLoc = inst.indexOf(Lops.VARIABLE_NAME_PLACEHOLDER)+skip;
-				String varName = inst.substring(startLoc, inst.indexOf(Lops.VARIABLE_NAME_PLACEHOLDER, startLoc));
+		if ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
+			int skip = Lop.VARIABLE_NAME_PLACEHOLDER.toString().length();
+			while ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
+				int startLoc = inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER)+skip;
+				String varName = inst.substring(startLoc, inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, startLoc));
 				String replacement = getVarNameReplacement(inst, varName, map);
-				inst = inst.replaceAll(Lops.VARIABLE_NAME_PLACEHOLDER + varName + Lops.VARIABLE_NAME_PLACEHOLDER, replacement);
+				inst = inst.replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER + varName + Lop.VARIABLE_NAME_PLACEHOLDER, replacement);
 			}
 		}
 		return inst;
@@ -427,15 +439,15 @@ public class RunMRJobs {
 	 */
 	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
 
-		if ( !instList.contains(Lops.VARIABLE_NAME_PLACEHOLDER) )
+		if ( !instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER) )
 			return instList;
 		
 		StringBuilder updateInstList = new StringBuilder();
-		String[] ilist = instList.split(Lops.INSTRUCTION_DELIMITOR); 
+		String[] ilist = instList.split(Lop.INSTRUCTION_DELIMITOR); 
 		
 		for ( int i=0; i < ilist.length; i++ ) {
 			if ( i > 0 )
-				updateInstList.append(Lops.INSTRUCTION_DELIMITOR);
+				updateInstList.append(Lop.INSTRUCTION_DELIMITOR);
 			
 			updateInstList.append( updateInstLabels(ilist[i], labelValueMapping));
 		}

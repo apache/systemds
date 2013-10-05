@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 public class StagingFileUtils 
 {

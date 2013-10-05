@@ -1,7 +1,18 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix.io;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
@@ -15,11 +26,13 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
-public class OperationsOnMatrixValues {
-
+public class OperationsOnMatrixValues 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

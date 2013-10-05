@@ -14,6 +14,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.LocalTaskQueue;
@@ -27,7 +28,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.TaskPartitionerStatic;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * Different test cases for task partitioners w.r.t. both number of created tasks

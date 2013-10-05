@@ -1,3 +1,11 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+
 package com.ibm.bi.dml.runtime.matrix;
 
 import java.io.PrintWriter;
@@ -15,10 +23,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
@@ -38,7 +47,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 
 /**
@@ -47,6 +55,10 @@ import com.ibm.bi.dml.utils.DMLRuntimeException;
  */
 public class DataGenMR
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+		
 	/**
 	 * <p>Starts a Rand MapReduce job which will produce one or more random objects.</p>
 	 * 
@@ -102,7 +114,7 @@ public class DataGenMR
 		
 		for(int i = 0; i < dataGenInstructions.length; i++)
 		{
-			dataGenInsStr=dataGenInsStr+Lops.INSTRUCTION_DELIMITOR+dataGenInstructions[i];
+			dataGenInsStr=dataGenInsStr+Lop.INSTRUCTION_DELIMITOR+dataGenInstructions[i];
 			
 			MRInstruction mrins = MRInstructionParser.parseSingleInstruction(dataGenInstructions[i]);
 			MRINSTRUCTION_TYPE mrtype = mrins.getMRInstructionType();

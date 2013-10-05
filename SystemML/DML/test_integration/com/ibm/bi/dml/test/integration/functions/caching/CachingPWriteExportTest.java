@@ -1,9 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.test.integration.functions.caching;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -13,11 +20,15 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 public class CachingPWriteExportTest extends AutomatedTestBase 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private final static String TEST_NAME = "export";
 	private final static String TEST_DIR = "functions/caching/";
 
-	private final static int rows = (int)Hops.CPThreshold-1;
-	private final static int cols = (int)Hops.CPThreshold-1;    
+	private final static int rows = (int)Hop.CPThreshold-1;
+	private final static int cols = (int)Hop.CPThreshold-1;    
 	private final static double sparsity = 0.7;
 	
 	@Override

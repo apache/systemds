@@ -9,8 +9,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.Collection;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
 /**
  * This is the base class for all task partitioner. For this purpose it stores relevant information such as

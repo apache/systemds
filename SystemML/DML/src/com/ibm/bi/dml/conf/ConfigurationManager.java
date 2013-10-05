@@ -5,9 +5,8 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package com.ibm.bi.dml.conf;
 
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 /**
  * Singleton for accessing the parsed and merged system configuration.

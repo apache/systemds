@@ -1,26 +1,38 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.utils.visualize;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import com.ibm.bi.dml.hops.Hops;
-import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LanguageException;
 
 
-public class SQLLopGraph {
+public class SQLLopGraph 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public static String getSQLLopGraphString(DMLProgram dmlp, String title, int x, int y, String basePath) throws HopsException, LanguageException
 	{
 		String graphString = new String("digraph G { \n node [ label = \"\\N\", style=filled ]; edge [dir=back]; \n ");
@@ -96,9 +108,9 @@ public class SQLLopGraph {
 		
 		else {
 			
-			ArrayList<Hops> hopsDAG = current.get_hops();
+			ArrayList<Hop> hopsDAG = current.get_hops();
 			if (hopsDAG !=  null && hopsDAG.size() > 0) {
-				Iterator<Hops> iter = hopsDAG.iterator();
+				Iterator<Hop> iter = hopsDAG.iterator();
 				while (iter.hasNext()) {
 					SQLLops h = iter.next().get_sqllops();
 
@@ -116,7 +128,7 @@ public class SQLLopGraph {
 	{
 		String s = new String("");
 
-		if (lop.get_visited() == Hops.VISIT_STATUS.DONE)
+		if (lop.get_visited() == Hop.VISIT_STATUS.DONE)
 			return s;
 		
 		String color = "white";

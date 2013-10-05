@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
 import java.util.Random;
@@ -5,18 +12,23 @@ import java.util.Random;
 import org.apache.commons.math.random.Well1024a;
 
 import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hops.DataGenMethod;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
 
-public class RandCPInstruction extends UnaryCPInstruction{
+public class RandCPInstruction extends UnaryCPInstruction
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public long rows;
 	public long cols;
 	public int rowsInBlock;
@@ -118,10 +130,10 @@ public class RandCPInstruction extends UnaryCPInstruction{
 
 		if ( method == DataGenMethod.RAND ) {
 			long rows = -1, cols = -1;
-	        if (!s[3].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+	        if (!s[3].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 			   	rows = Double.valueOf(s[3]).longValue();
 	        }
-	        if (!s[4].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+	        if (!s[4].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 	        	cols = Double.valueOf(s[4]).longValue();
 	        }
 			
@@ -144,13 +156,13 @@ public class RandCPInstruction extends UnaryCPInstruction{
 			
 	        double from, to, incr;
 	        from = to = incr = Double.NaN;
-			if (!s[5].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+			if (!s[5].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 				from = Double.valueOf(s[5]);
 	        }
-			if (!s[6].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+			if (!s[6].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 				to   = Double.valueOf(s[6]);
 	        }
-			if (!s[7].contains( Lops.VARIABLE_NAME_PLACEHOLDER)) {
+			if (!s[7].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 				incr = Double.valueOf(s[7]);
 	        }
 			

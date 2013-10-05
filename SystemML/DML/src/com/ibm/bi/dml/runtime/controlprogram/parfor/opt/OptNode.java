@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -247,7 +247,7 @@ public class OptNode
 	 */
 	public String getInstructionName() 
 	{
-		return String.valueOf(_etype) + Lops.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
+		return String.valueOf(_etype) + Lop.OPERAND_DELIMITOR + getParam(ParamType.OPSTRING);
 	}
 	
 	/**

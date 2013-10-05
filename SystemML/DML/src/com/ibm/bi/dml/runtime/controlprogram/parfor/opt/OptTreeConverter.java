@@ -13,9 +13,10 @@ import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -28,6 +29,8 @@ import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -55,9 +58,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.HopsException;
 
 /**
  * Converter for creating an internal plan representation for a given runtime program
@@ -508,16 +508,16 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hops> hops, LocalVariableMap vars, HashSet<String> memo ) 
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, HashSet<String> memo ) 
 		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
 		
 		//reset all hops
-		Hops.resetVisitStatus(hops);
+		Hop.resetVisitStatus(hops);
 		
 		//created and add actual opt nodes
-		for( Hops hop : hops )
+		for( Hop hop : hops )
 			ret.addAll(rCreateAbstractOptNodes(hop, vars, memo));
 		
 		return ret;
@@ -531,11 +531,11 @@ public class OptTreeConverter
 	 * @throws DMLRuntimeException  
 	 * @throws HopsException 
 	 */
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hops hop, LocalVariableMap vars, HashSet<String> memo) 
+	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, HashSet<String> memo) 
 		throws DMLRuntimeException, HopsException 
 	{
 		ArrayList<OptNode> ret = new ArrayList<OptNode>(); 
-		ArrayList<Hops> in = hop.getInput();
+		ArrayList<Hop> in = hop.getInput();
 	
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return ret;
@@ -590,7 +590,7 @@ public class OptTreeConverter
 		}
 		
 		if( in != null )
-			for( Hops hin : in ) 
+			for( Hop hin : in ) 
 				if( !(hin instanceof DataOp || hin instanceof LiteralOp ) ) //no need for opt nodes
 					ret.addAll(rCreateAbstractOptNodes(hin, vars, memo));
 

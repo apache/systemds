@@ -9,12 +9,13 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.Hops.VISIT_STATUS;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.ForStatement;
@@ -22,6 +23,8 @@ import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
@@ -30,11 +33,8 @@ import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ArithmeticBinaryCPInstruction;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * 
@@ -66,17 +66,17 @@ public class ProgramRecompiler
 			ProgramBlock pbOld = (ProgramBlock) o[1];
 			
 			//get changed node and set type appropriately
-			Hops hop = (Hops) map.getMappedHop(n.getID());
+			Hop hop = (Hop) map.getMappedHop(n.getID());
 			hop.setForcedExecType(n.getExecType().toLopsExecType()); 
 			hop.set_lops(null); //to enable fresh construction
 		
 			//get all hops of statement and construct new instructions
-			Dag<Lops> dag = new Dag<Lops>();
-			for( Hops hops : sbOld.get_hops() )
+			Dag<Lop> dag = new Dag<Lop>();
+			for( Hop hops : sbOld.get_hops() )
 			{
 				hops.resetVisitStatus();
 				Recompiler.rClearLops(hops);
-				Lops lops = hops.constructLops();
+				Lop lops = hops.constructLops();
 				lops.addToDag(dag);
 			}
 			
@@ -121,17 +121,17 @@ public class ProgramRecompiler
 				LopProperties.ExecType oldtype = null;
 				
 				//get changed node and set type appropriately
-				Hops hop = (Hops) map.getMappedHop(n.getID());
+				Hop hop = (Hop) map.getMappedHop(n.getID());
 				hop.setForcedExecType(n.getExecType().toLopsExecType()); 
 				hop.set_lops(null); //to enable fresh construction
 			
 				//get all hops of statement and construct new lops
-				Dag<Lops> dag = new Dag<Lops>();
-				for( Hops hops : sbOld.get_hops() )
+				Dag<Lop> dag = new Dag<Lop>();
+				for( Hop hops : sbOld.get_hops() )
 				{
 					hops.resetVisitStatus();
 					Recompiler.rClearLops(hops);
-					Lops lops = hops.constructLops();
+					Lop lops = hops.constructLops();
 					lops.addToDag(dag);
 				}
 				
@@ -217,13 +217,13 @@ public class ProgramRecompiler
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//create instruction string
-		StringBuilder sb = new StringBuilder("CP"+Lops.OPERAND_DELIMITOR+"+"+Lops.OPERAND_DELIMITOR);
+		StringBuilder sb = new StringBuilder("CP"+Lop.OPERAND_DELIMITOR+"+"+Lop.OPERAND_DELIMITOR);
 		sb.append(iterVar);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
 		sb.append(offset);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT"+Lops.OPERAND_DELIMITOR);
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT"+Lop.OPERAND_DELIMITOR);
 		sb.append(iterVar);
-		sb.append(Lops.DATATYPE_PREFIX+"SCALAR"+Lops.VALUETYPE_PREFIX+"INT");
+		sb.append(Lop.DATATYPE_PREFIX+"SCALAR"+Lop.VALUETYPE_PREFIX+"INT");
 		String str = sb.toString(); 
 		
 		//create instruction set
@@ -302,8 +302,8 @@ public class ProgramRecompiler
 			{
 				//process actual hops
 				boolean ret = false;
-				Hops.resetVisitStatus(sb.get_hops());
-				for( Hops h : sb.get_hops() )
+				Hop.resetVisitStatus(sb.get_hops());
+				for( Hop h : sb.get_hops() )
 					ret |= rFindAndSetCPIndexingHOP(h, var);
 				
 				//recompilation on-demand
@@ -321,14 +321,14 @@ public class ProgramRecompiler
 		}
 	}
 	
-	public static boolean rFindAndSetCPIndexingHOP(Hops hop, String var) 
+	public static boolean rFindAndSetCPIndexingHOP(Hop hop, String var) 
 	{
 		boolean ret = false;
 		
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return ret;
 		
-		ArrayList<Hops> in = hop.getInput();
+		ArrayList<Hop> in = hop.getInput();
 		
 		if( hop instanceof IndexingOp )
 		{
@@ -349,7 +349,7 @@ public class ProgramRecompiler
 		
 		//recursive search
 		if( in != null )
-			for( Hops hin : in )
+			for( Hop hin : in )
 				ret |= rFindAndSetCPIndexingHOP(hin,var);
 		
 		hop.set_visited(VISIT_STATUS.DONE);

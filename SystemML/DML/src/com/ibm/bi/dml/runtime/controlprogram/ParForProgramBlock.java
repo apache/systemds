@@ -21,9 +21,11 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -32,6 +34,9 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
@@ -66,7 +71,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
@@ -74,10 +78,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.utils.CacheException;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
 
 
 
@@ -1331,8 +1331,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		sb.append(PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
 		
@@ -1352,8 +1352,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		sb.append(PARFOR_MR_RESULT_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
 		
@@ -1375,8 +1375,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
-		sb.append(Lops.FILE_SEPARATOR);
-		sb.append(Lops.PROCESS_PREFIX);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		sb.append(fname);
 		

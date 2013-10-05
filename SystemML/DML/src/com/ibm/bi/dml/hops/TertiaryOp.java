@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -9,7 +16,8 @@ import com.ibm.bi.dml.lops.CoVariance;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lops;
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.SortKeys;
@@ -34,8 +42,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 import com.ibm.bi.dml.sql.sqllops.SQLUnion.UNIONTYPE;
-import com.ibm.bi.dml.utils.HopsException;
-import com.ibm.bi.dml.utils.LopsException;
 
 /* Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
@@ -49,17 +55,21 @@ import com.ibm.bi.dml.utils.LopsException;
  *
  */
 
-public class TertiaryOp extends Hops {
-
-	Hops.OpOp3 op;
+public class TertiaryOp extends Hop 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	Hop.OpOp3 op;
 
 	private TertiaryOp() {
 		//default constructor for clone
 	}
 	
-	public TertiaryOp(String l, DataType dt, ValueType vt, Hops.OpOp3 o,
-			Hops inp1, Hops inp2, Hops inp3) {
-		super(Hops.Kind.TertiaryOp, l, dt, vt);
+	public TertiaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
+			Hop inp1, Hop inp2, Hop inp3) {
+		super(Hop.Kind.TertiaryOp, l, dt, vt);
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
@@ -69,7 +79,7 @@ public class TertiaryOp extends Hops {
 		inp3.getParent().add(this);
 	}
 
-	public Lops constructLops() throws HopsException {
+	public Lop constructLops() throws HopsException {
 
 		if (get_lops() == null) {
 			try {
@@ -88,7 +98,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(0).get_cols_in_block(), 
 							getInput().get(0).getNnz());
 					
-					CentralMoment cm = new CentralMoment(combine, (Lops) getInput()
+					CentralMoment cm = new CentralMoment(combine, getInput()
 							.get(2).constructLops(), DataType.MATRIX,
 							get_valueType(), et);
 					cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
@@ -113,16 +123,16 @@ public class TertiaryOp extends Hops {
 					set_lops(cm);
 				}
 
-			} else if (op == Hops.OpOp3.COVARIANCE) {
+			} else if (op == Hop.OpOp3.COVARIANCE) {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
 					// combineTertiary -> CoVariance -> CastAsScalar
 					CombineTertiary combine = CombineTertiary
 							.constructCombineLop(
 									CombineTertiary.OperationTypes.PreCovWeighted,
-									(Lops) getInput().get(0).constructLops(),
-									(Lops) getInput().get(1).constructLops(),
-									(Lops) getInput().get(2).constructLops(),
+									getInput().get(0).constructLops(),
+									getInput().get(1).constructLops(),
+									getInput().get(2).constructLops(),
 									DataType.MATRIX, get_valueType());
 	
 					combine.getOutputParameters().setDimensions(
@@ -182,7 +192,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(2).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 	
 					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -215,7 +225,7 @@ public class TertiaryOp extends Hops {
 							getInput().get(2).constructLops(),
 							get_dataType(),
 							get_valueType(),
-							(op == Hops.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 									: PickByCount.OperationTypes.RANGEPICK, et, true);
 					sort.getOutputParameters().setDimensions(
 							getInput().get(0).get_dim1(),
@@ -435,7 +445,7 @@ public class TertiaryOp extends Hops {
 			if (get_visited() != VISIT_STATUS.DONE) {
 				super.printMe();
 				LOG.debug("  Operation: " + op);
-				for (Hops h : getInput()) {
+				for (Hop h : getInput()) {
 					h.printMe();
 				}
 			}
@@ -451,9 +461,9 @@ public class TertiaryOp extends Hops {
 
 			GENERATES gen = determineGeneratesFlag();
 
-			Hops hop1 = this.getInput().get(0);
-			Hops hop2 = this.getInput().get(1);
-			Hops hop3 = this.getInput().get(2);
+			Hop hop1 = this.getInput().get(0);
+			Hop hop2 = this.getInput().get(1);
+			Hop hop3 = this.getInput().get(2);
 
 			hop3.constructSQLLOPs();
 
@@ -764,7 +774,7 @@ public class TertiaryOp extends Hops {
 	}
 	
 	@Override
-	public boolean compare( Hops that )
+	public boolean compare( Hop that )
 	{
 		if( that._kind!=Kind.TertiaryOp )
 			return false;

@@ -14,6 +14,8 @@ import java.util.LinkedList;
 
 import junit.framework.Assert;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
@@ -22,8 +24,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ParWorker;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
-import com.ibm.bi.dml.utils.DMLRuntimeException;
-import com.ibm.bi.dml.utils.DMLUnsupportedOperationException;
 
 /**
  * TestCases for local task queue.

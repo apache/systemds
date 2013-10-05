@@ -1,13 +1,23 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.lops.Lops;
-import com.ibm.bi.dml.utils.LanguageException;
+import com.ibm.bi.dml.lops.Lop;
 
 
 public class IterablePredicate extends Expression 
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	private DataIdentifier _iterVar;	// variable being iterated over
 	private Expression _fromExpr;
 	private Expression _toExpr;
@@ -151,17 +161,17 @@ public class IterablePredicate extends Expression
 		_parforParams = params;
 	}
 	
-	public static String[] createIterablePredicateVariables( String varName, Lops from, Lops to, Lops incr )
+	public static String[] createIterablePredicateVariables( String varName, Lop from, Lop to, Lop incr )
 	{
 		String[] ret = new String[4]; //varname, from, to, incr
 		
 		ret[0] = varName;
 		
-		if( from.getType()==Lops.Type.Data )
+		if( from.getType()==Lop.Type.Data )
 			ret[1] = from.getOutputParameters().getLabel();
-		if( to.getType()==Lops.Type.Data )
+		if( to.getType()==Lop.Type.Data )
 			ret[2] = to.getOutputParameters().getLabel();
-		if( incr.getType()==Lops.Type.Data )
+		if( incr.getType()==Lop.Type.Data )
 			ret[3] = incr.getOutputParameters().getLabel();
 		
 		return ret;

@@ -1,13 +1,25 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
-import com.ibm.bi.dml.utils.HopsException;
+import com.ibm.bi.dml.hops.HopsException;
 
 /**
  * class to maintain output parameters for a lop.
  * 
  */
 
-public class OutputParameters {
+public class OutputParameters 
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	public enum Format {
 		TEXT, BINARY, MM
 	};
@@ -96,14 +108,14 @@ public class OutputParameters {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("rows=" + getNum_rows() + Lops.VALUETYPE_PREFIX);
-		sb.append("cols=" + getNum_cols() + Lops.VALUETYPE_PREFIX);
-		sb.append("nnz=" + getNnz() + Lops.VALUETYPE_PREFIX);
-		sb.append("rowsInBlock=" + get_rows_in_block() + Lops.VALUETYPE_PREFIX);
-		sb.append("colsInBlock=" + get_cols_in_block() + Lops.VALUETYPE_PREFIX);
-		sb.append("isBlockedRepresentation=" + isBlocked_representation() + Lops.VALUETYPE_PREFIX);
-		sb.append("format=" + getFormat() + Lops.VALUETYPE_PREFIX);
-		sb.append("label=" + getLabel() + Lops.VALUETYPE_PREFIX);
+		sb.append("rows=" + getNum_rows() + Lop.VALUETYPE_PREFIX);
+		sb.append("cols=" + getNum_cols() + Lop.VALUETYPE_PREFIX);
+		sb.append("nnz=" + getNnz() + Lop.VALUETYPE_PREFIX);
+		sb.append("rowsInBlock=" + get_rows_in_block() + Lop.VALUETYPE_PREFIX);
+		sb.append("colsInBlock=" + get_cols_in_block() + Lop.VALUETYPE_PREFIX);
+		sb.append("isBlockedRepresentation=" + isBlocked_representation() + Lop.VALUETYPE_PREFIX);
+		sb.append("format=" + getFormat() + Lop.VALUETYPE_PREFIX);
+		sb.append("label=" + getLabel() + Lop.VALUETYPE_PREFIX);
 		sb.append("filename=" + getFile_name());
 		return sb.toString();
 	}

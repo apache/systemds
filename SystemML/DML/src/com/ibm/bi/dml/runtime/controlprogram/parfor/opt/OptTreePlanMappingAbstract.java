@@ -9,7 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hops;
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -45,7 +45,7 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		_rtprog = rtprog;
 	}
 	
-	public long putHopMapping( Hops hops, OptNode n )
+	public long putHopMapping( Hop hops, OptNode n )
 	{
 		long id = _idSeq.getNextID();
 		
@@ -80,9 +80,9 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		return ret;
 	}
 	
-	public Hops getMappedHop( long id )
+	public Hop getMappedHop( long id )
 	{
-		return (Hops)_id_hlprog.get( id );
+		return (Hop)_id_hlprog.get( id );
 	}
 	
 	public Object[] getMappedProg( long id )

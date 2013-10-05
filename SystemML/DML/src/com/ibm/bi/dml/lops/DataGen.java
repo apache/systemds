@@ -1,8 +1,15 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.lops;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hops.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
@@ -10,18 +17,21 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.RandStatement;
 import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.utils.LopsException;
 
 
 /**
  * <p>Defines a LOP that generates data.</p>
  */
-public class DataGen extends Lops
+public class DataGen extends Lop
 {
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
 	/** base dir for rand input */
 	private String baseDir;
 	
-	private HashMap<String, Lops> _inputParams;
+	private HashMap<String, Lop> _inputParams;
 	DataGenMethod method;
 	
 	/**
@@ -34,13 +44,13 @@ public class DataGen extends Lops
 	 * @param vt Value type
 	 * @param ExecType Execution type
 	 */	
-	public DataGen(DataGenMethod mthd, DataIdentifier id, HashMap<String, Lops> 
+	public DataGen(DataGenMethod mthd, DataIdentifier id, HashMap<String, Lop> 
 				inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et) throws LopsException 
 	{
 		super(Type.RandLop, dt, vt);
 		method = mthd;
 				
-		for (Lops lop : inputParametersLops.values()) {
+		for (Lop lop : inputParametersLops.values()) {
 			this.addInput(lop);
 			lop.addOutput(this);
 		}
@@ -90,27 +100,27 @@ public class DataGen extends Lops
 		StringBuilder sb = new StringBuilder( );
 		ExecType et = getExecType();
 		sb.append( et );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 
-		Lops iLop = null;
+		Lop iLop = null;
 
 		iLop = _inputParams.get(RandStatement.SEQ_FROM.toString()); 
 		String fromString = iLop.getOutputParameters().getLabel();
 		if ( (iLop.getExecLocation() == ExecLocation.Data &&
 				 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data ))
-			fromString = Lops.VARIABLE_NAME_PLACEHOLDER + fromString + Lops.VARIABLE_NAME_PLACEHOLDER;
+			fromString = Lop.VARIABLE_NAME_PLACEHOLDER + fromString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		iLop = _inputParams.get(RandStatement.SEQ_TO.toString()); 
 		String toString = iLop.getOutputParameters().getLabel();
 		if ( iLop.getExecLocation() == ExecLocation.Data 
 				&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
-			toString = Lops.VARIABLE_NAME_PLACEHOLDER + toString + Lops.VARIABLE_NAME_PLACEHOLDER;
+			toString = Lop.VARIABLE_NAME_PLACEHOLDER + toString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		iLop = _inputParams.get(RandStatement.SEQ_INCR.toString()); 
 		String incrString = iLop.getOutputParameters().getLabel();
 		if ( iLop.getExecLocation() == ExecLocation.Data 
 				&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
-			incrString = Lops.VARIABLE_NAME_PLACEHOLDER + incrString + Lops.VARIABLE_NAME_PLACEHOLDER;
+			incrString = Lop.VARIABLE_NAME_PLACEHOLDER + incrString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		String rowsString = String.valueOf(this.getOutputParameters().getNum_rows());
 		String colsString = String.valueOf(this.getOutputParameters().getNum_cols());
@@ -154,12 +164,12 @@ public class DataGen extends Lops
 		
 		StringBuilder sb = new StringBuilder( );
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		String in1 = new String(""), in2 = new String("");
 		
 		if (this.getInputs().size() == RandStatement.RAND_VALID_PARAM_NAMES.length) {
 
-			Lops iLop = null;
+			Lop iLop = null;
 
 			iLop = _inputParams.get(RandStatement.RAND_ROWS.toString());
 			String rowsString = iLop.getOutputParameters().getLabel();
@@ -168,8 +178,8 @@ public class DataGen extends Lops
 					|| !(iLop.getExecLocation() == ExecLocation.Data)) {
 				in1 = "" + rowsString + DATATYPE_PREFIX + iLop.get_dataType()
 						+ VALUETYPE_PREFIX + iLop.get_valueType();
-				rowsString = Lops.VARIABLE_NAME_PLACEHOLDER + rowsString
-						+ Lops.VARIABLE_NAME_PLACEHOLDER;
+				rowsString = Lop.VARIABLE_NAME_PLACEHOLDER + rowsString
+						+ Lop.VARIABLE_NAME_PLACEHOLDER;
 			}
 			iLop = _inputParams.get(RandStatement.RAND_COLS.toString());
 			String colsString = iLop.getOutputParameters().getLabel();
@@ -178,8 +188,8 @@ public class DataGen extends Lops
 					|| !(iLop.getExecLocation() == ExecLocation.Data)) {
 				in2 = "" + colsString + DATATYPE_PREFIX + iLop.get_dataType()
 						+ VALUETYPE_PREFIX + iLop.get_valueType();
-				colsString = Lops.VARIABLE_NAME_PLACEHOLDER + colsString
-						+ Lops.VARIABLE_NAME_PLACEHOLDER;
+				colsString = Lop.VARIABLE_NAME_PLACEHOLDER + colsString
+						+ Lop.VARIABLE_NAME_PLACEHOLDER;
 			}
 			String rowsInBlockString = String.valueOf(this
 					.getOutputParameters().num_rows_in_block);
@@ -277,27 +287,27 @@ public class DataGen extends Lops
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		sb.append( Lops.OPERAND_DELIMITOR );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		if ( method == DataGenMethod.SEQ ) {
-			Lops iLop = null;
+			Lop iLop = null;
 
 			iLop = _inputParams.get(RandStatement.SEQ_FROM.toString()); 
 			String fromString = iLop.getOutputParameters().getLabel();
 			if ( (iLop.getExecLocation() == ExecLocation.Data &&
 					 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data ))
-				fromString = Lops.VARIABLE_NAME_PLACEHOLDER + fromString + Lops.VARIABLE_NAME_PLACEHOLDER;
+				fromString = Lop.VARIABLE_NAME_PLACEHOLDER + fromString + Lop.VARIABLE_NAME_PLACEHOLDER;
 			
 			iLop = _inputParams.get(RandStatement.SEQ_TO.toString()); 
 			String toString = iLop.getOutputParameters().getLabel();
 			if ( iLop.getExecLocation() == ExecLocation.Data 
 					&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
-				toString = Lops.VARIABLE_NAME_PLACEHOLDER + toString + Lops.VARIABLE_NAME_PLACEHOLDER;
+				toString = Lop.VARIABLE_NAME_PLACEHOLDER + toString + Lop.VARIABLE_NAME_PLACEHOLDER;
 			
 			iLop = _inputParams.get(RandStatement.SEQ_INCR.toString()); 
 			String incrString = iLop.getOutputParameters().getLabel();
 			if ( iLop.getExecLocation() == ExecLocation.Data 
 					&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
-				incrString = Lops.VARIABLE_NAME_PLACEHOLDER + incrString + Lops.VARIABLE_NAME_PLACEHOLDER;
+				incrString = Lop.VARIABLE_NAME_PLACEHOLDER + incrString + Lop.VARIABLE_NAME_PLACEHOLDER;
 			
 			String rowsString = String.valueOf(this.getOutputParameters().getNum_rows());
 			String colsString = String.valueOf(this.getOutputParameters().getNum_cols());
@@ -331,19 +341,19 @@ public class DataGen extends Lops
 		}
 		if (this.getInputs().size() == RandStatement.RAND_VALID_PARAM_NAMES.length) {
 
-			Lops iLop = null;
+			Lop iLop = null;
 
 			iLop = _inputParams.get(RandStatement.RAND_ROWS.toString()); 
 			String rowsString = iLop.getOutputParameters().getLabel();
 			if ( (iLop.getExecLocation() == ExecLocation.Data &&
 					 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data ))
-				rowsString = Lops.VARIABLE_NAME_PLACEHOLDER + rowsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+				rowsString = Lop.VARIABLE_NAME_PLACEHOLDER + rowsString + Lop.VARIABLE_NAME_PLACEHOLDER;
 			
 			iLop = _inputParams.get(RandStatement.RAND_COLS.toString()); 
 			String colsString = iLop.getOutputParameters().getLabel();
 			if ( iLop.getExecLocation() == ExecLocation.Data 
 					&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
-				colsString = Lops.VARIABLE_NAME_PLACEHOLDER + colsString + Lops.VARIABLE_NAME_PLACEHOLDER;
+				colsString = Lop.VARIABLE_NAME_PLACEHOLDER + colsString + Lop.VARIABLE_NAME_PLACEHOLDER;
 			
 			String rowsInBlockString = String.valueOf(this.getOutputParameters().num_rows_in_block);
 			String colsInBlockString = String.valueOf(this.getOutputParameters().num_cols_in_block);

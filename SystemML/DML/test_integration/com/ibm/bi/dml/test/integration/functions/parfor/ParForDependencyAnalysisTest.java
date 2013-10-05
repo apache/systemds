@@ -15,12 +15,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.ConfigurationManager;
-import com.ibm.bi.dml.utils.LanguageException;
-import com.ibm.bi.dml.utils.configuration.DMLConfig;
+import com.ibm.bi.dml.parser.LanguageException;
 
 /**
  * Different test cases for ParFOR loop dependency analysis:

@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.hops;
 
@@ -47,7 +47,7 @@ public class IndexingOp extends Hop
 	}
 	
 	//right indexing doesn't really need the dimensionality of the left matrix
-	private static Lop dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
+	//private static Lops dummy=new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 	
 	private IndexingOp() {
 		//default constructor for clone
@@ -89,7 +89,7 @@ public class IndexingOp extends Hop
 			try {
 				ExecType et = optFindExecType();
 				if(et == ExecType.MR) {
-					
+					Lop dummy = new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
@@ -119,6 +119,7 @@ public class IndexingOp extends Hop
 					set_lops(agg1);
 				}
 				else {
+					Lop dummy = new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,

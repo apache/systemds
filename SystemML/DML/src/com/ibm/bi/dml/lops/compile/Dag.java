@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.lops.compile;
 
@@ -85,6 +85,15 @@ public class Dag<N extends Lop>
 	// hash set for all nodes in dag
 
 	ArrayList<N> nodes;
+	
+	/* 
+	 * Hashmap to translates the nodes in the DAG to a sequence of numbers
+	 *     key:   Lop ID
+	 *     value: Sequence Number (0 ... |DAG|)
+	 *     
+	 * This map is primarily used in performing DFS on the DAG, and subsequently in performing ancestor-descendant checks.
+	 */
+	HashMap<Long, Integer> IDMap = null;
 
 	//static int job_id = 0;
 	//static int var_index = 0;
@@ -856,7 +865,7 @@ public class Dag<N extends Lop>
 
 				// if child is queued, this node will be processed in the later
 				// iteration
-				if (hasChildNode(node, queuedNodes)) {
+				if (hasChildNode(node,queuedNodes)) {
 
 					LOG.trace(indent + "Queueing node "
 								+ node.toString() + " (code 2)");
@@ -867,7 +876,6 @@ public class Dag<N extends Lop>
 					// remove children that will be needed in a future
 					// iterations
 					// may also have to remove parent nodes of these children
-
 					removeNodesForNextIteration(node, finishedNodes, execNodes,
 							queuedNodes, jobNodes);
 
@@ -930,18 +938,16 @@ public class Dag<N extends Lop>
 				// then all its inputs must be ancestors of RecordReader. If
 				// not, queue "node"
 				if (node.getInputs().size() > 1
-						&& hasChildNode(node, execNodes,
-								ExecLocation.RecordReader)) {
+						&& hasChildNode(node, execNodes, ExecLocation.RecordReader)) {
 					// get the actual RecordReader lop
-					N rr_node = getChildNode(node, execNodes,
-							ExecLocation.RecordReader);
+					N rr_node = getChildNode(node, execNodes, ExecLocation.RecordReader);
 
 					// all inputs of "node" must be ancestors of rr_node
 					boolean queue_it = false;
 					for (int in = 0; in < node.getInputs().size(); in++) {
 						// each input should be ancestor of RecordReader lop
 						N n = (N) node.getInputs().get(in);
-						if (!n.equals(rr_node) && !isChild(rr_node, n)) {
+						if (!n.equals(rr_node) && !isChild(rr_node, n, IDMap)) {
 							queue_it = true; // i.e., "node" must be queued
 							break;
 						}
@@ -1188,19 +1194,17 @@ public class Dag<N extends Lop>
 	}
 
 	private boolean compatibleWithChildrenInExecNodes(Vector<N> execNodes, N node) {
-	  
 	  for(int i=0; i < execNodes.size(); i++)
 	  {
 	    N tmpNode = execNodes.elementAt(i);
 	    // for lops that execute in control program, compatibleJobs property is set to LopProperties.INVALID
 	    // we should not consider such lops in this check
-	    if (isChild(tmpNode, node) 
+	    if (isChild(tmpNode, node, IDMap) 
 	    		&& tmpNode.getExecLocation() != ExecLocation.ControlProgram
 	    		//&& tmpNode.getCompatibleJobs() != LopProperties.INVALID 
 	    		&& (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) == 0)
 	      return false;
 	  }
-	  
 	  return true;
 	}
 
@@ -1601,9 +1605,9 @@ public class Dag<N extends Lop>
 			    LOG.trace("Removing for next iteration: ("
                 + tmpNode.getID() + ") " + tmpNode.toString());
 			  }
-			  else
-				if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node)
-						&& isChild(tmpNode, node)  && branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes))
+			  else {
+				if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
+						&& isChild(tmpNode, node, IDMap)  && branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
 
 	
 				    if( 
@@ -1621,7 +1625,9 @@ public class Dag<N extends Lop>
 					
 	        				markedNodes.add(tmpNode);
 						
-				}
+						}
+				 }
+			  }
 			} else {
 				/*
 				 * "node" has no other queued children.
@@ -1642,7 +1648,7 @@ public class Dag<N extends Lop>
 						&& node.getExecLocation() == ExecLocation.MapAndReduce
 						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,
 								node)
-						&& isChild(tmpNode, node) &&
+						&& isChild(tmpNode, node, IDMap) &&
 						branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, finishedNodes)
 						&& tmpNode.definesMRJob() != true) {
 					LOG.trace("Removing for next iteration:: ("
@@ -1658,7 +1664,7 @@ public class Dag<N extends Lop>
 				// if it is of type MapAndReduce, don't need to free any nodes
 
 				if (!inputs_in_same_job && !unassigned_inputs
-						&& isChild(tmpNode, node) && 
+						&& isChild(tmpNode, node, IDMap) && 
 						(tmpNode == node.getInputs().get(0) || tmpNode == node.getInputs().get(1)) && 
 		            tmpNode.isAligner()) 
 				{
@@ -1712,7 +1718,7 @@ public class Dag<N extends Lop>
        if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
          return false;
        
-       if(isChild(n, node) && isChild(tmpNode, n) && !node.getInputs().contains(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+       if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) && !node.getInputs().contains(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
          return false;
          
       }
@@ -1735,7 +1741,7 @@ public class Dag<N extends Lop>
 	      if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
 	        return false;
 	      
-	      if(isChild(n, node) && isChild(tmpNode, n) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+	      if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
 	        return false;
 	        
 	     }
@@ -1769,7 +1775,7 @@ public class Dag<N extends Lop>
 	    if(n.equals(node) || n.equals(tmpNode))
 	      continue;
 	    
-	    if(isChild(n, node) && isChild(tmpNode, n))
+	    if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap))
 	    {      
 	      int cnt = 0;
 	      for (int j = 0; j < n.getOutputs().size(); j++) {
@@ -1802,7 +1808,7 @@ public class Dag<N extends Lop>
 
 			if (execNodes.contains(n)
 					&& n.getExecLocation() == ExecLocation.MapAndReduce
-					&& isChild(n, node)) {
+					&& isChild(n, node, IDMap)) {
 				return true;
 			} else {
 				if (hasMapAndReduceParentNode(n, execNodes, node))
@@ -1851,7 +1857,7 @@ public class Dag<N extends Lop>
 
 			if (execNodes.contains(n) && !n.equals(node)
 					&& n.getExecLocation() == ExecLocation.MapAndReduce
-					&& isChild(n, node)) {
+					&& isChild(n, node, IDMap)) {
 				return true;
 			} else {
 				if (hasOtherMapAndReduceParentNode(n, execNodes, node))
@@ -1864,7 +1870,7 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * Method to check if there is a queued node between tmpNode and node
+	 * Method to check if there is a queued node that is a parent of both tmpNode and node
 	 * 
 	 * @param tmpNode
 	 * @param queuedNodes
@@ -1873,18 +1879,38 @@ public class Dag<N extends Lop>
 	 */
 
 	@SuppressWarnings("unchecked")
-	private boolean hasOtherQueuedParentNode(N tmpNode, Vector<N> queuedNodes,
+	private boolean hasOtherQueuedParentNode(N tmpNode, Vector<N> queuedNodes, N node) {
+		if ( queuedNodes.size() == 0 )
+			return false;
+		
+		boolean[] nodeMarked = node.get_reachable();
+		boolean[] tmpMarked  = tmpNode.get_reachable();
+		
+		for ( int i=0; i < queuedNodes.size(); i++ ) {
+			int id = IDMap.get(queuedNodes.get(i).getID());
+			if (nodeMarked[id] && tmpMarked[id])
+				return true;
+		}
+		
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	private boolean hasOtherQueuedParentNodeOLD(N tmpNode, Vector<N> queuedNodes,
 			N node) {
 		for (int i = 0; i < tmpNode.getOutputs().size(); i++) {
 			N n = (N) tmpNode.getOutputs().get(i);
-
-			if (queuedNodes.contains(n) && !n.equals(node) && isChild(n, node)) {
+			
+			// if node is a child of n then n's level must be greater than node
+			if(n.getLevel() <= node.getLevel() )
+				continue;
+			
+			if (queuedNodes.contains(n) && !n.equals(node) && isChild(n, node, IDMap)) {
 				return true;
 			} else {
 				if (hasOtherQueuedParentNode(n, queuedNodes, node))
 					return true;
 			}
-
 		}
 
 		return false;
@@ -1963,7 +1989,7 @@ public class Dag<N extends Lop>
 			for (int j = 0; j < gmrnodes.size(); j++) {
 				if (rrnodes.get(rrid).equals(gmrnodes.get(j)))
 					flags[j] = true;
-				else if (isChild(rrnodes.get(rrid), gmrnodes.get(j))) {
+				else if (isChild(rrnodes.get(rrid), gmrnodes.get(j), IDMap)) {
 					splitGMR.get(rrid).add(gmrnodes.get(j));
 					flags[j] = true;
 				}
@@ -2133,7 +2159,7 @@ public class Dag<N extends Lop>
 
 	private void addParents(N node, Vector<N> node_v, Vector<N> exec_n) {
 		for (int i = 0; i < exec_n.size(); i++) {
-			if (isChild(node, exec_n.elementAt(i))) {
+			if (isChild(node, exec_n.elementAt(i), IDMap)) {
 				if (!node_v.contains(exec_n.elementAt(i))) {
 					LOG.trace("Adding parent - "
 								+ exec_n.elementAt(i).toString());
@@ -3567,13 +3593,19 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * check to see if a is the child of b
+	 * check to see if a is the child of b (i.e., there is a directed path from a to b)
 	 * 
 	 * @param a
 	 * @param b
 	 */
 
-	public static boolean isChild(Lop a, Lop b) {
+	public static boolean isChild(Lop a, Lop b, HashMap<Long, Integer> IDMap) {
+		//int aID = IDMap.get(a.getID());
+		int bID = IDMap.get(b.getID());
+		return a.get_reachable()[bID];
+	}
+	
+	public static boolean isChildOLD(Lop a, Lop b) {
 		for (int i = 0; i < b.getInputs().size(); i++) {
 			if (b.getInputs().get(i).equals(a))
 				return true;
@@ -3581,7 +3613,7 @@ public class Dag<N extends Lop>
 			/**
 			 * dfs search
 			 */
-			boolean return_val = isChild(a, b.getInputs().get(i));
+			boolean return_val = isChildOLD(a, b.getInputs().get(i));
 
 			/**
 			 * return true, if matching parent found, else continue
@@ -3608,74 +3640,36 @@ public class Dag<N extends Lop>
 		 * Step 2: sort the nodes by level, and within a level by node ID.
 		 */
 		
-		/*
-		 * Source nodes with no inputs are at level zero.
-		 * level(v) = max( levels(v.inputs) ) + 1.
-		 */
-		// initialize
-/*		for (int i = 0; i < numNodes; i++) {
-			v.get(i).setLevel(-1);
-		}
-
-		// BFS (breadth-first) style of algorithm.
-		Queue<N> q = new LinkedList<N>();
-*/
-		/*
-		 * A node is marked visited only afterall its inputs are visited.
-		 * A node is added to sortedNodes and its levelmap is updated only when
-		 * it is visited.
-		 */
-/*		int numSourceNodes = 0;
-		for (int i = 0; i < numNodes; i++) {
-			if (v.get(i).getInputs().size() == 0) {
-				v.get(i).setLevel(0);
-				q.add(v.get(i)); // add to queue
-				numSourceNodes++;
-			}
-		}
-*/
+		// Step1: Performed at the time of creating Lops
 		
-/*		N n, parent;
-		int maxLevel, inputLevel;
-		boolean markAsVisited;
-		while (q.size() != 0) {
-			n = q.remove();
-
-			// check if outputs of "n" can be marked as visited
-			for (int i = 0; i < n.getOutputs().size(); i++) {
-				parent = (N) n.getOutputs().get(i);
-
-				markAsVisited = true;
-				maxLevel = -1;
-				for (int j = 0; j < parent.getInputs().size(); j++) {
-					inputLevel = parent.getInputs().get(j).getLevel(); 
-					if (inputLevel == -1) {
-						// "parent" can not be visited if any of its inputs are
-						// not visited
-						markAsVisited = false;
-						break;
-					}
-
-					if (maxLevel < inputLevel)
-						maxLevel = inputLevel;
-				}
-
-				if (markAsVisited == true) {
-					// mark "parent" as visited
-					parent.setLevel(maxLevel + 1);
-					q.add(parent);
-				}
-			}
-		}
-*/
 		// Step2: sort nodes by level, and then by node ID
 		Object[] nodearray = v.toArray();
 		Arrays.sort(nodearray, new LopComparator());
 
-		// Copy sorted nodes into "v"
+		// Copy sorted nodes into "v" and construct a mapping between Lop IDs and sequence of numbers
 		v.clear();
+		if ( IDMap != null )
+			IDMap.clear();
+		else 
+			IDMap = new HashMap<Long, Integer>();
+		
 		for (int i = 0; i < nodearray.length; i++) {
 			v.add((N) nodearray[i]);
+			IDMap.put(v.get(i).getID(), i);
+		}
+		
+		/*
+		 * Compute of All-pair reachability graph (Transitive Closure) of the DAG.
+		 * - Perform a depth-first search (DFS) from every node $u$ in the DAG 
+		 * - and construct the list of reachable nodes from the node $u$
+		 * - store the constructed reachability information in $u$.reachable[] boolean array
+		 */
+		// 
+		//  
+		for (int i = 0; i < nodearray.length; i++) {
+			boolean[] arr = v.get(i).create_reachable(nodearray.length);
+			Arrays.fill(arr, false);
+			dagDFS(v.get(i), arr);
 		}
 
 		// Sanity check -- can be removed
@@ -3700,24 +3694,57 @@ public class Dag<N extends Lop>
 				// + levelmap.get(sortedNodes.get(i).getID()) + "), ");
 				LOG.trace(v.get(i).getID() + "(" + v.get(i).getLevel()
 						+ "), ");
-				System.out.print(v.get(i).getID() + "(" + v.get(i).getLevel()+ "), ");
+				//System.out.print(v.get(i).getID() + "(" + v.get(i).getLevel()+ "), ");
 			}
 			
-			System.out.println("");
+			//System.out.println("");
 			LOG.trace("topological sort -- done");
 		}
 
 	}
 
+	/**
+	 * Method to perform depth-first traversal from a given node in the DAG.
+	 * Store the reachability information in marked[] boolean array.
+	 * 
+	 * @param root
+	 * @param marked
+	 */
+	void dagDFS(N root, boolean[] marked) {
+		int mapID = IDMap.get(root.getID());
+		if ( marked[mapID] )
+			return;
+		marked[mapID] = true;
+		for(int i=0; i < root.getOutputs().size(); i++) {
+			dagDFS((N)root.getOutputs().get(i), marked);
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, Vector<N> childNodes, ExecLocation type) {
+		if ( childNodes.size() == 0 ) 
+			return false;
+		
+		int index = IDMap.get(node.getID());
+		for(int i=0; i < childNodes.size(); i++) {
+			N cn = childNodes.get(i);
+			if ( (type == ExecLocation.INVALID || cn.getExecLocation() == type) && cn.get_reachable()[index]) {
+				return true;
+			}
+		}
+		return false;
+	}
 
+	@SuppressWarnings("unchecked")
+	private boolean hasChildNodeOLD(N node, Vector<N> childNodes, ExecLocation type) {
+		if(childNodes.size() == 0)
+			return false;
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
 			if (childNodes.contains(n) && n.getExecLocation() == type) {
 				return true;
 			} else {
-				if (hasChildNode(n, childNodes, type))
+				if (hasChildNodeOLD(n, childNodes, type))
 					return true;
 			}
 
@@ -3729,13 +3756,29 @@ public class Dag<N extends Lop>
 
 	@SuppressWarnings("unchecked")
 	private N getChildNode(N node, Vector<N> childNodes, ExecLocation type) {
+		if ( childNodes.size() == 0 )
+			return null;
+		
+		int index = IDMap.get(node.getID());
+		for(int i=0; i < childNodes.size(); i++) {
+			N cn = childNodes.get(i);
+			if ( cn.getExecLocation() == type && cn.get_reachable()[index]) {
+				return cn;
+			}
+		}
+		return null;
+	}
 
+	@SuppressWarnings("unchecked")
+	private N getChildNodeOLD(N node, Vector<N> childNodes, ExecLocation type) {
+		if(childNodes.size() == 0)
+			return null;
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
 			if (childNodes.contains(n) && n.getExecLocation() == type) {
 				return n;
 			} else {
-				return getChildNode(n, childNodes, type);
+				return getChildNodeOLD(n, childNodes, type);
 			}
 
 		}
@@ -3755,13 +3798,28 @@ public class Dag<N extends Lop>
 	 */
 	@SuppressWarnings("unchecked")
 	private N getParentNode(N node, Vector<N> parentNodes, ExecLocation type) {
+		if ( parentNodes.size() == 0 )
+			return null;
+		for(int i=0; i < parentNodes.size(); i++ ) {
+			N pn = parentNodes.get(i);
+			int index = IDMap.get( pn.getID() );
+			if ( pn.getExecLocation() == type && node.get_reachable()[index])
+				return pn;
+		}
+		return null;
+	}
 
+	@SuppressWarnings("unchecked")
+	private N getParentNodeOLD(N node, Vector<N> parentNodes, ExecLocation type) {
+		if(parentNodes.size() ==0)
+			return null;
+		
 		for (int i = 0; i < node.getOutputs().size(); i++) {
 			N n = (N) node.getOutputs().get(i);
 			if (parentNodes.contains(n) && n.getExecLocation() == type) {
 				return n;
 			} else {
-				return getParentNode(n, parentNodes, type);
+				return getParentNodeOLD(n, parentNodes, type);
 			}
 
 		}
@@ -3774,13 +3832,29 @@ public class Dag<N extends Lop>
 	// set to true
 	@SuppressWarnings("unchecked")
 	private boolean hasMRJobChildNode(N node, Vector<N> nodesVec) {
+		if ( nodesVec.size() == 0 )
+			return false;
+		
+		int index = IDMap.get(node.getID());
+		
+		for (int i = 0; i < nodesVec.size(); i++) {
+			N n = nodesVec.get(i);
+			if ( n.definesMRJob() && n.get_reachable()[index]) 
+				return true;
+		}
+		return false;
+	}
 
+	@SuppressWarnings("unchecked")
+	private boolean hasMRJobChildNodeOLD(N node, Vector<N> nodesVec) {
+		if(nodesVec.size() ==0)
+			return false;
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
 			if (nodesVec.contains(n) && n.definesMRJob()) {
 				return true;
 			} else {
-				if (hasMRJobChildNode(n, nodesVec))
+				if (hasMRJobChildNodeOLD(n, nodesVec))
 					return true;
 			}
 
@@ -3794,13 +3868,28 @@ public class Dag<N extends Lop>
 	// returns null if no such descendant exists in nodeVec
 	@SuppressWarnings("unchecked")
 	private N getMRJobChildNode(N node, Vector<N> nodesVec) {
+		if(nodesVec.size() == 0)
+			return null;
+		
+		int index = IDMap.get(node.getID());
+		for (int i = 0; i < nodesVec.size(); i++) {
+			N n = nodesVec.get(i);
+			if ( n.definesMRJob() && n.get_reachable()[index]) 
+				return n;
+		}
+		return null;
+	}
 
+	@SuppressWarnings("unchecked")
+	private N getMRJobChildNodeOLD(N node, Vector<N> nodesVec) {
+		if(nodesVec.size() == 0)
+			return null;
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
 			if (nodesVec.contains(n) && n.definesMRJob()) {
 				return n;
 			} else {
-				N ret = getMRJobChildNode(n, nodesVec);
+				N ret = getMRJobChildNodeOLD(n, nodesVec);
 				if ( ret != null ) 
 					return ret;
 			}
@@ -3848,13 +3937,19 @@ public class Dag<N extends Lop>
 
 	@SuppressWarnings("unchecked")
 	private boolean hasChildNode(N node, Vector<N> nodes) {
+		return hasChildNode(node, nodes, ExecLocation.INVALID);
+	}
 
+	@SuppressWarnings("unchecked")
+	private boolean hasChildNodeOLD(N node, Vector<N> nodes) {
+		if(nodes.size() == 0)
+			return false;
 		for (int i = 0; i < node.getInputs().size(); i++) {
 			N n = (N) node.getInputs().get(i);
 			if (nodes.contains(n)) {
 				return true;
 			} else {
-				if (hasChildNode(n, nodes))
+				if (hasChildNodeOLD(n, nodes))
 					return true;
 			}
 
@@ -3865,14 +3960,28 @@ public class Dag<N extends Lop>
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean hasParentNode(N node, Vector<N> childNodes) {
-
+	private boolean hasParentNode(N node, Vector<N> parentNodes) {
+		if ( parentNodes.size() == 0 )
+			return false;
+		
+		for( int i=0; i < parentNodes.size(); i++ ) {
+			int index = IDMap.get( parentNodes.get(i).getID() );
+			if ( node.get_reachable()[index])
+				return true;
+		}
+		return false;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private boolean hasParentNodeOLD(N node, Vector<N> childNodes) {
+		if(childNodes.size() == 0)
+			return false;
 		for (int i = 0; i < node.getOutputs().size(); i++) {
 			N n = (N) node.getOutputs().get(i);
 			if (childNodes.contains(n)) {
 				return true;
 			} else {
-				if (hasParentNode(n, childNodes))
+				if (hasParentNodeOLD(n, childNodes))
 					return true;
 			}
 

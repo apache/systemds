@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.parser;
 
@@ -400,7 +400,6 @@ public class DMLTranslator
 	}
 	
 	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) throws ParseException, LanguageException, HopsException {
-
 		/*
 		 * Compute memory estimates for all the hops. These estimates are used
 		 * subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
@@ -430,7 +429,7 @@ public class DMLTranslator
 
 		this.resetHopsDAGVisitStatus(dmlp);
 		eval_rule_BlockSizeAndReblock(dmlp);
-		
+
 		/**
 		 * Rule: CommonSubexpressionElimination. For all statement blocks, 
 		 * eliminate common subexpressions within dags by merging equivalent
@@ -1451,7 +1450,7 @@ public class DMLTranslator
 		}
 		
 		// Verify: Sanity Check
-		boolean checkFlag = true;
+		/*boolean checkFlag = true;
 		if (hopsDAG != null && hopsDAG.size() > 0) {
 			for (Hop h : hopsDAG) {
 				checkFlag = checkFlag && h.checkEstimates();
@@ -1460,7 +1459,7 @@ public class DMLTranslator
 		if ( checkFlag == false) {
 			LOG.error("Memory estimate for one or more Hops is not computed!!");
 			throw new HopsException("Memory estimate for one or more Hops is not computed!!");
-		}
+		}*/
 		
 		if (current instanceof FunctionStatementBlock) {
 			
@@ -2261,12 +2260,51 @@ public class DMLTranslator
 	{
 		HashMap<String, Hop> _ids = new HashMap<String, Hop>();
 		
-		// set iterable predicate
+		// set iterable predicate 
 		ForStatementBlock fsb = (ForStatementBlock)passedSB;
 		ForStatement fs = (ForStatement) fsb.getStatement(0);
 		IterablePredicate ip = fs.getIterablePredicate();
 	
-		VariableSet varsRead = ip.variablesRead();
+		for(int i=0; i < 3; i++) {
+			VariableSet varsRead = null;
+			if (i==0)
+				varsRead = ip.getFromExpr().variablesRead();
+			else if (i==1)
+				varsRead = ip.getToExpr().variablesRead();
+			else
+				varsRead = ip.getIncrementExpr().variablesRead();
+
+			if(varsRead != null) {
+				for (String varName : varsRead.getVariables().keySet()) {
+					
+					DataIdentifier var = passedSB.liveIn().getVariable(varName);
+					DataOp read = null;
+					if (var == null) {
+						LOG.error(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
+						throw new ParseException(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
+					}
+					else {
+						long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
+						long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
+						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
+								null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
+						read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
+					}
+					_ids.put(varName, read);
+				}
+			}
+			
+			//construct hops for from, to, and increment expressions		
+			if(i==0)
+				fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
+			else if(i==1)
+				fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
+			else
+				fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));					
+				
+		}
+		
+		/*VariableSet varsRead = ip.variablesRead();
 		
 		for (String varName : varsRead.getVariables().keySet()) {
 			
@@ -2289,7 +2327,7 @@ public class DMLTranslator
 		//construct hops for from, to, and increment expressions		
 		fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
 		fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
-		fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));					
+		fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));*/					
 	}
 	 
 	

@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.hops;
 
@@ -805,13 +805,16 @@ public abstract class Hop
 	 * to find chains that need to be optimized.
 	 */
 	public void rule_OptimizeMMChains() throws HopsException {
+		if(this.get_visited() == Hop.VISIT_STATUS.DONE)
+				return;
+		
 		if (this.getKind() == Hop.Kind.AggBinaryOp && ((AggBinaryOp) this).isMatrixMultiply()
 				&& this.get_visited() != Hop.VISIT_STATUS.DONE) {
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			this.optimizeMMChain();
 		}
-
+		
 		for (Hop hi : this.getInput())
 			hi.rule_OptimizeMMChains();
 
@@ -1056,10 +1059,13 @@ public abstract class Hop
 		// print the MMChain
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("Identified MM Chain: ");
+			//System.out.print("MMChain_" + getHopID() + " (" + mmChain.size() + "): ");
 			for (Hop h : mmChain) {
 				LOG.trace("Hop " + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " "
 						+ h.get_dim1() + "x" + h.get_dim2());
+				//System.out.print("[" + h.get_name() + "(" + h.getKind() + ", " + h.getHopID() + ")" + " " + h.get_dim1() + "x" + h.get_dim2() + "]  ");
 			}
+			//System.out.println("");
 			LOG.trace("--End of MM Chain--");
 		}
 
@@ -1083,7 +1089,7 @@ public abstract class Hop
 			 // Step-4: Relink the hops using the optimal ordering (split[][]) found from DP.
 			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);
 		}
-	
+		System.out.println("  .");
 	}
 
 	public void printMe() throws HopsException {

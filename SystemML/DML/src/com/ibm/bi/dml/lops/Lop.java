@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.lops;
 
@@ -48,6 +48,9 @@ public abstract class Lop
 	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
 	private VISIT_STATUS _visited = VISIT_STATUS.NOTVISITED;
+	
+	// Boolean array to hold the list of nodes(lops) in the DAG that are reachable from this lop.
+	private boolean[] reachable = null;
 	private DataType _dataType;
 	private ValueType _valueType;
 
@@ -71,6 +74,15 @@ public abstract class Lop
 
 	public VISIT_STATUS get_visited() {
 		return _visited;
+	}
+	
+	public boolean[] get_reachable() {
+		return reachable;
+	}
+
+	public boolean[] create_reachable(int size) {
+		reachable = new boolean[size];
+		return reachable;
 	}
 
 	/**

@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.lops.compile;
 
@@ -724,8 +724,10 @@ public class Recompiler
 		
 		//preserve Treads to prevent wrong rmfilevar instructions
 		//TODO revisit if this is still required
-		if( hop.getOpString().equals("TRead") )
-			return; 
+		
+		// TODO: check with Matthias to see if commenting out following two lines would create any problem.
+		//if( hop.getOpString().equals("TRead") )
+		//	return; 
 		
 		//clear all relevant lops to allow for recompilation
 		hop.set_lops(null);

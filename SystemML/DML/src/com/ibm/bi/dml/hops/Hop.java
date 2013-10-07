@@ -1591,6 +1591,12 @@ public abstract class Hop
 		{
 			set_dim1(UtilFunctions.parseToLong(input.get_name()));
 		}
+		else if ( input instanceof BinaryOp )
+		{
+			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>());
+			if( dim != Long.MAX_VALUE ) //if known
+				set_dim1( dim );
+		}
 	}
 	
 	/**
@@ -1609,6 +1615,77 @@ public abstract class Hop
 		{
 			set_dim2(UtilFunctions.parseToLong(input.get_name()));
 		}
+		else if ( input instanceof BinaryOp )
+		{
+			long dim = rEvalSimpleBinarySizeExpression(input, new HashMap<Long, Long>());
+			if( dim != Long.MAX_VALUE ) //if known
+				set_dim2( dim );
+		}
+	}
+	
+	/**
+	 * Function to evaluate simple size expressions of binary operators 
+	 * (plus, minus, mult, div, min, max) over literals and now/ncol.
+	 * 
+	 * It returns the exact results of this expressions if known, otherwise
+	 * Long.MAX_VALUE if unknown.
+	 * 
+	 * TODO: extend to memo table usage (for this, memo needs to contain min/max bounds,
+	 * other wise expressions like b-a might give not a worst-case estimate if a is overestimated)
+	 * 
+	 * @param root
+	 * @return
+	 */
+	protected long rEvalSimpleBinarySizeExpression( Hop root, HashMap<Long, Long> memo )
+	{
+		//memoization (prevent redundant computation of common subexpr)
+		if( memo.containsKey(root.getHopID()) )
+			return memo.get(root.getHopID());
+		
+		long ret = Long.MAX_VALUE;
+		
+		if( root instanceof LiteralOp )
+		{
+			long dim = UtilFunctions.parseToLong(root.get_name());
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof UnaryOp )
+		{
+			UnaryOp uroot = (UnaryOp) root;
+			long dim = -1;
+			if(uroot.get_op() == Hop.OpOp1.NROW)
+				dim = uroot.getInput().get(0).get_dim1();
+			else if( uroot.get_op() == Hop.OpOp1.NCOL )
+				dim = uroot.getInput().get(0).get_dim2();
+			if( dim != -1 ) //if known
+				ret = dim;
+		}
+		else if( root instanceof BinaryOp )
+		{ 
+			if( OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION )
+			{
+				BinaryOp broot = (BinaryOp) root;
+				long lret = rEvalSimpleBinarySizeExpression(broot.getInput().get(0), memo);
+				long rret = rEvalSimpleBinarySizeExpression(broot.getInput().get(1), memo);
+				//note: positive and negative values might be valid subexpressions
+				if( lret!=Long.MAX_VALUE && rret!=Long.MAX_VALUE ) //if known
+				{
+					switch( broot.op )
+					{
+						case PLUS:	ret = lret + rret; break;
+						case MINUS:	ret = lret - rret; break;
+						case MULT:  ret = lret * rret; break;
+						case DIV:   ret = lret / rret; break;
+						case MIN:   ret = Math.min(lret, rret); break;
+						case MAX:   ret = Math.max(lret, rret); break;
+					}
+				}
+			}
+		}
+		
+		memo.put(root.getHopID(), ret);
+		return ret;
 	}
 	
 	

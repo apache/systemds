@@ -75,6 +75,12 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
 	
+	/**
+	 * Enables simplex expression evaluation for datagen parameters 'rows', 'cols'. Simple
+	 * expressions are defined as binary operations on literals and nrow/ncol.
+	 */
+	public static boolean ALLOW_SIZE_EXPRESSION_EVALUATION = true;
+	
 	
 	//////////////////////
 	// Optimizer types  //

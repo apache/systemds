@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+m = $1;
+n = $2;
+
+A = matrix(1, rows=m, cols=n);
+B = A %*% A;
+
+C1 = matrix(1, rows=nrow(B)*ncol(B), cols=1);
+C2 = matrix(1, rows=1, cols=nrow(B)*ncol(B));        
+C3 = matrix(1, rows=(0+1*ncol(B)+1-1/1), cols=(0+1*nrow(B)+1-1/1) );
+
+R = matrix(1, rows=1, cols=1);
+R[1,1] = sum(C1)+sum(C2)+sum(C3);
+
+write(R, $3, format="text");  

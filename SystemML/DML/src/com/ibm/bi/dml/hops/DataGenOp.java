@@ -252,9 +252,10 @@ public class DataGenOp extends Hop
 		Hop input2 = null; 
 		Hop input3 = null;
 
-		if ( method == DataGenMethod.RAND ) {
-			input1 = getInput().get(_paramIndexMap.get("rows")); //rows
-			input2 = getInput().get(_paramIndexMap.get("cols")); //cols
+		if ( method == DataGenMethod.RAND ) 
+		{
+			input1 = getInput().get(_paramIndexMap.get(RandStatement.RAND_ROWS)); //rows
+			input2 = getInput().get(_paramIndexMap.get(RandStatement.RAND_COLS)); //cols
 			
 			//refresh rows information
 			refreshRowsParameterInformation(input1);
@@ -262,76 +263,32 @@ public class DataGenOp extends Hop
 			//refresh cols information
 			refreshColsParameterInformation(input2);
 		}
-		else if (method == DataGenMethod.SEQ ) {
+		else if (method == DataGenMethod.SEQ ) 
+		{
 			input1 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_FROM));
 			input2 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_TO)); 
 			input3 = getInput().get(_paramIndexMap.get(RandStatement.SEQ_INCR)); 
 
-			double from, to, incr;
-			from = to = incr = Double.NaN;
-			boolean fromKnown, toKnown, incrKnown;
-			fromKnown = toKnown = incrKnown = false;
+			HashMap<Long,Long> memo = new HashMap<Long, Long>();
+			long from = rEvalSimpleBinarySizeExpression(input1, memo);
+			boolean fromKnown = (from != Long.MAX_VALUE);
 			
-			try {
-				if ( input1.getKind() == Kind.LiteralOp ) {
-					from = ((LiteralOp)input1).getDoubleValue();
-					fromKnown = true;
-				}
-				else if ( input1.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input1).get_op() == Hop.OpOp1.NROW ) {
-						from = input1.getInput().get(0).get_dim1();
-						fromKnown = true;
-					}
-					else if ( ((UnaryOp)input1).get_op() == Hop.OpOp1.NCOL ) {
-						from = input1.getInput().get(0).get_dim2();
-						fromKnown = true;
-					}
-				}
-				
-				if ( input2.getKind() == Kind.LiteralOp ) {
-					to = ((LiteralOp)input2).getDoubleValue();
-					toKnown = true;
-				}
-				else if ( input2.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input2).get_op() == Hop.OpOp1.NROW ) {
-						to = input2.getInput().get(0).get_dim1();
-						toKnown = true;
-					}
-					else if ( ((UnaryOp)input2).get_op() == Hop.OpOp1.NCOL ) {
-						to = input2.getInput().get(0).get_dim2();
-						toKnown = true;
-					}
-				}
-				
-				if ( input3.getKind() == Kind.LiteralOp ) {
-					incr = ((LiteralOp)input3).getDoubleValue();
-					incrKnown = true;
-				}
-				else if ( input3.getKind() == Kind.UnaryOp ) {
-					if( ((UnaryOp)input3).get_op() == Hop.OpOp1.NROW ) {
-						incr = input3.getInput().get(0).get_dim1();
-						incrKnown = true;
-					}
-					else if ( ((UnaryOp)input3).get_op() == Hop.OpOp1.NCOL ) {
-						incr = input3.getInput().get(0).get_dim2();
-						incrKnown = true;
-					}
-				}
-				else if (input3.getKind() == Kind.BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) {
-					if ( from >= to )
-						incr = -1.0;
-					else 
-						incr = 1.0;
-					incrKnown = true;
-				}
-				
-				if ( fromKnown && toKnown && incrKnown ) {
-					set_dim1(1 + (long)Math.floor((to-from)/incr));
-					set_dim2(1);
-				}
-			} catch (HopsException e) {
-				// TODO Auto-generated catch block
-				throw new RuntimeException(e);
+			long to = rEvalSimpleBinarySizeExpression(input2, memo);
+			boolean toKnown = (to != Long.MAX_VALUE);
+			
+			long incr = rEvalSimpleBinarySizeExpression(input3, memo);
+			boolean incrKnown = (incr != Long.MAX_VALUE);
+			
+			if(  !incrKnown && input3.getKind() == Kind.BinaryOp //special case for incr
+			   && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) 
+			{
+				incr = ( from >= to ) ? -1 : 1;
+				incrKnown = true;
+			}
+			
+			if ( fromKnown && toKnown && incrKnown ) {
+				set_dim1(1 + (long)Math.floor(((double)(to-from))/incr));
+				set_dim2(1);
 			}
 		}
 		

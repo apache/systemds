@@ -60,55 +60,104 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	@Test
 	public void testWhileRecompile() 
 	{
-		runRecompileTest(TEST_NAME1, true);
+		runRecompileTest(TEST_NAME1, true, false);
 	}
 	
 	@Test
 	public void testWhileNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME1, false);
+		runRecompileTest(TEST_NAME1, false, false);
 	}
 	
 	@Test
 	public void testIfRecompile() 
 	{
-		runRecompileTest(TEST_NAME2, true);
+		runRecompileTest(TEST_NAME2, true, false);
 	}
 	
 	@Test
 	public void testIfNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME2, false);
+		runRecompileTest(TEST_NAME2, false, false);
 	}
 	
 	@Test
 	public void testForRecompile() 
 	{
-		runRecompileTest(TEST_NAME3, true);
+		runRecompileTest(TEST_NAME3, true, false);
 	}
 	
 	@Test
 	public void testForNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME3, false);
+		runRecompileTest(TEST_NAME3, false, false);
 	}
 	
 	@Test
 	public void testParForRecompile() 
 	{
-		runRecompileTest(TEST_NAME4, true);
+		runRecompileTest(TEST_NAME4, true, false);
 	}
 	
 	@Test
 	public void testParForNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME4, false);
+		runRecompileTest(TEST_NAME4, false, false);
 	}
 
+	@Test
+	public void testWhileRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME1, true, true);
+	}
 	
-	private void runRecompileTest( String testname, boolean recompile )
+	@Test
+	public void testWhileNoRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME1, false, true);
+	}
+	
+	@Test
+	public void testIfRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME2, true, true);
+	}
+	
+	@Test
+	public void testIfNoRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME2, false, true);
+	}
+	
+	@Test
+	public void testForRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME3, true, true);
+	}
+	
+	@Test
+	public void testForNoRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME3, false, true);
+	}
+	
+	@Test
+	public void testParForRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME4, true, true);
+	}
+	
+	@Test
+	public void testParForNoRecompileExprEval() 
+	{
+		runRecompileTest(TEST_NAME4, false, true);
+	}
+	
+	
+	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr )
 	{	
-		boolean oldFlag = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		
 		try
 		{
@@ -127,6 +176,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
+			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			
@@ -134,16 +185,16 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			if( recompile )
 			{
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						  1, Statistics.getNoOfExecutedMRJobs()); //rand	
+						  1 - ((evalExpr)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand	
 			}
 			else
 			{
 				if( testname.equals(TEST_NAME1) )
 					Assert.assertEquals("Unexpected number of executed MR jobs.", 
-				            4, Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body				
+				            4 - ((evalExpr)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body				
 				else //if( testname.equals(TEST_NAME2) )
 					Assert.assertEquals("Unexpected number of executed MR jobs.", 
-				            3, Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
+				            3 - ((evalExpr)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
 			}
 			
 			//compare matrices
@@ -152,7 +203,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlag;
+			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
 		}
 	}
 	

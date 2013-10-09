@@ -346,6 +346,13 @@ public class DataGenOp extends Hop
 				ret &= (   that2.getInput().get(pos2)!=null
 					    && getInput().get(pos1) == that2.getInput().get(pos2) );
 			}
+			
+			//special case for rand seed (no CSE if unspecified seed because runtime generated)
+			if( method == DataGenMethod.RAND ){
+				Hop seed = getInput().get(_paramIndexMap.get(RandStatement.RAND_SEED));
+				if( seed.get_name().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)) )
+					ret = false;
+			}
 		}
 		
 		return ret;

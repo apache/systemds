@@ -51,6 +51,8 @@ public class AggBinaryOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	private static final double MVMULT_MEM_MULTIPLIER = 0.9;
 	
 	private OpOp2 innerOp;
 	private AggOp outerOp;
@@ -393,7 +395,7 @@ public class AggBinaryOp extends Hop
 	private static boolean partitionVectorInDistCache(long rows, long cols) {
 		//return true;
 		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
-		return ( vec_size > 0.8 * OptimizerUtils.getMemBudget(false) );
+		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) );
 	}
 	
 	/*
@@ -415,7 +417,7 @@ public class AggBinaryOp extends Hop
 			// matrix-vector multiplication. 
 			// Choose DIST_MVMULT if the "dense" vector fits in memory.
 			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-			if ( vec_size < 0.9 * OptimizerUtils.getMemBudget(false) )
+			if ( vec_size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) )
 				return MMultMethod.DIST_MV;
 		}
 		

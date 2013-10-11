@@ -49,37 +49,42 @@ public class EigenWrapper extends PackageFunction
 	}
 
 	@Override
-	public void execute() { 
-
-		Matrix input_m = (Matrix) this.getFunctionInput(0);
-		double [][] arr = input_m.getMatrixAsDoubleArray();
-
-		intW numValues = new intW(0); 
-		intW info = new intW(0);
-		double []e_values = new double[arr.length];
-		double [][]e_vectors = new double[arr.length][arr.length];
-		int[] i_suppz = new int[2* arr.length];
-		double []work = new double[26*arr.length];
-		int []iwork = new int[10*arr.length];
-		
-		try
-		{
-			//compute eigen values and vectors
-			org.netlib.lapack.DSYEVR.DSYEVR("V", "A", "U", arr.length, arr, -1, -1, -1, -1, 0.0, numValues, e_values, e_vectors, i_suppz, work, 26*arr.length, iwork, 10*arr.length, info);
+	public void execute() 
+	{ 
+		//prevent multiple concurrent invocations in same JVM because Lapack DSYEVR can run into deadlocks
+		synchronized( EigenWrapper.class )
+		{		
+			Matrix input_m = (Matrix) this.getFunctionInput(0);
+			double [][] arr = input_m.getMatrixAsDoubleArray();
+	
+			intW numValues = new intW(0); 
+			intW info = new intW(0);
+			double []e_values = new double[arr.length];
+			double [][]e_vectors = new double[arr.length][arr.length];
+			int[] i_suppz = new int[2* arr.length];
+			double []work = new double[26*arr.length];
+			int []iwork = new int[10*arr.length];
 			
-			//create output matrices
-			return_e_values = new Matrix( e_values.length, e_values.length, ValueType.Double );
-			double[][] tmp = new double[e_values.length][e_values.length];
-			for(int i=0; i < e_values.length; i++)
-				tmp[i][i] = e_values[i];
-			return_e_values.setMatrixDoubleArray(tmp);
+			try
+			{
+				//compute eigen values and vectors
+				org.netlib.lapack.DSYEVR.DSYEVR("V", "A", "U", arr.length, arr, -1, -1, -1, -1, 0.0, numValues, e_values, e_vectors, i_suppz, work, 26*arr.length, iwork, 10*arr.length, info);
+				
+				double[][] tmp = new double[e_values.length][e_values.length];
+				for(int i=0; i < e_values.length; i++)
+					tmp[i][i] = e_values[i];
+				
+				//create output matrices
+				return_e_values = new Matrix( e_values.length, e_values.length, ValueType.Double );
+				return_e_values.setMatrixDoubleArray(tmp);			
+				return_e_vectors = new Matrix( e_vectors.length, e_vectors.length, ValueType.Double );
+				return_e_vectors.setMatrixDoubleArray(e_vectors);			
+			}
+			catch(Exception e)
+			{
+				throw new PackageRuntimeException("Error performing eigen",e);
+			}
 			
-			return_e_vectors = new Matrix( e_vectors.length, e_vectors.length, ValueType.Double );
-			return_e_vectors.setMatrixDoubleArray(e_vectors);			
-		}
-		catch(Exception e)
-		{
-			throw new PackageRuntimeException("Error performing eigen",e);
 		}
 	}
 

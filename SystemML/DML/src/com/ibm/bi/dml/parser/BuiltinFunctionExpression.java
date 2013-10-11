@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+Â * IBM Confidential
+Â * OCO Source Materials
+Â * (C) Copyright IBM Corp. 2010, 2013
+Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Â */
 
 package com.ibm.bi.dml.parser;
 
@@ -513,6 +513,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				//System.out.println("seq("+from+","+to+","+incr+") -> dims("+dim1+","+dim2+")");
 			}
 			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
 			output.setDimensions(dim1, dim2);
 			output.setBlockDimensions(0, 0);
 			break;

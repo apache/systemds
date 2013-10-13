@@ -124,6 +124,8 @@ public class StagingFileUtils
 	public static int nextSizedKeyMap( BufferedReader in, HashMap<Integer,HashMap<Long,Long>> map, int blen, int size ) 
 		throws NumberFormatException, IOException
 	{
+		map.clear();
+		
 		String value = null;
 		int len = 0;
 		while( (value=in.readLine())!=null )

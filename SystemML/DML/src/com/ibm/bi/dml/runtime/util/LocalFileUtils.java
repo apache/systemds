@@ -279,6 +279,17 @@ public class LocalFileUtils
 		if( fdir.exists() )
 			rDelete(fdir);
 	}
+	
+	/**
+	 * 
+	 * @param dir
+	 * @return
+	 */
+	public static boolean isExisting(String dir) 
+	{
+		File fdir = new File(dir);
+		return fdir.exists();
+	}
 
 	
 	/**

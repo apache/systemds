@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
@@ -38,6 +39,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
@@ -174,18 +176,23 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			long ret = -1;
 			try
 			{
+				boolean diagBlocks = false;
+				
 				//Phase 1: write file to staging 
 				if( ii == InputInfo.TextCellInputInfo )
 					createTextCellStagingFile( fnameOld, stagingDir );
 				else if( ii == InputInfo.BinaryCellInputInfo )
 					createBinaryCellStagingFile( fnameOld, stagingDir );
 				else if( ii == InputInfo.BinaryBlockInputInfo )
-					createBinaryBlockStagingFile( fnameOld, stagingDir );
+					diagBlocks = createBinaryBlockStagingFile( fnameOld, stagingDir );
 				
 				//System.out.println("Executed phase 1 in "+time.stop());
 				
 				//Phase 2: scan empty rows/cols
-				ret = createKeyMapping(stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii);
+				if( diagBlocks )
+					ret = createKeyMappingDiag(stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii);
+				else
+					ret = createKeyMapping(stagingDir, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii);
 				
 				//System.out.println("Executed phase 2 in "+time.stop());
 				
@@ -198,7 +205,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				else if( ii == InputInfo.BinaryBlockInputInfo )
 				{
-					createBlockResultFile( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), ret, mc.getNonZeros(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
+					if( diagBlocks )
+						createBlockResultFileDiag( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), ret, mc.getNonZeros(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
+					else
+						createBlockResultFile( fnameNew, stagingDir, mc.get_rows(), mc.get_cols(), ret, mc.getNonZeros(), mc.get_rows_per_block(), mc.get_cols_per_block(), ii );
 				}
 				
 				//System.out.println("Executed phase 3 in "+time.stop());
@@ -368,13 +378,15 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		}
 
 		/**
+		 * Creates a binary block staging file and returns if the input matrix is a diag,
+		 * because diag is the primary usecase and there is lots of optimization potential.
 		 * 
 		 * @param fnameOld
 		 * @param stagingDir
 		 * @throws IOException
 		 * @throws DMLRuntimeException
 		 */
-		public void createBinaryBlockStagingFile( String fnameOld, String stagingDir ) 
+		public boolean createBinaryBlockStagingFile( String fnameOld, String stagingDir ) 
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
@@ -386,6 +398,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			
 			MatrixIndexes key = new MatrixIndexes(); 
 			MatrixBlock value = new MatrixBlock();
+			boolean diagBlocks = true;
 			
 			for(Path lpath : DataConverter.getSequenceFilePaths(fs, path))
 			{
@@ -395,8 +408,12 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				{
 					while( reader.next(key, value) )
 					{
-						String fname = stagingDir +"/"+key.getRowIndex()+"_"+key.getColumnIndex();
-						LocalFileUtils.writeMatrixBlockToLocal(fname, value);
+						if( !value.isEmptyBlock() ) //skip empty blocks (important for diag)
+						{
+							String fname = stagingDir +"/"+key.getRowIndex()+"_"+key.getColumnIndex();
+							LocalFileUtils.writeMatrixBlockToLocal(fname, value);							
+							diagBlocks &= (key.getRowIndex()==key.getColumnIndex());
+						}
 					}	
 				}
 				finally
@@ -405,6 +422,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						reader.close();
 				}
 			}
+			
+			return diagBlocks;
 		}
 		
 		/**
@@ -475,6 +494,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
 						if( ii == InputInfo.BinaryBlockInputInfo ){
+							if( !LocalFileUtils.isExisting(fname) )
+								continue;
 							MatrixBlock buffer = LocalFileUtils.readMatrixBlockFromLocal(fname);
 							for( int i=0; i<buffer.getNumRows(); i++ )
 								for( int j=0; j<buffer.getNumColumns(); j++ )
@@ -513,6 +534,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
 						if( ii == InputInfo.BinaryBlockInputInfo ){
+							if( !LocalFileUtils.isExisting(fname) )
+								continue;
 							MatrixBlock buffer = LocalFileUtils.readMatrixBlockFromLocal(fname);
 							for( int i=0; i<buffer.getNumRows(); i++ )
 								for( int j=0; j<buffer.getNumColumns(); j++ )
@@ -546,6 +569,111 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			return len;
 		}
 
+		/**
+		 * 
+		 * @param stagingDir
+		 * @param rlen
+		 * @param clen
+		 * @param brlen
+		 * @param bclen
+		 * @param ii
+		 * @return
+		 * @throws FileNotFoundException
+		 * @throws IOException
+		 * @throws DMLRuntimeException
+		 */
+		private long createKeyMappingDiag( String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii) 
+			throws FileNotFoundException, IOException, DMLRuntimeException 
+		{
+			String metaOut = stagingDir+"/meta";
+			
+			long len = 0;
+			long lastKey = 0;
+			
+			if(_margin.equals("rows"))
+			{
+				for(int blockRow = 0; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
+				{	
+					boolean[] flags = new boolean[brlen];
+					for( int k=0; k<brlen; k++ )
+						flags[k] = true;
+					
+					//scan for empty rows
+					String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockRow+1);
+					if( ii == InputInfo.BinaryBlockInputInfo ){
+						if( !LocalFileUtils.isExisting(fname) )
+							continue;
+						MatrixBlock buffer = LocalFileUtils.readMatrixBlockFromLocal(fname);
+						for( int i=0; i<buffer.getNumRows(); i++ )
+							for( int j=0; j<buffer.getNumColumns(); j++ )
+							{
+								double lvalue = buffer.quickGetValue(i, j);
+								if( lvalue != 0 )
+									flags[ i ] = false;
+							}
+					}
+					else{
+						LinkedList<Cell> buffer = StagingFileUtils.readCellListFromLocal(fname);
+						for( Cell c : buffer )
+							flags[ (int)c.getRow()-blockRow*brlen-1 ] = false;
+					}
+					 
+			
+					//create and append key mapping
+					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					for( int i = 0; i<flags.length; i++ )
+						if( !flags[i] )
+							keyMapping.add(new long[]{blockRow*brlen+i, lastKey++});
+					len += keyMapping.size();
+					StagingFileUtils.writeKeyMappingToLocal(metaOut, keyMapping.toArray(new long[0][0]));
+				}
+			}
+			else
+			{
+				for(int blockCol = 0; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
+				{	
+					boolean[] flags = new boolean[bclen];
+					for( int k=0; k<bclen; k++ )
+						flags[k] = true;
+					
+					//scan for empty rows
+					String fname = stagingDir+"/"+(blockCol+1)+"_"+(blockCol+1);
+					if( ii == InputInfo.BinaryBlockInputInfo ){
+						if( !LocalFileUtils.isExisting(fname) )
+							continue;
+						MatrixBlock buffer = LocalFileUtils.readMatrixBlockFromLocal(fname);
+						for( int i=0; i<buffer.getNumRows(); i++ )
+							for( int j=0; j<buffer.getNumColumns(); j++ )
+							{
+								double lvalue = buffer.quickGetValue(i, j);
+								if( lvalue != 0 )
+									flags[ j ] = false;
+							}
+					}
+					else{
+						LinkedList<Cell> buffer = StagingFileUtils.readCellListFromLocal(fname);
+						for( Cell c : buffer )
+							flags[ (int)c.getCol()-blockCol*bclen-1 ] = false;
+					}
+					 
+			
+					//create and append key mapping
+					LinkedList<long[]> keyMapping = new LinkedList<long[]>();
+					for( int i = 0; i<flags.length; i++ )
+						if( !flags[i] )
+							keyMapping.add(new long[]{blockCol*bclen+i, lastKey++});
+					len += keyMapping.size();
+					StagingFileUtils.writeKeyMappingToLocal(metaOut, keyMapping.toArray(new long[0][0]));
+				}
+			}
+			
+			//final validation (matrices with dimensions 0x0 not allowed)
+			if( len <= 0 )
+				throw new DMLRuntimeException("Matrices with dimensions [0,0] not supported.");
+			
+			return len;
+		}
+		
 		/**
 		 * 
 		 * @param fnameNew
@@ -699,39 +827,49 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
+						int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
 						
 						int blockRowOut = 0;
 						int currentSize = -1;
 						while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, brlen, brlen)) > 0  )
 						{
 							int maxRow = currentSize;
-							int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
-				
+							
 							//get reuse matrix block
 							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
 							
 							int rowPos = 0;
 							int blockRow = Collections.min(keyMap.keySet());
+							
 							for( ; blockRow < (int)Math.ceil(rlen/(double)brlen) && rowPos<brlen ; blockRow++)
 							{
 								if( keyMap.containsKey(blockRow) )
 								{
 									String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
-									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
 									
-									HashMap<Long,Long> lkeyMap = keyMap.get(blockRow);
-									long row_offset = blockRow*brlen;
-									for( int i=0; i<tmp.getNumRows(); i++ )
-										if( lkeyMap.containsKey(row_offset+i) ) {	
-											//copy row
-											for( int j=0; j<tmp.getNumColumns(); j++ ) {
-												double lvalue = tmp.quickGetValue(i, j);
-												if( lvalue != 0 )
-													block.quickSetValue(rowPos, j, lvalue);
+									if( LocalFileUtils.isExisting(fname) ) 
+									{	
+										MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
+										
+										HashMap<Long,Long> lkeyMap = keyMap.get(blockRow);
+										long row_offset = blockRow*brlen;
+										for( int i=0; i<tmp.getNumRows(); i++ )
+											if( lkeyMap.containsKey(row_offset+i) ) {	
+												//copy row
+												for( int j=0; j<tmp.getNumColumns(); j++ ) {
+													double lvalue = tmp.quickGetValue(i, j);
+													if( lvalue != 0 )
+														block.quickSetValue(rowPos, j, lvalue);
+												}
+												rowPos++;
 											}
-											rowPos++;
-										}
+									}
+									else
+									{
+										HashMap<Long,Long> lkeyMap = keyMap.get(blockRow);
+										rowPos+=lkeyMap.size();
+									}
 								}				
 								keyMap.remove(blockRow);
 							}
@@ -753,14 +891,14 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 					{
 						HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
 						BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
+						int maxRow = (int)((blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen);
 						
 						int blockColOut = 0;
 						int currentSize = -1;
 						while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, bclen, bclen)) > 0  )
 						{
 							int maxCol = currentSize;
-							int maxRow = (int)((blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen);
-				
+							
 							//get reuse matrix block
 							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 							block.reset(maxRow, maxCol);
@@ -772,20 +910,29 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 								if( keyMap.containsKey(blockCol) )
 								{
 									String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
-									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
 									
-									HashMap<Long,Long> lkeyMap = keyMap.get(blockCol);
-									long col_offset = blockCol*bclen;
-									for( int j=0; j<tmp.getNumColumns(); j++ )
-										if( lkeyMap.containsKey(col_offset+j) ) {	
-											//copy column
-											for( int i=0; i<tmp.getNumRows(); i++ ){
-												double lvalue = tmp.quickGetValue(i, j);
-												if( lvalue != 0 )
-													block.quickSetValue(i, colPos, lvalue);
+									if( LocalFileUtils.isExisting(fname) ) 
+									{
+										MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
+										
+										HashMap<Long,Long> lkeyMap = keyMap.get(blockCol);
+										long col_offset = blockCol*bclen;
+										for( int j=0; j<tmp.getNumColumns(); j++ )
+											if( lkeyMap.containsKey(col_offset+j) ) {	
+												//copy column
+												for( int i=0; i<tmp.getNumRows(); i++ ){
+													double lvalue = tmp.quickGetValue(i, j);
+													if( lvalue != 0 )
+														block.quickSetValue(i, colPos, lvalue);
+												}
+												colPos++;
 											}
-											colPos++;
-										}
+									}
+									else
+									{
+										HashMap<Long,Long> lkeyMap = keyMap.get(blockCol);
+										colPos+=lkeyMap.size();
+									}
 								}							
 								keyMap.remove(blockCol);
 							}
@@ -801,6 +948,182 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				}
 				
 				//Note: no handling of empty matrices necessary
+			}
+			finally
+			{
+				if( writer != null )
+					writer.close();
+			}
+		}
+		
+		/**
+		 * 
+		 * @param fnameNew
+		 * @param stagingDir
+		 * @param rlen
+		 * @param clen
+		 * @param newlen
+		 * @param nnz
+		 * @param brlen
+		 * @param bclen
+		 * @param ii
+		 * @throws IOException
+		 * @throws DMLRuntimeException
+		 */
+		public void createBlockResultFileDiag( String fnameNew, String stagingDir, long rlen, long clen, long newlen, long nnz, int brlen, int bclen, InputInfo ii ) 
+			throws IOException, DMLRuntimeException
+		{
+			//prepare input
+			JobConf job = new JobConf();	
+			Path path = new Path(fnameNew);
+			FileSystem fs = FileSystem.get(job);
+			String metaOut = stagingDir+"/meta";
+	
+			//prepare output
+			SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
+			MatrixIndexes key = new MatrixIndexes(); 
+			HashSet<Long> writtenBlocks = new HashSet<Long>();
+			
+			try
+			{
+				if( _margin.equals("rows") ) 
+				{
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(newlen, clen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
+					int currentSize = -1;
+					int blockRowOut = 0;
+					
+					while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, brlen, brlen)) > 0  )
+					{
+						int rowPos = 0;
+						int blockRow = Collections.min(keyMap.keySet()); 
+						int maxRow = currentSize;
+						for( ; blockRow < (int)Math.ceil(rlen/(double)brlen); blockRow++)
+						{
+							int blockCol = blockRow; // for diag known to be equivalent
+							int maxCol = (int)((blockCol*bclen + bclen < clen) ? bclen : clen - blockCol*bclen);
+							
+							//get reuse matrix block
+							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							block.reset(maxRow, maxCol);
+							
+							if( keyMap.containsKey(blockRow) )
+							{
+								String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
+								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
+								
+								HashMap<Long,Long> lkeyMap = keyMap.get(blockRow);
+								long row_offset = blockRow*brlen;
+								for( int i=0; i<tmp.getNumRows(); i++ )
+									if( lkeyMap.containsKey(row_offset+i) ) {	
+										//copy row
+										for( int j=0; j<tmp.getNumColumns(); j++ ) {
+											double lvalue = tmp.quickGetValue(i, j);
+											if( lvalue != 0 )
+												block.quickSetValue(rowPos, j, lvalue);
+										}
+										rowPos++;
+									}
+							}
+							
+							//output current block (by def of diagBlocks, no additional rows)
+							key.setIndexes(blockRowOut+1, blockCol+1);
+							writer.append(key, block);
+							writtenBlocks.add(IDHandler.concatIntIDsToLong(blockRowOut+1, blockCol+1));
+							
+							//finished block
+							if( rowPos == maxRow )
+							{
+								keyMap.remove(blockRow); 	
+								blockRowOut++;
+								break;
+							}
+						}
+					}
+					if( fkeyMap != null )
+						StagingFileUtils.closeKeyMap(fkeyMap);
+					
+				}
+				else //cols
+				{
+					MatrixBlock[] blocks = DataConverter.createMatrixBlocksForReuse(rlen, newlen, brlen, bclen, (nnz/(rlen*clen)<MatrixBlockDSM.SPARCITY_TURN_POINT), nnz);  
+					HashMap<Integer,HashMap<Long,Long>> keyMap = new HashMap<Integer, HashMap<Long,Long>>();
+					BufferedReader fkeyMap = StagingFileUtils.openKeyMap(metaOut);
+					int currentSize = -1;
+					int blockColOut = 0;
+					
+					while( (currentSize = StagingFileUtils.nextSizedKeyMap(fkeyMap, keyMap, bclen, bclen)) > 0  )
+					{
+						int colPos = 0;
+						int blockCol = Collections.min(keyMap.keySet()); 
+						int maxCol = currentSize;
+						for( ; blockCol < (int)Math.ceil(clen/(double)bclen); blockCol++)
+						{
+							int blockRow = blockCol; // for diag known to be equivalent
+							int maxRow = (int)((blockRow*brlen + brlen < rlen) ? brlen : rlen - blockRow*brlen);
+							
+							//get reuse matrix block
+							MatrixBlock block = DataConverter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							block.reset(maxRow, maxCol);
+						
+							if( keyMap.containsKey(blockCol) )
+							{
+								String fname = stagingDir+"/"+(blockRow+1)+"_"+(blockCol+1);
+								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(fname);
+								
+								HashMap<Long,Long> lkeyMap = keyMap.get(blockCol);
+								long col_offset = blockCol*bclen;
+								for( int j=0; j<tmp.getNumColumns(); j++ )
+									if( lkeyMap.containsKey(col_offset+j) ) {	
+										//copy column
+										for( int i=0; i<tmp.getNumRows(); i++ ){
+											double lvalue = tmp.quickGetValue(i, j);
+											if( lvalue != 0 )
+												block.quickSetValue(i, colPos, lvalue);
+										}
+										colPos++;
+									}
+							}
+								
+							//output current block (by def of diagBlocks, no additional cols)
+							key.setIndexes(blockRow+1, blockColOut+1);
+							writer.append(key, block);
+							writtenBlocks.add(IDHandler.concatIntIDsToLong(blockRow+1, blockColOut+1));
+							
+							//finished block
+							if( colPos == maxCol )
+							{
+								keyMap.remove(blockCol); 	
+								blockColOut++;
+								break;
+							}
+						}
+					}
+					if( fkeyMap != null )
+						StagingFileUtils.closeKeyMap(fkeyMap);
+				}
+				
+				//write remaining empty blocks
+				MatrixBlock empty = new MatrixBlock(1,1,true);
+				long rows = _margin.equals("rows") ? newlen : rlen;
+				long cols = _margin.equals("cols") ? newlen : clen;
+				int countBlk1 = (int)Math.ceil(rows/(double)brlen)*(int)Math.ceil(cols/(double)bclen);
+				int countBlk2 = writtenBlocks.size();
+				for( int i=0; i<(int)Math.ceil(rows/(double)brlen); i++)
+					for(int j=0; j<(int)Math.ceil(cols/(double)bclen); j++ )
+						if( !writtenBlocks.contains(IDHandler.concatIntIDsToLong(i+1, j+1)) )
+						{
+							int maxRow = (int)((i*brlen + brlen < rows) ? brlen : rows - i*brlen);
+							int maxCol = (int)((j*bclen + bclen < cols) ? bclen : cols - j*bclen);
+							empty.reset(maxRow, maxCol);
+							key.setIndexes(i+1, j+1);
+							writer.append(key, empty);
+							countBlk2++;
+						}
+				
+				if( countBlk1 != countBlk2 )
+					throw new DMLRuntimeException("Wrong number of written result blocks: "+countBlk1+" vs "+countBlk2+".");
 			}
 			finally
 			{

@@ -29,11 +29,12 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME = "UltraSparseMatrixMultiplication";
+	private final static String TEST_NAME1 = "UltraSparseMatrixMultiplication";
+	private final static String TEST_NAME2 = "UltraSparseMatrixMultiplication2";
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 4045;
+	private final static int rows = 4045; 
 	private final static int cols = 23;
 	
 	private final static double sparsity1 = 0.7;
@@ -44,23 +45,39 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
+				TEST_NAME1, 
+				new TestConfiguration(TEST_DIR, TEST_NAME1, 
+				new String[] { "C" })   ); 
+		addTestConfiguration(
+				TEST_NAME2, 
+				new TestConfiguration(TEST_DIR, TEST_NAME2, 
 				new String[] { "C" })   ); 
 	}
 
 
 	
 	@Test
-	public void testMMDenseMR() 
+	public void testMMRowDenseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR);
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true);
 	}
 	
 	@Test
-	public void testMMSparseMR() 
+	public void testMMRowSparseMR() 
 	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR);
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true);
+	}
+	
+	@Test
+	public void testMMColDenseMR() 
+	{
+		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, false);
+	}
+	
+	@Test
+	public void testMMColSparseMR() 
+	{
+		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, false);
 	}
 	
 	
@@ -71,7 +88,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType)
+	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean rowwise)
 	{
 		//setup exec type, rows, cols
 
@@ -81,6 +98,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	
 		try
 		{
+			String TEST_NAME = (rowwise) ? TEST_NAME1 : TEST_NAME2;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */

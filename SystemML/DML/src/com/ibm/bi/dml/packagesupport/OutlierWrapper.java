@@ -13,7 +13,7 @@ import java.io.DataOutputStream;
 import org.nimble.algorithms.outlier.OutlierTask;
 import org.nimble.hadoop.HDFSFileManager;
 import org.nimble.io.utils.FixedWidthDataset;
-import org.nimble.test.algorithms.MatrixUtils;
+import org.nimble.utils.MatrixUtils;
 import org.nimble.utils.MatrixtoFixedWidth;
 
 import com.ibm.bi.dml.packagesupport.Matrix.ValueType;

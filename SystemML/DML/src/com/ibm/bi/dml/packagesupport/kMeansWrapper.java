@@ -9,12 +9,12 @@ package com.ibm.bi.dml.packagesupport;
 
 import java.io.DataOutputStream;
 
-import org.nimble.algorithms.kmeans.SparseKMeansTask;
+import org.nimble.algorithms.sparsekmeans.SparseKMeansTask;
 import org.nimble.hadoop.HDFSFileManager;
 import org.nimble.io.utils.FixedWidthDataset;
 import org.nimble.io.utils.ObjectDataset;
-import org.nimble.utils.MatrixtoSparseBlockMatrix;
-import org.nimble.utils.SparseHashMatrix;
+import org.nimble.algorithms.sparsekmeans.MatrixtoSparseBlockMatrix;
+import org.nimble.algorithms.sparsekmeans.SparseHashMatrix;
 
 import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
 

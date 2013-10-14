@@ -19,7 +19,7 @@ import org.nimble.algorithms.sequencemining.SequenceMinerTask;
 import org.nimble.hadoop.HDFSFileManager;
 import org.nimble.io.utils.FixedWidthDataset;
 import org.nimble.io.utils.LongComparableSerializable;
-import org.nimble.utils.MatrixToSequenceConv;
+import org.nimble.algorithms.sequencemining.MatrixToSequenceConv;
 
 import com.ibm.bi.dml.packagesupport.Matrix.ValueType;
 

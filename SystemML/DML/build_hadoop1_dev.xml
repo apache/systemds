@@ -40,7 +40,7 @@ The source code for this program is not published or otherwise divested of its t
 		
 	<path id="OWN.classpath">
 		<pathelement location="${build.ownlib}/hadoop-core-1.1.1.jar" />    			  <!-- This needs to be replaced by source codes -->   
-		<pathelement location="${build.ownlib}/nimble.jar" />    			  <!-- This needs to be replaced by source codes -->   
+		<pathelement location="${build.ownlib}/nimble_hadoop1.jar" />    			  <!-- This needs to be replaced by source codes -->   
 		<pathelement location="${build.ownlib}/grappa_vis.jar" />             <!-- for visualizing HOP/LOP DAGs. SHOULD NOT BE SHIPPED. -->
 		<pathelement location="${build.ownlib}/lapack.jar" />
 		<pathelement location="${build.ownlib}/lapack_simple.jar" />    <!-- for eigen value decomposition -->
@@ -160,7 +160,7 @@ The source code for this program is not published or otherwise divested of its t
 	<target depends="build" name="jar">
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
 			<fileset dir="${build.ownlib}">
-				<include name="nimble.jar" />
+				<include name="nimble_hadoop1.jar" />
 				<include name="lapack_simple.jar" />
 				<include name="lapack.jar" />
 				<include name="netlib-java-0.9.2.jar" />
@@ -180,7 +180,7 @@ The source code for this program is not published or otherwise divested of its t
 		</copy>
 		<jar jarfile="${build.folder}/${build.jarnamerun}" basedir="${build.folder}">
 			<exclude name="com/ibm/bi/dml/test/**" />
-			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble.jar"/>
+			<zipfileset includes="**/*.class" src="${build.ownlib}/nimble_hadoop1.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/JSON4J.jar"/>
 			<zipfileset includes="**/*.class" src="${build.sharedlib}/commons-math-2.2.jar"/> 
 			<!-- TZ: IHC 1.0.3 has commons-math-2.2.jar already, but Cloudera does not have it yet, so we need to include it for now. -->
@@ -248,7 +248,7 @@ The source code for this program is not published or otherwise divested of its t
 	<target name="junitjar">
 		<copy includeemptydirs="false" todir="${build.folder}/lib">
 			<fileset dir="${build.ownlib}">
-				<include name="nimble.jar" />
+				<include name="nimble_hadoop1.jar" />
 				<include name="lapack_simple.jar" />
 				<include name="lapack.jar" />
 				<include name="netlib-java-0.9.2.jar" />

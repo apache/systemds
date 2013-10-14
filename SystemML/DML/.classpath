@@ -4,8 +4,8 @@
 	<classpathentry excluding="scripts/" kind="src" path="test"/>
 	<classpathentry excluding="com/ibm/bi/dml/test/integration/functions/external/EigenTest.java" kind="src" path="test_integration"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/nimble.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/grappa_vis.jar"/>
 	<classpathentry kind="lib" path="lib/f2jutil.jar"/>
 	<classpathentry kind="lib" path="lib/metaTracker.jar"/>
 	<classpathentry kind="lib" path="lib/netlib-java-0.9.2.jar"/>
@@ -29,8 +29,8 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/slf4j-api-1.6.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/guava-11.0.2.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/commons-math-2.2.jar"/>
-	<classpathentry kind="lib" path="lib/grappa_vis.jar"/>
-	<classpathentry kind="lib" path="lib/hadoop-core-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/avro-1.7.4.jar"/>
+	<classpathentry kind="lib" path="lib/nimble_hadoop1.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-core-1.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

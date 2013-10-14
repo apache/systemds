@@ -308,7 +308,10 @@ public class ReorgOp extends Hop
 			{
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
-				long k = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
+				
+				//the following approach leads to problems if dim1 unknown, but dim2 known to be 1
+				//long k = (mc.get_rows() > 1 ? mc.get_rows() : mc.get_cols()); 
+				long k = mc.get_rows(); 
 				if( k > 0 )
 					ret = new long[]{k, k, ((mc.getNonZeros()>0) ? mc.getNonZeros() : k)};
 				break;
@@ -392,7 +395,10 @@ public class ReorgOp extends Hop
 			{
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
-				long k = (input1.get_dim1() > 1 ? input1.get_dim1() : input1.get_dim2()); 
+				
+				//the following approach leads to problems if dim1 unknown, but dim2 known to be 1
+				//long k = (input1.get_dim1() > 1 ? input1.get_dim1() : input1.get_dim2()); 
+				long k = input1.get_dim1(); 
 				set_dim1(k);
 				set_dim2(k);
 				setNnz( (input1.getNnz()>0) ? input1.getNnz() : k );

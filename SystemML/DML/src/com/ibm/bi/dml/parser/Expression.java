@@ -80,7 +80,7 @@ public abstract class Expression
 	};
 
 	public enum FormatType {
-		TEXT, BINARY, MM, DELIMITED, UNKNOWN
+		TEXT, BINARY, MM, CSV, UNKNOWN
 	};
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 

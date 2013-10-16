@@ -226,8 +226,12 @@ public class IfProgramBlock extends ProgramBlock
 						
 				
 					}
-				}	
+				}
+				else {
+					result = (BooleanObject)scalarResult;
+				}
 			}
+			
 		}
 		catch(Exception ex)
 		{

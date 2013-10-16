@@ -388,7 +388,8 @@ public class DataOp extends Hop
 			}
 			String i = _fileName;
 			if(input != null && _fileName != null)
-				i = input.get_sqllops().get_tableName() + "->" + i;
+				i = (input.get_sqllops() != null) ? input.get_sqllops().get_tableName() + "->" + i : "->" + i;
+				//i = input.get_sqllops().get_tableName() + "->" + i;
 			else
 				i = "";
 			sqllop.set_properties(getProperties(i));

@@ -84,6 +84,7 @@ public class DMLScript
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
 	private String _dmlScriptString;
+	private String _dmlScriptName = "";
 	// stores name of the OPTIONAL config file
 	private String _optConfig;
 	// stores optional args to parameterize DML script 
@@ -246,6 +247,7 @@ public class DMLScript
 		}
 	
 		executeHadoop(dmlt, prog, defaultConfig);
+		//executeNetezza(dmlt, prog, defaultConfig, (_dmlScriptName.equalsIgnoreCase("") ? "TEST" : _dmlScriptName));
 	}
 	
 	
@@ -300,7 +302,7 @@ public class DMLScript
 		
 		//Process the script path, get the content of the script
 		StringBuilder dmlScriptString = new StringBuilder();
-		
+		_dmlScriptName = scriptPathName;
 		if (scriptPathName == null){
 			throw new LanguageException("DML script path was not provided by the user");
 		}

@@ -19,6 +19,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.json.java.JSONObject;
 
@@ -274,6 +276,9 @@ public class DataExpression extends Expression
 			
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = true;
+			
+			if ( DMLScript.rtplatform == RUNTIME_PLATFORM.NZ)
+				shouldReadMTD = false;
 			
 			// track whether format type has been inferred 
 			boolean inferredFormatType = false;
@@ -571,9 +576,11 @@ public class DataExpression extends Expression
 						else {
 							// if the InputStatement does not specify parameter value, then add MTD metadata file value to parameter list
 							if (getVarParam(key.toString()) == null){
-								StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
-								strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-								addVarParam(key.toString(), strId);
+								if ( !key.toString().equalsIgnoreCase(Statement.DESCRIPTIONPARAM) ) {
+									StringIdentifier strId = new StringIdentifier(configObject.get(key).toString());
+									strId.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+									addVarParam(key.toString(), strId);
+								}
 							}
 						}
 					}

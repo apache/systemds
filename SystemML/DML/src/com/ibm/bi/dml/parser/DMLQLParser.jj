@@ -603,7 +603,9 @@ FunctionStatement FunctionStatement() :
 	
 	{
 		fstmt._inputParams = functionInputs ;
-		fstmt._outputParams = functionOutputs ;
+		if (functionOutputs != null){
+			fstmt._outputParams = functionOutputs ;
+		}
 		fstmt.setName(t.image);
 
 		// track position for start / end token tStart
@@ -628,13 +630,14 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 }
 {
 	t = <ID> <ASSIGN> <EXTERNALFUNCTION> functionInputs = ReadTypedArgList()
-	<RETURN> functionOutputs = ReadTypedArgList()
+	(<RETURN> functionOutputs = ReadTypedArgList())?
 	tEnd = <IMPLEMENTED_IN> map = ReadGenericParamList()[ tEnd = <SEMICOLON>]
  
 	{
 		fstmt.setOtherParams(map);
 		fstmt._inputParams = functionInputs ;
-		fstmt._outputParams = functionOutputs ;
+		if (functionOutputs != null) {			fstmt._outputParams = functionOutputs ;
+		}
 		fstmt.setName(t.image);
 
 		// track position for start / end token tStart
@@ -1037,7 +1040,7 @@ IfStatement IfStatement() :
   		{
     		is.mergeStatementBlocksElseBody();
   		}
- 	)?
+ 	)? [<SEMICOLON>]
  	{
 		// track position for statement
 		blp = tStart.beginLine;
@@ -1128,7 +1131,7 @@ ForStatement ForStatement() :
 			fs.addStatementBlock(sb);
 		}
 	)*
-   	tEnd = <RIGHTCURLYPAREN>
+   	tEnd = <RIGHTCURLYPAREN> [<SEMICOLON>]
    
  	{
 		fs.mergeStatementBlocks();

@@ -190,7 +190,10 @@ public class FunctionCallIdentifier extends DataIdentifier
 	@Override
 	public DataIdentifier getOutput() {
 			
-		if (_outputs.size() == 0){
+		if (_outputs.size() == 0)
+			return null;
+		/*
+		 {
 			try{
 				LOG.error(this.printErrorLocation() + "function " + this._name + " must return a value");
 				throw new LanguageException(this.printErrorLocation() + "function " + this._name + " must return a value");
@@ -200,6 +203,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 			}
 			return null;
 		}
+		*/
 		else
 			return _outputs.get(0);
 	}

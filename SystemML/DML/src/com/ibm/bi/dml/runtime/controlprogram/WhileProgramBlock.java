@@ -17,6 +17,10 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstruction;
@@ -108,9 +112,51 @@ public class WhileProgramBlock extends ProgramBlock
 				else
 					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
-			else
-				result = (BooleanObject)ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
+			else {
+				
+				ScalarObject scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
+				
+				if (scalarResult instanceof StringObject){
+					// throw runtime exception -- variable evaluated to string
+					result = null;
+					LOG.trace(this.printBlockErrorLocation() + "\nWhile predicate variable "+ _predicateResultVar + " evaluated to string " + scalarResult + " which is not allowed for predicates in DML");
+					throw new DMLRuntimeException(this.printBlockErrorLocation() + "\nWhile predicate variable "+ _predicateResultVar + " evaluated to string " + scalarResult + " which is not allowed for predicates in DML");
+				}	
+				else if (scalarResult instanceof IntObject){
+					// throw runtime exception -- variable evaluated to string
+					if (((IntObject)scalarResult).getIntValue() == 0){
+						result =  new BooleanObject(false);
+					}
+					else if (((IntObject)scalarResult).getIntValue() == 1){
+						result =  new BooleanObject(true);
+					} 
+					else {
+						result = new BooleanObject(true);
+						LOG.warn(this.printWarningLocation() + "\nWhile predicate variable "+ _predicateResultVar + " evaluated to integer " + scalarResult + " which is converted in DML to logical true");
+						//throw new DMLRuntimeException(this.printBlockErrorLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to integer " + scalarResult + " which is not allowed for predicates in DML");
+				
+					}
+				}
+				else if (scalarResult instanceof DoubleObject){
+					// throw runtime exception -- variable evaluated to string
+					if (((DoubleObject)scalarResult).getIntValue() == 0){
+						result =  new BooleanObject(false);
+					}
+					else if (((DoubleObject)scalarResult).getIntValue() == 1){
+						result =  new BooleanObject(true);
+					} 
+					else {
+						result = new BooleanObject(true);
+						LOG.warn(this.printWarningLocation() + "\nWhile predicate variable "+ _predicateResultVar + " evaluated to double " + scalarResult + " which is converted in DML to logical true");
+						
+				
+					}
+				}	
+			}
 		}
+		
+		
+		
 		catch(Exception ex)
 		{
 			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());

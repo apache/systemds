@@ -23,6 +23,9 @@ public class ConditionalPredicate
 	public Expression getPredicate(){
 		return _expr;
 	}
+	public void setPredicate(Expression expr){
+		_expr = expr;
+	}
 	
 	public String toString(){
 		return _expr.toString();

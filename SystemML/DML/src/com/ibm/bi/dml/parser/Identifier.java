@@ -55,6 +55,10 @@ public abstract class Identifier extends Expression
 	}
 	
 	public void setProperties(Identifier i){		
+		
+		if (i == null) 
+			return;
+		
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();
 		if (i instanceof IndexedIdentifier){

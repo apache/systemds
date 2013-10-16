@@ -2238,6 +2238,29 @@ public class DMLTranslator
 		} else if (predicate instanceof DataIdentifier) {
 			// handle data identifier predicate
 			predicateHops = processExpression(cp.getPredicate(), null, _ids);
+		} else if (predicate instanceof ConstIdentifier) {
+			// handle constant identifier
+			//  a) translate 0 --> FALSE; translate 1 --> TRUE
+			//	b) disallow string values
+			if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 0) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 0.0)) {
+				cp.setPredicate(new BooleanIdentifier(false));
+				
+			}
+			else if ( (predicate instanceof IntIdentifier && ((IntIdentifier)predicate).getValue() == 1) || (predicate instanceof DoubleIdentifier && ((DoubleIdentifier)predicate).getValue() == 1.0)) {
+				cp.setPredicate(new BooleanIdentifier(true));
+			}
+			else if (predicate instanceof IntIdentifier || predicate instanceof DoubleIdentifier){
+				cp.setPredicate(new BooleanIdentifier(true));
+				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
+				throw new ParseException(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
+
+			}
+			else if (predicate instanceof StringIdentifier) {
+				LOG.error(predicate.printErrorLocation() + "String value '" + predicate.toString() + "' is not allowed for iterable predicate");
+				throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString() + "' is not allowed for iterable predicate");
+
+			}
+			predicateHops = processExpression(cp.getPredicate(), null, _ids);
 		}
 		if (passedSB instanceof WhileStatementBlock)
 			((WhileStatementBlock)passedSB).set_predicate_hops(predicateHops);

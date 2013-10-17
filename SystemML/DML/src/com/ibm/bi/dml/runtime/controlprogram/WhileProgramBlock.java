@@ -116,7 +116,11 @@ public class WhileProgramBlock extends ProgramBlock
 				
 				ScalarObject scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
 				
-				if (scalarResult instanceof StringObject){
+				if( scalarResult instanceof BooleanObject ){
+					//default case
+					result = (BooleanObject) scalarResult;
+				}
+				else if (scalarResult instanceof StringObject){
 					// throw runtime exception -- variable evaluated to string
 					result = null;
 					LOG.trace(this.printBlockErrorLocation() + "\nWhile predicate variable "+ _predicateResultVar + " evaluated to string " + scalarResult + " which is not allowed for predicates in DML");
@@ -154,9 +158,6 @@ public class WhileProgramBlock extends ProgramBlock
 				}	
 			}
 		}
-		
-		
-		
 		catch(Exception ex)
 		{
 			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());

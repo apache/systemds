@@ -228,6 +228,7 @@ public class ProgramConverter
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
+		tmpPB.setPredicateResultVar( wpb.getPredicateResultVar() );
 		tmpPB.setStatementBlock( wpb.getStatementBlock() );
 		tmpPB.setThreadID(pid);
 		
@@ -252,6 +253,7 @@ public class ProgramConverter
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
+		tmpPB.setPredicateResultVar( ipb.getPredicateResultVar() );
 		tmpPB.setStatementBlock( ipb.getStatementBlock() );
 		tmpPB.setThreadID(pid);
 		
@@ -1155,6 +1157,8 @@ public class ProgramConverter
 			sb.append( serializeInstructions( wpb.getPredicate() ) );
 			sb.append( PARFOR_INST_END );
 			sb.append( COMPONENTS_DELIM );
+			sb.append( wpb.getPredicateResultVar() );
+			sb.append( COMPONENTS_DELIM );
 			sb.append( PARFOR_INST_BEGIN );
 			sb.append( serializeInstructions( wpb.getExitInstructions() ) );
 			sb.append( PARFOR_INST_END );
@@ -1228,6 +1232,8 @@ public class ProgramConverter
 			sb.append( PARFOR_INST_BEGIN );
 			sb.append( serializeInstructions( ipb.getPredicate() ) );
 			sb.append( PARFOR_INST_END );	
+			sb.append( COMPONENTS_DELIM );
+			sb.append( ipb.getPredicateResultVar() );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( PARFOR_INST_BEGIN );
 			sb.append( serializeInstructions( ipb.getExitInstructions() ) );
@@ -1396,8 +1402,19 @@ public class ProgramConverter
 	public static LocalVariableMap parseVariables(String in) 
 		throws DMLRuntimeException
 	{
-		String varStr = in.substring( PARFOR_VARS_BEGIN.length(),in.length()-PARFOR_VARS_END.length()).trim(); 
-		return LocalVariableMap.deserialize(varStr);
+		LocalVariableMap ret = null;
+		
+		if( in.length()> PARFOR_VARS_BEGIN.length() + PARFOR_VARS_END.length())
+		{
+			String varStr = in.substring( PARFOR_VARS_BEGIN.length(),in.length()-PARFOR_VARS_END.length()).trim(); 
+			ret = LocalVariableMap.deserialize(varStr);
+		}
+		else //empty input symbol table
+		{
+			ret = new LocalVariableMap();
+		}
+
+		return ret;
 	}
 	
 	/**
@@ -1513,6 +1530,7 @@ public class ProgramConverter
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		String var = st.nextToken();
 		
 		//exit instructions
 		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
@@ -1521,6 +1539,7 @@ public class ProgramConverter
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 		
 		WhileProgramBlock wpb = new WhileProgramBlock(prog,inst);
+		wpb.setPredicateResultVar(var);
 		wpb.setExitInstructions2(exit);
 		wpb.setChildBlocks(pbs);
 		//wpb.setVariables(vars);
@@ -1636,6 +1655,7 @@ public class ProgramConverter
 		
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		String var = st.nextToken();
 		
 		//exit instructions
 		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
@@ -1645,6 +1665,7 @@ public class ProgramConverter
 		ArrayList<ProgramBlock> pbs2 = rParseProgramBlocks(st.nextToken(), prog, id);
 		
 		IfProgramBlock ipb = new IfProgramBlock(prog,inst);
+		ipb.setPredicateResultVar(var);
 		ipb.setExitInstructions2(exit);
 		ipb.setChildBlocksIfBody(pbs1);
 		ipb.setChildBlocksElseBody(pbs2);

@@ -78,354 +78,33 @@ public class TertiaryOp extends Hop
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
 	}
-
+	
 	public Lop constructLops() throws HopsException {
 
 		if (get_lops() == null) {
 			try {
-			if (op == OpOp3.CENTRALMOMENT) {
-				ExecType et = optFindExecType();
-				if ( et == ExecType.MR ) {
-					CombineBinary combine = CombineBinary.constructCombineLop(
-							OperationTypes.PreCentralMoment, 
-							getInput().get(0).constructLops(), 
-							getInput().get(1).constructLops(), 
-							DataType.MATRIX, get_valueType());
-					combine.getOutputParameters().setDimensions(
-							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_in_block(),
-							getInput().get(0).get_cols_in_block(), 
-							getInput().get(0).getNnz());
+				switch(op) {
+				case CENTRALMOMENT:
+					handleCentralMoment();
+					break;
 					
-					CentralMoment cm = new CentralMoment(combine, getInput()
-							.get(2).constructLops(), DataType.MATRIX,
-							get_valueType(), et);
-					cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
+				case COVARIANCE:
+					handleCovariance();
+					break;
 					
-					cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				case QUANTILE:
+				case INTERQUANTILE:
+					handleQuantile();
+					break;
 					
-					UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
-							.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
-							get_valueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
-				} else {
-					//System.out.println("CM Tertiary executing in CP...");
-					CentralMoment cm = new CentralMoment(
-							getInput().get(0).constructLops(),
-							getInput().get(1).constructLops(),
-							getInput().get(2).constructLops(),
-							get_dataType(), get_valueType(), et);
-					cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(cm);
-				}
+				case CTABLE:
+					handleCtable();
+					break;
+					
+					default:
+						throw new HopsException(this.printErrorLocation() + "Unknown TertiaryOp (" + op + ") while constructing Lops \n");
 
-			} else if (op == Hop.OpOp3.COVARIANCE) {
-				ExecType et = optFindExecType();
-				if ( et == ExecType.MR ) {
-					// combineTertiary -> CoVariance -> CastAsScalar
-					CombineTertiary combine = CombineTertiary
-							.constructCombineLop(
-									CombineTertiary.OperationTypes.PreCovWeighted,
-									getInput().get(0).constructLops(),
-									getInput().get(1).constructLops(),
-									getInput().get(2).constructLops(),
-									DataType.MATRIX, get_valueType());
-	
-					combine.getOutputParameters().setDimensions(
-							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_in_block(),
-							getInput().get(0).get_cols_in_block(), 
-							getInput().get(0).getNnz());
-	
-					CoVariance cov = new CoVariance(
-							combine, DataType.MATRIX, get_valueType(), et);
-	
-					cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-					
-					cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					UnaryCP unary1 = new UnaryCP(
-							cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-							get_dataType(), get_valueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(unary1);
 				}
-				else {
-					//System.out.println("COV Tertiary executing in CP...");
-					CoVariance cov = new CoVariance(
-							getInput().get(0).constructLops(), 
-							getInput().get(1).constructLops(), 
-							getInput().get(2).constructLops(), 
-							get_dataType(), get_valueType(), et);
-					cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					set_lops(cov);
-				}
-
-			} else if (op == OpOp3.QUANTILE || op == OpOp3.INTERQUANTILE) {
-				ExecType et = optFindExecType();
-				
-				if ( et == ExecType.MR ) {
-					CombineBinary combine = CombineBinary
-							.constructCombineLop(
-									OperationTypes.PreSort,
-									getInput().get(0).constructLops(),
-									getInput().get(1).constructLops(),
-									DataType.MATRIX, get_valueType());
-	
-					SortKeys sort = SortKeys
-							.constructSortByValueLop(
-									combine,
-									SortKeys.OperationTypes.WithWeights,
-									DataType.MATRIX, get_valueType(), et);
-	
-					// If only a single quantile is computed, then "pick" operation executes in CP.
-					ExecType et_pick = (getInput().get(2).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
-					PickByCount pick = new PickByCount(
-							sort,
-							getInput().get(2).constructLops(),
-							get_dataType(),
-							get_valueType(),
-							(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-									: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
-	
-					pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					combine.getOutputParameters().setDimensions(
-							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 
-							getInput().get(0).get_rows_in_block(), 
-							getInput().get(0).get_cols_in_block(),
-							getInput().get(0).getNnz());
-					sort.getOutputParameters().setDimensions(
-							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(), 
-							getInput().get(0).get_rows_in_block(), 
-							getInput().get(0).get_cols_in_block(),
-							getInput().get(0).getNnz());
-					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-	
-					set_lops(pick);
-				}
-				else {
-					SortKeys sort = SortKeys.constructSortByValueLop(
-							getInput().get(0).constructLops(), 
-							getInput().get(1).constructLops(), 
-							SortKeys.OperationTypes.WithWeights, 
-							getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
-					PickByCount pick = new PickByCount(
-							sort,
-							getInput().get(2).constructLops(),
-							get_dataType(),
-							get_valueType(),
-							(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-									: PickByCount.OperationTypes.RANGEPICK, et, true);
-					sort.getOutputParameters().setDimensions(
-							getInput().get(0).get_dim1(),
-							getInput().get(0).get_dim2(),
-							getInput().get(0).get_rows_in_block(), 
-							getInput().get(0).get_cols_in_block(),
-							getInput().get(0).getNnz());
-					pick.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-	
-					set_lops(pick);
-				}
-
-			} else if (op == OpOp3.CTABLE) {
-				/*
-				 * We must handle three different cases: case1 : all three
-				 * inputs are vectors (e.g., F=ctable(A,B,W)) case2 : two
-				 * vectors and one scalar (e.g., F=ctable(A,B)) case3 : one
-				 * vector and two scalars (e.g., F=ctable(A))
-				 */
-
-				// identify the particular case
-				
-				// F=ctable(A,B,W)
-				
-				DataType dt1 = getInput().get(0).get_dataType(); 
-				DataType dt2 = getInput().get(1).get_dataType(); 
-				DataType dt3 = getInput().get(2).get_dataType(); 
-				Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
-				
-				ExecType et = optFindExecType();
-				if ( et == ExecType.CP ) {
-					Tertiary tertiary = new Tertiary(
-							getInput().get(0).constructLops(), 
-							getInput().get(1).constructLops(), 
-							getInput().get(2).constructLops(),
-							tertiaryOp,
-							get_dataType(), get_valueType(), et);
-					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-					tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
-						|| et == ExecType.CP ) {
-						
-						if( et == ExecType.CP ){
-							//force blocked output in CP (see below)
-							tertiary.getOutputParameters().setDimensions(-1, -1, 1000, 1000, -1);
-						}
-						
-						//tertiary opt, w/o reblock in CP
-						set_lops(tertiary);
-					}
-					else {
-						ReBlock reblock = null;
-						try {
-							reblock = new ReBlock(
-									tertiary, get_rows_in_block(),
-									get_cols_in_block(), get_dataType(),
-									get_valueType());
-						} catch (Exception e) {
-							throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop " , e);
-						}
-						reblock.getOutputParameters().setDimensions(-1, -1,  
-								get_rows_in_block(), get_cols_in_block(), -1);
-						
-						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-						set_lops(reblock);
-					}
-				}
-				else {
-					Group group1, group2, group3, group4;
-					group1 = group2 = group3 = group4 = null;
-	
-					group1 = new Group(
-							getInput().get(0).constructLops(),
-							Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-					group1.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-					
-					group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					Tertiary tertiary = null;
-					// create "group" lops for MATRIX inputs
-					switch (tertiaryOp) {
-					case CTABLE_TRANSFORM:
-						// F = ctable(A,B,W)
-						group2 = new Group(
-								getInput().get(1).constructLops(),
-								Group.OperationTypes.Sort, get_dataType(),
-								get_valueType());
-						group2.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						group3 = new Group(
-								getInput().get(2).constructLops(),
-								Group.OperationTypes.Sort, get_dataType(),
-								get_valueType());
-						group3.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						
-						tertiary = new Tertiary(
-								group1, group2, group3,
-								tertiaryOp,
-								get_dataType(), get_valueType(), et);	
-						
-						break;
-	
-					case CTABLE_TRANSFORM_SCALAR_WEIGHT:
-						// F = ctable(A,B) or F = ctable(A,B,1)
-						group2 = new Group(
-								getInput().get(1).constructLops(),
-								Group.OperationTypes.Sort, get_dataType(),
-								get_valueType());
-						group2.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						tertiary = new Tertiary(
-								group1,
-								group2,
-								getInput().get(2).constructLops(),
-								tertiaryOp,
-								get_dataType(), get_valueType(), et);
-						break;
-					case CTABLE_TRANSFORM_HISTOGRAM:
-						// F=ctable(A,1) or F = ctable(A,1,1)
-						tertiary = new Tertiary(
-								group1, getInput().get(1).constructLops(),
-								getInput().get(2).constructLops(),
-								tertiaryOp,
-								get_dataType(), get_valueType(), et);
-						break;
-					case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
-						// F=ctable(A,1,W)
-						group3 = new Group(
-								getInput().get(2).constructLops(),
-								Group.OperationTypes.Sort, get_dataType(),
-								get_valueType());
-						group3.getOutputParameters().setDimensions(get_dim1(),
-								get_dim2(), get_rows_in_block(),
-								get_cols_in_block(), getNnz());
-						group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-						tertiary = new Tertiary(
-								group1,
-								getInput().get(1).constructLops(),
-								group3,
-								tertiaryOp,
-								get_dataType(), get_valueType(), et);
-						break;
-					}
-	
-					// output dimensions are not known at compilation time
-					tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-					tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					group4 = new Group(
-							tertiary, Group.OperationTypes.Sort, get_dataType(),
-							get_valueType());
-					group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-					group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-	
-					Aggregate agg1 = new Aggregate(
-							group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
-							get_valueType(), ExecType.MR);
-					agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-	
-					agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					// kahamSum is used for aggreagtion but inputs do not have
-					// correction values
-					agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
-	
-					// set_lops(agg1);
-	
-					ReBlock reblock = null;
-					try {
-						reblock = new ReBlock(
-								agg1, get_rows_in_block(),
-								get_cols_in_block(), get_dataType(),
-								get_valueType());
-					} catch (Exception e) {
-						throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
-					}
-					reblock.getOutputParameters().setDimensions(-1, -1, 
-							get_rows_in_block(), get_cols_in_block(), -1);
-	
-					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
-					set_lops(reblock);
-				}
-			} 
-			else {
-				throw new HopsException(this.printErrorLocation() + "Incorrect TertiaryOp (" + op
-						+ ") while constructing Lops \n");
-			}
 			} catch(LopsException e) {
 				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 			}
@@ -433,6 +112,389 @@ public class TertiaryOp extends Hop
 		return get_lops();
 	}
 
+	/**
+	 * Method to construct LOPs when op = CENTRAILMOMENT.
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void handleCentralMoment() throws HopsException, LopsException {
+		
+		if ( op != OpOp3.CENTRALMOMENT )
+			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CENTRALMOMENT );
+		
+		ExecType et = optFindExecType();
+		if ( et == ExecType.MR ) {
+			CombineBinary combine = CombineBinary.constructCombineLop(
+					OperationTypes.PreCentralMoment, 
+					getInput().get(0).constructLops(), 
+					getInput().get(1).constructLops(), 
+					DataType.MATRIX, get_valueType());
+			combine.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(),
+					getInput().get(0).get_rows_in_block(),
+					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getNnz());
+			
+			CentralMoment cm = new CentralMoment(combine, getInput()
+					.get(2).constructLops(), DataType.MATRIX,
+					get_valueType(), et);
+			cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
+			
+			cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
+					.get(OpOp1.CAST_AS_SCALAR), get_dataType(),
+					get_valueType());
+			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			set_lops(unary1);
+		} else {
+			//System.out.println("CM Tertiary executing in CP...");
+			CentralMoment cm = new CentralMoment(
+					getInput().get(0).constructLops(),
+					getInput().get(1).constructLops(),
+					getInput().get(2).constructLops(),
+					get_dataType(), get_valueType(), et);
+			cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			set_lops(cm);
+		}
+	}
+	
+	/**
+	 * Method to construct LOPs when op = COVARIANCE.
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void handleCovariance() throws HopsException, LopsException {
+		
+		if ( op != OpOp3.COVARIANCE )
+			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.COVARIANCE );
+		
+		ExecType et = optFindExecType();
+		if ( et == ExecType.MR ) {
+			// combineTertiary -> CoVariance -> CastAsScalar
+			CombineTertiary combine = CombineTertiary
+					.constructCombineLop(
+							CombineTertiary.OperationTypes.PreCovWeighted,
+							getInput().get(0).constructLops(),
+							getInput().get(1).constructLops(),
+							getInput().get(2).constructLops(),
+							DataType.MATRIX, get_valueType());
+
+			combine.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(),
+					getInput().get(0).get_rows_in_block(),
+					getInput().get(0).get_cols_in_block(), 
+					getInput().get(0).getNnz());
+
+			CoVariance cov = new CoVariance(
+					combine, DataType.MATRIX, get_valueType(), et);
+
+			cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
+			
+			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			UnaryCP unary1 = new UnaryCP(
+					cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+					get_dataType(), get_valueType());
+			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			set_lops(unary1);
+		}
+		else {
+			//System.out.println("COV Tertiary executing in CP...");
+			CoVariance cov = new CoVariance(
+					getInput().get(0).constructLops(), 
+					getInput().get(1).constructLops(), 
+					getInput().get(2).constructLops(), 
+					get_dataType(), get_valueType(), et);
+			cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			set_lops(cov);
+		}
+	}
+	
+	/**
+	 * Method to construct LOPs when op = QUANTILE | INTERQUANTILE.
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void handleQuantile() throws HopsException, LopsException {
+		
+		if ( op != OpOp3.QUANTILE && op != OpOp3.INTERQUANTILE )
+			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
+		
+		ExecType et = optFindExecType();
+		
+		if ( et == ExecType.MR ) {
+			CombineBinary combine = CombineBinary
+					.constructCombineLop(
+							OperationTypes.PreSort,
+							getInput().get(0).constructLops(),
+							getInput().get(1).constructLops(),
+							DataType.MATRIX, get_valueType());
+
+			SortKeys sort = SortKeys
+					.constructSortByValueLop(
+							combine,
+							SortKeys.OperationTypes.WithWeights,
+							DataType.MATRIX, get_valueType(), et);
+
+			// If only a single quantile is computed, then "pick" operation executes in CP.
+			ExecType et_pick = (getInput().get(2).get_dataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
+			PickByCount pick = new PickByCount(
+					sort,
+					getInput().get(2).constructLops(),
+					get_dataType(),
+					get_valueType(),
+					(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
+
+			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			combine.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(), 
+					getInput().get(0).get_rows_in_block(), 
+					getInput().get(0).get_cols_in_block(),
+					getInput().get(0).getNnz());
+			sort.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(), 
+					getInput().get(0).get_rows_in_block(), 
+					getInput().get(0).get_cols_in_block(),
+					getInput().get(0).getNnz());
+			pick.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+
+			set_lops(pick);
+		}
+		else {
+			SortKeys sort = SortKeys.constructSortByValueLop(
+					getInput().get(0).constructLops(), 
+					getInput().get(1).constructLops(), 
+					SortKeys.OperationTypes.WithWeights, 
+					getInput().get(0).get_dataType(), getInput().get(0).get_valueType(), et);
+			PickByCount pick = new PickByCount(
+					sort,
+					getInput().get(2).constructLops(),
+					get_dataType(),
+					get_valueType(),
+					(op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+							: PickByCount.OperationTypes.RANGEPICK, et, true);
+			sort.getOutputParameters().setDimensions(
+					getInput().get(0).get_dim1(),
+					getInput().get(0).get_dim2(),
+					getInput().get(0).get_rows_in_block(), 
+					getInput().get(0).get_cols_in_block(),
+					getInput().get(0).getNnz());
+			pick.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+
+			set_lops(pick);
+		}
+	}
+
+	/**
+	 * Method to construct LOPs when op = CTABLE.
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void handleCtable() throws HopsException, LopsException {
+		
+		if ( op != OpOp3.CTABLE )
+			throw new HopsException("Unexpected operation: " + op + ", expecting " + OpOp3.CTABLE );
+		
+		/*
+		 * We must handle three different cases: case1 : all three
+		 * inputs are vectors (e.g., F=ctable(A,B,W)) case2 : two
+		 * vectors and one scalar (e.g., F=ctable(A,B)) case3 : one
+		 * vector and two scalars (e.g., F=ctable(A))
+		 */
+
+		// identify the particular case
+		
+		// F=ctable(A,B,W)
+		
+		DataType dt1 = getInput().get(0).get_dataType(); 
+		DataType dt2 = getInput().get(1).get_dataType(); 
+		DataType dt3 = getInput().get(2).get_dataType(); 
+		Tertiary.OperationTypes tertiaryOp = Tertiary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
+		
+		ExecType et = optFindExecType();
+		if ( et == ExecType.CP ) {
+			Tertiary tertiary = new Tertiary(
+					getInput().get(0).constructLops(), 
+					getInput().get(1).constructLops(), 
+					getInput().get(2).constructLops(),
+					tertiaryOp,
+					get_dataType(), get_valueType(), et);
+			tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+				|| et == ExecType.CP ) {
+				
+				if( et == ExecType.CP ){
+					//force blocked output in CP (see below)
+					tertiary.getOutputParameters().setDimensions(-1, -1, 1000, 1000, -1);
+				}
+				
+				//tertiary opt, w/o reblock in CP
+				set_lops(tertiary);
+			}
+			else {
+				ReBlock reblock = null;
+				try {
+					reblock = new ReBlock(
+							tertiary, get_rows_in_block(),
+							get_cols_in_block(), get_dataType(),
+							get_valueType());
+				} catch (Exception e) {
+					throw new HopsException(this.printErrorLocation() + "error in constructLops for TertiaryOp Hop " , e);
+				}
+				reblock.getOutputParameters().setDimensions(-1, -1,  
+						get_rows_in_block(), get_cols_in_block(), -1);
+				
+				reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+				set_lops(reblock);
+			}
+		}
+		else {
+			Group group1, group2, group3, group4;
+			group1 = group2 = group3 = group4 = null;
+
+			group1 = new Group(
+					getInput().get(0).constructLops(),
+					Group.OperationTypes.Sort, get_dataType(),
+					get_valueType());
+			group1.getOutputParameters().setDimensions(get_dim1(),
+					get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			Tertiary tertiary = null;
+			// create "group" lops for MATRIX inputs
+			switch (tertiaryOp) {
+			case CTABLE_TRANSFORM:
+				// F = ctable(A,B,W)
+				group2 = new Group(
+						getInput().get(1).constructLops(),
+						Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group2.getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block(), getNnz());
+				group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				group3 = new Group(
+						getInput().get(2).constructLops(),
+						Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group3.getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block(), getNnz());
+				group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				tertiary = new Tertiary(
+						group1, group2, group3,
+						tertiaryOp,
+						get_dataType(), get_valueType(), et);	
+				
+				break;
+
+			case CTABLE_TRANSFORM_SCALAR_WEIGHT:
+				// F = ctable(A,B) or F = ctable(A,B,1)
+				group2 = new Group(
+						getInput().get(1).constructLops(),
+						Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group2.getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block(), getNnz());
+				group2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				tertiary = new Tertiary(
+						group1,
+						group2,
+						getInput().get(2).constructLops(),
+						tertiaryOp,
+						get_dataType(), get_valueType(), et);
+				break;
+			case CTABLE_TRANSFORM_HISTOGRAM:
+				// F=ctable(A,1) or F = ctable(A,1,1)
+				tertiary = new Tertiary(
+						group1, getInput().get(1).constructLops(),
+						getInput().get(2).constructLops(),
+						tertiaryOp,
+						get_dataType(), get_valueType(), et);
+				break;
+			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
+				// F=ctable(A,1,W)
+				group3 = new Group(
+						getInput().get(2).constructLops(),
+						Group.OperationTypes.Sort, get_dataType(),
+						get_valueType());
+				group3.getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(),
+						get_cols_in_block(), getNnz());
+				group3.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				tertiary = new Tertiary(
+						group1,
+						getInput().get(1).constructLops(),
+						group3,
+						tertiaryOp,
+						get_dataType(), get_valueType(), et);
+				break;
+			}
+
+			// output dimensions are not known at compilation time
+			tertiary.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			group4 = new Group(
+					tertiary, Group.OperationTypes.Sort, get_dataType(),
+					get_valueType());
+			group4.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+			group4.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+
+			Aggregate agg1 = new Aggregate(
+					group4, HopsAgg2Lops.get(AggOp.SUM), get_dataType(),
+					get_valueType(), ExecType.MR);
+			agg1.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
+
+			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			// kahamSum is used for aggreagtion but inputs do not have
+			// correction values
+			agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
+
+			// set_lops(agg1);
+
+			ReBlock reblock = null;
+			try {
+				reblock = new ReBlock(
+						agg1, get_rows_in_block(),
+						get_cols_in_block(), get_dataType(),
+						get_valueType());
+			} catch (Exception e) {
+				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
+			}
+			reblock.getOutputParameters().setDimensions(-1, -1, 
+					get_rows_in_block(), get_cols_in_block(), -1);
+
+			reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+			set_lops(reblock);
+		}
+	}
+	
 	@Override
 	public String getOpString() {
 		String s = new String("");

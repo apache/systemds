@@ -25,7 +25,7 @@ public class UnaryCP extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
 	};
 	public static final String CAST_AS_MATRIX_OPCODE = "castAsMatrix";
 
@@ -85,6 +85,18 @@ public class UnaryCP extends Lop
 
 		case TAN:
 			opString += "tan";
+			break;
+
+		case ASIN:
+			opString += "asin";
+			break;
+
+		case ACOS:
+			opString += "acos";
+			break;
+
+		case ATAN:
+			opString += "atan";
 			break;
 
 		case SQRT:

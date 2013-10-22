@@ -28,7 +28,7 @@ public class Unary extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, POW, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, POW, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -154,6 +154,12 @@ public class Unary extends Lop
 			return "cos";
 		case TAN:
 			return "tan";
+		case ASIN:
+			return "asin";
+		case ACOS:
+			return "acos";
+		case ATAN:
+			return "atan";
 		case SQRT:
 			return "sqrt";
 		case EXP:

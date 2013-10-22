@@ -1,0 +1,20 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.scalar.SinTest.java
+
+$$readhelper$$
+
+IntComputation = asin($$int$$);
+IntComputationHelper = IntComputation * Helper;
+write(IntComputationHelper, "$$outdir$$int", format="text");
+
+DoubleComputation = asin($$double$$);
+DoubleComputationHelper = DoubleComputation * Helper;
+write(DoubleComputationHelper, "$$outdir$$double", format="text");

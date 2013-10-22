@@ -3141,6 +3141,9 @@ public class DMLTranslator
 		case SIN:
 		case COS:
 		case TAN:
+		case ASIN:
+		case ACOS:
+		case ATAN:
 		case SQRT:
 		case EXP:
 		case ROUND:
@@ -3157,6 +3160,15 @@ public class DMLTranslator
 				break;
 			case TAN:
 				mathOp1 = Hop.OpOp1.TAN;
+				break;
+			case ASIN:
+				mathOp1 = Hop.OpOp1.ASIN;
+				break;
+			case ACOS:
+				mathOp1 = Hop.OpOp1.ACOS;
+				break;
+			case ATAN:
+				mathOp1 = Hop.OpOp1.ATAN;
 				break;
 			case SQRT:
 				mathOp1 = Hop.OpOp1.SQRT;

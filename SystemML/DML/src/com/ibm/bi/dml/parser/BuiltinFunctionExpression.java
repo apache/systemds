@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+Â * IBM Confidential
+Â * OCO Source Materials
+Â * (C) Copyright IBM Corp. 2010, 2013
+Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+Â */
 
 package com.ibm.bi.dml.parser;
 
@@ -558,6 +558,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case COS:
 		case SIN:
 		case TAN:
+		case ACOS:
+		case ASIN:
+		case ATAN:
 		case SQRT:
 		case ABS:
 		case LOG:
@@ -574,6 +577,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case COS:
 		case SIN:
 		case TAN:
+		case ACOS:
+		case ASIN:
+		case ATAN:
 		case SQRT:
 		case ABS:
 		case EXP:
@@ -742,6 +748,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SIN;
 		else if (functionName.equals("tan"))
 			bifop = Expression.BuiltinFunctionOp.TAN;
+		else if (functionName.equals("acos"))
+			bifop = Expression.BuiltinFunctionOp.ACOS;
+		else if (functionName.equals("asin"))
+			bifop = Expression.BuiltinFunctionOp.ASIN;
+		else if (functionName.equals("atan"))
+			bifop = Expression.BuiltinFunctionOp.ATAN;
 		else if (functionName.equals("diag"))
 			bifop = Expression.BuiltinFunctionOp.DIAG;
 		else if (functionName.equals("exp"))

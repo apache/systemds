@@ -90,6 +90,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "sin"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "cos"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "tan"  , MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "asin" , MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "acos" , MRINSTRUCTION_TYPE.Unary);
+		String2MRInstructionType.put( "atan" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "sqrt" , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "exp"  , MRINSTRUCTION_TYPE.Unary);
 		String2MRInstructionType.put( "log"  , MRINSTRUCTION_TYPE.Unary);

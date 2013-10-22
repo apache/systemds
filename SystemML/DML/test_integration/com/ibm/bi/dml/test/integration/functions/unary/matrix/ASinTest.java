@@ -14,7 +14,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 
 
-public class TanTest extends AutomatedTestBase 
+public class ASinTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
@@ -24,11 +24,11 @@ public class TanTest extends AutomatedTestBase
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/unary/matrix/";
 		availableTestConfigurations.put("PositiveTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration("ASinTest", new String[] { "vector", "matrix" }));
 		availableTestConfigurations.put("NegativeTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration("ASinTest", new String[] { "vector", "matrix" }));
 		availableTestConfigurations.put("RandomTest",
-				new TestConfiguration("TanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration("ASinTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test
@@ -43,22 +43,22 @@ public class TanTest extends AutomatedTestBase
 		loadTestConfiguration("PositiveTest");
 		
 		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
-		double[][] tanVector = new double[rows][1];
+		double[][] asinVector = new double[rows][1];
 		for(int i = 0; i < rows; i++) {
-			tanVector[i][0] = Math.tan(vector[i][0]);
+			asinVector[i][0] = Math.asin(vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
-		writeExpectedMatrix("vector", tanVector);
+		writeExpectedMatrix("vector", asinVector);
 		
 		double[][] matrix = getRandomMatrix(rows, cols, 0, 1, 1, -1);
-		double[][] tanMatrix = new double[rows][cols];
+		double[][] asinMatrix = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				tanMatrix[i][j] = Math.tan(matrix[i][j]);
+				asinMatrix[i][j] = Math.asin(matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
-		writeExpectedMatrix("matrix", tanMatrix);
+		writeExpectedMatrix("matrix", asinMatrix);
 		
 		runTest();
 		
@@ -77,22 +77,22 @@ public class TanTest extends AutomatedTestBase
 		loadTestConfiguration("NegativeTest");
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 0, 1, -1);
-		double[][] tanVector = new double[rows][1];
+		double[][] asinVector = new double[rows][1];
 		for(int i = 0; i < rows; i++) {
-			tanVector[i][0] = Math.tan(vector[i][0]);
+			asinVector[i][0] = Math.asin(vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
-		writeExpectedMatrix("vector", tanVector);
+		writeExpectedMatrix("vector", asinVector);
 		
 		double[][] matrix = getRandomMatrix(rows, cols, -1, 0, 1, -1);
-		double[][] tanMatrix = new double[rows][cols];
+		double[][] asinMatrix = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				tanMatrix[i][j] = Math.tan(matrix[i][j]);
+				asinMatrix[i][j] = Math.asin(matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
-		writeExpectedMatrix("matrix", tanMatrix);
+		writeExpectedMatrix("matrix", asinMatrix);
 		
 		runTest();
 		
@@ -111,22 +111,22 @@ public class TanTest extends AutomatedTestBase
 		loadTestConfiguration("RandomTest");
 		
 		double[][] vector = getRandomMatrix(rows, 1, -1, 1, 1, -1);
-		double[][] tanVector = new double[rows][1];
+		double[][] asinVector = new double[rows][1];
 		for(int i = 0; i < rows; i++) {
-			tanVector[i][0] = Math.tan(vector[i][0]);
+			asinVector[i][0] = Math.asin(vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
-		writeExpectedMatrix("vector", tanVector);
+		writeExpectedMatrix("vector", asinVector);
 		
 		double[][] matrix = getRandomMatrix(rows, cols, -1, 1, 1, -1);
-		double[][] tanMatrix = new double[rows][cols];
+		double[][] asinMatrix = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				tanMatrix[i][j] = Math.tan(matrix[i][j]);
+				asinMatrix[i][j] = Math.asin(matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
-		writeExpectedMatrix("matrix", tanMatrix);
+		writeExpectedMatrix("matrix", asinMatrix);
 		
 		runTest();
 		

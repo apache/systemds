@@ -25,7 +25,7 @@ public class Builtin extends ValueFunction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX  };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX  };
 	public BuiltinFunctionCode bFunc;
 	
 	
@@ -36,6 +36,9 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "sin"    , BuiltinFunctionCode.SIN);
 		String2BuiltinFunctionCode.put( "cos"    , BuiltinFunctionCode.COS);
 		String2BuiltinFunctionCode.put( "tan"    , BuiltinFunctionCode.TAN);
+		String2BuiltinFunctionCode.put( "asin"   , BuiltinFunctionCode.ASIN);
+		String2BuiltinFunctionCode.put( "acos"   , BuiltinFunctionCode.ACOS);
+		String2BuiltinFunctionCode.put( "atan"   , BuiltinFunctionCode.ATAN);
 		String2BuiltinFunctionCode.put( "log"    , BuiltinFunctionCode.LOG);
 		String2BuiltinFunctionCode.put( "min"    , BuiltinFunctionCode.MIN);
 		String2BuiltinFunctionCode.put( "max"    , BuiltinFunctionCode.MAX);
@@ -53,7 +56,8 @@ public class Builtin extends ValueFunction
 	}
 	
 	// We should create one object for every builtin function that we support
-	private static Builtin sinObj = null, cosObj = null, tanObj = null, logObj = null, minObj = null, maxObj = null, maxindexObj = null;
+	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
+	private static Builtin logObj = null, minObj = null, maxObj = null, maxindexObj = null;
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, print2Obj = null;
 	
@@ -79,6 +83,19 @@ public class Builtin extends ValueFunction
 			if ( tanObj == null )
 				tanObj = new Builtin(BuiltinFunctionCode.TAN);
 			return tanObj;
+		case ASIN:
+			if ( asinObj == null )
+				asinObj = new Builtin(BuiltinFunctionCode.ASIN);
+			return asinObj;
+		
+		case ACOS:
+			if ( acosObj == null )
+				acosObj = new Builtin(BuiltinFunctionCode.ACOS);
+			return acosObj;
+		case ATAN:
+			if ( atanObj == null )
+				atanObj = new Builtin(BuiltinFunctionCode.ATAN);
+			return atanObj;
 		case LOG:
 			if ( logObj == null )
 				logObj = new Builtin(BuiltinFunctionCode.LOG);
@@ -151,6 +168,9 @@ public class Builtin extends ValueFunction
 		case SIN:
 		case COS:
 		case TAN:
+		case ASIN:
+		case ACOS:
+		case ATAN:
 		case SQRT:
 		case EXP:
 		case PLOGP:
@@ -179,10 +199,13 @@ public class Builtin extends ValueFunction
 		case SIN:    return Math.sin(in);
 		case COS:    return Math.cos(in);
 		case TAN:    return Math.tan(in);
+		case ASIN:   return Math.asin(in);
+		case ACOS:   return Math.acos(in);
+		case ATAN:   return Math.atan(in);
 		
 		case LOG:
-			if ( in <= 0 )
-				throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
+			//if ( in <= 0 )
+			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
 			// for negative numbers, Math.log will return NaN
 			return Math.log(in); 
 		
@@ -190,8 +213,8 @@ public class Builtin extends ValueFunction
 			return Math.abs(in);
 			
 		case SQRT:
-			if ( in < 0 )
-				throw new DMLRuntimeException("Builtin.execute(): squareroot can only be computed for non-negative numbers (input = " + in + ").");
+			//if ( in < 0 )
+			//	throw new DMLRuntimeException("Builtin.execute(): squareroot can only be computed for non-negative numbers (input = " + in + ").");
 			return Math.sqrt(in);
 		
 		case PLOGP:

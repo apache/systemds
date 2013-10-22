@@ -1,0 +1,18 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# junit test class: com.ibm.bi.dml.test.integration.functions.unary.matrix.CosTest.java
+
+Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
+CosVector = acos(Vector);
+write(CosVector, "$$outdir$$vector", format="text");
+
+Matrix = read("$$indir$$matrix", rows=$$rows$$, cols=$$cols$$, format="text");
+CosMatrix = acos(Matrix);
+write(CosMatrix, "$$outdir$$matrix", format="text");

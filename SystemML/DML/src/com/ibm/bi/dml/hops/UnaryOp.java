@@ -505,7 +505,8 @@ public class UnaryOp extends Hop
 		Hop input = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 		if( mc.dimsKnown() ) {
-			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
+			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN 
+				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
 			{
 				ret = new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
@@ -563,7 +564,8 @@ public class UnaryOp extends Hop
 			Hop input = getInput().get(0);
 			set_dim1( input.get_dim1() );
 			set_dim2( input.get_dim2() );
-			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN 
+			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN  
+				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
 			{
 				setNnz( input.getNnz() );

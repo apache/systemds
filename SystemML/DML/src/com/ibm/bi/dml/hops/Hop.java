@@ -1175,7 +1175,7 @@ public abstract class Hop
 
 	// TODO BJR: I intend to remove OpOp1.MINUS, once we made the change
 	public enum OpOp1 {
-		MINUS, NOT, ABS, SIN, COS, TAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
+		MINUS, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
 	}
 
 	// Operations that require two operands
@@ -1343,6 +1343,9 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.SIN, com.ibm.bi.dml.lops.Unary.OperationTypes.SIN);
 		HopsOpOp1LopsU.put(OpOp1.COS, com.ibm.bi.dml.lops.Unary.OperationTypes.COS);
 		HopsOpOp1LopsU.put(OpOp1.TAN, com.ibm.bi.dml.lops.Unary.OperationTypes.TAN);
+		HopsOpOp1LopsU.put(OpOp1.ASIN, com.ibm.bi.dml.lops.Unary.OperationTypes.ASIN);
+		HopsOpOp1LopsU.put(OpOp1.ACOS, com.ibm.bi.dml.lops.Unary.OperationTypes.ACOS);
+		HopsOpOp1LopsU.put(OpOp1.ATAN, com.ibm.bi.dml.lops.Unary.OperationTypes.ATAN);
 		HopsOpOp1LopsU.put(OpOp1.SQRT, com.ibm.bi.dml.lops.Unary.OperationTypes.SQRT);
 		HopsOpOp1LopsU.put(OpOp1.EXP, com.ibm.bi.dml.lops.Unary.OperationTypes.EXP);
 		HopsOpOp1LopsU.put(OpOp1.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
@@ -1359,6 +1362,9 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.SIN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.SIN);
 		HopsOpOp1LopsUS.put(OpOp1.COS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.COS);
 		HopsOpOp1LopsUS.put(OpOp1.TAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.TAN);
+		HopsOpOp1LopsUS.put(OpOp1.ASIN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ASIN);
+		HopsOpOp1LopsUS.put(OpOp1.ACOS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ACOS);
+		HopsOpOp1LopsUS.put(OpOp1.ATAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ATAN);
 		HopsOpOp1LopsUS.put(OpOp1.SQRT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.SQRT);
 		HopsOpOp1LopsUS.put(OpOp1.EXP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.EXP);
 		HopsOpOp1LopsUS.put(OpOp1.LOG, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LOG);
@@ -1392,6 +1398,9 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.SIN, "sin");
 		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");
 		HopsOpOp12String.put(OpOp1.TAN, "tan");
+		HopsOpOp12String.put(OpOp1.ASIN, "asin");
+		HopsOpOp12String.put(OpOp1.ACOS, "acos");
+		HopsOpOp12String.put(OpOp1.ATAN, "atan");
 	}
 	static public HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {

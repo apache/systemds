@@ -46,6 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 
 
@@ -88,7 +89,7 @@ public class MapReduceTool
 	}
 
 	
-	public static int getUniqueMapperId(JobConf job, boolean inMapper) {
+	public static int getUniqueTaskId(JobConf job) {
 		//TODO: investigate ID pattern, required for parallel jobs
 		/*String nodePrefix = job.get("mapred.task.id"); 
 		return IDHandler.extractIntID(nodePrefix);*/
@@ -546,7 +547,7 @@ public class MapReduceTool
 				((TextInputFormat)informat).configure(job);
 			InputSplit[] splits= informat.getSplits(job, 1);
 			
-			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, false, brlen, bclen).newInstance();
+			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL).newInstance();
 			inputConverter.setBlockSize(brlen, bclen);
     		
 			Writable key=inputinfo.inputKeyClass.newInstance();

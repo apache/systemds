@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.hadoopfix.MultipleInputs;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 //</Arun>
@@ -49,7 +50,7 @@ public class ReconstructionJoinMR
 		byte[] resultDimsUnknown = {(byte)1};
 		MRJobConfiguration.setPartitionParams(job, pp) ;
 		MRJobConfiguration.setUpMultipleInputs(job, new byte[]{0}, new String[]{input}, new InputInfo[]{inputinfo},
-												true, new int[]{bnr}, new int[]{bnc});
+												new int[]{bnr}, new int[]{bnc}, true, ConvertTarget.BLOCK);
 		OutputInfo[] outputInfos = new OutputInfo[outputs.length] ;
 		for(int i = 0 ; i < outputInfos.length; i++){
 			outputInfos[i] = OutputInfo.BinaryBlockOutputInfo ;

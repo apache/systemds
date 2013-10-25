@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.PartialBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 
 
 public class PartitionSubMatrixMR 
@@ -50,7 +51,7 @@ public class PartitionSubMatrixMR
 		MRJobConfiguration.setPartitionParams(job, pp) ;
 		
 		MRJobConfiguration.setUpMultipleInputs(job, new byte[]{0}, new String[]{input}, new InputInfo[]{inputinfo},
-											   false, new int[]{bnr}, new int[]{bnc});
+											   new int[]{bnr}, new int[]{bnc}, true, ConvertTarget.CELL);
 		
 		OutputInfo[] outputInfos = new OutputInfo[outputs.length] ;
 		for(int i = 0 ; i < outputInfos.length; i++)

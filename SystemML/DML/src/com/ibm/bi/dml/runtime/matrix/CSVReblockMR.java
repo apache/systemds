@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Vector;
+import java.util.regex.Pattern;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -58,7 +61,9 @@ import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -134,7 +139,7 @@ public class CSVReblockMR
 				{
 					if(ins.input==thisIndex)
 					{
-						delim=Character.toString(ins.delim);
+						delim=Pattern.quote(ins.delim);
 						ignoreFirstLine=ins.ignoreFirstLine;
 						break;
 					}
@@ -160,7 +165,7 @@ public class CSVReblockMR
 			{
 				if(!ignoreFirstLine)
 				{
-					report.incrCounter(NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim).length);
+					report.incrCounter(NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
 				//	System.out.println(value.toString().split(delim).length);
 					num++;
 				}
@@ -170,7 +175,7 @@ public class CSVReblockMR
 			{
 				if(realFirstLine)
 				{
-					report.incrCounter(NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim).length);
+					report.incrCounter(NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
 					realFirstLine=false;
 				}
 				num++;
@@ -248,18 +253,12 @@ public class CSVReblockMR
 		BlockRow row;
 		String delim=" ";
 		boolean ignoreFirstLine=false;
-		double missingValue=0;
+		//double missingValue=0;
 		
 		public void configure(JobConf job)
 		{
 			super.configure(job);
 			//get the number colums per block
-			row=new BlockRow();
-			int maxBclen=0;
-			for(int i=0; i<bclens.length; i++)
-				if(maxBclen<bclens[i])
-					maxBclen=bclens[i];
-			row.container=new double[maxBclen];		
 			
 			//load the offset mapping
 			byte matrixIndex=representativeMatrixes.get(0);
@@ -299,9 +298,22 @@ public class CSVReblockMR
 				throw new RuntimeException(e);
 			}
 			CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
-			delim=Character.toString(ins.delim);
+			
+			delim=Pattern.quote(ins.delim);
 			ignoreFirstLine=ins.ignoreFirstLine;
-			missingValue=ins.missingValue;
+			//missingValue=ins.missingValue;
+			
+			row=new BlockRow();
+			int maxBclen=0;
+		
+			for(Vector<CSVReblockInstruction> insv: csv_reblock_instructions)
+				for(CSVReblockInstruction in: insv)
+				{	
+					if(maxBclen<in.bclen)
+						maxBclen=in.bclen;
+				}
+			row.container=new double[maxBclen];		
+		
 		}
 		
 		@Override
@@ -317,42 +329,48 @@ public class CSVReblockMR
 			if(key.get()==0 && ignoreFirstLine)
 				return;
 			
-			String[] cells=value.toString().split(delim);
+			String[] cells=value.toString().split(delim, -1);
 			
 			for(int i=0; i<representativeMatrixes.size(); i++)
-			{
-				int start=0;
-				row.numCols=bclens[i];
-				outIndexes.setTag(csv_reblock_instructions.get(i).get(0).output);
-				long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, brlens[i]);
-				row.indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, brlens[i]);
-				
-				long col=0;
-				for(; col<cells.length/bclens[i]; col++)
+				for(CSVReblockInstruction ins: csv_reblock_instructions.get(i))
 				{
-					outIndexes.setIndexes(rowIndex, col+1);
-					for(int k=0;k<bclens[i]; k++)
+					int start=0;
+					row.numCols=ins.bclen;
+					outIndexes.setTag(ins.output);
+					long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, ins.brlen);
+					row.indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, ins.brlen);
+					
+					long col=0;
+					for(; col<cells.length/ins.bclen; col++)
 					{
-						if(cells[k+start].isEmpty())
-							row.container[k]=missingValue;
-						else
-							row.container[k]= Double.parseDouble(cells[k+start]);
+						outIndexes.setIndexes(rowIndex, col+1);
+						for(int k=0;k<ins.bclen; k++)
+						{
+							if(cells[k+start].isEmpty())
+								row.container[k]=ins.missingValue;
+							else
+								row.container[k]= Double.parseDouble(cells[k+start]);
+						}
+						out.collect(outIndexes, row);
+						//System.out.println("mapper: "+outIndexes+", "+row);
+						start+=ins.bclen;
 					}
-					out.collect(outIndexes, row);
-					//System.out.println("mapper: "+outIndexes+", "+row);
-					start+=bclens[i];
+					outIndexes.setIndexes(rowIndex, col+1);
+					int lastBclen=cells.length%ins.bclen;
+					if(lastBclen!=0)
+					{
+						row.numCols=lastBclen+1;
+						for(int k=0;k<lastBclen; k++)
+						{
+							if(cells[k+start].isEmpty())
+								row.container[k]=ins.missingValue;
+							else
+								row.container[k]= Double.parseDouble(cells[k+start]);
+						}
+						out.collect(outIndexes, row);
+						//System.out.println("mapper: "+outIndexes+", "+row);
+					}
 				}
-				outIndexes.setIndexes(rowIndex, col+1);
-				int lastBclen=cells.length%bclens[i];
-				if(lastBclen!=0)
-				{
-					row.numCols=lastBclen+1;
-					for(int k=0;k<lastBclen; k++)
-						row.container[k]= Double.parseDouble(cells[k+start]);
-					out.collect(outIndexes, row);
-					//System.out.println("mapper: "+outIndexes+", "+row);
-				}
-			}
 			
 			num++;
 		}
@@ -468,10 +486,10 @@ public class CSVReblockMR
 		
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, 
-				false, brlens, bclens, false, false);
+				brlens, bclens, false, ConvertTarget.CELL);
 		
 		//set up the aggregate instructions that will happen in the combiner and reducer
-		MRJobConfiguration.setReblockInstructions(job, reblockInstructions);
+		MRJobConfiguration.setCSVReblockInstructions(job, reblockInstructions);
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
@@ -535,7 +553,7 @@ public class CSVReblockMR
 			realIndexes[b]=b;
 		
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, false, brlens, bclens);
+		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, brlens, bclens, false, ConvertTarget.CELL);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);
@@ -544,7 +562,7 @@ public class CSVReblockMR
 		MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
 		
 		//set up the aggregate instructions that will happen in the combiner and reducer
-		MRJobConfiguration.setReblockInstructions(job, reblockInstructions);
+		MRJobConfiguration.setCSVReblockInstructions(job, reblockInstructions);
 		
 		//set up the instructions that will happen in the reducer, after the aggregation instrucions
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
@@ -615,6 +633,8 @@ public class CSVReblockMR
 		
 		RunningJob runjob=JobClient.runJob(job);
 		
+		MapReduceTool.deleteFileIfExistOnHDFS(counterFile, job);
+		
 		/* Process different counters */
 		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
@@ -622,7 +642,7 @@ public class CSVReblockMR
 			// number of non-zeros
 			stats[i].nonZero=group.getCounter(Integer.toString(i));
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
-		}	
+		}
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	
@@ -633,8 +653,12 @@ public class CSVReblockMR
 			String[] outputs, OutputInfo[] outputInfos) throws Exception 
 	{
 		AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication);
-		return CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
+		for(int i=0; i<rlens.length; i++)
+			if( (rlens[i]>0 && rlens[i]!=ret1.rlens[i]) || (clens[i]>0 && clens[i]!=ret1.clens[i]) )
+				throw new RuntimeException("Dimension doesn't mach for input matrix "+i+", expected ("+rlens[i]+", "+clens[i]+") but real ("+ret1.rlens[i]+", "+ret1.clens[i]+")");
+		JobReturn ret= CSVReblockMR.runCSVReblockJob(null, inputs, inputInfos, ret1.rlens, ret1.clens, brlens, bclens, reblockInstructions, 
 				otherInstructionsInReducer, numReducers, replication, resultIndexes, outputs, outputInfos, ret1.counterFile);
+		return ret;
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -652,7 +676,7 @@ public class CSVReblockMR
 		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[0] + Instruction.OPERAND_DELIM
 		+ bclens[0] + Instruction.OPERAND_DELIM
-		+ Byte.toString((byte)'%') + Instruction.OPERAND_DELIM
+		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
 		+ true+ Instruction.OPERAND_DELIM
 		+100.0;
 		
@@ -662,11 +686,11 @@ public class CSVReblockMR
 		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[1] + Instruction.OPERAND_DELIM
 		+ bclens[1] + Instruction.OPERAND_DELIM
-		+ Byte.toString((byte)' ') + Instruction.OPERAND_DELIM
+		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
 		+ false+ Instruction.OPERAND_DELIM
 		+0.0;
 		
-		CSVReblockMR.runJob(null, inputs, inputInfos, null, null, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
+		CSVReblockMR.runJob(null, inputs, inputInfos, new long[]{-1, -1}, new long[]{-1, -1}, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
 				outputInfos);
 	}
 }

@@ -95,7 +95,7 @@ implements Mapper<Writable, Writable, IntWritable, MatrixBlock>
 					(pp.isEL == true && (pp.et == PartitionParams.EnsembleType.rsm || pp.et == PartitionParams.EnsembleType.rowholdout)))
 				bmm = new HoldoutRowBlockMapperMethod(pp, multipleOutputs) ;
 			
-			int mapperId = MapReduceTool.getUniqueMapperId(job, true) ;
+			int mapperId = MapReduceTool.getUniqueTaskId(job) ;
 			int numSeedsReqd = pp.getNumSeedsPerMapper() ;
 			random = new Well1024a[numSeedsReqd] ;
 			// Skip random[0] by numSeedsReqd * mapperId ;

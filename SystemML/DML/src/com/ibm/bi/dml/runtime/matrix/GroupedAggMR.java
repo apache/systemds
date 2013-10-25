@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.matrix.io.WeightedCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
@@ -60,7 +61,7 @@ public class GroupedAggMR
 		
 		//set up the input files and their format information
 		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, 
-				false, realbrlens, realbclens, true, true);
+				realbrlens, realbclens, true, ConvertTarget.WEIGHTEDCELL);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);

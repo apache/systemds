@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineTertiaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CombineUnaryInstruction;
@@ -344,6 +345,22 @@ public class MRInstructionParser extends InstructionParser
 			for(int i=0; i < strlist.length; i++)
 			{
 				inst[i] = (CSVReblockInstruction) CSVReblockInstruction.parseInstruction( strlist[i] );
+			}
+		}
+		return inst;
+	}
+	
+	public static CSVWriteInstruction[] parseCSVWriteInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		CSVWriteInstruction[] inst=null;
+		if(str!=null && !str.isEmpty())
+		{
+			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
+			inst = new CSVWriteInstruction[strlist.length];
+			
+			for(int i=0; i < strlist.length; i++)
+			{
+				inst[i] = (CSVWriteInstruction) CSVWriteInstruction.parseInstruction( strlist[i] );
 			}
 		}
 		return inst;

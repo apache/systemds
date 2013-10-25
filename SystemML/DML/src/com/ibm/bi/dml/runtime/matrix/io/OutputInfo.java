@@ -18,6 +18,7 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.matrix.WriteCSVMR.RowBlockForTextOutput;
 import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
 
 
@@ -55,6 +56,8 @@ public class OutputInfo
 			DoubleWritable.class, IntWritable.class);
 	public static OutputInfo WeightedPairOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
+	public static OutputInfo CSVOutputInfo=new OutputInfo(UnPaddedOutputFormat.class, 
+			NullWritable.class, RowBlockForTextOutput.class);
 
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) throws DMLRuntimeException {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
@@ -71,6 +74,8 @@ public class OutputInfo
 			return InputInfo.InputInfoForSortOutput;
 		else if ( oi == OutputInfo.WeightedPairOutputInfo)
 			return InputInfo.WeightedPairInputInfo;
+		else if ( oi == OutputInfo.CSVOutputInfo)
+			return InputInfo.CSVInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}

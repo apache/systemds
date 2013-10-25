@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.DataGenMapper;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -136,6 +137,7 @@ public class DataGenMR
 				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));
 				PrintWriter pw = new PrintWriter(fsOut);
+				
 				//for obj reuse and preventing repeated buffer re-allocations
 				StringBuilder sb = new StringBuilder();
 				
@@ -165,8 +167,7 @@ public class DataGenMR
 				fsOut.close();
 				inputInfos[i] = InputInfo.TextCellInputInfo;
 			}
-			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) 
-			{
+			else if ( mrtype == MRINSTRUCTION_TYPE.Seq ) {
 				SeqInstruction seqInst = (SeqInstruction) mrins;
 				inputs[i]=genInst.baseDir + System.currentTimeMillis()+".seqinput";
 				maxsparsity = 1.0; //always dense
@@ -254,7 +255,7 @@ public class DataGenMR
 			MRJobConfiguration.setBlocksSizes(job, realIndexes, brlens, bclens);
 			
 			//set up the input files and their format information
-			MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, true, brlens, bclens, false);
+			MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, brlens, bclens, false, ConvertTarget.BLOCK);
 			
 			//set up the dimensions of input matrices
 			MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);

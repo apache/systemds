@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CMCOVMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 
 
 public class CMCOVMR 
@@ -60,8 +61,7 @@ public class CMCOVMR
 			realIndexes[b]=b;
 		
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, 
-				false, realbrlens, realbclens, true, true);
+		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, realbrlens, realbclens, true, ConvertTarget.WEIGHTEDCELL);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, realrlens, realclens);

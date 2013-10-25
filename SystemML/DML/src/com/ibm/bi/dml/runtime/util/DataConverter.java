@@ -52,6 +52,7 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 
 
 /**
@@ -1350,7 +1351,7 @@ public class DataConverter
 				((TextInputFormat)informat).configure(job);
 			InputSplit[] splits= informat.getSplits(job, 1);
 			
-			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, false, brlen, bclen).newInstance();
+			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL).newInstance();
 			inputConverter.setBlockSize(brlen, bclen);
     		
 			Writable key=inputinfo.inputKeyClass.newInstance();

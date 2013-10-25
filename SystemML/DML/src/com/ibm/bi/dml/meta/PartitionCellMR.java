@@ -77,7 +77,7 @@ public class PartitionCellMR
 		public void configure(JobConf job) {
 			multipleOutputs = new MultipleOutputs(job) ;
 			numIterations = job.getInt("numIterations", 1) ;
-			int mapperId = MapReduceTool.getUniqueMapperId(job, true) ;
+			int mapperId = MapReduceTool.getUniqueTaskId(job) ;
 			for(int i = 0 ; i < mapperId; i++){
 				// DOUG: RANDOM
 				//random.resetNextSubstream() ;

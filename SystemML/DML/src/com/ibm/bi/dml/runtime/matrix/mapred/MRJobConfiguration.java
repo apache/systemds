@@ -48,6 +48,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruct
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
@@ -146,6 +147,7 @@ public class MRJobConfiguration
 	private static final String AGGREGATE_BINARY_INSTRUCTIONS_CONFIG="aggregate.binary.instructions";
 	private static final String REBLOCK_INSTRUCTIONS_CONFIG="reblock.instructions";
 	private static final String CSV_REBLOCK_INSTRUCTIONS_CONFIG="csv.reblock.instructions";
+	private static final String CSV_WRITE_INSTRUCTIONS_CONFIG="csv.write.instructions";
 	private static final String COMBINE_INSTRUCTIONS_CONFIG="combine.instructions";
 	private static final String CM_N_COV_INSTRUCTIONS_CONFIG="cm_n_com.instructions";
 	private static final String GROUPEDAGG_INSTRUCTIONS_CONFIG="groupedagg.instructions";
@@ -283,7 +285,7 @@ public class MRJobConfiguration
 		else
 			return MatrixCell.class;
 	}
-	
+/*	
 	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, boolean targetToBlock, 
 			int brlen, int bclen)
 	{
@@ -302,7 +304,7 @@ public class MRJobConfiguration
 		else
 			return getConverterClass(inputinfo, targetToBlock, brlen, bclen);
 	}
-	
+*/	
 	public static enum ConvertTarget{CELL, BLOCK, WEIGHTEDCELL, CSVWRITE}
 	
 	public static Class<? extends Converter> getConverterClass(InputInfo inputinfo, int brlen, int bclen, ConvertTarget target)
@@ -481,16 +483,19 @@ public class MRJobConfiguration
 		job.set( "mapreduce.jobtracker.staging.root.dir", dir );
 	}
 	
-	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
+/*	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
 			int brlen, int bclen)
 	{
 		setInputInfo(job, input, inputinfo, targetToBlock, brlen, bclen, false);
-	}
+	}*/
 	
-	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
-			int brlen, int bclen, boolean targetToWeightedCell)
+	//public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, boolean targetToBlock, 
+	//		int brlen, int bclen, boolean targetToWeightedCell)
+	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, 
+			int brlen, int bclen, ConvertTarget target)
 	{
-		Class<? extends Converter> converterClass=getConverterClass(inputinfo, targetToBlock, brlen, bclen, targetToWeightedCell);
+		//Class<? extends Converter> converterClass=getConverterClass(inputinfo, targetToBlock, brlen, bclen, targetToWeightedCell);
+		Class<? extends Converter> converterClass=getConverterClass(inputinfo, brlen, bclen, target);
 		job.setClass(INPUT_CONVERTER_CLASS_PREFIX_CONFIG+input, converterClass, Converter.class);
 		job.setClass(INPUT_KEY_CLASS_PREFIX_CONFIG+input, inputinfo.inputKeyClass, Writable.class);
 		job.setClass(INPUT_VALUE_CLASS_PREFIX_CONFIG+input, inputinfo.inputValueClass, Writable.class);
@@ -589,6 +594,13 @@ public class MRJobConfiguration
 	{
 		String str=job.get(CSV_REBLOCK_INSTRUCTIONS_CONFIG);
 		CSVReblockInstruction[] reblock_instructions = MRInstructionParser.parseCSVReblockInstructions(str);
+		return reblock_instructions;
+	}
+	
+	public static CSVWriteInstruction[] getCSVWriteInstructions(JobConf job) throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		String str=job.get(CSV_WRITE_INSTRUCTIONS_CONFIG);
+		CSVWriteInstruction[] reblock_instructions = MRInstructionParser.parseCSVWriteInstructions(str);
 		return reblock_instructions;
 	}
 	
@@ -815,6 +827,11 @@ public class MRJobConfiguration
 	public static void setCSVReblockInstructions(JobConf job, String reblockInstructions)
 	{
 		job.set(CSV_REBLOCK_INSTRUCTIONS_CONFIG, reblockInstructions);
+	}
+	
+	public static void setCSVWriteInstructions(JobConf job, String csvWriteInstructions)
+	{
+		job.set(CSV_WRITE_INSTRUCTIONS_CONFIG, csvWriteInstructions);
 	}
 	
 	public static void setCombineInstructions(JobConf job, String combineInstructions)
@@ -1170,7 +1187,7 @@ public class MRJobConfiguration
 	public static int[] getInputPartitionSizes(JobConf job) {
 		return MRJobConfiguration.csv2int(job.get(PARTITION_SIZES));
 	}
-	
+/*	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
 			boolean inBlockRepresentation, int[] brlens, int[] bclens)
 	throws Exception
@@ -1184,10 +1201,10 @@ public class MRJobConfiguration
 	{
 		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, inBlockRepresentation, brlens, bclens, setConverter, false);
 	}
-
+*/
 	
 	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-			boolean inBlockRepresentation, int[] brlens, int[] bclens, boolean setConverter, boolean forCMJob) 
+			int[] brlens, int[] bclens, boolean setConverter, ConvertTarget target) 
 	throws Exception
 	{
 		if(inputs.length!=inputInfos.length)
@@ -1200,7 +1217,7 @@ public class MRJobConfiguration
 		if(setConverter)
 		{
 			for(int i=0; i<inputs.length; i++)
-				setInputInfo(job, inputIndexes[i], inputInfos[i], inBlockRepresentation, brlens[i], bclens[i], forCMJob);
+				setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
 		}
 		
 		//remove redundant input files
@@ -1256,7 +1273,12 @@ public class MRJobConfiguration
 		MRJobConfiguration.setMapFucInputMatrixIndexes(job, inputIndexes);
 		
 		for(int i=0; i<inputs.length; i++)
-			setInputInfo(job, inputIndexes[i], inputInfos[i], (inputInfos[i]==InputInfo.BinaryBlockInputInfo), brlens[i], bclens[i], false);
+		{
+			ConvertTarget target=ConvertTarget.CELL;
+			if(inputInfos[i]==InputInfo.BinaryBlockInputInfo)
+				target=ConvertTarget.BLOCK;
+			setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
+		}
 		
 		//remove redundant input files
 		Vector<Path> paths=new Vector<Path>();

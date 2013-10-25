@@ -13,11 +13,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Partitioner;
 
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -136,9 +138,9 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 	/**
 	   * Partition based on the first index.
 	   */
-	  public static class FirstIndexPartitioner implements Partitioner<TaggedFirstSecondIndexes, MatrixValue>{
+	  public static class FirstIndexPartitioner implements Partitioner<TaggedFirstSecondIndexes, Writable>{
 	    @Override
-	    public int getPartition(TaggedFirstSecondIndexes key, MatrixValue value, int numPartitions) 
+	    public int getPartition(TaggedFirstSecondIndexes key, Writable value, int numPartitions) 
 	    {
 	      return UtilFunctions.longHashFunc(key.getFirstIndex()*127)%10007%numPartitions;
 	    }
@@ -146,6 +148,28 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 		@Override
 		public void configure(JobConf arg0) {
 			
+		}
+	  }
+	  
+	  /**
+	   * Partition based on the first index.
+	   */
+	  public static class FirstIndexRangePartitioner implements Partitioner<TaggedFirstSecondIndexes, Writable>{
+		  long[] rstep=null;
+		  @Override
+	    public int getPartition(TaggedFirstSecondIndexes key, Writable value, int numPartitions) 
+	    {
+	      	return (int) ((key.first-1)/rstep[key.tag]);
+	    }
+
+		@Override
+		public void configure(JobConf job) {
+			String[] matrices=MRJobConfiguration.getInputPaths(job);
+			int partitions = job.getNumReduceTasks();
+			//get the dimension of all the representative matrices
+			rstep=new long[matrices.length];
+			for(int i=0; i<matrices.length; i++)
+				rstep[i]=(long) Math.ceil((double)MRJobConfiguration.getNumRows(job, (byte)i)/(double)partitions);
 		}
 	  }
 	  

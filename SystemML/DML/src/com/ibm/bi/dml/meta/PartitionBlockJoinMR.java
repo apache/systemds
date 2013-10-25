@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 //</Arun>
@@ -72,7 +73,7 @@ public class PartitionBlockJoinMR
 		//instead of above stmt, we cull out the foll from that file
 		job.setStrings("input.matrices.dirs", new String[]{input});		//TODO the prefix string is hardcoded from MRJobConfiguration.java
 		MRJobConfiguration.setMapFucInputMatrixIndexes(job, new byte[]{0});
-		MRJobConfiguration.setInputInfo(job, (byte)(0), inputinfo, true, bnr, bnc, false);
+		MRJobConfiguration.setInputInfo(job, (byte)(0), inputinfo, bnr, bnc, ConvertTarget.BLOCK);
 		//add idtable class
 		MultipleInputs.addInputPath(job, new Path(input), inputinfo.inputFormatClass ,PartitionBlockJoinMapperMatrix.class); 
 

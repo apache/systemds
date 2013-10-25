@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -299,7 +300,8 @@ public class CombineMR
 			inputIndexes[b]=b;
 		
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, inBlockRepresentation, brlens, bclens);
+		MRJobConfiguration.setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, 
+				true, inBlockRepresentation? ConvertTarget.BLOCK: ConvertTarget.CELL);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, inputIndexes, rlens, clens);

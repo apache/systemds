@@ -49,6 +49,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
@@ -274,7 +275,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    if(instructionBeforesort!=null)
 	    	job.set(INSTRUCTION, instructionBeforesort);
 	    MRJobConfiguration.setBlockSize(job, (byte)0, brlen, bclen);
-	    MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, false, brlen, bclen);
+	    MRJobConfiguration.setInputInfo(job, (byte)0, inputInfo, brlen, bclen, ConvertTarget.CELL);
 	    int partitionWith0=SamplingSortMRInputFormat.writePartitionFile(job, partitionFile);
 	    DistributedCache.addCacheFile(partitionUri, job);
 	    DistributedCache.createSymlink(job);

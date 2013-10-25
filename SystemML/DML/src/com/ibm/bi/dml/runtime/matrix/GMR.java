@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.GMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.GMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -210,7 +211,8 @@ public class GMR
 		setupDistributedCache(job, instructionsInMapper, realinputs, realrlens, realclens);
 
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, inBlockRepresentation, realbrlens, realbclens);
+		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, realinputs, realinputInfos, realbrlens, realbclens, 
+				true, inBlockRepresentation? ConvertTarget.BLOCK: ConvertTarget.CELL);
 		MRJobConfiguration.setInputPartitioningInfo(job, partitioned, pformats, psizes);
 		
 		//set up the dimensions of input matrices

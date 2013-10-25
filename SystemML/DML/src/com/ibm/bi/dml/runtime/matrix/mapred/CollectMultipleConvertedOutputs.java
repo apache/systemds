@@ -62,6 +62,14 @@ public class CollectMultipleConvertedOutputs
 		//	System.out.println("output in collectOutput "+outpair.getKey().toString()+":"+outpair.getValue());
 		}
 	}
+	
+	public void directOutput(Writable key, Writable value, int output, Reporter reporter) 
+	throws IOException
+	{
+		//	System.out.println("output before convert: "+key+" "+value);
+		multipleOutputs.getCollector(Integer.toString(output), reporter).collect(key, value);
+	//	System.out.println("output in collectOutput "+key+":"+value);
+	}
 
 	public void close() throws IOException {
 		

@@ -16,11 +16,11 @@ public class CSVReblockInstruction extends ReblockInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public char delim=' ';
+	public String delim=" ";
 	public boolean ignoreFirstLine=false;
 	public double missingValue=0.0;
 	public CSVReblockInstruction(Operator op, byte in, byte out, int br,
-			int bc, char delim, boolean ignore1Line, double mv, String istr) {
+			int bc, String delim, boolean ignore1Line, double mv, String istr) {
 		super(op, in, out, br, bc, istr);
 		this.delim=delim;
 		this.missingValue=mv;
@@ -29,7 +29,6 @@ public class CSVReblockInstruction extends ReblockInstruction
 
 	public static Instruction parseInstruction(String str) {
 		Operator op = null;
-		
 		byte input, output;
 		String[] s=str.split(Instruction.OPERAND_DELIM);
 		
@@ -41,7 +40,7 @@ public class CSVReblockInstruction extends ReblockInstruction
 		
 		int brlen=Integer.parseInt(s[4]);
 		int bclen=Integer.parseInt(s[5]);
-		char delim=(char)Byte.parseByte(s[6]);
+		String delim=s[6];
 		boolean ignore=Boolean.parseBoolean(s[7]);
 		double missingValue=Double.parseDouble(s[8]);
 		return new CSVReblockInstruction(op, input, output, brlen, bclen, delim, ignore, missingValue, str);

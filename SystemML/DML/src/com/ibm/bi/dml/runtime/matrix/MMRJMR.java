@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.matrix.io.TripleIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 
 /*
@@ -82,7 +83,8 @@ public class MMRJMR
 			realIndexes[b]=b;
 		
 		//set up the input files and their format information
-		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, inBlockRepresentation, brlens, bclens);
+		MRJobConfiguration.setUpMultipleInputs(job, realIndexes, inputs, inputInfos, brlens, bclens, 
+				true, inBlockRepresentation? ConvertTarget.BLOCK: ConvertTarget.CELL);
 		
 		//set up the dimensions of input matrices
 		MRJobConfiguration.setMatricesDimensions(job, realIndexes, rlens, clens);

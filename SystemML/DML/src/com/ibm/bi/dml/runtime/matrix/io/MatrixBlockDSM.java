@@ -328,7 +328,7 @@ public class MatrixBlockDSM extends MatrixValue
 		else
 			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
 	}
-
+	
 	public void init(double[][] arr, int r, int c) throws DMLRuntimeException {
 		/* This method is designed only for dense representation */
 		if ( sparse )
@@ -1594,7 +1594,7 @@ public class MatrixBlockDSM extends MatrixValue
 			tmp = sparseBinaryHelp(op, that, (MatrixBlockDSM)result);
 		else
 			tmp = denseBinaryHelp(op, that, (MatrixBlockDSM)result);
-		
+				
 		return tmp;
 	}
 	
@@ -1758,8 +1758,7 @@ public class MatrixBlockDSM extends MatrixValue
 					quickSetValue(r+1, c, buffer._correction);
 				}
 			
-		}
-		else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
@@ -4952,8 +4951,6 @@ public class MatrixBlockDSM extends MatrixValue
 		
 	}
 	
-	
-	
 	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
 	{
 		SparsityEstimate resultSparse=checkSparcityOnBinary(this, that, op);
@@ -5681,7 +5678,6 @@ public class MatrixBlockDSM extends MatrixValue
 				if( denseBlock[i]!=0 )
 					nonZeros++;
 			}
-				
 		}
 	}
 	

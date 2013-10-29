@@ -1,0 +1,265 @@
+# 
+# IBM Confidential
+# 
+# OCO Source Materials
+# 
+# (C) Copyright IBM Corp. 2010, 2013
+# 
+# The source code for this program is not published or
+# 
+# otherwise divested of its trade secrets, irrespective of
+# 
+# what has been deposited with the U.S. Copyright Office.
+#
+
+# Main starts here -----------------------------------------------------------------------------------------------------------
+
+# input data set
+D = read($1)
+
+# label attr id (must be a valid index > 0)  
+label_index = $2
+
+# feature attributes, column vector of indices
+feature_indices = read($3) 
+
+# can be either 1 (scale) or 0 (categorical)
+label_measurement_level = $4 
+
+# measurement levels for features, 0/1 column vector
+feature_measurement_levels = read($5) 
+
+sz = ncol(D)
+
+# store for pvalues and pearson's r
+stats = matrix(0, rows=sz, cols=1)
+# store for type of test performed: 1 is chi-sq, 2 is ftest, 3 is pearson's
+tests = matrix(0, rows=sz, cols=1)
+# store for covariances used to compute pearson's r
+covariances = matrix(0, rows=sz, cols=1)
+# store for standard deviations used to compute pearson's r
+standard_deviations = matrix(0, rows=sz, cols=1)
+
+labels = D[,label_index]
+
+labelCorrection = 0
+if(label_measurement_level == 1){
+	numLabels = nrow(labels)
+    cmLabels = centralMoment(labels,2)
+    stdLabels = sqrt(cmLabels * (numLabels/(numLabels-1.0)) )
+	standard_deviations[label_index,1] = stdLabels
+}else{
+	labelCorrection = 1 - min(labels)
+	labels = labels + labelCorrection
+}
+
+mx = colMaxs(D)
+mn = colMins(D)	
+num_distinct_values = mx-mn+1
+max_num_distinct_values = 0
+for(i1 in 1:nrow(feature_indices)){
+	feature_index1 = castAsScalar(feature_indices[i1,1])
+	num = castAsScalar(num_distinct_values[1,feature_index1])
+	if(castAsScalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values){
+		max_num_distinct_values = num
+	}
+}
+distinct_label_values = matrix(0, rows=1, cols=1)	
+contingencyTableSz = 1
+maxNumberOfGroups = 1
+if(max_num_distinct_values != 0){
+	maxNumberOfGroups = max_num_distinct_values
+}
+if(label_measurement_level==0){
+	distinct_label_values = groupedAggregate(target=labels, groups=labels, fn="count")
+	if(max_num_distinct_values != 0){
+		contingencyTableSz = max_num_distinct_values*nrow(distinct_label_values)
+	}
+	maxNumberOfGroups = max(maxNumberOfGroups, nrow(distinct_label_values))
+}
+# store for contingency table cell values
+contingencyTablesCounts = matrix(0, rows=sz, cols=contingencyTableSz)
+# store for contingency table label(row) assignments
+contingencyTablesLabelValues = matrix(0, rows=sz, cols=contingencyTableSz)
+# store for contingency table feature(col) assignments
+contingencyTablesFeatureValues = matrix(0, rows=sz, cols=contingencyTableSz)
+# store for distinct values
+featureValues = matrix(0, rows=sz, cols=maxNumberOfGroups)
+# store for counts of distinct values
+featureCounts = matrix(0, rows=sz, cols=maxNumberOfGroups)
+# store for group means
+featureMeans = matrix(0, rows=sz, cols=maxNumberOfGroups)
+# store for group standard deviations
+featureSTDs = matrix(0, rows=sz, cols=maxNumberOfGroups)
+
+if(label_measurement_level == 0){
+	featureCounts[label_index,1:nrow(distinct_label_values)] = t(distinct_label_values)
+	parfor(i2 in 1:nrow(distinct_label_values)){
+		featureValues[label_index,i2] = i2-labelCorrection
+	}
+}
+
+parfor(i3 in 1:nrow(feature_indices), check=0){
+	feature_index2 = castAsScalar(feature_indices[i3,1])
+	feature_measurement_level = castAsScalar(feature_measurement_levels[i3,1])
+	
+	feature = D[,feature_index2]
+	
+	if(feature_measurement_level == 0){
+		featureCorrection = 1 - min(feature)
+		feature = feature + featureCorrection
+			
+		if(label_measurement_level == feature_measurement_level){
+			# categorical-categorical
+			tests[feature_index2,1] = 1
+			[pVal, contingencyTable, rowMarginals, colMarginals] = bivar_cc(labels, feature)
+			stats[feature_index2,1] = pVal
+			
+			sz3=1
+			if(1==1){
+				sz3 = nrow(contingencyTable)*ncol(contingencyTable)
+			}
+			contingencyTableCounts = matrix(0, rows=1, cols=sz3)
+			contingencyTableLabelValues = matrix(0, rows=1, cols=sz3)
+			contingencyTableFeatureValues = matrix(0, rows=1, cols=sz3)
+			
+            parfor(i4 in 1:nrow(contingencyTable), check=0){
+				parfor(j in 1:ncol(contingencyTable), check=0){
+					#get rid of this, see *1 below
+					contingencyTableCounts[1, ncol(contingencyTable)*(i4-1)+j] = contingencyTable[i4,j]
+					
+					contingencyTableLabelValues[1, ncol(contingencyTable)*(i4-1)+j] = i4-labelCorrection
+					contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
+				}
+			}
+			#*1: contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=true)
+            contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
+            
+			contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues
+			contingencyTablesFeatureValues[feature_index2,1:sz3] = contingencyTableFeatureValues
+			
+			featureCounts[feature_index2,1:ncol(colMarginals)] = colMarginals
+			parfor(i5 in 1:ncol(colMarginals), check=0){
+				featureValues[feature_index2,i5] = i5-featureCorrection
+			}
+		}else{
+			# label is scale, feature is categorical
+			tests[feature_index2,1] = 2
+			[pVal, frequencies, means, variances] = bivar_sc(labels, feature)
+			stats[feature_index2,1] = pVal
+			featureCounts[feature_index2,1:nrow(frequencies)] = t(frequencies)
+			parfor(i6 in 1:nrow(frequencies), check=0){
+				featureValues[feature_index2,i6] = i6 - featureCorrection
+			}
+			featureMeans[feature_index2,1:nrow(means)] = t(means)
+			featureSTDs[feature_index2,1:nrow(variances)] = t(sqrt(variances))
+		}
+	}else{
+		if(label_measurement_level == feature_measurement_level){
+			# scale-scale
+			tests[feature_index2,1] = 3
+			[r, covariance, stdX, stdY] = bivar_ss(labels, feature)
+			stats[feature_index2,1] = r
+			covariances[feature_index2,1] = covariance
+			standard_deviations[feature_index2,1] = stdY
+		}else{
+			# label is categorical, feature is scale
+			tests[feature_index2,1] = 2
+			[pVal, frequencies, means, variances] = bivar_sc(feature, labels)
+			stats[feature_index2,1] = pVal
+			featureMeans[feature_index2,1:nrow(means)] = t(means)
+			featureSTDs[feature_index2,1:nrow(variances)] = t(sqrt(variances))
+		}
+	}
+}
+
+write(stats, $6, format="text")
+write(tests, $7, format="text")
+write(covariances, $8, format="text")
+write(standard_deviations, $9, format="text")
+write(contingencyTablesCounts, $10, format="text")
+write(contingencyTablesLabelValues, $11, format="text")
+write(contingencyTablesFeatureValues, $12, format="text")
+write(featureValues, $13, format="text")
+write(featureCounts, $14, format="text")
+write(featureMeans, $15, format="text")
+write(featureSTDs, $16, format="text")
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R, Double covXY, Double sigmaX, Double sigmaY) {
+
+    # Unweighted co-variance
+    covXY = cov(X,Y)
+
+    # compute standard deviations for both X and Y by computing 2^nd central moment
+    W = nrow(X)
+    m2X = centralMoment(X,2)
+    m2Y = centralMoment(Y,2)
+    sigmaX = sqrt(m2X * (W/(W-1.0)) )
+    sigmaY = sqrt(m2Y * (W/(W-1.0)) )
+
+
+    # Pearson's R
+    R = covXY / (sigmaX*sigmaY)
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+bivar_cc = function(Matrix[Double] A, Matrix[Double] B) return (Double pval, Matrix[Double] contingencyTable, Matrix[Double] rowMarginals, Matrix[Double] colMarginals) {
+
+    # Contingency Table
+    FF = ctable(A,B)
+
+    tmp = removeEmpty(target=FF, margin="rows"); 
+    F = removeEmpty(target=tmp, margin="cols");
+
+    # Chi-Squared
+    W = sum(F)
+    r = rowSums(F)
+    c = colSums(F)
+    E = (r %*% c)/W
+    E = ppred(E, 0, "==")*0.0001 + E
+    T = (F-E)^2/E
+    chi_squared = sum(T)
+
+    # compute p-value
+    degFreedom = (nrow(F)-1)*(ncol(F)-1)
+    pValue = 1 - cumulativeProbability(target=chi_squared, dist="chisq", df=degFreedom)
+
+
+    # Assign return values
+    pval = pValue
+    contingencyTable = F
+    rowMarginals = r
+    colMarginals = c
+}
+
+# -----------------------------------------------------------------------------------------------------------
+
+# Y points to SCALE variable
+# A points to CATEGORICAL variable
+bivar_sc = function(Matrix[Double] Y, Matrix[Double] A) return (Double pVal, Matrix[Double] CFreqs, Matrix[Double] CMeans, Matrix[Double] CVars ) {
+	# mean and variance in target variable
+    W = nrow(A)
+    my = mean(Y)
+    varY = centralMoment(Y,2) * W/(W-1.0)
+
+    # category-wise (frequencies, means, variances)
+    CFreqs1 = groupedAggregate(target=Y, groups=A, fn="count")
+    present_domain_vals_mat = removeEmpty(target=diag(1-ppred(CFreqs1, 0, "==")), margin="rows")
+    CFreqs = present_domain_vals_mat %*% CFreqs1
+
+    CMeans = present_domain_vals_mat %*% groupedAggregate(target=Y, groups=A, fn="mean")
+    CVars = present_domain_vals_mat %*% groupedAggregate(target=Y, groups=A, fn="variance")
+    
+    # number of categories
+    R = nrow(CFreqs)
+    df1 = R-1
+    df2 = W-R
+
+	anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1)
+    anova_den = sum( (CFreqs-1)*CVars )/(W-R)
+    AnovaF = anova_num/anova_den
+    pVal = 1-cumulativeProbability(target=AnovaF, dist="F", df1=df1, df2=df2)
+}

@@ -14,8 +14,9 @@ import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.Expression.*;
 
 
 
@@ -40,61 +41,56 @@ public class Data extends Lop
 	private HashMap<String, Lop> _inputParams;
 
 	/**
-	 * Constructor to setup data lop.
-	 * @param fName name of input file, null if not an input  file.
-	 * @param op read or write lop
-	 * @param name label for the lop. if provided, fName and literal should be null. should be null. 
-	 * @param literal literal value for variable. if provided, fname and name should be null. 
-	 * @param dt
-	 * @param type
+	 * Method to create literal LOPs.
+	 * 
+	 * @param vt
+	 * @param literalValue
+	 * @return
+	 * @throws LopsException
 	 */
-	public Data(String fName, Data.OperationTypes op, String name, String literal, DataType dt, ValueType vt, boolean isTransient) 
-	{
-		super(Lop.Type.Data, dt, vt);		
-		operation = op;		
-		
-		if(literal != null)
-		{
-			literal_var = true;
-			this.getOutputParameters().setLabel(literal);
-		}
-
-		transient_var = isTransient;
-		if(name != null)
-		{
-			if ( transient_var )
-				this.getOutputParameters().setLabel(name); // tvar+name
-			else
-				this.getOutputParameters().setLabel("p"+op+name);
-		}
-
-		this.getOutputParameters().setFile_name(fName);
-
-		setLopProperties( );
-	
+	public static Data createLiteralLop(ValueType vt, String literalValue) throws LopsException {
+		// All literals have default format type of TEXT
+		return new Data(OperationTypes.READ, null, null, null, literalValue, DataType.SCALAR, vt, false, FileFormatTypes.TEXT);
 	}
 	
-	// Constructor to setup data lop for read or write lops
-	// If a user wants to create a write lops, input must be provided,
-	// it will always be added to the first element of the Input Array
+	/**
+	 * Constructor to setup read or write LOP
+	 * In case of write: <code>input</code> must be provided. This will always be added as the first element in <code>input</code> array.
+	 * For literals: this function is invoked through the static method <code>createLiteralLop</code>.
+	 * 
+	 * @param op
+	 * @param input
+	 * @param inputParametersLops
+	 * @param name
+	 * @param literal
+	 * @param dt
+	 * @param vt
+	 * @param isTransient
+	 * @throws LopsException
+	 */
 	public Data(Data.OperationTypes op, Lop input, HashMap<String, Lop> 
-	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient) throws LopsException 
+	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient, FileFormatTypes fmt) throws LopsException 
 	{
 		super(Lop.Type.Data, dt, vt);	
 		operation = op;	
 		
+		transient_var = isTransient;
+		
+		// Either <code>name</code> or <code>literal</code> can be non-null.
 		if(literal != null){
+			if (transient_var )
+				throw new LopsException("Invalid parameter values while setting up a Data LOP -- transient flag is invalid for a literal.");
 			literal_var = true;
 			this.getOutputParameters().setLabel(literal);
 		}
-
-		transient_var = isTransient;
-		if(name != null)
-		{
+		else if(name != null) {
 			if ( transient_var )
 				this.getOutputParameters().setLabel(name); // tvar+name
 			else
 				this.getOutputParameters().setLabel("p"+op+name);
+		}
+		else {
+			throw new LopsException("Invalid parameter values while setting up a Data LOP -- the lop must have either literal value or a name.");
 		}
 		
 		// WRITE operation must have an input Lops, we always put this
@@ -106,88 +102,53 @@ public class Data extends Lop
 			input.addOutput(this);
 		}
 		
-		for (Lop lop : inputParametersLops.values()) {
-			this.addInput(lop);
-			lop.addOutput(this);
-		}
-		
 		_inputParams = inputParametersLops;
 		
-		if (inputParametersLops.get(Statement.IO_FILENAME)!= null){
-		
-			OutputParameters outParams = ((Data)inputParametersLops.get(Statement.IO_FILENAME)).getOutputParameters();
-			String fName = outParams.getLabel();
-			this.getOutputParameters().setFile_name(fName);
+		if ( _inputParams != null ) {
+			for (Lop lop : inputParametersLops.values()) {
+				this.addInput(lop);
+				lop.addOutput(this);
+			}
+			if (inputParametersLops.get(Statement.IO_FILENAME)!= null){
+				OutputParameters outParams = ((Data)inputParametersLops.get(Statement.IO_FILENAME)).getOutputParameters();
+				String fName = outParams.getLabel();
+				this.getOutputParameters().setFile_name(fName);
+			}
 		}
+		
+		setFileFormatType(fmt);
 		
 		setLopProperties( );
 	}
 
-	/**
-	 * Same as other constructor, but with the ability to specify an input for write data lops.
-	 * @param fName
-	 * @param op
-	 * @param input
-	 * @param name
-	 * @param literal
-	 * @param dt
-	 * @param type
-	 */
-	
-	public Data(String fName, Data.OperationTypes op, Lop input, String name, String literal, DataType dt, ValueType vt, boolean isTransient) 
-	{
-		super(Lop.Type.Data, dt, vt);		
-		operation = op;
-		
-		if(literal != null)
-		{
-			literal_var = true;
-			this.getOutputParameters().setLabel(literal);
-		}
-
-		transient_var = isTransient;
-		if(name != null)
-		{
-			if ( transient_var )
-				this.getOutputParameters().setLabel(name);  // tvar+name
-			else
-				this.getOutputParameters().setLabel("p"+op+name);
-		}
-		
-		this.getOutputParameters().setFile_name(fName);
-
-		/** write operation must have an input **/
-		if(input != null && operation == OperationTypes.WRITE)
-		{
-			this.addInput(input);
-			input.addOutput(this);
-		}
-		
-		setLopProperties();
-	}
-	
 	private void setLopProperties() {
-		/*
-		 *  This lop can be executed in all job types except for RAND, PARTITION.
-		 *  RAND: because all inputs must be of type random. 
-		 */
-		lps.addCompatibility(JobType.ANY);
-		lps.removeCompatibility(JobType.PARTITION);
-		// reads are not compatible with RAND because RAND must have all inputs that are random
-		if ( operation == OperationTypes.READ )
-			lps.removeCompatibility(JobType.RAND);
-		else if ( operation == OperationTypes.WRITE ) {
-			// WRITE lops are not compatible with jobs that produce an 
-			// intermediate output, which MUST be consumed by other subsequent lops 
-			lps.removeCompatibility(JobType.MMCJ);
-			lps.removeCompatibility(JobType.SORT);
-			lps.removeCompatibility(JobType.COMBINE);
-		}
-		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
+
+		if ( getFileFormatType() == FileFormatTypes.CSV ) {
+			lps.addCompatibility(JobType.CSV_WRITE);
+			definesMRJob = true;
+		}
+		else {
+			/*
+			 *  This lop can be executed in all job types except for RAND, PARTITION.
+			 *  RAND: because all inputs must be of type random. 
+			 */
+			lps.addCompatibility(JobType.ANY);
+			lps.removeCompatibility(JobType.PARTITION);
+			// reads are not compatible with RAND because RAND must have all inputs that are random
+			if ( operation == OperationTypes.READ )
+				lps.removeCompatibility(JobType.RAND);
+			else if ( operation == OperationTypes.WRITE ) {
+				// WRITE lops are not compatible with jobs that produce an 
+				// intermediate output, which MUST be consumed by other subsequent lops 
+				lps.removeCompatibility(JobType.MMCJ);
+				lps.removeCompatibility(JobType.SORT);
+				lps.removeCompatibility(JobType.COMBINE);
+			}
+		}
 		// ExecType is invalid for Data lop
 		this.lps.setProperties ( inputs, ExecType.INVALID, ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
 	}
@@ -206,8 +167,9 @@ public class Data extends Lop
 	/**
 	 * Method to set format types for input, output files. 
 	 * @param type
+	 * @throws LopsException 
 	 */
-	public void setFileFormatType(FileFormatTypes type) 
+	public void setFileFormatType(FileFormatTypes type) throws LopsException 
 	{
 		this.formatType = type ;
 		if(type == FileFormatTypes.BINARY)
@@ -216,6 +178,10 @@ public class Data extends Lop
 			this.outParams.setFormat(Format.TEXT) ;
 		else if (type == FileFormatTypes.MM)
 			this.outParams.setFormat(Format.MM);
+		else if (type == FileFormatTypes.CSV )
+			this.outParams.setFormat(Format.CSV);
+		else 
+			throw new LopsException("Unexpected format: " + type);
 	}
 
 	/**
@@ -254,6 +220,10 @@ public class Data extends Lop
 		return _inputParams;
 	}
 	
+	public Lop getNamedInputLop(String name) {
+		return _inputParams.get(name);
+	}
+	
 	/**
 	 * method to check if this data lop represents a literal.
 	 * @return
@@ -265,6 +235,30 @@ public class Data extends Lop
 
 	}
 	
+	public boolean getBooleanValue() throws LopsException {
+		if(literal_var) {
+			return Boolean.parseBoolean(getOutputParameters().getLabel());
+		}
+		else
+			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
+	}
+	
+	public double getDoubleValue() throws LopsException {
+		if(literal_var) {
+			return Double.parseDouble(getOutputParameters().getLabel());
+		}
+		else
+			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
+	}
+	
+	public String getStringValue() throws LopsException {
+		if(literal_var) {
+			return getOutputParameters().getLabel();
+		}
+		else
+			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
+	}
+	
 	/**
 	 * Method to check if this represents a transient variable.
 	 * @return
@@ -273,11 +267,70 @@ public class Data extends Lop
 	{
 		return transient_var;
 	}
+	
+	/**
+	 * Method to generate appropriate MR write instructions.
+	 * Explicit write instructions are generated only in case of external file formats 
+	 * (e.g., CSV) except for MatrixMarket. MM format is overridden by TextCell, instead.
+	 * 
+	 */
+	@Override
+	public String getInstructions(int input_index, int output_index) throws LopsException {
+		
+		OutputParameters oparams = getOutputParameters();
+
+		if ( operation != OperationTypes.WRITE )
+			throw new LopsException("This method should only be executed for generating MR Write instructions.");
+		
+		if ( oparams.getFormat() != Format.CSV )
+			throw new LopsException("MR Write instructions can not be generated for the output format: " + oparams.getFormat() );
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( "MR" );
+		sb.append( OPERAND_DELIMITOR );
+		
+		// Generate opcode based on the output format
+		if ( oparams.getFormat() == Format.CSV )
+			sb.append( "csvwrite" );
+		else 
+			throw new LopsException("MR Write instructions can not be generated for the output format: " + oparams.getFormat() );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( input_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( getInputs().get(0).get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( output_index );
+		sb.append( DATATYPE_PREFIX );
+		sb.append( get_dataType() );
+		sb.append( VALUETYPE_PREFIX );
+		sb.append( get_valueType() );
+
+		// Attach format-specific properties
+		if(oparams.getFormat() == Format.CSV) {
+			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
+			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
+				
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(headerLop.getBooleanValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(delimLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(sparseLop.getBooleanValue());
+		}
+		else {
+			throw new LopsException("MR Write instructions can not be generated for the output format: " + oparams.getFormat() );
+		}
+		
+		return sb.toString();
+	}
 
 	/**
-	 * Method to get instructions for reading/writing scalars from/to HDFS
-	 * This method should be executed only when the data type = SCALAR
-	 * In case of MR, Reads/Writes of matrices is done through inputs/outputs fields.
+	 * Method to get CP instructions for reading/writing scalars and matrices from/to HDFS.
+	 * This method generates CP read/write instructions.
 	 */
 	@Override
 	public String getInstructions(String input1, String input2) 
@@ -309,19 +362,24 @@ public class Data extends Lop
 			sb.append( ValueType.STRING );
 
 			// attach outputInfo in case of matrices
+			OutputParameters oparams = getOutputParameters();
 			if ( operation == OperationTypes.WRITE ) {
 				sb.append( OPERAND_DELIMITOR );
 				if ( get_dataType() == DataType.MATRIX ) {
-					OutputParameters oparams = getOutputParameters();
 					if ( oparams.getFormat() == Format.MM )
 						sb.append( "matrixmarket" );
 					else if (oparams.getFormat() == Format.TEXT)
 						sb.append( "textcell");
-					else {
+					else if (oparams.getFormat() == Format.CSV)
+						sb.append( "csv");
+					else if ( oparams.getFormat() == Format.BINARY ){
 						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 							sb.append( "binaryblock" );
 						else
 							sb.append( "binarycell" );
+					}
+					else {
+						throw new LopsException("Unexpected format: " + oparams.getFormat());
 					}
 				}
 				else {
@@ -333,6 +391,21 @@ public class Data extends Lop
 				sb.append( DataType.SCALAR );
 				sb.append( VALUETYPE_PREFIX );
 				sb.append( ValueType.STRING );
+				
+				if(oparams.getFormat() == Format.CSV) {
+					Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
+					Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
+					Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
+					
+					sb.append(OPERAND_DELIMITOR);
+					sb.append(headerLop.getBooleanValue());
+					sb.append(OPERAND_DELIMITOR);
+					sb.append(delimLop.getStringValue());
+					sb.append(OPERAND_DELIMITOR);
+					sb.append(sparseLop.getBooleanValue());
+					
+				}
+				
 			}
 			return sb.toString();
 		}
@@ -340,11 +413,15 @@ public class Data extends Lop
 	}
 	
 	/**
-	 * Method to generate an instruction that updates symbol table with metadata, hdfsfile name, etc.
+	 * Method to generate createvar instruction that updates symbol table with metadata, hdfsfile name, etc.
 	 * 
 	 * @throws LopsException 
 	 */
 	public String getInstructions() throws LopsException {
+		return getInstructions(getOutputParameters().getFile_name());
+	}
+	
+	public String getInstructions(String outputFileName) throws LopsException {
 		if ( get_dataType() == DataType.MATRIX ) {
 			
 			if ( isTransient() )
@@ -357,6 +434,8 @@ public class Data extends Lop
 				fmt = "textcell";
 			else if ( oparams.getFormat() == Format.MM )
 				fmt = "matrixmarket";
+			else if ( oparams.getFormat() == Format.CSV )
+				fmt = "csv";
 			else {
 				if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
 					fmt = "binaryblock";
@@ -371,7 +450,7 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR ); 
 			sb.append( oparams.getLabel() );
 			sb.append( OPERAND_DELIMITOR ); 
-			sb.append( oparams.getFile_name() );
+			sb.append( outputFileName );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( false );
 			sb.append( OPERAND_DELIMITOR ); // only persistent reads come here!
@@ -387,10 +466,53 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNnz() );
 			
+			/* Format-specific properties */
+			if ( oparams.getFormat() == Format.CSV ) {
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( createVarCSVHelper() );
+			}
+			
 			return sb.toString();
 		}
 		else {
 			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unexpected data type " + get_dataType());
 		}
+	}
+	
+	/**
+	 * Helper function that attaches CSV format-specific properties to createvar instruction.
+	 * The set of properties that are attached for a READ operation is different from that for a WRITE operation.
+	 * 
+	 * @return
+	 * @throws LopsException
+	 */
+	private String createVarCSVHelper() throws LopsException {
+		StringBuilder sb = new StringBuilder();
+		if ( operation == OperationTypes.READ ) {
+			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
+			Data fillLop = (Data) getNamedInputLop(Statement.DELIM_FILL); 
+			Data fillValueLop = (Data) getNamedInputLop(Statement.DELIM_FILL_VALUE);
+			
+			sb.append(headerLop.getBooleanValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(delimLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(fillLop.getBooleanValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(fillValueLop.getDoubleValue());
+		}
+		else { // (operation == OperationTypes.WRITE) 
+			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
+			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
+			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE); 
+			
+			sb.append(headerLop.getBooleanValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(delimLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(sparseLop.getBooleanValue());
+		}
+		return sb.toString();
 	}
 }

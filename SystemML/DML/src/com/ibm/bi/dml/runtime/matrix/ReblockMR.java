@@ -140,7 +140,7 @@ public class ReblockMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK_BINARY, inputStats); 
+		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
 			MRJobConfiguration.setStagingDir( job );

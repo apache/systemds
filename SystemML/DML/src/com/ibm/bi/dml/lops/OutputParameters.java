@@ -21,7 +21,7 @@ public class OutputParameters
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum Format {
-		TEXT, BINARY, MM
+		TEXT, BINARY, MM, CSV
 	};
 
 	boolean blocked_representation = true;
@@ -34,7 +34,7 @@ public class OutputParameters
 	String file_label = null;
 
 	Format matrix_format = Format.BINARY;
-
+	
 	public String getFile_name() {
 		return file_name;
 	}
@@ -72,8 +72,8 @@ public class OutputParameters
 		}
 	}
 
-	public void setFormat(Format format) {
-		matrix_format = format;
+	public void setFormat(Format fmt) {
+		matrix_format = fmt;
 
 	}
 

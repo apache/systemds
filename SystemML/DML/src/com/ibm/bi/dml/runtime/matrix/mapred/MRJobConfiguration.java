@@ -766,7 +766,7 @@ public class MRJobConfiguration
 				indexes[i]=(byte)i;
 		}else
 		{
-			String[] strs=str.split(",");
+			String[] strs=str.split(Instruction.INSTRUCTION_DELIM);
 			indexes=new byte[strs.length];
 			for(int i=0; i<strs.length; i++)
 				indexes[i]=Byte.parseByte(strs[i]);

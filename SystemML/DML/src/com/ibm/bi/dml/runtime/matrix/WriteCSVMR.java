@@ -1,9 +1,9 @@
 /**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 
 package com.ibm.bi.dml.runtime.matrix;
@@ -11,6 +11,7 @@ package com.ibm.bi.dml.runtime.matrix;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -118,8 +119,8 @@ public class WriteCSVMR
 			inst.printCompelteMRJobInstruction(stats);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
-		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  null, 
-				null, null, null, resultIndexes);
+		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  "", 
+				"", csvWriteInstructions, resultIndexes);
 		
 		//set up the multiple output files, and their format information
 		MRJobConfiguration.setUpMultipleOutputs(job, resultIndexes, resultDimsUnknown, outputs, 
@@ -143,7 +144,7 @@ public class WriteCSVMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK_BINARY, inputStats); 
+		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
 			MRJobConfiguration.setStagingDir( job );
@@ -259,7 +260,10 @@ public class WriteCSVMR
 			}
 			if(container[i]!=0)
 				buffer.append(container[i]);
-			out.write(Text.encode(buffer.toString(), true).array());
+			ByteBuffer bytes = Text.encode(buffer.toString());
+		    int length = bytes.limit();
+		    out.write(bytes.array(), 0, length);
+			//out.write(Text.encode(buffer.toString(), true).array());
 		}
 		public String toString()
 		{
@@ -362,6 +366,7 @@ public class WriteCSVMR
 		boolean[] sparses=null;
 		boolean firsttime=true;
 		Reporter cachedReporter=null;
+		int[] tagToResultIndex=null;
 		//HashMap<Byte, CSVWriteInstruction> csvWriteInstructions=new HashMap<Byte, CSVWriteInstruction>();
 		
 		private void addEndingMissingValues(byte tag, Reporter reporter) 
@@ -372,14 +377,14 @@ public class WriteCSVMR
 			{
 				zeroBlock.numCols=colsPerBlock[tag];
 				zeroBlock.setSituation(Situation.MIDDLE);
-				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tag, reporter);
+				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 			}
 			//the last block
 			if(col<=numColBlocks[tag])
 			{
 				zeroBlock.numCols=lastBlockNCols[tag];
 				zeroBlock.setSituation(Situation.MIDDLE);
-				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tag, reporter);
+				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 				colIndexes[tag]=0;
 			}
 		}
@@ -392,12 +397,12 @@ public class WriteCSVMR
 				{
 					zeroBlock.numCols=colsPerBlock[tag];
 					zeroBlock.setSituation(sit);
-					collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tag, reporter);
+					collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 					sit=Situation.MIDDLE;
 				}
 				zeroBlock.numCols=lastBlockNCols[tag];
 				zeroBlock.setSituation(Situation.MIDDLE);
-				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tag, reporter);
+				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 				colIndexes[tag]=0;
 				sit=Situation.NEWLINE;
 			}
@@ -436,21 +441,20 @@ public class WriteCSVMR
 			{	
 				//if a row is completely missing
 				addMissingRows(tag, inkey.getFirstIndex(), sit, reporter);
-				sit=Situation.NEWLINE;
 			}
 			//add missing value at the beginning of this row
 			for(long col=colIndexes[tag]+1; col<inkey.getSecondIndex(); col++)
 			{
 				zeroBlock.numCols=colsPerBlock[tag];
 				zeroBlock.setSituation(sit);
-				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tag, reporter);
+				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 				sit=Situation.MIDDLE;
 			}
 			colIndexes[tag]=inkey.getSecondIndex();
 			while(inValue.hasNext())
 			{
 				outValue.set(inValue.next(), sit);
-				collectFinalMultipleOutputs.directOutput(nullKey, outValue, tag, reporter);
+				collectFinalMultipleOutputs.directOutput(nullKey, outValue, tagToResultIndex[tag], reporter);
 				sit=RowBlockForTextOutput.Situation.MIDDLE;
 			}
 			rowIndexes[tag]=inkey.getFirstIndex();
@@ -486,9 +490,12 @@ public class WriteCSVMR
 			colsPerBlock=new int[maxIndex+1];
 			delims=new String[maxIndex+1];
 			sparses=new boolean[maxIndex+1];
+			tagToResultIndex=new int[maxIndex+1];
 			
-			for(byte ri:resultIndexes)
+			for(int i=0; i<resultIndexes.length; i++)
 			{
+				byte ri=resultIndexes[i];
+				tagToResultIndex[ri]=i;
 				CSVWriteInstruction in=out2Ins.get(ri);
 				MatrixCharacteristics dim=MRJobConfiguration.getMatrixCharacteristicsForInput(job, in.input);
 				delims[ri]=in.delim;
@@ -502,6 +509,7 @@ public class WriteCSVMR
 				minRowIndexes[ri]=rowIndexes[ri]=rstep*taskID;
 				maxRowIndexes[ri]=Math.max(rstep*(taskID+1), dim.numRows);
 				colIndexes[ri]=0;
+				
 			}
 			
 			zeroBlock.container=new double[maxCol];
@@ -522,35 +530,39 @@ public class WriteCSVMR
 	
 	public static void main(String[] args) throws Exception {
 		ConfigurationManager.setConfig(new DMLConfig("SystemML-config.xml"));
-		String[] inputs = {"data/A.csv", "data/B.csv"};
+		String[] inputs = {"data/test1.csv", "data/test2.csv"};
 		InputInfo[] inputInfos = {InputInfo.CSVInputInfo, InputInfo.CSVInputInfo};
 		String[] outputs = {"data/A.tmp", "data/B.tmp"};
 		OutputInfo[] outputInfos = {OutputInfo.BinaryBlockOutputInfo, OutputInfo.BinaryBlockOutputInfo};
-		int[] brlens = { 2, 2};
-		int[] bclens = { 2, 2};
+		int[] brlens = { 1000, 1000};
+		int[] bclens = { 1000, 1000};
 		
 		String ins1= "MR" + Instruction.OPERAND_DELIM 
-		+ "rblkcsv" + Instruction.OPERAND_DELIM 
+		+ "csvrblk" + Instruction.OPERAND_DELIM 
 		+ 0 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[0] + Instruction.OPERAND_DELIM
 		+ bclens[0] + Instruction.OPERAND_DELIM
-		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
+		+ "," + Instruction.OPERAND_DELIM
 		+ false+ Instruction.OPERAND_DELIM
+		+ true+ Instruction.OPERAND_DELIM
 		+100.0;
 		
 		String ins2= "MR" + Instruction.OPERAND_DELIM 
-		+ "rblkcsv" + Instruction.OPERAND_DELIM 
+		+ "csvrblk" + Instruction.OPERAND_DELIM 
 		+ 1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[1] + Instruction.OPERAND_DELIM
 		+ bclens[1] + Instruction.OPERAND_DELIM
-		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
+		+ "," + Instruction.OPERAND_DELIM
 		+ false+ Instruction.OPERAND_DELIM
+		+ true+ Instruction.OPERAND_DELIM
 		+0.0;
 		
-		JobReturn ret=CSVReblockMR.runJob(null, inputs, inputInfos, new long[]{-1, -1}, new long[]{-1, -1}, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 
+		JobReturn ret=CSVReblockMR.runJob(null, inputs, inputInfos, new long[]{-1, -1}, new long[]{-1, -1}, brlens, bclens, ins1+ Instruction.INSTRUCTION_DELIM +ins2, null, 2, 1, new byte[]{2,3}, outputs, 
 				outputInfos);
+		System.out.println("END of CSVReblock");
+		
 		InputInfo[] inputInfos2 = {InputInfo.BinaryBlockInputInfo, InputInfo.BinaryBlockInputInfo};
 		long[] rlens= new long[]{((MatrixDimensionsMetaData)(ret.metadata[0])).matchar.numRows, 
 				((MatrixDimensionsMetaData)(ret.metadata[1])).matchar.numRows};
@@ -560,17 +572,19 @@ public class WriteCSVMR
 		+ "csvwrite" + Instruction.OPERAND_DELIM 
 		+ 0 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
+		+ true + Instruction.OPERAND_DELIM
 		+ "@" + Instruction.OPERAND_DELIM
-		+ true;
+		+ false;
 		
 		String ins4= "MR" + Instruction.OPERAND_DELIM 
 		+ "csvwrite" + Instruction.OPERAND_DELIM 
 		+ 1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
+		+ false + Instruction.OPERAND_DELIM
 		+ "%" + Instruction.OPERAND_DELIM
-		+ false;
+		+ true;
 		String[] outputs2 = {"data/A.out", "data/B.out"};
-		WriteCSVMR.runJob(null, outputs, inputInfos2, rlens, clens, brlens, bclens, ins3+","+ins4, 2, 1, new byte[]{2,3}, outputs2);
+		WriteCSVMR.runJob(null, outputs, inputInfos2, rlens, clens, brlens, bclens, ins3+Instruction.INSTRUCTION_DELIM+ins4, 2, 1, new byte[]{2,3}, outputs2);
 	}
 	
 }

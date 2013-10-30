@@ -99,6 +99,8 @@ public class OutputInfo
 			return OutputInfoForSortOutput;
 		else if ( str.equalsIgnoreCase("weightedpair") )
 			return WeightedPairOutputInfo;
+		else if ( str.equalsIgnoreCase("csv") )
+			return CSVOutputInfo;
 		return null;
 	}
 	
@@ -119,6 +121,8 @@ public class OutputInfo
 			return "sort_output";
 		else if ( oi == WeightedPairOutputInfo )
 			return "weightedpair";
+		else if ( oi == CSVOutputInfo )
+			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}

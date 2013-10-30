@@ -29,6 +29,7 @@ import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.Kind;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
+import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -949,7 +950,7 @@ public class Recompiler
 			String shuffleInst = inst.getIv_shuffleInstructions();
 			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
 			for( String rblk : instParts )
-				if( !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) )
+				if( !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) && !InstructionUtils.getOpCode(rblk).equals(CSVReBlock.OPCODE) )
 				{
 					ret = false;
 					break;

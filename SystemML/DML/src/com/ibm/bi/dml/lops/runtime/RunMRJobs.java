@@ -34,7 +34,9 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.ReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CMCOVMR;
+import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CombineMR;
+import com.ibm.bi.dml.runtime.matrix.DataGenMR;
 import com.ibm.bi.dml.runtime.matrix.DataPartitionMR;
 import com.ibm.bi.dml.runtime.matrix.GMR;
 import com.ibm.bi.dml.runtime.matrix.GroupedAggMR;
@@ -44,9 +46,9 @@ import com.ibm.bi.dml.runtime.matrix.MMRJMR;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.DataGenMR;
 import com.ibm.bi.dml.runtime.matrix.ReblockMR;
 import com.ibm.bi.dml.runtime.matrix.SortMR;
+import com.ibm.bi.dml.runtime.matrix.WriteCSVMR;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
@@ -76,7 +78,7 @@ public class RunMRJobs
 		
 		// export dirty matrices to HDFS
 		// note: for REBLOCK postponed until we know if necessary
-		if( !(inst.getJobType() == JobType.REBLOCK_TEXT || inst.getJobType() == JobType.REBLOCK_BINARY ) )
+		if( !(inst.getJobType() == JobType.REBLOCK) )
 		{
 			//export matrices
 			for(MatrixObject m : inputMatrices) {
@@ -137,8 +139,8 @@ public class RunMRJobs
 						inst.getOutputs(), inst.getOutputInfos() );
 				break;
 			
-			case REBLOCK_TEXT:
-			case REBLOCK_BINARY:
+			case REBLOCK:
+			case CSV_REBLOCK:
 				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPReblock( inst, inputMatrices ) ) 
@@ -172,14 +174,29 @@ public class RunMRJobs
 					}
 					checkEmptyInputs( inst, inputMatrices );
 					
-					ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
-							inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
-							mapInst, shuffleInst, otherInst,
-							inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
-							inst.getOutputs(), inst.getOutputInfos() );
+					if ( inst.getJobType() == JobType.REBLOCK ) {
+						ret = ReblockMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
+								inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+								mapInst, shuffleInst, otherInst,
+								inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
+								inst.getOutputs(), inst.getOutputInfos() );
+					}
+					else if( inst.getJobType() == JobType.CSV_REBLOCK ) {
+						ret = CSVReblockMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
+								inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
+								shuffleInst, otherInst,
+								inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(),   
+								inst.getOutputs(), inst.getOutputInfos() );
+					}
 				}
 				break;
 
+			case CSV_WRITE:
+				ret = WriteCSVMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
+						inst.getRlens(), inst.getClens(), inst.getBclens(), inst.getBclens(), shuffleInst,
+						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getOutputs());
+				break;
+				
 			case MMCJ:
 				ret = MMCJMR.runJob(inst, inst.getInputs(),  inst.getInputInfos(), 
 						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
@@ -488,8 +505,7 @@ public class RunMRJobs
 			if ( compareInputDimensions(stats, 3) )
 				return ExecMode.LOCAL;
 			break;
-		case REBLOCK_BINARY:
-		case REBLOCK_TEXT:
+		case REBLOCK:
 			if ( compareInputDimensions(stats, 1) )
 				return ExecMode.LOCAL;
 			break;

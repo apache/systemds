@@ -70,13 +70,15 @@ public class RandTest
         id.setDataType(DataType.MATRIX);
         id.setDimensions(NUM_ROWS, NUM_COLS);
         id.setBlockDimensions(NUM_ROWS_IN_BLOCK, NUM_COLS_IN_BLOCK);
-        Data min = new Data("", Data.OperationTypes.READ, String.valueOf(MIN_VALUE), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data max = new Data("", Data.OperationTypes.READ, String.valueOf(MAX_VALUE), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data sparsity = new Data("", Data.OperationTypes.READ, String.valueOf(SPARSITY), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data seed = new Data("", Data.OperationTypes.READ, String.valueOf(SEED), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data pdf = new Data("", Data.OperationTypes.READ, String.valueOf(PDF), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data rows = new Data("", Data.OperationTypes.READ, String.valueOf(NUM_ROWS), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
-        Data cols = new Data("", Data.OperationTypes.READ, String.valueOf(NUM_COLS), "TEXT", DataType.SCALAR, ValueType.DOUBLE, false);
+        
+        Data min = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(MIN_VALUE));
+        Data max = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(MAX_VALUE));
+        Data sparsity = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(SPARSITY));
+        Data rows = Data.createLiteralLop(ValueType.INT, Long.toString(NUM_ROWS));
+        Data cols = Data.createLiteralLop(ValueType.INT, Long.toString(NUM_COLS));
+        Data seed = Data.createLiteralLop(ValueType.INT, Long.toString(SEED));
+        Data pdf = Data.createLiteralLop(ValueType.STRING, PDF);
+        
         HashMap<String, Lop> 
     	inputParametersLops = new HashMap<String, Lop>();
         inputParametersLops.put("min", min);

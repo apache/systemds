@@ -40,7 +40,7 @@ public abstract class Lop
 		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
-		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition, FunctionCallCP
+		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock
 	};
 
 	public enum VISIT_STATUS {DONE, VISITING, NOTVISITED}
@@ -58,7 +58,7 @@ public abstract class Lop
 	public static final String PROCESS_PREFIX = "_p";
 	
 	//TODO MB: change delimiters to specific chars or check literals in script; otherwise potential conflicts on instruction serialization
-	public static final String INSTRUCTION_DELIMITOR = "\u002c"; //",";
+	public static final String INSTRUCTION_DELIMITOR = "\u2021"; // "\u002c"; //",";
 	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
 	public static final String DATATYPE_PREFIX = "\u00b7" ; //":#:";

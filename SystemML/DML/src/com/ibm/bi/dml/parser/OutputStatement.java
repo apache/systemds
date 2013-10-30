@@ -18,7 +18,7 @@ public class OutputStatement extends IOStatement
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE, DELIM_DELIMITER};
+	public static final String[] WRITE_VALID_PARAM_NAMES = { IO_FILENAME, FORMAT_TYPE, DELIM_DELIMITER, DELIM_HAS_HEADER_ROW, DELIM_SPARSE};
 
 	public static boolean isValidParamName(String key){
 	for (String paramName : WRITE_VALID_PARAM_NAMES)

@@ -24,6 +24,8 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
+import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
+import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
@@ -72,6 +74,9 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand output;
 	private MetaData metadata;
 	int arity;
+	
+	// CSV related members (used only in createvar instructions)
+	FileFormatProperties formatProperties;
 	
 	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLUnsupportedOperationException {
 		
@@ -155,6 +160,8 @@ public class VariableCPInstruction extends CPInstruction
 		output = out;
 		arity = _arity;
 		instString = istr;
+		
+		formatProperties = null;
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
@@ -162,6 +169,18 @@ public class VariableCPInstruction extends CPInstruction
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
 		metadata = md;
+	}
+	
+	// This version of the constructor is used only in case of CreateVariable
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, FileFormatProperties formatProperties, String istr)
+	{
+		this(op, in1, in2, in3, (CPOperand)null, _arity, istr);
+		metadata = md;
+		this.formatProperties = formatProperties;
+	}
+	
+	public void setFormatProperties(FileFormatProperties prop) {
+		formatProperties = prop;
 	}
 	
 	public String getOutputVariableName(){
@@ -195,7 +214,13 @@ public class VariableCPInstruction extends CPInstruction
 		int _arity = -1;
 		
 		if ( voc == VariableOperationCode.CreateVariable ){
-			if ( parts.length != 5 && parts.length != 10 )
+			if ( parts.length < 5 )  //&& parts.length != 10 )
+				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+		}
+		else if ( voc == VariableOperationCode.Write ) {
+			// All write instructions have 3 parameters, except in case of delimited/csv file.
+			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
+			if ( parts.length != 4 && parts.length != 7 )
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 		}
 		else {
@@ -217,6 +242,19 @@ public class VariableCPInstruction extends CPInstruction
 			
 			// format 
 			String fmt = parts[4];
+			if ( fmt.equalsIgnoreCase("csv") ) {
+				/*
+				 * Cretevar instructions for CSV format either has 13 or 14 inputs.
+				 * 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
+				 * 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
+				 */
+				if ( parts.length != 13 && parts.length != 14 )
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
+			else {
+				if ( parts.length != 5 && parts.length != 10 )
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
 			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 			
@@ -225,7 +263,7 @@ public class VariableCPInstruction extends CPInstruction
 				// do nothing
 				;
 			}
-			else if ( parts.length == 10 ) {
+			else if ( parts.length >= 10 ) {
 				// matrix characteristics
 				mc.setDimension(Long.parseLong(parts[5]), Long.parseLong(parts[6]));
 				mc.setBlockSize(Integer.parseInt(parts[7]), Integer.parseInt(parts[8]));
@@ -235,34 +273,32 @@ public class VariableCPInstruction extends CPInstruction
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
-			return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, str);
 			
-			/*if ( parts.length > 3 ) {
-				MatrixCharacteristics mc = new MatrixCharacteristics();
-				if ( parts.length == 4 ) {
-					// the last operand is the OutputInfo
-					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[3]);
-					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
-					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, iimd);
-				}
-				mc.setDimension(Long.parseLong(parts[3]), Long.parseLong(parts[4]));
-				mc.setBlockSize(Integer.parseInt(parts[5]), Integer.parseInt(parts[6]));
-				mc.setNonZeros(Long.parseLong(parts[7]));
-				
-				if (parts.length > 8) {
-					OutputInfo oi = OutputInfo.stringToOutputInfo(parts[8]);
-					InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
-					MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, iimd);
+			if ( fmt.equalsIgnoreCase("csv") ) {
+				/*
+				 * Cretevar instructions for CSV format either has 13 or 14 inputs.
+				 * 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
+				 * 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
+				 */
+				FileFormatProperties fmtProperties = null;
+				if ( parts.length == 13 ) {
+					boolean hasHeader = Boolean.parseBoolean(parts[10]);
+					String delim = parts[11];
+					boolean sparse = Boolean.parseBoolean(parts[12]);
+					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, sparse) ;
 				}
 				else {
-					MatrixDimensionsMetaData mdmd = new MatrixDimensionsMetaData(mc);
-					return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, parts.length, str, mdmd);
+					boolean hasHeader = Boolean.parseBoolean(parts[10]);
+					String delim = parts[11];
+					boolean fill = Boolean.parseBoolean(parts[12]);
+					double fillValue = Double.parseDouble(parts[13]);
+					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue) ;
 				}
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, fmtProperties, str);
 			}
-			break;*/
-			
+			else {
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, str);
+			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
@@ -315,7 +351,17 @@ public class VariableCPInstruction extends CPInstruction
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			in3 = new CPOperand(parts[3]);
-			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
+			
+			VariableCPInstruction inst = new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str); 
+			
+			if ( in3.get_name().equalsIgnoreCase("csv") ) {
+				boolean hasHeader = Boolean.parseBoolean(parts[4]);
+				String delim = parts[5];
+				boolean sparse = Boolean.parseBoolean(parts[6]);
+				FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
+				inst.setFormatProperties(formatProperties);
+			}
+			return inst;
 			
 		case Read:
 			in1 = new CPOperand(parts[1]);
@@ -386,6 +432,7 @@ public class VariableCPInstruction extends CPInstruction
 				mobj.setVarName(input1.get_name());
 				mobj.setDataType(DataType.MATRIX);
 				mobj.setMetaData(metadata);
+				mobj.setFileFormatProperties(formatProperties);
 				
 				ec.setVariable(input1.get_name(), mobj);
 			}
@@ -614,65 +661,7 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case Write:
-			if ( input1.get_dataType() == DataType.SCALAR ) {
-				ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType());
-				try {
-					switch ( input1.get_valueType() ) {
-					case DOUBLE:
-						MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
-						break;
-					case INT:
-						MapReduceTool.writeIntToHDFS(scalar.getIntValue(), input2.get_name());
-						break;
-					case BOOLEAN:
-						MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());
-						break;
-					case STRING:
-						MapReduceTool.writeStringToHDFS(scalar.getStringValue(), input2.get_name());
-						break;
-					default:
-						throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
-					}
-				  // write out .mtd file
-				  MapReduceTool.writeScalarMetaDataFile(input2.get_name() +".mtd", input1.get_valueType());
-				} catch ( IOException e ) {
-					throw new DMLRuntimeException(e);
-				}
-			}
-			else {
-				MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
-				String outFmt = input3.get_name();
-				if (outFmt.equalsIgnoreCase("matrixmarket")) {
-					if(mo.isDirty()) {
-						// there exist data computed in CP that is not backed up on HDFS
-						// i.e., it is either in-memory or in evicted space
-						mo.exportData(input2.get_name(), outFmt);
-					}
-					else {
-						OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
-						MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-						if(oi == OutputInfo.TextCellOutputInfo) {
-							try {
-								DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), input2.get_name(), mc.get_rows(), mc.get_cols(), mc.getNonZeros());
-							} catch (IOException e) {
-								throw new DMLRuntimeException(e);
-							}
-						}
-						else if ( oi == OutputInfo.BinaryBlockOutputInfo) {
-							mo.exportData(input2.get_name(), outFmt);
-							//System.out.println("TO BE IMPLEMENTED");
-							//throw new DMLRuntimeException("TO BE IMPLEMENTED");
-						}
-						else {
-							throw new DMLRuntimeException("Unrecognized data format: can not write in matrixmarket format.");
-						}
-					}
-				}
-				else {
-					// Default behavior
-					mo.exportData(input2.get_name(), outFmt);
-				}
-			}
+			processWriteInstruction(ec);
 			break;
 			
 		case SetFileName:
@@ -707,6 +696,134 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}	
 
+	/**
+	 * Handler for write instructions.
+	 * 
+	 * Non-native formats like MM and CSV are handled through specialized helper functions.
+	 * The default behavior is to write out the specified matrix from the instruction, in 
+	 * the format given by the corresponding symbol table entry.
+	 * 
+	 * @throws DMLRuntimeException 
+	 */
+	private void processWriteInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		if ( input1.get_dataType() == DataType.SCALAR ) {
+			writeScalarToHDFS(ec);
+		}
+		else {
+			String outFmt = input3.get_name();
+			
+			if (outFmt.equalsIgnoreCase("matrixmarket")) {
+				writeMMFile(ec);
+			}
+			else if (outFmt.equalsIgnoreCase("csv") ) {
+				writeCSVFile(ec);
+			}
+			else {
+				// Default behavior
+				MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+				mo.exportData(input2.get_name(), outFmt);
+			}
+		}
+	}
+	
+	/**
+	 * Helper function to write CSV files to HDFS.
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 */
+	private void writeCSVFile(ExecutionContext ec) throws DMLRuntimeException {
+		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+		String outFmt = "csv";
+		
+		if(mo.isDirty()) {
+			// there exist data computed in CP that is not backed up on HDFS
+			// i.e., it is either in-memory or in evicted space
+			mo.exportData(input2.get_name(), outFmt, formatProperties);
+		}
+		else {
+			try {
+				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
+				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				if(oi == OutputInfo.CSVOutputInfo) {
+						DataConverter.mergeCSVPartFiles(mo.getFileName(), input2.get_name(), (CSVFileFormatProperties)formatProperties, mc.get_rows(), mc.get_cols());
+				}
+				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
+					mo.exportData(input2.get_name(), outFmt, formatProperties);
+				}
+				else {
+					throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into CSV format.");
+				}
+				
+				// Write Metadata file
+				MapReduceTool.writeMetaDataFile (input2.get_name() + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo);
+			} catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+	
+	/**
+	 * Helper function to write MM files to HDFS.
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 */
+	private void writeMMFile(ExecutionContext ec) throws DMLRuntimeException {
+		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
+		String outFmt = "matrixmarket";
+		if(mo.isDirty()) {
+			// there exist data computed in CP that is not backed up on HDFS
+			// i.e., it is either in-memory or in evicted space
+			mo.exportData(input2.get_name(), outFmt);
+		}
+		else {
+			OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
+			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+			if(oi == OutputInfo.TextCellOutputInfo) {
+				try {
+					DataConverter.mergeTextcellToMatrixMarket(mo.getFileName(), input2.get_name(), mc.get_rows(), mc.get_cols(), mc.getNonZeros());
+				} catch (IOException e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+			else if ( oi == OutputInfo.BinaryBlockOutputInfo) {
+				mo.exportData(input2.get_name(), outFmt);
+			}
+			else {
+				throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into MatrixMarket format.");
+			}
+		}
+	}
+	/**
+	 * Helper function to write scalars to HDFS based on its value type.
+	 * @throws DMLRuntimeException 
+	 */
+	private void writeScalarToHDFS(ExecutionContext ec) throws DMLRuntimeException {
+		ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+		try {
+			switch ( input1.get_valueType() ) {
+			case DOUBLE:
+				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), input2.get_name());
+				break;
+			case INT:
+				MapReduceTool.writeIntToHDFS(scalar.getIntValue(), input2.get_name());
+				break;
+			case BOOLEAN:
+				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), input2.get_name());
+				break;
+			case STRING:
+				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), input2.get_name());
+				break;
+			default:
+				throw new DMLRuntimeException("Invalid value type (" + input1.get_valueType() + ") in writeScalar instruction: " + instString);
+			}
+		  // write out .mtd file
+		  MapReduceTool.writeScalarMetaDataFile(input2.get_name() +".mtd", input1.get_valueType());
+		} catch ( IOException e ) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+	
 	/**
 	 * 
 	 * @param pb
@@ -802,6 +919,10 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(mc.get_cols_per_block());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
+		
+		if ( format.equalsIgnoreCase("csv") ) {
+			
+		}
 		
 		String str = sb.toString();
 

@@ -61,8 +61,7 @@ public class PartialAggregate extends Lop
 			 */
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.RAND);
-			lps.addCompatibility(JobType.REBLOCK_BINARY);
-			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			lps.addCompatibility(JobType.REBLOCK);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
 			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);

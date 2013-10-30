@@ -347,7 +347,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		if( matrices.size() > 0 )
 		{
 			c2binst = new ArrayList<Instruction>();
-			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK_BINARY);
+			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK);
 			
 			ArrayList<String> inLabels = new ArrayList<String>();
 			ArrayList<String> outLabels = new ArrayList<String>();

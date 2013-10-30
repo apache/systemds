@@ -7,7 +7,9 @@
 
 package com.ibm.bi.dml.lops.compile;
 
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 
 
@@ -44,16 +46,18 @@ public enum JobType
 	ANY				(0, "ANY", false, false, false), 
 	GMR				(1, "GMR", false, false, false), 
 	RAND			(2, "RAND", false, true, false), 
-	REBLOCK_TEXT	(3, "REBLOCK_TEXT", false, false, false), 
-	REBLOCK_BINARY	(4, "REBLOCK_BINARY", false, false, false), 
-	MMCJ			(5, "MMCJ", true, false, true), 
-	MMRJ			(6, "MMRJ", false, false, false), 
-	COMBINE			(7, "COMBINE", true, false, false), 
-	SORT			(8, "SORT", true, false, true), 
-	CM_COV			(9, "CM_COV", false, false, false), 
-	GROUPED_AGG		(10, "GROUPED_AGG", false, false, false), 
-	PARTITION		(11, "PARTITION", false, false, false),
-	DATA_PARTITION	(12, "DATAPARTITION", false, false, false);
+	//REBLOCK_TEXT	(3, "REBLOCK_TEXT", false, false, false), 
+	REBLOCK			(3, "REBLOCK", false, false, false), 
+	MMCJ			(4, "MMCJ", true, false, true), 
+	MMRJ			(5, "MMRJ", false, false, false), 
+	COMBINE			(6, "COMBINE", true, false, false), 
+	SORT			(7, "SORT", true, false, true), 
+	CM_COV			(8, "CM_COV", false, false, false), 
+	GROUPED_AGG		(9, "GROUPED_AGG", false, false, false), 
+	PARTITION		(10, "PARTITION", false, false, false),
+	DATA_PARTITION	(11, "DATAPARTITION", false, false, false),
+	CSV_REBLOCK		(12, "CSV_REBLOCK", false, false, false),
+	CSV_WRITE		(13, "CSV_WRITE", false, false, false);
 
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
@@ -112,9 +116,12 @@ public enum JobType
 		}
 	}
 	
-	public static JobType findJobTypeFromLopType(Lop.Type lt) {
+	public static JobType findJobTypeFromLop(Lop node) {
+		Lop.Type lt = node.getType();
 		switch(lt) {
 		case RandLop: 		return JobType.RAND;
+		
+		case ReBlock:		return JobType.REBLOCK;
 		
 		case Grouping:		return JobType.GMR;
 		
@@ -138,8 +145,20 @@ public enum JobType
 		case CombineTertiary: 			
 							return JobType.COMBINE;
 		
-		case DataPartition:
-							return JobType.DATA_PARTITION;
+		case DataPartition:	return JobType.DATA_PARTITION;
+		
+		case CSVReBlock:	return JobType.CSV_REBLOCK;
+		
+		case Data:
+			/*
+			 * Only Write LOPs with external data formats (except MatrixMarket) produce MR Jobs
+			 */
+			FileFormatTypes fmt = ((Data) node).getFileFormatType();
+			if ( fmt == FileFormatTypes.CSV )
+				return JobType.CSV_WRITE;
+			else
+				return null;
+			
 		default:
 			return null;
 		}

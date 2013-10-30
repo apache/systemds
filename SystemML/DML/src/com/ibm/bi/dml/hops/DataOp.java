@@ -35,7 +35,7 @@ public class DataOp extends Hop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	DataOpTypes _dataop;
-	String _fileName;
+	String _fileName = null;
 	private FileFormatTypes _formatType = FileFormatTypes.TEXT;
 	
 	private boolean _recompileRead = true;
@@ -165,62 +165,57 @@ public class DataOp extends Hop
 
 			ExecType et = optFindExecType();
 			
-			//TODO: need to remove this if statement
-			/*if (!(_fileName==null)){
+			// construct lops for all input parameters
+			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
+			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+				inputLops.put(cur.getKey(), getInput().get(cur.getValue())
+						.constructLops());
+			}
+
+			// Set the transient flag
+			boolean isTransient = false;
+			switch(_dataop) {
+			case PERSISTENTREAD:
+			case PERSISTENTWRITE:
+				isTransient = false;
+				break;
 				
-				if (_dataop == DataOpTypes.PERSISTENTREAD) {
-					l = new Data(
-							getFileName(), HopsData2Lops.get(_dataop), get_name(), null,
-							get_dataType(), get_valueType(), false);
-				} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
-					l = new Data(
-							getFileName(), HopsData2Lops.get(_dataop), get_name(),
-							null, get_dataType(), get_valueType(), true);
-				} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
-					l = new Data(
-							getFileName(), HopsData2Lops.get(_dataop), this
-									.getInput().get(0).constructLops(), get_name(), null,
-							get_dataType(), get_valueType(), false);
-				} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
-					l = new Data(
-							getFileName(), HopsData2Lops.get(_dataop), this
-									.getInput().get(0).constructLops(), get_name(),
-							null, get_dataType(), get_valueType(), true);
-				}
+			case TRANSIENTREAD:
+			case TRANSIENTWRITE:
+				isTransient = true;
+				break;
+				
+			default:
+				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
 			
-			else {*/
-
-				// construct lops for all input parameters
-				HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
-				for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-					inputLops.put(cur.getKey(), getInput().get(cur.getValue())
-							.constructLops());
-				}
-
-				if (_dataop == DataOpTypes.PERSISTENTREAD) {
-					l = new Data(
-							HopsData2Lops.get(_dataop), null,
-							inputLops, get_name(), null,
-							get_dataType(), get_valueType(), false);
-				} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
-					l = new Data(
-							HopsData2Lops.get(_dataop), null,
-							inputLops, get_name(), null, 
-							get_dataType(), get_valueType(), true);
-				} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
-					l = new Data(
-							HopsData2Lops.get(_dataop), this
-							.getInput().get(0).constructLops(),inputLops, 
-							get_name(), null, get_dataType(), get_valueType(), false);
-					((Data)l).setExecType( et );
-				} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
-					l = new Data(
-							HopsData2Lops.get(_dataop), this
-							.getInput().get(0).constructLops(),inputLops, 
-							get_name(), null, get_dataType(), get_valueType(), true);
-				}
-			//}
+			// Cretae the lop
+			switch(_dataop) {
+			case TRANSIENTREAD:
+			case PERSISTENTREAD:
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), isTransient, getFormatType());
+				break;
+				
+			case PERSISTENTWRITE:
+			case TRANSIENTWRITE:
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), isTransient, getFormatType());
+				
+				// TODO: should we set the exec type for transient write ?
+				if (_dataop == DataOpTypes.PERSISTENTWRITE)
+					((Data)l ).setExecType(et);
+				break;
+			}
+			
+			/*if (_dataop == DataOpTypes.PERSISTENTREAD) {
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), false);
+			} else if (_dataop == DataOpTypes.TRANSIENTREAD) {
+				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, get_name(), null, get_dataType(), get_valueType(), true);
+			} else if (_dataop == DataOpTypes.PERSISTENTWRITE) {
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), false);
+				((Data) l).setExecType(et);
+			} else if (_dataop == DataOpTypes.TRANSIENTWRITE) {
+				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), true);
+			}*/
 			
 			((Data) l).setFileFormatType(this.getFormatType());
 

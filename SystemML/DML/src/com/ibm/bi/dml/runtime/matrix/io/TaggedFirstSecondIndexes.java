@@ -11,6 +11,8 @@ package com.ibm.bi.dml.runtime.matrix.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Writable;
@@ -19,6 +21,7 @@ import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Partitioner;
 
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVWriteInstruction;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -155,7 +158,7 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 	   * Partition based on the first index.
 	   */
 	  public static class FirstIndexRangePartitioner implements Partitioner<TaggedFirstSecondIndexes, Writable>{
-		  long[] rstep=null;
+		  long[] rstep=null;//some parts of the array may be empty, but it is for performance
 		  @Override
 	    public int getPartition(TaggedFirstSecondIndexes key, Writable value, int numPartitions) 
 	    {
@@ -167,9 +170,25 @@ public class TaggedFirstSecondIndexes implements WritableComparable<TaggedFirstS
 			String[] matrices=MRJobConfiguration.getInputPaths(job);
 			int partitions = job.getNumReduceTasks();
 			//get the dimension of all the representative matrices
-			rstep=new long[matrices.length];
+			long[] inRstep=new long[matrices.length];
 			for(int i=0; i<matrices.length; i++)
-				rstep[i]=(long) Math.ceil((double)MRJobConfiguration.getNumRows(job, (byte)i)/(double)partitions);
+				inRstep[i]=(long) Math.ceil((double)MRJobConfiguration.getNumRows(job, (byte)i)/(double)partitions);
+			byte maxIndex=0;
+			HashMap<Byte, Long> outRsteps=new HashMap<Byte, Long>();
+			try {
+				CSVWriteInstruction[] ins = MRJobConfiguration.getCSVWriteInstructions(job);
+				for(CSVWriteInstruction in: ins)
+				{
+					outRsteps.put(in.output, inRstep[in.input]);
+					if(in.output>maxIndex)
+						maxIndex=in.output;
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			rstep=new long[maxIndex+1];
+			for(Entry<Byte, Long> outRstep: outRsteps.entrySet())
+				rstep[outRstep.getKey()]=outRstep.getValue();
 		}
 	  }
 	  

@@ -66,7 +66,7 @@ public class CollectMultipleConvertedOutputs
 	public void directOutput(Writable key, Writable value, int output, Reporter reporter) 
 	throws IOException
 	{
-		//	System.out.println("output before convert: "+key+" "+value);
+		//System.out.println("output before convert: "+key+" "+value +" --> output " + output);
 		multipleOutputs.getCollector(Integer.toString(output), reporter).collect(key, value);
 	//	System.out.println("output in collectOutput "+key+":"+value);
 	}

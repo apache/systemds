@@ -1214,7 +1214,7 @@ public abstract class Hop
 	};
 
 	public enum FileFormatTypes {
-		TEXT, BINARY, DELIM, MM
+		TEXT, BINARY, MM, CSV
 	};
 
 	public enum DataOpTypes {
@@ -1407,14 +1407,6 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
-	}
-
-	static public HashMap<Hop.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format> HopsFileFormatTypes2Lops;
-	static {
-		HopsFileFormatTypes2Lops = new HashMap<Hop.FileFormatTypes, com.ibm.bi.dml.lops.OutputParameters.Format>();
-		HopsFileFormatTypes2Lops.put(FileFormatTypes.BINARY, com.ibm.bi.dml.lops.OutputParameters.Format.BINARY);
-		HopsFileFormatTypes2Lops.put(FileFormatTypes.TEXT, com.ibm.bi.dml.lops.OutputParameters.Format.TEXT);
-		
 	}
 
 	static public HashMap<Hop.OpOp2, String> HopsOpOp2String;

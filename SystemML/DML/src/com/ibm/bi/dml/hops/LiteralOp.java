@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
@@ -62,30 +63,21 @@ public class LiteralOp extends Hop
 
 		if (get_lops() == null) {
 
+			try {
 			Lop l = null;
 
 			switch (get_valueType()) {
 			case DOUBLE:
-				l = new Data(null,
-						Data.OperationTypes.READ, null, Double
-								.toString(value_double), get_dataType(),
-						get_valueType(), false);
+				l = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(value_double));
 				break;
 			case BOOLEAN:
-				l = new Data(null,
-						Data.OperationTypes.READ, null, Boolean
-								.toString(value_boolean), get_dataType(),
-						get_valueType(), false);
+				l = Data.createLiteralLop(ValueType.BOOLEAN, Boolean.toString(value_boolean));
 				break;
 			case STRING:
-				l = new Data(null,
-						Data.OperationTypes.READ, null, value_string,
-						get_dataType(), get_valueType(), false);
+				l = Data.createLiteralLop(ValueType.STRING, value_string);
 				break;
 			case INT:
-				l = new Data(null,
-						Data.OperationTypes.READ, null, Long.toString(value_long), get_dataType(),
-						get_valueType(), false);
+				l = Data.createLiteralLop(ValueType.INT, Long.toString(value_long));
 				break;
 			default:
 				throw new HopsException(this.printErrorLocation() + 
@@ -96,6 +88,9 @@ public class LiteralOp extends Hop
 			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 			l.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			set_lops(l);
+			} catch(LopsException e) {
+				throw new HopsException(e);
+			}
 		}
 
 		return get_lops();
@@ -267,6 +262,22 @@ public class LiteralOp extends Hop
 			return value_double;
 		else
 			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Double.");
+	}
+	
+	public boolean getBooleanValue() throws HopsException {
+		if ( get_valueType() == ValueType.BOOLEAN ) {
+			return value_boolean;
+		}
+		else
+			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Boolean.");
+	}
+	
+	public String getStringValue() throws HopsException {
+		if ( get_valueType() == ValueType.STRING ) {
+			return value_string;
+		}
+		else
+			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into String.");
 	}
 	
 	@Override

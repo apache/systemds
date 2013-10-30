@@ -93,6 +93,8 @@ public class InputInfo
 			return OutputInfo.OutputInfoForSortOutput;
 		else if ( ii == InputInfo.WeightedPairInputInfo)
 			return OutputInfo.WeightedPairOutputInfo;
+		else if ( ii == InputInfo.CSVInputInfo)
+			return OutputInfo.CSVOutputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + ii);
 	}
@@ -116,6 +118,8 @@ public class InputInfo
 			return InputInfoForSortOutput;
 		else if ( str.equalsIgnoreCase("weightedpair"))
 			return WeightedPairInputInfo;
+		else if ( str.equalsIgnoreCase("csv"))
+			return CSVInputInfo;
 		return null;
 	}
 	
@@ -136,6 +140,8 @@ public class InputInfo
 			return "weightedpair";
 		else if ( ii == MatrixMarketInputInfo )
 			return "matrixmarket";
+		else if ( ii == CSVInputInfo )
+			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized inputInfo: " + ii);
 	}

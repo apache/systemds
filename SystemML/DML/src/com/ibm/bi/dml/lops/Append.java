@@ -52,8 +52,7 @@ public class Append extends Lop
 			
 			//TODO MB @Shirish: please review; disabled compatibility to reblock because even with 'setupDistributedCache' 
 			//        (and partitioning information) in ReblockMR, this fails due to matrix block vs matrix cell
-			//lps.addCompatibility(JobType.REBLOCK_TEXT);
-			//lps.addCompatibility(JobType.REBLOCK_BINARY);
+			//lps.addCompatibility(JobType.REBLOCK);
 			this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 		}
 		else {

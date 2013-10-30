@@ -111,9 +111,7 @@ public class BinaryOp extends Hop
 							getInput().get(0).get_cols_in_block(), 
 							getInput().get(0).getNnz());
 
-					Data lit = new Data(null, Data.OperationTypes.READ, null,
-							Double.toString(0.25), DataType.SCALAR,
-							get_valueType(), false);
+					Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
 					
 					lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 

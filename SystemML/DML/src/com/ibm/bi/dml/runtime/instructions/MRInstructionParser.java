@@ -133,7 +133,7 @@ public class MRInstructionParser extends InstructionParser
 		
 		// REBLOCK Instruction Opcodes 
 		String2MRInstructionType.put( "rblk"   , MRINSTRUCTION_TYPE.Reblock);
-		String2MRInstructionType.put( "rblkcsv"   , MRINSTRUCTION_TYPE.CSVReblock);
+		String2MRInstructionType.put( "csvrblk", MRINSTRUCTION_TYPE.CSVReblock);
 		
 		// Tertiary Reorg Instruction Opcodes 
 		String2MRInstructionType.put( "ctabletransform", MRINSTRUCTION_TYPE.Tertiary);
@@ -170,6 +170,8 @@ public class MRInstructionParser extends InstructionParser
 		
 		//dummy (pseudo instructions)
 		String2MRInstructionType.put( "sort", MRINSTRUCTION_TYPE.Sort);
+		
+		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
 		
 	}
 	
@@ -263,6 +265,9 @@ public class MRInstructionParser extends InstructionParser
 		
 		case Sort: //workaround for dummy MR sort instruction
 			return (MRInstruction)UnaryInstruction.parseInstruction(str);
+			
+		case CSVWrite:
+			return (MRInstruction)CSVWriteInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

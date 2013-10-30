@@ -37,7 +37,15 @@ public abstract class Statement
 	public static final String DELIM_DELIMITER = "sep";
 	public static final String DELIM_HAS_HEADER_ROW = "header";
 	public static final String DELIM_FILL = "fill";
-	public static final String DELIM_DEFAULT = "default";
+	public static final String DELIM_FILL_VALUE = "default";
+	public static final String DELIM_SPARSE = "sparse";
+	
+	/* Default Values for delimited (CSV) files */
+	public static final String  DEFAULT_DELIM_DELIMITER = ",";
+	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;
+	public static final boolean DEFAULT_DELIM_FILL = true;
+	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
+	public static final boolean DEFAULT_DELIM_SPARSE = true;
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";

@@ -79,7 +79,7 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createRandomMatrix("in", rows, cols, -1, 0, 1, -1);
 		
-		runTest(true, DMLRuntimeException.class);
+		runTest(false, DMLRuntimeException.class);
 	}
 	
 	@Test
@@ -95,7 +95,7 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createRandomMatrix("in", rows, cols, -1, 0, 1, -1);
 		
-		runTest(true, DMLRuntimeException.class);
+		runTest(false, DMLRuntimeException.class);
 	}
 	
 }

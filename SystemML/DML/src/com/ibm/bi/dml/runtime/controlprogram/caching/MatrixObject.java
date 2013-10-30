@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
+import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.NumItemsByEachReducerMetaData;
@@ -93,13 +94,19 @@ public class MatrixObject extends CacheableData
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _cleanupFlag = true; //flag if obj unpinned
 	
-	//partitioning information
+	/**
+	 * Information relevant to partitioned matrices.
+	 */
 	private boolean _partitioned = false; //indicates if obj partitioned
 	private PDataPartitionFormat _partitionFormat = null; //indicates how obj partitioned
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 
-
+	/**
+	 * Informtaion relevant to specific external file formats
+	 */
+	FileFormatProperties _formatProperties = null;
+	
 	/**
 	 * Constructor that takes only the HDFS filename.
 	 */
@@ -172,6 +179,14 @@ public class MatrixObject extends CacheableData
 		mc.setNonZeros( _data.getNonZeros() );		
 	}
 
+	public void setFileFormatProperties(FileFormatProperties formatProperties) {
+		_formatProperties = formatProperties;
+	}
+	
+	public FileFormatProperties getFileFormatProperties() {
+		return _formatProperties;
+	}
+	
 	public boolean isFileExists() 
 	{
 		return _hdfsFileExists;
@@ -538,8 +553,21 @@ public class MatrixObject extends CacheableData
 	public void exportData( int replication )
 		throws CacheException
 	{
-		exportData(_hdfsFileName, null, replication);
+		exportData(_hdfsFileName, null, replication, null);
 		_hdfsFileExists = true;
+	}
+	
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @param formatProperties
+	 * @throws CacheException
+	 */
+	public synchronized void exportData (String fName, String outputFormat, FileFormatProperties formatProperties)
+		throws CacheException
+	{
+		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
 	/**
@@ -551,7 +579,7 @@ public class MatrixObject extends CacheableData
 	public synchronized void exportData (String fName, String outputFormat)
 		throws CacheException
 	{
-		exportData(fName, outputFormat, -1);
+		exportData(fName, outputFormat, -1, null);
 	}
 	
 	/**
@@ -569,7 +597,7 @@ public class MatrixObject extends CacheableData
 	 * @param outputFormat
 	 * @throws CacheException
 	 */
-	public synchronized void exportData (String fName, String outputFormat, int replication)
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
 		throws CacheException
 	{
 		LOG.trace("Export data "+_varName+" "+fName);
@@ -618,7 +646,7 @@ public class MatrixObject extends CacheableData
 			try
 			{
 				writeMetaData( fName, outputFormat );
-				writeMatrixToHDFS( fName, outputFormat, replication );
+				writeMatrixToHDFS( fName, outputFormat, replication, formatProperties );
 				if ( !pWrite )
 					_dirtyFlag = false;
 			}
@@ -1037,7 +1065,7 @@ public class MatrixObject extends CacheableData
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		double sparsity = ((double)mc.nonZero)/(mc.numRows*mc.numColumns); //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
-				                           rlen, clen, mc.numRowsPerBlock, mc.numColumnsPerBlock, sparsity);
+				                           rlen, clen, mc.numRowsPerBlock, mc.numColumnsPerBlock, sparsity, _formatProperties);
 		
 		if( newData == null )
 		{
@@ -1072,7 +1100,7 @@ public class MatrixObject extends CacheableData
 				//	LocalFileUtils.writeMatrixBlockToLocal2(filePathAndName, _data);
 				break;			
 			case HDFS:
-				writeMatrixToHDFS (filePathAndName, null, -1);
+				writeMatrixToHDFS (filePathAndName, null, -1, null);
 				break;
 			default:
 				throw new IOException (filePathAndName + 
@@ -1088,7 +1116,7 @@ public class MatrixObject extends CacheableData
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
-	private void writeMatrixToHDFS (String filePathAndName, String outputFormat, int replication)
+	private void writeMatrixToHDFS (String filePathAndName, String outputFormat, int replication, FileFormatProperties formatProperties)
 		throws DMLRuntimeException, IOException
 	{
 		//System.out.println("write matrix "+_varName+" "+filePathAndName);
@@ -1110,10 +1138,10 @@ public class MatrixObject extends CacheableData
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && 
 					(mc.get_rows_per_block() != DMLTranslator.DMLBlockSize || mc.get_cols_per_block() != DMLTranslator.DMLBlockSize) ) {
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication);
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.get_rows(), mc.get_cols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication, formatProperties);
 			}
 			else {
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc, replication);
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc, replication, formatProperties);
 			}
 
 			LOG.trace("Writing matrix to HDFS ("+filePathAndName+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");

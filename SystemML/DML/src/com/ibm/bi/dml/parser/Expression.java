@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.parser;
 
@@ -176,6 +176,9 @@ public abstract class Expression
 		}
 		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
 			return FileFormatTypes.MM;
+		}
+		if (fn.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV))  {
+			return FileFormatTypes.CSV;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type
 		return FileFormatTypes.TEXT;

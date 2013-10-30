@@ -20,9 +20,20 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.AggUnaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
+import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
+import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.AggOp;
+import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
+import com.ibm.bi.dml.hops.Hop.Direction;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
+import com.ibm.bi.dml.hops.Hop.OpOp3;
+import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
+import com.ibm.bi.dml.hops.Hop.ReOrgOp;
+import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.LeftIndexingOp;
@@ -30,21 +41,9 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
-import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
-import com.ibm.bi.dml.hops.Hop.AggOp;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.Direction;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.Hop.OpOp3;
-import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
-import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -1919,16 +1918,28 @@ public class DMLTranslator
 				String formatName = os.getFormatName();
 				ae.setFormatType(Expression.convertFormatType(formatName));
 
-
-				if (ae.getFormatType() == FileFormatTypes.TEXT || 
-					ae.getFormatType() == FileFormatTypes.MM ||
-					ae.get_dataType() == DataType.SCALAR)  {
-					
+				if (ae.get_dataType() == DataType.SCALAR ) {
 					ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), -1, -1);
 				}
-				else  {
-				    ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				else {
+					switch(ae.getFormatType()) {
+					case TEXT:
+					case MM:
+					case CSV:
+						// write output in textcell format
+						ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), -1, -1);
+						break;
+						
+					case BINARY:
+						// write output in binary block format
+					    ae.setOutputParams(ae.get_dim1(), ae.get_dim2(), ae.getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+					    break;
+						
+						default:
+							throw new LanguageException("Unrecognized file format: " + ae.getFormatType());
+					}
 				}
+				
 				output.add(ae);
 				
 			}

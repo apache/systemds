@@ -15,8 +15,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.OutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -41,7 +43,9 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
+import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.Converter;
+import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
@@ -51,6 +55,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 
@@ -72,6 +77,33 @@ public class DataConverter
 	// (textcell, binarycell, binaryblock)
 	///////
 	
+	private class ReadProperties {
+		/* Properties common to all file formats */
+		String path;
+		long rlen, clen;
+		int brlen, bclen;
+		double expectedSparsity;
+		InputInfo inputInfo;
+		boolean localFS;
+		
+		/* Flag to indicate the input file is in MatrixMarket format */
+		//boolean matrixMarket;
+		
+		/* Properties specific to CSV files */
+		FileFormatProperties formatProperties;
+		
+		public ReadProperties() {
+			rlen = clen = -1;
+			brlen = bclen = -1;
+			expectedSparsity = 0.1d;
+			inputInfo = null;
+			localFS = false;
+			
+			//matrixMarket = false;
+		}
+
+	}
+	
 	/**
 	 * 
 	 * @param mat
@@ -87,10 +119,10 @@ public class DataConverter
 			                             MatrixCharacteristics mc )
 		throws IOException
 	{
-		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1);
+		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1, null);
 	}
 	
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication)
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication, FileFormatProperties formatProperties)
 	throws IOException
 	{
 		JobConf job = new JobConf();
@@ -124,6 +156,12 @@ public class DataConverter
 			{
 				writeMatrixMarketToHDFS( path, job, mat, mc.get_rows(), mc.get_cols(), mc.getNonZeros());
 			}
+			else if ( outputinfo == OutputInfo.CSVOutputInfo ) {
+				writeCSVToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.getNonZeros(), formatProperties);
+			}
+			else {
+				throw new RuntimeException("Unknown format (" + OutputInfo.outputInfoToString(outputinfo));
+			}
 		}
 		catch(Exception e)
 		{
@@ -145,8 +183,19 @@ public class DataConverter
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
 		throws IOException
 	{	
+		DataConverter dc = new DataConverter();
+		ReadProperties prop = dc.new ReadProperties();
+		
+		prop.path = dir;
+		prop.inputInfo = inputinfo;
+		prop.rlen = rlen;
+		prop.clen = clen;
+		prop.brlen = brlen;
+		prop.bclen = bclen;
+		prop.localFS = localFS;
+		
 		//expected matrix is sparse (default SystemML usecase)
-		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, localFS);
+		return readMatrixFromHDFS(prop);
 	}
 	
 	/**
@@ -163,8 +212,18 @@ public class DataConverter
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
 		throws IOException
 	{	
+		DataConverter dc = new DataConverter();
+		ReadProperties prop = dc.new ReadProperties();
+		
+		prop.path = dir;
+		prop.inputInfo = inputinfo;
+		prop.rlen = rlen;
+		prop.clen = clen;
+		prop.brlen = brlen;
+		prop.bclen = bclen;
+		
 		//expected matrix is sparse (default SystemML usecase)
-		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, 0.1d, false);
+		return readMatrixFromHDFS(prop);
 	}
 
 	/**
@@ -182,9 +241,83 @@ public class DataConverter
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, double expectedSparsity) 
 		throws IOException
 	{	
-		return readMatrixFromHDFS(dir, inputinfo, rlen, clen, brlen, bclen, expectedSparsity, false);
+		DataConverter dc = new DataConverter();
+		ReadProperties prop = dc.new ReadProperties();
+		
+		prop.path = dir;
+		prop.inputInfo = inputinfo;
+		prop.rlen = rlen;
+		prop.clen = clen;
+		prop.brlen = brlen;
+		prop.bclen = bclen;
+		prop.expectedSparsity = expectedSparsity;
+		
+		return readMatrixFromHDFS(prop);
 	}
 
+	/**
+	 * 
+	 * @param dir
+	 * @param inputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param expectedSparsity
+	 * @param localFS
+	 * @return
+	 * @throws IOException
+	 */
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+			int brlen, int bclen, double expectedSparsity, boolean localFS) 
+	throws IOException
+	{
+		DataConverter dc = new DataConverter();
+		ReadProperties prop = dc.new ReadProperties();
+		
+		prop.path = dir;
+		prop.inputInfo = inputinfo;
+		prop.rlen = rlen;
+		prop.clen = clen;
+		prop.brlen = brlen;
+		prop.bclen = bclen;
+		prop.expectedSparsity = expectedSparsity;
+		prop.localFS = localFS;
+		
+		return readMatrixFromHDFS(prop);
+	}
+	/**
+	 * 
+	 * @param dir
+	 * @param inputinfo
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param expectedSparsity
+	 * @param localFS
+	 * @return
+	 * @throws IOException
+	 */
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+			int brlen, int bclen, double expectedSparsity, FileFormatProperties formatProperties) 
+	throws IOException
+	{
+		DataConverter dc = new DataConverter();
+		ReadProperties prop = dc.new ReadProperties();
+		
+		prop.path = dir;
+		prop.inputInfo = inputinfo;
+		prop.rlen = rlen;
+		prop.clen = clen;
+		prop.brlen = brlen;
+		prop.bclen = bclen;
+		prop.expectedSparsity = expectedSparsity;
+		prop.formatProperties = formatProperties;
+		
+		return readMatrixFromHDFS(prop);
+	}
+	
 	/**
 	 * Core method for reading matrices in format textcell, matrixmarket, binarycell, or binaryblock 
 	 * from HDFS into main memory. For expected dense matrices we directly copy value- or block-at-a-time 
@@ -212,13 +345,16 @@ public class DataConverter
 	 * @return
 	 * @throws IOException
 	 */
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, double expectedSparsity, boolean localFS) 
+	public static MatrixBlock readMatrixFromHDFS(ReadProperties prop) 
 	throws IOException
 	{	
-		boolean sparse = expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT;
+		boolean sparse = prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT;
 
-		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+dir);
+		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+prop.dir);
+		
+		long rlen = prop.rlen;
+		long clen = prop.clen;
+		InputInfo inputinfo = prop.inputInfo;
 		
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
@@ -226,51 +362,60 @@ public class DataConverter
 			sparse = false;
 		
 		//prepare result matrix block
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(expectedSparsity*rlen*clen));
-		if( !sparse && inputinfo!=InputInfo.BinaryBlockInputInfo )
+		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(prop.expectedSparsity*rlen*clen));
+		if( !sparse && inputinfo != InputInfo.BinaryBlockInputInfo )
 			ret.spaceAllocForDenseUnsafe((int)rlen, (int)clen);
 		
 		//prepare file access
 		JobConf job = new JobConf();	
 		Path path = null; 
 		FileSystem fs = null;
-		if ( localFS ) {
-			path = new Path("file:///" + dir);
+		if ( prop.localFS ) {
+			path = new Path("file:///" + prop.path);
 			//System.out.println("local file system path ..." + path.toUri() + ", " + path.toString());
 			fs = FileSystem.getLocal(job);
 		}
 		else {
-			path = new Path(dir);
+			path = new Path(prop.path);
 			fs = FileSystem.get(job);
 		}
 		if( !fs.exists(path) )	
-			throw new IOException("File "+dir+" does not exist on HDFS/LFS.");
+			throw new IOException("File "+prop.path+" does not exist on HDFS/LFS.");
 		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
 		
 		try 
 		{
 			//check for empty file
 			if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
-				throw new EOFException("Empty input file "+dir+".");
+				throw new EOFException("Empty input file "+ prop.path +".");
+			
+			boolean isMMFile = (inputinfo == InputInfo.MatrixMarketInputInfo);
 			
 			//core matrix reading 
 			if( inputinfo == InputInfo.TextCellInputInfo )
 			{			
 				if( fs.getFileStatus(path).isDir() )
-					readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
+					readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, prop.brlen, prop.bclen);
 				else
-					readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, false);
+					readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, isMMFile);
 			}
 			else if( inputinfo == InputInfo.BinaryCellInputInfo )
 			{
-				readBinaryCellMatrixFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
+				readBinaryCellMatrixFromHDFS( path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen );
 			}
 			else if( inputinfo == InputInfo.BinaryBlockInputInfo )
 			{
-				readBinaryBlockMatrixFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
+				readBinaryBlockMatrixFromHDFS( path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen );
 			}
 			else if ( inputinfo == InputInfo.MatrixMarketInputInfo ) {
-				readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, true);
+				readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, isMMFile);
+			} 
+			else if ( inputinfo == InputInfo.CSVInputInfo ) {
+				CSVFileFormatProperties csvprop = (CSVFileFormatProperties) prop.formatProperties;
+				readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, csvprop.isHasHeader(), csvprop.getDelim(), csvprop.isFill(), csvprop.getFillValue());
+			}
+			else {
+				throw new IOException("Can not read files with format = " + InputInfo.inputInfoToString(inputinfo));
 			}
 			
 			//finally check if change of sparse/dense block representation required
@@ -381,7 +526,7 @@ public class DataConverter
 	      } else {
 	        throw new IOException(src.toString() + ": No such file or directory");
 	      }
-}
+	}
 	
 	/**
 	 * 
@@ -466,6 +611,209 @@ public class DataConverter
 			//handle empty result
 			if ( !entriesWritten ) {
 				br.write("1 1 0\n");
+			}
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
+		}
+	}
+	
+	/**
+	 * Method to merge multiple CSV part files on HDFS into a single CSV file on HDFS. 
+	 * The part files are created by CSV_WRITE MR job. 
+	 * 
+	 * This method is invoked from CP-write instruction.
+	 * 
+	 * @param srcFileName
+	 * @param destFileName
+	 * @param csvprop
+	 * @param rlen
+	 * @param clen
+	 * @throws IOException
+	 */
+	public static void mergeCSVPartFiles(String srcFileName,
+			String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
+			throws IOException {
+		
+		Configuration conf = new Configuration();
+
+		Path srcFilePath = new Path(srcFileName);
+		Path mergedFilePath = new Path(destFileName);
+		FileSystem hdfs = FileSystem.get(conf);
+
+		if (hdfs.exists(mergedFilePath)) {
+			hdfs.delete(mergedFilePath, true);
+		}
+		OutputStream out = hdfs.create(mergedFilePath, true);
+
+		// write out the header, if needed
+		if (csvprop.isHasHeader()) {
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < clen; i++) {
+				sb.append("C" + (i + 1));
+				if (i < clen - 1)
+					sb.append(csvprop.getDelim());
+			}
+			sb.append('\n');
+			out.write(sb.toString().getBytes());
+			sb.setLength(0);
+		}
+
+		// if the source is a directory
+		if (hdfs.getFileStatus(srcFilePath).isDir()) {
+			try {
+				FileStatus contents[] = hdfs.listStatus(srcFilePath);
+				Path[] partPaths = new Path[contents.length];
+				int numPartFiles = 0;
+				for (int i = 0; i < contents.length; i++) {
+					if (!contents[i].isDir()) {
+						partPaths[i] = contents[i].getPath();
+						numPartFiles++;
+					}
+				}
+				Arrays.sort(partPaths);
+
+				for (int i = 0; i < numPartFiles; i++) {
+					InputStream in = hdfs.open(partPaths[i]);
+					try {
+						IOUtils.copyBytes(in, out, conf, false);
+					} finally {
+						in.close();
+					}
+				}
+			} finally {
+				out.close();
+			}
+		} else if (hdfs.isFile(srcFilePath)) {
+			InputStream in = null;
+			try {
+				in = hdfs.open(srcFilePath);
+				IOUtils.copyBytes(in, out, conf, true);
+			} finally {
+				in.close();
+				out.close();
+			}
+		} else {
+			throw new IOException(srcFilePath.toString()
+					+ ": No such file or directory");
+		}
+	}
+		
+	/**
+	 * 
+	 * @param fileName
+	 * @param src
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @throws IOException
+	 */
+	public static void writeCSVToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
+		throws IOException
+	{
+		boolean sparse = src.isInSparseFormat();
+		FileSystem fs = FileSystem.get(job);
+        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+        
+    	int rows = src.getNumRows();
+		int cols = src.getNumColumns();
+
+		//bound check per block
+		if( rows > rlen || cols > clen )
+		{
+			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
+					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+		}
+		
+		try
+		{
+			//for obj reuse and preventing repeated buffer re-allocations
+			StringBuilder sb = new StringBuilder();
+			
+			CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)formatProperties;
+			String delim = Pattern.quote(csvProperties.getDelim());
+			
+			// Write header line, if needed
+			if (csvProperties.isHasHeader()) {
+				for(int i=0; i < clen; i++) {
+					sb.append("C"+ (i+1));
+					if ( i < clen-1 )
+						sb.append(delim);
+				}
+				sb.append('\n');
+				br.write( sb.toString());
+	            sb.setLength(0);
+			}
+			
+			// Write data lines
+			if( sparse ) //SPARSE
+			{			   
+	            int c, prev_c;
+	            double v;
+				for(int r=0; r < rows; r++) {
+					SparseRow spRow = src.getSparseRows()[r];
+					prev_c = 0;
+					if ( spRow != null) {
+						for(int ind=0; ind < spRow.size(); ind++) {
+							c = spRow.getIndexContainer()[ind];
+							v = spRow.getValueContainer()[ind];
+							
+							// output empty fields, if needed
+							while(prev_c <= c-1) {
+								if (!csvProperties.isSparse()) {
+									sb.append(0.0);
+								}
+								sb.append(delim);
+								prev_c++;
+							}
+							
+							// output the value
+							sb.append(v);
+							prev_c = c;
+						}
+					}
+					// Output empty fields at the end of the row.
+					// In case of an empty row, output (clen-1) empty fields
+					while (prev_c < clen - 1) {
+						if (!csvProperties.isSparse()) {
+							sb.append(0.0);
+						}
+						sb.append(delim);
+						prev_c++;
+					}
+					sb.append('\n');
+					//if ( sb.toString().split(delim).length != clen) {
+					//	throw new RuntimeException("row = " + r + ", prev_c = " + prev_c + ", filedcount=" + sb.toString().split(delim).length + ": " + sb.toString());
+					//}
+					br.write( sb.toString() ); 
+					sb.setLength(0); 
+				}
+			}
+			else //DENSE
+			{
+				for( int i=0; i<rows; i++ ) {
+					for( int j=0; j<cols; j++ )
+					{
+						double lvalue = src.getValueDenseUnsafe(i, j);
+						if( lvalue != 0 ) //for nnz
+						{
+							sb.append(lvalue);
+						}
+						else {
+							if (!csvProperties.isSparse()) {
+								// write in dense format
+								sb.append(0.0);
+							}
+						}
+						if ( j != cols-1 )
+							sb.append(csvProperties.getDelim());
+					}
+					sb.append('\n');
+					br.write( sb.toString() ); //same as append
+					sb.setLength(0); 
+				}
 			}
 		}
 		finally
@@ -794,6 +1142,111 @@ public class DataConverter
 			{
 				throw new IOException( "Unable to read matrix in text cell format.", ex );
 			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param dest
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @throws IOException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 */
+	private static void readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double fillValue )
+		throws IOException, IllegalAccessException, InstantiationException
+	{
+		boolean sparse = dest.isInSparseFormat();
+		//FileSystem fs = FileSystem.get(job);
+		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
+		
+		String value = null;
+		int row = -1;
+		int col = -1;
+		double cellValue;
+		
+		String escapedDelim = Pattern.quote(delim);
+		
+		try
+		{
+			// Read the header line, if there is one.
+			String headerLine = null, cellStr = null;
+			if ( hasHeader ) 
+				headerLine = br.readLine();
+			
+			// Read the data
+			boolean emptyValuesFound = false;
+			if( sparse ) //SPARSE<-value
+			{
+				row = 0;
+				while( (value=br.readLine())!=null )
+				{
+					col = 0;
+					cellStr = value.toString().trim();
+					emptyValuesFound = false;
+					for(String part : cellStr.split(escapedDelim, -1)) {
+						part = part.trim();
+						if ( part.isEmpty() ) {
+							emptyValuesFound = true;
+							cellValue = fillValue;
+						}
+						else {
+							cellValue = Double.parseDouble(part);
+						}
+						if ( Double.compare(cellValue, 0.0) != 0 )
+							dest.appendValue(row, col, cellValue);
+						col++;
+					}
+					if ( !fill && emptyValuesFound) {
+						throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
+					}
+					if ( col != clen ) {
+						throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
+					}
+					row++;
+				}
+				dest.recomputeNonZeros();
+			} 
+			else //DENSE<-value
+			{
+				row = 0;
+				while( (value=br.readLine())!=null )
+				{
+					cellStr = value.toString().trim();
+					col = 0;
+					for(String part : cellStr.split(escapedDelim, -1)) {
+						part = part.trim();
+						if ( part.isEmpty() ) {
+							if ( !fill ) {
+								throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
+							}
+							else {
+								cellValue = fillValue;
+							}
+						}
+						else {
+							cellValue = Double.parseDouble(part);
+						}
+						dest.setValueDenseUnsafe(row, col, cellValue);
+						col++;
+					}
+					if ( col != clen ) {
+						throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
+					}
+					row++;
+				}
+				dest.recomputeNonZeros();
+			}
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
 		}
 	}
 	

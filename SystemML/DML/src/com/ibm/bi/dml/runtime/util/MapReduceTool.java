@@ -478,8 +478,10 @@ public class MapReduceTool
         	line += "\"text\"\n";
           } else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
         	line += "\"binary\"\n"; // currently, there is no way to differentiate between them
+          } else if (outinfo == OutputInfo.CSVOutputInfo ) {
+        	line += "\"csv\"\n"; 
           } else {
-        	line += "\"specialized\"\n"; // this should not be the final output info
+        	line += "\"specialized\"\n"; 
         }
         
 		line += "    ,\"description\": { \"author\": \"SystemML\" } \n" + "}" ;

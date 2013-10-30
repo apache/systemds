@@ -226,7 +226,7 @@ public class DataExpression extends Expression
 						|| getVarParam(Statement.DELIM_DELIMITER) != null	
 						|| getVarParam(Statement.DELIM_HAS_HEADER_ROW) != null
 						|| getVarParam(Statement.DELIM_FILL) != null
-						|| getVarParam(Statement.DELIM_DEFAULT) != null){
+						|| getVarParam(Statement.DELIM_FILL_VALUE) != null){
 					
 					LOG.error(this.printErrorLocation() + "Invalid parameters in read statement of a scalar: " +
 							toString() + ". Only " + Statement.VALUETYPEPARAM + " is allowed.");
@@ -309,7 +309,7 @@ public class DataExpression extends Expression
 					addVarParam(Statement.FORMAT_TYPE,new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV));
 					formatTypeString = Statement.FORMAT_TYPE_VALUE_CSV;
 					inferredFormatType = true;
-					shouldReadMTD = false;
+					//shouldReadMTD = false;
 				}	
 			}
 			
@@ -423,131 +423,6 @@ public class DataExpression extends Expression
 				}
 			}
 			
-			else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
-			
-				 // Handle delimited file format
-				 // 
-				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
-				 //  
-				 // 2) open the file
-				 //
-				
-				// there should be no MTD file for delimited file format
-				shouldReadMTD = false;
-				
-				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
-				//		as ONLY valid parameters
-				if (inferredFormatType == false){
-					for (String key : _varParams.keySet()){
-						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) 
-								|| key.equals(Statement.DELIM_HAS_HEADER_ROW) || key.equals(Statement.DELIM_DELIMITER) 
-								|| key.equals(Statement.DELIM_FILL) || key.equals(Statement.DELIM_DEFAULT)
-								|| key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM))){
-							
-							LOG.error(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME     + "," 
-																				   + Statement.DELIM_HAS_HEADER_ROW   + "," 
-																				   + Statement.DELIM_DELIMITER 	+ ","
-																				   + Statement.DELIM_FILL 		+ ","
-																				   + Statement.DELIM_DEFAULT 	+ ","
-																				   + Statement.READROWPARAM     + "," 
-																				   + Statement.READCOLPARAM);
-							
-							throw new LanguageException(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
-									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
-																				   + Statement.DELIM_HAS_HEADER_ROW   + ","
-																				   + Statement.DELIM_DELIMITER + "," 
-																				   + Statement.DELIM_FILL 		+ ","
-																				   + Statement.DELIM_DEFAULT 	+ ","
-																				   + Statement.READROWPARAM     + "," 
-																				   + Statement.READCOLPARAM,
-																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
-						}
-					}
-				}
-				
-				// DEFAULT for "sep" : ","
-				if (getVarParam(Statement.DELIM_DELIMITER) == null){
-					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(","));
-				}
-				else {
-					if ( (getVarParam(Statement.DELIM_DELIMITER) instanceof ConstIdentifier)
-						&& (! (getVarParam(Statement.DELIM_DELIMITER) instanceof StringIdentifier)))
-					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
-								+  " must be a string value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
-								+  " must be a string value ");
-					}
-				} 
-				
-				// DEFAULT for "default": 0
-				if (getVarParam(Statement.DELIM_DEFAULT) == null){
-					addVarParam(Statement.DELIM_DEFAULT, new DoubleIdentifier(0.0));
-				}
-				else {
-					if ( (getVarParam(Statement.DELIM_DEFAULT) instanceof ConstIdentifier)
-							&& (! (getVarParam(Statement.DELIM_DEFAULT) instanceof IntIdentifier ||  getVarParam(Statement.DELIM_DEFAULT) instanceof DoubleIdentifier)))
-					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-					}
-				} 
-				
-				// DEFAULT for "header": boolean false
-				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
-					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(false));
-				}
-				else {
-					if ((getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
-						&& (! (getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
-					{
-	
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
-								+  " must be a boolean value ");
-					}
-				}
-				
-				// DEFAULT for "fill": boolean false
-				if (getVarParam(Statement.DELIM_FILL) == null){
-					addVarParam(Statement.DELIM_FILL,new BooleanIdentifier(false));
-				}
-				else {
-					
-					if ((getVarParam(Statement.DELIM_FILL) instanceof ConstIdentifier)
-							&& (! (getVarParam(Statement.DELIM_FILL) instanceof BooleanIdentifier)))
-					{
-
-						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
-								+  " must be a boolean value ");
-						
-						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
-								+  " must be a boolean value ");
-					}
-				}
-				
-				
-				if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
-					
-					LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
-							+  " must specify both row and column dimensions ");
-					
-					throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
-							+  " must specify both row and column dimensions ");
-				}
-				
-			} // else if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
-			
-			
 			configObject = null;
 			
 			if (shouldReadMTD){
@@ -590,6 +465,131 @@ public class DataExpression extends Expression
 		        }
 			} 
 	        
+			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
+				
+				 // Handle delimited file format
+				 // 
+				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				 //  
+				 // 2) open the file
+				 //
+				
+				// there should be no MTD file for delimited file format
+				shouldReadMTD = true;
+				
+				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				//		as ONLY valid parameters
+				if (inferredFormatType == false){
+					for (String key : _varParams.keySet()){
+						if (!  (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE) 
+								|| key.equals(Statement.DELIM_HAS_HEADER_ROW) || key.equals(Statement.DELIM_DELIMITER) 
+								|| key.equals(Statement.DELIM_FILL) || key.equals(Statement.DELIM_FILL_VALUE)
+								|| key.equals(Statement.READROWPARAM) || key.equals(Statement.READCOLPARAM)
+								|| key.equals(Statement.READNUMNONZEROPARAM) || key.equals(Statement.DATATYPEPARAM) || key.equals(Statement.VALUETYPEPARAM)
+								)){
+							
+							LOG.error(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
+									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME     + "," 
+																				   + Statement.DELIM_HAS_HEADER_ROW   + "," 
+																				   + Statement.DELIM_DELIMITER 	+ ","
+																				   + Statement.DELIM_FILL 		+ ","
+																				   + Statement.DELIM_FILL_VALUE 	+ ","
+																				   + Statement.READROWPARAM     + "," 
+																				   + Statement.READCOLPARAM);
+							
+							throw new LanguageException(this.printErrorLocation() + "Invalid parameter " + key + " in read.csv statement: " +
+									toString() + ". Only parameters allowed are: " + Statement.IO_FILENAME      + "," 
+																				   + Statement.DELIM_HAS_HEADER_ROW   + ","
+																				   + Statement.DELIM_DELIMITER + "," 
+																				   + Statement.DELIM_FILL 		+ ","
+																				   + Statement.DELIM_FILL_VALUE 	+ ","
+																				   + Statement.READROWPARAM     + "," 
+																				   + Statement.READCOLPARAM,
+																				   LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+					}
+				}
+				
+				// DEFAULT for "sep" : ","
+				if (getVarParam(Statement.DELIM_DELIMITER) == null){
+					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(Statement.DEFAULT_DELIM_DELIMITER));
+				}
+				else {
+					if ( (getVarParam(Statement.DELIM_DELIMITER) instanceof ConstIdentifier)
+						&& (! (getVarParam(Statement.DELIM_DELIMITER) instanceof StringIdentifier)))
+					{
+
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
+								+  " must be a string value ");
+						
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_DELIMITER) 
+								+  " must be a string value ");
+					}
+				} 
+				
+				// DEFAULT for "default": 0
+				if (getVarParam(Statement.DELIM_FILL_VALUE) == null){
+					addVarParam(Statement.DELIM_FILL_VALUE, new DoubleIdentifier(Statement.DEFAULT_DELIM_FILL_VALUE));
+				}
+				else {
+					if ( (getVarParam(Statement.DELIM_FILL_VALUE) instanceof ConstIdentifier)
+							&& (! (getVarParam(Statement.DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(Statement.DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
+					{
+
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+								+  " must be a boolean value ");
+						
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+								+  " must be a boolean value ");
+					}
+				} 
+				
+				// DEFAULT for "header": boolean false
+				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
+					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(Statement.DEFAULT_DELIM_HAS_HEADER_ROW));
+				}
+				else {
+					if ((getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
+						&& (! (getVarParam(Statement.DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
+					{
+	
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+								+  " must be a boolean value ");
+						
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_HAS_HEADER_ROW) 
+								+  " must be a boolean value ");
+					}
+				}
+				
+				// DEFAULT for "fill": boolean false
+				if (getVarParam(Statement.DELIM_FILL) == null){
+					addVarParam(Statement.DELIM_FILL,new BooleanIdentifier(Statement.DEFAULT_DELIM_FILL));
+				}
+				else {
+					
+					if ((getVarParam(Statement.DELIM_FILL) instanceof ConstIdentifier)
+							&& (! (getVarParam(Statement.DELIM_FILL) instanceof BooleanIdentifier)))
+					{
+
+						LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
+								+  " must be a boolean value ");
+						
+						throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.DELIM_FILL) 
+								+  " must be a boolean value ");
+					}
+				}
+				
+				
+				if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
+					
+					LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
+							+  " must specify both row and column dimensions ");
+					
+					throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
+							+  " must specify both row and column dimensions ");
+				}
+				
+			} 
 	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
@@ -729,7 +729,13 @@ public class DataExpression extends Expression
 			// for delimited format, if no delimiter specified THEN set default ","
 			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
 				if (getVarParam(Statement.DELIM_DELIMITER) == null){
-					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(","));
+					addVarParam(Statement.DELIM_DELIMITER, new StringIdentifier(Statement.DEFAULT_DELIM_DELIMITER));
+				}
+				if (getVarParam(Statement.DELIM_HAS_HEADER_ROW) == null){
+					addVarParam(Statement.DELIM_HAS_HEADER_ROW, new BooleanIdentifier(Statement.DEFAULT_DELIM_HAS_HEADER_ROW));
+				}
+				if (getVarParam(Statement.DELIM_SPARSE) == null){
+					addVarParam(Statement.DELIM_SPARSE, new BooleanIdentifier(Statement.DEFAULT_DELIM_SPARSE));
 				}
 			}
 			

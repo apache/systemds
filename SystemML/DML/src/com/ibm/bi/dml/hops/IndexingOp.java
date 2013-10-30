@@ -89,7 +89,7 @@ public class IndexingOp extends Hop
 			try {
 				ExecType et = optFindExecType();
 				if(et == ExecType.MR) {
-					Lop dummy = new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
+					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
@@ -119,7 +119,7 @@ public class IndexingOp extends Hop
 					set_lops(agg1);
 				}
 				else {
-					Lop dummy = new Data(null, Data.OperationTypes.READ, null, "-1", DataType.SCALAR, ValueType.INT, false);
+					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,

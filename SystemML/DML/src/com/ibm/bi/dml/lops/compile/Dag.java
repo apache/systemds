@@ -28,6 +28,7 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.DataGen;
@@ -529,23 +530,10 @@ public class Dag<N extends Lop>
 			if ( node.definesMRJob() ) {
 				
 				// find the corresponding JobType
-				JobType jt = JobType.findJobTypeFromLopType(node.getType());
+				JobType jt = JobType.findJobTypeFromLop(node);
 				
 				if ( jt == null ) {
-					// In case of Reblock, jobType depends not only on LopType but also on the format
-					if ( node.getType() == Lop.Type.ReBlock ) {
-						// must differentiate between reblock lops that operate on text
-						// and binary input
-						if (getChildFormat(node) == Format.BINARY) {
-							jt = JobType.REBLOCK_BINARY;
-						}
-						else {
-							jt = JobType.REBLOCK_TEXT;
-						}
-					}
-					else {
-						throw new LopsException(node.printErrorLocation() + "No matching JobType is found for a the lop type: " + node.getType() + " \n");
-					}
+					throw new LopsException(node.printErrorLocation() + "No matching JobType is found for a the lop type: " + node.getType() + " \n");
 				}
 				
 				// Add "node" to corresponding job vector
@@ -721,22 +709,25 @@ public class Dag<N extends Lop>
 	
 	
 	/**
-	 * Method to generate instructions that create variables.
-	 * i.e., each instructions creates a new entry in the symbol table.
-	 * Every "data" input node in a LOPs DAG is translated into an instruction. 
-	 *    
+	 * Method to generate createvar instructions, which creates a new entry
+	 * in the symbol table. One instruction is generated for every LOP that is 
+	 * 1) type Data and 
+	 * 2) persistent and 
+	 * 3) matrix and 
+	 * 4) read
+	 * 
+	 * Transient reads needn't be considered here since the previous program 
+	 * block would already create appropriate entries in the symbol table.
+	 * 
 	 * @param nodes
 	 * @throws LopsException 
 	 */
 	private void generateInstructionsForInputVariables(Vector<N> nodes_v, ArrayList<Instruction> inst) throws LopsException, IOException {
 		for(N n : nodes_v) {
-			/*
-			 * ONLY persistent reads must be considered. For transient reads, previous program block 
-			 * would have already created appropriate entries in the symbol table. 
-			 * Therefore, no explicit createvar instruction is required.
-			 */
-			if (n.getExecLocation() == ExecLocation.Data
-					&& !((Data) n).isTransient() && ((Data) n).getOperationType() == OperationTypes.READ && n.get_dataType() == DataType.MATRIX) {
+			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
+					&& ((Data) n).getOperationType() == OperationTypes.READ 
+					&& n.get_dataType() == DataType.MATRIX) {
+				
 				if ( !((Data)n).isLiteral() ) {
 					try {
 						String inst_string = n.getInstructions();
@@ -2305,6 +2296,9 @@ public class Dag<N extends Lop>
 		} else {
 			if (oparams.getFormat() == Format.TEXT || oparams.getFormat() == Format.MM)
 				oinfo = OutputInfo.TextCellOutputInfo;
+			else if ( oparams.getFormat() == Format.CSV ) {
+				oinfo = OutputInfo.CSVOutputInfo;
+			}
 			else {
 				oinfo = OutputInfo.BinaryCellOutputInfo;
 			}
@@ -2549,7 +2543,25 @@ public class Dag<N extends Lop>
 						// for MatrixMarket format, the creatvar will output the result to a temporary file in textcell format 
 						// the CP write instruction (post instruction) after the MR instruction will merge the result into a single
 						// part MM format file on hdfs.
-						if (oparams.getFormat() == Format.MM  )  {
+						if (oparams.getFormat() == Format.CSV)  {
+							
+							String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+			   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
+			   					    "temp" + job_id.getNextID();
+							
+							String createInst = node.getInstructions(tempFileName);
+							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
+							
+							String writeInst = node.getInstructions(oparams.getLabel(), oparams.getFile_name());
+							out.addPostInstruction(CPInstructionParser.parseSingleInstruction(writeInst));
+							
+							// remove the variable
+							out.addLastInstruction(CPInstructionParser.parseSingleInstruction(
+									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
+									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
+									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
+						} 
+						else if (oparams.getFormat() == Format.MM )  {
 							
 							String tempFileName = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
 			   					    Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR +  
@@ -2570,7 +2582,8 @@ public class Dag<N extends Lop>
 									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
 									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
 									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN"));
-						} else {
+						} 
+						else {
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 									                oparams.getLabel(), 
 									                oparams.getFile_name(), 
@@ -2713,7 +2726,7 @@ public class Dag<N extends Lop>
 		/*
 		 * Handle cases when job's output is FORCED to be cell format.
 		 * - If there exist a cell input, then output can not be blocked. 
-		 *   Only exception is when jobType = REBLOCK (for obvisous reason)
+		 *   Only exception is when jobType = REBLOCK/CSVREBLOCK (for obvisous reason)
 		 *   or when jobType = RAND since RandJob takes a special input file, 
 		 *   whose format should not be used to dictate the output format.
 		 * - If there exists a recordReader instruction
@@ -2721,7 +2734,7 @@ public class Dag<N extends Lop>
 		 */
 		
 		// 
-		if ( jt != JobType.REBLOCK_BINARY && jt != JobType.REBLOCK_TEXT && jt != JobType.RAND ) {
+		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.RAND ) {
 			for (int i=0; i < inputInfos.size(); i++)
 				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
 					cellModeOverride = true;
@@ -2865,7 +2878,7 @@ public class Dag<N extends Lop>
 				if (s.compareTo("") == 0)
 					s = inputStrings.get(i);
 				else
-					s += "," + inputStrings.get(i);
+					s += Lop.INSTRUCTION_DELIMITOR + inputStrings.get(i);
 			}
 		}
 		return s;
@@ -3015,20 +3028,31 @@ public class Dag<N extends Lop>
 		}
 
 		// have to verify if this is needed
-		if (node.getExecLocation() == ExecLocation.Data) {
-			return ret_val;
+		if (node.getExecLocation() == ExecLocation.Data ) {
+			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV ) {
+				// Generate write instruction, which goes into CSV_WRITE Job
+				int output_index = start_index[0];
+				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
+				nodeIndexMapping.put(node, output_index);
+				start_index[0]++; 
+				return output_index;
+			}
+			else {
+				return ret_val;
+			}
 		}
 
 		if (node.getExecLocation() == ExecLocation.MapAndReduce) {
 			
 			/* Generate Shuffle Instruction for "node", and return the index associated with produced output */
 			
-			boolean flag = false;
+			boolean instGenerated = true;
 			int output_index = start_index[0];
 			switch(node.getType()) {
 			
 			/* Lop types that take a single input */
 			case ReBlock:
+			case CSVReBlock:
 			case SortKeys:
 			case CentralMoment:
 			case CoVariance:
@@ -3051,11 +3075,11 @@ public class Dag<N extends Lop>
 				break;
 			
 			default:
-				flag = true;
+				instGenerated = false;
 				break;
 			}
 			
-			if ( !flag ) { 
+			if ( instGenerated ) { 
 				nodeIndexMapping.put(node, output_index);
 				start_index[0]++;
 				return output_index;
@@ -3989,4 +4013,5 @@ public class Dag<N extends Lop>
 
 		return false;
 	}
+	
 }

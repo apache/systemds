@@ -141,7 +141,7 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		runTest(true);
+		runTest(false);
 	}
 	
 	@Test
@@ -155,7 +155,7 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		runTest(true);
+		runTest(false);
 	}
 	
 }

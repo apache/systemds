@@ -69,8 +69,7 @@ public class Tertiary extends Lop
 			 */
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.RAND);
-			lps.addCompatibility(JobType.REBLOCK_BINARY);
-			lps.addCompatibility(JobType.REBLOCK_TEXT);
+			lps.addCompatibility(JobType.REBLOCK);
 			
 			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}

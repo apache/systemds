@@ -11,6 +11,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.ReBlock;
+import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
@@ -94,15 +95,34 @@ public class ReblockOp extends Hop
 			try {
 				ExecType et = optFindExecType();
 				if ( et == ExecType.MR ) {
-					ReBlock reblock = new ReBlock(
-						getInput().get(0).constructLops(),
-						get_rows_in_block(), get_cols_in_block(), get_dataType(), get_valueType());
-					reblock.getOutputParameters().setDimensions(get_dim1(),
-							get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-		
-					reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					Hop input = getInput().get(0);
 					
-					set_lops(reblock);
+					// Create the reblock lop according to the format of the input hop
+					if ( input.getKind() == Kind.DataOp 
+							&& ((DataOp)input).get_dataop() == DataOpTypes.PERSISTENTREAD
+							&& ((DataOp)input).getFormatType() == FileFormatTypes.CSV ) {
+						// NOTE: only persistent reads can have CSV format
+						CSVReBlock rcsv = new CSVReBlock(
+								getInput().get(0).constructLops(),
+								get_rows_in_block(), get_cols_in_block(), get_dataType(), get_valueType());
+							rcsv.getOutputParameters().setDimensions(get_dim1(),
+									get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+				
+							rcsv.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							
+							set_lops(rcsv);
+					}
+					else {
+						ReBlock reblock = new ReBlock(
+							getInput().get(0).constructLops(),
+							get_rows_in_block(), get_cols_in_block(), get_dataType(), get_valueType());
+						reblock.getOutputParameters().setDimensions(get_dim1(),
+								get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			
+						reblock.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						
+						set_lops(reblock);
+					}
 				}
 				else 
 					throw new HopsException(this.printErrorLocation() + "In Reblock Hop, Invalid ExecType (" + et + ") for Reblock. \n");

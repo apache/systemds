@@ -139,8 +139,8 @@ public class CSVReblockMR
 				{
 					if(ins.input==thisIndex)
 					{
-						delim=Pattern.quote(ins.delim);
-						ignoreFirstLine=ins.ignoreFirstLine;
+						delim=Pattern.quote(ins.delim); 
+						ignoreFirstLine=ins.hasHeader;
 						break;
 					}
 				}
@@ -298,9 +298,8 @@ public class CSVReblockMR
 				throw new RuntimeException(e);
 			}
 			CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
-			
 			delim=Pattern.quote(ins.delim);
-			ignoreFirstLine=ins.ignoreFirstLine;
+			ignoreFirstLine=ins.hasHeader;
 			//missingValue=ins.missingValue;
 			
 			row=new BlockRow();
@@ -347,7 +346,11 @@ public class CSVReblockMR
 						for(int k=0;k<ins.bclen; k++)
 						{
 							if(cells[k+start].isEmpty())
-								row.container[k]=ins.missingValue;
+							{
+								if(!ins.fill)
+									throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
+								row.container[k]=ins.fillValue;
+							}
 							else
 								row.container[k]= Double.parseDouble(cells[k+start]);
 						}
@@ -363,7 +366,11 @@ public class CSVReblockMR
 						for(int k=0;k<lastBclen; k++)
 						{
 							if(cells[k+start].isEmpty())
-								row.container[k]=ins.missingValue;
+							{
+								if(!ins.fill)
+									throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
+								row.container[k]=ins.fillValue;
+							}
 							else
 								row.container[k]= Double.parseDouble(cells[k+start]);
 						}
@@ -584,8 +591,8 @@ public class CSVReblockMR
 		MRJobConfiguration.setNumReducers(job, ret.numReducerGroups, numReducers);
 		
 		// Print the complete instruction
-		if (LOG.isTraceEnabled())
-			inst.printCompelteMRJobInstruction(stats);
+		//if (LOG.isTraceEnabled())
+		//	inst.printCompelteMRJobInstruction(stats);
 		
 		// Update resultDimsUnknown based on computed "stats"
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];
@@ -618,7 +625,7 @@ public class CSVReblockMR
 		for ( int i=0; i < inputs.length; i++ ) {
 			inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 		}
-		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK_BINARY, inputStats); 
+		ExecMode mode = RunMRJobs.getExecMode(JobType.REBLOCK, inputStats); 
 		if ( mode == ExecMode.LOCAL ) {
 			job.set("mapred.job.tracker", "local");
 			MRJobConfiguration.setStagingDir( job );
@@ -663,7 +670,7 @@ public class CSVReblockMR
 	
 	public static void main(String[] args) throws Exception {
 		ConfigurationManager.setConfig(new DMLConfig("SystemML-config.xml"));
-		String[] inputs = {"data/A.csv", "data/B.csv"};
+		String[] inputs = {"data/csv/test1.csv", "data/csv/test2.csv"};
 		InputInfo[] inputInfos = {InputInfo.CSVInputInfo, InputInfo.CSVInputInfo};
 		String[] outputs = {"data/A.out", "data/B.out"};
 		OutputInfo[] outputInfos = {OutputInfo.TextCellOutputInfo, OutputInfo.TextCellOutputInfo};
@@ -671,23 +678,25 @@ public class CSVReblockMR
 		int[] bclens = { 2, 2};
 		
 		String ins1= "MR" + Instruction.OPERAND_DELIM 
-		+ "rblkcsv" + Instruction.OPERAND_DELIM 
+		+ "csvrblk" + Instruction.OPERAND_DELIM 
 		+ 0 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 2 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[0] + Instruction.OPERAND_DELIM
 		+ bclens[0] + Instruction.OPERAND_DELIM
 		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
 		+ true+ Instruction.OPERAND_DELIM
+		+ true+ Instruction.OPERAND_DELIM
 		+100.0;
 		
 		String ins2= "MR" + Instruction.OPERAND_DELIM 
-		+ "rblkcsv" + Instruction.OPERAND_DELIM 
+		+ "csvrblk" + Instruction.OPERAND_DELIM 
 		+ 1 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM  
 		+ 3 + Instruction.DATATYPE_PREFIX + DataType.MATRIX + Instruction.VALUETYPE_PREFIX + ValueType.DOUBLE + Instruction.OPERAND_DELIM
 		+ brlens[1] + Instruction.OPERAND_DELIM
 		+ bclens[1] + Instruction.OPERAND_DELIM
 		+ Byte.toString((byte)',') + Instruction.OPERAND_DELIM
 		+ false+ Instruction.OPERAND_DELIM
+		+ true+ Instruction.OPERAND_DELIM
 		+0.0;
 		
 		CSVReblockMR.runJob(null, inputs, inputInfos, new long[]{-1, -1}, new long[]{-1, -1}, brlens, bclens, ins1+","+ins2, null, 2, 1, new byte[]{2,3}, outputs, 

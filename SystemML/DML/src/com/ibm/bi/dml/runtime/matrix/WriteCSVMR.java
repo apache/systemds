@@ -263,6 +263,7 @@ public class WriteCSVMR
 			ByteBuffer bytes = Text.encode(buffer.toString());
 		    int length = bytes.limit();
 		    out.write(bytes.array(), 0, length);
+		   // System.out.print(buffer.toString());
 			//out.write(Text.encode(buffer.toString(), true).array());
 		}
 		public String toString()
@@ -389,7 +390,7 @@ public class WriteCSVMR
 			}
 		}
 		
-		private void addMissingRows(byte tag, long stoppingRow, Situation sit, Reporter reporter) throws IOException
+		private Situation addMissingRows(byte tag, long stoppingRow, Situation sit, Reporter reporter) throws IOException
 		{
 			for(long row=rowIndexes[tag]+1; row<stoppingRow; row++)
 			{
@@ -401,12 +402,13 @@ public class WriteCSVMR
 					sit=Situation.MIDDLE;
 				}
 				zeroBlock.numCols=lastBlockNCols[tag];
-				zeroBlock.setSituation(Situation.MIDDLE);
+				zeroBlock.setSituation(sit);
 				collectFinalMultipleOutputs.directOutput(nullKey, zeroBlock, tagToResultIndex[tag], reporter);
 				colIndexes[tag]=0;
 				sit=Situation.NEWLINE;
 			}
 			colIndexes[tag]=0;
+			return sit;
 		}
 		
 		@Override
@@ -440,7 +442,7 @@ public class WriteCSVMR
 			if(sit==Situation.NEWLINE||sit==Situation.START)
 			{	
 				//if a row is completely missing
-				addMissingRows(tag, inkey.getFirstIndex(), sit, reporter);
+				sit=addMissingRows(tag, inkey.getFirstIndex(), sit, reporter);
 			}
 			//add missing value at the beginning of this row
 			for(long col=colIndexes[tag]+1; col<inkey.getSecondIndex(); col++)

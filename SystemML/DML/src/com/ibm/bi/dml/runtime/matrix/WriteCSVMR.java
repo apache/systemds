@@ -254,11 +254,11 @@ public class WriteCSVMR
 			int i=0;
 			for(; i<numCols-1; i++)
 			{
-				if(container[i]!=0)
+				if(!sparse)//if(container[i]!=0)
 					buffer.append(container[i]);
 				buffer.append(delim);
 			}
-			if(container[i]!=0)
+			if(!sparse)//if(container[i]!=0)
 				buffer.append(container[i]);
 			ByteBuffer bytes = Text.encode(buffer.toString());
 		    int length = bytes.limit();

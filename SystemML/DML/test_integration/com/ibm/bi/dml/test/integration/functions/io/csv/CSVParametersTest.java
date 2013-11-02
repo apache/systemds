@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -32,12 +33,10 @@ public class CSVParametersTest extends AutomatedTestBase
 	
 	private final static int rows = 1200;
 	private final static int cols = 100;
-	private final static double sparsity = 1;
 	private final static double eps = 1e-9;
-
-	//private int _rows, _cols;
-	//private double _sparsity;
 	
+	private static double sparsity = 0.1;
+
 	private boolean _header = false;
 	private String _delim = ",";
 	private boolean _sparse = true;
@@ -74,8 +73,7 @@ public class CSVParametersTest extends AutomatedTestBase
 	   return Arrays.asList(data);
 	 }
 	 
-	@Test
-	public void testFormatChange() {
+	private void setup() {
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("w_header", _header);
@@ -83,11 +81,93 @@ public class CSVParametersTest extends AutomatedTestBase
 		config.addVariable("w_sparse", _sparse);
 		
 		loadTestConfiguration(config);
+	}
+	
+	@Test
+	public void testCSVParametersSparseCP() {
+		setup();
+		sparsity = 0.1;
+		
+		RUNTIME_PLATFORM old_platform = rtplatform;
+		
+		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersDenseCP() {
+		setup();
+		sparsity = 1.0;
+		
+		RUNTIME_PLATFORM old_platform = rtplatform;
+
+		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersSparseMR() {
+		setup();
+		sparsity = 0.1;
+
+		RUNTIME_PLATFORM old_platform = rtplatform;
+
+		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersDenseMR() {
+		setup();
+		sparsity = 1.0;
+
+		RUNTIME_PLATFORM old_platform = rtplatform;
+
+		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersSparseHybrid() {
+		setup();
+		sparsity = 0.1;
+		
+		RUNTIME_PLATFORM old_platform = rtplatform;
+
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersDenseHybrid() {
+		setup();
+		sparsity = 1.0;
+		
+		RUNTIME_PLATFORM old_platform = rtplatform;
+
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	private void csvParameterTest(RUNTIME_PLATFORM platform, double sp) {
 		
 		//generate actual dataset
-		double[][] D = getRandomMatrix(rows, cols, 0, 1, sparsity, 7777); 
+		double[][] D = getRandomMatrix(rows, cols, 0, 1, sp, 7777); 
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 		writeInputMatrixWithMTD("D", D, true, mc);
+		D = null;
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		String txtFile = HOME + INPUT_DIR + "D";
@@ -115,22 +195,21 @@ public class CSVParametersTest extends AutomatedTestBase
 				scalarFile
 				};
 		
+		//System.out.println("Text -> CSV");
 		// Text -> CSV 
 		fullDMLScriptName = writeDML;
 		programArgs = writeArgs;
 		runTest(true, false, null, -1);
 
 		// Evaluate the written CSV file 
+		//System.out.println("CSV -> SCALAR");
 		fullDMLScriptName = readDML;
 		programArgs = readArgs;
+		//boolean exceptionExpected = (!_sparse && sparsity < 1.0);
 		runTest(true, false, null, -1);
 
 		double dmlScalar = TestUtils.readDMLScalar(scalarFile); 
-		
-		// Add a test case that fails when fill=false and there are missing fields (sparsity must be changed to < 1)
-		
-		TestUtils.compareScalars(dmlScalar, 0.01, eps);
-
+		TestUtils.compareScalars(dmlScalar, 0.0, eps);
 	}
 	
 }

@@ -733,7 +733,7 @@ public class DataConverter
 			StringBuilder sb = new StringBuilder();
 			
 			CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)formatProperties;
-			String delim = Pattern.quote(csvProperties.getDelim());
+			String delim = csvProperties.getDelim(); //Pattern.quote(csvProperties.getDelim());
 			
 			// Write header line, if needed
 			if (csvProperties.isHasHeader()) {
@@ -754,14 +754,14 @@ public class DataConverter
 	            double v;
 				for(int r=0; r < rows; r++) {
 					SparseRow spRow = src.getSparseRows()[r];
-					prev_c = 0;
+					prev_c = -1;
 					if ( spRow != null) {
 						for(int ind=0; ind < spRow.size(); ind++) {
 							c = spRow.getIndexContainer()[ind];
 							v = spRow.getValueContainer()[ind];
 							
 							// output empty fields, if needed
-							while(prev_c <= c-1) {
+							while(prev_c < c-1) {
 								if (!csvProperties.isSparse()) {
 									sb.append(0.0);
 								}
@@ -771,6 +771,8 @@ public class DataConverter
 							
 							// output the value
 							sb.append(v);
+							if ( c < clen-1)
+								sb.append(delim);
 							prev_c = c;
 						}
 					}
@@ -780,13 +782,14 @@ public class DataConverter
 						if (!csvProperties.isSparse()) {
 							sb.append(0.0);
 						}
-						sb.append(delim);
 						prev_c++;
+						if (prev_c < clen-1)
+							sb.append(delim);
 					}
 					sb.append('\n');
-					//if ( sb.toString().split(delim).length != clen) {
-					//	throw new RuntimeException("row = " + r + ", prev_c = " + prev_c + ", filedcount=" + sb.toString().split(delim).length + ": " + sb.toString());
-					//}
+					/*if ( sb.toString().split(Pattern.quote(delim)).length != clen) {
+						throw new RuntimeException("row = " + r + ", prev_c = " + prev_c + ", filedcount=" + sb.toString().split(Pattern.quote(delim)).length + ": " + sb.toString());
+					}*/
 					br.write( sb.toString() ); 
 					sb.setLength(0); 
 				}
@@ -808,7 +811,7 @@ public class DataConverter
 							}
 						}
 						if ( j != cols-1 )
-							sb.append(csvProperties.getDelim());
+							sb.append(delim);
 					}
 					sb.append('\n');
 					br.write( sb.toString() ); //same as append
@@ -1168,7 +1171,7 @@ public class DataConverter
 		String value = null;
 		int row = -1;
 		int col = -1;
-		double cellValue;
+		double cellValue = 0;
 		
 		String escapedDelim = Pattern.quote(delim);
 		
@@ -1203,7 +1206,7 @@ public class DataConverter
 						col++;
 					}
 					if ( !fill && emptyValuesFound) {
-						throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
+						throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
 					}
 					if ( col != clen ) {
 						throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);

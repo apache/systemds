@@ -15,6 +15,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -60,23 +62,50 @@ public class FormatChangeTest extends AutomatedTestBase
 	   return Arrays.asList(data);
 	 }
 	 
-	@Test
-	public void testFormatChange() {
-		
-		int rows = _rows;
-		int cols = _cols;
-		double sparsity = _sparsity;
+	private void setup() {
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
+		config.addVariable("rows", _rows);
+		config.addVariable("cols", _cols);
 		config.addVariable("format1", "text");
 		config.addVariable("format2", "binary");
 		
 		loadTestConfiguration(config);
-		
-		int scriptNum = 1;
-		
+	}
+	
+	@Test
+	public void testFormatChangeCP() {
+		setup();
+		RUNTIME_PLATFORM old_platform = rtplatform;
+		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		formatChangeTest();
+		rtplatform =  old_platform;
+	}
+	
+	@Test
+	public void testFormatChangeMR() {
+		setup();
+		RUNTIME_PLATFORM old_platform = rtplatform;
+		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		formatChangeTest();
+		rtplatform =  old_platform;
+	}
+	
+	@Test
+	public void testFormatChangeHybrid() {
+		setup();
+		RUNTIME_PLATFORM old_platform = rtplatform;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		formatChangeTest();
+		rtplatform =  old_platform;
+	}
+	
+	private void formatChangeTest() {
+
+		int rows = _rows;
+		int cols = _cols;
+		double sparsity = _sparsity;
+
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, 0, 1, sparsity, 7777); 
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
@@ -84,7 +113,7 @@ public class FormatChangeTest extends AutomatedTestBase
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		String[] oldProgramArgs = programArgs = new String[]{"-args", 
 											HOME + INPUT_DIR + "D",
                 							format1,
@@ -148,7 +177,6 @@ public class FormatChangeTest extends AutomatedTestBase
 		//fullRScriptName = HOME + TEST_NAME + ".R";
 		//rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		//      HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
-		
 
 	}
 	

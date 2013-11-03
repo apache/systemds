@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -93,17 +93,10 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		if(intValue < 0) {
-			runTest(true);
-		} else {
-			double computedIntValue = Math.sqrt(intValue);
-			
-			writeExpectedHelperMatrix("computed", computedIntValue);
-			
-			runTest();
-			
-			compareResults();
-		}
+		double computedIntValue = Math.sqrt(intValue);
+		writeExpectedHelperMatrix("computed", computedIntValue);
+		runTest();
+		compareResults();
 	}
 	
 	@Test
@@ -117,17 +110,10 @@ public class SqrtTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		if(doubleValue < 0) {
-			runTest(true);
-		} else {
-			double computedDoubleValue = Math.sqrt(doubleValue);
-			
-			writeExpectedHelperMatrix("computed", computedDoubleValue);
-			
-			runTest();
-			
-			compareResults();
-		}
+		double computedDoubleValue = Math.sqrt(doubleValue);
+		writeExpectedHelperMatrix("computed", computedDoubleValue);
+		runTest();
+		compareResults();
 	}
 	
 	@Test
@@ -157,5 +143,4 @@ public class SqrtTest extends AutomatedTestBase
 		
 		runTest(false);
 	}
-	
 }

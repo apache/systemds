@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -129,6 +129,7 @@ public class LazyWriteBuffer
 		
 		synchronized( _mData )
 		{
+			//remove serialized matrix
 			ByteBuffer ldata = _mData.remove(fname);
 			if( ldata != null )
 			{
@@ -137,6 +138,9 @@ public class LazyWriteBuffer
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
 					PageCache.putPage(ldata.data);
 			}
+			
+			//remove queue entry
+			_mQueue.remove(fname);	
 		}
 		
 		//delete from FS if required

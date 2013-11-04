@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -787,14 +787,9 @@ public class Recompiler
 			if ( d.getDataGenMethod() == DataGenMethod.RAND ) {
 				int ix1 = params.get(RandStatement.RAND_ROWS);
 				int ix2 = params.get(RandStatement.RAND_COLS);
-				String name1 = d.getInput().get(ix1).get_name();
-				String name2 = d.getInput().get(ix2).get_name();
-				Data dat1 = vars.get(name1);
-				Data dat2 = vars.get(name2);
-				if( dat1!=null && dat1 instanceof ScalarObject )
-					d.set_dim1( ((ScalarObject)dat1).getLongValue() );
-				if( dat2!=null && dat2 instanceof ScalarObject )
-					d.set_dim2( ((ScalarObject)dat2).getLongValue() );
+				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
+				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
+				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
 			} 
 			else if ( d.getDataGenMethod() == DataGenMethod.SEQ ) {
 				

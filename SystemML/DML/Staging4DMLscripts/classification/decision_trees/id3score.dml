@@ -1,0 +1,74 @@
+# arg 1 is nodes of model tree
+# arg 2 is edges of model tree
+# arg 3 is test samples
+# arg 4 is labels for test samples
+
+tree_nodes = read($1)
+tree_edges = read($2)
+
+edge_parents = tree_edges[,1]
+fanouts = groupedAggregate(target=edge_parents, groups=edge_parents, fn="count")
+mx_fanout = max(fanouts)
+
+nodeRow2edgeRows = Rand(rows=nrow(tree_nodes), cols=mx_fanout, min=-1, max=-1)
+positions = Rand(rows=nrow(tree_nodes), cols=1, min=1, max=1)
+
+one = Rand(rows=1, cols=1, min=1, max=1)
+
+for(i1 in 1:nrow(tree_edges)){
+	edge = tree_edges[i1,]
+	parent_row = castAsScalar(edge[1,1])
+	position_in_row = castAsScalar(positions[parent_row,1])
+	nodeRow2edgeRows[parent_row, position_in_row] = i1*one
+	positions[parent_row,1] = (position_in_row + 1)*one
+}
+
+samples = read($3)
+labels = read($4)
+
+#-1 denotes an undefined predicted label
+predicted = Rand(rows=nrow(samples), cols=1, min=-1, max=-1)
+
+parfor(i2 in 1:nrow(samples)){
+	sample = samples[i2,]
+	
+	feature_row = 1
+	continue = 1
+	while(continue == 1){
+		feature_id = castAsScalar(tree_nodes[feature_row,1])
+		
+		if(feature_id == -1){ #leaf node
+			predicted[i2,1] = tree_nodes[feature_row,2]
+			continue = 0
+		}else{
+			feature_value = castAsScalar(sample[1,feature_id])
+			
+			continue1 = 1
+			pos = 1
+			while(continue1 == 1){
+				edge_row = castAsScalar(nodeRow2edgeRows[feature_row, pos])
+				
+				if(edge_row == -1){
+					print("sample's feature value (" + feature_value + ") does not seem to be present in tree")
+					continue1 = 0
+				}
+				
+				value_on_edge = castAsScalar(tree_edges[edge_row,2])
+				
+				if(value_on_edge == feature_value){
+					feature_row = castAsScalar(tree_edges[edge_row,3])
+					continue1 = 0
+				}
+				
+				pos = pos + 1
+			}
+		}
+	}	
+}
+
+acc = sum(ppred(predicted, labels, "=="))
+perc = acc/nrow(labels)*100.0
+
+n = nrow(samples)
+print("#Correctly predicted: " + acc + " (out of " + n + " samples)")
+print("Accuracy (%): " + perc)

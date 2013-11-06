@@ -1123,7 +1123,7 @@ public abstract class Hop
 			 // Step-4: Relink the hops using the optimal ordering (split[][]) found from DP.
 			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split);
 		}
-		System.out.println("  .");
+		//System.out.println("  .");
 	}
 
 	public void printMe() throws HopsException {

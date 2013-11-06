@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -74,6 +74,13 @@ public class OptimizerUtils
 	 * about transferred data yet, this rewrite rule is enabled by default.
 	 */
 	public static boolean ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
+
+	/**
+	 * Enables constant folding in dags. Constant folding computes simple expressions of binary 
+	 * operations and literals and replaces the hop sub-DAG with a new literal operator. 
+	 */
+	public static boolean ALLOW_CONSTANT_FOLDING = true;
+	
 	
 	/**
 	 * Enables simplex expression evaluation for datagen parameters 'rows', 'cols'. Simple

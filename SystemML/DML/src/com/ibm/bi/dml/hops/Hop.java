@@ -760,7 +760,10 @@ public abstract class Hop
 						for( Hop p : parent )
 							for( int k=0; k<p.getInput().size(); k++ )
 								if( p.getInput().get(k)==h2 )
+								{
 									p.getInput().set(k, h1);
+									h1.getParent().add(p);
+								}
 						
 						//replace h2 w/ h1 in h2-input parents
 						for( Hop in : h2.getInput() )
@@ -775,6 +778,34 @@ public abstract class Hop
 		this.set_visited(Hop.VISIT_STATUS.DONE);
 
 		return ret;
+	}
+	
+	/**
+	 * Test and debugging only.
+	 * 
+	 * @param h
+	 * @throws HopsException 
+	 */
+	public void checkParentChildPointers( ) 
+		throws HopsException
+	{
+		if( get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		for( Hop in : getInput() )
+		{
+			if( !in.getParent().contains(this) )
+				throw new HopsException("Parent-Child pointers incorrect.");
+			in.checkParentChildPointers();
+		}
+		
+		set_visited(VISIT_STATUS.DONE);
+	}
+	
+	public void rule_ConstantFolding( ) 
+		throws HopsException 
+	{
+		rConstantFoldingBinaryExpression(this);
 	}
 	
 	public void rule_RehangTransientWriteParents(StatementBlock sb) throws HopsException {
@@ -1812,7 +1843,77 @@ public abstract class Hop
 		memo.put(root.getHopID(), ret);
 		return ret;
 	}
-	
+
+	protected void rConstantFoldingBinaryExpression( Hop root ) 
+		throws HopsException
+	{
+		if( root.get_visited() == VISIT_STATUS.DONE )
+			return;
+		
+		//recursively process childs (before replacement to allow bottom-recursion)
+		//no iterator in order to prevent concurrent modification
+		for( int i=0; i<root.getInput().size(); i++ )
+		{
+			Hop h = root.getInput().get(i);
+			rConstantFoldingBinaryExpression(h);
+		}
+		
+		//fold binary op if both are literals
+		if( root instanceof BinaryOp 
+			&& root.getInput().get(0) instanceof LiteralOp && root.getInput().get(1) instanceof LiteralOp )
+		{ 
+			BinaryOp broot = (BinaryOp) root;
+			LiteralOp lit1 = (LiteralOp) root.getInput().get(0);	
+			LiteralOp lit2 = (LiteralOp) root.getInput().get(1);
+			double ret = Double.MAX_VALUE;
+			
+			if(   (lit1.get_valueType()==ValueType.DOUBLE || lit1.get_valueType()==ValueType.INT)
+			   && (lit2.get_valueType()==ValueType.DOUBLE || lit2.get_valueType()==ValueType.INT) )
+			{
+				double lret = lit1.getDoubleValue();
+				double rret = lit2.getDoubleValue();
+				switch( broot.op )
+				{
+					case PLUS:	ret = lret + rret; break;
+					case MINUS:	ret = lret - rret; break;
+					case MULT:  ret = lret * rret; break;
+					case DIV:   ret = lret / rret; break;
+					case MIN:   ret = Math.min(lret, rret); break;
+					case MAX:   ret = Math.max(lret, rret); break;
+				}
+			}
+			
+			if( ret!=Double.MAX_VALUE )
+			{
+				LiteralOp literal = null;
+				if( broot.get_valueType()==ValueType.DOUBLE )
+					literal = new LiteralOp(String.valueOf(ret), ret);
+				else if( broot.get_valueType()==ValueType.INT )
+					literal = new LiteralOp(String.valueOf((long)ret), (long)ret);
+				
+				//reverse replacement in order to keep common subexpression elimination
+				for( int i=0; i<broot.getParent().size(); i++ ) //for all parents
+				{
+					Hop parent = broot.getParent().get(i);
+					for( int j=0; j<parent.getInput().size(); j++ )
+					{
+						Hop child = parent.getInput().get(j);
+						if( broot == child )
+						{
+							//replace operator
+							parent.getInput().remove(j);
+							parent.getInput().add(j, literal);
+						}
+					}
+				}
+				broot.getParent().clear();	
+			}		
+		}
+		
+		//mark processed
+		root.set_visited( VISIT_STATUS.DONE );
+	}
+
 	/**
 	 * 
 	 * @return

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
 */
 
@@ -447,6 +447,24 @@ public class DMLTranslator
 		}
 		
 		/**
+		 * Rule: Constant Folding. For all statement blocks, 
+		 * eliminate simple binary expressions of literals within dags by 
+		 * computing them and replacing them with a new Literal op once.
+		 * For the moment, this only applies within a dag, later this should be 
+		 * extended across statements block (global, inter-procedure). 
+		 */
+
+		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
+		{
+			//Timing time = new Timing();
+			//time.start();
+			this.resetHopsDAGVisitStatus(dmlp);
+			eval_rule_ConstantFolding(dmlp);
+			//System.out.println("CSE: "+time.stop());
+			
+		}
+		
+		/**
 		 * Rule: Determine the optimal order of execution for a chain of
 		 * matrix multiplications Solution: Classic Dynamic Programming
 		 * Approach Currently, the approach based only on matrix dimensions
@@ -733,6 +751,12 @@ public class DMLTranslator
 			cseMerged = h.rule_CommonSubexpressionElimination(dataops, literalops);
 			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		}
+		
+		//note: postprocessing checks for debug only
+		//for (Hop h : hops) {
+		//	h.resetVisitStatus();
+		//	h.checkParentChildPointers();
+		//}
 	}
 	
 	private void eval_rule_CommonSubexpressionElimination(Hop hops) 
@@ -748,7 +772,94 @@ public class DMLTranslator
 		cseMerged = hops.rule_CommonSubexpressionElimination(dataops, literalops);
 		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 	}
+
+	/////
+	// handle rule rule_ConstantFolding
 	
+	/**
+	 * 
+	 * @param dmlp
+	 * @throws LanguageException
+	 * @throws HopsException
+	 */
+	private void eval_rule_ConstantFolding(DMLProgram dmlp) 
+		throws LanguageException, HopsException
+	{	
+		// for each namespace, handle function statement blocks
+		for (String namespaceKey : dmlp.getNamespaces().keySet())
+			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
+			{
+				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
+				eval_rule_ConstantFolding(fsblock);
+			}
+		
+		// handle regular statement blocks in "main" method
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) 
+		{
+			StatementBlock current = dmlp.getStatementBlock(i);
+			eval_rule_ConstantFolding(current);
+		}
+	}
+		
+	private void eval_rule_ConstantFolding(StatementBlock current) 
+		throws HopsException
+	{	
+		if (current instanceof FunctionStatementBlock)
+		{
+			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
+			for (StatementBlock sb : fstmt.getBody())
+				eval_rule_ConstantFolding(sb);
+		}
+		else if (current instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock) current;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			eval_rule_ConstantFolding(wsb.getPredicateHops());
+			for (StatementBlock sb : wstmt.getBody())
+				eval_rule_ConstantFolding(sb);
+		}	
+		else if (current instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) current;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			eval_rule_ConstantFolding(isb.getPredicateHops());
+			for (StatementBlock sb : istmt.getIfBody())
+				eval_rule_ConstantFolding(sb);
+			for (StatementBlock sb : istmt.getElseBody())
+				eval_rule_ConstantFolding(sb);
+		}
+		else if (current instanceof ForStatementBlock)
+		{
+			ForStatementBlock fsb = (ForStatementBlock) current;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			eval_rule_ConstantFolding(fsb.getFromHops());
+			eval_rule_ConstantFolding(fsb.getToHops());
+			eval_rule_ConstantFolding(fsb.getIncrementHops());
+			for (StatementBlock sb : fstmt.getBody())
+				eval_rule_ConstantFolding(sb);
+		}
+		else 
+			eval_rule_ConstantFolding(current.get_hops());
+	}
+	
+	private void eval_rule_ConstantFolding(ArrayList<Hop> hops) 
+		throws HopsException 
+	{
+		if( hops == null )
+			return;
+
+		for (Hop h : hops) 
+			h.rule_ConstantFolding();
+	}
+	
+	private void eval_rule_ConstantFolding(Hop hops) 
+		throws HopsException 
+	{
+		if( hops == null )
+			return;
+
+		hops.rule_ConstantFolding();
+	}
 
 	//TODO Take nested blocks into account
 	public void printSQLLops(DMLProgram dmlp) throws ParseException, HopsException, LanguageException

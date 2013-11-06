@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -60,104 +60,153 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	@Test
 	public void testWhileRecompile() 
 	{
-		runRecompileTest(TEST_NAME1, true, false);
+		runRecompileTest(TEST_NAME1, true, false, false);
 	}
 	
 	@Test
 	public void testWhileNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME1, false, false);
+		runRecompileTest(TEST_NAME1, false, false, false);
 	}
 	
 	@Test
 	public void testIfRecompile() 
 	{
-		runRecompileTest(TEST_NAME2, true, false);
+		runRecompileTest(TEST_NAME2, true, false, false);
 	}
 	
 	@Test
 	public void testIfNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME2, false, false);
+		runRecompileTest(TEST_NAME2, false, false, false);
 	}
 	
 	@Test
 	public void testForRecompile() 
 	{
-		runRecompileTest(TEST_NAME3, true, false);
+		runRecompileTest(TEST_NAME3, true, false, false);
 	}
 	
 	@Test
 	public void testForNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME3, false, false);
+		runRecompileTest(TEST_NAME3, false, false, false);
 	}
 	
 	@Test
 	public void testParForRecompile() 
 	{
-		runRecompileTest(TEST_NAME4, true, false);
+		runRecompileTest(TEST_NAME4, true, false, false);
 	}
 	
 	@Test
 	public void testParForNoRecompile() 
 	{
-		runRecompileTest(TEST_NAME4, false, false);
+		runRecompileTest(TEST_NAME4, false, false, false);
 	}
 
 	@Test
 	public void testWhileRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME1, true, true);
+		runRecompileTest(TEST_NAME1, true, true, false);
 	}
 	
 	@Test
 	public void testWhileNoRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME1, false, true);
+		runRecompileTest(TEST_NAME1, false, true, false);
 	}
 	
 	@Test
 	public void testIfRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME2, true, true);
+		runRecompileTest(TEST_NAME2, true, true, false);
 	}
 	
 	@Test
 	public void testIfNoRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME2, false, true);
+		runRecompileTest(TEST_NAME2, false, true, false);
 	}
 	
 	@Test
 	public void testForRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME3, true, true);
+		runRecompileTest(TEST_NAME3, true, true, false);
 	}
 	
 	@Test
 	public void testForNoRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME3, false, true);
+		runRecompileTest(TEST_NAME3, false, true, false);
 	}
 	
 	@Test
 	public void testParForRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME4, true, true);
+		runRecompileTest(TEST_NAME4, true, true, false);
 	}
 	
 	@Test
 	public void testParForNoRecompileExprEval() 
 	{
-		runRecompileTest(TEST_NAME4, false, true);
+		runRecompileTest(TEST_NAME4, false, true, false);
+	}
+
+	@Test
+	public void testWhileRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME1, true, false, true);
+	}
+	
+	@Test
+	public void testWhileNoRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME1, false, false, true);
+	}
+	
+	@Test
+	public void testIfRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME2, true, false, true);
+	}
+	
+	@Test
+	public void testIfNoRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME2, false, false, true);
+	}
+	
+	@Test
+	public void testForRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME3, true, false, true);
+	}
+	
+	@Test
+	public void testForNoRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME3, false, false, true);
+	}
+	
+	@Test
+	public void testParForRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME4, true, false, true);
+	}
+	
+	@Test
+	public void testParForNoRecompileConstFold() 
+	{
+		runRecompileTest(TEST_NAME4, false, false, true);
 	}
 	
 	
-	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr )
+	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr, boolean constFold )
 	{	
 		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
+		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		
 		try
 		{
@@ -177,6 +226,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
+			OptimizerUtils.ALLOW_CONSTANT_FOLDING = constFold;
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
@@ -185,7 +235,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			if( recompile )
 			{
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						  1 - ((evalExpr)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand	
+						  1 - ((evalExpr || constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand	
 			}
 			else
 			{
@@ -205,6 +255,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 		{
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
+			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldFlagFold;
 		}
 	}
 	

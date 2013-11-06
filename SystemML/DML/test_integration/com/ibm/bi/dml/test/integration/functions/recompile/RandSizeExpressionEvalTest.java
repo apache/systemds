@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -38,20 +38,27 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testComplexRandWithoutEvalExpression() 
+	public void testComplexRand() 
 	{
-		runRandTest(TEST_NAME, false);
+		runRandTest(TEST_NAME, false, false);
 	}
 	
 	@Test
-	public void testComplexRandWithEvalExpression() 
+	public void testComplexRandExprEval() 
 	{
-		runRandTest(TEST_NAME, true);
+		runRandTest(TEST_NAME, true, false);
 	}
 	
-	private void runRandTest( String testName, boolean evalExpr )
+	@Test
+	public void testComplexRandConstFold() 
+	{
+		runRandTest(TEST_NAME, false, true);
+	}
+	
+	private void runRandTest( String testName, boolean evalExpr, boolean constFold )
 	{	
-		boolean oldFlag = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
+		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
+		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		
 		try
 		{
@@ -67,6 +74,8 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 	
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
+			OptimizerUtils.ALLOW_CONSTANT_FOLDING = constFold;
+			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			
@@ -75,7 +84,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			Assert.assertEquals("Unexpected results.", rows*cols*3.0, dmlfile.get(new CellIndex(1,1)).doubleValue());
 			
 			//check expected number of compiled and executed MR jobs
-			if( evalExpr )
+			if( evalExpr || constFold )
 			{
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 
 						  0, Statistics.getNoOfExecutedMRJobs());			
@@ -88,7 +97,8 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlag;
+			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
+			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldFlagFold;
 		}
 	}
 	

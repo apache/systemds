@@ -87,10 +87,31 @@ public class RelationalExpression extends Expression
 	 * @throws LanguageException 
 	 */
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars) throws LanguageException{
-		 
+		
+		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
+		Expression leftExpr = this.getLeft();
+		Expression rightExpr = this.getRight();
+		
+		if ((leftExpr != null && leftExpr instanceof BooleanIdentifier) || (rightExpr != null && rightExpr instanceof BooleanIdentifier)){
+			if ((leftExpr instanceof IntIdentifier || leftExpr instanceof DoubleIdentifier) || rightExpr instanceof IntIdentifier || rightExpr instanceof DoubleIdentifier){
+				if (leftExpr instanceof BooleanIdentifier){
+					if (((BooleanIdentifier) leftExpr).getValue() == true)
+						this.setLeft(new IntIdentifier(1));
+					else
+						this.setLeft(new IntIdentifier(0));
+				}
+				else if (rightExpr instanceof BooleanIdentifier){
+					if (((BooleanIdentifier) rightExpr).getValue() == true)
+						this.setRight(new IntIdentifier(1));
+					else
+						this.setRight(new IntIdentifier(0));
+				}
+			}
+		}
+		
 		this.getLeft().validateExpression(ids, constVars);
 		this.getRight().validateExpression(ids, constVars);
-		
+				
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());

@@ -53,7 +53,9 @@ public class DoubleObject extends ScalarObject
 	}
 
 	public boolean getBooleanValue(){
-		throw new UnsupportedOperationException();
+		if (_value == 0) return false;
+		else return true;
+		//throw new UnsupportedOperationException();
 	}
 
 	@Override

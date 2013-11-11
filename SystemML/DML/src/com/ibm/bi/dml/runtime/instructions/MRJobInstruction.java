@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,6 +20,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
@@ -165,7 +166,9 @@ public class MRJobInstruction extends Instruction
 	 * @throws IllegalArgumentException 
 	 * 
 	 */
-	public MRJobInstruction(MRJobInstruction that, String srcPattern, String targetPattern) throws IllegalArgumentException, IllegalAccessException {
+	public MRJobInstruction(MRJobInstruction that) 
+		throws IllegalArgumentException, IllegalAccessException 
+	{
 		this(that.getJobType());
 		Class<MRJobInstruction> cla = MRJobInstruction.class;
 		
@@ -177,12 +180,6 @@ public class MRJobInstruction extends Instruction
 			if(!Modifier.isStatic(f.getModifiers()))
 				f.set(this, f.get(that));
 		}
-		this.dimsUnknownFilePrefix.replaceAll(srcPattern, targetPattern);
-		
-		//replace rand inst strings
-		String rand = getIv_randInstructions();
-		rand = rand.replaceAll(srcPattern, targetPattern);
-		setRandInstructions(rand);
 		
 		//replace inputs/outputs (arrays)
 		inputVars = that.inputVars.clone();
@@ -863,4 +860,45 @@ public class MRJobInstruction extends Instruction
 		LOG.trace("  Replication - " + iv_replication);
 	}
 	
+	@Override
+	public void updateInstructionThreadID(String pattern, String replace)
+	{
+		this.dimsUnknownFilePrefix.replaceAll(pattern, replace);
+		
+		if( getJobType() == JobType.RAND )
+		{
+			//update string representation (because parsing might fail due to pending instruction patching)
+			String rndinst = getIv_randInstructions();
+			String rndinst2 = "";
+			if( rndinst!=null && rndinst.length()>0 )
+			{
+				String[] instSet = rndinst.split( Lop.INSTRUCTION_DELIMITOR );
+				for( String dginst : instSet )
+				{
+					String[] parts = dginst.split(Lop.OPERAND_DELIMITOR);
+					int pos = -1;
+					if( parts[1].equals("Rand") ) pos = 13;
+					if( parts[1].equals("seq") ) pos = 11;
+					if( pos>0 )
+					{
+						StringBuilder sb = new StringBuilder();
+						for( int i=0; i<parts.length; i++ )
+						{
+							if( i>0 ) sb.append(Lop.OPERAND_DELIMITOR);
+							
+							if( i==pos )
+								sb.append(ProgramConverter.saveReplaceFilenameThreadID(parts[i], pattern, replace));
+							else
+								sb.append(parts[i]);
+						}
+						rndinst2 = sb.toString();
+					}
+					else
+						rndinst2 = rndinst2 + dginst;		
+					
+				}
+				setRandInstructions(rndinst2);
+			}		
+		}
+	}
 }

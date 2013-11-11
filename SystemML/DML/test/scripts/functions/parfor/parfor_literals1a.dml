@@ -1,0 +1,22 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+dynWrite = externalFunction(Matrix[Double] in, String fname, String format)
+  return(Boolean success)
+  implemented in (classname="com.ibm.bi.dml.packagesupport.DynamicWriteMatrixCP",exectype="mem") 
+
+A = read($1, rows=$2, cols=$3, format="text");   
+
+parfor( i in 1:1, mode=LOCAL, opt=NONE ) 
+{
+   B = A + 0; 
+   # param should include internal 'thread root prefix' _t0
+   x = dynWrite(B, $4, "textcell");  
+}  
+      

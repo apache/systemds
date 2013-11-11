@@ -1,0 +1,20 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+A = read($1, rows=$2, cols=$3, format="text");   
+_t0 = matrix(0, rows=nrow(A),cols=ncol(A));
+
+parfor( i in 1:1, mode=LOCAL, opt=NONE, check=0 ) 
+{
+   _t0[1:nrow(A),1:ncol(A)]=A+0; 
+}  
+
+write(_t0, $4);
+      

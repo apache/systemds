@@ -1,19 +1,21 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Map.Entry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -47,7 +49,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
+import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
@@ -57,6 +59,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruct
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -78,14 +81,16 @@ public class ProgramConverter
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	protected static final Log LOG = LogFactory.getLog(ProgramConverter.class.getName());
+    
 	//use escaped unicodes for separators in order to prevent string conflict
 	public static final String NEWLINE           = "\n"; //System.lineSeparator();
-	public static final String COMPONENTS_DELIM  = "\u003b"; //";";
-	public static final String ELEMENT_DELIM     = "\u002c"; //",";
+	public static final String COMPONENTS_DELIM  = "\u236e"; //semicolon w/ bar; ";";
+	public static final String ELEMENT_DELIM     = "\u236a"; //comma w/ bar; ",";
 	public static final String DATA_FIELD_DELIM  = "\u007c"; //"|";
 	public static final String KEY_VALUE_DELIM   = "\u003d"; //"=";
-	public static final String LEVELIN           = "\u007b"; //"{";
-	public static final String LEVELOUT          = "\u007d"; //"}";	
+	public static final String LEVELIN           = "\u23a8"; //variant of left curly bracket; "\u007b"; //"{";
+	public static final String LEVELOUT          = "\u23ac"; //variant of right curly bracket; "\u007d"; //"}";	
 	public static final String EMPTY             = "null";
 	public static final String EXT_FUNCTION      = "extfunct";
 	
@@ -416,18 +421,18 @@ public class ProgramConverter
 			ExternalFunctionProgramBlockCP efpb = (ExternalFunctionProgramBlockCP) fpb;
 			HashMap<String,String> tmp3 = efpb.getOtherParams();		
 			if( IDPrefix!=-1 )
-				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
+				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),CP_CHILD_THREAD+IDPrefix,CP_CHILD_THREAD+pid));
 			else	
-				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
+				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),CP_ROOT_THREAD_ID,CP_CHILD_THREAD+pid));
 		}
 		else if( fpb instanceof ExternalFunctionProgramBlock )
 		{
 			ExternalFunctionProgramBlock efpb = (ExternalFunctionProgramBlock) fpb;
 			HashMap<String,String> tmp3 = efpb.getOtherParams();
 			if( IDPrefix!=-1 )
-				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
+				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),CP_CHILD_THREAD+IDPrefix, CP_CHILD_THREAD+pid));
 			else	
-				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,efpb.getBaseDir().replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
+				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),CP_ROOT_THREAD_ID, CP_CHILD_THREAD+pid));
 		}
 		else
 		{
@@ -521,61 +526,46 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	@SuppressWarnings("unchecked")
 	public static Instruction cloneInstruction( Instruction oInst, long pid, boolean plain, boolean cpFunctions ) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		Instruction inst = null;
 
-		String tmpString = oInst.toString().replaceAll(ProgramConverter.CP_ROOT_THREAD_ID, 
-				                                       ProgramConverter.CP_CHILD_THREAD+pid);
-		
-		Class<Instruction> cla = null;
-		Method parse = null;
-		try
-		{
-			cla = (Class) oInst.getClass();
-			parse = cla.getMethod("parseInstruction", String.class);
-		}
-		catch(Exception ex){}
+		String tmpString = oInst.toString();
 		
 		try
 		{
-			if( parse != null )
+			if( oInst instanceof CPInstruction || oInst instanceof MRInstruction )
 			{
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions )
 				{
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;
 					if( !plain )
+					{
+						//no safe replacement required because concatenation only
 						tmpString = tmp.toString().replaceAll(tmp.getFunctionName(), tmp.getFunctionName() + CP_CHILD_THREAD+pid);  
+					}
 					//otherwise: preserve functionname
 				}
 				
-				inst = (Instruction) parse.invoke(null, tmpString);
-			}
-			else if( oInst instanceof CPInstruction )
-			{
-				CPInstruction tmp = (CPInstruction) oInst;
-				inst = CPInstructionParser.parseSingleInstruction(tmp.getCPInstructionType(), tmpString);
-			}
-			else if( oInst instanceof MRInstruction )
-			{
-				MRInstruction tmp = (MRInstruction) oInst;
-				inst = MRInstructionParser.parseSingleInstruction(tmp.getMRInstructionType(), tmpString);
+				inst = InstructionParser.parseSingleInstruction(tmpString);
 			}
 			else if( oInst instanceof MRJobInstruction )
 			{
-				MRJobInstruction tmp = (MRJobInstruction)oInst;
-				inst = new MRJobInstruction(tmp, ProgramConverter.CP_ROOT_THREAD_ID, 
-						                         ProgramConverter.CP_CHILD_THREAD+pid );
+				//clone via copy constructor
+				inst = new MRJobInstruction( (MRJobInstruction)oInst );
 			}
 			else
-				throw new DMLUnsupportedOperationException("Unable to clone instruction of type "+cla.toString());
+				throw new DMLUnsupportedOperationException("Failed to clone instruction: "+oInst);
 		}
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException(ex);
 		}
+		
+		//save replacement of thread id references in instructions
+		inst = saveReplaceThreadID( inst, ProgramConverter.CP_ROOT_THREAD_ID, 
+				                          ProgramConverter.CP_CHILD_THREAD+pid);
 		
 		return inst;
 	}
@@ -909,26 +899,36 @@ public class ProgramConverter
 	public static String checkAndReplaceLiterals( String instStr )
 	{
 		String tmp = instStr;
-
-		//1) check own delimiters
-		if( tmp.contains(COMPONENTS_DELIM) )
-			tmp = tmp.replaceAll(COMPONENTS_DELIM, ".");
 		
-		if( tmp.contains(ELEMENT_DELIM) )
+		//1) check own delimiters (very unlikely due to special characters)
+		if( tmp.contains(COMPONENTS_DELIM) ) {
+			tmp = tmp.replaceAll(COMPONENTS_DELIM, ".");
+			LOG.warn("Replaced special literal character sequence "+COMPONENTS_DELIM+" with '.'");
+		}
+		
+		if( tmp.contains(ELEMENT_DELIM) ) {
 			tmp = tmp.replaceAll(ELEMENT_DELIM, ".");
+			LOG.warn("Replaced special literal character sequence "+ELEMENT_DELIM+" with '.'");
+		}
+			
+		if( tmp.contains( LEVELIN ) ){
+			tmp = tmp.replaceAll(LEVELIN, "("); // '\\' required if LEVELIN='{' because regex
+			LOG.warn("Replaced special literal character sequence "+LEVELIN+" with '('");
+		}
 
-		if( tmp.contains(LEVELIN) )
-			tmp = tmp.replaceAll(LEVELIN, ".");
-
-		if( tmp.contains(LEVELOUT) )
-			tmp = tmp.replaceAll(LEVELOUT, ".");
+		if( tmp.contains(LEVELOUT) ){
+			tmp = tmp.replaceAll(LEVELOUT, ")");
+			LOG.warn("Replaced special literal character sequence "+LEVELOUT+" with ')'");
+		}
 		
 		//NOTE: DATA_FIELD_DELIM and KEY_VALUE_DELIM not required
 		//because those literals cannot occur in critical places.
 		
 		//2) check end tag of CDATA
-		if( tmp.contains(PARFOR_CDATA_END) )
-			tmp = tmp.replaceAll(PARFOR_CDATA_END, ".");		
+		if( tmp.contains(PARFOR_CDATA_END) ){
+			tmp = tmp.replaceAll(PARFOR_CDATA_END, "."); //prevent XML parsing issues in job.xml
+			LOG.warn("Replaced special literal character sequence "+PARFOR_CDATA_END+" with '.'");
+		}
 		
 		return tmp;
 	}
@@ -1342,7 +1342,6 @@ public class ProgramConverter
 		
 		//handle program
 		String progStr = st.nextToken();
-	    progStr = progStr.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction  
 		Program prog = parseProgram( progStr, id ); 
 		
 		//handle result variable names
@@ -1356,7 +1355,6 @@ public class ProgramConverter
 			
 		//handle program blocks
 		String spbs = st.nextToken();
-		spbs = spbs.replaceAll(CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id); //replace for all instruction 
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(spbs, prog, id);
 		
 		body.setChildBlocks( pbs );
@@ -1529,11 +1527,11 @@ public class ProgramConverter
 		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 		String var = st.nextToken();
 		
 		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
+		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
 		
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1568,12 +1566,12 @@ public class ProgramConverter
 		String[] iterPredVars = parseStringArray(st.nextToken());
 		
 		//instructions
-		ArrayList<Instruction> from = parseInstructions(st.nextToken());
-		ArrayList<Instruction> to = parseInstructions(st.nextToken());
-		ArrayList<Instruction> incr = parseInstructions(st.nextToken());
+		ArrayList<Instruction> from = parseInstructions(st.nextToken(),id);
+		ArrayList<Instruction> to = parseInstructions(st.nextToken(),id);
+		ArrayList<Instruction> incr = parseInstructions(st.nextToken(),id);
 		
 		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
+		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
 
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1602,7 +1600,6 @@ public class ProgramConverter
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		String lin = in.substring( PARFOR_PB_PARFOR.length(),in.length()-PARFOR_PB_END.length()); 
-		lin = lin.replaceAll(CP_CHILD_THREAD+id, CP_ROOT_THREAD_ID); // reset placeholder to preinit state (replaced by deep copies of nested parfor pbs)
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
 		
 		//LocalVariableMap vars = parseVariables(st.nextToken());
@@ -1612,16 +1609,16 @@ public class ProgramConverter
 		ArrayList<String> resultVars = parseStringArrayList(st.nextToken());
 		HashMap<String,String> params = parseStringHashMap(st.nextToken());
 		
-		//instructions
-		ArrayList<Instruction> from = parseInstructions(st.nextToken());
-		ArrayList<Instruction> to = parseInstructions(st.nextToken());
-		ArrayList<Instruction> incr = parseInstructions(st.nextToken());
+		//instructions 
+		ArrayList<Instruction> from = parseInstructions(st.nextToken(), 0);
+		ArrayList<Instruction> to = parseInstructions(st.nextToken(), 0);
+		ArrayList<Instruction> incr = parseInstructions(st.nextToken(), 0);
 		
 		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
+		ArrayList<Instruction> exit = parseInstructions(st.nextToken(), 0);
 
-		//program blocks
-		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
+		//program blocks //reset id to preinit state, replaced during exec
+		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, 0); 
 
 		ParForProgramBlock pfpb = new ParForProgramBlock(id, prog, iterPredVars, params);
 		pfpb.disableOptimization(); //already done in top-level parfor
@@ -1654,11 +1651,11 @@ public class ProgramConverter
 		//LocalVariableMap vars = parseVariables(st.nextToken());
 		
 		//predicate instructions
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 		String var = st.nextToken();
 		
 		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken());
+		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
 		
 		//program blocks: if and else
 		ArrayList<ProgramBlock> pbs1 = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1696,7 +1693,7 @@ public class ProgramConverter
 		ArrayList<DataIdentifier> dat2 = parseDataIdentifiers(st.nextToken());
 		
 		//instructions
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1738,7 +1735,7 @@ public class ProgramConverter
 		
 		//instructions
 		@SuppressWarnings("unused")
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken()); //required for removing INST BEGIN, END
+		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id); //required for removing INST BEGIN, END
 
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1770,7 +1767,7 @@ public class ProgramConverter
 		String lin = in.substring( PARFOR_PB_BEGIN.length(),in.length()-PARFOR_PB_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
 		
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken());
+		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 		
 		ProgramBlock pb = new ProgramBlock(prog);
 		pb.setInstructions(inst);
@@ -1785,7 +1782,7 @@ public class ProgramConverter
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static ArrayList<Instruction> parseInstructions( String in ) 
+	public static ArrayList<Instruction> parseInstructions( String in, int id ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> insts = new ArrayList<Instruction>();  
@@ -1800,6 +1797,7 @@ public class ProgramConverter
 			try
 			{
 				Instruction tmpinst = CPInstructionParser.parseSingleInstruction(instStr);
+				tmpinst = saveReplaceThreadID(tmpinst, CP_ROOT_THREAD_ID, CP_CHILD_THREAD+id );
 				insts.add( tmpinst );
 			}
 			catch(Exception ex)
@@ -2007,6 +2005,55 @@ public class ProgramConverter
 		return ec;
 	}
 
+	//////////
+	// CUSTOM SAFE LITERAL REPLACEMENT
+	
+	/**
+	 * In-place replacement of thread ids in filenames, functions names etc
+	 * 
+	 * @param instInst
+	 * @param pattern
+	 * @param replacement
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	public static Instruction saveReplaceThreadID( Instruction inst, String pattern, String replacement ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//currently known, relevant instructions: createvar, rand, seq, extfunct, 
+		if( inst instanceof MRJobInstruction )
+		{
+			//update dims file, and internal string representations of rand/seq instructions
+			MRJobInstruction mrinst = (MRJobInstruction)inst;
+			mrinst.updateInstructionThreadID(pattern, replacement);
+		}
+		else if ( inst instanceof VariableCPInstruction )  //createvar, setfilename
+		{
+			//update in-memory representation
+			inst.updateInstructionThreadID(pattern, replacement);
+		}
+		//NOTE> //Rand, seq in CP not required
+		//else if( inst.toString().contains(pattern) )
+		//	throw new DMLRuntimeException( "DEBUG: Missed thread id replacement: "+inst );
+		
+		return inst;
+	}
+	
+	public static String saveReplaceFilenameThreadID(String fname, String pattern, String replace)
+	{
+		//save replace necessary in order to account for the possibility that read variables have our prefix in the absolute path
+		//replace the last match only, because (1) we have at most one _t0 and (2) always concatenated to the end.
+	    int pos = fname.lastIndexOf(pattern);
+	    if( pos < 0 )
+	    	return fname;
+	    return fname.substring(0, pos) + replace + fname.substring(pos+pattern.length());
+	}
+	
+	
+	//////////
+	// CUSTOM HIERARCHICAL TOKENIZER
+	
 	
 	/**
 	 * Custom StringTokenizer for splitting strings of hierarchies. The basic idea is to

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -96,19 +96,24 @@ public class BinaryExpression extends Expression
 	 * @throws LanguageException
 	 */
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
-			throws LanguageException {
+			throws LanguageException 
+	{	
+		//recursive validate
+		_left.validateExpression(ids, constVars);
+		_right.validateExpression(ids, constVars);
 		
-		this.getLeft().validateExpression(ids, constVars);
-		this.getRight().validateExpression(ids, constVars);
+		//constant propagation (precondition for more complex constant folding rewrite)
+		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )
+			_left = constVars.get(((DataIdentifier) _left).getName());
+		if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
+			_right = constVars.get(((DataIdentifier) _right).getName());;
+		
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
-		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-		
+		output.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());		
 		output.setDataType(computeDataType(this.getLeft(), this.getRight(), true));
-
-		ValueType resultVT = computeValueType(this.getLeft(), this.getRight(),
-				true);
+		ValueType resultVT = computeValueType(this.getLeft(), this.getRight(), true);
 
 		// Override the computed value type, if needed
 		if (this.getOpCode() == Expression.BinaryOp.POW
@@ -177,7 +182,7 @@ public class BinaryExpression extends Expression
 		}
 		return;
 	}
-
+	
 	public String toString() {
 
 		return "(" + _left.toString() + " " + _opcode.toString() + " "

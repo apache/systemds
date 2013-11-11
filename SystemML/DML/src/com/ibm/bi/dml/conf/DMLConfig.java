@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -171,17 +171,20 @@ public class DMLConfig
 	 */
 	private void parseConfig () throws ParserConfigurationException, SAXException, IOException 
 	{
-		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setIgnoringComments(true); //ignore XML comments
+		DocumentBuilder builder = factory.newDocumentBuilder();
 		Document domTree = null;
 		if (config_file_name.startsWith("hdfs:") ||
 		    config_file_name.startsWith("gpfs:") ) { // config file from DFS
 			FileSystem DFS = FileSystem.get(new Configuration());
             Path configFilePath = new Path(config_file_name);
-            domTree = builder.parse(DFS.open(configFilePath));
+            domTree = builder.parse(DFS.open(configFilePath));  
 		}
 		else { // config from local file system
 			domTree = builder.parse(config_file_name);
 		}
+		
 		xml_root = domTree.getDocumentElement();		
 	}
 	
@@ -244,7 +247,7 @@ public class DMLConfig
 			elem.getFirstChild().setNodeValue(newTextValue);	
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @return

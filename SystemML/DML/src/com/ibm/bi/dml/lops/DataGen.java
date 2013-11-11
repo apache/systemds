@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -163,7 +163,8 @@ public class DataGen extends Lop
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
 		
 		StringBuilder sb = new StringBuilder( );
-		sb.append( getExecType() );
+		ExecType et = getExecType();
+		sb.append( et );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		String in1 = new String(""), in2 = new String("");
 		
@@ -265,8 +266,10 @@ public class DataGen extends Lop
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(pdfString);
 			sb.append(OPERAND_DELIMITOR);
-			sb.append(baseDir);
-			sb.append(OPERAND_DELIMITOR);
+			if ( et == ExecType.MR ) {
+				sb.append(baseDir);
+				sb.append(OPERAND_DELIMITOR);
+			}
 			sb.append(output);
 			sb.append(DATATYPE_PREFIX);
 			sb.append(get_dataType());

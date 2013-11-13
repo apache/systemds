@@ -516,6 +516,13 @@ public class CSVReblockMR
 		//configure reducer
 		job.setReducerClass(AssignRowIDReducer.class);
 		
+		/*
+		 	job.setBoolean("adaptivemr.map.enable", true);
+			job.setInt("adaptivemr.map.waves", 1);
+		 */
+		
+		//turn off adaptivemr
+		job.setBoolean("adaptivemr.map.enable", false);
 		
 		// By default, the job executes in "cluster" mode.
 		// Determine if we can optimize and run it in "local" mode.
@@ -615,6 +622,14 @@ public class CSVReblockMR
 		
 		//configure reducer
 		job.setReducerClass(CSVReblockReducer.class);
+		
+		/*
+	 	job.setBoolean("adaptivemr.map.enable", true);
+		job.setInt("adaptivemr.map.waves", 1);
+	 */
+	
+		//turn off adaptivemr
+		job.setBoolean("adaptivemr.map.enable", false);
 		
 		
 		// By default, the job executes in "cluster" mode.

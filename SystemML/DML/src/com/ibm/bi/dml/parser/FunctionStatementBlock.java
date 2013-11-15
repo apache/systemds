@@ -10,10 +10,13 @@ package com.ibm.bi.dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 
 
 public class FunctionStatementBlock extends StatementBlock 
@@ -40,10 +43,9 @@ public class FunctionStatementBlock extends StatementBlock
 		}
 		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
 			
+		// handle DML-bodied functions
 		if (!(fstmt instanceof ExternalFunctionStatement)){
-			
-			//fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlProg));
-			
+					
 			// perform validate for function body
 			this._dmlProg = dmlProg;
 			for(StatementBlock sb : fstmt.getBody())
@@ -51,8 +53,70 @@ public class FunctionStatementBlock extends StatementBlock
 				ids = sb.validate(dmlProg, ids, constVars);
 				constVars = sb.getConstOut();
 			}
-			_constVarsIn.putAll(fstmt.getBody().get(0).getConstIn());
-			_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
+			if (fstmt.getBody().size() > 0)
+				_constVarsIn.putAll(fstmt.getBody().get(0).getConstIn());
+			
+			if (fstmt.getBody().size() > 1)
+				_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
+			
+//			for each return value, check variable is defined and validate the return type
+			// 	if returnValue type known incorrect, then throw exception
+			Vector<DataIdentifier> returnValues = fstmt.getOutputParams();
+			for (DataIdentifier returnValue : returnValues){
+				DataIdentifier curr = ids.getVariable(returnValue.getName());
+				if (curr == null){
+					LOG.error(this.printBlockErrorLocation() + "for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ");
+					throw new LanguageException(this.printBlockErrorLocation() + "for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ");
+				}
+				
+				if (curr.getDataType() == DataType.UNKNOWN){
+					LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " may not match data type in function signature of " + returnValue.getDataType());
+				}
+				
+				if (curr.getValueType() == ValueType.UNKNOWN){
+					LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getValueType() + " may not match data type in function signature of " + returnValue.getValueType());
+				}
+				
+				if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
+					LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType());
+					throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType());
+				}
+				
+				if (curr.getValueType() != ValueType.UNKNOWN && !curr.getValueType().equals(returnValue.getValueType())){
+					
+					// attempt to convert value type: handle conversion from scalar DOUBLE or INT
+					if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
+						if (returnValue.getValueType() == ValueType.DOUBLE){
+							if (curr.getValueType() == ValueType.INT){
+								IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
+								if (currIntValue != null){
+									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue());
+									constVars.put(curr.getName(), currDoubleValue);
+								}
+								curr.setValueType(ValueType.DOUBLE);
+								ids.addVariable(curr.getName(), curr);
+								LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and but was safely cast");
+							}
+							else {
+								// THROW EXCEPTION -- CANNOT CONVERT
+								LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast value");
+								throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast value");
+							}
+						}
+						if (returnValue.getValueType() == ValueType.INT){
+							// THROW EXCEPTION -- CANNOT CONVERT
+							LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
+							throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
+							
+						} 
+					}	
+					else {
+						LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast double as int");
+						throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
+					}
+				}
+				
+			}
 		}
 		else {
 			//validate specified attributes and attribute values
@@ -61,7 +125,7 @@ public class FunctionStatementBlock extends StatementBlock
 			
 			//validate child statements
 			this._dmlProg = dmlProg;
-			for(StatementBlock sb : efstmt.getBody()) //TODO MB: Is this really necessary? Can an ExternalFunction, implemented in Java, really have child statement blocks?
+			for(StatementBlock sb : efstmt.getBody()) 
 			{
 				ids = sb.validate(dmlProg, ids, constVars);
 				constVars = sb.getConstOut();
@@ -69,6 +133,7 @@ public class FunctionStatementBlock extends StatementBlock
 		}
 		
 		
+
 		return ids;
 	}
 
@@ -170,10 +235,11 @@ public class FunctionStatementBlock extends StatementBlock
 		return _hops;
 	}
 	
+	
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
-		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
-		
+		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");	
 	}
+	
 	
 	public VariableSet analyze(VariableSet liPassed, VariableSet loPassed) throws LanguageException{
  		

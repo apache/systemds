@@ -260,8 +260,8 @@ TOKEN :
  	// LITERALS
  
  	// The name of an optree or an existing annotation type.
- 	| <ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","0"-"9","_"])* >
- 	| <DOLLAR_ID : "$"(["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <ID : ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <DOLLAR_ID : "$"(["0"-"9"])* >
 
  	// A number with no decimal point -- minus sign is a separate token
  	| <INTEGER : (["0"-"9"])+>

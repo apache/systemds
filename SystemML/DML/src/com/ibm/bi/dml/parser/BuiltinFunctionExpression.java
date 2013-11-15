@@ -1,9 +1,9 @@
 /**
-Â * IBM Confidential
-Â * OCO Source Materials
-Â * (C) Copyright IBM Corp. 2010, 2013
-Â * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
-Â */
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2013
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
 
 package com.ibm.bi.dml.parser;
 
@@ -741,8 +741,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		// check if the function name is built-in function
 		//	(assign built-in function op if function is built-in
 		Expression.BuiltinFunctionOp bifop = null;
-	
-		if (functionName.equals("cos"))
+		
+		if (functionName.equals("avg"))
+			bifop = Expression.BuiltinFunctionOp.MEAN;
+		else if (functionName.equals("cos"))
 			bifop = Expression.BuiltinFunctionOp.COS;
 		else if (functionName.equals("sin"))
 			bifop = Expression.BuiltinFunctionOp.SIN;
@@ -818,7 +820,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop= Expression.BuiltinFunctionOp.QUANTILE;
 		else if (functionName.equals("interQuantile"))
 			bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;
-	else if (functionName.equals("interQuartileMean"))
+		else if (functionName.equals("interQuartileMean"))
 			bifop= Expression.BuiltinFunctionOp.IQM;
 		else if (functionName.equals("ctable"))
 			bifop = Expression.BuiltinFunctionOp.CTABLE;

@@ -31,6 +31,7 @@ public class IfStatementBlock extends StatementBlock
 		if (_statements.size() > 1){
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "IfStatementBlock should only have 1 statement (IfStatement)");
 		}
+		
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
 			
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
@@ -71,6 +72,24 @@ public class IfStatementBlock extends StatementBlock
 			constVarsElseCopy = sb.getConstOut();
 		}
 		
+		
+		/////////////////////////////////////////////////////////////////////////////////
+		//  check data type and value type are same for updated variables in both 
+		//	if statement and else statement
+		/////////////////////////////////////////////////////////////////////////////////
+		for (String updatedVar : this._updated.getVariableNames()){
+			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
+			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			
+			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getDataType().equals(elseVersion.getOutput().getDataType())){
+				LOG.warn(elseVersion.printWarningLocation() + "variable " + elseVersion.getName() + " defined with different data type in if and else clause");
+			}
+					
+			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getValueType().equals(elseVersion.getOutput().getValueType())){
+				LOG.warn(elseVersion.printWarningLocation() + "variable " + elseVersion.getName() + " defined with different value type in if and else clause");
+			}
+		}
+		
 		// handle constant variable propogation -- (IF UNION ELSE) MINUS updated vars
 		
 		//////////////////////////////////////////////////////////////////////////////////
@@ -93,6 +112,7 @@ public class IfStatementBlock extends StatementBlock
 				recConstVars.put(varName,constVarsElseCopy.get(varName));
 		}
 		
+		
 		// STEP 2: check that updated const values have in both if / else branches 
 		//		a) same data type, 
 		//		b) same value type (SCALAR),
@@ -100,6 +120,7 @@ public class IfStatementBlock extends StatementBlock
 		for (String updatedVar : this._updated.getVariableNames()){
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			
 			if (ifVersion != null && elseVersion != null 
 					&& ifVersion.getOutput().getDataType().equals(DataType.SCALAR) 
 					&& elseVersion.getOutput().getDataType().equals(DataType.SCALAR) 

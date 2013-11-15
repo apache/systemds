@@ -172,17 +172,19 @@ public class StatementBlock extends LiveVariableAnalysis
 					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
-				if (fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
+				if (fblock.getStatements().size() > 0 && fblock.getStatement(0) instanceof ExternalFunctionStatement  ||  ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 ){
 					return false;
 				}
 				else {
 					 // check if statement block is a control block
-					 StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
-					 if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock){
-						 return false;
-					 }
-					 else {
-						return true; 
+					 if (fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0){
+						 StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+						 if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock){
+							 return false;
+						 }
+						 else {
+							 return true; 
+						 }
 					 }
 				}
 			}
@@ -213,11 +215,13 @@ public class StatementBlock extends LiveVariableAnalysis
 				}
 				else {
 					// check if statement block is a control block
-					StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
-					if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
-						return false;
-					else
-						return true;
+					if (fblock.getStatements().size() > 0 && ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 0){
+						StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+						if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
+							return false;
+						else
+							return true;
+					}
 				}
 			}
 		}
@@ -522,7 +526,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
 					boolean paramsOkay = true;
 					for (String key : os._paramsExpr.getVarParams().keySet()){
-						if (!key.equals(Statement.IO_FILENAME)) 
+						if (! (key.equals(Statement.IO_FILENAME) || key.equals(Statement.FORMAT_TYPE))) 
 							paramsOkay = false;
 					}
 					if (paramsOkay == false){

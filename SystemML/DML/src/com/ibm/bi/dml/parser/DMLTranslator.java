@@ -99,7 +99,6 @@ public class DMLTranslator
 	 */
 	public void validateParseTree(DMLProgram dmlp) throws LanguageException, ParseException, IOException {
 		
-			
 		// handle functions in namespaces (current program has default namespace)
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
 		

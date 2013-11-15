@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2013, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -5105,6 +5105,24 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 */	
+	/**
+	 * Method to generate a sequence according to the given parameters. The
+	 * generated sequence is always in dense format.
+	 * 
+	 * Both end points specified <code>from</code> and <code>to</code> must be
+	 * included in the generated sequence i.e., [from,to] both inclusive. Note
+	 * that, <code>to</code> is included only if (to-from) is perfectly
+	 * divisible by <code>incr</code>.
+	 * 
+	 * For example, seq(0,1,0.5) generates (0.0 0.5 1.0) 
+	 *      whereas seq(0,1,0.6) generates (0.0 0.6) but not (0.0 0.6 1.0)
+	 * 
+	 * @param from
+	 * @param to
+	 * @param incr
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public MatrixBlockDSM getSequence(double from, double to, double incr) throws DMLRuntimeException {
 		boolean neg = (from > to);
 		if (neg != (incr < 0))
@@ -5112,11 +5130,6 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		//System.out.println(System.nanoTime() + ": begin of seq()");
 		
-		/*
-		 * Both end points of the range must included i.e., [from,to] both inclusive.
-		 * Note that, "to" is included only if (to-from) is perfectly divisible by incr
-		 * For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0)
-		 */
 		int rows = 1 + (int)Math.floor((to-from)/incr);
 		int cols = 1;
 		sparse = false; // sequence matrix is always dense
@@ -5126,19 +5139,12 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		//System.out.println(System.nanoTime() + ": MatrixBlockDSM.seq(): seq("+from+","+to+","+incr+") rows = " + rows);
 		
-		/*KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-		KahanObject obj = new KahanObject(from, 0);
-		this.denseBlock[0] = obj._sum;
-		for(int i=1; i < rows; i++) {
-			kplus.execute(obj, incr);
-			this.denseBlock[i] = obj._sum;
-		}*/
-		
 		this.denseBlock[0] = from;
 		for(int i=1; i < rows; i++) {
 			from += incr;
 			this.denseBlock[i] = from;
 		}
+		recomputeNonZeros();
 		//System.out.println(System.nanoTime() + ": end of seq()");
 		return this;
 	}

@@ -119,20 +119,16 @@ parfor(i3 in 1:nrow(feature_indices), check=0){
 			if(1==1){
 				sz3 = nrow(contingencyTable)*ncol(contingencyTable)
 			}
-			contingencyTableCounts = matrix(0, rows=1, cols=sz3)
 			contingencyTableLabelValues = matrix(0, rows=1, cols=sz3)
 			contingencyTableFeatureValues = matrix(0, rows=1, cols=sz3)
 			
             parfor(i4 in 1:nrow(contingencyTable), check=0){
 				parfor(j in 1:ncol(contingencyTable), check=0){
-					#get rid of this, see *1 below
-					contingencyTableCounts[1, ncol(contingencyTable)*(i4-1)+j] = contingencyTable[i4,j]
-					
 					contingencyTableLabelValues[1, ncol(contingencyTable)*(i4-1)+j] = i4-labelCorrection
 					contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
 				}
 			}
-			#*1: contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=true)
+			contingencyTableCounts = matrix(contingencyTable, rows=1, cols=sz3, byrow=true)
             contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
             
 			contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues

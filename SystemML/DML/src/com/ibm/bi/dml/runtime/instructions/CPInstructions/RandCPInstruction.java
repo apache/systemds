@@ -194,7 +194,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 			
 			// execute rand
 			//soresBlock = (MatrixBlock) (MatrixBlock.randOperations((int)rows, (int)cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, bigrand));
-			soresBlock = (MatrixBlock) (MatrixBlock.randOperationsOLD((int)rows, (int)cols, sparsity, minValue, maxValue, pdf, seed));
+			soresBlock = (MatrixBlock) (MatrixBlock.randOperationsOLD((int)rows, (int)cols, sparsity, minValue, maxValue, pdf, lSeed));
 			
 			//System.out.println("RandTime " + (System.nanoTime()-begin)*1e-6 + " msec.");
 		}

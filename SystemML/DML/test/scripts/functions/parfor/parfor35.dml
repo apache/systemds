@@ -13,7 +13,8 @@ dummy = matrix(1, rows=1,cols=1);
 
 parfor( i in 1:20 )
 {
-   b = A[i,B[i,]];  
+   val = castAsScalar(B[i,i]);
+   b = A[i,val]; #due to parser change A[i,B[i,]];  
    c = dummy*(b+i);
 }
 

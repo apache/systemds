@@ -90,9 +90,8 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		runLiteralTest(TEST_NAME1c);
 	}
 	
-	
 	@Test
-	public void testParForExtFuncLiterals()  //TODO
+	public void testParForExtFuncLiterals()  
 	{
 		runLiteralTest(TEST_NAME2);
 	}

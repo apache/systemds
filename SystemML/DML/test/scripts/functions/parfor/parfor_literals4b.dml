@@ -9,12 +9,12 @@
 
 
 A = read($1, rows=$2, cols=$3, format="text");   
-_t0 = matrix(0, rows=nrow(A),cols=ncol(A));
+a_t0 = matrix(0, rows=nrow(A),cols=ncol(A));
 
 parfor( i in 1:1, mode=REMOTE_MR, opt=NONE, check=0 ) 
 {
-   _t0[1:nrow(A),1:ncol(A)]=A+0; 
+   a_t0[1:nrow(A),1:ncol(A)]=A+0; 
 }  
 
-write(_t0, $4);
+write(a_t0, $4);
       

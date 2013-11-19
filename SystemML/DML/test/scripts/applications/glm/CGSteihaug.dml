@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -20,7 +20,7 @@ get_CG_Steihaug_point =
 {
     trust_delta_sq_CG = trust_delta_CG * trust_delta_CG;
     size_CG = nrow (g_CG);
-    z_CG = Rand (rows = size_CG, cols = 1, min = 0, max = 0);
+    z_CG = matrix (0.0, rows = size_CG, cols = 1);
     neg_log_l_change_CG = 0.0;
     reached_trust_boundary_CG = 0;
     g_reg_CG = g_CG + lambda_CG * beta_CG;

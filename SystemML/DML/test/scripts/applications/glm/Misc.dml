@@ -1,0 +1,184 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+# THE SIMPLE LEAST SQUARES PROCEDURE SCRIPT:
+get_simpleLS_point =
+    function (Matrix[double] A_LS, Matrix[double] g_LS, double lambda_LS, double eps_LS)
+    return (Matrix[double] z_LS)
+{
+    z_LS = matrix (0.0, rows = nrow (g_LS), cols = 1);
+    r_LS = g_LS;
+    p_LS = -r_LS;
+    norm_r2_LS = sum(r_LS * r_LS);
+
+    max_iteration_LS = nrow (g_LS);
+    i_LS = 0;
+    while(i_LS < max_iteration_LS & norm_r2_LS >= eps_LS)  ###  max(abs(r_LS)) >= eps_LS
+    {
+        q_LS = (A_LS %*% p_LS) + lambda_LS * p_LS;
+        alpha_LS = norm_r2_LS / castAsScalar(t(p_LS) %*% q_LS);
+        z_LS = z_LS + alpha_LS * p_LS;
+        old_norm_r2_LS = norm_r2_LS;
+        r_LS = r_LS + alpha_LS * q_LS;
+        norm_r2_LS = sum(r_LS * r_LS);
+        p_LS = -r_LS + (norm_r2_LS / old_norm_r2_LS) * p_LS;
+        i_LS = i_LS + 1;
+        
+# print ("z[1] = " + castAsScalar (z_LS[1,1]) + ";  z[2] = " + castAsScalar (z_LS[2,1]) + ";  z[3] = " + castAsScalar (z_LS[3,1]));
+        
+    }
+}
+
+# Shifts and scales the weights to ensure the desired statistics for Linear Form = w^T X
+# Used in data and/or weight generation in the testing of GLM, Logistic Regression etc.
+# new_sigmaLF == sigmaLF if successful, new_sigmaLF > sigmaLF if had to relax this constraint
+scaleWeights = 
+    function (Matrix[double] X_data, Matrix[double] w_unscaled, double meanLF, double sigmaLF)
+    return (Matrix[double] w_scaled, double new_sigmaLF)
+{
+    numFeatures = nrow (w_unscaled);
+    W_ext = matrix (1.0, rows = numFeatures, cols = 2);
+    W_ext [, 1] = w_unscaled;
+    S1 = colSums (X_data %*% W_ext);
+    TF = matrix (1.0, rows = 2, cols = 2);
+    TF [1, 1] = S1 [1, 1] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [1, 2] = S1 [1, 2];
+    TF [2, 1] = S1 [1, 2] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [2, 2] = - S1 [1, 1];
+    TF = W_ext %*% TF;
+    Q = t(TF) %*% t(X_data) %*% X_data %*% TF;
+    Q [1, 1] = Q [1, 1] - nrow (X_data) * meanLF * meanLF;
+    new_sigmaLF = sigmaLF;
+    discr = castAsScalar (Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1] - nrow (X_data) * Q [2, 2] * sigmaLF * sigmaLF);
+    if (discr > 0.0) {
+        new_sigmaLF = sqrt (castAsScalar ((Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1]) / (nrow (X_data) * Q [2, 2])));
+        discr = -0.0;
+    }
+    t = matrix (1.0, rows = 2, cols = 1);
+    t [2, 1] = (- Q [1, 2] + sqrt (- discr)) / Q [2, 2];
+    w_scaled = TF %*% t;
+}
+
+gaussian_probability = function (Matrix[double] vector_of_points)
+    return (Matrix[double] vector_of_probabilities)
+{
+    t_gp = 1.0 / (1.0 + abs (vector_of_points) * 0.231641888);  # 0.231641888 = 0.3275911 / sqrt (2.0)
+    erf_gp = 1.0 - t_gp * ( 0.254829592 
+                 + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
+                 + t_gp * ( 1.421413741 # U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299
+                 + t_gp * (-1.453152027 
+                 + t_gp *   1.061405429)))) * exp (- vector_of_points * vector_of_points / 2.0);
+    erf_gp = erf_gp * 2.0 * (ppred (vector_of_points, 0.0, ">") - 0.5);
+    vector_of_probabilities = 0.5 + 0.5 * erf_gp;
+}
+
+# Computes the logarithm of the factorial of x >= 0 via the Gamma function 
+# From paper: C. Lanczos "A Precision Approximation of the Gamma Function",
+# Journal of the SIAM: Numerical Analysis, Series B, Vol. 1, 1964, pp. 86-96
+logFactorial = function (Matrix[double] x) return (Matrix[double] logfact)
+{
+    y = 1.000000000178;
+    y = y + 76.180091729406 / (x + 1);
+    y = y - 86.505320327112 / (x + 2);
+    y = y + 24.014098222230 / (x + 3);
+    y = y -  1.231739516140 / (x + 4);
+    y = y +  0.001208580030 / (x + 5);
+    y = y -  0.000005363820 / (x + 6);
+    logfact = log(y) + (x + 0.5) * log(x + 5.5) - (x + 5.5) + 0.91893853320467; # log(sqrt(2 * PI));
+}
+
+atan_temporary =
+    function (Matrix [double] Args) return (Matrix [double] AtanArgs)
+{
+    AbsArgs = abs (Args);
+    Eks = AbsArgs + ppred (AbsArgs, 0.0, "==") * 0.000000000001;
+    Eks = ppred (AbsArgs, 1.0, "<=") * Eks + ppred (AbsArgs, 1.0, ">") / Eks;
+    EksSq = Eks * Eks;
+    AtanEks = 
+        Eks   * ( 1.0000000000 + 
+        EksSq * (-0.3333314528 + # Milton Abramowitz and Irene A. Stegun, Eds.
+        EksSq * ( 0.1999355085 + # "Handbook of Mathematical Functions"
+        EksSq * (-0.1420889944 + # U.S. National Bureau of Standards, June 1964
+        EksSq * ( 0.1065626393 + # Section 4.4, page 81, Equation 4.4.49
+        EksSq * (-0.0752896400 +
+        EksSq * ( 0.0429096138 + 
+        EksSq * (-0.0161657367 + 
+        EksSq *   0.0028662257 ))))))));
+    pi_over_two = 1.5707963267948966192313216916398;
+    AtanAbsArgs = ppred (AbsArgs, 1.0, "<=") * AtanEks + ppred (AbsArgs, 1.0, ">") * (pi_over_two - AtanEks);
+    AtanArgs    = (ppred (Args, 0.0, ">=") - ppred (Args, 0.0, "<")) * AtanAbsArgs;
+}
+
+round_to_print = function (double x_to_truncate)
+return (double mantissa, int eee)
+{
+    mantissa = 1.0;
+    eee = 0;
+    positive_infinity = 1.0 / 0.0;
+    x = abs (x_to_truncate);
+    if (x != x / 2.0) {
+        log_ten = log (10.0);
+        d_eee = round (log (x) / log_ten - 0.5);
+        mantissa = round (x * exp (log_ten * (4.0 - d_eee))) / 10000;
+        if (mantissa == 10.0) {
+            mantissa = 1.0;
+            d_eee = d_eee + 1;
+        }
+        if (x_to_truncate < 0.0) {
+            mantissa = - mantissa;
+        }
+        eee = 0;
+        pow_two = 1;
+        res_eee = abs (d_eee);
+        while (res_eee != 0.0) {
+            new_res_eee = round (res_eee / 2.0 - 0.3);
+            if (new_res_eee * 2.0 < res_eee) {
+                eee = eee + pow_two;
+            }
+            res_eee = new_res_eee;
+            pow_two = 2 * pow_two;
+        }
+        if (d_eee < 0.0) {
+            eee = - eee;
+        }
+    } else { mantissa = x_to_truncate; }
+}
+
+/*
+    x_to_print = x_to_truncate;
+    abs_x_to_truncate = abs (x_to_truncate);
+    if (abs_x_to_truncate > 0.0)
+    {
+        dummy = matrix (0.0, rows = 1, cols = 1);
+        unrounded_power_of_ten = -0.5 + log (abs_x_to_truncate) / log (10.0);
+        power_of_ten = castAsScalar (round (unrounded_power_of_ten + dummy));
+        abs_power_of_ten = abs (power_of_ten);
+        x_to_round = x_to_truncate;
+        while (abs_power_of_ten > 3.1) {
+            abs_power_of_ten = abs_power_of_ten - 4.0;
+            if (power_of_ten > 0.1) {
+                x_to_round = x_to_round / 10000.0;
+            }
+            else {
+                x_to_round = x_to_round * 10000.0;            
+            }
+        }
+        x_to_print = castAsScalar (round ((x_to_round * 10000.0) + dummy));
+        x_to_print = x_to_print / 10000.0;
+        abs_power_of_ten = abs (power_of_ten);
+        while (abs_power_of_ten > 3.1) {
+            abs_power_of_ten = abs_power_of_ten - 4.0;
+            if (power_of_ten > 0.1) {
+                x_to_print = x_to_print * 10000.0;
+            }
+            else {
+                x_to_print = x_to_print / 10000.0;            
+}   }   }   }
+*/

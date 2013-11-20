@@ -1,0 +1,46 @@
+
+# Lanczos algorithm to compute eigen vectors and eigen values of a square matrix
+
+eigen = externalFunction(Matrix[Double] A) 
+return(Matrix[Double] eval, Matrix[Double] evec)
+  implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper", exectype="mem")   
+
+A = read($1); # input data, must be a square matrix
+
+m = nrow(A);
+v0 = matrix(0, m, 1);
+v1 = Rand(rows=m, cols=1);
+v1 = sqrt(v1/sum(v1)); # vector with norm 1
+
+T = matrix(0, m, m);
+TV = matrix(0, m, m);
+
+# Lanczos iterations to compute Tri-Diagonal Matrix
+beta = 0;
+for(i in seq(1,m)) {
+    if (i == m) {
+        w1 = A %*% v1;
+        alpha = sum(w1*v1);
+        T[m, m] = alpha;
+    } else {
+        w1 = A %*% v1;
+        alpha = sum(w1*v1);
+        w1 = w1 - alpha*v1 - beta*v0;
+        beta = sqrt(sum(w1^2));
+        v0 = v1;
+        v1 = w1/beta
+
+        T[i, i] = alpha;
+        T[i+1, i] = beta;
+        T[i, i+1] = beta;
+    }
+    TV[,i] = v1;
+}
+# compute eigen vectors of Tri-diagonal matrix
+[eval, tevec] = eigen(T)
+# compute eigen vectors of Tri-diagonal matrix
+evec = TV %*% tevec;
+
+# output data
+write(eval, $2);
+write(evec, $3);

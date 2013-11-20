@@ -1,0 +1,27 @@
+# Principal Component Analysis (PCA)
+eigen = externalFunction(Matrix[Double] A) 
+        return (Matrix[Double] evec, Matrix[Double] eval) 
+        implemented in (classname="dml.packagesupport.JLapackEigenWrapper",
+                          execlocation="master")
+
+A = read("data.mtx");
+
+N = nrow(A);
+D = ncol(A);
+
+# co-variance matrix 
+mu = colSums(A)/N;
+C = (t(A) %*% A)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+# compute eigen vectors and values
+[evectors, evalues] = eigen(C);
+evalues = diag(evalues); # convert diagonal matrix into a vector 
+
+# select three dominant eigen vectors 
+components = 3;
+evec_dominant = evectors[,1:components];
+eval_dominant = evalues[1:components, 1];
+
+write(evec_dominant, "dominant.eigen.vectors");
+write(eval_dominant, "dominant.eigen.values");
+

@@ -33,8 +33,8 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException{
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType());
-		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
 		

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -235,17 +235,9 @@ public class Unary extends Lop
 			sb.append( Lop.OPERAND_DELIMITOR );
 			sb.append( getOpcode() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(0).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( output );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			sb.append( this.prepOutputOperand(output));
 			
 			return sb.toString();
 
@@ -264,23 +256,24 @@ public class Unary extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		if ( getInputs().get(0).get_dataType() == DataType.SCALAR ) {
+			sb.append( getInputs().get(0).prepScalarInputOperand(getExecType()));
+		}
+		else {
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) {
+			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
+		}
+		else {
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -295,10 +288,9 @@ public class Unary extends Lop
 			int outputIndex) throws LopsException {
 		if (this.getInputs().size() == 2) {
 			// Unary operators with two inputs
+			// Determine the correct operation, depending on the scalar input
 
-			// Determine which of the two inputs is a scalar
 			int scalarIndex = -1;
-
 			if (this.getInputs().get(0).get_dataType() == DataType.MATRIX)
 				// inputIndex1 is matrix, and inputIndex2 is scalar
 				scalarIndex = 1;
@@ -312,30 +304,12 @@ public class Unary extends Lop
 					operation = OperationTypes.Over;
 			}
 
-			/**
-			 * get label for scalar input.
-			 */
-
-			String valueLabel = this.getInputs().get(scalarIndex)
-					.getOutputParameters().getLabel();
-
-			/**
-			 * if it is a literal, copy val, else surround with the label with
-			 * ## symbols. these will be replaced at runtime.
-			 */
-			String valueString;
-			if (this.getInputs().get(scalarIndex).getExecLocation() == ExecLocation.Data
-					&& ((Data) this.getInputs().get(scalarIndex)).isLiteral())
-				valueString = "" + valueLabel;
-			else
-				valueString = "##" + valueLabel + "##";
-
 			if (scalarIndex == 1) {
 				// second input is the scalar
-				return getInstructions(""+inputIndex1, valueString, ""+outputIndex);
+				return getInstructions(""+inputIndex1, ""+inputIndex2, ""+outputIndex);
 			} else {
 				// first input is the scalar
-				return getInstructions(""+inputIndex2, valueString, ""+outputIndex);
+				return getInstructions(""+inputIndex2, ""+inputIndex1, ""+outputIndex);
 			}
 		} else {
 			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("

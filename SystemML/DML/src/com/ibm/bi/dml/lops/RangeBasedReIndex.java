@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -57,7 +57,7 @@ public class RangeBasedReIndex extends Lop
 		if ( et == ExecType.MR ) {
 			
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
 			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
@@ -113,36 +113,22 @@ public class RangeBasedReIndex extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowl );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		// rowl, rowu
+		sb.append( getInputs().get(1).prepScalarInputOperand(rowl));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( getInputs().get(2).prepScalarInputOperand(rowu));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( coll );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(3).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(3).get_valueType() );
+		
+		// coll, colu
+		sb.append( getInputs().get(3).prepScalarInputOperand(coll));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( colu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(4).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(4).get_valueType() );
+		sb.append( getInputs().get(4).prepScalarInputOperand(colu));
 		sb.append( OPERAND_DELIMITOR );
+		
 		sb.append( output );
 		sb.append( DATATYPE_PREFIX );
 		sb.append( get_dataType() );
@@ -152,17 +138,10 @@ public class RangeBasedReIndex extends Lop
 		if(getExecType() == ExecType.MR) {
 			// following fields are added only when this lop is executed in MR (both for left & right indexing) 
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( leftRowDim );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(5).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(5).get_valueType() );
+			
+			sb.append( getInputs().get(5).prepScalarInputOperand(leftRowDim));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( leftColDim );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(6).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(6).get_valueType() );
+			sb.append( getInputs().get(6).prepScalarInputOperand(leftColDim));
 		}
 		
 		return sb.toString();
@@ -183,32 +162,13 @@ public class RangeBasedReIndex extends Lop
 		 * will be equal to -1. They should be ignored and the scalar value labels must
 		 * be derived from input lops.
 		 */
-		String rowl = this.getInputs().get(1).getOutputParameters().getLabel();
-		if (this.getInputs().get(1).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
-			rowl = "##" + rowl + "##";
-		String rowu = this.getInputs().get(2).getOutputParameters().getLabel();
-		if (this.getInputs().get(2).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(2)).isLiteral())
-			rowu = "##" + rowu + "##";
-		String coll = this.getInputs().get(3).getOutputParameters().getLabel();
-		if (this.getInputs().get(3).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(3)).isLiteral())
-			coll = "##" + coll + "##";
-		String colu = this.getInputs().get(4).getOutputParameters().getLabel();
-		if (this.getInputs().get(4).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(4)).isLiteral())
-			colu = "##" + colu + "##";
-		
-		String left_nrow = this.getInputs().get(5).getOutputParameters().getLabel();
-		if (this.getInputs().get(5).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(5)).isLiteral())
-			left_nrow = "##" + left_nrow + "##";
-		
-		String left_ncol = this.getInputs().get(6).getOutputParameters().getLabel();
-		if (this.getInputs().get(6).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(6)).isLiteral())
-			left_ncol = "##" + left_ncol + "##";
+		String rowl = getInputs().get(1).prepScalarLabel();
+		String rowu = getInputs().get(2).prepScalarLabel();
+		String coll = getInputs().get(3).prepScalarLabel();
+		String colu = getInputs().get(4).prepScalarLabel();
+
+		String left_nrow = getInputs().get(5).prepScalarLabel();
+		String left_ncol = getInputs().get(6).prepScalarLabel();
 		
 		return getInstructions(Integer.toString(input_index1), rowl, rowu, coll, colu, left_nrow, left_ncol, Integer.toString(output_index));
 	}

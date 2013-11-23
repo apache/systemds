@@ -35,8 +35,8 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		String opcode = InstructionUtils.getOpCode(instString);
 		ScalarObject sores = null;
 		
-		ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
-		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType() );
+		ScalarObject so1 = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
+		ScalarObject so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
 		
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String buffer = "";

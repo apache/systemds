@@ -84,17 +84,9 @@ public class SortKeys extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "sort" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append ( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -106,23 +98,11 @@ public class SortKeys extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "sort" );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( getInputs().get(1).prepInputOperand(input2));
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}

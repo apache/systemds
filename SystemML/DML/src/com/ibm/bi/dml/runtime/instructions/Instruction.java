@@ -26,6 +26,7 @@ public abstract class Instruction
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lop.VALUETYPE_PREFIX;
+	public static final String LITERAL_PREFIX = Lop.LITERAL_PREFIX;
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	

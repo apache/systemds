@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -53,10 +53,6 @@ public class CombineBinary extends Lop
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 	}
 	
-	/**
-	 * for debugging purposes. 
-	 */
-	
 	public String toString()
 	{
 		return "combinebinary";		
@@ -78,29 +74,17 @@ public class CombineBinary extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "combinebinary" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( isSecondInputIsWeight );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( DataType.SCALAR );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( ValueType.BOOLEAN );
+		
+		sb.append( prepOperand(String.valueOf(isSecondInputIsWeight), DataType.SCALAR, ValueType.BOOLEAN) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

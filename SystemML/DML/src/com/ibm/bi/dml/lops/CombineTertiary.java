@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,13 +32,6 @@ public class CombineTertiary extends Lop
 
 	OperationTypes operation;
 
-	/**
-	 * @param input
-	 *            - input lop
-	 * @param op
-	 *            - operation type
-	 */
-
 	public CombineTertiary( OperationTypes op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) {
 		super(Lop.Type.CombineTertiary, dt, vt);
 		operation = op;
@@ -59,10 +52,6 @@ public class CombineTertiary extends Lop
 		this.lps.setProperties(inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 	}
 
-	/**
-	 * for debugging purposes.
-	 */
-
 	public String toString() {
 		return "combinetertiary";
 	}
@@ -77,29 +66,17 @@ public class CombineTertiary extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "combinetertiary" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index3 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
+
+		sb.append( getInputs().get(2).prepInputOperand(input_index3));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepInputOperand(output_index));
 
 		return sb.toString();
 	}

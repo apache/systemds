@@ -58,9 +58,9 @@ public class InstructionGraph
 		ArrayList<String> varsOut = new ArrayList<String>(varsIn);
 
 		for (String inst : str.split(Lop.INSTRUCTION_DELIMITOR)) {
-			if (inst.contains("Var")) {
+			if (inst.contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 				for (String part : inst.split(Lop.OPERAND_DELIMITOR)) {
-					if (part.contains("Var")) {
+					if (part.contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 						String s = (part.split(Lop.VALUETYPE_PREFIX))[0];
 						if (s.startsWith("##")) {
 							varsOut.add(trimHashes(s));
@@ -114,16 +114,16 @@ public class InstructionGraph
 				// Get all variables (Var) used in miscellaneous instructions
 				// All Var's are used only as input operands
 				ArrayList<String> vars = new ArrayList<String>();
-				if (mrInst.getIv_shuffleInstructions().contains("Var")) {
+				if (mrInst.getIv_shuffleInstructions().contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 					vars = getVariableNames(mrInst.getIv_shuffleInstructions(), vars);
 				}
-				if (mrInst.getIv_aggInstructions().contains("Var")) {
+				if (mrInst.getIv_aggInstructions().contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 					vars = getVariableNames(mrInst.getIv_aggInstructions(), vars);
 				}
-				if (mrInst.getIv_instructionsInMapper().contains("Var")) {
+				if (mrInst.getIv_instructionsInMapper().contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 					vars = getVariableNames(mrInst.getIv_instructionsInMapper(), vars);
 				}
-				if (mrInst.getIv_otherInstructions().contains("Var")) {
+				if (mrInst.getIv_otherInstructions().contains(Lop.SCALAR_VAR_NAME_PREFIX)) {
 					vars = getVariableNames(mrInst.getIv_instructionsInMapper(), vars);
 				}
 

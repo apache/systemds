@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,6 +24,15 @@ public class CoVariance extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) throws LopsException {
+		/*
+		 * When et = MR: covariance lop will have a single input lop, which
+		 * denote the combined input data -- output of combinebinary, if unweighed;
+		 * and output combineteriaty (if weighted).
+		 * 
+		 * When et = CP: covariance lop must have at least two input lops, which
+		 * denote the two input columns on which covariance is computed. It also
+		 * takes an optional third arguments, when weighted covariance is computed.
+		 */
 		this.addInput(input1);
 		input1.addOutput(this);
 
@@ -41,6 +50,7 @@ public class CoVariance extends Lop
 			}
 			this.addInput(input2);
 			input2.addOutput(this);
+			
 			if ( input3 != null ) {
 				this.addInput(input3);
 				input3.addOutput(this);
@@ -81,6 +91,11 @@ public class CoVariance extends Lop
 		return "Operation = coVariance";
 	}
 	
+	/**
+	 * Function two generate CP instruction to compute unweighted covariance.
+	 * input1 -> input column 1
+	 * input2 -> input column 2
+	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
@@ -88,27 +103,24 @@ public class CoVariance extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+
+		sb.append( getInputs().get(1).prepInputOperand(input2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 
+	/**
+	 * Function two generate CP instruction to compute weighted covariance.
+	 * input1 -> input column 1
+	 * input2 -> input column 2
+	 * input3 -> weights
+	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
@@ -116,33 +128,26 @@ public class CoVariance extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+
+		sb.append( getInputs().get(1).prepInputOperand(input2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input3 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
+
+		sb.append( getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 
+	/**
+	 * Function to generate MR version of covariance instruction.
+	 * input_index -> denote the "combined" input columns and weights, 
+	 * when applicable.
+	 */
 	@Override
 	public String getInstructions(int input_index, int output_index) {
 		StringBuilder sb = new StringBuilder();
@@ -150,17 +155,11 @@ public class CoVariance extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cov" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append ( this.prepInputOperand(output_index));
 		
 		return sb.toString();
 	}

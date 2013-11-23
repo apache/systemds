@@ -64,12 +64,12 @@ public class AppendTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 		//double sparsity=0.2;
 		double sparsity=rand.nextDouble();
-		System.out.println("sparsity: "+sparsity);
+		//System.out.println("sparsity: "+sparsity);
         double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("A", A, true);
         sparsity=rand.nextDouble();
        // sparsity=0.8;
-        System.out.println("sparsity: "+sparsity);
+        //System.out.println("sparsity: "+sparsity);
         double[][] B= getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("B", B, true);
         

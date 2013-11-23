@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -76,86 +76,80 @@ public class CentralMoment extends Lop
 		return "Operation = CentralMoment";
 	}
 
+	/**
+	 * Function to generate CP centralMoment instruction for weighted operation.
+	 * 
+	 * input1: data
+	 * input2: weights
+	 * input3: order
+	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
+		
 		sb.append( "cm" );
-		// value type for "order" is INT
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		// Input data
+		sb.append( getInputs().get(0).prepInputOperand(input1) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		// Weights
+		sb.append( getInputs().get(1).prepInputOperand(input2) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input3 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( DataType.SCALAR );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( ValueType.INT );
+		
+		// Order
+		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 	
+	/**
+	 * Function to generate CP centralMoment instruction for unweighted operation.
+	 * 
+	 * input1: data
+	 * input2: order (not used, and order is derived internally!)
+	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
+		
 		sb.append( "cm" );
-		// value type for "order" is INT
 		sb.append( OPERAND_DELIMITOR ); 
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		// Input data (can be weighted or unweighted)
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( DataType.SCALAR );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( ValueType.INT );
+		
+		// Order
+		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 	
+	/**
+	 * Function to generate MR central moment instruction, invoked from
+	 * <code>Dag.java:getAggAndOtherInstructions()</code>. This function
+	 * is used for both weighted and unweighted operations.
+	 * 
+	 * input_index: data (in case of weighted: data combined via combinebinary)
+	 * output_index: produced output
+	 * 
+	 * The order for central moment is derived internally in the function.
+	 */
 	@Override
 	public String getInstructions(int input_index, int output_index) {
-		
-		// get label for scalar input -- the "order" for central moment.
-		String order = this.getInputs().get(1).getOutputParameters().getLabel();
-		/*
-		 * if it is a literal, copy val, else surround with the label with
-		 * ## symbols. these will be replaced at runtime.
-		 */
-		if(this.getInputs().get(1).getExecLocation() == ExecLocation.Data && 
-				((Data)this.getInputs().get(1)).isLiteral())
-			; // order = order;
-		else
-			order = "##" + order + "##";
-		
-		return getInstructions(input_index+"", order, output_index+"");
+		return getInstructions(input_index+"", "", output_index+"");
 	}
 
 }

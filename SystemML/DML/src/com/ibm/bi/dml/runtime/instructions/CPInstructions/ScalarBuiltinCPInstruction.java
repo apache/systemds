@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,17 +20,9 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private boolean _literal = false;
-	
 	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr)
 	{
-		this(op, in, out, instr, false);
-	}
-	
-	public ScalarBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String instr, boolean literal)
-	{
 		super(op, in, out, 1, instr);
-		_literal = literal;
 	}
 	
 	@Override 
@@ -43,28 +35,12 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		ScalarObject so = null;
 		
 		//get the scalar input 
-		if( _literal )
-			so = new StringObject( input1.get_name() ); 
-		else	
-			so = ec.getScalarInput( input1.get_name(), input1.get_valueType() );
+		so = ec.getScalarInput( input1.get_name(), input1.get_valueType(), input1.isLiteral() );
 			
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String outString = "";
-			switch (input1.get_valueType()) {
-			case INT:
-				outString += so.getIntValue();
-				break;
-			case DOUBLE:
-				outString += so.getDoubleValue();
-				break;
-			case BOOLEAN:
-				outString += so.getBooleanValue();
-				break;
-			case STRING:
-				outString += so.getStringValue();
-				break;
-			}
+			outString = so.getStringValue();
 			System.out.println(outString);
 			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
 			sores = new StringObject(outString);

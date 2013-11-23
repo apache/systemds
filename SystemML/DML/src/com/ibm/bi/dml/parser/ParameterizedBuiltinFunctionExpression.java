@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -117,15 +117,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		case GROUPEDAGG:
 			
-			if (getVarParam("target")  == null || getVarParam("groups") == null){
+			if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
 				throw new LanguageException(this.printErrorLocation() + "Must define both target and groups and both must have same dimensions");
 			}
-			if (getVarParam("target") instanceof DataIdentifier && getVarParam("groups") instanceof DataIdentifier && (getVarParam("weights") == null || getVarParam("weights") instanceof DataIdentifier))
+			if (getVarParam(Statement.GAGG_TARGET) instanceof DataIdentifier && getVarParam(Statement.GAGG_GROUPS) instanceof DataIdentifier && (getVarParam(Statement.GAGG_WEIGHTS) == null || getVarParam(Statement.GAGG_WEIGHTS) instanceof DataIdentifier))
 			{
 				
-				DataIdentifier targetid = (DataIdentifier)getVarParam("target");
-				DataIdentifier groupsid = (DataIdentifier)getVarParam("groups");
-				DataIdentifier weightsid = (DataIdentifier)getVarParam("weights");
+				DataIdentifier targetid = (DataIdentifier)getVarParam(Statement.GAGG_TARGET);
+				DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
+				DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
 				
 				if( targetid.dimsKnown() && groupsid.dimsKnown() &&
 					(targetid.getDim1() != groupsid.getDim1() || targetid.getDim2() != groupsid.getDim2()) )
@@ -144,30 +144,30 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			}
 			
 			
-			if (getVarParam("fn") == null){
+			if (getVarParam(Statement.GAGG_FN) == null){
 				throw new LanguageException(this.printErrorLocation() + "must define function name (fname=<function name>) for groupedAggregate()");
 			}
 			
-			Expression functParam = getVarParam("fn");
+			Expression functParam = getVarParam(Statement.GAGG_FN);
 			
 			if (functParam instanceof Identifier){
 			
 				// standardize to lowercase and dequote fname
-				String fnameStr = getVarParam("fn").toString();
+				String fnameStr = getVarParam(Statement.GAGG_FN).toString();
 				
 				
 				// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4 
 				// check ELSE IF fname is allowed
-				if(fnameStr.equals("centralmoment")){
-					String orderStr = getVarParam("order") == null ? null : getVarParam("order").toString();
+				if(fnameStr.equals(Statement.GAGG_FN_CM)){
+					String orderStr = getVarParam(Statement.GAGG_FN_CM_ORDER) == null ? null : getVarParam(Statement.GAGG_FN_CM_ORDER).toString();
 					if (orderStr == null || !(orderStr.equals("2") || orderStr.equals("3") || orderStr.equals("4"))){
 						throw new LanguageException(this.printErrorLocation() + "for centralmoment, must define order.  Order must be equal to 2,3, or 4");
 					}
 				}
-				else if (fnameStr.equals("count") 
-						|| fnameStr.equals("sum") 
-						|| fnameStr.equals("mean")
-						|| fnameStr.equals("variance")){}
+				else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
+						|| fnameStr.equals(Statement.GAGG_FN_SUM) 
+						|| fnameStr.equals(Statement.GAGG_FN_MEAN)
+						|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
 				else {
 					throw new LanguageException(this.printErrorLocation() + "fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance");
 				}

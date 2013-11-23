@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,8 +10,9 @@ package com.ibm.bi.dml.lops;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.Expression.*;
 
 
 /**
@@ -61,30 +62,39 @@ public class CSVReBlock extends Lop
 		
 		Lop input = getInputs().get(0);
 		
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( input.get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( input.get_valueType() );
+		sb.append( input.prepInputOperand(input_index) );
 		sb.append( OPERAND_DELIMITOR );
 		
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
-		
+		sb.append( this.prepOutputOperand(output_index) );
 		sb.append( OPERAND_DELIMITOR );
+		
 		sb.append( rows_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( cols_per_block );
+		sb.append( OPERAND_DELIMITOR );
 		
 		Lop headerLop = ((Data)input).getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
 		Lop delimLop = ((Data)input).getNamedInputLop(Statement.DELIM_DELIMITER);
 		Lop fillLop = ((Data)input).getNamedInputLop(Statement.DELIM_FILL); 
 		Lop fillValueLop = ((Data)input).getNamedInputLop(Statement.DELIM_FILL_VALUE);
 		
-		sb.append( OPERAND_DELIMITOR );
+		if (headerLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+					+ " must be a literal for a seq operation.");
+		if (delimLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + Statement.DELIM_DELIMITER
+					+ " must be a literal for a seq operation.");
+		if (fillLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + Statement.DELIM_FILL
+					+ " must be a literal for a seq operation.");
+		if (fillValueLop.isVariable())
+			throw new LopsException(this.printErrorLocation()
+					+ "Parameter " + Statement.DELIM_FILL_VALUE
+					+ " must be a literal for a seq operation.");
+
 		sb.append( ((Data)headerLop).getBooleanValue() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( ((Data)delimLop).getStringValue() );

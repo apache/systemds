@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -79,9 +79,9 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 	{
 		//get inputs
 		MatrixBlock in = ec.getMatrixInput(input1.get_name());
-		int rows = ec.getScalarInput(_opRows.get_name(), ValueType.INT).getIntValue(); //save cast
-		int cols = ec.getScalarInput(_opCols.get_name(), ValueType.INT).getIntValue(); //save cast
-		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.get_name(), ValueType.BOOLEAN);
+		int rows = ec.getScalarInput(_opRows.get_name(), ValueType.INT, _opRows.isLiteral()).getIntValue(); //save cast
+		int cols = ec.getScalarInput(_opCols.get_name(), ValueType.INT, _opCols.isLiteral()).getIntValue(); //save cast
+		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.get_name(), ValueType.BOOLEAN, _opByRow.isLiteral());
 
 		//execute operations 
 		MatrixBlock out = new MatrixBlock();

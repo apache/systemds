@@ -69,18 +69,13 @@ public class ReBlock extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append ( this.prepOutputOperand(output_index));
 		sb.append( OPERAND_DELIMITOR );
+		
 		sb.append( rows_per_block );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( cols_per_block );

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -64,7 +64,7 @@ public class Binary extends Lop
 		
 		if ( et == ExecType.MR ) {
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
@@ -146,23 +146,14 @@ public class Binary extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append ( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		sb.append ( getInputs().get(1).prepInputOperand(input2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -170,31 +161,6 @@ public class Binary extends Lop
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
-		
-		return sb.toString();
+		return getInstructions(input_index1+"", input_index2+"", output_index+"");
 	}
-
- 
 }

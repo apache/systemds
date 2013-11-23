@@ -1,0 +1,10 @@
+
+boo = matrix (0, rows=10, cols = 2);
+if (0 == 0 ) {
+
+  msg = "foo" + "boo"
+
+  print (msg + ", " + sum(boo)); 
+  #print ("Sum = " + sum(boo));
+
+}

@@ -113,7 +113,8 @@ public class SQLScalarAssignInstruction extends SQLInstructionBase
 		
 		if(!hasSelect)
 		{
-			ec.setVariable(this.prepName, ec.getScalarInput(this.prepSQL, vt));
+			//TODO: the literal flag in getScalarInput() is passed as false. The value should actually come from SQLLop
+			ec.setVariable(this.prepName, ec.getScalarInput(this.prepSQL, vt, false));
 			return null;
 		}
 		try

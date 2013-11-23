@@ -28,6 +28,7 @@ public class PrintTest extends AutomatedTestBase
 
 		availableTestConfigurations.put("PrintTest", new TestConfiguration("PrintTest", new String[] {}));
 		availableTestConfigurations.put("PrintTest2", new TestConfiguration("PrintTest2", new String[] {}));
+		availableTestConfigurations.put("PrintTest3", new TestConfiguration("PrintTest3", new String[] {}));
 	}
 
 	@Test
@@ -91,6 +92,17 @@ public class PrintTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
+		setExpectedStdOut(value.substring(1, value.length()-1));
+		runTest();
+	}
+
+	@Test
+	public void testPrint() {
+		TestConfiguration config = availableTestConfigurations.get("PrintTest3");
+
+		loadTestConfiguration(config);
+
+		String value = "fooboo, 0.0";
 		setExpectedStdOut(value.substring(1, value.length()-1));
 		runTest();
 	}

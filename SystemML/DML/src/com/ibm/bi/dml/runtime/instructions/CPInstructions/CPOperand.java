@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,6 +21,7 @@ public class CPOperand
 	private String _name;
 	private ValueType _valueType;
 	private DataType _dataType;
+	private boolean _isLiteral;
 	
 	public CPOperand(String str) {
 		split(str);
@@ -31,12 +32,21 @@ public class CPOperand
 		_name = "";
 		_valueType = ValueType.UNKNOWN;
 		_dataType = DataType.UNKNOWN;
+		_isLiteral = false;
 	}
 	
 	public CPOperand(String name, ValueType vt, DataType dt ) {
 		_name = name;
 		_valueType = vt;
 		_dataType = dt;
+		_isLiteral = false;
+	}
+	
+	public CPOperand(String name, ValueType vt, DataType dt, boolean literal ) {
+		_name = name;
+		_valueType = vt;
+		_dataType = dt;
+		_isLiteral = literal;
 	}
 	
 	public String get_name() {
@@ -51,6 +61,10 @@ public class CPOperand
 		return _dataType;
 	}
 	
+	public boolean isLiteral() {
+		return _isLiteral;
+	}
+	
 	public void set_name(String name) {
 		_name = name;
 	}
@@ -63,6 +77,10 @@ public class CPOperand
 		_dataType = dt;
 	}
 	
+	public void set_literal(boolean literal) {
+		_isLiteral = literal;
+	}
+	
 	public void split_by_value_type_prefix ( String str ) {
 		String[] opr = str.split(Lop.VALUETYPE_PREFIX);
 		_name = opr[0];
@@ -71,10 +89,17 @@ public class CPOperand
 
 	public void split(String str){
 		String[] opr = str.split(Instruction.VALUETYPE_PREFIX);
-		if ( opr.length == 3 ) {
+		if ( opr.length == 4 ) {
 			_name = opr[0];
 			_dataType = DataType.valueOf(opr[1]);
 			_valueType = ValueType.valueOf(opr[2]);
+			_isLiteral = Boolean.parseBoolean(opr[3]);
+		}
+		else if ( opr.length == 3 ) {
+			_name = opr[0];
+			_dataType = DataType.valueOf(opr[1]);
+			_valueType = ValueType.valueOf(opr[2]);
+			_isLiteral = false;
 		}
 		else {
 			_name = opr[0];

@@ -45,7 +45,7 @@ public class Group extends Lop
 		 *  MMCJ, REBLOCK, and PARTITION themselves has location MapAndReduce.
 		 */
 		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.RAND);
+		lps.addCompatibility(JobType.DATAGEN);
 		
 		boolean breaksAlignment = false;
 		boolean aligner = true;

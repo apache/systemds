@@ -45,8 +45,7 @@ public enum JobType
 	INVALID			(-1, "INVALID", false, false, false), 
 	ANY				(0, "ANY", false, false, false), 
 	GMR				(1, "GMR", false, false, false), 
-	RAND			(2, "RAND", false, true, false), 
-	//REBLOCK_TEXT	(3, "REBLOCK_TEXT", false, false, false), 
+	DATAGEN			(2, "DATAGEN", false, true, false), 
 	REBLOCK			(3, "REBLOCK", false, false, false), 
 	MMCJ			(4, "MMCJ", true, false, true), 
 	MMRJ			(5, "MMRJ", false, false, false), 
@@ -119,7 +118,7 @@ public enum JobType
 	public static JobType findJobTypeFromLop(Lop node) {
 		Lop.Type lt = node.getType();
 		switch(lt) {
-		case RandLop: 		return JobType.RAND;
+		case DataGen: 		return JobType.DATAGEN;
 		
 		case ReBlock:		return JobType.REBLOCK;
 		

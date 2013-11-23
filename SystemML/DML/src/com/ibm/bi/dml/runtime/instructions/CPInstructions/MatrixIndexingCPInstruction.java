@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -119,10 +119,10 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 		
 		String opcode = InstructionUtils.getOpCode(this.instString);
 		
-		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
+		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT, rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT, rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT, colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT, colUpper.isLiteral()).getLongValue();
 		
 		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
 		MatrixBlock resultBlock = null;
@@ -151,7 +151,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				{
 					if(!(rl==ru && cl==cu))
 						throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
-					ScalarObject scalar = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE);
+					ScalarObject scalar = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral());
 					resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock());
 				}
 			}

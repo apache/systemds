@@ -16,9 +16,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import org.apache.commons.math.random.Well1024a;
 
@@ -5129,7 +5129,6 @@ public class MatrixBlockDSM extends MatrixValue
 			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq()");
 		
 		//System.out.println(System.nanoTime() + ": begin of seq()");
-		
 		int rows = 1 + (int)Math.floor((to-from)/incr);
 		int cols = 1;
 		sparse = false; // sequence matrix is always dense

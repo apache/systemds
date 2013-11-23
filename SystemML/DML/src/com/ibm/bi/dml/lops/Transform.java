@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -66,7 +66,7 @@ public class Transform extends Lop
 			 *  MMCJ: only in mapper.
 			 */
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
@@ -131,17 +131,9 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -158,31 +150,19 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		
 		//rows, cols, byrow
 		String[] inputX = new String[]{input2,input3,input4};
 		for( int i=1; i<=(inputX.length); i++ ) {
 			Lop ltmp = getInputs().get(i);
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( inputX[i-1] );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( ltmp.get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( ltmp.get_valueType() );				
+			sb.append( ltmp.prepScalarInputOperand(getExecType()));
 		}
 		
 		//output
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -198,17 +178,9 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() ); 
+		sb.append( getInputs().get(0).prepInputOperand(input_index));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}
@@ -225,35 +197,23 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() ); 
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		
 		//rows		
 		Lop input2 = getInputs().get(1); 
-		String rowsString = input2.getOutputParameters().getLabel();
-		if ( (input2.getExecLocation() == ExecLocation.Data &&
-				 !((Data)input2).isLiteral()) || !(input2.getExecLocation() == ExecLocation.Data )){
-			rowsString = Lop.VARIABLE_NAME_PLACEHOLDER + rowsString + Lop.VARIABLE_NAME_PLACEHOLDER;
-		}
+		String rowsString = input2.prepScalarLabel(); 
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( rowsString );
 		
 		//cols
 		Lop input3 = getInputs().get(2); 
-		String colsString = input3.getOutputParameters().getLabel();
-		if ( input3.getExecLocation() == ExecLocation.Data 
-				&& !((Data)input3).isLiteral() || !(input3.getExecLocation() == ExecLocation.Data )) {
-			colsString = Lop.VARIABLE_NAME_PLACEHOLDER + colsString + Lop.VARIABLE_NAME_PLACEHOLDER;
-		}
+		String colsString = input3.prepScalarLabel(); 
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( colsString );
 		
 		//byrow
 		Lop input4 = getInputs().get(3); 
-		String byrowString = input4.getOutputParameters().getLabel();
+		String byrowString = input4.prepScalarLabel();
 		if ( input4.getExecLocation() == ExecLocation.Data 
 				&& !((Data)input4).isLiteral() || !(input4.getExecLocation() == ExecLocation.Data ) ){
 			throw new LopsException(this.printErrorLocation() + "Parameter 'byRow' must be a literal for a matrix operation.");
@@ -263,15 +223,10 @@ public class Transform extends Lop
 		
 		//output
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}
-
 
 	public static Transform constructTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
 		

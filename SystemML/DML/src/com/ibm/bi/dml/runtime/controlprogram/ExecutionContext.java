@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -177,36 +177,35 @@ public class ExecutionContext
 		}
 	}
 	
-	public ScalarObject getScalarInput(String name, ValueType vt) {
-		Data obj = getVariable(name);
-		if (obj == null) {
-			try {
-				switch (vt) {
-				case INT:
-					int intVal = Integer.parseInt(name);
-					IntObject intObj = new IntObject(intVal);
-					return intObj;
-				case DOUBLE:
-					double doubleVal = Double.parseDouble(name);
-					DoubleObject doubleObj = new DoubleObject(doubleVal);
-					return doubleObj;
-				case BOOLEAN:
-					Boolean boolVal = Boolean.parseBoolean(name);
-					BooleanObject boolObj = new BooleanObject(boolVal);
-					return boolObj;
-				case STRING:
-					StringObject stringObj = new StringObject(name);
-					return stringObj;
-				default:
-					throw new DMLRuntimeException("Unknown variable: " + name + ", or unknown value type: " + vt);
-				}
-			} 
-			catch (Exception e) 
-			{	
-				e.printStackTrace();
+	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral) throws DMLRuntimeException {
+		if ( isLiteral ) {
+			switch (vt) {
+			case INT:
+				int intVal = Integer.parseInt(name);
+				IntObject intObj = new IntObject(intVal);
+				return intObj;
+			case DOUBLE:
+				double doubleVal = Double.parseDouble(name);
+				DoubleObject doubleObj = new DoubleObject(doubleVal);
+				return doubleObj;
+			case BOOLEAN:
+				Boolean boolVal = Boolean.parseBoolean(name);
+				BooleanObject boolObj = new BooleanObject(boolVal);
+				return boolObj;
+			case STRING:
+				StringObject stringObj = new StringObject(name);
+				return stringObj;
+			default:
+				throw new DMLRuntimeException("Unknown value type: " + vt + " for variable: " + name);
 			}
 		}
-		return (ScalarObject) obj;
+		else {
+			Data obj = getVariable(name);
+			if (obj == null) {
+				throw new DMLRuntimeException("Unknown variable: " + name);
+			}
+			return (ScalarObject) obj;
+		}
 	}
 
 	

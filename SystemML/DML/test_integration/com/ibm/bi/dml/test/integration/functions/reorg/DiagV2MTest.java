@@ -60,7 +60,7 @@ public class DiagV2MTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 		//double sparsity=0.2;
 		double sparsity=rand.nextDouble();
-		System.out.println("sparsity: "+sparsity);
+		//System.out.println("sparsity: "+sparsity);
         double[][] A = getRandomMatrix(1, cols, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("A", A, true);
         sparsity=rand.nextDouble();   

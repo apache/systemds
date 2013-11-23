@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -27,11 +27,11 @@ public class AppendCPInstruction extends BinaryCPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//can be a var name or constant
-	String offset_str;
+	CPOperand offset;
 	
-	public AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, String offset_str, CPOperand out, String istr){
+	public AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String istr){
 		super(op, in1, in2, out, istr);
-		this.offset_str = offset_str;
+		this.offset = in3;
 		cptype = CPINSTRUCTION_TYPE.Append;
 	}
 	
@@ -39,6 +39,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
 		//4 parts to the instruction besides opcode and execlocation
@@ -49,8 +50,9 @@ public class AppendCPInstruction extends BinaryCPInstruction
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
-		out.split(parts[3]);
-		String offset_str = parts[4];
+		in3.split(parts[3]);
+		out.split(parts[4]);
+		//String offset_str = parts[4];
 		 
 		if(!opcode.equalsIgnoreCase("append"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
@@ -58,7 +60,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			return new AppendCPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
 										   in1, 
 										   in2,
-										   offset_str,
+										   in3,
 										   out,
 										   str);
 	}

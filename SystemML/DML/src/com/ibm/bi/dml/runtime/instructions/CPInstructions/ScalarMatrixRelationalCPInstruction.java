@@ -45,7 +45,7 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 		}
 		
 		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(mat.get_name());
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType());
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.get_name(), scalar.get_valueType(), scalar.isLiteral());
 		
 		ScalarOperator sc_op = (ScalarOperator) optr;
 		sc_op.setConstant(constant.getDoubleValue());

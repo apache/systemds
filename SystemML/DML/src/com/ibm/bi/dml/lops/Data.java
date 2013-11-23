@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -33,7 +33,7 @@ public class Data extends Lop
 	
 	public enum OperationTypes {READ,WRITE};
 	
-	FileFormatTypes formatType;
+	FileFormatTypes formatType = FileFormatTypes.BINARY;
 	OperationTypes operation;
 	boolean literal_var = false;
 	boolean transient_var = false;
@@ -50,7 +50,7 @@ public class Data extends Lop
 	 */
 	public static Data createLiteralLop(ValueType vt, String literalValue) throws LopsException {
 		// All literals have default format type of TEXT
-		return new Data(OperationTypes.READ, null, null, null, literalValue, DataType.SCALAR, vt, false, FileFormatTypes.TEXT);
+		return new Data(OperationTypes.READ, null, null, null, literalValue, DataType.SCALAR, vt, false, FileFormatTypes.BINARY);
 	}
 	
 	/**
@@ -140,7 +140,7 @@ public class Data extends Lop
 			lps.removeCompatibility(JobType.PARTITION);
 			// reads are not compatible with RAND because RAND must have all inputs that are random
 			if ( operation == OperationTypes.READ )
-				lps.removeCompatibility(JobType.RAND);
+				lps.removeCompatibility(JobType.DATAGEN);
 			else if ( operation == OperationTypes.WRITE ) {
 				// WRITE lops are not compatible with jobs that produce an 
 				// intermediate output, which MUST be consumed by other subsequent lops 
@@ -296,17 +296,10 @@ public class Data extends Lop
 			throw new LopsException("MR Write instructions can not be generated for the output format: " + oparams.getFormat() );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append ( getInputs().get(0).prepInputOperand(input_index));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output_index));
 
 		// Attach format-specific properties
 		if(oparams.getFormat() == Format.CSV) {
@@ -314,6 +307,19 @@ public class Data extends Lop
 			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
 			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
 				
+			if (headerLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+						+ " must be a literal for a seq operation.");
+			if (delimLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_DELIMITER
+						+ " must be a literal for a seq operation.");
+			if (sparseLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_SPARSE
+						+ " must be a literal for a seq operation.");
+
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
@@ -349,34 +355,27 @@ public class Data extends Lop
 				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 			
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			sb.append ( prepOperand(input1, get_dataType(), get_valueType()) );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input2 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( DataType.SCALAR );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( ValueType.STRING );
+			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING) );
 
 			// attach outputInfo in case of matrices
 			OutputParameters oparams = getOutputParameters();
 			if ( operation == OperationTypes.WRITE ) {
 				sb.append( OPERAND_DELIMITOR );
+				String fmt = "";
 				if ( get_dataType() == DataType.MATRIX ) {
 					if ( oparams.getFormat() == Format.MM )
-						sb.append( "matrixmarket" );
+						fmt = "matrixmarket";
 					else if (oparams.getFormat() == Format.TEXT)
-						sb.append( "textcell");
+						fmt = "textcell";
 					else if (oparams.getFormat() == Format.CSV)
-						sb.append( "csv");
+						fmt = "csv";
 					else if ( oparams.getFormat() == Format.BINARY ){
 						if ( oparams.get_rows_in_block() > 0 || oparams.get_cols_in_block() > 0 )
-							sb.append( "binaryblock" );
+							fmt = "binaryblock"; 
 						else
-							sb.append( "binarycell" );
+							fmt = "binarycell" ;
 					}
 					else {
 						throw new LopsException("Unexpected format: " + oparams.getFormat());
@@ -384,18 +383,28 @@ public class Data extends Lop
 				}
 				else {
 					// scalars will always be written in text format
-					sb.append( "textcell" );
+					fmt = "textcell";
 				}
 				
-				sb.append( DATATYPE_PREFIX );
-				sb.append( DataType.SCALAR );
-				sb.append( VALUETYPE_PREFIX );
-				sb.append( ValueType.STRING );
+				sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING));
 				
 				if(oparams.getFormat() == Format.CSV) {
 					Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
 					Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
 					Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE);
+					
+					if (headerLop.isVariable())
+						throw new LopsException(this.printErrorLocation()
+								+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+								+ " must be a literal for a seq operation.");
+					if (delimLop.isVariable())
+						throw new LopsException(this.printErrorLocation()
+								+ "Parameter " + Statement.DELIM_DELIMITER
+								+ " must be a literal for a seq operation.");
+					if (sparseLop.isVariable())
+						throw new LopsException(this.printErrorLocation()
+								+ "Parameter " + Statement.DELIM_SPARSE
+								+ " must be a literal for a seq operation.");
 					
 					sb.append(OPERAND_DELIMITOR);
 					sb.append(headerLop.getBooleanValue());
@@ -506,6 +515,19 @@ public class Data extends Lop
 			Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);
 			Data delimLop = (Data) getNamedInputLop(Statement.DELIM_DELIMITER);
 			Data sparseLop = (Data) getNamedInputLop(Statement.DELIM_SPARSE); 
+			
+			if (headerLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_HAS_HEADER_ROW
+						+ " must be a literal for a seq operation.");
+			if (delimLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_DELIMITER
+						+ " must be a literal for a seq operation.");
+			if (sparseLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + Statement.DELIM_SPARSE
+						+ " must be a literal for a seq operation.");
 			
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);

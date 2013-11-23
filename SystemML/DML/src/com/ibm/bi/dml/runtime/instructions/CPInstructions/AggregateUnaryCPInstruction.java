@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -291,7 +291,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			MatrixBlock matBlock = ec.getMatrixInput(input1.get_name());
 	
 			CPOperand scalarInput = (input3==null ? input2 : input3);
-			ScalarObject order = ec.getScalarInput(scalarInput.get_name(), scalarInput.get_valueType()); 
+			ScalarObject order = ec.getScalarInput(scalarInput.get_name(), scalarInput.get_valueType(), scalarInput.isLiteral()); 
 			
 			CMOperator cm_op = ((CMOperator)optr); 
 			if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID ) {

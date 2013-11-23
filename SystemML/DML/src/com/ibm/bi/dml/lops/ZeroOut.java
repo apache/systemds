@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -39,7 +39,7 @@ public class ZeroOut  extends Lop
 		if ( et == ExecType.MR ) {
 			
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
 			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
@@ -78,41 +78,22 @@ public class ZeroOut  extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR ); 
-		sb.append( rowl );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		// rowl, rowu
+		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
+		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( coll );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(3).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(3).get_valueType() );
+				
+		// coll, colu
+		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( colu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(4).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(4).get_valueType() );
-		sb.append( OPERAND_DELIMITOR ); 
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() ); 
+		sb.append( getInputs().get(4).prepScalarInputOperand(getExecType()));
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -132,24 +113,8 @@ public class ZeroOut  extends Lop
 		 * will be equal to -1. They should be ignored and the scalar value labels must
 		 * be derived from input lops.
 		 */
-		String rowl = this.getInputs().get(1).getOutputParameters().getLabel();
-		if (this.getInputs().get(1).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
-			rowl = "##" + rowl + "##";
-		String rowu = this.getInputs().get(2).getOutputParameters().getLabel();
-		if (this.getInputs().get(2).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(2)).isLiteral())
-			rowu = "##" + rowu + "##";
-		String coll = this.getInputs().get(3).getOutputParameters().getLabel();
-		if (this.getInputs().get(3).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(3)).isLiteral())
-			coll = "##" + coll + "##";
-		String colu = this.getInputs().get(4).getOutputParameters().getLabel();
-		if (this.getInputs().get(4).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(4)).isLiteral())
-			colu = "##" + colu + "##";
 		
-		return getInstructions(Integer.toString(input_index1), rowl, rowu, coll, colu, Integer.toString(output_index));
+		return getInstructions(Integer.toString(input_index1), input_index2+"", input_index3+"", input_index4+"", input_index5+"", Integer.toString(output_index));
 	}
 
 	@Override

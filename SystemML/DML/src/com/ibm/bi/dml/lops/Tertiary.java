@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -68,7 +68,7 @@ public class Tertiary extends Lop
 			 *  This lop can be executed in GMR, RAND, REBLOCK jobs
 			 */
 			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.RAND);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			
 			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
@@ -125,29 +125,32 @@ public class Tertiary extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "ctable" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		if ( getInputs().get(0).get_dataType() == DataType.SCALAR ) {
+			sb.append ( getInputs().get(0).prepScalarInputOperand(getExecType()) );
+		}
+		else {
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) {
+			sb.append ( getInputs().get(1).prepScalarInputOperand(getExecType()) );
+		}
+		else {
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input3 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
+		
+		if ( getInputs().get(2).get_dataType() == DataType.SCALAR ) {
+			sb.append ( getInputs().get(2).prepScalarInputOperand(getExecType()) );
+		}
+		else {
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
@@ -164,29 +167,13 @@ public class Tertiary extends Lop
 			// F = ctable(A,B,W)
 			sb.append( "ctabletransform" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(0).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(0).get_valueType() );
+			sb.append( getInputs().get(0).prepInputOperand(input_index1));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index2 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(1).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(1).get_valueType() );
+			sb.append( getInputs().get(1).prepInputOperand(input_index2));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index3 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(2).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(2).get_valueType() );
+			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( output_index );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 		
@@ -202,38 +189,20 @@ public class Tertiary extends Lop
 			// ## symbols. these will be replaced at runtime.
 			
 			int scalarIndex = 2; // index of the scalar input
-			String valueLabel = null;
-			if(this.getInputs().get(scalarIndex).getExecLocation() == ExecLocation.Data && 
-					((Data)this.getInputs().get(scalarIndex)).isLiteral())
-				valueLabel = getInputs().get(scalarIndex).getOutputParameters().getLabel();
-			else
-				valueLabel = "##" + getInputs().get(scalarIndex).getOutputParameters().getLabel() + "##";
 			
 			sb.append( "ctabletransformscalarweight" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(0).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(0).get_valueType() );
+			
+			sb.append( getInputs().get(0).prepInputOperand(input_index1));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index2 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(1).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(1).get_valueType() );
+			
+			sb.append( getInputs().get(1).prepInputOperand(input_index2));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( valueLabel );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(2).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(2).get_valueType() );
+			
+			sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( output_index );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			
+			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 			
@@ -242,46 +211,21 @@ public class Tertiary extends Lop
 			if ( input_index2 != -1 || input_index3 != -1)
 				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
 			
-			// parse the scalar inputs (2nd and 3rd inputs)
-			String scalar2=null;
-			if(this.getInputs().get(1).getExecLocation() == ExecLocation.Data && 
-					((Data)this.getInputs().get(1)).isLiteral())
-				scalar2 = getInputs().get(1).getOutputParameters().getLabel();
-			else
-				scalar2 = "##" + getInputs().get(1).getOutputParameters().getLabel() + "##";
-			
-			String scalar3=null;
-			if(this.getInputs().get(2).getExecLocation() == ExecLocation.Data && 
-					((Data)this.getInputs().get(2)).isLiteral())
-				scalar3 = getInputs().get(2).getOutputParameters().getLabel();
-			else
-				scalar3 = "##" + getInputs().get(2).getOutputParameters().getLabel() + "##";
+			// 2nd and 3rd inputs are scalar inputs 
 			
 			sb.append( "ctabletransformhistogram" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(0).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(0).get_valueType() );
+			
+			sb.append( getInputs().get(0).prepInputOperand(input_index1));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( scalar2 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(1).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(1).get_valueType() );
+			
+			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()) );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( scalar3 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(2).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(2).get_valueType());
+			
+			sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()) );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( output_index );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			
+			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 		
@@ -289,39 +233,22 @@ public class Tertiary extends Lop
 			// F=ctable(A,1,W)
 			if ( input_index2 != -1 )
 				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation);
-			// parse the scalar inputs (2nd and 3rd inputs)
-			String scalarInput2=null;
-			if(this.getInputs().get(1).getExecLocation() == ExecLocation.Data && 
-					((Data)this.getInputs().get(1)).isLiteral())
-				scalarInput2 = getInputs().get(1).getOutputParameters().getLabel();
-			else
-				scalarInput2 = "##" + getInputs().get(1).getOutputParameters().getLabel() + "##";
+			
+			// 2nd input is the scalar input
 			
 			sb.append( "ctabletransformweightedhistogram" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index1 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(0).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(0).get_valueType() );
+			
+			sb.append( getInputs().get(0).prepInputOperand(input_index1));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( scalarInput2 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(1).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(1).get_valueType() );
+			
+			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( input_index3 );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( getInputs().get(2).get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( getInputs().get(2).get_valueType() );
+			
+			sb.append( getInputs().get(2).prepInputOperand(input_index3));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( output_index );
-			sb.append( DATATYPE_PREFIX );
-			sb.append( get_dataType() );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( get_valueType() );
+			
+			sb.append( this.prepOutputOperand(output_index));
 			
 			break;
 			

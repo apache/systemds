@@ -61,23 +61,12 @@ public class MMCJ extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "cpmm" );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

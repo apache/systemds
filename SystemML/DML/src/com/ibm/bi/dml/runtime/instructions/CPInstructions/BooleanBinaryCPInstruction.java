@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -52,10 +52,10 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
-		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so1 = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 		ScalarObject so2 = null;
 		if ( input2 != null ) 
-			so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType() );
+			so2 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral() );
 		ScalarObject sores = null;
 		
 		BinaryOperator dop = (BinaryOperator) optr;

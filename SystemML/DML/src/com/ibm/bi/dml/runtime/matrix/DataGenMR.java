@@ -346,7 +346,7 @@ public class DataGenMR
 			for ( int i=0; i < inputs.length; i++ ) {
 				inputStats[i] = new MatrixCharacteristics(rlens[i], clens[i], brlens[i], bclens[i]);
 			}
-			ExecMode mode = RunMRJobs.getExecMode(JobType.RAND, inputStats); 
+			ExecMode mode = RunMRJobs.getExecMode(JobType.DATAGEN, inputStats); 
 			if ( mode == ExecMode.LOCAL ) {
 				job.set("mapred.job.tracker", "local");
 				MRJobConfiguration.setStagingDir( job );

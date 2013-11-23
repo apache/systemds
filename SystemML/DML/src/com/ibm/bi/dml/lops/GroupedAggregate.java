@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.*;
 
 
@@ -27,6 +28,8 @@ public class GroupedAggregate extends Lop
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private HashMap<String, Lop> _inputParams;
+	private final String opcode = "groupedagg";
+	public final static String COMBINEDINPUT = "combinedinput";
 	
 	/**
 	 * Constructor to perform grouped aggregate.
@@ -45,12 +48,12 @@ public class GroupedAggregate extends Lop
 			 * needs to be computed. Make sure that "combinedinput" is the first input
 			 * to GroupedAggregate lop. 
 			 */
-			this.addInput(inputParameterLops.get("combinedinput"));
-			inputParameterLops.get("combinedinput").addOutput(this);
+			this.addInput(inputParameterLops.get(COMBINEDINPUT));
+			inputParameterLops.get(COMBINEDINPUT).addOutput(this);
 			
 			// process remaining parameters
 			for ( String k : inputParameterLops.keySet()) {
-				if ( !k.equalsIgnoreCase("combinedinput") ) {
+				if ( !k.equalsIgnoreCase(COMBINEDINPUT) ) {
 					this.addInput(inputParameterLops.get(k));
 					inputParameterLops.get(k).addOutput(this);
 				}
@@ -70,14 +73,14 @@ public class GroupedAggregate extends Lop
 			boolean definesMRJob = false;
 			
 			// First, add inputs corresponding to "target" and "groups"
-			this.addInput(inputParameterLops.get("target"));
-			inputParameterLops.get("target").addOutput(this);
-			this.addInput(inputParameterLops.get("groups"));
-			inputParameterLops.get("groups").addOutput(this);
+			this.addInput(inputParameterLops.get(Statement.GAGG_TARGET));
+			inputParameterLops.get(Statement.GAGG_TARGET).addOutput(this);
+			this.addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
+			inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
 			
 			// process remaining parameters
 			for ( String k : inputParameterLops.keySet()) {
-				if ( !k.equalsIgnoreCase("target") && !k.equalsIgnoreCase("groups") ) {
+				if ( !k.equalsIgnoreCase(Statement.GAGG_TARGET) && !k.equalsIgnoreCase(Statement.GAGG_GROUPS) ) {
 					this.addInput(inputParameterLops.get(k));
 					inputParameterLops.get(k).addOutput(this);
 				}
@@ -108,53 +111,54 @@ public class GroupedAggregate extends Lop
 		return "Operation = GroupedAggregate";
 	}
 
+	/**
+	 * Function to generate CP Grouped Aggregate Instructions.
+	 * 
+	 */
 	@Override
-	// This version of getInstructions() is invoked when groupedAgg is executed in CP
 	public String getInstructions(String output) 
 		throws LopsException 
 	{
 		StringBuilder sb = new StringBuilder();
+		
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "groupedagg" );
 		
-		if ( _inputParams.get("target") == null || _inputParams.get("groups") == null || _inputParams.get("fn") == null ) 
+		sb.append( opcode );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		
+		if ( _inputParams.get(Statement.GAGG_TARGET) == null || _inputParams.get(Statement.GAGG_GROUPS) == null || _inputParams.get("fn") == null ) 
 			throw new LopsException(this.printErrorLocation() + "Invalid parameters to groupedAggregate -- \"target\", \"groups\", \"fn\" must be provided");
 		
-		String targetVar = _inputParams.get("target").getOutputParameters().getLabel();
-		String groupsVar = _inputParams.get("groups").getOutputParameters().getLabel();
+		String targetVar = _inputParams.get(Statement.GAGG_TARGET).getOutputParameters().getLabel();
+		String groupsVar = _inputParams.get(Statement.GAGG_GROUPS).getOutputParameters().getLabel();
 		
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "target" );
+		sb.append( Statement.GAGG_TARGET );
 		sb.append( Lop.NAME_VALUE_SEPARATOR );
 		sb.append( targetVar );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "groups" );
+		
+		sb.append( Statement.GAGG_GROUPS );
 		sb.append( Lop.NAME_VALUE_SEPARATOR );
 		sb.append( groupsVar );
-		if ( _inputParams.get("weights") != null )
+		
+		if ( _inputParams.get(Statement.GAGG_WEIGHTS) != null )
 		{
 			sb.append( Lop.OPERAND_DELIMITOR );
-			sb.append( "weights" );
+			sb.append( Statement.GAGG_WEIGHTS );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
-			sb.append( _inputParams.get("weights").getOutputParameters().getLabel() );
+			sb.append( _inputParams.get(Statement.GAGG_WEIGHTS).getOutputParameters().getLabel() );
 		}
 		
-		// Process all the other parameters, which are scalars
+		// Process all other name=value parameters, which are scalars
 		String name, valueString;
 		Lop value;
 		for(Entry<String, Lop>  e : _inputParams.entrySet()) {
 			name = e.getKey();
-			if ( !name.equalsIgnoreCase("target") && !name.equalsIgnoreCase("groups") && !name.equalsIgnoreCase("weights") ) {
+			if ( !name.equalsIgnoreCase(Statement.GAGG_TARGET) && !name.equalsIgnoreCase(Statement.GAGG_GROUPS) && !name.equalsIgnoreCase(Statement.GAGG_WEIGHTS) ) {
 				value =  e.getValue();
+				valueString = value.prepScalarLabel();
 				
-				if ( value.getExecLocation() == ExecLocation.Data && 
-						((Data)value).isLiteral() ) {
-					valueString = value.getOutputParameters().getLabel();
-				}
-				else {
-					valueString = "##" + value.getOutputParameters().getLabel() + "##";
-				}
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( name );
 				sb.append( Lop.NAME_VALUE_SEPARATOR );
@@ -163,16 +167,12 @@ public class GroupedAggregate extends Lop
 		}
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}
 
-	@Override
+	/*@Override
 	public String getInstructions(String input1, String input2, String output) 
 	{
 		StringBuilder sb = new StringBuilder();
@@ -197,7 +197,7 @@ public class GroupedAggregate extends Lop
 		sb.append( get_valueType() );
 		
 		return sb.toString();
-	}
+	}*/
 	
 	@Override
 	public String getInstructions(int input_index, int output_index) 
@@ -206,51 +206,25 @@ public class GroupedAggregate extends Lop
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		
-		// value type for "order" is INT
-		sb.append( "groupedagg" );
+		sb.append( opcode );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		sb.append( getInputs().get(0).prepInputOperand(input_index));
 				
 		// get the aggregate function
-		Lop funcLop = _inputParams.get("fn"); 
-		//OperationTypes op = OperationTypes.INVALID;
-		String func = null;
-		if ( funcLop.getExecLocation() == ExecLocation.Data && 
-				((Data)funcLop).isLiteral() ) {
-			func = funcLop.getOutputParameters().getLabel();
-		}
-		else {
-			func = "##" + funcLop.getOutputParameters().getLabel() + "##";
-		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( func );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( funcLop.get_valueType() );
+		Lop funcLop = _inputParams.get(Statement.GAGG_FN); 
+		sb.append( funcLop.prepScalarInputOperand(getExecType()));
 		
 		// get the "optional" parameters
-		String order = null;
-		if ( _inputParams.get("order") != null ) {
-			Lop orderLop = _inputParams.get("order"); 
-			if ( orderLop.getExecLocation() == ExecLocation.Data && 
-					((Data)orderLop).isLiteral() ) {
-				order = orderLop.getOutputParameters().getLabel();
-			}
-			else {
-				order = "##" + orderLop.getOutputParameters().getLabel() + "##";
-			}
+		if ( _inputParams.get(Statement.GAGG_FN_CM_ORDER) != null ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( order );
-			sb.append( VALUETYPE_PREFIX );
-			sb.append( orderLop.get_valueType() );
+			Lop orderLop = _inputParams.get(Statement.GAGG_FN_CM_ORDER); 
+			sb.append( orderLop.prepScalarInputOperand(getExecType()));
 		}
 		
 		// add output_index to instruction
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		sb.append( this.prepOutputOperand(output_index));
 		
 		return sb.toString();
 	}

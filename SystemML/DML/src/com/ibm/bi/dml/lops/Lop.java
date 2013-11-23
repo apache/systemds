@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -37,7 +37,7 @@ public abstract class Lop
 	};
 
 	public enum Type {
-		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, RandLop, ReBlock,  
+		Aggregate, MMCJ, Grouping, Data, Transform, UNARY, Binary, PartialAggregate, BinaryCP, UnaryCP, DataGen, ReBlock,  
 		PartitionLop, CrossvalLop, GenericFunctionLop, ExtBuiltInFuncLop, ParameterizedBuiltin, 
 		Tertiary, SortKeys, PickValues, CombineUnary, CombineBinary, CombineTertiary, MMRJ, CentralMoment, CoVariance, GroupedAgg, 
 		Append, RangeReIndex, LeftIndex, ZeroOut, MVMult, MMTSJ, DataPartition, FunctionCallCP, CSVReBlock
@@ -61,10 +61,12 @@ public abstract class Lop
 	public static final String INSTRUCTION_DELIMITOR = "\u2021"; // "\u002c"; //",";
 	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
 	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
-	public static final String DATATYPE_PREFIX = "\u00b7" ; //":#:";
+	public static final String DATATYPE_PREFIX = VALUETYPE_PREFIX; //":#:";
+	public static final String LITERAL_PREFIX = VALUETYPE_PREFIX; //":#:";
 	public static final String NAME_VALUE_SEPARATOR = "="; // e.g., used in parameterized builtins
 	public static final String VARIABLE_NAME_PLACEHOLDER = "##"; //TODO: use in LOPs 
-	
+	public static final String MATRIX_VAR_NAME_PREFIX = "0mVar";
+	public static final String SCALAR_VAR_NAME_PREFIX = "0Var";
 	
 	/**
 	 * get visit status of node
@@ -374,7 +376,7 @@ public abstract class Lop
 	 * @throws LopsException
 	 **/
 	public String getInstructions(int input_index, int output_index) throws LopsException {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
 
 	}
 
@@ -502,12 +504,151 @@ public abstract class Lop
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 
-	public String parseLabelForInstruction(Lop iLop) {
-		String ret = iLop.getOutputParameters().getLabel();
-		if ( (iLop.getExecLocation() == ExecLocation.Data &&
-				 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data )){
+	/**
+	 * Function that determines if the output of a LOP is defined by a variable or not.
+	 * 
+	 * @return
+	 */
+	public boolean isVariable() {
+		return ( (getExecLocation() == ExecLocation.Data && !((Data)this).isLiteral()) 
+				 || !(getExecLocation() == ExecLocation.Data ) );
+	}
+	
+	
+	
+	/**
+	 * Method to prepare instruction operand with given parameters.
+	 * 
+	 * @param label
+	 * @param dt
+	 * @param vt
+	 * @return
+	 */
+	public String prepOperand(String label, DataType dt, ValueType vt) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(label);
+		sb.append(Lop.DATATYPE_PREFIX);
+		sb.append(dt);
+		sb.append(Lop.VALUETYPE_PREFIX);
+		sb.append(vt);
+		return sb.toString();
+	}
+
+	/**
+	 * Method to prepare instruction operand with given label. Data type
+	 * and Value type are derived from Lop's properties.
+	 * 
+	 * @param label
+	 * @return
+	 */
+	private String prepOperand(String label) {
+		StringBuilder sb = new StringBuilder("");
+		sb.append(label);
+		sb.append(Lop.DATATYPE_PREFIX);
+		sb.append(get_dataType());
+		sb.append(Lop.VALUETYPE_PREFIX);
+		sb.append(get_valueType());
+		return sb.toString();
+	}
+	
+	public String prepOutputOperand() {
+		return prepOperand(getOutputParameters().getLabel());
+	}
+	
+	public String prepOutputOperand(int index) {
+		return prepOperand(index+"");
+	}
+	public String prepOutputOperand(String label) {
+		return prepOperand(label);
+	}
+	
+	/**
+	 * Function to prepare label for scalar inputs while generating instructions.
+	 * It attaches placeholder suffix and prefixes if the Lop denotes a variable.
+	 * 
+	 * @return
+	 */
+	public String prepScalarLabel() {
+		String ret = getOutputParameters().getLabel();
+		if ( isVariable() ){
 			ret = Lop.VARIABLE_NAME_PLACEHOLDER + ret + Lop.VARIABLE_NAME_PLACEHOLDER;
 		}
 		return ret;
 	}
+	
+	/**
+	 * Function to be used in creating instructions for creating scalar
+	 * operands. It decides whether or not attach placeholders for instruction
+	 * patching. Resulting string also encodes if the operand is a literal.
+	 * 
+	 * For non-literals: 
+	 * Placeholder prefix and suffix need to be attached for Instruction 
+	 * Patching during execution. However, they should NOT be attached IF: 
+	 *   - the operand is a literal 
+	 *     OR 
+	 *   - the execution type is CP. This is because CP runtime has access 
+	 *     to symbol table and the instruction encodes sufficient information
+	 *     to determine if an operand is a literal or not.
+	 * 
+	 * @param et
+	 * @return
+	 */
+	public String prepScalarOperand(ExecType et, String label) {
+		boolean isData = (getExecLocation() == ExecLocation.Data);
+		boolean isLiteral = (isData && ((Data)this).isLiteral());
+		
+		StringBuilder sb = new StringBuilder("");
+		if ( et == ExecType.CP || (isData && isLiteral)) {
+			sb.append(label);
+		}
+		else {
+			sb.append(Lop.VARIABLE_NAME_PLACEHOLDER);
+			sb.append(label);
+			sb.append(Lop.VARIABLE_NAME_PLACEHOLDER);
+		}
+		
+		sb.append(Lop.DATATYPE_PREFIX);
+		sb.append(get_dataType());
+		sb.append(Lop.VALUETYPE_PREFIX);
+		sb.append(get_valueType());
+		sb.append(Lop.LITERAL_PREFIX);
+		sb.append(isLiteral);
+		
+		return sb.toString();
+	}
+
+	public String prepScalarInputOperand(ExecType et) {
+		return prepScalarOperand(et, getOutputParameters().getLabel());
+	}
+	
+	public String prepScalarInputOperand(String label) {
+		boolean isData = (getExecLocation() == ExecLocation.Data);
+		boolean isLiteral = (isData && ((Data)this).isLiteral());
+		
+		StringBuilder sb = new StringBuilder("");
+		sb.append(label);
+		sb.append(Lop.DATATYPE_PREFIX);
+		sb.append(get_dataType());
+		sb.append(Lop.VALUETYPE_PREFIX);
+		sb.append(get_valueType());
+		sb.append(Lop.LITERAL_PREFIX);
+		sb.append(isLiteral);
+		
+		return sb.toString();
+	}
+
+	public String prepInputOperand(int index) {
+		return prepInputOperand(index+"");
+	}
+
+	public String prepInputOperand(String label) {
+		DataType dt = get_dataType();
+		if ( dt == DataType.MATRIX ) {
+			return prepOperand(label);
+		}
+		else {
+			return prepScalarInputOperand(label);
+		}
+	}
+	
 }

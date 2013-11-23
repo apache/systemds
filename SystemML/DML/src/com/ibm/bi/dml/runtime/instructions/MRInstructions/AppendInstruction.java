@@ -47,9 +47,9 @@ public class AppendInstruction extends BinaryMRInstructionBase
 		int offset;
 		in1 = Byte.parseByte(parts[1]);
 		in2 = Byte.parseByte(parts[2]);
-		out = Byte.parseByte(parts[3]);
-		offset = (int)(Double.parseDouble(parts[4]));
-		
+		offset = (int)(Double.parseDouble(parts[3]));
+		out = Byte.parseByte(parts[4]);
+			
 		return new AppendInstruction(null, in1, in2, offset, out, str);
 	}
 	

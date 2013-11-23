@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -115,15 +115,7 @@ public class ParameterizedBuiltin extends Lop
 				
 				// get the value/label of the scalar input associated with name "s"
 				Lop iLop = _inputParams.get(s);
-				if ( iLop.getExecLocation() == ExecLocation.Data 
-						&& ((Data)iLop).isLiteral() ) {
-					sb.append( iLop.getOutputParameters().getLabel() );
-				}
-				else {
-					sb.append( "##" );
-					sb.append( iLop.getOutputParameters().getLabel() );
-					sb.append( "##" );
-				}
+				sb.append( iLop.prepScalarLabel() );
 				sb.append( OPERAND_DELIMITOR );
 			}
 			break;
@@ -139,11 +131,7 @@ public class ParameterizedBuiltin extends Lop
 				
 				// instruction patching not required because rmEmpty always executed as CP/CP_FILE
 				Lop iLop = _inputParams.get(s);
-				//if ( iLop.getExecLocation() == ExecLocation.Data 
-				//		&& ((Data)iLop).isLiteral() ) 
-					sb.append(iLop.getOutputParameters().getLabel());
-				//else 
-				//	inst.append("##").append(iLop.getOutputParameters().getLabel()).append("##");
+				sb.append(iLop.getOutputParameters().getLabel());
 				sb.append(OPERAND_DELIMITOR);
 			}
 			break;
@@ -151,11 +139,7 @@ public class ParameterizedBuiltin extends Lop
 			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + operation);
 		}
 		
-		sb.append(output);
-		sb.append(DATATYPE_PREFIX);
-		sb.append(get_dataType());
-		sb.append(VALUETYPE_PREFIX);
-		sb.append(get_valueType());
+		sb.append(this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}

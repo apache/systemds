@@ -14,6 +14,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
@@ -391,7 +392,7 @@ public class ParForResultMergeTest
 				MatrixFormatMetaData meta2 = new MatrixFormatMetaData(mc2, oi, ii);
 				DataConverter.writeMatrixToHDFS(tmpMB, _fname2+k, oi, mc2);		
 				MatrixObject tmpMo = new MatrixObject(ValueType.DOUBLE,_fname2+k);
-				tmpMo.setVarName("Var"+k);
+				tmpMo.setVarName(Lop.VARIABLE_NAME_PLACEHOLDER+k);
 				tmpMo.setMetaData(meta2);
 				in[ k ] = tmpMo;
 			}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -84,49 +84,34 @@ public class LeftIndex extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
+		
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( lhsInput );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(lhsInput));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rhsInput );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) {
+			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
+		}
+		else {
+			sb.append( getInputs().get(1).prepInputOperand(rhsInput));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowl );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(2).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(2).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(3).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(3).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( coll );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(4).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(4).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( colu );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(5).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(5).get_valueType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		// rowl, rowu
+		sb.append(getInputs().get(2).prepScalarInputOperand(getExecType()));
+		sb.append( OPERAND_DELIMITOR );	
+		sb.append(getInputs().get(3).prepScalarInputOperand(getExecType()));
+		sb.append( OPERAND_DELIMITOR );	
+		
+		// rowl, rowu
+		sb.append(getInputs().get(4).prepScalarInputOperand(getExecType()));
+		sb.append( OPERAND_DELIMITOR );	
+		sb.append(getInputs().get(5).prepScalarInputOperand(getExecType()));
+		sb.append( OPERAND_DELIMITOR );	
+		
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 	}

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -442,7 +442,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private int computeNumMapTasks( VarStats[] vs, byte[] inputIx, double blocksize, int maxPMap, JobType jobtype )
 	{
 		//special cases
-		if( jobtype == JobType.RAND )
+		if( jobtype == JobType.DATAGEN )
 			return maxPMap;
 			
 		//input size, num blocks

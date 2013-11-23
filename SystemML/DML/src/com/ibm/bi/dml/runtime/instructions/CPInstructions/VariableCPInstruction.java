@@ -424,7 +424,7 @@ public class VariableCPInstruction extends CPInstruction
 				String fname = input2.get_name();
 				
 				// check if unique filename needs to be generated
-				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(input3.get_name(), input3.get_valueType())).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
+				boolean overrideFileName = ((BooleanObject) ec.getScalarInput(input3.get_name(), input3.get_valueType(), true)).getBooleanValue();; //!(input1.get_name().startsWith("p")); //    
 				if ( overrideFileName ) {
 					fname = fname + "_" + _uniqueVarID.getNextID();
 				}
@@ -448,7 +448,7 @@ public class VariableCPInstruction extends CPInstruction
 		
 		case AssignVariable:
 			// assign value of variable to the other
-			ec.setScalarOutput(input2.get_name(), ec.getScalarInput(input1.get_name(), input1.get_valueType()));			
+			ec.setScalarOutput(input2.get_name(), ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral()));			
 			break;
 			
 		case RemoveVariable:
@@ -511,7 +511,7 @@ public class VariableCPInstruction extends CPInstruction
 			
 		case RemoveVariableAndFile:
 			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
-			boolean del = ( (BooleanObject) ec.getScalarInput(input2.get_name(), input2.get_valueType()) ).getBooleanValue();
+			boolean del = ( (BooleanObject) ec.getScalarInput(input2.get_name(), input2.get_valueType(), true) ).getBooleanValue();
 			
 			MatrixObject m = (MatrixObject) ec.getVariable(input1.get_name());
 			if ( !del ) {
@@ -549,7 +549,7 @@ public class VariableCPInstruction extends CPInstruction
 			ec.setScalarOutput(output.get_name(), new DoubleObject(value));
 			break;
 		case CastAsMatrixVariable:
-			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 			MatrixBlock out = new MatrixBlock(1,1,false);
 			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
 			ec.setMatrixOutput(output.get_name(), out);
@@ -562,7 +562,7 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixObject mat = (MatrixObject)ec.getVariable(input1.get_name());
 			String fname = mat.getFileName();
 			MetaData mdata = mat.getMetaData();
-			ScalarObject pickindex = ec.getScalarInput(input2.get_name(), input2.get_valueType());
+			ScalarObject pickindex = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			
 			if ( mdata != null ) {
 				try {
@@ -582,7 +582,7 @@ public class VariableCPInstruction extends CPInstruction
 			MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
 
 			if ( input2.get_dataType() == DataType.SCALAR ) {
-				ScalarObject quantile = ec.getScalarInput(input2.get_name(), input2.get_valueType());
+				ScalarObject quantile = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 				double picked = matBlock.pickValue(quantile.getDoubleValue());
 				ec.setScalarOutput(output.get_name(), (ScalarObject) new DoubleObject(picked));
 			} 
@@ -615,7 +615,7 @@ public class VariableCPInstruction extends CPInstruction
 			MetaData iqs_md = ec.getMetaData(iqs_fname);
 			
 			// ge the range
-			ScalarObject pickrange = ec.getScalarInput(input2.get_name(), input2.get_valueType());
+			ScalarObject pickrange = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			
 			if ( iqs_md != null ) {
 				try {
@@ -680,8 +680,8 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case SequenceIncrement:
-			ScalarObject fromObj = ec.getScalarInput(input1.get_name(), input1.get_valueType());
-			ScalarObject toObj = ec.getScalarInput(input2.get_name(), input2.get_valueType());
+			ScalarObject fromObj = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+			ScalarObject toObj = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral());
 			double ret = Double.NaN;
 			if ( fromObj.getDoubleValue() >= toObj.getDoubleValue() )
 				ret = -1.0;
@@ -800,7 +800,7 @@ public class VariableCPInstruction extends CPInstruction
 	 * @throws DMLRuntimeException 
 	 */
 	private void writeScalarToHDFS(ExecutionContext ec) throws DMLRuntimeException {
-		ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject scalar = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 		try {
 			switch ( input1.get_valueType() ) {
 			case DOUBLE:
@@ -928,8 +928,7 @@ public class VariableCPInstruction extends CPInstruction
 		String str = sb.toString();
 
 		return parseInstruction(str);
-	}
-	
+	}	
 	
 	@Override
 	public void updateInstructionThreadID(String pattern, String replace)

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -44,7 +44,7 @@ public class PartialMVMult extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.RAND);
+		lps.addCompatibility(JobType.DATAGEN);
 		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 	}
 
@@ -56,15 +56,23 @@ public class PartialMVMult extends Lop
 	@Override
 	public String getInstructions(int input_index1, int input_index2, int output_index)
 	{
-		String opString = new String(getExecType() + Lop.OPERAND_DELIMITOR);
-		opString += "mvmult";
+		StringBuilder sb = new StringBuilder();
 		
-		String inst = new String("");
-		inst += opString + OPERAND_DELIMITOR + 
-				input_index1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType() + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-				input_index2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType() + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-		        output_index + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
-		return inst;
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append("mvmult");
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append( getInputs().get(0).prepInputOperand(input_index1));
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append( getInputs().get(1).prepInputOperand(input_index2));
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append( this.prepOutputOperand(output_index));
+		
+		return sb.toString();
 	}
 
 

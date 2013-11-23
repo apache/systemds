@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -119,65 +120,64 @@ public class ParameterizedBuiltinOp extends Hop
 					// construct necessary lops: combineBinary/combineTertiary and
 					// groupedAgg
 	
-					boolean isWeighted = (_paramIndexMap.get("weights") != null);
+					boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
 					if (isWeighted) {
 						// combineTertiary followed by groupedAgg
 						CombineTertiary combine = CombineTertiary
 								.constructCombineLop(
 										com.ibm.bi.dml.lops.CombineTertiary.OperationTypes.PreGroupedAggWeighted,
-										inputlops.get("target"),
-										inputlops.get("groups"),
-										inputlops.get("weights"),
+										inputlops.get(Statement.GAGG_TARGET),
+										inputlops.get(Statement.GAGG_GROUPS),
+										inputlops.get(Statement.GAGG_WEIGHTS),
 										DataType.MATRIX, get_valueType());
 	
 						// the dimensions of "combine" would be same as that of the
 						// input data
 						combine.getOutputParameters().setDimensions(
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_dim1(),
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_dim2(),		
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_rows_in_block(),
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_cols_in_block(), 
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.getNnz());
 	
-						// add the combine lop to parameter list, with a new name
-						// "combinedinput"
-						inputlops.put("combinedinput", combine);
-						inputlops.remove("target");
-						inputlops.remove("groups");
-						inputlops.remove("weights");
+						// add the combine lop to parameter list, with a new name "combinedinput"
+						inputlops.put(GroupedAggregate.COMBINEDINPUT, combine);
+						inputlops.remove(Statement.GAGG_TARGET);
+						inputlops.remove(Statement.GAGG_GROUPS);
+						inputlops.remove(Statement.GAGG_WEIGHTS);
 	
 					} else {
 						// combineBinary followed by groupedAgg
 						CombineBinary combine = CombineBinary.constructCombineLop(
 								OperationTypes.PreGroupedAggUnweighted,
-								inputlops.get("target"), inputlops
-										.get("groups"), DataType.MATRIX,
+								inputlops.get(Statement.GAGG_TARGET), inputlops
+										.get(Statement.GAGG_GROUPS), DataType.MATRIX,
 								get_valueType());
 	
 						// the dimensions of "combine" would be same as that of the
 						// input data
 						combine.getOutputParameters().setDimensions(
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_dim1(),
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_dim2(),
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_rows_in_block(),
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.get_cols_in_block(), 
-								getInput().get(_paramIndexMap.get("target"))
+								getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET))
 										.getNnz());
 	
 						// add the combine lop to parameter list, with a new name
 						// "combinedinput"
-						inputlops.put("combinedinput", combine);
-						inputlops.remove("target");
-						inputlops.remove("groups");
+						inputlops.put(GroupedAggregate.COMBINEDINPUT, combine);
+						inputlops.remove(Statement.GAGG_TARGET);
+						inputlops.remove(Statement.GAGG_GROUPS);
 	
 					}
 					GroupedAggregate grp_agg = new GroupedAggregate(inputlops,

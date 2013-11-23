@@ -1,15 +1,14 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2014
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.parser;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-
-/**
- * IBM Confidential
- * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
- * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
- */
 
 public abstract class Statement 
 {
@@ -80,6 +79,18 @@ public abstract class Statement
 	public static final String BOOLEAN_VALUE_TYPE = "boolean";
 	public static final String INT_VALUE_TYPE = "int";
 	public static final String STRING_VALUE_TYPE = "string";
+	
+	// String constants related to Grouped Aggregate parameters
+	public static final String GAGG_TARGET  = "target";
+	public static final String GAGG_GROUPS  = "groups";
+	public static final String GAGG_WEIGHTS = "weights";
+	public static final String GAGG_FN      = "fn";
+	public static final String GAGG_FN_SUM      = "sum";
+	public static final String GAGG_FN_COUNT    = "count";
+	public static final String GAGG_FN_MEAN     = "mean";
+	public static final String GAGG_FN_VARIANCE = "variance";
+	public static final String GAGG_FN_CM       = "centralmoment";
+	public static final String GAGG_FN_CM_ORDER = "order";
 	
 	public abstract boolean controlStatement();
 	

@@ -91,19 +91,19 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
-			cst1 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
+			cst1 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE, input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
-			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
-			cst2 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral()).getDoubleValue();
+			cst2 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE, input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
 			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
-			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap);
 			break;
 		

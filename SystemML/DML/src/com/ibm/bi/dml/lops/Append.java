@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,12 +25,6 @@ public class Append extends Lop
 		init(input1, input2, input3, dt, vt, et);
 	}
 	
-	public Append(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
-	{
-		super(Lop.Type.Append, dt, vt);		
-		init(input1, input2, input3, dt, vt, ExecType.MR);
-	}
-	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) 
 	{
 		this.addInput(input1);
@@ -47,12 +41,7 @@ public class Append extends Lop
 		boolean definesMRJob = false;
 		
 		if ( et == ExecType.MR ) {
-			//confirm this
 			lps.addCompatibility(JobType.GMR);
-			
-			//TODO MB @Shirish: please review; disabled compatibility to reblock because even with 'setupDistributedCache' 
-			//        (and partitioning information) in ReblockMR, this fails due to matrix block vs matrix cell
-			//lps.addCompatibility(JobType.REBLOCK);
 			this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
@@ -79,44 +68,22 @@ public class Append extends Lop
 	//....in CP
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) throws LopsException
 	{
-		String offsetString;
-		String offsetLabel = this.getInputs().get(2).getOutputParameters().getLabel();
-	
-		if (getExecType() == ExecType.MR ) {
-			if (this.getInputs().get(2).getExecLocation() == ExecLocation.Data
-				&& ((Data) this.getInputs().get(2)).isLiteral())
-				offsetString = "" + offsetLabel;
-			else
-				offsetString = "##" + offsetLabel + "##";
-		}
-		else {
-			offsetString = "" + offsetLabel;
-		}
-	
 		StringBuilder sb = new StringBuilder();
 		sb.append( this.lps.execType );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( "append" );
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() ); 
+		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input_index2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() ); 
+		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output_index );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() ); 
+		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( offsetString );
+		sb.append( this.prepOutputOperand(output_index+"") );
 		
 		return sb.toString();
 	}

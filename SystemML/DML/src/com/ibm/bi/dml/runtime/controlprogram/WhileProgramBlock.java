@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
@@ -113,9 +114,17 @@ public class WhileProgramBlock extends ProgramBlock
 					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
 			}
 			else {
-				
-				ScalarObject scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN);
-				
+				// TODO: Doug: how do we differentiate between literals and variables?
+				ScalarObject scalarResult = null;
+				Data resultData = ec.getVariable(_predicateResultVar);
+				if ( resultData == null ) {
+					// resultvar is a literal (can it be of any value type other than BOOLEAN??) 
+					scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN, true);
+				}
+				else {
+					scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN, false);
+				}
+								
 				if( scalarResult instanceof BooleanObject ){
 					//default case
 					result = (BooleanObject) scalarResult;

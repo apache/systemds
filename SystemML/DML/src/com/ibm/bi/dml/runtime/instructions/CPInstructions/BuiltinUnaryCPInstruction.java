@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -52,12 +52,11 @@ public class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 		if( parts.length==4 ) //print, print2
 		{
 			opcode = parts[0];
-			boolean literal = Boolean.parseBoolean(parts[3]);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
-			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str, literal);
+			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, str);
 		}
 		else //2+1, general case
 		{

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -50,7 +50,7 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// 1) Obtain data objects associated with inputs 
-		ScalarObject so = ec.getScalarInput(input1.get_name(), input1.get_valueType());
+		ScalarObject so = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 		ScalarObject sores = null;
 		
 		// 2) Compute the result value & make an appropriate data object 

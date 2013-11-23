@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -93,24 +93,6 @@ public class PickByCount extends Lop
 	public String getInstructions(int input_index1, int input_index2, int output_index) 
 		throws LopsException
 	{
-		if ( operation == OperationTypes.RANGEPICK ) {
-			// check the scalar input
-			if ( this.getInputs().get(1).get_dataType() == DataType.SCALAR ) {
-				String valueLabel = this.getInputs().get(1).getOutputParameters().getLabel();
-				String valueString = "";
-
-				/**
-				 * if it is a literal, copy val, else surround with the label with
-				 * ## symbols. these will be replaced at runtime.
-				 */
-				if(this.getInputs().get(1).getExecLocation() == ExecLocation.Data && 
-						((Data)this.getInputs().get(1)).isLiteral())
-					valueString = "" + valueLabel;
-				else
-					valueString = "##" + valueLabel + "##";
-				return getInstructions(""+input_index1, valueString, ""+output_index);
-			}
-		}
 		return getInstructions(""+input_index1, ""+input_index2, ""+output_index);
 
 	}
@@ -125,47 +107,46 @@ public class PickByCount extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		
-		String opString = new String ("");
-		if ( operation == OperationTypes.VALUEPICK)
+		String opString = null;
+		switch(operation) {
+		case VALUEPICK:
 			opString = (inMemoryInput ? "inmem-valuepick" : "valuepick");
-		else if ( operation == OperationTypes.RANGEPICK ) {
-			//opString = "rangepick";
+			break;
+		case RANGEPICK:
 			opString = (inMemoryInput ? "inmem-rangepick" : "rangepick");
-			if ( this.getInputs().get(1).get_dataType() != DataType.SCALAR  )
+			if ( getInputs().get(1).get_dataType() != DataType.SCALAR  )
 				throw new LopsException(this.printErrorLocation() + "In PickByCount Lop, Unexpected input datatype " + this.getInputs().get(1).get_dataType() + " for rangepick: expecting a SCALAR.");
-		}
-		else if ( operation == OperationTypes.IQM ) {
+			break;
+		case IQM:
 			if ( !inMemoryInput ) {
 				throw new LopsException(this.printErrorLocation() + "Pick.IQM in can only execute in Control Program on in-memory matrices.");
 			}
 			opString = "inmem-iqm";
-		}
-		else
+			break;
+		
+		default:
 			throw new LopsException(this.printErrorLocation() + "Invalid operation specified for PickByCount: " + operation);
+				
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
 		
 		sb.append( opString );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType() );
+		
+		if ( getInputs().get(1).get_dataType() == DataType.SCALAR ) 
+			sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
+		else {
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+		}
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output));
 
 		return sb.toString();
 	}
@@ -183,17 +164,11 @@ public class PickByCount extends Lop
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( "inmem-iqm" );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( input );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).get_valueType() );
+		
+		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( this.prepOutputOperand(output) );
 		
 		return sb.toString();
 	}

@@ -865,7 +865,7 @@ public class MRJobInstruction extends Instruction
 	{
 		this.dimsUnknownFilePrefix.replaceAll(pattern, replace);
 		
-		if( getJobType() == JobType.RAND )
+		if( getJobType() == JobType.DATAGEN )
 		{
 			//update string representation (because parsing might fail due to pending instruction patching)
 			String rndinst = getIv_randInstructions();

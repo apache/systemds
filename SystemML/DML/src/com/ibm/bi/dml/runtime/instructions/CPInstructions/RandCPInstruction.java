@@ -115,7 +115,7 @@ public class RandCPInstruction extends UnaryCPInstruction
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase("Rand") ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 12 );
+			InstructionUtils.checkNumFields ( str, 10 );
 		}
 		else if ( opcode.equalsIgnoreCase("seq") ) {
 			method = DataGenMethod.SEQ;
@@ -130,20 +130,20 @@ public class RandCPInstruction extends UnaryCPInstruction
 
 		if ( method == DataGenMethod.RAND ) {
 			long rows = -1, cols = -1;
-	        if (!s[3].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
-			   	rows = Double.valueOf(s[3]).longValue();
+	        if (!s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+			   	rows = Double.valueOf(s[1]).longValue();
 	        }
-	        if (!s[4].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
-	        	cols = Double.valueOf(s[4]).longValue();
+	        if (!s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+	        	cols = Double.valueOf(s[2]).longValue();
 	        }
 			
-			int rpb = Integer.parseInt(s[5]);
-			int cpb = Integer.parseInt(s[6]);
-			double minValue = Double.parseDouble(s[7]);
-			double maxValue = Double.parseDouble(s[8]);
-			double sparsity = Double.parseDouble(s[9]);
-			long seed = Long.parseLong(s[10]);
-			String pdf = s[11];
+			int rpb = Integer.parseInt(s[3]);
+			int cpb = Integer.parseInt(s[4]);
+			double minValue = Double.parseDouble(s[5]);
+			double maxValue = Double.parseDouble(s[6]);
+			double sparsity = Double.parseDouble(s[7]);
+			long seed = Long.parseLong(s[8]);
+			String pdf = s[9];
 			
 			return new RandCPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, str);
 		}

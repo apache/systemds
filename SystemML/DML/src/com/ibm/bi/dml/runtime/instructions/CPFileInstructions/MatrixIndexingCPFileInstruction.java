@@ -92,10 +92,10 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		String opcode = InstructionUtils.getOpCode( instString );
-		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT).getLongValue();
+		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT, rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT, rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT, colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT, colUpper.isLiteral()).getLongValue();
 		MatrixObject mo = (MatrixObject) ec.getVariable(input1.get_name());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 

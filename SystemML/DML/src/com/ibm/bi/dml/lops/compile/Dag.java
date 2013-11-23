@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -26,28 +26,26 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.DataGen;
+import com.ibm.bi.dml.lops.Data.OperationTypes;
 import com.ibm.bi.dml.lops.FunctionCallCP;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.Lop.Type;
+import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.OutputParameters;
+import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.lops.PartitionLop;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.lops.Data.OperationTypes;
-import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.Lop.Type;
-import com.ibm.bi.dml.lops.OutputParameters.Format;
 import com.ibm.bi.dml.meta.PartitionParams;
 import com.ibm.bi.dml.parser.Expression;
-import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -55,11 +53,11 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
@@ -541,8 +539,8 @@ public class Dag<N extends Lop>
 				if ( jt == JobType.GMR ) {
 					// if "node" (in this case, a group lop) has any inputs from RAND 
 					// then add it to RAND job. Otherwise, create a GMR job
-					if (hasChildNode(node, arr.get(JobType.RAND.getId()) )) {
-						arr.get(JobType.RAND.getId()).add(node);
+					if (hasChildNode(node, arr.get(JobType.DATAGEN.getId()) )) {
+						arr.get(JobType.DATAGEN.getId()).add(node);
 						// we should NOT call 'addChildren' because appropriate
 						// child nodes would have got added to RAND job already
 					} else {
@@ -910,7 +908,7 @@ public class Dag<N extends Lop>
 					if (hasMRJobChildNode(node, execNodes)) {
 						// "node" must NOT be queued when node=group and the child that defines job is Rand
 						// this is because "group" can be pushed into the "Rand" job.
-						if (! (node.getType() == Lop.Type.Grouping && getMRJobChildNode(node,execNodes).getType() == Lop.Type.RandLop) ) {
+						if (! (node.getType() == Lop.Type.Grouping && getMRJobChildNode(node,execNodes).getType() == Lop.Type.DataGen) ) {
 							LOG.trace(indent + "Queueing node "
 										+ node.toString() + " (code 4)");
 
@@ -1329,13 +1327,14 @@ public class Dag<N extends Lop>
 
 				String inst_string = "";
 
-				// Lops with arbitrary number of inputs (ParameterizedBuiltin, Aggregate)
+				// Lops with arbitrary number of inputs (ParameterizedBuiltin, GroupedAggregate, DataGen)
 				// are handled separately, by simply passing ONLY the output variable to getInstructions()
 				if (node.getType() == Lop.Type.ParameterizedBuiltin
 						|| node.getType() == Lop.Type.GroupedAgg 
-						|| (node.getType() == Lop.Type.RandLop && ((DataGen)node).getDataGenMethod() == DataGenMethod.SEQ)){
+						|| node.getType() == Lop.Type.DataGen ){ 
 					inst_string = node.getInstructions(node.getOutputParameters().getLabel());
 				} 
+				
 				// Lops with arbitrary number of inputs and outputs are handled
 				// separately as well by passing arrays of inputs and outputs
 				else if ( node.getType() == Lop.Type.FunctionCallCP )
@@ -1475,7 +1474,7 @@ public class Dag<N extends Lop>
 				else {
 					// generate a temp label to hold the value that is read from HDFS
 					if ( node.get_dataType() == DataType.SCALAR ) {
-						node.getOutputParameters().setLabel("Var" + var_index.getNextID());
+						node.getOutputParameters().setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 						String io_inst = node.getInstructions(node.getOutputParameters().getLabel(), 
 								node.getOutputParameters().getFile_name());
 						inst.add(CPInstructionParser.parseSingleInstruction(io_inst));
@@ -2346,6 +2345,24 @@ public class Dag<N extends Lop>
   		return OutputInfo.outputInfoToString(getOutputInfo(node, false));
   	}
 */  	
+	
+	public String prepareAssignVarInstruction(Lop input, Lop node) {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(ExecType.CP);
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append("assignvar");
+		sb.append(Lop.OPERAND_DELIMITOR);
+
+		sb.append( input.prepScalarInputOperand(ExecType.CP) );
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		sb.append(node.prepOutputOperand());
+
+		return sb.toString();
+	}
+
 	/**
 	 * Method to setup output filenames and outputInfos, and to generate related instructions
 	 * @throws DMLRuntimeException 
@@ -2370,7 +2387,7 @@ public class Dag<N extends Lop>
 		if (node.getExecLocation() != ExecLocation.Data ) 
 		{
 			if (node.get_dataType() == DataType.SCALAR) {
-				oparams.setLabel("Var" + var_index.getNextID());
+				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 				out.setVarName(oparams.getLabel());
 				out.addLastInstruction(VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel()));
 			} 
@@ -2383,7 +2400,7 @@ public class Dag<N extends Lop>
 						+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
 						+ ProgramConverter.CP_ROOT_THREAD_ID
 						+ Lop.FILE_SEPARATOR + "temp" + job_id.getNextID());
-				oparams.setLabel("mVar" + var_index.getNextID());
+				oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
 
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
@@ -2413,15 +2430,7 @@ public class Dag<N extends Lop>
 			if ( node.get_dataType() == DataType.SCALAR ) {
 				// generate assignment operations for final and transient writes
 				if ( oparams.getFile_name() == null ) {
-					String io_inst = "CP" + Lop.OPERAND_DELIMITOR + "assignvar"
-						+ Lop.OPERAND_DELIMITOR
-						+ node.getInputs().get(0).getOutputParameters().getLabel()
-						+ Lop.DATATYPE_PREFIX + node.getInputs().get(0).get_dataType()
-						+ Lop.VALUETYPE_PREFIX + node.getInputs().get(0).get_valueType()
-						+ Lop.OPERAND_DELIMITOR
-						+ node.getOutputParameters().getLabel()
-						+ Lop.DATATYPE_PREFIX + node.get_dataType()
-						+ Lop.VALUETYPE_PREFIX + node.get_valueType();
+					String io_inst = prepareAssignVarInstruction(node.getInputs().get(0), node);
 					out.addLastInstruction(CPInstructionParser.parseSingleInstruction(io_inst));
 				}
 				else {
@@ -2704,7 +2713,7 @@ public class Dag<N extends Lop>
 		}
 		
 		// In case of RAND job, instructions are defined in the input file
-		if (jt == JobType.RAND)
+		if (jt == JobType.DATAGEN)
 			randInstructions = inputs;
 		
 		int[] start_index = new int[1];
@@ -2734,7 +2743,7 @@ public class Dag<N extends Lop>
 		 */
 		
 		// 
-		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.RAND ) {
+		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN ) {
 			for (int i=0; i < inputInfos.size(); i++)
 				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
 					cellModeOverride = true;
@@ -2754,7 +2763,7 @@ public class Dag<N extends Lop>
 		
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("    Input strings: " + inputs.toString());
-			if (jt == JobType.RAND)
+			if (jt == JobType.DATAGEN)
 				LOG.trace("    Rand instructions: " + getCSVString(randInstructions));
 			if (jt == JobType.GMR)
 				LOG.trace("    RecordReader instructions: " + getCSVString(recordReaderInstructions));
@@ -2829,7 +2838,7 @@ public class Dag<N extends Lop>
 		mr.setRecordReaderInstructions(getCSVString(recordReaderInstructions));
 		mr.setMapperInstructions(getCSVString(mapperInstructions));
 		
-		if ( jt == JobType.RAND )
+		if ( jt == JobType.DATAGEN )
 			mr.setRandInstructions(getCSVString(randInstructions));
 		
 		// set shuffle instructions
@@ -3444,7 +3453,7 @@ public class Dag<N extends Lop>
 			HashMap<N, Integer> nodeIndexMapping, ArrayList<String> inputLabels, ArrayList<Lop> inputLops)
 			throws LopsException {
 		// treat rand as an input.
-		if (node.getType() == Type.RandLop && execNodes.contains(node)
+		if (node.getType() == Type.DataGen && execNodes.contains(node)
 				&& !nodeIndexMapping.containsKey(node)) {
 			numRows.add(node.getOutputParameters().getNum_rows());
 			numCols.add(node.getOutputParameters().getNum_cols());

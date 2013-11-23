@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -64,7 +64,6 @@ public class UnaryCP extends Lop
 	public String getInstructions(String input, String output)
 			throws LopsException {
 		String opString = new String(getExecType() + Lop.OPERAND_DELIMITOR);
-		ValueType vtype = this.getInputs().get(0).get_valueType();
 
 		switch (operation) {
 		case NOT:
@@ -133,15 +132,12 @@ public class UnaryCP extends Lop
 			break;
 		case NROW:
 			opString += "nrow";
-			vtype = ValueType.STRING;
 			break;
 		case NCOL:
 			opString += "ncol";
-			vtype = ValueType.STRING;
 			break;
 		case LENGTH:
 			opString += "length";
-			vtype = ValueType.STRING;
 			break;
 
 		default:
@@ -153,26 +149,11 @@ public class UnaryCP extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( opString );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( vtype );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
 		
-		//check for print literal
-		Lop inputLop = getInputs().get(0);
-		if( (operation == OperationTypes.PRINT || operation == OperationTypes.PRINT2) &&
-			inputLop instanceof Data )
-		{
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( ((Data)inputLop).isLiteral() );
-		}
+		sb.append(getInputs().get(0).prepScalarInputOperand(getExecType()));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
 

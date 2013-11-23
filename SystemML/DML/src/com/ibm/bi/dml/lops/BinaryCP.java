@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,10 +13,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.*;
-
- 
- 
-
 
 /**
  * Lop to perform binary scalar operations. Both inputs must be scalars.
@@ -58,9 +54,6 @@ public class BinaryCP extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 
-		/*
-		 * This lop is executed in control program.
-		 */
 		boolean breaksAlignment = false; // this field does not carry any meaning for this lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
@@ -70,9 +63,7 @@ public class BinaryCP extends Lop
 
 	@Override
 	public String toString() {
-
 		return "Operation: " + operation;
-
 	}
 	
 	public OperationTypes getOperationType(){
@@ -82,105 +73,88 @@ public class BinaryCP extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
 	{
-		String opString = new String (getExecType() + Lop.OPERAND_DELIMITOR);
-		
-		ValueType vtype_input1 = this.getInputs().get(0).get_valueType();
+		String opString = null;
 		
 		switch ( operation ) {
 		
 		/* Arithmetic */
 		case ADD:
-			opString += "+"; break;
+			opString = "+"; break;
 		case SUBTRACT:
-			opString += "-"; break;
+			opString = "-"; break;
 		case MULTIPLY:
-			opString += "*"; break;
+			opString = "*"; break;
 		case DIVIDE:
-			opString += "/"; break;
+			opString = "/"; break;
 		case MODULUS:
-			opString += "%%"; break;	
+			opString = "%%"; break;	
 		case POW:	
-			opString += "^"; break;
+			opString = "^"; break;
 			
 		/* Relational */
 		case LESS_THAN:
-			opString += "<"; break;
+			opString = "<"; break;
 		case LESS_THAN_OR_EQUALS:
-			opString += "<="; break;
+			opString = "<="; break;
 		case GREATER_THAN:
-			opString += ">"; break;
+			opString = ">"; break;
 		case GREATER_THAN_OR_EQUALS:
-			opString += ">="; break;
+			opString = ">="; break;
 		case EQUALS:
-			opString += "=="; break;
+			opString = "=="; break;
 		case NOT_EQUALS:
-			opString += "!="; break;
+			opString = "!="; break;
 		
 		/* Boolean */
 		case AND:
-			opString += "&&"; break;
+			opString = "&&"; break;
 		case OR:
-			opString += "||"; break;
+			opString = "||"; break;
 		
 		/* Builtin Functions */
 		case LOG:
-			opString += "log"; break;
+			opString = "log"; break;
 		case MIN:
-			opString += "min"; break;
+			opString = "min"; break;
 		case MAX:
-			opString += "max"; break;
+			opString = "max"; break;
 		
 		case PRINT:
-			opString += "print"; break;
+			opString = "print"; break;
 			
 		case IQSIZE:
-			opString += "iqsize"; 
-			vtype_input1 = ValueType.STRING; // first input is a filename
+			opString = "iqsize"; 
 			break;
 		
 		case MATMULT:
-			opString += "ba+*";
+			opString = "ba+*";
 			break;
 			
 		case SEQINCR:
-			opString += "seqincr";
+			opString = "seqincr";
 			break;
-			
-/*			String mminst = opString + OPERAND_DELIMITOR + 
-			input1 + DATATYPE_PREFIX + getInputs().get(0).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(0).get_valueType() + OPERAND_DELIMITOR + 
-			input2 + DATATYPE_PREFIX + getInputs().get(1).get_dataType()  + VALUETYPE_PREFIX + getInputs().get(1).get_valueType() + OPERAND_DELIMITOR + 
-	        output + DATATYPE_PREFIX + get_dataType() + VALUETYPE_PREFIX + get_valueType() ;
-
-			return mminst;
-*/
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for BinaryScalar operator: " + operation);
 		}
 		
 		StringBuilder sb = new StringBuilder();
+		
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
 		sb.append( opString );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( vtype_input1 );
+		
+		sb.append( getInputs().get(0).prepScalarInputOperand(getExecType()) );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).get_dataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).get_valueType());
+		
+		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( get_dataType() ); 
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( get_valueType() );
+		
+		sb.append( prepOutputOperand(output));
 
 		return sb.toString();
-		
 	}
 	
 	@Override
@@ -192,9 +166,4 @@ public class BinaryCP extends Lop
 			return SimpleInstType.Scalar;
 		}
 	}
-
-
 }
-
-
-

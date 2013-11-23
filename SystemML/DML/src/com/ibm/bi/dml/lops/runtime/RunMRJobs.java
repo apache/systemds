@@ -116,7 +116,7 @@ public class RunMRJobs
 						inst.getOutputs(), inst.getOutputInfos() );
 				 break;
 
-			case RAND:
+			case DATAGEN:
 				ret = DataGenMR.runJob(inst, 
 						rdInst.split(Lop.INSTRUCTION_DELIMITOR), mapInst, aggInst, otherInst, 
 						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
@@ -501,7 +501,7 @@ public class RunMRJobs
 		
 		switch ( jt ) {
 		case GMR:
-		case RAND:
+		case DATAGEN:
 			if ( compareInputDimensions(stats, 3) )
 				return ExecMode.LOCAL;
 			break;

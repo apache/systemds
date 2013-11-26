@@ -261,7 +261,8 @@ TOKEN :
  
  	// The name of an optree or an existing annotation type.
  	| <ID : ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
- 	| <DOLLAR_ID : "$"(["0"-"9"])* >
+ 	| <DOLLAR_ID : "$"["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <DOLLAR_ID_POS : "$"(["0"-"9"])+ >
 
  	// A number with no decimal point -- minus sign is a separate token
  	| <INTEGER : (["0"-"9"])+>
@@ -1710,11 +1711,11 @@ Identifier IdentifierOrConstant() :
 {
 	(
 
-		t1 = <DOLLAR_ID>
+		(t1 = <DOLLAR_ID> | t1 = <DOLLAR_ID_POS>)
 		{
 	
-			///////// BEGIN handle variable param ///////////////
-		
+			///////// BEGIN handle variable param /////////////////////////////
+
 			String argVal = commandArgs.get(t1.image);
 
 			if (argVal == null)			{			    LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");

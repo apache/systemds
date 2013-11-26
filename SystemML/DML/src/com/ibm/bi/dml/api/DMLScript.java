@@ -107,7 +107,8 @@ public class DMLScript
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
 			+ "          <config_filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n"
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-			+ "    1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
+			+ "    each argument can either be named-argument of form name=value, where value will replace $name in DML script"
+			+ "    OR unnamed-argument, where 1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
 			+ "<args-list>: (optional) args to DML script \n" ;
 			
 	public DMLScript (){
@@ -501,19 +502,46 @@ public class DMLScript
 	//Process the optional script arguments provided by the user to run with the DML script
 	private void processOptionalScriptArgs(String... scriptArguments) throws LanguageException{
 		
+		boolean usesPositionDollarArgs = false;
+		boolean usesNamedDollarArgs = false;
+		
 		if (scriptArguments != null){
 			int index = 1;
 			for (String arg : scriptArguments){
 				if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
 					arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
 					arg.equalsIgnoreCase("-exec") ||
-					arg.startsWith("-config=")){
-					resetExecutionOptions();
-					throw new LanguageException("-args must be the final argument for DMLScript!");
-			}
+					arg.startsWith("-config="))
+				{
+						resetExecutionOptions();
+						throw new LanguageException("-args must be the final argument for DMLScript!");
+				}
+				if(arg.contains("=")){
+					// CASE: named argument argName=argValue -- must add <argName, argValue> pair to _argVals
+					usesNamedDollarArgs = true;
+					if (usesPositionDollarArgs == true){
+						throw new LanguageException("all arguments passed using -args must either be named (e.g., -args arg1=5, arg2=foo, referenced as $arg1 and $arg2 in DML script) or unnamed (e.g, -args 5 foo, referenced as $1 and $2 in DML script");
+					}
+					String[] argPieces = arg.split("=");
+					if(argPieces.length != 2)
+						throw new LanguageException("argName=argValue passed using -args cannot contain '=' character in argName or argValue");
+					
+					String varNameRegex = "^[a-zA-Z]([a-zA-Z0-9_])*$";
+					if (!argPieces[0].matches(varNameRegex))
+						throw new LanguageException("argName " + argPieces[0] + " must be a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
 						
-				_argVals.put("$"+index ,arg);
-				index++;
+					_argVals.put("$"+argPieces[0],argPieces[1]);
+					index++;
+				}
+				else {
+					// CASE: unnamed argument argName 
+					usesPositionDollarArgs = true;
+					if (usesNamedDollarArgs == true){
+						throw new LanguageException("all arguments passed using -args must either be named (e.g., -args arg1=5, arg2=foo, referenced as $arg1 and $arg2 in DML script) or unnamed (e.g, -args 5 foo, referenced as $1 and $2 in DML script");
+					} 
+					_argVals.put("$"+index ,arg);
+					index++;
+				}
 			}
 		}
 	}

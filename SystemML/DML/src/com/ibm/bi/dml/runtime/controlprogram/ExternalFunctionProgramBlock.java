@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -607,7 +607,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 		if (outputs.size() != returnFunc.getNumFunctionOutputs()) {
 			throw new PackageRuntimeException(
-					"Function outputs do not match with declaration");
+					"Number of function outputs ("+returnFunc.getNumFunctionOutputs()+") " +
+					"does not match with declaration ("+outputs.size()+").");
 		}
 
 		// iterate over each output and verify that type matches
@@ -626,7 +627,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 						|| !(tokens.get(2).compareTo(
 								getMatrixValueTypeString(m.getValueType())) == 0)) {
 					throw new PackageRuntimeException(
-							"Function output does not match with declaration");
+							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
 				// add result to variableMapping
@@ -652,7 +653,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 						|| !tokens.get(2).equals(
 								getScalarValueTypeString(s.getScalarType()))) {
 					throw new PackageRuntimeException(
-							"Function output does not match with declaration");
+							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
 				// allocate and set appropriate object based on type
@@ -676,7 +677,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					break;
 				default:
 					throw new PackageRuntimeException(
-							"Unknown scalar object type");
+							"Unknown scalar value type '"+type+"' of output '"+outputs.get(i)+"'.");
 				}
 
 				//this.getVariables().put(tokens.get(1), scalarObject);
@@ -687,7 +688,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			if (returnFunc.getFunctionOutput(i).getType() == Type.Object) {
 				if (!tokens.get(0).equals(getFIODataTypeString(Type.Object))) {
 					new PackageRuntimeException(
-							"Function output does not match with declaration");
+							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
 				throw new PackageRuntimeException(
@@ -697,7 +698,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			}
 
 			throw new PackageRuntimeException(
-					"Should never come here -- unknown output type");
+					"Unknown data type '"+returnFunc.getFunctionOutput(i).getType()+"' " +
+					"of output '"+outputs.get(i)+"'.");
 		}
 	}
 

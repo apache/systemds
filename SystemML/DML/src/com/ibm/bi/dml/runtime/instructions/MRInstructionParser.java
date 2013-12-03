@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -121,6 +121,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "^2"    , MRINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
+		String2MRInstructionType.put( "*2"    , MRINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		// String2InstructionType.put( "sl"    , MRINSTRUCTION_TYPE.Scalar);
 
 		// REORG Instruction Opcodes 
@@ -265,6 +267,9 @@ public class MRInstructionParser extends InstructionParser
 		
 		case Sort: //workaround for dummy MR sort instruction
 			return (MRInstruction)UnaryInstruction.parseInstruction(str);
+		
+		case CSVReblock:
+			return (MRInstruction)CSVReblockInstruction.parseInstruction(str);
 			
 		case CSVWrite:
 			return (MRInstruction)CSVWriteInstruction.parseInstruction(str);

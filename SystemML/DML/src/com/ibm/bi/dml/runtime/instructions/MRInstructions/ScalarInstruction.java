@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,9 +21,11 @@ import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
 import com.ibm.bi.dml.runtime.functionobjects.NotEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
+import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
@@ -73,7 +75,10 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		} 
 		else if ( opcode.equalsIgnoreCase("*") ) {
 			return new ScalarInstruction(new RightScalarOperator(Multiply.getMultiplyFnObject(), cst), in, out, str);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("*2") ) {
+			return new ScalarInstruction(new RightScalarOperator(Multiply2.getMultiply2FnObject(), cst), in, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			return new ScalarInstruction(new RightScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
@@ -85,6 +90,9 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		} 
 		else if ( opcode.equalsIgnoreCase("^") ) {
 			return new ScalarInstruction(new RightScalarOperator(Power.getPowerFnObject(), cst), in, out, str);
+		}
+		else if ( opcode.equalsIgnoreCase("^2") ) {
+			return new ScalarInstruction(new RightScalarOperator(Power2.getPower2FnObject(), cst), in, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new ScalarInstruction(new RightScalarOperator(Builtin.getBuiltinFnObject("max"), cst), in, out, str);
@@ -110,6 +118,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		else if ( opcode.equalsIgnoreCase("!=") ) {
 			return new ScalarInstruction(new RightScalarOperator(NotEqualsReturnDouble.getNotEqualsReturnDoubleFnObject(), cst), in, out, str);
 		}
+		
 		
 		return null;
 	}

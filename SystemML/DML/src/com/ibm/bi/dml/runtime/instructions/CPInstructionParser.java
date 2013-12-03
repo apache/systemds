@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -83,6 +83,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "/"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "%%"   , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "^"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
+		String2CPInstructionType.put( "^2"    , CPINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
+		String2CPInstructionType.put( "*2"    , CPINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPINSTRUCTION_TYPE.BooleanBinary);

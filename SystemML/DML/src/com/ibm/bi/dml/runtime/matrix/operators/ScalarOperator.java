@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,6 +11,9 @@ package com.ibm.bi.dml.runtime.matrix.operators;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
+import com.ibm.bi.dml.runtime.functionobjects.Power;
+import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 
@@ -27,7 +30,9 @@ public class ScalarOperator  extends Operator
 		fn=p;
 		constant=cst;
 		//as long as (0 op v)=0, then op is sparsesafe
-		if(fn instanceof Multiply || fn instanceof And)
+		if( fn instanceof Multiply || fn instanceof Multiply2 ||
+			fn instanceof Power || fn instanceof Power2 ||	
+		    fn instanceof And                                     ) 
 			sparseSafe=true;
 		else
 			sparseSafe=false;

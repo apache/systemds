@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -76,6 +76,10 @@ public class BinaryOp extends Hop
 
 	public OpOp2 getOp() {
 		return op;
+	}
+	
+	public void setOp(OpOp2 iop) {
+		 op = iop;
 	}
 	
 	public Lop constructLops() throws HopsException {
@@ -383,9 +387,21 @@ public class BinaryOp extends Hop
 
 					// One operand is Matrix and the other is scalar
 					ExecType et = optFindExecType();
+					
+					//select specific operator implementations
+					com.ibm.bi.dml.lops.Unary.OperationTypes ot = null;
+					Hop right = getInput().get(1);
+					if( op==OpOp2.POW && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
+						ot = com.ibm.bi.dml.lops.Unary.OperationTypes.POW2;
+					else if( op==OpOp2.MULT && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
+						ot = com.ibm.bi.dml.lops.Unary.OperationTypes.MULTIPLY2;
+					else //general case
+						ot = HopsOpOp2LopsU.get(op);
+					
+					
 					Unary unary1 = new Unary(getInput().get(0).constructLops(),
-							getInput().get(1).constructLops(), HopsOpOp2LopsU
-									.get(op), get_dataType(), get_valueType(), et);
+								   getInput().get(1).constructLops(), ot, get_dataType(), get_valueType(), et);
+				
 					unary1.getOutputParameters().setDimensions(get_dim1(),
 							get_dim2(), get_rows_in_block(),
 							get_cols_in_block(), getNnz());

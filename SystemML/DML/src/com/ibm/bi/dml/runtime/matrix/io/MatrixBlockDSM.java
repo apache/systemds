@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013, 2014
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -1123,8 +1123,9 @@ public class MatrixBlockDSM extends MatrixValue
 			}
 		}else
 		{
-			if(denseBlock==null)
-				return;
+			//early abort possible since sparsesafe
+			if(denseBlock==null) 
+				return; 
 			int limit=rlen*clen;
 			nonZeros=0;
 			for(int i=0; i<limit; i++)
@@ -1165,8 +1166,10 @@ public class MatrixBlockDSM extends MatrixValue
 				sparseRows[r].truncate(pos);
 			}
 			
-		}else
+		}
+		else
 		{
+			//early abort possible since sparsesafe
 			if(denseBlock==null)
 				return;
 			int limit=rlen*clen;
@@ -1183,25 +1186,62 @@ public class MatrixBlockDSM extends MatrixValue
 	public void denseScalarOperationsInPlace(ScalarOperator op) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		double v;
-		for(int r=0; r<rlen; r++)
-			for(int c=0; c<clen; c++)
+		
+		if( sparse ) //SPARSE MATRIX
+		{
+			double v;
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++)
+				{
+					v=op.executeScalar(quickGetValue(r, c));
+					quickSetValue(r, c, v);
+				}
+		}
+		else //DENSE MATRIX
+		{
+			//early abort not possible because not sparsesafe (e.g., A+7)
+			if(denseBlock==null)
+				allocateDenseBlock();
+				
+			int limit=rlen*clen;
+			nonZeros=0;
+			for(int i=0; i<limit; i++)
 			{
-				v=op.executeScalar(quickGetValue(r, c));
-				quickSetValue(r, c, v);
-			}	
+				denseBlock[i]=op.executeScalar(denseBlock[i]);
+				if(denseBlock[i]!=0)
+					nonZeros++;
+			}
+		}
 	}
 	
 	public void denseUnaryOperationsInPlace(UnaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+			throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		double v;
-		for(int r=0; r<rlen; r++)
-			for(int c=0; c<clen; c++)
+		if( sparse ) //SPARSE MATRIX
+		{
+			double v;
+			for(int r=0; r<rlen; r++)
+				for(int c=0; c<clen; c++)
+				{
+					v=op.fn.execute(quickGetValue(r, c));
+					quickSetValue(r, c, v);
+				}
+		}
+		else//DENSE MATRIX
+		{
+			//early abort not possible because not sparsesafe
+			if(denseBlock==null)
+				allocateDenseBlock();
+			
+			int limit=rlen*clen;
+			nonZeros=0;
+			for(int i=0; i<limit; i++)
 			{
-				v=op.fn.execute(quickGetValue(r, c));
-				quickSetValue(r, c, v);
-			}	
+				denseBlock[i]=op.fn.execute(denseBlock[i]);
+				if(denseBlock[i]!=0)
+					nonZeros++;
+			}
+		}
 	}
 	
 	private static MatrixBlockDSM checkType(MatrixValue block) throws DMLUnsupportedOperationException

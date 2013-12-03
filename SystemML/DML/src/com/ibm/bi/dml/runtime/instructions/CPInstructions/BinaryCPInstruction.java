@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,10 +19,12 @@ import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.Power;
+import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
@@ -112,18 +114,20 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 			return new BinaryOperator(Minus.getMinusFnObject());
 		else if(opcode.equalsIgnoreCase("*"))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
+		else if ( opcode.equalsIgnoreCase("*2") ) 
+			return new BinaryOperator(Multiply2.getMultiply2FnObject());
 		else if(opcode.equalsIgnoreCase("/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
 		else if(opcode.equalsIgnoreCase("%%"))
 			return new BinaryOperator(Modulus.getModulusFnObject());
 		else if(opcode.equalsIgnoreCase("^"))
 			return new BinaryOperator(Power.getPowerFnObject());
-		else if ( opcode.equalsIgnoreCase("max") ) {
+		else if ( opcode.equalsIgnoreCase("^2") )
+			return new BinaryOperator(Power2.getPower2FnObject());
+		else if ( opcode.equalsIgnoreCase("max") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		}
-		else if ( opcode.equalsIgnoreCase("min") ) {
+		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
@@ -187,6 +191,14 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
 			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
+		}
+		
+		//operation that only exist for performance purposes
+		else if ( opcode.equalsIgnoreCase("*2") ) {
+			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), default_constant);
+		} 
+		else if ( opcode.equalsIgnoreCase("^2") ){
+			return new RightScalarOperator(Power2.getPower2FnObject(), default_constant);
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);

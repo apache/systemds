@@ -98,7 +98,7 @@ public class DMLScript
 	private static final String PATH_TO_SRC = "./";
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? (-args)? <args-list>? \n" 
+			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? [-args | -nvargs]? <args-list>? \n" 
 			+ " -f: <filename> will be interpreted as a filename path + \n"
 			+ "     <filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n" 
 			+ " -s: <filename> will be interpreted as a DML script string \n"
@@ -107,9 +107,11 @@ public class DMLScript
 			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
 			+ "          <config_filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n"
 			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-			+ "    each argument can either be named-argument of form name=value, where value will replace $name in DML script"
-			+ "    OR unnamed-argument, where 1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
-			+ "<args-list>: (optional) args to DML script \n" ;
+			+ "    	each argument must be an unnamed-argument, where 1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
+			+ " -nvargs: (optional) parameterize DML script with contents of [args list], ALL args after -nvargs flag \n"
+			+ "		each argument must be be named-argument of form argName=argValue, where value will replace $argName in DML script"
+			+ "    	argName must be a valid DML variable name (start with letter, contain only letters, numbers, or underscores)" 
+			+ " <args-list>: (optional) args to DML script \n" ;
 			
 	public DMLScript (){
 		
@@ -260,14 +262,15 @@ public class DMLScript
 	 * @throws IOException 
 	 * @throws DMLException 
 	 */
-	public boolean executeScript (String scriptPathName, String... scriptArguments) throws IOException, ParseException, DMLException{
-		boolean success = executeScript(scriptPathName, new Configuration(), (Properties)null, scriptArguments);
+	public boolean executeScript (String scriptPathName, boolean hasNamedArgs, String... scriptArguments) throws IOException, ParseException, DMLException{
+		boolean success = executeScript(scriptPathName, new Configuration(), (Properties)null, hasNamedArgs, scriptArguments);
 		return success;
 	}
 	/**
 	 * executeScript: Execute a DML script, which is provided by the user as a file path to the script file.
 	 * @param scriptPathName Path to the DML script file
 	 * @param executionProperties DMLScript runtime and debug settings
+	 * @param hasNamedArgs boolean indicating if DMLScript has (optional) named arguments (of form argName=argValue)
 	 * @param scriptArguments Variant arguments provided by the user to run with the DML Script
 	 * @throws ParseException 
 	 * @throws IOException 
@@ -278,7 +281,7 @@ public class DMLScript
 	 * @throws LopsException 
 	 */
 
-	public boolean executeScript (String scriptPathName, Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+	public boolean executeScript (String scriptPathName, Configuration conf, Properties executionProperties, boolean hasNamedArgs, String... scriptArguments) throws IOException, ParseException, DMLException{
 		
 		VISUALIZE = false;
 		
@@ -336,7 +339,7 @@ public class DMLScript
 		
 		try {
 			processExecutionProperties(executionProperties);
-			processOptionalScriptArgs(scriptArguments);
+			processOptionalScriptArgs(hasNamedArgs, scriptArguments);
 		
 			LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + scriptPathName + "\n" 
 		                + "VISUALIZE: "  + VISUALIZE + "\n" 
@@ -384,7 +387,7 @@ public class DMLScript
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 */
-	public boolean executeScript (InputStream script,  Configuration conf, Properties executionProperties, String... scriptArguments) throws IOException, ParseException, DMLException{
+	public boolean executeScript (InputStream script,  Configuration conf, Properties executionProperties, boolean hasNamedArgs, String... scriptArguments) throws IOException, ParseException, DMLException{
 		VISUALIZE = false;
 		
 		String debug = conf.get("systemml.logging");
@@ -416,7 +419,7 @@ public class DMLScript
 		
 		try {
 			processExecutionProperties(executionProperties);
-			processOptionalScriptArgs(scriptArguments);
+			processOptionalScriptArgs(hasNamedArgs, scriptArguments);
 			LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + _dmlScriptString + "\n" 
                 + "VISUALIZE: "  + VISUALIZE + "\n" 
                 + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
@@ -424,8 +427,14 @@ public class DMLScript
 
 			if (_argVals.size() > 0) {
 				LOG.debug("Script arguments are: \n");
-				for (int i=1; i<= _argVals.size(); i++)
-					LOG.debug("Script argument $" + i + " = " + _argVals.get("$" + i) );
+				if (hasNamedArgs){
+					for (String key : _argVals.keySet())
+						LOG.debug("Script argument " + key + " = " + _argVals.get(key) );
+				}
+				else {
+					for (int i=1; i<= _argVals.size(); i++)
+						LOG.debug("Script argument $" + i + " = " + _argVals.get("$" + i) );
+				}	
 			}
 
 			run();
@@ -500,11 +509,8 @@ public class DMLScript
 	}
 	
 	//Process the optional script arguments provided by the user to run with the DML script
-	private void processOptionalScriptArgs(String... scriptArguments) throws LanguageException{
-		
-		boolean usesPositionDollarArgs = false;
-		boolean usesNamedDollarArgs = false;
-		
+	private void processOptionalScriptArgs(boolean hasNamedArgs, String... scriptArguments) throws LanguageException{
+			
 		if (scriptArguments != null){
 			int index = 1;
 			for (String arg : scriptArguments){
@@ -514,31 +520,31 @@ public class DMLScript
 					arg.startsWith("-config="))
 				{
 						resetExecutionOptions();
-						throw new LanguageException("-args must be the final argument for DMLScript!");
+						throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
 				}
-				if(arg.contains("=")){
+				if(hasNamedArgs){
 					// CASE: named argument argName=argValue -- must add <argName, argValue> pair to _argVals
-					usesNamedDollarArgs = true;
-					if (usesPositionDollarArgs == true){
-						throw new LanguageException("all arguments passed using -args must either be named (e.g., -args arg1=5, arg2=foo, referenced as $arg1 and $arg2 in DML script) or unnamed (e.g, -args 5 foo, referenced as $1 and $2 in DML script");
-					}
 					String[] argPieces = arg.split("=");
-					if(argPieces.length != 2)
-						throw new LanguageException("argName=argValue passed using -args cannot contain '=' character in argName or argValue");
+					if(argPieces.length < 2)
+						throw new LanguageException("for -nvargs option, elements in arg list must be named and have form argName=argValue");
+					String argName = argPieces[0];
+					String argValue = new String();
+					for (int jj=1; jj < argPieces.length; jj++){
+						argValue += argPieces[jj]; 
+					}
 					
 					String varNameRegex = "^[a-zA-Z]([a-zA-Z0-9_])*$";
-					if (!argPieces[0].matches(varNameRegex))
-						throw new LanguageException("argName " + argPieces[0] + " must be a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
+					if (!argName.matches(varNameRegex))
+						throw new LanguageException("argName " + argName + " must be a valid variable name in DML. Valid variable names in DML start with upper-case or lower-case letter, and contain only letters, digits, or underscores");
 						
-					_argVals.put("$"+argPieces[0],argPieces[1]);
+					_argVals.put("$"+argName,argValue);
 					index++;
 				}
 				else {
-					// CASE: unnamed argument argName 
-					usesPositionDollarArgs = true;
-					if (usesNamedDollarArgs == true){
-						throw new LanguageException("all arguments passed using -args must either be named (e.g., -args arg1=5, arg2=foo, referenced as $arg1 and $arg2 in DML script) or unnamed (e.g, -args 5 foo, referenced as $1 and $2 in DML script");
-					} 
+					// CASE: unnamed argument -- use position in arg list for name
+					//if (arg.contains("=")){
+					//	LOG.info("Argument " + arg + " contains an '=', which is not treated as an argument name");
+					//}
 					_argVals.put("$"+index ,arg);
 					index++;
 				}
@@ -579,6 +585,7 @@ public class DMLScript
 		Properties executionProperties = new Properties();
 		String[] scriptArgs = null;
 		int i = 2;
+		boolean hasNamedArgs = false;
 		while (i<otherArgs.length){
 			if (otherArgs[i].equalsIgnoreCase("-v") || otherArgs[i].equalsIgnoreCase("-visualize")) {
 				executionProperties.put(EXECUTION_PROPERTIES.VISUALIZE.toString(), "true");
@@ -601,7 +608,9 @@ public class DMLScript
 				executionProperties.put(EXECUTION_PROPERTIES.CONFIG.toString(), otherArgs[i].substring(8).replaceAll("\"", "")); 
 			}
 			// handle the args to DML Script -- rest of args will be passed here to 
-			else if (otherArgs[i].startsWith("-args")) {
+			else if (otherArgs[i].startsWith("-args") || otherArgs[i].startsWith("-nvargs")) {
+				if (otherArgs[i].startsWith("-nvargs"))
+					hasNamedArgs = true;
 				i++;
 				scriptArgs = new String[otherArgs.length - i];
 				int j = 0;
@@ -616,11 +625,11 @@ public class DMLScript
 			i++;
 		}
 		if (fromFile){
-			success = d.executeScript(script, conf, executionProperties, scriptArgs);
+			success = d.executeScript(script, conf, executionProperties, hasNamedArgs, scriptArgs);
 		}
 		else {
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			success = d.executeScript(is, conf, executionProperties, scriptArgs);
+			success = d.executeScript(is, conf, executionProperties, hasNamedArgs, scriptArgs);
 		}
 		
 		if (!success){

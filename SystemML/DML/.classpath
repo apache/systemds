@@ -32,5 +32,6 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-2.2.0-mr1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/slf4j-api-1.7.5.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/slf4j-log4j12-1.7.5.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/conf"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

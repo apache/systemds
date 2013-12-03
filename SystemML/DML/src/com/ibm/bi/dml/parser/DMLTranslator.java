@@ -44,6 +44,7 @@ import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TertiaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -397,469 +398,19 @@ public class DMLTranslator
 		//sb.set_lops(lops);
 	}
 	
-	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) throws ParseException, LanguageException, HopsException {
-		/*
-		 * Compute memory estimates for all the hops. These estimates are used
-		 * subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
-		 */
-		//if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
-			this.resetHopsDAGVisitStatus(dmlp);
-			this.refreshMemEstimates(dmlp);
-		//}
+	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) 
+		throws ParseException, LanguageException, HopsException 
+	{
+		//apply hop rewrites (reinitialize with current set of flags)
+		ProgramRewriter rewriter = new ProgramRewriter();
+		rewriter.rewriteProgramHopDAGs(dmlp);
 		
-		/**
-		 * Rule 1: Eliminate for Transient Write DataHops to have no parents
-		 * Solution: Move parent edges of Transient Write Hop to parent of
-		 * its child 
-		 * Reason: Transient Write not being a root messes up
-		 * analysis for Lop's to Instruction translation (according to Amol)
-		 */
-		
-		this.resetHopsDAGVisitStatus(dmlp); 
-		eval_rule_RehangTransientWriteParents(dmlp);
-		
-		/**
-		 * Rule: BlockSizeAndReblock. For all statement blocks, determine
-		 * "optimal" block size, and place reblock Hops. For now, we just
-		 * use BlockSize 1K x 1K and do reblock after Persistent Reads and
-		 * before Persistent Writes.
-		 */
-
+		// Compute memory estimates for all the hops. These estimates are used
+		// subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
 		this.resetHopsDAGVisitStatus(dmlp);
-		eval_rule_BlockSizeAndReblock(dmlp);
-
-		/**
-		 * Rule: CommonSubexpressionElimination. For all statement blocks, 
-		 * eliminate common subexpressions within dags by merging equivalent
-		 * operators (same input, equal parameters) bottom-up. For the moment,
-		 * this only applies within a dag, later this should be extended across
-		 * statements block (global, inter-procedure). 
-		 */
-
-		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
-		{
-			//Timing time = new Timing();
-			//time.start();
-			this.resetHopsDAGVisitStatus(dmlp);
-			eval_rule_CommonSubexpressionElimination(dmlp);
-			//System.out.println("CSE: "+time.stop());
-		}
-		
-		/**
-		 * Rule: Constant Folding. For all statement blocks, 
-		 * eliminate simple binary expressions of literals within dags by 
-		 * computing them and replacing them with a new Literal op once.
-		 * For the moment, this only applies within a dag, later this should be 
-		 * extended across statements block (global, inter-procedure). 
-		 */
-
-		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
-		{
-			//Timing time = new Timing();
-			//time.start();
-			this.resetHopsDAGVisitStatus(dmlp);
-			eval_rule_ConstantFolding(dmlp);
-			//System.out.println("CSE: "+time.stop());
-			
-		}
-		
-		/**
-		 * Rule: Determine the optimal order of execution for a chain of
-		 * matrix multiplications Solution: Classic Dynamic Programming
-		 * Approach Currently, the approach based only on matrix dimensions
-		 * Goal: To reduce the number of computations in the run-time
-		 * (map-reduce) layer
-		 */
-
-		// Assumption: VISIT_STATUS of all Hops is set to NOTVISITED
-		this.resetHopsDAGVisitStatus(dmlp);
-		eval_rule_OptimizeMMChains(dmlp);		
+		this.refreshMemEstimates(dmlp);
 	}
 	
-	
-	// handle rule rule_OptimizeMMChains
-	private void eval_rule_OptimizeMMChains(DMLProgram dmlp) throws HopsException, LanguageException {
-		
-		// for each namespace, handle function program blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String functionName : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,functionName);
-				eval_rule_OptimizeMMChains(fsblock);	
-			}
-		}
-		
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
-			eval_rule_OptimizeMMChains(current);
-		}
-	}
-	
-	private void eval_rule_OptimizeMMChains(StatementBlock current) throws HopsException {
-		
-		if (current instanceof FunctionStatementBlock){
-			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : fstmt.getBody())
-				eval_rule_OptimizeMMChains(sb);
-		}
-		
-		else if (current instanceof WhileStatementBlock){
-			WhileStatement wstmt = (WhileStatement)((WhileStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody())
-				eval_rule_OptimizeMMChains(sb);
-		}
-		
-		else if (current instanceof IfStatementBlock){
-			IfStatement istmt = (IfStatement)((IfStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : istmt.getIfBody())
-				eval_rule_OptimizeMMChains(sb);
-			
-			for (StatementBlock sb : istmt.getElseBody())
-				eval_rule_OptimizeMMChains(sb);
-		}
-			
-		else if (current instanceof ForStatementBlock){
-			ForStatement wstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody()){
-				eval_rule_OptimizeMMChains(sb);
-			}
-		}
-
-		else {
-			// handle general case
-			if (current.get_hops() != null){	
-				for (Hop h : current.get_hops()) {
-					if (h.get_visited() != Hop.VISIT_STATUS.DONE) {
-						// Find the optimal order for the chain whose result is the current HOP
-						h.rule_OptimizeMMChains();
-					}
-				}
-			}
-		} // end else	
-	} // end method
-	
-	
-	// handle rule rule_RehangTransientWriteParents
-	private void eval_rule_RehangTransientWriteParents(DMLProgram dmlp) throws LanguageException, HopsException {
-		
-		// for each namespace, handle function program blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				eval_rule_RehangTransientWriteParents(fsblock);
-			}
-		}
-		
-		// handle regular statement blocks in "main" function
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
-			eval_rule_RehangTransientWriteParents(current);
-		}
-	}
-	
-	private void eval_rule_RehangTransientWriteParents(StatementBlock current) throws HopsException {
-
-		if (current instanceof FunctionStatementBlock){
-			FunctionStatement fstmt = (FunctionStatement)current.getStatement(0);
-			for (StatementBlock sb : fstmt.getBody()){
-				eval_rule_RehangTransientWriteParents(sb);
-			}
-		}
-		
-		else if (current instanceof WhileStatementBlock){
-			WhileStatement wstmt = (WhileStatement)((WhileStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody()){
-				eval_rule_RehangTransientWriteParents(sb);
-			}
-		}
-		
-		else if (current instanceof IfStatementBlock){
-			IfStatement istmt = (IfStatement)((IfStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : istmt.getIfBody()){
-				eval_rule_RehangTransientWriteParents(sb);
-			}
-			for (StatementBlock sb : istmt.getElseBody()){
-				eval_rule_RehangTransientWriteParents(sb);
-			}	
-		}
-		
-		else if (current instanceof ForStatementBlock){
-			ForStatement wstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody()){
-				eval_rule_RehangTransientWriteParents(sb);
-			}
-		}
-		
-		else {
-			// handle general case
-			if (current.get_hops() != null){
-				for (Hop h : current.get_hops()) {
-					h.rule_RehangTransientWriteParents(current);
-				}
-			}
-		} // end else
-		
-	} // end method
-	
-	
-	// handle rule rule_BlockSizeAndReblock
-	private void eval_rule_BlockSizeAndReblock(DMLProgram dmlp) throws LanguageException, HopsException{
-		
-		// for each namespace, handle function statement blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()){
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				eval_rule_BlockSizeAndReblock(fsblock);
-			}
-		}
-		
-		// handle regular statement blocks in "main" method
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock current = dmlp.getStatementBlock(i);
-			eval_rule_BlockSizeAndReblock(current);
-		}
-	}
-	
-	private void eval_rule_BlockSizeAndReblock(StatementBlock current) throws HopsException{
-		
-		if (current instanceof FunctionStatementBlock){
-			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : fstmt.getBody()){
-				eval_rule_BlockSizeAndReblock(sb);
-			}
-		}
-		else if (current instanceof WhileStatementBlock){
-			WhileStatement wstmt = (WhileStatement)((WhileStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody()){
-				eval_rule_BlockSizeAndReblock(sb);
-			}
-		}
-		
-		else if (current instanceof IfStatementBlock){
-			IfStatement istmt = (IfStatement)((IfStatementBlock)current).getStatement(0);
-			
-			for (StatementBlock sb : istmt.getIfBody()){
-				eval_rule_BlockSizeAndReblock(sb);
-			}
-			
-			for (StatementBlock sb : istmt.getElseBody()){
-				eval_rule_BlockSizeAndReblock(sb);
-			}
-			
-		}
-		
-		else if (current instanceof ForStatementBlock){
-			ForStatement wstmt = (ForStatement)((ForStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : wstmt.getBody()){
-				eval_rule_BlockSizeAndReblock(sb);
-			}
-		}
-		
-		else {
-			// handle general case
-			if (current.get_hops() != null){
-				for (Hop h : current.get_hops()) {
-					h.rule_BlockSizeAndReblock(DMLTranslator.DMLBlockSize);
-				}
-			}
-		} // end else
-		
-	} // end method
-	
-	
-	/////
-	// handle rule rule_CommonSubexpressionElimination
-	
-	/**
-	 * 
-	 * @param dmlp
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
-	private void eval_rule_CommonSubexpressionElimination(DMLProgram dmlp) 
-		throws LanguageException, HopsException
-	{	
-		// for each namespace, handle function statement blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet())
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
-			{
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				eval_rule_CommonSubexpressionElimination(fsblock);
-			}
-		
-		// handle regular statement blocks in "main" method
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) 
-		{
-			StatementBlock current = dmlp.getStatementBlock(i);
-			eval_rule_CommonSubexpressionElimination(current);
-		}
-	}
-		
-	private void eval_rule_CommonSubexpressionElimination(StatementBlock current) 
-		throws HopsException
-	{	
-		if (current instanceof FunctionStatementBlock)
-		{
-			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : fstmt.getBody())
-				eval_rule_CommonSubexpressionElimination(sb);
-		}
-		else if (current instanceof WhileStatementBlock)
-		{
-			WhileStatementBlock wsb = (WhileStatementBlock) current;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			eval_rule_CommonSubexpressionElimination(wsb.getPredicateHops());
-			for (StatementBlock sb : wstmt.getBody())
-				eval_rule_CommonSubexpressionElimination(sb);
-		}	
-		else if (current instanceof IfStatementBlock)
-		{
-			IfStatementBlock isb = (IfStatementBlock) current;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			eval_rule_CommonSubexpressionElimination(isb.getPredicateHops());
-			for (StatementBlock sb : istmt.getIfBody())
-				eval_rule_CommonSubexpressionElimination(sb);
-			for (StatementBlock sb : istmt.getElseBody())
-				eval_rule_CommonSubexpressionElimination(sb);
-		}
-		else if (current instanceof ForStatementBlock)
-		{
-			ForStatementBlock fsb = (ForStatementBlock) current;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			eval_rule_CommonSubexpressionElimination(fsb.getFromHops());
-			eval_rule_CommonSubexpressionElimination(fsb.getToHops());
-			eval_rule_CommonSubexpressionElimination(fsb.getIncrementHops());
-			for (StatementBlock sb : fstmt.getBody())
-				eval_rule_CommonSubexpressionElimination(sb);
-		}
-		else 
-			eval_rule_CommonSubexpressionElimination(current.get_hops());
-	}
-	
-	private void eval_rule_CommonSubexpressionElimination(ArrayList<Hop> hops) 
-		throws HopsException 
-	{
-		if( hops == null )
-			return;
-		
-		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>();
-		for (Hop h : hops) 
-		{
-			int cseMerged = h.rule_CommonSubexpressionElimination_MergeLeafs(dataops, literalops);
-			h.resetVisitStatus();
-			cseMerged = h.rule_CommonSubexpressionElimination(dataops, literalops);
-			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
-		}
-		
-		//note: postprocessing checks for debug only
-		//for (Hop h : hops) {
-		//	h.resetVisitStatus();
-		//	h.checkParentChildPointers();
-		//}
-	}
-	
-	private void eval_rule_CommonSubexpressionElimination(Hop hops) 
-		throws HopsException 
-	{
-		if( hops == null )
-			return;
-		
-		HashMap<String, Hop> dataops = new HashMap<String, Hop>();
-		HashMap<String, Hop> literalops = new HashMap<String, Hop>();
-		int cseMerged = hops.rule_CommonSubexpressionElimination_MergeLeafs(dataops, literalops);
-		hops.resetVisitStatus();
-		cseMerged = hops.rule_CommonSubexpressionElimination(dataops, literalops);
-		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
-	}
-
-	/////
-	// handle rule rule_ConstantFolding
-	
-	/**
-	 * 
-	 * @param dmlp
-	 * @throws LanguageException
-	 * @throws HopsException
-	 */
-	private void eval_rule_ConstantFolding(DMLProgram dmlp) 
-		throws LanguageException, HopsException
-	{	
-		// for each namespace, handle function statement blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet())
-			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet())
-			{
-				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				eval_rule_ConstantFolding(fsblock);
-			}
-		
-		// handle regular statement blocks in "main" method
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) 
-		{
-			StatementBlock current = dmlp.getStatementBlock(i);
-			eval_rule_ConstantFolding(current);
-		}
-	}
-		
-	private void eval_rule_ConstantFolding(StatementBlock current) 
-		throws HopsException
-	{	
-		if (current instanceof FunctionStatementBlock)
-		{
-			FunctionStatement fstmt = (FunctionStatement)((FunctionStatementBlock)current).getStatement(0);
-			for (StatementBlock sb : fstmt.getBody())
-				eval_rule_ConstantFolding(sb);
-		}
-		else if (current instanceof WhileStatementBlock)
-		{
-			WhileStatementBlock wsb = (WhileStatementBlock) current;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			eval_rule_ConstantFolding(wsb.getPredicateHops());
-			for (StatementBlock sb : wstmt.getBody())
-				eval_rule_ConstantFolding(sb);
-		}	
-		else if (current instanceof IfStatementBlock)
-		{
-			IfStatementBlock isb = (IfStatementBlock) current;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			eval_rule_ConstantFolding(isb.getPredicateHops());
-			for (StatementBlock sb : istmt.getIfBody())
-				eval_rule_ConstantFolding(sb);
-			for (StatementBlock sb : istmt.getElseBody())
-				eval_rule_ConstantFolding(sb);
-		}
-		else if (current instanceof ForStatementBlock)
-		{
-			ForStatementBlock fsb = (ForStatementBlock) current;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			eval_rule_ConstantFolding(fsb.getFromHops());
-			eval_rule_ConstantFolding(fsb.getToHops());
-			eval_rule_ConstantFolding(fsb.getIncrementHops());
-			for (StatementBlock sb : fstmt.getBody())
-				eval_rule_ConstantFolding(sb);
-		}
-		else 
-			eval_rule_ConstantFolding(current.get_hops());
-	}
-	
-	private void eval_rule_ConstantFolding(ArrayList<Hop> hops) 
-		throws HopsException 
-	{
-		if( hops == null )
-			return;
-
-		for (Hop h : hops) 
-			h.rule_ConstantFolding();
-	}
-	
-	private void eval_rule_ConstantFolding(Hop hops) 
-		throws HopsException 
-	{
-		if( hops == null )
-			return;
-
-		hops.rule_ConstantFolding();
-	}
-
 	//TODO Take nested blocks into account
 	public void printSQLLops(DMLProgram dmlp) throws ParseException, HopsException, LanguageException
 	{
@@ -2332,8 +1883,8 @@ public class DMLTranslator
 			DataOp read = null;
 			
 			if (var == null) {
-				LOG.error(var.printErrorLocation() + "variable " + varName + " not live variable for conditional predicate");
-				throw new ParseException(var.printErrorLocation() + "variable " + varName + " not live variable for conditional predicate");
+				LOG.error("variable " + varName + " not live variable for conditional predicate");
+				throw new ParseException("variable " + varName + " not live variable for conditional predicate");
 			} else {
 				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
@@ -2384,9 +1935,9 @@ public class DMLTranslator
 			predicateHops = processExpression(cp.getPredicate(), null, _ids);
 		}
 		if (passedSB instanceof WhileStatementBlock)
-			((WhileStatementBlock)passedSB).set_predicate_hops(predicateHops);
+			((WhileStatementBlock)passedSB).setPredicateHops(predicateHops);
 		else if (passedSB instanceof IfStatementBlock)
-			((IfStatementBlock)passedSB).set_predicate_hops(predicateHops);
+			((IfStatementBlock)passedSB).setPredicateHops(predicateHops);
 	}
 
 	
@@ -2424,8 +1975,8 @@ public class DMLTranslator
 					DataIdentifier var = passedSB.liveIn().getVariable(varName);
 					DataOp read = null;
 					if (var == null) {
-						LOG.error(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
-						throw new ParseException(var.printErrorLocation() + "variable '" + varName + "' is not available for iterable predicate");
+						LOG.error("variable '" + varName + "' is not available for iterable predicate");
+						throw new ParseException("variable '" + varName + "' is not available for iterable predicate");
 					}
 					else {
 						long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();

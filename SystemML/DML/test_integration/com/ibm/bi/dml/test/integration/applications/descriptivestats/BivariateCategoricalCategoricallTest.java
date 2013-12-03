@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -72,8 +72,8 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		
 		loadTestConfiguration(config);
 
-        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
+        double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 3);
+        double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, 7);
         round(A);
         round(B);
         

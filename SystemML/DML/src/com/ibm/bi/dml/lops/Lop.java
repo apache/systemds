@@ -535,6 +535,26 @@ public abstract class Lop
 	}
 
 	/**
+	 * Method to prepare instruction operand with given parameters.
+	 * 
+	 * @param label
+	 * @param dt
+	 * @param vt
+	 * @return
+	 */
+	public String prepOperand(String label, DataType dt, ValueType vt, boolean literal) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(label);
+		sb.append(Lop.DATATYPE_PREFIX);
+		sb.append(dt);
+		sb.append(Lop.VALUETYPE_PREFIX);
+		sb.append(vt);
+		sb.append(Lop.LITERAL_PREFIX);
+		sb.append(literal);
+		return sb.toString();
+	}
+
+	/**
 	 * Method to prepare instruction operand with given label. Data type
 	 * and Value type are derived from Lop's properties.
 	 * 

@@ -355,9 +355,10 @@ public class Data extends Lop
 				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 			
 			sb.append( OPERAND_DELIMITOR );
-			sb.append ( prepOperand(input1, get_dataType(), get_valueType()) );
+			sb.append ( getInputs().get(0).prepInputOperand(input1) );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING) );
+			// TODO: appropriate literal flag must be passed for the second operand, when dynamic read/write functionality is added.
+			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, true) );
 
 			// attach outputInfo in case of matrices
 			OutputParameters oparams = getOutputParameters();
@@ -386,7 +387,7 @@ public class Data extends Lop
 					fmt = "textcell";
 				}
 				
-				sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING));
+				sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
 				
 				if(oparams.getFormat() == Format.CSV) {
 					Data headerLop = (Data) getNamedInputLop(Statement.DELIM_HAS_HEADER_ROW);

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -367,8 +367,8 @@ public abstract class CostEstimator
 			{				
 				String[] parts = InstructionUtils.getInstructionParts(st.nextToken());
 				byte outIndex = Byte.parseByte(parts[2]);
-				long rlen = parts[3].contains("##")?-1:Long.parseLong(parts[3]);
-				long clen = parts[4].contains("##")?-1:Long.parseLong(parts[4]);
+				long rlen = parts[3].contains("##")?-1:UtilFunctions.parseToLong(parts[3]);
+				long clen = parts[4].contains("##")?-1:UtilFunctions.parseToLong(parts[4]);
 				long brlen = Long.parseLong(parts[5]);
 				long bclen = Long.parseLong(parts[6]);
 				long nnz = (long) (Double.parseDouble(parts[9]) * rlen * clen);

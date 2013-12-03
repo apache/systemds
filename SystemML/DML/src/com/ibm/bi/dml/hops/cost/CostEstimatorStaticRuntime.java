@@ -245,6 +245,12 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				type = 1;
 			attr = new String[]{String.valueOf(type)};
 		}	
+		if( opcode.equals("seq") )
+		{
+			vs[0] = _unknownStats;
+			vs[1] = _unknownStats;
+			vs[2] = stats[Integer.parseInt(parts[2])];
+		}	
 		else //general case
 		{
 			
@@ -254,7 +260,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			if( mrinst instanceof UnaryMRInstructionBase )
 			{
 				UnaryMRInstructionBase uinst = (UnaryMRInstructionBase) mrinst;
-				vs[0] = stats[ uinst.input ];
+				vs[0] = uinst.input>=0 ? stats[ uinst.input ] : _unknownStats;
 				vs[1] = _unknownStats;
 				vs[2] = stats[ uinst.output ];
 				
@@ -731,7 +737,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 				    return 0;	
 				    
-				case ArithmeticBinary: //opcodes: +, -, *, /, ^
+				case ArithmeticBinary: //opcodes: +, -, *, /, ^ (incl. ^2, *2)
 					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
 					if( optype.equals("+") || optype.equals("-") //sparse safe
 						&& ( leftSparse || rightSparse ) )
@@ -822,13 +828,18 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else
 						return DEFAULT_NFLOP_NOOP;
 			
-				case Rand: //opcodes: Rand 
-					switch(Integer.parseInt(args[0])) {
-						case 0: return DEFAULT_NFLOP_NOOP; //empty matrix
-						case 1: return d3m * d3n * DEFAULT_NFLOP_CP; //arrayfill
-						case 2: return d3m * d3n * DEFAULT_NFLOP_RAND + 
-							           d3m * d3n * d3s * (DEFAULT_NFLOP_RAND + 2);
+				case Rand: //opcodes: Rand, seq
+					if( optype.equals("Rand") ){
+						switch(Integer.parseInt(args[0])) {
+							case 0: return DEFAULT_NFLOP_NOOP; //empty matrix
+							case 1: return d3m * d3n * DEFAULT_NFLOP_CP; //arrayfill
+							case 2: return d3m * d3n * DEFAULT_NFLOP_RAND + 
+								           d3m * d3n * d3s * (DEFAULT_NFLOP_RAND + 2);
+						}
 					}
+					else //seq
+						return d3m * d3n * DEFAULT_NFLOP_CP;
+				
 				case External: //opcodes: extfunct
 					//note: should be invoked independently for multiple outputs
 					return d1m * d1n * d1s * DEFAULT_NFLOP_UNKNOWN;

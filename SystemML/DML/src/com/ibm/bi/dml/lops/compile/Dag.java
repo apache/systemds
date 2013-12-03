@@ -300,7 +300,7 @@ public class Dag<N extends Lop>
 				else {
 					if(labelNodeMapping.containsKey(node.getOutputParameters().getLabel())) 
 						// corresponding transient read exists (i.e., the variable is updated)
-						// in such a case, generate rmvar instruction so that OLD data gets delete
+						// in such a case, generate rmvar instruction so that OLD data gets deleted
 						labelNodeMapping.remove(node.getOutputParameters().getLabel());
 				}
 			}
@@ -2781,6 +2781,8 @@ public class Dag<N extends Lop>
 					rootNodes.elementAt(i), execNodes, shuffleInstructions, aggInstructionsReducer,
 					otherInstructionsReducer, nodeIndexMapping, start_index,
 					inputLabels, inputLops);
+			if ( resultIndex == -1)
+				throw new LopsException("Unexpected error in piggybacking!");
 			resultIndices.add(new Byte((byte) resultIndex));
 			
 			// setup output filenames and outputInfos and generate related instructions
@@ -3100,6 +3102,7 @@ public class Dag<N extends Lop>
 
 		/* Get instructions for aligned reduce and other lops below the reduce. */
 		if (node.getExecLocation() == ExecLocation.Reduce
+				|| node.getExecLocation() == ExecLocation.MapOrReduce
 				|| hasChildNode(node, execNodes, ExecLocation.MapAndReduce)) {
 
 			if (inputIndices.size() == 1) {
@@ -3345,7 +3348,9 @@ public class Dag<N extends Lop>
 		// to mapper instructions.
 		if ((node.getExecLocation() == ExecLocation.Map || node
 				.getExecLocation() == ExecLocation.MapOrReduce)
-				&& !hasChildNode(node, execNodes, ExecLocation.MapAndReduce)) {
+				&& !hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
+				&& !hasChildNode(node, execNodes, ExecLocation.Reduce)
+				) {
 			int output_index = max_input_index;
 
 			// cannot reuse index if this is true
@@ -3393,9 +3398,10 @@ public class Dag<N extends Lop>
 			if (node.getInputs().size() == 1)
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), output_index));
-			else if (node.getInputs().size() == 2)
+			else if (node.getInputs().size() == 2) {
 				instructionsInMapper.add(node.getInstructions(inputIndices
 						.get(0), inputIndices.get(1), output_index));
+			}
 			else if (node.getInputs().size() == 3)
 				instructionsInMapper.add(node.getInstructions(inputIndices.get(0), 
 															  inputIndices.get(1), 

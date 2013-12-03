@@ -248,6 +248,13 @@ public class Unary extends Lop
 		}
 	}
 	
+	@Override
+	public String getInstructions(int input_index, int output_index)
+			throws LopsException {
+		return getInstructions(""+input_index, ""+output_index);
+	}
+
+	@Override
 	public String getInstructions(String input1, String input2, String output) 
 		throws LopsException 
 	{
@@ -278,39 +285,53 @@ public class Unary extends Lop
 		return sb.toString();
 	}
 	
-	public String getInstructions(int input_index, int output_index)
-			throws LopsException {
-		return getInstructions(""+input_index, ""+output_index);
-	}
-
 	@Override
 	public String getInstructions(int inputIndex1, int inputIndex2,
 			int outputIndex) throws LopsException {
 		if (this.getInputs().size() == 2) {
 			// Unary operators with two inputs
 			// Determine the correct operation, depending on the scalar input
-
-			int scalarIndex = -1;
-			if (this.getInputs().get(0).get_dataType() == DataType.MATRIX)
+			int scalarIndex = -1, matrixIndex = -1;
+			String matrixLabel= null;
+			if (this.getInputs().get(0).get_dataType() == DataType.MATRIX) {
 				// inputIndex1 is matrix, and inputIndex2 is scalar
 				scalarIndex = 1;
-
+				matrixIndex = 1-scalarIndex;
+				matrixLabel = String.valueOf(inputIndex1);
+			}
 			else {
 				// inputIndex2 is matrix, and inputIndex1 is scalar
 				scalarIndex = 0;
+				matrixIndex = 1-scalarIndex;
+				matrixLabel = String.valueOf(inputIndex2); 
+				
+				// when the first operand is a scalar, setup the operation type accordingly
 				if (operation == OperationTypes.SUBTRACT)
 					operation = OperationTypes.SUBTRACTRIGHT;
 				else if (operation == OperationTypes.DIVIDE)
 					operation = OperationTypes.Over;
 			}
+			matrixIndex = 1-scalarIndex;
 
-			if (scalarIndex == 1) {
-				// second input is the scalar
-				return getInstructions(""+inputIndex1, ""+inputIndex2, ""+outputIndex);
-			} else {
-				// first input is the scalar
-				return getInstructions(""+inputIndex2, ""+inputIndex1, ""+outputIndex);
-			}
+			// Prepare the instruction
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			sb.append( Lop.OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			
+			// append the matrix operand
+			sb.append( getInputs().get(matrixIndex).prepInputOperand(matrixLabel));
+			sb.append( OPERAND_DELIMITOR );
+			
+			// append the scalar operand
+			sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append( this.prepOutputOperand(outputIndex+""));
+			
+			return sb.toString();
+			
 		} else {
 			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
 					+ this.getInputs().size() + ") for an Unary opration: "

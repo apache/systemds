@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -78,7 +78,7 @@ public class DataConverter
 	///////
 	
 	private class ReadProperties {
-		/* Properties common to all file formats */
+		// Properties common to all file formats 
 		String path;
 		long rlen, clen;
 		int brlen, bclen;
@@ -86,10 +86,7 @@ public class DataConverter
 		InputInfo inputInfo;
 		boolean localFS;
 		
-		/* Flag to indicate the input file is in MatrixMarket format */
-		//boolean matrixMarket;
-		
-		/* Properties specific to CSV files */
+		// Properties specific to CSV files
 		FileFormatProperties formatProperties;
 		
 		public ReadProperties() {
@@ -98,8 +95,6 @@ public class DataConverter
 			expectedSparsity = 0.1d;
 			inputInfo = null;
 			localFS = false;
-			
-			//matrixMarket = false;
 		}
 
 	}
@@ -123,16 +118,12 @@ public class DataConverter
 	}
 	
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication, FileFormatProperties formatProperties)
-	throws IOException
+			throws IOException
 	{
 		JobConf job = new JobConf();
 		Path path = new Path(dir);
 
 		//System.out.println("write matrix (sparse="+mat.isInSparseFormat()+") to HDFS: "+dir);
-		
-		//set the replication factor for the output
-		if( replication > 0 ) //otherwise: default 3
-			job.setInt("dfs.replication", replication);
 		
 		try
 		{
@@ -150,7 +141,7 @@ public class DataConverter
 			}
 			else if( outputinfo == OutputInfo.BinaryBlockOutputInfo )
 			{
-				writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block());
+				writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
 			}
 			else if ( outputinfo == OutputInfo.MatrixMarketOutputInfo ) 
 			{
@@ -346,20 +337,17 @@ public class DataConverter
 	 * @throws IOException
 	 */
 	public static MatrixBlock readMatrixFromHDFS(ReadProperties prop) 
-	throws IOException
+		throws IOException
 	{	
-		boolean sparse = prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT;
+		//determine target representation (sparse/dense)
+		boolean sparse = (    prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
+				           && prop.clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
 
 		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+prop.dir);
 		
 		long rlen = prop.rlen;
 		long clen = prop.clen;
 		InputInfo inputinfo = prop.inputInfo;
-		
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if ( clen <=MatrixBlock.SKINNY_MATRIX_TURN_POINT )
-			sparse = false;
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, (int)(prop.expectedSparsity*rlen*clen));
@@ -379,6 +367,7 @@ public class DataConverter
 			path = new Path(prop.path);
 			fs = FileSystem.get(job);
 		}
+		
 		if( !fs.exists(path) )	
 			throw new IOException("File "+prop.path+" does not exist on HDFS/LFS.");
 		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
@@ -998,20 +987,34 @@ public class DataConverter
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	private static void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
+	private static void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 		
-		//bound check for src block
+		// 1) create sequence file writer, with right replication factor 
+		// (config via 'dfs.replication' not possible since sequence file internally calls fs.getDefaultReplication())
+		SequenceFile.Writer writer = null;
+		if( replication > 0 ) //if replication specified (otherwise default)
+		{
+			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt("io.file.buffer.size", 4096),  
+					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());
+		}
+		else	
+		{
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
+		}
+		
+		// 2) bound check for src block
 		if( src.getNumRows() > rlen || src.getNumColumns() > clen )
 		{
 			throw new IOException("Matrix block [1:"+src.getNumRows()+",1:"+src.getNumColumns()+"] " +
 					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 		}
-		//reblock and write
+		
+		//3) reblock and write
 		try
 		{
 			MatrixIndexes indexes = new MatrixIndexes();

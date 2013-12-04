@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -78,6 +79,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 
 
 
@@ -198,7 +200,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean ALLOW_UNSCOPED_PARTITIONING = false;
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
-	public static final boolean FORCE_CP_ON_REMOTE_MR       = true;
+	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
+	public static final boolean LIVEVAR_AWARE_EXPORT        = true; //export only read variables according to live variable analysis
+ 	public static final boolean LIVEVAR_AWARE_CLEANUP       = true; //cleanup pinned variables according to live variable analysis
+	
 	
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_MR_results.dat"; 
@@ -554,6 +559,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		//reset state of shared input/result variables 
 		ec.unpinVariables(varList, varState);
 		
+		//cleanup unpinned shared variables
+		cleanupSharedVariables(ec, varState);
+		
+		
 		//set iteration var to TO value (+ increment) for FOR equivalence
 		iterVar = new IntObject( iterVarName, to.getIntValue() ); //consistent with for
 		ec.setVariable(iterVarName, iterVar);
@@ -871,19 +880,65 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void exportMatricesToHDFS( ExecutionContext ec ) 
 		throws CacheException 
 	{
-		for (String key : ec.getVariables().keySet() ) 
+		if( LIVEVAR_AWARE_EXPORT && _sb != null)
 		{
-			Data d = ec.getVariable(key);
-			if ( d.getDataType() == DataType.MATRIX )
+			//optimization to prevent unnecessary export of matrices
+			//export only variables that are read in the body
+			VariableSet varsRead = _sb.variablesRead();
+			for (String key : ec.getVariables().keySet() ) 
 			{
-				MatrixObject mo = (MatrixObject)d;
-				mo.exportData( _replicationExport );
+				Data d = ec.getVariable(key);
+				if (    d.getDataType() == DataType.MATRIX
+					 && varsRead.containsVariable(key)  )
+				{
+					MatrixObject mo = (MatrixObject)d;
+					mo.exportData( _replicationExport );
+				}
+			}
+		}
+		else
+		{
+			//export all matrices in symbol table
+			for (String key : ec.getVariables().keySet() ) 
+			{
+				Data d = ec.getVariable(key);
+				if ( d.getDataType() == DataType.MATRIX )
+				{
+					MatrixObject mo = (MatrixObject)d;
+					mo.exportData( _replicationExport );
+				}
 			}
 		}
 	}
 	
 	/**
-	 * Creates an new or partially recycled instance of a parallel worker. Therefore the symbol table, and child
+	 * 
+	 * @param ec
+	 * @param varState
+	 * @throws DMLRuntimeException
+	 */
+	private void cleanupSharedVariables( ExecutionContext ec, HashMap<String,Boolean> varState ) 
+		throws DMLRuntimeException 
+	{
+		if( LIVEVAR_AWARE_CLEANUP && _sb != null)
+		{
+			//cleanup shared variables after they are unpinned
+			VariableSet liveout = _sb.liveOut();
+			for( Entry<String, Boolean> var : varState.entrySet() ) 
+			{
+				String varname = var.getKey();
+				boolean unpinned = var.getValue();
+				//delete unpinned vars if not in liveout (similar like rmvar)
+				if( unpinned && !liveout.containsVariable(varname) )
+				{
+					VariableCPInstruction.processRemoveVariableInstruction(ec,varname);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Creates a new or partially recycled instance of a parallel worker. Therefore the symbol table, and child
 	 * program blocks are deep copied. Note that entries of the symbol table are not deep copied because they are replaced 
 	 * anyway on the next write. In case of recycling the deep copies of program blocks are recycled from previous 
 	 * executions of this parfor.
@@ -1025,6 +1080,15 @@ public class ParForProgramBlock extends ForProgramBlock
 		return dp;
 	}
 	
+	/**
+	 * 
+	 * @param prm
+	 * @param out
+	 * @param in
+	 * @param fname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname ) 
 		throws DMLRuntimeException 
 	{

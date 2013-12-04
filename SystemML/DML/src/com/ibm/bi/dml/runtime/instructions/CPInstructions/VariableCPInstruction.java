@@ -150,6 +150,11 @@ public class VariableCPInstruction extends CPInstruction
 		return false;
 	}
 	
+	public VariableCPInstruction()
+	{
+	
+	}
+	
 	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, int _arity, String istr )
 	{
 		super();
@@ -388,7 +393,7 @@ public class VariableCPInstruction extends CPInstruction
 	}
 
 	//private int getRefCount(ProgramBlock pb, String var, boolean breakIfMultipleRefs) {
-	private int getRefCount(ExecutionContext ec, Data d, boolean breakIfMultipleRefs) {
+	private static int getRefCount(ExecutionContext ec, Data d, boolean breakIfMultipleRefs) {
 		
 		//Data d = pb.getVariable(var);
 		
@@ -452,33 +457,8 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 			
 		case RemoveVariable:
+			processRemoveVariableInstruction(ec, input1.get_name());
 			
-			Data input1_data = ec.getVariable(input1.get_name());
-			
-			if ( input1_data == null ) {
-				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + input1.get_name() + ", while processing instruction " +this.toString());
-			}
-
-			// check if any other variable refers to the same Data object
-			int refCount = getRefCount(ec, input1_data, true);
-			if ( refCount == 1 ) {
-				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
-				
-				if ( input1_data instanceof MatrixObject ) {
-					// clean in-memory object
-					clearCachedMatrixObject( input1_data );
-					
-					if ( ((MatrixObject) input1_data).isFileExists() && ((MatrixObject) input1_data).isCleanupEnabled() )
-						// clean data on hdfs, if exists
-						cleanDataOnHDFS( input1_data );
-				}
-			}
-			else if ( refCount == 0 ) 
-				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
-
-			// remove variable from the program block
-			ec.removeVariable(input1.get_name());
-
 			break;
 			
 		case CopyVariable:
@@ -728,6 +708,44 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	/**
+	 * Remove variable instruction externalized as a static function in order to allow various 
+	 * cleanup procedures to use the same codepath as the actual rmVar instruction
+	 * 
+	 * @param ec
+	 * @param varname
+	 * @throws DMLRuntimeException
+	 */
+	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
+		throws DMLRuntimeException
+	{
+		Data input1_data = ec.getVariable(varname);
+		
+		if ( input1_data == null ) {
+			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmVar instruction.");
+		}
+
+		// check if any other variable refers to the same Data object
+		int refCount = getRefCount(ec, input1_data, true);
+		if ( refCount == 1 ) {
+			// no other variable in the symbol table points to the same Data object as that of input1.get_name()
+			
+			if ( input1_data instanceof MatrixObject ) {
+				// clean in-memory object
+				clearCachedMatrixObject( input1_data );
+				
+				if ( ((MatrixObject) input1_data).isFileExists() && ((MatrixObject) input1_data).isCleanupEnabled() )
+					// clean data on hdfs, if exists
+					cleanDataOnHDFS( input1_data );
+			}
+		}
+		else if ( refCount == 0 ) 
+			throw new DMLRuntimeException("Error while processing rmVar instruction: refCount=0 is unexpected!");
+
+		// remove variable from the program block
+		ec.removeVariable(varname);
+	}
+	
+	/**
 	 * Helper function to write CSV files to HDFS.
 	 * 
 	 * @param ec
@@ -831,7 +849,7 @@ public class VariableCPInstruction extends CPInstruction
 	 * @param op
 	 * @throws CacheException 
 	 */
-	public void clearCachedMatrixObject( Data d) 
+	private static void clearCachedMatrixObject( Data d) 
 		throws CacheException 
 	{
 		if ( d instanceof MatrixObject ) {
@@ -839,7 +857,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	private void cleanDataOnHDFS(Data d) 
+	private static void cleanDataOnHDFS(Data d) 
 			throws DMLRuntimeException {
 		if (d instanceof MatrixObject ) {
 			MatrixObject m = (MatrixObject) d;

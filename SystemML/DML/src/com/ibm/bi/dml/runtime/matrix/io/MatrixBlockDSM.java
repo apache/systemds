@@ -329,23 +329,32 @@ public class MatrixBlockDSM extends MatrixValue
 			return ( (double)m.getNonZeros()/(double)m.getNumRows()/(double)m.getNumColumns() < SPARCITY_TURN_POINT);
 	}
 	
-	public void init(double[][] arr, int r, int c) throws DMLRuntimeException {
-		/* This method is designed only for dense representation */
+	/**
+	 * NOTE: This method is designed only for dense representation.
+	 * 
+	 * @param arr
+	 * @param r
+	 * @param c
+	 * @throws DMLRuntimeException
+	 */
+	public void init(double[][] arr, int r, int c) 
+		throws DMLRuntimeException 
+	{	
+		//input checks 
 		if ( sparse )
 			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
+		if( r*c > rlen*clen )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() invoked with too large dimensions ("+r+","+c+") vs ("+rlen+","+clen+")");
 		
-		if ( denseBlock == null 
-				|| (denseBlock != null && denseBlock.length<rlen*clen) ) {
-			denseBlock=null;
-			denseBlock = new double[r*c];
-		}
+		//allocate or resize dense block
+		allocateDenseBlock();
 		
-		int ind = 0;
+		//copy and compute nnz in 1 pass
 		double lvalue = -1;
-		for(int i=0; i < r; i++) {
-			for(int j=0; j < c; j++) {
+		for(int i=0, ix=0; i < r; i++) {
+			for(int j=0; j < c; j++, ix++) {
 				lvalue = arr[i][j];
-				denseBlock[ind++] = lvalue;
+				denseBlock[ ix ] = lvalue;
 				if( lvalue!=0 )
 					nonZeros++;
 			}
@@ -5190,16 +5199,13 @@ public class MatrixBlockDSM extends MatrixValue
 
 	public MatrixBlockDSM getRandomSparseMatrixOLD(int rows, int cols, double sparsity, double min, double max, long seed)
 	{
-		sparse = (sparsity < SPARCITY_TURN_POINT);
-		//handle vectors specially
-		//if result is a column vector, use dense format, otherwise use the normal process to decide
-		if(cols<=SKINNY_MATRIX_TURN_POINT)
-			sparse=false;
+		sparse = (sparsity < SPARCITY_TURN_POINT && cols > SKINNY_MATRIX_TURN_POINT);
 		this.reset(rows, cols, sparse);
 		
 		//specific cases for efficiency
 		if ( min == 0.0 && max == 0.0 ) { //all zeros
 			// nothing to do here
+			sparse = (cols > SKINNY_MATRIX_TURN_POINT);
 			return this;
 		} 
 		else if( !sparse && sparsity==1.0d && min == max ) //equal values

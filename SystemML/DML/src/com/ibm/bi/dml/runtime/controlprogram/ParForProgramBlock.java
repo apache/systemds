@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -79,7 +78,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.VariableCPInstruction;
 
 
 
@@ -574,6 +572,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( String var : _variablesDPOriginal.keySet() )
 			{
 				MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
+				//TODO cleanup partitioned matrix
 				ec.setVariable(var, mo);
 			}
 		}
@@ -920,6 +919,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void cleanupSharedVariables( ExecutionContext ec, HashMap<String,Boolean> varState ) 
 		throws DMLRuntimeException 
 	{
+		//TODO needs as precondition a systematic treatment of persistent read information.
+		/*
 		if( LIVEVAR_AWARE_CLEANUP && _sb != null)
 		{
 			//cleanup shared variables after they are unpinned
@@ -928,13 +929,18 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				String varname = var.getKey();
 				boolean unpinned = var.getValue();
-				//delete unpinned vars if not in liveout (similar like rmvar)
+				String fprefix = ConfigurationManager.getConfig().getTextValue("scratch") 
+						         + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID();
+				
+				//delete unpinned vars if not in liveout (similar like rmvar) and not persistent input
 				if( unpinned && !liveout.containsVariable(varname) )
+					      
 				{
 					VariableCPInstruction.processRemoveVariableInstruction(ec,varname);
 				}
 			}
 		}
+		*/
 	}
 	
 	/**

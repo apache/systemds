@@ -32,9 +32,12 @@ public class ExecutionContext
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	
+	
 	//symbol table
 	private LocalVariableMap _variables;
 	
+	//SQL-specific (TODO should be separated)
 	private NetezzaConnector nzConnector;
 	private boolean debug;
 	ArrayList<SQLExecutionStatistics> statistics;
@@ -245,19 +248,33 @@ public class ExecutionContext
 	 */
 	public HashMap<String,Boolean> pinVariables(ArrayList<String> varList) 
 	{
+		//2-pass approach since multiple vars might refer to same matrix object
 		HashMap<String, Boolean> varsState = new HashMap<String,Boolean>();
 		
+		//step 1) get current information
 		for( String var : varList )
 		{
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 			{
-				//System.out.println("pin "+var);
 				MatrixObject mo = (MatrixObject)dat;
 				varsState.put( var, mo.isCleanupEnabled() );
-				mo.enableCleanup(false); 
+				//System.out.println("pre-pin "+var+" ("+mo.isCleanupEnabled()+")");
 			}
 		}
+		
+		//step 2) pin variables
+		for( String var : varList )
+		{
+			Data dat = _variables.get(var);
+			if( dat instanceof MatrixObject )
+			{
+				MatrixObject mo = (MatrixObject)dat;
+				mo.enableCleanup(false); 
+				//System.out.println("pin "+var);
+			}
+		}
+		
 		return varsState;
 	}
 	
@@ -278,7 +295,7 @@ public class ExecutionContext
 	{
 		for( String var : varList)
 		{
-			//System.out.println("unpin "+var);
+			//System.out.println("unpin "+var+" ("+varsState.get(var)+")");
 			Data dat = _variables.get(var);
 			if( dat instanceof MatrixObject )
 				((MatrixObject)dat).enableCleanup(varsState.get(var));

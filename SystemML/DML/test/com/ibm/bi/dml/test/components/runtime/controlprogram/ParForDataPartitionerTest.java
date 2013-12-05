@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -544,7 +544,7 @@ public class ParForDataPartitionerTest
 			else if( dp == PDataPartitioner.REMOTE_MR )
 				dpart = new DataPartitionerRemoteMR(format, _n, 4, 4, 3, 1, false);
 			
-			MatrixObject mo2 = dpart.createPartitionedMatrixObject(mo1, true);	
+			MatrixObject mo2 = dpart.createPartitionedMatrixObject(mo1, _fname+"_dp", true);	
 			ii = ((MatrixFormatMetaData)mo2.getMetaData()).getInputInfo();
 			matrix2 = readPartitionedMatrix(format, mo2.getFileName(),ii, rows, cols, _brlen, _bclen, _n);
 			

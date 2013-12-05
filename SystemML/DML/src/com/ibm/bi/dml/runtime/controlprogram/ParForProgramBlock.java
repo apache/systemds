@@ -202,10 +202,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; //export only read variables according to live variable analysis
  	public static final boolean LIVEVAR_AWARE_CLEANUP       = true; //cleanup pinned variables according to live variable analysis
 	
-	
-	public static final String PARFOR_MR_TASKS_TMP_FNAME    = "/parfor/%ID%_MR_taskfile.dat"; 
-	public static final String PARFOR_MR_RESULT_TMP_FNAME   = "/parfor/%ID%_MR_results.dat"; 
-	public static final String PARFOR_MR_RESULTMERGE_FNAME   = "/parfor/%ID%_resultmerge%VAR%.dat"; 
+ 	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
+	public static final String PARFOR_MR_TASKS_TMP_FNAME    = PARFOR_FNAME_PREFIX + "%ID%_MR_taskfile"; 
+	public static final String PARFOR_MR_RESULT_TMP_FNAME   = PARFOR_FNAME_PREFIX + "%ID%_MR_results"; 
+	public static final String PARFOR_MR_RESULTMERGE_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_resultmerge%VAR%"; 
+	public static final String PARFOR_DATAPARTITIONS_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_datapartitions%VAR%"; 
 	
 	// static ID generator sequences
 	private static IDSequence   _pfIDSeq        = null;
@@ -241,6 +242,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected int                 _IDPrefix     = -1;
 	protected ArrayList<String>  _resultVars      = null;
 	protected IDSequence         _resultVarsIDSeq = null;
+	protected IDSequence         _dpVarsIDSeq     = null;
 	
 	// local parworker data
 	protected long[] 		   	                    _pwIDs   = null;
@@ -276,6 +278,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
 		_resultVarsIDSeq = new IDSequence();
+		_dpVarsIDSeq = new IDSequence();
 		
 		//parse and use internal parameters (already set to default if not specified)
 		_params = params;
@@ -491,7 +494,7 @@ public class ParForProgramBlock extends ForProgramBlock
 							if( !ALLOW_UNSCOPED_PARTITIONING ) //store reference of original var
 								_variablesDPOriginal.put(var, moVar);
 							DataPartitioner dp = createDataPartitioner( dpf, _dataPartitioner );
-							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar);
+							MatrixObject moVarNew = dp.createPartitionedMatrixObject(moVar, constructDataPartitionsFileName());
 							ec.setVariable(var, moVarNew);
 							ProgramRecompiler.rFindAndRecompileIndexingHOP(_sb,this,var,ec);
 							LOG.trace("Partitioning and recompilation done in "+ltime.stop()+"ms");
@@ -577,11 +580,14 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 		}
 		
-		
 		///////
 		//end PARALLEL EXECUTION of (PAR)FOR body
 		///////
-			
+	
+		//TODO
+		//LOG.info("\n"+StatisticMonitor.createReport());
+		
+		
 		executeInstructions(_exitInstructions, ec);			
 	}
 
@@ -1442,6 +1448,29 @@ public class ParForProgramBlock extends ForProgramBlock
 		String fname = PARFOR_MR_RESULTMERGE_FNAME;
 		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID
 		fname = fname.replaceAll("%VAR%", String.valueOf(_resultVarsIDSeq.getNextID()));
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(scratchSpaceLoc);
+		sb.append(Lop.FILE_SEPARATOR);
+		sb.append(Lop.PROCESS_PREFIX);
+		sb.append(DMLScript.getUUID());
+		sb.append(fname);
+		
+		return sb.toString();   		
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private String constructDataPartitionsFileName()
+	{
+		String scratchSpaceLoc = ConfigurationManager.getConfig()
+		                             .getTextValue(DMLConfig.SCRATCH_SPACE);
+		
+		String fname = PARFOR_DATAPARTITIONS_FNAME;
+		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID
+		fname = fname.replaceAll("%VAR%", String.valueOf(_dpVarsIDSeq.getNextID()));
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);

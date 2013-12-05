@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -55,30 +55,38 @@ public abstract class DataPartitioner
 	}
 	
 	/**
-	 * see createPartitionedMatrix( MatrixObjectNew in, boolean force )
-	 * (with default not to force)
 	 * 
 	 * @param in
+	 * @param fnameNew
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in )
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew )
 		throws DMLRuntimeException
 	{
-		return createPartitionedMatrixObject(in, null, false);
-	}
-
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out)
-	throws DMLRuntimeException 
-	{
-		return createPartitionedMatrixObject(in, out, false);
+		return createPartitionedMatrixObject(in, fnameNew, false);
 	}
 	
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, boolean force)
-	throws DMLRuntimeException 
+	/**
+	 * 
+	 * @param in
+	 * @param fnameNew
+	 * @param force
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force )
+		throws DMLRuntimeException
 	{
-		return createPartitionedMatrixObject(in, null, force);
+		ValueType vt = in.getValueType();
+		String varname = in.getVarName();
+		MatrixObject out = new MatrixObject(vt, fnameNew );
+		out.setDataType( DataType.MATRIX );
+		out.setVarName( varname+NAME_SUFFIX );		
+		
+		return createPartitionedMatrixObject(in, out, force);
 	}
+	
 
 	/**
 	 * Creates a partitioned matrix object based on the given input matrix object, 
@@ -100,8 +108,6 @@ public abstract class DataPartitioner
 			return in;
 		
 		//analyze input matrix object
-		ValueType vt = in.getValueType();
-		String varname = in.getVarName();
 		MatrixFormatMetaData meta = (MatrixFormatMetaData)in.getMetaData();
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 		String fname = in.getFileName();
@@ -133,9 +139,6 @@ public abstract class DataPartitioner
 				LOG.debug("Changing format from "+PDataPartitionFormat.COLUMN_WISE+" to "+PDataPartitionFormat.ROW_BLOCK_WISE+".");
 				_format = PDataPartitionFormat.COLUMN_BLOCK_WISE;
 			}
-			
-			//FIXME: just for test
-			//_n = 16000000; //16000
 			//_format = PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
 		
@@ -155,12 +158,7 @@ public abstract class DataPartitioner
 		in.exportData(); //written to disk iff dirty
 		
 		//prepare filenames and cleanup if required
-		String fnameNew = null;
-		if ( out == null )
-			fnameNew = fname + NAME_SUFFIX;
-		else
-			fnameNew = out.getFileName();
-		
+		String fnameNew = out.getFileName();
 		try{
 			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
 		}
@@ -171,14 +169,9 @@ public abstract class DataPartitioner
 		//core partitioning (depending on subclass)
 		partitionMatrix( fname, fnameNew, ii, oi, rows, cols, brlen, bclen );
 		
-		if ( out == null ) {
-			//create output matrix object
-			out = new MatrixObject(vt, fnameNew );
-			out.setDataType(DataType.MATRIX);
-			out.setVarName( varname+NAME_SUFFIX );
-		}
-		
+		//create output matrix object
 		out.setPartitioned( _format, _n ); 
+		
 		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols,
 				                           (_format==PDataPartitionFormat.ROW_WISE || _format==PDataPartitionFormat.ROW_BLOCK_WISE_N)? 1 : (int)brlen, //for blockwise brlen anyway
 				                           (_format==PDataPartitionFormat.COLUMN_WISE || _format==PDataPartitionFormat.COLUMN_BLOCK_WISE_N)? 1 : (int)bclen ); //for blockwise bclen anyway

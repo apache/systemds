@@ -1,0 +1,162 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# hadoop jar SystemML.jar -f test/scripts/applications/impute/testShadowRecurrenceInputGenerator.dml -exec singlenode
+#    -args
+#        test/scripts/applications/impute/initial_reports
+#        test/scripts/applications/impute/CReps 
+#        test/scripts/applications/impute/RegresValueMap
+#        test/scripts/applications/impute/RegresFactorDefault
+#        test/scripts/applications/impute/RegresParamMap
+#        test/scripts/applications/impute/RegresCoeffDefault
+#        test/scripts/applications/impute/RegresScaleMult
+
+
+# GENERATE SYNTHETIC "INITIAL REPORTS"
+
+num_terms = 10;
+num_series = 10;
+num_attrs = 2 * num_series;
+num_frees = num_series * (num_terms + 1);
+
+initial_reports = Rand (rows = num_attrs, cols = num_terms, min = -50.0, max = 50.0);
+
+for (s in 1:num_series) {
+    for (t in 1:(num_terms - 1)) {
+        val = 400 - (t - 14.16) * (t - 5.5) * (t + 3.16) / 2.463552;
+        initial_reports [2 * (s-1) + 1, t] = initial_reports [2 * (s-1) + 1, t] + val;
+    }
+}
+
+zero = matrix (0.0, rows = 1, cols = 1);
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM FREE VARIABLES TO THE REPORTS
+# AFFINE MAP = LINEAR MAP + INITIAL (DEFAULT) REPORTS
+# ---------------------------------------------------------
+
+CReps = matrix (0.0, rows = (num_terms * num_attrs), cols = num_frees);
+
+for (s in 1:num_series) {
+    for (t in 0:num_terms) {
+        ta_shift = (t - 1) * num_attrs + 2 * s;
+        if (t == 0) {
+            ta_shift = (num_terms - 1) * num_attrs + (2 * s - 1);
+        }        
+        CReps [ta_shift, t * num_series + s] = 1.0 + zero;
+}   }
+
+# In all regressions, except the last few "special" ones, there are 3 factors
+# (here "x" are the "states" and "y" are the "observations"):
+# Observation  regression:  y[t]-x[t] ~ a * 1      ###   + b * (y[t-1]-x[t-1])
+# State-change regression:  x[t] ~ c * x[t-1] + d * (x[t-1]-x[t-2])
+
+num_factors = 3; 
+num_reg_eqs = num_terms * 2 * num_series;
+num_params  = 3 * num_series;
+
+RegresValueMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = (num_terms * num_attrs));
+RegresFactorDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM REPORTS TO REGRESSION FACTORS
+# AFFINE MAP = LINEAR MAP + A VECTOR OF DEFAULTS
+# ---------------------------------------------------------
+
+
+for (t in 1 : num_terms) {
+    for (s in 1 : num_series) {
+
+        reg_index =  ((t-1) * num_series + (s-1)) * 2 * num_factors;
+
+# Observation regression:
+
+        RegresValueMap [reg_index + 1, (t-1) * num_attrs + 2 * s - 1] = -1.0 + zero; # 1st factor: 
+        RegresValueMap [reg_index + 1, (t-1) * num_attrs + 2 * s    ] =  1.0 + zero; #   -(y[t]-x[t])
+        
+        RegresFactorDefault [reg_index + 2, 1] =  1.0 + zero; # 2nd factor: Intercept
+        
+#       RegresValueMap [reg_index + 3, (t-2) * num_attrs + 2 * s - 1] =  1.0 + zero; # 3rd factor: 
+#       RegresValueMap [reg_index + 3, (t-2) * num_attrs + 2 * s    ] = -1.0 + zero; #   y[t-1]-x[t-1]
+        
+        reg_index = reg_index + num_factors;
+        
+# State-change regression:
+
+        if (t >= 3) {
+            RegresValueMap [reg_index + 1, (t-1) * num_attrs + 2 * s] = -1.0 + zero; # 1st factor: -x[t]
+            RegresValueMap [reg_index + 2, (t-2) * num_attrs + 2 * s] =  1.0 + zero; # 2nd factor: x[t-1]
+            RegresValueMap [reg_index + 3, (t-2) * num_attrs + 2 * s] =  1.0 + zero; # 3rd factor: 
+            RegresValueMap [reg_index + 3, (t-3) * num_attrs + 2 * s] = -1.0 + zero; #   x[t-1]-x[t-2]
+        }
+    }
+}
+
+# ----------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM PARAMETERS TO THE COEFFICIENTS
+# AT REGRESSION FACTORS: A LINEAR MAP + A VECTOR OF DEFAULTS
+# ----------------------------------------------------------
+
+RegresParamMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = num_params);
+RegresCoeffDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+for (t in 1 : num_terms) {
+    for (s in 1 : num_series) {
+
+        reg_index =  ((t-1) * num_series + (s-1)) * 2 * num_factors;
+
+# Observation regression:
+
+        RegresCoeffDefault [reg_index + 1, 1] =  1.0 + zero;
+        RegresParamMap [reg_index + 2, 3 * (s-1) + 1] = 1.0 + zero; 
+        
+#       RegresParamMap [reg_index + 3, 4 * (s-1) + 2] = 1.0 + zero; 
+        
+        reg_index = reg_index + num_factors;
+        
+# State-change regression:
+
+        if (t >= 3) {
+            RegresCoeffDefault [reg_index + 1, 1] =  1.0 + zero;
+            RegresParamMap [reg_index + 2, 3 * (s-1) + 2] = 1.0 + zero;
+            RegresParamMap [reg_index + 3, 3 * (s-1) + 3] = 1.0 + zero;
+        }
+    }
+}
+
+# ----------------------------------------------------------------------
+# GENERATE A VECTOR OF SCALE MULTIPLIERS ("WEIGHTS"), ONE PER REGRESSION
+# ----------------------------------------------------------------------
+
+RegresScaleMult = matrix (1.0, rows = num_reg_eqs, cols = 1);
+global_weight = 0.5 + zero;
+acceptable_drift = 1.0;
+
+for (t in 1 : num_terms) {
+    for (s in 1 : num_series) {
+        reg_id =  ((t-1) * num_series + (s-1)) * 2 + 1;
+        RegresScaleMult [reg_id    , 1] = global_weight / (acceptable_drift ^ 2);
+        RegresScaleMult [reg_id + 1, 1] = global_weight / (acceptable_drift ^ 2);
+    }
+}
+
+
+# --------------------------------
+# WRITE OUT ALL GENERATED MATRICES
+# --------------------------------
+
+
+write (initial_reports,    $1, format="text");
+write (CReps,              $2, format="text");
+write (RegresValueMap,     $3, format="text");
+write (RegresFactorDefault,$4, format="text");
+write (RegresParamMap,     $5, format="text");
+write (RegresCoeffDefault, $6, format="text");
+write (RegresScaleMult,    $7, format="text");

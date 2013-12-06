@@ -1,0 +1,116 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+setwd ("test/scripts/applications/glm");
+source ("Misc.dml");
+
+blahblah = 0.0 / 0.0; # -0.00099999999;
+print (blahblah);
+x = matrix (0.0, rows = 55, cols = 1);
+x [55, 1] = blahblah;
+print (castAsScalar (x [55, 1]));
+for (i in 1:9) {
+    x [i, 1] = -0.001 * i;
+}
+for (i in 1:5) {
+    x [(9 * i + 1):(9 * i + 9), 1] = x [(9 * i - 8):(9 * i), 1] * 10;
+}
+y = atan_temporary (x);
+z = tan (y);
+for (i in 1:nrow(x)) {
+    [x_m, x_e] = round_to_print (castAsScalar (x[i,1]));
+    [a_m, a_e] = round_to_print (castAsScalar (y[i,1]));
+    [t_m, t_e] = round_to_print (castAsScalar (z[i,1]));
+    print ("x = " + x_m + "E" + x_e + ";  atan(x) = " + a_m + "E" + a_e + ";  tan(atan(x)) = " + t_m + "E" + t_e);
+}
+
+
+
+
+
+
+coeff_a = -3.14;
+coeff_b =  3.14 * (2 - 3 - 1.7);
+coeff_c = -3.14 * (2 * (-3) + 2 * (-1.7) + (-3) * (-1.7));
+coeff_d =  3.14 * (2 * (-3) * (-1.7));
+
+
+    coeff_aa = coeff_b / coeff_a;
+    coeff_bb = coeff_c / coeff_a;
+    coeff_cc = coeff_d / coeff_a;
+
+    coeff_Q = (coeff_aa * coeff_aa - 3.0 * coeff_bb) / 9.0;
+    coeff_R = (2.0 * coeff_aa * coeff_aa * coeff_aa - 9.0 * coeff_aa * coeff_bb + 27.0 * coeff_cc) / 54.0;
+
+    if (coeff_R * coeff_R < coeff_Q * coeff_Q * coeff_Q)
+    {
+        two_pi_third = 2.0943951023931954923084289221863;
+        acos_argument = coeff_R / sqrt (coeff_Q * coeff_Q * coeff_Q);
+        
+        x = abs (acos_argument);
+        acos_x = sqrt (1.0 - x) * (1.5707963050 + x * (-0.2145988016
+            + x * ( 0.0889789874 + x * (-0.0501743046
+            + x * ( 0.0308918810 + x * (-0.0170881256
+            + x * ( 0.0066700901 + x * (-0.0012624911))))))));
+        if (acos_argument >= 0.0) {
+            coeff_theta = acos_x;
+        } else {
+            coeff_theta = 3.1415926535897932384626433832795 - acos_x;
+        }
+        
+        root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);
+        root_2 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 + two_pi_third);
+        root_3 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 - two_pi_third);
+        
+        root_min = min (min (root_1, root_2), root_3);
+        root_max = max (max (root_1, root_2), root_3);
+        root_middle = root_1 + root_2 + root_3 - root_min - root_max;
+        
+        root_1 = root_min; root_2 = root_middle; root_3 = root_max;
+        
+        print ("Three roots:  " + (round (root_1 * 10000) / 10000) + ",  " + (round (root_2 * 10000) / 10000) + ",  " + (round (root_3 * 10000) / 10000));
+        
+    } else {
+        if (coeff_R >= 0.0) {
+            sgn_coeff_R = 1.0;
+        } else {
+            sgn_coeff_R = -1.0;
+        }
+        coeff_bigA = - sgn_coeff_R * (abs (coeff_R) + sqrt (coeff_R * coeff_R - coeff_Q * coeff_Q * coeff_Q)) ^ (1.0 / 3.0);
+        if (coeff_bigA != 0.0) {
+            root = coeff_bigA + coeff_Q / coeff_bigA - coeff_aa / 3.0;
+        } else {
+            root = - coeff_aa / 3.0;
+        }
+        print ("One root:  " + (round (root * 10000) / 10000));
+    }
+
+/*
+atan_temporary =
+    function (Matrix [double] Args) return (Matrix [double] AtanArgs)
+{
+    AbsArgs = abs (Args);
+    Eks = AbsArgs + ppred (AbsArgs, 0.0, "==") * 0.000000000001;
+    Eks = ppred (AbsArgs, 1.0, "<=") * Eks + ppred (AbsArgs, 1.0, ">") / Eks;
+    EksSq = Eks * Eks;
+    AtanEks = 
+        Eks   * ( 1.0000000000 + 
+        EksSq * (-0.3333314528 + # Milton Abramowitz and Irene A. Stegun, Eds.
+        EksSq * ( 0.1999355085 + # "Handbook of Mathematical Functions"
+        EksSq * (-0.1420889944 + # U.S. National Bureau of Standards, June 1964
+        EksSq * ( 0.1065626393 + # Section 4.4, page 81, Equation 4.4.49
+        EksSq * (-0.0752896400 +
+        EksSq * ( 0.0429096138 + 
+        EksSq * (-0.0161657367 + 
+        EksSq *   0.0028662257 ))))))));
+    pi_over_two = 1.5707963267948966192313216916398;
+    AtanAbsArgs = ppred (AbsArgs, 1.0, "<=") * AtanEks + ppred (AbsArgs, 1.0, ">") * (pi_over_two - AtanEks);
+    AtanArgs    = (ppred (Args, 0.0, ">=") - ppred (Args, 0.0, "<")) * AtanAbsArgs;
+}
+*/

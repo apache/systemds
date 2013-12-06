@@ -88,96 +88,93 @@ num_params  = ncol (RegresParamMap);   # Number of parameters used in all regres
 max_num_burnin_iterations = $9;
 max_num_observed_iterations = $10;
 
-ones_fv = matrix (1.0, rows = 1, cols = num_frees);
-ones_pm = matrix (1.0, rows = 1, cols = num_params);
-twos_re = matrix (2.0, rows = 1, cols = num_reg_eqs);
-
-# Create a summation operator (matrix) that adds the factors in each regression:
-
-ncols_SumFactor = num_reg_eqs * num_factors;
-SumFactor = matrix (0.0, rows = num_reg_eqs, cols = ncols_SumFactor);
-ones_f = matrix (1.0, rows = 1, cols = num_factors);
-SumFactor [1, 1:num_factors] = ones_f;
-nSumFactor = 1;
-while (nSumFactor < num_reg_eqs) {
-    incSumFactor = nSumFactor;
-    if (incSumFactor > num_reg_eqs - nSumFactor) {
-        incSumFactor = num_reg_eqs - nSumFactor;
-    }
-    SumFactor [(nSumFactor + 1) : (nSumFactor + incSumFactor), 
-        (nSumFactor * num_factors + 1) : ((nSumFactor + incSumFactor) * num_factors)] = 
-            SumFactor [1 : incSumFactor, 1 : (incSumFactor * num_factors)];
-    nSumFactor = nSumFactor + incSumFactor;
-}
-
-freeVars = matrix (0.0, rows = num_frees, cols = 1);
-params = matrix (1.0, rows = num_params, cols = 1);
-
-
-
 num_opt_iter = 20;
 print ("Performing initial optimization (" + num_opt_iter + " alternating CG steps)...");
 
+freeVars = matrix (0.0, rows = num_frees, cols = 1);
+params = matrix (1.0, rows = num_params, cols = 1);
 reports = CReps %*% freeVars + dReps;
-regresValues = RegresValueMap %*% reports + RegresFactorDefault;
-regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
 
-bilinear_sums = SumFactor %*% (regresValues * regresParams);
-w_bilinear_sums = RegresScaleMult * bilinear_sums;
-bilinear_form_value = sum (w_bilinear_sums * bilinear_sums);
+regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+bilinear_vector = regresValues * regresParams;
+
+### DELETE: bilinear_form = matricize (bilinear_vector, num_factors);
+bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
 
 opt_iter = 1;
 is_step_params = 1;
 is_opt_converged = 0;
 
 print ("Before optimization:    Initial bilinear form value = " + bilinear_form_value);
+        
 
 while (is_opt_converged == 0)
 {
     deg = is_step_params * num_params + (1 - is_step_params) * num_frees;
-    shift_vector = matrix (0.0, rows = deg, cols = 1);
 
     # Compute gradient
 
-    if (is_step_params == 1) {
-        gradient = twos_re %*% ((w_bilinear_sums %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) *  RegresParamMap)));
-    } else {
-        gradient = twos_re %*% ((w_bilinear_sums %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
+    gradient = matrix (0.0, rows = deg, cols = 1);
+    for (i in 1:deg)
+    {
+        if (is_step_params == 1) {
+            bilinear_vector = regresValues * RegresParamMap [, i];
+        } else {
+            bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
+        }
+        ### DELETE: bilinear_updater = matricize (bilinear_vector, num_factors);
+        bilinear_updater = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);        
+        
+        q_minus_1 = sum (RegresScaleMult * rowSums (bilinear_form - bilinear_updater) * rowSums (bilinear_form - bilinear_updater));
+        q_plus_1  = sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater) * rowSums (bilinear_form + bilinear_updater));
+        gradient [i, 1] = 0.5 * (q_plus_1 - q_minus_1) + gradient [i, 1];
     }
-
+    
     # Make a few conjugate gradient steps
     
-    residual = t(gradient);
+    shift_vector = matrix (0.0, rows = deg, cols = 1);
+    residual = gradient;
     p = - residual;
     norm_r2 = sum (residual * residual);
-    cg_iter = 1;
-    cg_terminate = 0;
 
-    while (cg_terminate == 0)
+    for (j in 1:3)
     {
-        # Want: q = A %*% p;
-        # Compute gradient change from 0 to p
+        q = matrix (0.0, rows = deg, cols = 1);
+        for (i in 1:deg) # Want: q = A %*% p;
+        {
+            if (is_step_params == 1) {
+                bilinear_vector = regresValues * RegresParamMap [, i];
+            } else {
+                bilinear_vector = (RegresValueMap %*% CReps [, i]) * regresParams;
+            }
+            ### DELETE: bilinear_updater_1 = matricize (bilinear_vector, num_factors);
+            bilinear_updater_1 = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
 
-        if (is_step_params == 1) {
-            w_bilinear_p = RegresScaleMult * (SumFactor %*% (regresValues * (RegresParamMap %*% p)));
-            gradient_change_p = twos_re %*% ((w_bilinear_p %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) * RegresParamMap)));
-        } else {
-            w_bilinear_p = RegresScaleMult * (SumFactor %*% ((RegresValueMap %*% CReps %*% p) * regresParams));
-            gradient_change_p = twos_re %*% ((w_bilinear_p %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
+            if (is_step_params == 1) {
+                bilinear_vector = regresValues * (RegresParamMap %*% p);
+            } else {
+                bilinear_vector = (RegresValueMap %*% CReps %*% p) * regresParams;
+            }
+            ### DELETE: bilinear_updater_p = matricize (bilinear_vector, num_factors);
+            bilinear_updater_p = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+
+            quadratic_plus_1  = 
+                sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater_1) * rowSums (bilinear_form + bilinear_updater_1));
+            quadratic_plus_p  = 
+                sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater_p) * rowSums (bilinear_form + bilinear_updater_p));
+            quadratic_plus_both = 
+                sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater_1 + bilinear_updater_p) * rowSums (bilinear_form + bilinear_updater_1 + bilinear_updater_p));
+            q [i, 1] = (quadratic_plus_both - quadratic_plus_1 - quadratic_plus_p + bilinear_form_value) + q [i, 1];
         }
-        q = t(gradient_change_p);
         
         alpha = norm_r2 / castAsScalar (t(p) %*% q);
-        shift_vector_change = alpha * p;
-        shift_vector = shift_vector + shift_vector_change;
+        shift_vector = shift_vector + alpha * p;
         old_norm_r2 = norm_r2;
         residual = residual + alpha * q;
         norm_r2 = sum (residual * residual);
         p = - residual + (norm_r2 / old_norm_r2) * p;
-        cg_iter = cg_iter + 1;
-        if (cg_iter > min (deg, 2 + opt_iter / 3)) {
-            cg_terminate = 1;
-        }
     }
 
     if (is_step_params == 1) {
@@ -194,10 +191,11 @@ while (is_opt_converged == 0)
     if (is_step_params == 1) {
         old_bilinear_form_value = bilinear_form_value;
     }
-
-    bilinear_sums = SumFactor %*% (regresValues * regresParams);
-    w_bilinear_sums = RegresScaleMult * bilinear_sums;
-    bilinear_form_value = sum (w_bilinear_sums * bilinear_sums);
+    bilinear_vector = regresValues * regresParams;
+    
+    ### DELETE: bilinear_form = matricize (bilinear_vector, num_factors);
+    bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
+    bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
         
     if (is_step_params == 1) {
         print ("Optimization step " + opt_iter + " (params) :  bilinear form value = " + bilinear_form_value);
@@ -213,242 +211,7 @@ while (is_opt_converged == 0)
     }
 }
 
-
-
-/*  UNCOMMENT TO TRY CONJUGATE GRADIENT DESCENT
-
-
-
-print ("Starting Gradient Descent...");
-### GRADIENT DESCENT WITH MODIFICATIONS TO ENHANCE CONVERGENCE
-
-# num_past_dirVs  = 3;
-# past_dirVFrees  = matrix (0.0, rows = num_frees,  cols = num_past_dirVs);
-# past_dirVParams = matrix (0.0, rows = num_params, cols = num_past_dirVs);
-
-shift_T = -1000.0;
-is_enough_gradient_descent = 0;
-gd_iter = 0;
-
-while (is_enough_gradient_descent == 0)
-{
-### GD-STEP 1: COMPUTE LOSS & GRADIENT AT CURRENT POINT
-
-    reports = CReps %*% freeVars + dReps;
-    regresValues = RegresValueMap %*% reports + RegresFactorDefault;
-    regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
-
-    bilinear_sums = SumFactor %*% (regresValues * regresParams);
-    w_bilinear_sums = RegresScaleMult * bilinear_sums;
-    gradientInFrees  = twos_re %*% ((w_bilinear_sums %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
-    gradientInParams = twos_re %*% ((w_bilinear_sums %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) *  RegresParamMap)));
-    
-### CG-STEP 2: MAKE A FEW APPROXIMATE CONJUGATE GRADIENT STEPS
-
-    shift_frees  = matrix (0.0, rows = num_frees,  cols = 1);
-    shift_params = matrix (0.0, rows = num_params, cols = 1);
-
-    residual_frees  = t(gradientInFrees);
-    residual_params = t(gradientInParams);
-    
-    p_frees  = - residual_frees;
-    p_params = - residual_params;
-    
-    norm_r2 = sum (residual_frees * residual_frees) + sum (residual_params * residual_params);
-    
-    cg_iter = 1;
-    cg_terminate = 0;
-    cg_eps = 0.000001;
-
-    while (cg_terminate == 0)
-    {
-        regresValues_eps_p = regresValues + cg_eps * (RegresValueMap %*% CReps %*% p_frees);
-        regresParams_eps_p = regresParams + cg_eps * (RegresParamMap %*% p_params);
-
-        bilinear_sums_eps_p   = SumFactor %*% (regresValues_eps_p * regresParams_eps_p);
-        w_bilinear_sums_eps_p = RegresScaleMult * bilinear_sums_eps_p;
-        
-        gradientInFrees_eps_p  = twos_re %*% ((w_bilinear_sums_eps_p %*% ones_fv) * (SumFactor %*% ((regresParams_eps_p %*% ones_fv) * (RegresValueMap %*% CReps))));
-        gradientInParams_eps_p = twos_re %*% ((w_bilinear_sums_eps_p %*% ones_pm) * (SumFactor %*% ((regresValues_eps_p %*% ones_pm) *  RegresParamMap)));
-        
-        q_frees  = t(gradientInFrees_eps_p  - gradientInFrees)  / cg_eps;
-        q_params = t(gradientInParams_eps_p - gradientInParams) / cg_eps;
-        
-        alpha = norm_r2 / castAsScalar (t(p_frees) %*% q_frees + t(p_params) %*% q_params);
-
-        shift_frees  = shift_frees  + alpha * p_frees;
-        shift_params = shift_params + alpha * p_params;
-
-        old_norm_r2 = norm_r2;
-        
-        residual_frees  = residual_frees  + alpha * q_frees;
-        residual_params = residual_params + alpha * q_params;
-        
-        norm_r2 = sum (residual_frees * residual_frees) + sum (residual_params * residual_params);
-        
-        p_frees  = - residual_frees  + (norm_r2 / old_norm_r2) * p_frees;
-        p_params = - residual_params + (norm_r2 / old_norm_r2) * p_params;
-        
-        cg_iter = cg_iter + 1;
-        if (cg_iter > 4) {
-            cg_terminate = 1;
-        }
-    }
-
-### GD-STEP 3: COMPUTE THE NEW DIRECTION VECTOR & "TEST" SHIFT
-    
-    dirVFrees_candidate  = shift_frees;
-    dirVParams_candidate = shift_params;
-  
-#        random_frees  = Rand (rows = num_frees,  cols = 1, min = 0.9, max = 1.1, sparsity = 1.0);
-#        random_params = Rand (rows = num_params, cols = 1, min = 0.9, max = 1.1, sparsity = 1.0);
-#        dirVFrees_candidate  = dirVFrees_candidate  * random_frees;
-#        dirVParams_candidate = dirVParams_candidate * random_params;
-
-    dirVFrees  = dirVFrees_candidate;
-    dirVParams = dirVParams_candidate;
-
-#   dirV_proj_factors =  t(past_dirVFrees) %*% dirVFrees_candidate + t(past_dirVParams) %*% dirVParams_candidate;
-#   dirVFrees  = dirVFrees_candidate  - past_dirVFrees  %*% dirV_proj_factors;
-#   dirVParams = dirVParams_candidate - past_dirVParams %*% dirV_proj_factors;
-    
-    dirV_denom = sqrt (sum (dirVFrees * dirVFrees) + sum (dirVParams * dirVParams));
-    dirVFrees  = dirVFrees  / dirV_denom;
-    dirVParams = dirVParams / dirV_denom;
-
-#   past_dirVFrees  [, 2:num_past_dirVs] = past_dirVFrees  [, 1:(num_past_dirVs-1)];
-#   past_dirVParams [, 2:num_past_dirVs] = past_dirVParams [, 1:(num_past_dirVs-1)];
-#   past_dirVFrees  [, 1] = dirVFrees;
-#   past_dirVParams [, 1] = dirVParams;
-
-        
-### GD-STEP 4: COMPUTE THE POLYNOMIAL FOR  d loss(t) / dt
-
-    dirVRegresValues = RegresValueMap %*% CReps %*% dirVFrees;
-    dirVRegresParams = RegresParamMap %*% dirVParams;
-    dirVdirV_bilinear_sums = SumFactor %*% (dirVRegresValues * dirVRegresParams);
-
-    dirV_bilinear_sums = SumFactor %*% (dirVRegresValues * regresParams + regresValues * dirVRegresParams);
-    L_0 = sum (w_bilinear_sums * bilinear_sums);
-    L_prime_0 = 2.0 * sum (w_bilinear_sums * dirV_bilinear_sums);
-
-    freeVars_T = freeVars + shift_T * dirVFrees;
-    params_T   = params   + shift_T * dirVParams;
-
-    reports_T = CReps %*% freeVars_T + dReps;
-    regresValues_T = RegresValueMap %*% reports_T + RegresFactorDefault;
-    regresParams_T = RegresParamMap %*% params_T  + RegresCoeffDefault;
-
-    bilinear_sums_T = SumFactor %*% (regresValues_T * regresParams_T);
-    w_bilinear_sums_T = RegresScaleMult * bilinear_sums_T;
-    dirV_bilinear_sums_T = SumFactor %*% (dirVRegresValues * regresParams_T + regresValues_T * dirVRegresParams);
-    
-    L_T = sum (w_bilinear_sums_T * bilinear_sums_T);
-    L_prime_T = 2.0 * sum (w_bilinear_sums_T * dirV_bilinear_sums_T);
-    
-    coeff_a = 4.0 * sum (RegresScaleMult * dirVdirV_bilinear_sums * dirVdirV_bilinear_sums);
-    coeff_b = -1.5 * coeff_a * shift_T + 3.0 * (L_prime_0 + L_prime_T + 2.0 * (L_0 - L_T) / shift_T) / (shift_T * shift_T);
-    coeff_c = 0.5 * coeff_a * shift_T * shift_T - 2.0 * (2.0 * L_prime_0 + L_prime_T + 3.0 * (L_0 - L_T) / shift_T) / shift_T;
-    coeff_d = L_prime_0;
-
-### GD-STEP 5: SOLVE CUBIC EQUATION & PICK THE BEST SHIFT (ROOT)
-
-    coeff_aa = coeff_b / coeff_a;
-    coeff_bb = coeff_c / coeff_a;
-    coeff_cc = coeff_d / coeff_a;
-
-    coeff_Q = (coeff_aa * coeff_aa - 3.0 * coeff_bb) / 9.0;
-    coeff_R = (2.0 * coeff_aa * coeff_aa * coeff_aa - 9.0 * coeff_aa * coeff_bb + 27.0 * coeff_cc) / 54.0;
-
-    root_choice = 0.0;
-    if (coeff_R * coeff_R < coeff_Q * coeff_Q * coeff_Q)
-    {
-        two_pi_third = 2.0943951023931954923084289221863;
-        acos_argument = coeff_R / sqrt (coeff_Q * coeff_Q * coeff_Q);
-        
-        x = abs (acos_argument);
-        acos_x = sqrt (1.0 - x) * (1.5707963050 + x * (-0.2145988016
-            + x * ( 0.0889789874 + x * (-0.0501743046
-            + x * ( 0.0308918810 + x * (-0.0170881256
-            + x * ( 0.0066700901 + x * (-0.0012624911))))))));
-        if (acos_argument >= 0.0) {
-            coeff_theta = acos_x;
-        } else {
-            coeff_theta = 3.1415926535897932384626433832795 - acos_x;
-        }
-        
-        root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);
-        root_2 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 + two_pi_third);
-        root_3 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 - two_pi_third);
-        root_min = min (min (root_1, root_2), root_3);
-        root_max = max (max (root_1, root_2), root_3);        
-        root_int_diff = (((root_max * coeff_a / 4.0 + coeff_b / 3.0) * root_max + coeff_c / 2.0) * root_max + coeff_d) * root_max
-                      - (((root_min * coeff_a / 4.0 + coeff_b / 3.0) * root_min + coeff_c / 2.0) * root_min + coeff_d) * root_min;
-        if (root_int_diff >= 0.0) {
-            root_choice = root_min;
-        } else {
-            root_choice = root_max;
-        }
-    } else {
-        if (coeff_R >= 0.0) {
-            sgn_coeff_R = 1.0;
-        } else {
-            sgn_coeff_R = -1.0;
-        }
-        coeff_bigA = - sgn_coeff_R * (abs (coeff_R) + sqrt (coeff_R * coeff_R - coeff_Q * coeff_Q * coeff_Q)) ^ (1.0 / 3.0);
-        if (coeff_bigA != 0.0) {
-            root_choice = coeff_bigA + coeff_Q / coeff_bigA - coeff_aa / 3.0;
-        } else {
-            root_choice = - coeff_aa / 3.0;
-        }
-    }
-    
-    root_choice = root_choice - 
-        (((coeff_a * root_choice + coeff_b) * root_choice + coeff_c) * root_choice + coeff_d) 
-            / ((3 * coeff_a * root_choice + 2 * coeff_b) * root_choice + coeff_c);
-    root_choice = root_choice - 
-        (((coeff_a * root_choice + coeff_b) * root_choice + coeff_c) * root_choice + coeff_d) 
-            / ((3 * coeff_a * root_choice + 2 * coeff_b) * root_choice + coeff_c);
-
-
-### GD-STEP 6: FINISH UP THE ITERATION
-
-    freeVars = freeVars + root_choice * dirVFrees;
-    params   = params   + root_choice * dirVParams;
-
-    root_int_diff = (((root_choice * coeff_a / 4.0 + coeff_b / 3.0) * root_choice + coeff_c / 2.0) * root_choice + coeff_d) * root_choice;
-    if (- root_int_diff < 0.00000001 * L_0) {
-        is_enough_gradient_descent = 1;
-    }
-    gd_iter = gd_iter + 1;
-    print ("Grad Descent Iter " + gd_iter + ":  L = " + (L_0 + root_int_diff) + ";  shift = " + root_choice);
-    shift_T = - 100.0 * sqrt (abs(root_choice) * abs(shift_T));
-}
-
-
-print ("Gradient Descent finished.  Starting MCMC...");
-
-
-
-
-END UNCOMMENT TO TRY CONJUGATE GRADIENT DESCENT  */
-
-
-
-
-
-
-
-
 print ("Performing MCMC initialization...");
-
-reports = CReps %*% freeVars + dReps;
-regresValues = RegresValueMap %*% reports + RegresFactorDefault;
-regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
-
-bilinear_vector = regresValues * regresParams;
-bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
-bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
 
 max_num_iter = max_num_burnin_iterations + max_num_observed_iterations;
 dim_sample = num_frees + num_params;
@@ -503,6 +266,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     regresParams = RegresParamMap %*% params + RegresCoeffDefault;
     bilinear_form_vector = regresValues * regresParams;
     
+    ### DELETE: bilinear_form = matricize (bilinear_form_vector, num_factors);
     bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
     bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
     
@@ -580,6 +344,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
             regresParams_updater = RegresParamMap %*% params_updater;
             bilinear_updater_vector = regresValues * regresParams_updater;
         }
+        ### DELETE: bilinear_updater = matricize (bilinear_updater_vector, num_factors);
         bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = true);
             
         # Compute the quadratic by three shift-points: -1, 0, +1
@@ -628,6 +393,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     # Update / adjust the reports and the parameters
     
     reports = CReps %*% freeVars + dReps;
+    ### DELETE: reports_matrix = matricize (reports, num_attrs);
     reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = false);
         
     # Make an observation of the reports and/or the parameters

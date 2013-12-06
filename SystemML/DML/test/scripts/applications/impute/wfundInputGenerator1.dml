@@ -1,0 +1,457 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# 2013-10-08: THIS IS THE ATTEMPT TO IMPLEMENT HIDDEN STATE AS "HIDDEN REPORTS"
+# THE FIRST TERMS IN THE REPORTS MATRIX ARE THE HIDDEN REPORTS, THE LAST ARE THE KNOWN REPORTS
+#
+# THIS VERSION IS WITH "TRADITIONAL" REGRESSIONS
+#
+
+# hadoop jar SystemML.jar -f test/scripts/applications/impute/wfundInputGenerator.dml -exec singlenode
+#    -args
+#        test/scripts/applications/impute/initial_reports
+#        test/scripts/applications/impute/initial_reports_preprocessed
+#        test/scripts/applications/impute/CReps 
+#        test/scripts/applications/impute/RegresValueMap
+#        test/scripts/applications/impute/RegresFactorDefault
+#        test/scripts/applications/impute/RegresParamMap
+#        test/scripts/applications/impute/RegresCoeffDefault
+#        test/scripts/applications/impute/RegresScaleMult
+
+is_GROUP_4_ENABLED = 1;    #   = 1 or 0
+num_known_terms = 6; # 20; # The number of   known   term reports, feel free to change
+num_predicted_terms = 1;   # The number of predicted term reports, feel free to change
+
+num_terms = 2 * num_known_terms + num_predicted_terms;
+num_attrs = 19;
+
+# Indicator matrix for the "known" values that should not be matched to hidden reports:
+disabled_known_values = matrix (0.0, rows = num_attrs, cols = num_known_terms);
+disabled_known_values [4, 3] = 1.0;
+disabled_known_values [5, 3] = 1.0;
+disabled_known_values [6, 3] = 1.0;
+disabled_known_values [7, 3] = 1.0;
+
+initial_reports_unprocessed = read ($1);
+initial_reports = matrix (0.0, rows = num_attrs, cols = num_terms);
+initial_reports [, 1:num_known_terms] = 
+    initial_reports_unprocessed [, 1:num_known_terms];
+initial_reports [, (num_known_terms + num_predicted_terms + 1):num_terms] = 
+    initial_reports_unprocessed [, 1:num_known_terms];
+
+num_frees_per_term = 13;
+if (is_GROUP_4_ENABLED == 1) {
+    num_frees_per_term = 15;
+}
+
+num_frees = (num_known_terms + num_predicted_terms) * num_frees_per_term;
+
+zero = matrix (0.0, rows = 1, cols = 1);
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM FREE VARIABLES TO THE REPORTS
+# AFFINE MAP = LINEAR MAP + INITIAL (DEFAULT) REPORTS
+# All free variables are mapped to the "HIDDEN" reports
+# ---------------------------------------------------------
+
+CReps = matrix (0.0, rows = (num_terms * num_attrs), cols = num_frees);
+
+for (t in 1:(num_known_terms + num_predicted_terms))
+{
+    dt = (t-1) * num_attrs;
+    df = (t-1) * num_frees_per_term;
+# constraint that          row1 =  row2 +  row3 +  row4 +  row5 +  row6 + row7
+# translated to free vars: row1 = free1 + free2 + free3 + free4 + free5 + free6
+    CReps [dt +  1, df +  1] = 1.0 + zero;
+    CReps [dt +  1, df +  2] = 1.0 + zero;
+    CReps [dt +  1, df +  3] = 1.0 + zero;
+    CReps [dt +  1, df +  4] = 1.0 + zero;
+    CReps [dt +  1, df +  5] = 1.0 + zero;
+    CReps [dt +  1, df +  6] = 1.0 + zero;
+    CReps [dt +  2, df +  1] = 1.0 + zero;
+    CReps [dt +  3, df +  2] = 1.0 + zero;
+    CReps [dt +  4, df +  3] = 1.0 + zero;
+    CReps [dt +  5, df +  4] = 1.0 + zero;
+    CReps [dt +  6, df +  5] = 1.0 + zero;
+    CReps [dt +  7, df +  6] = 1.0 + zero;
+
+# row 8 is free variable not appearing in any non-free variable
+    CReps [dt +  8, df +  7] = 1.0 + zero;
+
+# constraint that          row9 = row10 + row11 +  row12 +  row13 +  row14 +  row15
+# translated to free vars: row9 = free8 + free9 + free10 + free11 + free12 + free13
+    CReps [dt +  9, df +  8] = 1.0 + zero;
+    CReps [dt +  9, df +  9] = 1.0 + zero;
+    CReps [dt +  9, df + 10] = 1.0 + zero;
+    CReps [dt +  9, df + 11] = 1.0 + zero;
+    CReps [dt +  9, df + 12] = 1.0 + zero;
+    CReps [dt +  9, df + 13] = 1.0 + zero;
+    CReps [dt + 10, df +  8] = 1.0 + zero;
+    CReps [dt + 11, df +  9] = 1.0 + zero;
+    CReps [dt + 12, df + 10] = 1.0 + zero;
+    CReps [dt + 13, df + 11] = 1.0 + zero;
+    CReps [dt + 14, df + 12] = 1.0 + zero;
+    CReps [dt + 15, df + 13] = 1.0 + zero;
+
+# constraint that          row16 =  row14 +  row15
+# translated to free vars: row16 = free14 + free15
+    if (is_GROUP_4_ENABLED == 1) {
+        CReps [dt + 16, df + 14] = 1.0 + zero;
+        CReps [dt + 16, df + 15] = 1.0 + zero;
+        CReps [dt + 17, df + 14] = 1.0 + zero;
+        CReps [dt + 18, df + 15] = 1.0 + zero;
+    }
+
+# constraint that           row19 = total cost (all free variables)
+# translated to free vars:  row19 = all free variables
+    CReps [dt + 19, df +  1] = 1.0 + zero;
+    CReps [dt + 19, df +  2] = 1.0 + zero;
+    CReps [dt + 19, df +  3] = 1.0 + zero;
+    CReps [dt + 19, df +  4] = 1.0 + zero;
+    CReps [dt + 19, df +  5] = 1.0 + zero;
+    CReps [dt + 19, df +  6] = 1.0 + zero;
+    CReps [dt + 19, df +  7] = 1.0 + zero;
+    CReps [dt + 19, df +  8] = 1.0 + zero;
+    CReps [dt + 19, df +  9] = 1.0 + zero;
+    CReps [dt + 19, df + 10] = 1.0 + zero;
+    CReps [dt + 19, df + 11] = 1.0 + zero;
+    CReps [dt + 19, df + 12] = 1.0 + zero;
+    CReps [dt + 19, df + 13] = 1.0 + zero;
+    if (is_GROUP_4_ENABLED == 1) {
+        CReps [dt + 19, df + 14] = 1.0 + zero;
+        CReps [dt + 19, df + 15] = 1.0 + zero;
+    }
+}
+
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM REPORTS TO REGRESSION FACTORS
+# AFFINE MAP = LINEAR MAP + A VECTOR OF DEFAULTS
+# ---------------------------------------------------------
+
+# We have three types of regressions:
+# 1. For "hidden" reports:
+#    x[t]  ~  aggregate[t], x[t-1],  (x[t-1] - x[t-2])
+# 2. For "observed" reports:
+#    y[t]  ~  x[t] (with coefficient 1)
+# 3. For some parameters: the regularization equations.
+# All regressions follow the 4-factor pattern.
+num_factors = 4; 
+
+# We have one regression equation per time-term for each attribute, 
+# plus a few "special" regularization regression equations:
+num_regularization_regs = 12;
+if (is_GROUP_4_ENABLED == 1) {
+    num_regularization_regs = 16;
+}
+
+num_reg_eqs = num_terms * num_attrs + num_regularization_regs;
+
+RegresValueMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = (num_terms * num_attrs));
+RegresFactorDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+# All regression equations for the same attribute share the same parameters, regardless
+# of the term; some parameters are shared across multiple attributes, (those attributes
+# whose behavior is believed to be similar) as specified in the table below:
+
+num_params = 28;
+if (is_GROUP_4_ENABLED == 1) {
+    num_params = 35;
+}
+
+# Factors: -self[t]  total[t]  self[t-1]  self[t-1]-
+#                                          self[t-2]
+# PARAMS:
+# Group 1:   1.0     prm#01     prm#08     prm#09    Row #01 = free#01 + ... + free#06
+# Group 1:    "      prm#02     prm#10     prm#11    Row #02 = free#01
+# Group 1:    "      prm#03       "          "       Row #03 = free#02
+# Group 1:    "      prm#04       "          "       Row #04 = free#03
+# Group 1:    "      prm#05       "          "       Row #05 = free#04
+# Group 1:    "      prm#06       "          "       Row #06 = free#05
+# Group 1:    "      prm#07       "          "       Row #07 = free#06
+# --------------------------------------------------------------------
+# Group 2:   1.0     prm#12     prm#13     prm#14    Row #08 = free#07
+# --------------------------------------------------------------------
+# Group 3:   1.0     prm#15     prm#22     prm#23    Row #09 = free#08 + ... + free#13
+# Group 3:    "      prm#16     prm#24     prm#25    Row #10 = free#08
+# Group 3:    "      prm#17       "          "       Row #11 = free#09
+# Group 3:    "      prm#18       "          "       Row #12 = free#10
+# Group 3:    "      prm#19       "          "       Row #13 = free#11
+# Group 3:    "      prm#20       "          "       Row #14 = free#12
+# Group 3:    "      prm#21       "          "       Row #15 = free#13
+# --------------------------------------------------------------------
+# GROUP-4 ZEROS: FIVE PARAMETERS REVOKED
+# Group 4:   1.0     prm#29     prm#32     prm#33    Row #16 = free#14 + free#15
+# Group 4:    "      prm#30     prm#34     prm#35    Row #17 = free#14
+# Group 4:    "      prm#31       "          "       Row #18 = free#15
+# --------------------------------------------------------------------
+# Group 5:   1.0     prm#26     prm#27     prm#28    Row #19 = free#01 + ... + free#15
+# 
+# (The aggregates in Groups 1..4 regress on the total cost in Group 5;
+#  the total cost in Group 5 regresses on the intercept.)
+
+# THE LAST REGULARIZATION "REGRESSION" EQUATIONS:
+# Factors:   1.0      -1.0       0.0        0.0
+# PARAMS:
+#          prm#27      1.0       0.0        0.0
+#          prm#28      0.0       0.0        0.0
+#          prm#08      0.0       0.0        0.0
+#          prm#09      0.0       0.0        0.0
+#          prm#10      0.0       0.0        0.0
+#          prm#11      0.0       0.0        0.0
+#          prm#13      0.0       0.0        0.0
+#          prm#14      0.0       0.0        0.0
+#          prm#22      0.0       0.0        0.0
+#          prm#23      0.0       0.0        0.0
+#          prm#24      0.0       0.0        0.0
+#          prm#25      0.0       0.0        0.0
+#          prm#32      0.0       0.0        0.0  # GROUP-4 ZEROS:
+#          prm#33      0.0       0.0        0.0  #   THESE EQUATIONS
+#          prm#34      0.0       0.0        0.0  #   USE REVOKED PARAMETERS
+#          prm#35      0.0       0.0        0.0  #   AND DO NOT APPEAR
+
+
+# --------------------------------------------------------------
+# FIRST, AN AFFINE MAP FROM HIDDEN REPORTS TO REGRESSION FACTORS
+# --------------------------------------------------------------
+
+for (t in 1 : (num_known_terms + num_predicted_terms))
+{
+    for (i in 1 : num_attrs)
+    {
+      reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+    
+      if (i < 19)
+      {
+          agg_i = 19;
+          if (i >=  2 & 1 <=  7) {agg_i =  1;}
+          if (i >= 10 & 1 <= 15) {agg_i =  9;}
+          if (i >= 17 & 1 <= 18) {agg_i = 16;}
+
+          RegresValueMap [reg_index + 1, (t-1) * num_attrs +     i] = -1.0 + zero;  # 1st factor: -x[t]
+          RegresValueMap [reg_index + 2, (t-1) * num_attrs + agg_i] =  1.0 + zero;  # 2nd factor: aggregate[t]
+          if (t == 1) {
+              RegresValueMap [reg_index + 3, i] = 1.0 + zero; # For t = 1 the 3rd factor is x[t] = x[1]
+          } else {
+              RegresValueMap [reg_index + 3, (t-2) * num_attrs + i] =  1.0 + zero; # 3rd factor: x[t-1]
+          }
+          if (t >= 3) {
+              RegresValueMap [reg_index + 4, (t-2) * num_attrs + i] =  1.0 + zero; # 4th factor is
+              RegresValueMap [reg_index + 4, (t-3) * num_attrs + i] = -1.0 + zero; #   x[t-1] - x[t-2]
+          }
+      }
+
+# Regression for the TOTAL:
+
+      if (i == 19)
+      {
+          if (t >= 2) {
+              RegresValueMap [reg_index + 1, (t-1) * num_attrs + 19] = -1.0 + zero; # 1st factor: -x[t]
+              RegresFactorDefault [reg_index + 2, 1]                 =  1.0 + zero; # 2nd factor: Intercept
+              RegresValueMap [reg_index + 3, (t-2) * num_attrs + 19] =  1.0 + zero; # 3rd factor: x[t-1]
+          }
+          if (t >= 3) {
+              RegresValueMap [reg_index + 4, (t-2) * num_attrs + 19] =  1.0 + zero; # 4th factor is
+              RegresValueMap [reg_index + 4, (t-3) * num_attrs + 19] = -1.0 + zero; #   x[t-1] - x[t-2]
+          }
+      }
+  }
+}
+
+# -----------------------------------------------------------------
+# SECOND, AN AFFINE MAP FROM OBSERVED REPORTS TO REGRESSION FACTORS
+# -----------------------------------------------------------------
+
+for (t in (num_known_terms + num_predicted_terms + 1) : num_terms)
+{
+    t2 = t - (num_known_terms + num_predicted_terms);
+    for (i in 1 : num_attrs) {
+        reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+        RegresValueMap [reg_index + 1, (t  - 1) * num_attrs + i] = -1.0 + zero; # 1st factor: -y[t]
+        RegresValueMap [reg_index + 2, (t2 - 1) * num_attrs + i] =  1.0 + zero; # 2nd factor:  x[t]
+    }
+}
+
+# -----------------------------------------------------
+# THIRD, AN AFFINE MAP FOR REGULARIZATION "REGRESSIONS"
+# -----------------------------------------------------
+
+reg_index = num_terms * num_attrs * num_factors;
+for (i in 1:num_regularization_regs)
+{
+    RegresFactorDefault [reg_index + 1, 1] =  1.0 + zero;
+    RegresFactorDefault [reg_index + 2, 1] = -1.0 + zero;
+    reg_index = reg_index + num_factors;
+}
+
+
+# ----------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM PARAMETERS TO THE COEFFICIENTS
+# AT REGRESSION FACTORS: A LINEAR MAP + A VECTOR OF DEFAULTS
+# ----------------------------------------------------------
+
+RegresParamMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = num_params);
+RegresCoeffDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+# -----------------------------------------------------------
+# FIRST, AN AFFINE MAP THAT COVERS HIDDEN REPORTS REGRESSIONS
+# -----------------------------------------------------------
+
+for (t in 1 : (num_known_terms + num_predicted_terms)) {
+# Group 1 attributes:
+    reg_index = ((t-1) * num_attrs - 1 + 1) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;  # Default coefficient = 1.0
+    RegresParamMap [reg_index + 2,  1]    = 1.0 + zero;  # Param #01
+    RegresParamMap [reg_index + 3,  8]    = 1.0 + zero;  # Param #08
+    RegresParamMap [reg_index + 4,  9]    = 1.0 + zero;  # Param #09
+    for (i in 2 : 7) {
+        reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+        RegresCoeffDefault [reg_index + 1, 1]  = 1.0 + zero;  # Default coefficient = 1.0
+        RegresParamMap [reg_index + 2,  i]     = 1.0 + zero;  # Param #02-#07
+        RegresParamMap [reg_index + 3, 10]     = 1.0 + zero;  # Param #10
+        RegresParamMap [reg_index + 4, 11]     = 1.0 + zero;  # Param #11
+    }
+# Group 2 attribute:
+    reg_index = ((t-1) * num_attrs - 1 + 8) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;  # Default coefficient = 1.0
+    RegresParamMap [reg_index + 2, 12] = 1.0 + zero;  # Param #12
+    RegresParamMap [reg_index + 3, 13] = 1.0 + zero;  # Param #13
+    RegresParamMap [reg_index + 4, 14] = 1.0 + zero;  # Param #14
+# Group 3 attributes:
+    reg_index = ((t-1) * num_attrs - 1 + 9) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1]  = 1.0 + zero;  # Default coefficient = 1.0
+    RegresParamMap [reg_index + 2, 15]     = 1.0 + zero;  # Param #17
+    RegresParamMap [reg_index + 3, 22]     = 1.0 + zero;  # Param #22
+    RegresParamMap [reg_index + 4, 23]     = 1.0 + zero;  # Param #23
+    for (i in 10 : 15) {
+        reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+        RegresCoeffDefault [reg_index + 1, 1]  = 1.0 + zero;  # Default coefficient = 1.0
+        RegresParamMap [reg_index + 2,  6 + i] = 1.0 + zero;  # Param #16-#21
+        RegresParamMap [reg_index + 3, 24]     = 1.0 + zero;  # Param #24
+        RegresParamMap [reg_index + 4, 25]     = 1.0 + zero;  # Param #25
+    }
+    
+# Group 4 attributes:
+if (is_GROUP_4_ENABLED == 1) {
+    reg_index = ((t-1) * num_attrs - 1 + 16) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1]  = 1.0 + zero;  # Default coefficient = 1.0
+    RegresParamMap [reg_index + 2, 29]     = 1.0 + zero;  # Param #29
+    RegresParamMap [reg_index + 3, 32]     = 1.0 + zero;  # Param #32
+    RegresParamMap [reg_index + 4, 33]     = 1.0 + zero;  # Param #33
+    for (i in 17 : 18) {
+        reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+        RegresCoeffDefault [reg_index + 1, 1]  = 1.0 + zero;  # Default coefficient = 1.0
+        RegresParamMap [reg_index + 2, 13 + i] = 1.0 + zero;  # Param #30-#31
+        RegresParamMap [reg_index + 3, 34]     = 1.0 + zero;  # Param #34
+        RegresParamMap [reg_index + 4, 35]     = 1.0 + zero;  # Param #35
+    }
+}
+
+# Group 5 attribute:
+    reg_index = ((t-1) * num_attrs - 1 + 19) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;  # Default coefficient = 1.0
+    RegresParamMap [reg_index + 2, 26] = 1.0 + zero;  # Param #26
+    RegresParamMap [reg_index + 3, 27] = 1.0 + zero;  # Param #27
+    RegresParamMap [reg_index + 4, 28] = 1.0 + zero;  # Param #28
+}
+
+# --------------------------------------------------------------
+# SECOND, AN AFFINE MAP THAT COVERS OBSERVED REPORTS REGRESSIONS
+# --------------------------------------------------------------
+
+for (t in (num_known_terms + num_predicted_terms + 1) : num_terms)
+{
+    for (i in 1 : num_attrs) {
+        if (castAsScalar (disabled_known_values [i, t - (num_known_terms + num_predicted_terms)]) == 0.0)
+        {
+            reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+            RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero; # Default coefficient = 1.0
+            RegresCoeffDefault [reg_index + 2, 1] = 1.0 + zero; # Default coefficient = 1.0
+        }
+    }
+}
+
+# -------------------------------------------------------------
+# THIRD, AN AFFINE MAP THAT COVERS REGULARIZATION "REGRESSIONS"
+# -------------------------------------------------------------
+
+reg_index = num_terms * num_attrs * num_factors;
+    RegresParamMap [reg_index + 1, 27] = 1.0 + zero;  # Param #27
+    RegresCoeffDefault [reg_index + 2, 1] = 1.0 + zero;
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 28] = 1.0 + zero;  # Param #28
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 08] = 1.0 + zero;  # Param #08
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 09] = 1.0 + zero;  # Param #09
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 10] = 1.0 + zero;  # Param #10
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 11] = 1.0 + zero;  # Param #11
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 13] = 1.0 + zero;  # Param #13
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 14] = 1.0 + zero;  # Param #14
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 22] = 1.0 + zero;  # Param #22
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 23] = 1.0 + zero;  # Param #23
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 24] = 1.0 + zero;  # Param #24
+reg_index = reg_index + num_factors;
+    RegresParamMap [reg_index + 1, 25] = 1.0 + zero;  # Param #25
+
+if (is_GROUP_4_ENABLED == 1) {
+    reg_index = reg_index + num_factors;
+        RegresParamMap [reg_index + 1, 32] = 1.0 + zero;  # Param #32
+    reg_index = reg_index + num_factors;
+        RegresParamMap [reg_index + 1, 33] = 1.0 + zero;  # Param #33
+    reg_index = reg_index + num_factors;
+        RegresParamMap [reg_index + 1, 34] = 1.0 + zero;  # Param #34
+    reg_index = reg_index + num_factors;
+        RegresParamMap [reg_index + 1, 35] = 1.0 + zero;  # Param #35
+}
+
+# ----------------------------------------------------------
+# GENERATE A VECTOR OF SCALE MULTIPLIERS, ONE PER REGRESSION
+# ----------------------------------------------------------
+
+RegresScaleMult = matrix (1.0, rows = num_reg_eqs, cols = 1);
+
+global_weight = 0.5 + zero;
+
+attribute_size = rowMeans (abs (initial_reports [, 1:num_known_terms]));
+max_attr_size = max (attribute_size);
+
+for (t in 1 : num_terms) {
+    for (i in 1 : num_attrs) {
+        regeqn = (t-1) * num_attrs + i;
+        scale_down = sqrt (attribute_size [i, 1] / max_attr_size) * 0.999 + 0.001;
+        acceptable_drift = scale_down * max_attr_size * 0.001;
+        RegresScaleMult [regeqn, 1] = global_weight / (acceptable_drift^2);
+    }
+}
+
+for (i in 1 : num_regularization_regs) {
+    regeqn = num_terms * num_attrs + i;
+    acceptable_drift = 0.01;
+    RegresScaleMult [regeqn, 1] = global_weight / (acceptable_drift^2);
+}
+
+# --------------------------------
+# WRITE OUT ALL GENERATED MATRICES
+# --------------------------------
+
+write (initial_reports,    $2, format="text");
+write (CReps,              $3, format="text");
+write (RegresValueMap,     $4, format="text");
+write (RegresFactorDefault,$5, format="text");
+write (RegresParamMap,     $6, format="text");
+write (RegresCoeffDefault, $7, format="text");
+write (RegresScaleMult,    $8, format="text");

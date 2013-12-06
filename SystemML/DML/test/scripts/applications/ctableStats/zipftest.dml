@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Generator of random records with boolean features
+# Average record (row) and feature (column) densities follow
+#   power laws:  E(#1s in line k) = const / (k + add)^pow
+# Cell[1, 1] has the highest probability to be 1, also input 
+
+# By setting num_features >> num_records we allow lots of rare
+# features while keeping most records nonempty.
+# The power ("pow") in the power law determines the tail behavior;
+# The additive ("add") determines how steeply the density changes
+#   in the first few records or features.
+
+num_records = 1000;    # The number of records (rows)
+num_features = 50000;  # The number of boolean features (columns)
+
+pow_records = 2.0;     # The Zipf law power for record  density
+pow_features = 1.0;    # The Zipf law power for feature density
+
+add_records = 100.0;   # The additive shift for record  density
+add_features = 20.0;   # The additive shift for feature density
+
+max_cell_prob = 1.0;   # The probability for Cell[1, 1] to be 1
+
+############
+
+c = max_cell_prob * ((1.0 + add_records)^pow_records) * ((1.0 + add_features)^pow_features);
+
+vec_records = matrix (1.0, rows = num_records, cols = 1);
+vec_records = sumup (vec_records);
+vec_records = 1.0 / ((vec_records + add_records)^pow_records);
+
+vec_features = matrix (1.0, rows = num_features, cols = 1);
+vec_features = sumup (vec_features);
+vec_features = 1.0 / ((t(vec_features) + add_features)^pow_features);
+
+Probs = c * (vec_records %*% vec_features);
+avg_density_records = rowSums (Probs);
+avg_density_features = colSums (Probs);
+
+Tosses = Rand (rows = num_records, cols = num_features, min = 0.0, max = 1.0);
+Data = ppred (Tosses, Probs, "<=");
+
+write (avg_density_records,  "Zipf.AvgDensity.Rows", format="text");
+write (avg_density_features, "Zipf.AvgDensity.Cols", format="text");
+write (Data, "Zipf.Data", format="text");
+
+
+sumup = function (Matrix[double] A) return (Matrix[double] sum_A)
+{
+    shift = 1;
+    m_A = nrow(A);
+    sum_A = A;
+    while (shift < m_A) {
+        sum_A [(shift+1):m_A, ] = sum_A [(shift+1):m_A, ] + sum_A [1:(m_A-shift), ];
+        shift = 2 * shift;
+    } 
+}

@@ -1,0 +1,434 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# 2013-10-08: THIS IS THE ATTEMPT TO IMPLEMENT HIDDEN STATE AS "HIDDEN REPORTS"
+# THE FIRST TERMS IN THE REPORTS MATRIX ARE THE HIDDEN REPORTS, THE LAST ARE THE KNOWN REPORTS
+#
+# THIS VERSION IS WITH "DIFFERENTIAL" REGRESSIONS & AUXILIARY ATTRIBUTES
+#
+# hadoop jar SystemML.jar -f test/scripts/applications/impute/wfundInputGenerator2.dml -exec singlenode
+#    -args
+#        test/scripts/applications/impute/initial_reports_unprocessed
+#        test/scripts/applications/impute/initial_reports_preprocessed
+#        test/scripts/applications/impute/CReps 
+#        test/scripts/applications/impute/RegresValueMap
+#        test/scripts/applications/impute/RegresFactorDefault
+#        test/scripts/applications/impute/RegresParamMap
+#        test/scripts/applications/impute/RegresCoeffDefault
+#        test/scripts/applications/impute/RegresScaleMult
+
+num_observed_attrs = 19;       #  The number of attributes in the report
+num_auxiliary_attrs = 5;       #  The number of extra attributes used to decompose the observed ones
+num_attrs = num_observed_attrs + num_auxiliary_attrs;
+zero = matrix (0.0, rows = 1, cols = 1);
+
+# -------------------------------------------
+#  FEEL FREE / DON'T FORGET TO CHANGE THESE:
+# -------------------------------------------
+
+is_GROUP_4_ENABLED   = 0;      #  = 1 or 0
+is_FLIPPING_ENABLED  = 0;      #  = 1 or 0  DISABLE THIS!
+is_QUARTERLY_ENABLED = 1;      #  = 1 or 0  (enabled for sabesp)
+is_OCTALLY_ENABLED   = 0;      #  = 1 or 0  DISABLE THIS!
+
+num_known_terms = 20;          #  The number of   known   term reports
+num_predicted_terms = 1;       #  The number of predicted term reports
+num_state_terms = num_known_terms + num_predicted_terms;
+
+# Indicator matrix to show which report values should NOT be penalized
+# because of their difference between "observed" and "hidden" reports:
+
+disabled_known_values = matrix (0.0, rows = num_observed_attrs, cols = num_known_terms);
+# disabled_known_values [4, 3] = 1.0 + zero;
+# disabled_known_values [5, 3] = 1.0 + zero;
+# disabled_known_values [6, 3] = 1.0 + zero;
+# disabled_known_values [7, 3] = 1.0 + zero;
+
+
+# --------------------------------------------------------
+#  subtotals_tree [i, 1] = the closest subtotal attribute
+#  " 0" means that this attribute's values are constants
+#  "-1" means that this attribute is a root total
+# --------------------------------------------------------
+
+subtotals_tree = matrix (0.0, rows = num_attrs, cols = 1);
+
+subtotals_tree [ 1, 1] = 19 + zero;  subtotals_tree [ 9, 1] = 19 + zero;
+subtotals_tree [ 2, 1] =  1 + zero;  subtotals_tree [10, 1] =  9 + zero;
+subtotals_tree [ 3, 1] =  1 + zero;  subtotals_tree [11, 1] =  9 + zero;
+subtotals_tree [ 4, 1] =  1 + zero;  subtotals_tree [12, 1] =  9 + zero;
+subtotals_tree [ 5, 1] =  1 + zero;  subtotals_tree [13, 1] =  9 + zero;
+subtotals_tree [ 6, 1] =  1 + zero;  subtotals_tree [14, 1] =  9 + zero;
+subtotals_tree [ 7, 1] =  1 + zero;  subtotals_tree [15, 1] =  9 + zero;
+subtotals_tree [ 8, 1] = 19 + zero;  subtotals_tree [19, 1] = -1 + zero; # TOTAL
+
+if (is_GROUP_4_ENABLED == 1) {
+    subtotals_tree [16, 1] = 19 + zero;
+    subtotals_tree [17, 1] = 16 + zero;
+    subtotals_tree [18, 1] = 16 + zero;
+}
+
+subtotals_tree [20, 1] = -1 + zero;  # Auxiliary TOTAL
+subtotals_tree [21, 1] = 20 + zero;
+if (is_FLIPPING_ENABLED  == 1) {subtotals_tree [22, 1] = 20 + zero;}
+if (is_QUARTERLY_ENABLED == 1) {subtotals_tree [23, 1] = 20 + zero;}
+if (is_OCTALLY_ENABLED   == 1) {subtotals_tree [24, 1] = 20 + zero;}
+
+# -------------------------------------------------------------------
+#  We have two full column-slots for every report: one slot for the 
+#  "hidden" report (# i) and one slot for the "observed" report 
+#  (# i + num_state_terms).  Only the "hidden" part has degrees of
+#  freedom associated with it; the "observed" part is kept constant.
+#  We penalize most "hidden" values if they deviate too far from the
+#  "observed" values.  We also use this penalty to regularize
+#  auxiliary attributes and/or predicted reports, in which case their
+#  "observed" counterparts are set to zero.
+# -------------------------------------------------------------------
+
+num_terms = 2 * num_state_terms;
+
+initial_reports_unprocessed = read ($1);
+initial_reports = matrix (0.0, rows = num_attrs, cols = num_terms);
+initial_reports [1:num_observed_attrs, 1:num_known_terms] = 
+    initial_reports_unprocessed [1:num_observed_attrs, 1:num_known_terms];
+initial_reports [1:num_observed_attrs, (num_state_terms + 1) : (num_state_terms + num_known_terms)] = 
+    initial_reports_unprocessed [1:num_observed_attrs, 1:num_known_terms];
+
+disabled_known_values_extended = matrix (0.0, rows = num_attrs, cols = num_state_terms);
+disabled_known_values_extended [1:num_observed_attrs, 1:num_known_terms] = disabled_known_values;
+disabled_known_values = disabled_known_values_extended;
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM FREE VARIABLES TO THE REPORTS
+# AFFINE MAP = LINEAR MAP + INITIAL (DEFAULT) REPORTS
+# All free variables are mapped to the "HIDDEN" reports
+# ---------------------------------------------------------
+
+is_free = matrix (1.0, rows = num_attrs, cols = 1);
+for (i in 1:num_attrs) {
+    j = castAsScalar (subtotals_tree [i, 1]);
+    if (j > 0.0) {
+        is_free [j, 1] = 0.0 + zero;
+    } else {
+        if (j == 0.0) {
+            is_free [i, 1] = 0.0 + zero;
+}   }   }
+num_frees_per_term = sum (is_free);
+num_frees = num_state_terms * num_frees_per_term;
+
+CReps_block = matrix (0.0, rows = num_attrs, cols = num_frees_per_term);
+index_free = 0;
+for (i in 1:num_attrs) {
+    if (castAsScalar (is_free [i, 1]) == 1.0) {
+        index_free = index_free + 1;
+        j = i;
+        while (j > 0.0) {
+            CReps_block [j, index_free] = 1.0 + zero;
+            j = castAsScalar (subtotals_tree [j, 1]);
+}   }   }
+
+CReps = matrix (0.0, rows = (num_terms * num_attrs), cols = num_frees);
+for (t in 1:num_state_terms)
+{
+    dt = (t-1) * num_attrs;
+    df = (t-1) * num_frees_per_term;
+    CReps [(dt + 1) : (dt + num_attrs), (df + 1) : (df + num_frees_per_term)] = CReps_block;
+}
+
+
+# ---------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM REPORTS TO REGRESSION FACTORS
+# AFFINE MAP = LINEAR MAP + A VECTOR OF DEFAULTS
+# ---------------------------------------------------------
+
+# We have one regression equation per time-term for each attribute, plus a few special
+# regularization "regression" equations.  There are three types of regressions:
+# 1. For "hidden" reports:
+#   x[t] ~ subtotal[t], x[t-1], (x[t-1] - x[t-2])
+#   (TOTAL[t] - TOTAL[t-1]) ~ (TOTAL[t-1] - TOTAL[t-2]), aux_1[t] (with coeff. 1)
+#     where aux_1[t] = aux_2[t] + ... + aux_5[t] (implemented as hard constraint)
+# 2. For "observed" reports:
+#   y[t]  ~  x[t] (with coefficient 1)
+# 3. For all parameters: regularization equations.
+# All regressions follow the 4-factor pattern.
+
+num_factors = 4; 
+num_params  = 18 * 3 + 1;
+num_reg_eqs = num_terms * num_attrs + num_params;
+
+# All regression equations for the same attribute share the same parameters, regardless
+# of the term; some parameters may be shared across multiple attributes, (those attributes
+# whose behavior is believed to be similar) as specified in the table below:
+
+# NON-TOTAL OBSERVED ATTRIBUTE REGRESSION EQUATIONS:
+#
+# Factors:                                                (x[t-1] -          
+#                     -x[t]       agg[t]       x[t-1]       x[t-2])        
+# -----------------------------------------------------------------------------
+# Row #i = 1...18:     1.0      prm[3*i-1]    prm[3*i]    prm[3*i+1]
+# (Must have: agg = subtotals_tree [i, 1] > 0.0)
+# -----------------------------------------------------------------------------
+
+# TOTAL AND AUXILIARY ATTRIBUTE REGRESSION EQUATIONS:
+#
+# Factors:          -(x[t] -    (x[t-1] -      
+#                     x[t-1])     x[t-2])      x[t-1]      aux_1[t]
+# -----------------------------------------------------------------------------
+# TOTAL (Row #19):     1.0        prm[1]        0.0          1.0      
+# aux_1 (Row #20):     0.0         0.0          0.0          0.0 
+# aux_2 (Row #21):     1.0         1.0          0.0          0.0     "steady"
+# aux_3 (Row #22):     1.0         1.0         -4.0          0.0    "flipping"
+# aux_4 (Row #23):     1.0         1.0         -2.0          0.0    "quarterly"
+# aux_5 (Row #24):     1.0         1.0       sqrt(2)-2       0.0     "octally"
+# -----------------------------------------------------------------------------
+
+# THE LAST REGULARIZATION "REGRESSION" EQUATIONS:
+#
+# Factors:            -1.0         1.0          0.0          0.0
+# -----------------------------------------------------------------------------
+# For prm[1]:         prm[1]       0.0 ?        0.0          0.0  ???
+# For i = 1...18:   prm[3*i-1]     0.0          0.0          0.0  if subtotals_tree [i, 1] == 0.0
+#                    prm[3*i]      1.0          0.0          0.0
+#                   prm[3*i+1]     0.0          0.0          0.0
+# For all others:      0.0         0.0          0.0          0.0
+# -----------------------------------------------------------------------------
+
+RegresValueMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = (num_terms * num_attrs));
+RegresFactorDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+# --------------------------------------------------------------
+# FIRST, AN AFFINE MAP FROM HIDDEN REPORTS TO REGRESSION FACTORS
+# --------------------------------------------------------------
+
+for (t in 2 : num_state_terms) {
+    for (i in 1 : num_attrs) {
+        reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+        agg = castAsScalar (subtotals_tree [i, 1]);
+        if (i <= 18 & agg > 0)
+        {
+            RegresValueMap [reg_index + 1, (t-1) * num_attrs +  i ]   = -1.0 + zero;  # 1st factor: -x[t]
+            RegresValueMap [reg_index + 2, (t-1) * num_attrs + agg]   =  1.0 + zero;  # 2nd factor: agg[t]
+            RegresValueMap [reg_index + 3, (t-2) * num_attrs +  i ]   =  1.0 + zero;  # 3rd factor: x[t-1]
+            if (t == 2) {
+                RegresValueMap [reg_index + 4, (t-1) * num_attrs + i] =  1.0 + zero;  # 4th factor:
+                RegresValueMap [reg_index + 4, (t-2) * num_attrs + i] = -1.0 + zero;  #   x[t] - x[t-1]
+            } else {
+                RegresValueMap [reg_index + 4, (t-2) * num_attrs + i] =  1.0 + zero;  # 4th factor:
+                RegresValueMap [reg_index + 4, (t-3) * num_attrs + i] = -1.0 + zero;  # x[t-1] - x[t-2]
+            }
+### RegresFactorDefault [reg_index + 4, 1] = 1.0 + zero;  # 4th factor: Intercept
+        }
+        if ((i == 19 | i >= 21) & t >= 3 & agg != 0)
+        {
+            reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+            RegresValueMap [reg_index + 1, (t-1) * num_attrs +  i]    = -1.0 + zero;  # 1st factor:
+            RegresValueMap [reg_index + 1, (t-2) * num_attrs +  i]    =  1.0 + zero;  #   - x[t] + x[t-1]
+            RegresValueMap [reg_index + 2, (t-2) * num_attrs +  i]    =  1.0 + zero;  # 2nd factor:
+            RegresValueMap [reg_index + 2, (t-3) * num_attrs +  i]    = -1.0 + zero;  #   x[t-1] - x[t-2]
+            RegresValueMap [reg_index + 3, (t-2) * num_attrs +  i]    =  1.0 + zero;  # 3rd factor: x[t-1]
+            RegresValueMap [reg_index + 4, (t-1) * num_attrs + 20]    =  1.0 + zero;  # 4th factor: aux_1[t]
+}   }   }
+
+# ----------------------------------------------------------------------------------------
+# SECOND, AN AFFINE MAP FROM OBSERVED REPORTS TO REGRESSION FACTORS FOR HIDDEN-TO-OBSERVED
+#   REPORTS MATCHING AND/OR REPORT VALUE REGULARIZATION
+# NOTE THAT WE REGULARIZE AUXILIARY ATTRIBUTES BY MATCHING THEM TO ZEROS!
+# ----------------------------------------------------------------------------------------
+
+for (t1 in (num_state_terms + 1) : num_terms) {
+    t2 = t1 - num_state_terms;
+    for (i in 1 : num_attrs) {
+        if ((i <= num_observed_attrs & t2 <= num_known_terms & castAsScalar (disabled_known_values [i, t2]) == 0.0) |
+            (i > num_observed_attrs & castAsScalar (subtotals_tree [i, 1]) > 0.0))
+        {
+            reg_index = ((t1 - 1) * num_attrs - 1 + i) * num_factors;
+            RegresValueMap [reg_index + 1, (t1 - 1) * num_attrs + i] = -1.0 + zero; # 1st factor: -y[t]
+            RegresValueMap [reg_index + 2, (t2 - 1) * num_attrs + i] =  1.0 + zero; # 2nd factor:  x[t]
+}   }   }
+
+# -----------------------------------------------------------------------
+# THIRD, AN AFFINE MAP THAT COVERS PARAMETER REGULARIZATION "REGRESSIONS"
+# -----------------------------------------------------------------------
+
+reg_index_base = num_terms * num_attrs * num_factors;
+for (param in 1:num_params)
+{
+    reg_index = reg_index_base + (param - 1) * num_factors;
+    RegresFactorDefault [reg_index + 1, 1] = -1.0 + zero;
+    RegresFactorDefault [reg_index + 2, 1] =  1.0 + zero;
+}
+
+
+# ----------------------------------------------------------
+# GENERATE AN AFFINE MAP FROM PARAMETERS TO THE COEFFICIENTS
+# AT REGRESSION FACTORS: A LINEAR MAP + A VECTOR OF DEFAULTS
+# ----------------------------------------------------------
+
+RegresParamMap = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = num_params);
+RegresCoeffDefault = matrix (0.0, rows = (num_reg_eqs * num_factors), cols = 1);
+
+# -----------------------------------------------------------
+# FIRST, AN AFFINE MAP THAT COVERS HIDDEN REPORTS REGRESSIONS
+# -----------------------------------------------------------
+
+for (t in 2 : num_state_terms) {
+    for (i in 1 : num_observed_attrs) {
+        if (castAsScalar (subtotals_tree [i, 1]) > 0.0) {
+            param_1 = 3 * i - 1;
+            param_2 = 3 * i;
+            param_3 = 3 * i + 1;
+            reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+            RegresCoeffDefault [reg_index + 1, 1]    = 1.0 + zero;
+            RegresParamMap [reg_index + 2,  param_1] = 1.0 + zero;
+            RegresParamMap [reg_index + 3,  param_2] = 1.0 + zero;
+            RegresParamMap [reg_index + 4,  param_3] = 1.0 + zero;
+    }   }
+
+    reg_index = ((t-1) * num_attrs - 1 + 19) * num_factors;
+    RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;
+    RegresParamMap     [reg_index + 2, 1] = 1.0 + zero; # prm[1]
+    RegresCoeffDefault [reg_index + 4, 1] = 1.0 + zero;
+    
+    for (i in (num_observed_attrs + 1) : num_attrs) {    
+        if (castAsScalar (subtotals_tree [i, 1]) > 0.0) {
+            reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
+            RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;
+            RegresCoeffDefault [reg_index + 2, 1] = 1.0 + zero;
+            if (i == 22) {
+                RegresCoeffDefault [reg_index + 3, 1] = -4.0 + zero;
+            }
+            if (i == 23) {
+                RegresCoeffDefault [reg_index + 3, 1] = -2.0 + zero;
+            }
+            if (i == 24) {
+                RegresCoeffDefault [reg_index + 3, 1] = sqrt (2.0) - 2.0 + zero;
+}   }   }   }
+
+# -----------------------------------------------------------------------
+# SECOND, AN AFFINE MAP THAT COVERS HIDDEN-TO-OBSERVED REPORTS MATCHING
+#   AND/OR REPORT VALUE REGULARIZATION
+# NOTE THAT WE REGULARIZE AUXILIARY ATTRIBUTES BY MATCHING THEM TO ZEROS!
+# -----------------------------------------------------------------------
+
+for (t1 in (num_state_terms + 1) : num_terms) {
+    t2 = t1 - num_state_terms;
+    for (i in 1 : num_attrs) {
+        if ((i <= num_observed_attrs & t2 <= num_known_terms & castAsScalar (disabled_known_values [i, t2]) == 0.0) |
+            (i > num_observed_attrs & castAsScalar (subtotals_tree [i, 1]) > 0.0))
+        {
+            reg_index = ((t1 - 1) * num_attrs - 1 + i) * num_factors;
+            RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero;
+            RegresCoeffDefault [reg_index + 2, 1] = 1.0 + zero;
+}   }   }
+
+# -----------------------------------------------------------------------
+# THIRD, AN AFFINE MAP THAT COVERS PARAMETER REGULARIZATION "REGRESSIONS"
+# -----------------------------------------------------------------------
+
+reg_index_base = num_terms * num_attrs * num_factors;
+
+param = 1;
+
+reg_index = reg_index_base + (param - 1) * num_factors;
+RegresParamMap     [reg_index + 1, param] = 1.0 + zero;
+RegresCoeffDefault [reg_index + 2,   1  ] = 0.0 + zero;
+
+for (i in 1 : num_observed_attrs) {
+    agg = castAsScalar (subtotals_tree [i, 1]);
+    if (agg >= 0.0)
+    {
+        param = 3 * i - 1;
+        
+        if (agg == 0.0) {
+            reg_index = reg_index_base + (param - 1) * num_factors;
+            RegresParamMap     [reg_index + 1, param] = 1.0 + zero;
+            RegresCoeffDefault [reg_index + 2,   1  ] = 0.0 + zero;
+        }
+        
+        param = 3 * i;
+        
+        reg_index = reg_index_base + (param - 1) * num_factors;
+        RegresParamMap     [reg_index + 1, param] = 1.0 + zero;
+        RegresCoeffDefault [reg_index + 2,   1  ] = 1.0 + zero;
+
+        param = 3 * i + 1;
+        
+        reg_index = reg_index_base + (param - 1) * num_factors;
+        RegresParamMap     [reg_index + 1, param] = 1.0 + zero;
+        RegresCoeffDefault [reg_index + 2,   1  ] = 0.0 + zero;
+    }
+}
+
+
+# ----------------------------------------------------------
+# GENERATE A VECTOR OF SCALE MULTIPLIERS, ONE PER REGRESSION
+# ----------------------------------------------------------
+
+RegresScaleMult = matrix (1.0, rows = num_reg_eqs, cols = 1);
+
+global_weight = 0.5 + zero;
+
+attribute_size = rowMeans (abs (initial_reports [1:num_observed_attrs, 1:num_known_terms]));
+max_attr_size = max (attribute_size);
+difference_size = rowMeans (abs (initial_reports [1:num_observed_attrs, 2:num_known_terms] 
+    - initial_reports [1:num_observed_attrs, 1:(num_known_terms-1)]));
+max_diff_size = max (difference_size);
+
+for (i in 1 : num_attrs)
+{
+    scale_factor = 1.0;
+    if (i <= num_observed_attrs) {
+        ### CORRECTION FOR OBSERVED ATTRIBUTES:
+        attribute_size_i = castAsScalar (attribute_size [i, 1]);
+        scale_factor = sqrt (attribute_size_i / max_attr_size) * 0.999 + 0.001;
+    }
+    for (t in 1 : num_terms) {
+        if (t <= num_state_terms) {
+        ### HIDDEN-STATE RECURRENCE REGRESSIONS
+            if (i <= num_observed_attrs) {
+            ### RECURRENCES FOR OBSERVED ATTRIBUTES:
+                acceptable_drift = scale_factor * max_attr_size * 0.0005;
+            } else {
+            ### RECURRENCES FOR AUXILIARY ATTRIBUTES:
+                acceptable_drift = scale_factor * max_diff_size * 0.0005;
+            }
+        } else {
+        ### MATCHING AND REGULARIZATION
+            if (i <= num_observed_attrs) {
+            ### MATCHING OF HIDDEN WITH OBSERVED ATTRIBUTES:
+                acceptable_drift = scale_factor * max_attr_size * 0.001;
+            } else {
+            ### REGULARIZATION OF AUXILIARY ATTRIBUTES:
+                acceptable_drift = scale_factor * max_diff_size * 0.1;
+        }   }
+        regeqn = (t-1) * num_attrs + i;
+        RegresScaleMult [regeqn, 1] = global_weight / (acceptable_drift^2);
+    }
+}
+
+for (i in 1 : num_params) {
+    regeqn = num_terms * num_attrs + i;
+    acceptable_drift = 0.05;
+    if (i == 1) {
+        acceptable_drift = 0.01; # 0.005;
+    }
+    RegresScaleMult [regeqn, 1] = global_weight / (acceptable_drift^2);
+}
+
+# --------------------------------
+# WRITE OUT ALL GENERATED MATRICES
+# --------------------------------
+
+write (initial_reports,    $2, format="text");
+write (CReps,              $3, format="text");
+write (RegresValueMap,     $4, format="text");
+write (RegresFactorDefault,$5, format="text");
+write (RegresParamMap,     $6, format="text");
+write (RegresCoeffDefault, $7, format="text");
+write (RegresScaleMult,    $8, format="text");

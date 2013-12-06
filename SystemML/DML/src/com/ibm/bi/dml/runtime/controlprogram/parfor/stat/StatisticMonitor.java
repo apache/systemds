@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -176,7 +176,7 @@ public class StatisticMonitor
 					sb.append("  Time INIT OPTIM   = "+stats.get(Stat.OPT_T).get(i)+"ms\n");
 				}
 				
-				sb.append("  Time INIT DATA  = "+stats.get(Stat.PARFOR_INIT_DATA_T).get(i)+"ms\n");
+				sb.append("  Time INIT DATA    = "+stats.get(Stat.PARFOR_INIT_DATA_T).get(i)+"ms\n");
 				sb.append("  Time INIT PARWRK  = "+stats.get(Stat.PARFOR_INIT_PARWRK_T).get(i)+"ms\n");
 				sb.append("  Time INIT TASKS   = "+stats.get(Stat.PARFOR_INIT_TASKS_T).get(i)+"ms\n");
 				sb.append("  Time WAIT EXEC    = "+stats.get(Stat.PARFOR_WAIT_EXEC_T).get(i)+"ms\n");

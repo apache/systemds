@@ -1,13 +1,12 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -27,13 +26,13 @@ public class LocalParWorker extends ParWorker implements Runnable
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected LocalTaskQueue<Task> _taskQueue   = null;
-	protected boolean        _stopped     = false;
 	
-	protected int 			 _max_retry   = -1;
+	protected boolean   _stopped     = false;
+	protected int 		_max_retry   = -1;
 	
-	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, int max_retry )	
+	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, int max_retry, boolean monitor )	
 	{
-		super(ID, body);
+		super(ID, body, monitor);
 
 		_taskQueue = q;
 		_stopped   = false;
@@ -54,8 +53,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 	public void run() 
 	{
 		// monitoring start
-		Timing time1;
-		if( ParForProgramBlock.MONITOR )
+		Timing time1 = null;
+		if( _monitor )
 		{
 			time1 = new Timing(); 
 			time1.start();
@@ -117,7 +116,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 		//cleanup symbol table
 		//cleanupCachedVariables();
 
-		if( ParForProgramBlock.MONITOR )
+		if( _monitor )
 		{
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMITERS, _numIters);

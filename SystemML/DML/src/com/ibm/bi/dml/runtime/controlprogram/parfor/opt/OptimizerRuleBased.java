@@ -236,7 +236,7 @@ public class OptimizerRuleBased extends Optimizer
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
-		_numEvaluatedPlans = 1;
+		_numTotalPlans = -1; //_numEvaluatedPlans maintained in rewrites;
 		return true;
 	}
 
@@ -295,6 +295,7 @@ public class OptimizerRuleBased extends Optimizer
 		// modify plan
 		n.addParam(ParamType.DATA_PARTITIONER, pdp.toString());
 	
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set data partitioner' - result="+pdp.toString() );
 		
 		return blockwise;
@@ -444,6 +445,7 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		}
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result partitioning' - result="+apply );
 	
 		return apply;
@@ -641,6 +643,7 @@ public class OptimizerRuleBased extends Optimizer
 		PExecMode mode = (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
 		pfpb.setExecMode( mode );	
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set execution strategy' - result="+mode );
 	}
 	
@@ -695,6 +698,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( apply )
 			pfpb.enableColocatedPartitionedMatrix( varname );
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
 	}
 	
@@ -778,6 +782,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( apply )
 			pfpb.setPartitionReplicationFactor( replication );
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set partition replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
 
@@ -815,6 +820,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( apply )
 			pfpb.setExportReplicationFactor( replication );
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set export replication factor' - result="+apply+((apply)?" ("+replication+")":"") );
 	}
 
@@ -886,6 +892,7 @@ public class OptimizerRuleBased extends Optimizer
 			nested = true;
 		}
 
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'enable nested parallelism' - result="+nested );
 		
 		return nested;
@@ -963,6 +970,7 @@ public class OptimizerRuleBased extends Optimizer
 			rAssignRemainingParallelism( n, kMax ); 
 		}		
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
 	}
 	
@@ -1062,6 +1070,7 @@ public class OptimizerRuleBased extends Optimizer
 			n.addParam(ParamType.TASK_SIZE, String.valueOf(maxc));
 		}
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set task partitioner' - result="+partitioner+((flagLIX) ? ","+n.getParam(ParamType.TASK_SIZE) : "") );	
 	}
 	
@@ -1110,6 +1119,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getChilds() != null )
 			rInvokeSetResultMerge(n.getChilds(), vars, inLocal && !flagMRParFOR);
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set result merge' - result="+ret );
 	}
 	
@@ -1298,6 +1308,7 @@ public class OptimizerRuleBased extends Optimizer
 			pfpb.setRecompileMemoryBudget( newLocalMem );
 		}
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set recompile memory budget' - result="+toMB(newLocalMem) );
 	}	
 	
@@ -1340,6 +1351,7 @@ public class OptimizerRuleBased extends Optimizer
 			count = removeRecursiveParFor(n, recPBs);
 		}
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove recursive parfor' - result="+recPBs.size()+"/"+count );
 	}
 	
@@ -1601,6 +1613,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		int count = removeUnnecessaryParFor( n );
 		
+		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary parfor' - result="+count );
 	}
 	

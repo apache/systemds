@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,7 +17,6 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
@@ -42,6 +41,8 @@ public abstract class ParWorker
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
 	protected ExecutionContext          _ec          = null;
 	protected ArrayList<String>         _resultVars  = null;
+
+	protected boolean                   _monitor     = false;
 	
 	protected int                       _numTasks    = -1;
 	protected int                       _numIters    = -1;
@@ -52,7 +53,7 @@ public abstract class ParWorker
 		//e.g., RemoteParWorkerMapper)
 	}
 	
-	public ParWorker( long ID, ParForBody body )
+	public ParWorker( long ID, ParForBody body, boolean monitor )
 	{
 		_workerID    = ID;
 		
@@ -62,6 +63,8 @@ public abstract class ParWorker
 			_ec          = body.getEc();
 			_resultVars  = body.getResultVarNames();
 		}
+		
+		_monitor = monitor;
 		
 		_numTasks    = 0;
 		_numIters    = 0;
@@ -133,8 +136,8 @@ public abstract class ParWorker
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//monitoring start
-		Timing time1, time2;		
-		if( ParForProgramBlock.MONITOR )
+		Timing time1 = null, time2 = null;		
+		if( _monitor )
 		{
 			time1 = new Timing(); time1.start();
 			time2 = new Timing(); time2.start();
@@ -156,14 +159,14 @@ public abstract class ParWorker
 					
 			_numIters++;
 			
-			if(ParForProgramBlock.MONITOR)
+			if( _monitor )
 				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());
 		}
 
 		_numTasks++;
 		
 		//monitoring end
-		if(ParForProgramBlock.MONITOR)
+		if( _monitor )
 		{
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
@@ -180,8 +183,8 @@ public abstract class ParWorker
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//monitoring start
-		Timing time1, time2;		
-		if( ParForProgramBlock.MONITOR )
+		Timing time1 = null, time2 = null;		
+		if( _monitor )
 		{
 			time1 = new Timing(); time1.start();
 			time2 = new Timing(); time2.start();
@@ -205,14 +208,14 @@ public abstract class ParWorker
 					
 			_numIters++;
 			
-			if(ParForProgramBlock.MONITOR)
+			if( _monitor )
 				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());	
 		}
 
 		_numTasks++;
 		
 		//monitoring end
-		if(ParForProgramBlock.MONITOR)
+		if( _monitor )
 		{
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());

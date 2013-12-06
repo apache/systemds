@@ -366,6 +366,7 @@ public class ProgramConverter
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
+		tmpPB.disableMonitorReport(); //already done in top-level parfor
 		tmpPB.setResultVariables( pfpb.getResultVariables() );
 		
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, plain, true) );

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -96,7 +96,7 @@ public class OptimizationWrapper
 	 * @throws LanguageException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static void optimize(DMLProgram prog, Program rtprog) 
+	public static void optimize(DMLProgram prog, Program rtprog, boolean monitor) 
 		throws DMLRuntimeException, LanguageException, DMLUnsupportedOperationException 
 	{
 		LOG.debug("ParFOR Opt: Running optimize all on DML program "+DMLScript.getUUID());
@@ -120,7 +120,7 @@ public class OptimizationWrapper
 			
 			//optimize (and implicit exchange)
 			POptMode type = pb.getOptimizationMode(); //known to be >0
-			optimize( type, sb, pb, ec );
+			optimize( type, sb, pb, ec, monitor );
 		}		
 		
 		LOG.debug("ParFOR Opt: Finished optimization for DML program "+DMLScript.getUUID());
@@ -138,7 +138,7 @@ public class OptimizationWrapper
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec ) 
+	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		Timing time = new Timing();	
@@ -153,12 +153,12 @@ public class OptimizationWrapper
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
-		optimize( type, ck, cm, sb, pb, ec );
+		optimize( type, ck, cm, sb, pb, ec, monitor );
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
 		//System.out.println("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
-		if( ParForProgramBlock.MONITOR )
+		if( monitor )
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
 	
@@ -174,7 +174,7 @@ public class OptimizationWrapper
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws  
 	 */
-	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec ) 
+	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		Timing time = new Timing();
@@ -247,7 +247,7 @@ public class OptimizationWrapper
 		OptTreeConverter.clear();
 		
 		//monitor stats
-		if( ParForProgramBlock.MONITOR )
+		if( monitor )
 		{
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, otype.ordinal());
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMTPLANS, opt.getNumTotalPlans());

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -32,7 +32,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	private final static int rows1 = (int)Hop.CPThreshold;  // # of rows in each vector (for CP instructions)
 	private final static int rows2 = (int)Hop.CPThreshold+1;  // # of rows in each vector (for MR instructions)
 	private final static int cols1 = 20;      // # of columns in each vector  
-	private final static int cols2 = (int)Hop.CPThreshold+1;
 	
 	private final static double minVal=0;    // minimum value in each vector 
 	private final static double maxVal=1000; // maximum value in each vector 
@@ -44,7 +43,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		addTestConfiguration(
 				TEST_NAME, 
 				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   ); //TODO this specification is not intuitive
+				new String[] { "Rout" })   );
 	}
 
 	@Test
@@ -53,7 +52,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false);
 	}
 
-	//Note MB: Comment this test if test suite has time constraints (requires more than 5 minutes)
 	@Test
 	public void testForCorrleationSerialSerialMR() 
 	{
@@ -97,17 +95,12 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(true, null, null, ExecType.MR, false);
 	}
 	
-	/**
-	 * Intension is to test file-based result merge with regard to its integration
-	 * with the different execution modes. Hence we need at least a dataset of size
-	 * CPThreshold^2. Furthermore it is a nice tests on executing many iterations
-	 * (n=col2*(col2-1)/2=1999000 inner iterations)
-	 */
-	//@Test //TODO decomment
-	//public void testParForCorrleationLargeLocalLocalMR() 
-	//{
-	//	runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR, true);
-	//}
+	@Test
+	public void testParForCorrleationDefaultMRWithProfile() 
+	{
+		runParForCorrelationTest(true, null, null, ExecType.MR, true);
+	}
+	
 	
 	/**
 	 * 
@@ -115,7 +108,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	 * @param inner execution mode of inner parfor loop
 	 * @param instType execution mode of instructions
 	 */
-	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType, boolean manyCols )
+	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType, boolean profile )
 	{
 		//inst exec type, influenced via rows
 		int rows = -1;
@@ -123,13 +116,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 			rows = rows1;
 		else //if type MR
 			rows = rows2;
-		
-		//number of columns
-		int cols = -1;
-		if( manyCols )
-			cols = cols2;
-		else
-			cols = cols1;
+		int cols = cols1;
 		
 		//script
 		int scriptNum = -1;
@@ -138,7 +125,8 @@ public class ParForCorrelationTest extends AutomatedTestBase
 			if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
 			else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
 			else if( outer == PExecMode.LOCAL )		scriptNum=1;
-			else                                    scriptNum=4; //optimized
+			else if( !profile)                      scriptNum=4; //optimized
+			else                                    scriptNum=5; //optimized with profile
 		}
 		else
 		{

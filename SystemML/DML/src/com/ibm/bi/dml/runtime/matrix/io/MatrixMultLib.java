@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -149,7 +149,7 @@ public class MatrixMultLib
 					//unrolled 8-block 
 					for( int k = bcd; k < cd; k+=8, aix+=8)
 					{
-						c[ cix ] += a[ aix ]   * b[ k   ];
+						c[ cix ] += a[ aix   ] * b[ k   ];
 						c[ cix ] += a[ aix+1 ] * b[ k+1 ];
 						c[ cix ] += a[ aix+2 ] * b[ k+2 ];
 						c[ cix ] += a[ aix+3 ] * b[ k+3 ];
@@ -183,17 +183,17 @@ public class MatrixMultLib
 							//rest, not aligned to 8-blocks
 							for( int j = 0; j < bn; j++)
 								c[ cix+j ] += val * b[ bix+j ];
-							//unrolled 8-block
-							for( int j=bn, jix1=cix+bn, jix2=bix+bn; j < n; j+=8, jix1+=8, jix2+=8 ) 
+							//unrolled 8-block 
+							for( int j = bn; j < n; j+=8) 
 							{
-								c[ jix1   ] += val * b[ jix2   ];
-								c[ jix1+1 ] += val * b[ jix2+1 ];
-								c[ jix1+2 ] += val * b[ jix2+2 ];
-								c[ jix1+3 ] += val * b[ jix2+3 ];
-								c[ jix1+4 ] += val * b[ jix2+4 ];
-								c[ jix1+5 ] += val * b[ jix2+5 ];
-								c[ jix1+6 ] += val * b[ jix2+6 ];
-								c[ jix1+7 ] += val * b[ jix2+7 ];
+								c[ cix+j   ] += val * b[ bix+j   ];
+								c[ cix+j+1 ] += val * b[ bix+j+1 ];
+								c[ cix+j+2 ] += val * b[ bix+j+2 ];
+								c[ cix+j+3 ] += val * b[ bix+j+3 ];
+								c[ cix+j+4 ] += val * b[ bix+j+4 ];
+								c[ cix+j+5 ] += val * b[ bix+j+5 ];
+								c[ cix+j+6 ] += val * b[ bix+j+6 ];
+								c[ cix+j+7 ] += val * b[ bix+j+7 ];
 							}
 						}
 					}	
@@ -294,7 +294,7 @@ public class MatrixMultLib
 							//unrolled 8-block 
 							for(int j = bblen; j < blen; j+=8)
 							{
-								c[cix+bix[j]]   += val * bvals[j];
+								c[cix+bix[j]  ] += val * bvals[j  ];
 								c[cix+bix[j+1]] += val * bvals[j+1];
 								c[cix+bix[j+2]] += val * bvals[j+2];
 								c[cix+bix[j+3]] += val * bvals[j+3];
@@ -394,7 +394,7 @@ public class MatrixMultLib
 						//unrolled 8-block 
 						for(int k = balen; k < alen; k+=8) 
 						{
-							c[i] += avals[k]   * b[aix[k]];
+							c[i] += avals[k  ] * b[aix[k]  ];
 							c[i] += avals[k+1] * b[aix[k+1]];
 							c[i] += avals[k+2] * b[aix[k+2]];
 							c[i] += avals[k+3] * b[aix[k+3]];
@@ -447,16 +447,16 @@ public class MatrixMultLib
 							for(int j = 0; j < bn; j++)
 								c[cix+j] += val * b[bix+j];
 							//unrolled 8-block 
-							for(int j=bn, jix1=cix+bn, jix2=bix+bn; j < n; j+=8, jix1+=8, jix2+=8 )
+							for(int j = bn; j < n; j+=8)
 							{
-								c[ jix1   ] += val * b[ jix2   ];
-								c[ jix1+1 ] += val * b[ jix2+1 ];
-								c[ jix1+2 ] += val * b[ jix2+2 ];
-								c[ jix1+3 ] += val * b[ jix2+3 ];
-								c[ jix1+4 ] += val * b[ jix2+4 ];
-								c[ jix1+5 ] += val * b[ jix2+5 ];
-								c[ jix1+6 ] += val * b[ jix2+6 ];
-								c[ jix1+7 ] += val * b[ jix2+7 ];
+								c[cix+j  ] += val * b[bix+j  ];
+								c[cix+j+1] += val * b[bix+j+1];
+								c[cix+j+2] += val * b[bix+j+2];
+								c[cix+j+3] += val * b[bix+j+3];
+								c[cix+j+4] += val * b[bix+j+4];
+								c[cix+j+5] += val * b[bix+j+5];
+								c[cix+j+6] += val * b[bix+j+6];
+								c[cix+j+7] += val * b[bix+j+7];
 							}
 						}						
 					}
@@ -543,7 +543,7 @@ public class MatrixMultLib
 							//unrolled 8-block 
 							for(int j = bblen; j < blen; j+=8)
 							{
-								c[cix+bix[j]]   += val * bvals[j];
+								c[cix+bix[j]  ] += val * bvals[j  ];
 								c[cix+bix[j+1]] += val * bvals[j+1];
 								c[cix+bix[j+2]] += val * bvals[j+2];
 								c[cix+bix[j+3]] += val * bvals[j+3];
@@ -650,16 +650,16 @@ public class MatrixMultLib
 										for(int j = bjmax; j < bjmax+bn; j++) 
 											c[ ix3+j ]  += val * a[ ix1+j ];
 										//unrolled 8-block
-										for(int j=bjmax+bn, jix1=ix3+bjmax+bn, jix2=ix1+bjmax+bn; j < bjmin; j+=8, jix1+=8, jix2+=8) 
+										for(int j = bjmax+bn; j < bjmin; j+=8) 
 										{
-											c[ jix1   ]  += val * a[ jix2   ];
-											c[ jix1+1 ]  += val * a[ jix2+1 ];
-											c[ jix1+2 ]  += val * a[ jix2+2 ];
-											c[ jix1+3 ]  += val * a[ jix2+3 ];
-											c[ jix1+4 ]  += val * a[ jix2+4 ];
-											c[ jix1+5 ]  += val * a[ jix2+5 ];
-											c[ jix1+6 ]  += val * a[ jix2+6 ];
-											c[ jix1+7 ]  += val * a[ jix2+7 ];
+											c[ ix3+j   ]  += val * a[ ix1+j   ];
+											c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
+											c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
+											c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
+											c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
+											c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
+											c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
+											c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
 										}
 									}
 								}
@@ -712,16 +712,16 @@ public class MatrixMultLib
 									for(int k = 0; k < bn; k++)
 										val += a[ ix1+k ] * a[ix2+k];
 									//unrolled 8-block
-									for(int k=bn, kix1=ix1+bn, kix2=ix2+bn; k < n; k+=8, kix1+=8, kix2+=8)
+									for(int k = bn; k < n; k+=8)
 									{
-										val += a[ kix1   ] * a[ kix2   ];
-										val += a[ kix1+1 ] * a[ kix2+1 ];
-										val += a[ kix1+2 ] * a[ kix2+2 ];
-										val += a[ kix1+3 ] * a[ kix2+3 ];
-										val += a[ kix1+4 ] * a[ kix2+4 ];
-										val += a[ kix1+5 ] * a[ kix2+5 ];
-										val += a[ kix1+6 ] * a[ kix2+6 ];
-										val += a[ kix1+7 ] * a[ kix2+7 ];
+										val += a[ ix1+k   ] * a[ix2+k  ];
+										val += a[ ix1+k+1 ] * a[ix2+k+1];
+										val += a[ ix1+k+2 ] * a[ix2+k+2];
+										val += a[ ix1+k+3 ] * a[ix2+k+3];
+										val += a[ ix1+k+4 ] * a[ix2+k+4];
+										val += a[ ix1+k+5 ] * a[ix2+k+5];
+										val += a[ ix1+k+6 ] * a[ix2+k+6];
+										val += a[ ix1+k+7 ] * a[ix2+k+7];
 									}
 									c[ ix3+j ] = val;	
 								}
@@ -813,7 +813,7 @@ public class MatrixMultLib
 								//unrolled 8-block
 								for(int j = i+balen; j < alen; j+=8)
 								{
-									c[ix2+aix[j]]   += val * avals[j];
+									c[ix2+aix[j]  ] += val * avals[j  ];
 									c[ix2+aix[j+1]] += val * avals[j+1];
 									c[ix2+aix[j+2]] += val * avals[j+2];
 									c[ix2+aix[j+3]] += val * avals[j+3];
@@ -894,7 +894,7 @@ public class MatrixMultLib
 									//unrolled 8-block
 									for(int j = i+balen; j < alen; j+=8)
 									{
-										c[ix2+aix[j]]   += val * avals[j];
+										c[ix2+aix[j]  ] += val * avals[j  ];
 										c[ix2+aix[j+1]] += val * avals[j+1];
 										c[ix2+aix[j+2]] += val * avals[j+2];
 										c[ix2+aix[j+3]] += val * avals[j+3];

@@ -198,7 +198,7 @@ public class ForStatementBlock extends StatementBlock
 			_updated.addVariables(sb._updated);
 		
 			// only add kill variables for statement blocks guaranteed to execute
-			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof IfStatementBlock) && !(sb instanceof ForStatementBlock) ){
+			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof ForStatementBlock) ){
 				_kill.addVariables(sb._kill);
 			}	
 		}

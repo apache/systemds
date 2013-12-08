@@ -286,7 +286,7 @@ public class IfStatementBlock extends StatementBlock
 			updatedIfBody.addVariables(sb._updated);
 			
 			// only add kill variables for statement blocks guaranteed to execute
-			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof IfStatementBlock) && !(sb instanceof ForStatementBlock) ){
+			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof ForStatementBlock) ){
 				killIfBody.addVariables(sb._kill);
 			}	
 		}
@@ -323,7 +323,7 @@ public class IfStatementBlock extends StatementBlock
 			updatedElseBody.addVariables(sb._updated);
 			
 			// only add kill variables for statement blocks guaranteed to execute
-			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof IfStatementBlock) && !(sb instanceof ForStatementBlock) ){
+			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof ForStatementBlock) ){
 				killElseBody.addVariables(sb._kill);
 			}
 		}

@@ -523,6 +523,51 @@ public class TestUtils
 		}
 		return Double.NaN;
 	}
+
+	public static boolean readDMLBoolean(String filePath) {
+		FileSystem fs;
+		try {
+			Boolean b = null;
+			fs = FileSystem.get(conf);
+			Path outDirectory = new Path(filePath);
+			String line;
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
+					b = new Boolean(Boolean.parseBoolean(line));
+				}
+				outIn.close();
+			}
+			return b.booleanValue();
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+		return _AssertOccured;
+	}
+	
+	public static String readDMLString(String filePath) {
+		FileSystem fs;
+		try {
+			String s =  null;
+			fs = FileSystem.get(conf);
+			Path outDirectory = new Path(filePath);
+			String line;
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+			for (FileStatus file : outFiles) {
+				FSDataInputStream outIn = fs.open(file.getPath());
+				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
+					s = line; 
+				}
+				outIn.close();
+			}
+			return s;
+		} catch (IOException e) {
+			assertTrue("could not read from file " + filePath, false);
+		}
+		return null;
+	}
+		
 	
 	/**
 	 * Reads a scalar value in R format from OS's FS

@@ -110,7 +110,6 @@ public class AppendRInstruction extends BinaryMRInstructionBase
 					ixtmp.setIndexes(in2.getIndexes().getRowIndex(), 
 							         _offset/bclen + in2.getIndexes().getColumnIndex());
 					data.set(ixtmp, in2.getValue());
-					System.out.println(ixtmp);
 				}
 				else //general case: split and forward
 				{		

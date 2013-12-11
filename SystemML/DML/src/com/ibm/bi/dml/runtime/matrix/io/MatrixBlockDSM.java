@@ -60,7 +60,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class MatrixBlockDSM extends MatrixValue
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final double SPARCITY_TURN_POINT=0.4;//based on practial experiments on space consumption and performance
@@ -645,7 +645,11 @@ public class MatrixBlockDSM extends MatrixValue
 			that = checkType(thatValue);
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
-		}		
+		}	
+		
+		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
+			throw new RuntimeException( "Copy must not overwrite itself!" );
+		
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=sp;
@@ -667,7 +671,11 @@ public class MatrixBlockDSM extends MatrixValue
 			that = checkType(thatValue);
 		} catch (DMLUnsupportedOperationException e) {
 			throw new RuntimeException(e);
-		}		
+		}
+		
+		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
+			throw new RuntimeException( "Copy must not overwrite itself!" );
+		
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=checkRealSparcity(that);
@@ -697,7 +705,7 @@ public class MatrixBlockDSM extends MatrixValue
 	 *           true, forces (1) to remove existing non-zeros in the index range of the 
 	 *                 destination if not present in src and (2) to internally maintain nnz
 	 *           false, assume empty index range in destination and do not maintain nnz
-	 *                  (the invoker is reponsible to recompute nnz after all copies are done) 
+	 *                  (the invoker is responsible to recompute nnz after all copies are done) 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlockDSM src, boolean awareDestNZ ) 
 	{	
@@ -2765,7 +2773,7 @@ public class MatrixBlockDSM extends MatrixValue
 	public MatrixValue sliceOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixValue ret) 
 	throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		// Check the validity of bounds
+		// check the validity of bounds
 		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
 				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
@@ -2788,11 +2796,19 @@ public class MatrixBlockDSM extends MatrixValue
 		else
 			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnzs);
 		
-		//core slicing operation (nnz maintained internally)
-		if (sparse) 
-			sliceSparse(rl, ru, cl, cu, result);
-		else 
-			sliceDense(rl, ru, cl, cu, result);
+		// actual slice operation
+		if( rowLower==1 && rowUpper==rlen && colLower==1 && colUpper==clen ) {
+			// copy if entire matrix required
+			result.copy( this );
+		}
+		else //general case
+		{
+			//core slicing operation (nnz maintained internally)
+			if (sparse) 
+				sliceSparse(rl, ru, cl, cu, result);
+			else 
+				sliceDense(rl, ru, cl, cu, result);
+		}
 		
 		return result;
 	}

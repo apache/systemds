@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,7 +22,8 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -41,7 +42,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class MRBaseForCommonInstructions extends MapReduceBase
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//indicate whether the matrix value in this mapper is a matrix cell or a matrix block
@@ -316,7 +317,7 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		{
 			MatrixReshapeMRInstruction mrins = (MatrixReshapeMRInstruction) ins;
 			byte input = mrins.input;
-			byte output = mrins.output;
+			byte output = mrins.output; 
 			MatrixCharacteristics dimIn=dimensions.get(input);
 			MatrixCharacteristics dimOut=dimensions.get(output);
 			if(dimIn==null || dimOut==null)
@@ -324,13 +325,22 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 			mrins.setMatrixCharacteristics(dimIn, dimOut);
 			mrins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
 		}
-		else if(ins instanceof AppendInstruction)
+		else if(ins instanceof AppendMInstruction)
 		{
-			byte input=((AppendInstruction) ins).input1;
+			byte input=((AppendMInstruction) ins).input1;
 			MatrixCharacteristics dim=dimensions.get(input);
 			if(dim==null)
 				throw new DMLRuntimeException("dimension for instruction "+ins+"  is unset!!!");
 			ins.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dim.numRowsPerBlock, dim.numColumnsPerBlock);
+		}
+		else if(ins instanceof AppendRInstruction)
+		{
+			AppendRInstruction arinst = ((AppendRInstruction) ins);
+			byte input = arinst.input1;
+			MatrixCharacteristics dimIn=dimensions.get(input);
+			if( dimIn==null )
+				throw new DMLRuntimeException("Dimensions for instruction "+arinst+"  is unset!!!");
+			arinst.processInstruction(valueClass, cachedValues, tempValue, zeroInput, dimIn.numRowsPerBlock, dimIn.numColumnsPerBlock);
 		}
 		else if ( ins instanceof AggregateBinaryInstruction ) {
 			byte input = ((AggregateBinaryInstruction)ins).input1;

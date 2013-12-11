@@ -14,7 +14,8 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendMInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.AppendRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.CSVReblockInstruction;
@@ -43,7 +44,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRU
 public class MRInstructionParser extends InstructionParser 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	static public HashMap<String, MRINSTRUCTION_TYPE> String2MRInstructionType;
@@ -167,7 +168,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "zeroOut"  , MRINSTRUCTION_TYPE.ZeroOut);
 
 		//misc
-		String2MRInstructionType.put( "append"  , MRINSTRUCTION_TYPE.Append);
+		String2MRInstructionType.put( "mappend"  , MRINSTRUCTION_TYPE.AppendM);
+		String2MRInstructionType.put( "rappend"  , MRINSTRUCTION_TYPE.AppendR);
 		String2MRInstructionType.put( "rshape", MRINSTRUCTION_TYPE.MatrixReshape);
 		
 		//dummy (pseudo instructions)
@@ -223,8 +225,11 @@ public class MRInstructionParser extends InstructionParser
 		case Reblock:
 			return (MRInstruction) ReblockInstruction.parseInstruction(str);
 			
-		case Append:
-			return (MRInstruction) AppendInstruction.parseInstruction(str);
+		case AppendM:
+			return (MRInstruction) AppendMInstruction.parseInstruction(str);
+		
+		case AppendR:
+			return (MRInstruction) AppendRInstruction.parseInstruction(str);
 			
 		case Reorg:
 			return (MRInstruction) ReorgInstruction.parseInstruction(str);

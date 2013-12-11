@@ -9,7 +9,9 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Append;
+import com.ibm.bi.dml.lops.AppendM;
+import com.ibm.bi.dml.lops.AppendCP;
+import com.ibm.bi.dml.lops.AppendR;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryCP;
 import com.ibm.bi.dml.lops.CentralMoment;
@@ -51,11 +53,19 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class BinaryOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static final double APPEND_MEM_MULTIPLIER = 0.9;
 	
 	Hop.OpOp2 op;
 
+	private enum AppendMethod { 
+		CP_APPEND, //in-memory general case append
+		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
+		MR_RAPPEND, //mam-reduce general case append
+	};
+	
 	private BinaryOp() {
 		//default constructor for clone
 	}
@@ -341,7 +351,8 @@ public class BinaryOp extends Hop
 	
 					set_lops(pick);
 				}
-			}else if(op == Hop.OpOp2.APPEND)
+			}
+			else if(op == Hop.OpOp2.APPEND)
 			{
 				ExecType et = optFindExecType();
 				DataType dt1 = getInput().get(0).get_dataType();
@@ -355,13 +366,62 @@ public class BinaryOp extends Hop
 				offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 				offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				
-				Append app=new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	offset,
-						get_dataType(), get_valueType(), et);
-				app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
-						get_rows_in_block(), get_cols_in_block(), getNnz());
-				set_lops(app);
-				
+				if( et == ExecType.MR )
+				{
+					AppendMethod am = optFindAppendMethod(getInput().get(0)._dim1, getInput().get(0)._dim2, 
+						                                  getInput().get(1)._dim1, getInput().get(1)._dim2);
+					
+					switch( am )
+					{
+						case MR_MAPPEND: 
+							//special case map-only append
+							AppendM appM = new AppendM(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
+					                                  offset, get_dataType(), get_valueType());
+							appM.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							appM.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+									                                get_rows_in_block(), get_cols_in_block(), getNnz());
+							set_lops(appM);
+							break;
+						case MR_RAPPEND:
+							//general case reduce append
+							
+							Lop offset2=new UnaryCP(getInput().get(1).constructLops(), 
+									                UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+							offset2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+							offset2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							
+							
+							AppendR appR = new AppendR(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
+	                                  offset, offset2, get_dataType(), get_valueType());
+							appR.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							appR.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+					                                get_rows_in_block(), get_cols_in_block(), getNnz());
+							
+							//group
+							Group group1 = new Group(appR, Group.OperationTypes.Sort, DataType.MATRIX, get_valueType());
+							group1.getOutputParameters().setDimensions(get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+									get_rows_in_block(), get_cols_in_block(), getNnz());
+							group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			
+							//aggregate
+							Aggregate agg1 = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
+									                       get_valueType(), et);
+							agg1.getOutputParameters().setDimensions(get_dim1(),getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							set_lops(agg1);
+			
+							break;
+					}
+				}
+				else //CP
+				{
+					AppendCP app = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
+							                    offset, get_dataType(), get_valueType());
+					app.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+					app.getOutputParameters().setDimensions(getInput().get(0).get_dim1(), getInput().get(0).get_dim2()+getInput().get(1).get_dim2(), 
+							                                get_rows_in_block(), get_cols_in_block(), getNnz());
+					set_lops(app);
+				}
 			}
 			else {
 				/* Default behavior for BinaryOp */
@@ -1221,6 +1281,28 @@ public class BinaryOp extends Hop
 		}
 		return _etype;
 	}
+	
+	/**
+	 * 
+	 * @param m1_dim1
+	 * @param m1_dim2
+	 * @param m2_dim1
+	 * @param m2_dim2
+	 * @return
+	 */
+	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2 )
+	{
+		if(    m2_dim2 == 1  //rhs is vector
+		    && m2_dim1 >= 1 // rhs row dim known 
+		    && OptimizerUtils.estimateSize(m2_dim1, m2_dim2, 1.0) //vector fits in mapper mem
+		       < APPEND_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) )
+		{
+			return AppendMethod.MR_MAPPEND;
+		}
+		
+		return AppendMethod.MR_RAPPEND; //general case
+	}
+	
 	
 	@Override
 	public void refreshSizeInformation()

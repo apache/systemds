@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,6 +22,7 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
@@ -54,7 +55,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class GMR
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	/*
@@ -86,7 +87,7 @@ public class GMR
 			byte index;
 			String[] inst = instructionsInMapper.split(Instruction.INSTRUCTION_DELIM);
 			for(int i=0; i < inst.length; i++) {
-				if ( inst[i].contains("mvmult") || inst[i].contains("append") ) {
+				if ( inst[i].contains("mvmult") || inst[i].contains(AppendM.OPCODE) ) {
 					// example: MR.mvmult.0.1.2
 					
 					// Determine the index that points to a vector

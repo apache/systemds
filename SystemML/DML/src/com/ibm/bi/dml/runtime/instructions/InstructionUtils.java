@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions;
 
 import java.util.StringTokenizer;
 
+import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -19,7 +20,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction.MRINSTRU
 public class InstructionUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/**
@@ -147,14 +148,24 @@ public class InstructionUtils
 		return (parts.length > 1);
 	}
 	
+	/**
+	 * Evaluates if at least one instruction of the given instruction set
+	 * used the distributed cache.
+	 * 
+	 * @param str
+	 * @return
+	 */
 	public static boolean isDistributedCacheUsed(String str) 
 	{	
 		String[] parts = str.split(Instruction.INSTRUCTION_DELIM);
 		for(String inst : parts) 
 		{
 			String opcode = getOpCode(inst);
-			if(opcode.equalsIgnoreCase("mvmult") || opcode.equalsIgnoreCase("append")) // || opcode.equalsIgnoreCase("vmmult"))
+			if(    opcode.equalsIgnoreCase("mvmult") 
+			    || opcode.equalsIgnoreCase(AppendM.OPCODE) ) 
+			{
 				return true;
+			}
 		}
 		return false;
 	}

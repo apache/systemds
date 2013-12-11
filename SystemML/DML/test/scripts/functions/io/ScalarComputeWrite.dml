@@ -1,0 +1,11 @@
+/*
+ * DML script to test the scalar write where the scalar is the result of some computation
+ * $1 - input value
+ * $2 - filename to which scalr needs to be written out
+ */
+
+r = $1;
+X = matrix(1.0, rows=10, cols=1);
+X = X*r;
+m = max(X);
+write(m, $2);

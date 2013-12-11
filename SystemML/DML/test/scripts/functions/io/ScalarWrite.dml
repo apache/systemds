@@ -1,0 +1,7 @@
+/*
+ * DML script to test the scalar write:
+ * $1 - input scalar value
+ * $2 - filename to which scalr needs to be written out
+ */
+x = $1
+write(x, $2);

@@ -1,0 +1,3 @@
+
+s = read($1, value_type=$2);
+print(s);

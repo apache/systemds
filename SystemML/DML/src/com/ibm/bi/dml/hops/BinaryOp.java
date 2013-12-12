@@ -21,6 +21,7 @@ import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
@@ -360,12 +361,8 @@ public class BinaryOp extends Hop
 				if(dt1!=DataType.MATRIX || dt2!=DataType.MATRIX)
 					throw new HopsException("Append can only apply to two matrices!");
 				
-				
-				Lop offset=new UnaryCP(getInput().get(0).constructLops(), 
-						UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
-				offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-				offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
+				Lop offset = createAppendOffsetLop( 0 ); //offset 1st input
+						
 				if( et == ExecType.MR )
 				{
 					AppendMethod am = optFindAppendMethod(getInput().get(0)._dim1, getInput().get(0)._dim2, 
@@ -384,12 +381,7 @@ public class BinaryOp extends Hop
 							break;
 						case MR_RAPPEND:
 							//general case reduce append
-							
-							Lop offset2=new UnaryCP(getInput().get(1).constructLops(), 
-									                UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
-							offset2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-							offset2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-							
+							Lop offset2 = createAppendOffsetLop( 1 ); //offset second input
 							
 							AppendR appR = new AppendR(getInput().get(0).constructLops(), getInput().get(1).constructLops(),	
 	                                  offset, offset2, get_dataType(), get_valueType());
@@ -1301,6 +1293,38 @@ public class BinaryOp extends Hop
 		}
 		
 		return AppendMethod.MR_RAPPEND; //general case
+	}
+	
+	/**
+	 * 
+	 * @param inputPos
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop createAppendOffsetLop( int inputPos ) 
+		throws HopsException, LopsException
+	{
+		Lop offset = null;
+		
+		if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+			&& getInput().get(inputPos).dimsKnown()    )
+		{
+			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
+			// a literal in order to increase the piggybacking potential. This is safe because append 
+			// is always marked for recompilation and hence, we have propagated the exact dimensions.
+			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(getInput().get(inputPos).get_dim2()));
+		}
+		else
+		{
+			offset = new UnaryCP(getInput().get(inputPos).constructLops(), 
+					UnaryCP.OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
+		}
+		
+		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		offset.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		
+		return offset;
 	}
 	
 	

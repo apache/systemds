@@ -10,6 +10,8 @@ package com.ibm.bi.dml.test.integration.functions.append;
 import java.util.HashMap;
 import java.util.Random;
 
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -18,6 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 public class AppendVectorTest extends AutomatedTestBase
 {
@@ -87,30 +90,20 @@ public class AppendVectorTest extends AutomatedTestBase
 
 		Random rand=new Random(System.currentTimeMillis());
 		loadTestConfiguration(config);
-		//double sparsity=0.2;
 		double sparsity=rand.nextDouble();
-		//System.out.println("sparsity: "+sparsity);
-        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
+		double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("A", A, true);
         sparsity=rand.nextDouble();
-       // sparsity=0.8;
-        //System.out.println("sparsity: "+sparsity);
         double[][] B= getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
         writeInputMatrix("B", B, true);
         
-		/*
-		 * Expected number of jobs:
-		 * Reblock - 1 job 
-		 * While loop iteration - 10 jobs
-		 * Final output write - 1 job
-		 */
-        //boolean exceptionExpected = false;
-		//int expectedNumberOfJobs = 12;
-		//runTest(exceptionExpected, null, expectedNumberOfJobs);
         boolean exceptionExpected = false;
-		int expectedNumberOfJobs = -1;
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
-		
+        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
+		int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
+		runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
+		Assert.assertEquals("Wrong number of executed MR jobs.",
+				             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
+	
 		runRScript(true);
 		//disableOutAndExpectedDeletion();
 	

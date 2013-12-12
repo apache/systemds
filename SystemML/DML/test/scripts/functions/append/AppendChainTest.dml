@@ -1,0 +1,15 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+A=read($1, rows=$2, cols=$3, format="text")
+B1=read($4, rows=$2, cols=$5, format="text")
+B2=read($6, rows=$2, cols=$7, format="text")
+C=append(A, B1)
+C=append(C, B2)
+write(C, $8, format="text")

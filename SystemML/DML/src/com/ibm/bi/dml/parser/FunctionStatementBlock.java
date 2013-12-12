@@ -194,7 +194,7 @@ public class FunctionStatementBlock extends StatementBlock
 			_updated.addVariables(sb._updated);
 		
 			// only add kill variables for statement blocks guaranteed to execute
-			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof IfStatementBlock) && !(sb instanceof ForStatementBlock) ){
+			if (!(sb instanceof WhileStatementBlock) && !(sb instanceof ForStatementBlock) ){
 				_kill.addVariables(sb._kill);
 			}	
 		}
@@ -263,12 +263,13 @@ public class FunctionStatementBlock extends StatementBlock
 		_liveIn = new VariableSet();
 		_liveIn.addVariables(liPassed);
 		
+		/*
 		for(String key : _gen.getVariableNames()){
 			if (_liveIn.containsVariable(key) == false){
 				throw new LanguageException(this.getStatement(0).printErrorLocation() + "function " + ((FunctionStatement)this.getStatement(0)).getName() + " requires variable " + key + " to be passed as formal parameter");
 			}
 		}
-		
+		*/
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		

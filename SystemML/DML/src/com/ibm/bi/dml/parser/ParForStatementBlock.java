@@ -41,7 +41,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 public class ParForStatementBlock extends ForStatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -119,7 +119,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults2.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.UNSPECIFIED) );
 		_paramDefaults2.put( RESULT_MERGE,      String.valueOf(PResultMerge.UNSPECIFIED) );
 		_paramDefaults2.put( EXEC_MODE,         String.valueOf(PExecMode.UNSPECIFIED) );
-		//_paramDefaults2.put( PROFILE,           "1" ); //note leave PROFILE as it is
+		_paramDefaults2.put( PROFILE,           "0" );
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();

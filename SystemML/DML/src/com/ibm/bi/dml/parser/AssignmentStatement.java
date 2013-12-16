@@ -37,14 +37,16 @@ public class AssignmentStatement extends Statement
 		return retVal;
 	}
 	
-	public AssignmentStatement(DataIdentifier t, Expression s){
+	
+	public AssignmentStatement(DataIdentifier t, Expression s) {
 
 		_targetList = new ArrayList<DataIdentifier>();
 		_targetList.add(t);
 		_source = s;
 	}
 	
-	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol){
+	
+	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine, int beginCol, int endLine, int endCol) throws LanguageException{
 		
 		_targetList = new ArrayList<DataIdentifier>();
 		_targetList.add(t);
@@ -55,6 +57,20 @@ public class AssignmentStatement extends Statement
 		_endLine     = endLine;
 		_endColumn   = endCol;
 		
+	}
+	
+	public AssignmentStatement(DataIdentifier t, Expression s, int beginLine) throws ParseException{
+		
+		if (t.getName().startsWith("$"))
+		{
+		    LOG.error(t.printErrorLocation() + " cannot use variable assigned from command-line " + t.getName() + " on left-hand side of assignment statement");
+			throw new ParseException(t.printErrorLocation() + " cannot use variable assigned from command-line " + t.getName() + " on left-hand side of assignment statement");
+		}
+		
+		_targetList = new ArrayList<DataIdentifier>();
+		_targetList.add(t);
+		_source = s;
+
 	}
 	
 	public DataIdentifier getTarget(){

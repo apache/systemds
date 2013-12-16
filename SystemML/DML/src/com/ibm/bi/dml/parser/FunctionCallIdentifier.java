@@ -215,7 +215,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 	
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		if (_namespace != null && _namespace.length() > 0) 
+		if (_namespace != null && _namespace.length() > 0 && !_namespace.equals(".defaultNS")) 
 			sb.append(_namespace + "::"); 
 		sb.append(_name);
 		sb.append(" ( ");		

@@ -1171,7 +1171,14 @@ public class DataExpression extends Expression
 			_output.setDimensions(rowsLong, colsLong);
 			
 			if (_output instanceof IndexedIdentifier){
-				((IndexedIdentifier) _output).setOriginalDimensions(_output.getDim1(), _output.getDim2());
+				// process the "target" being indexed
+				DataIdentifier targetAsSeen = ids.get(((DataIdentifier)_output).getName());
+				if (targetAsSeen == null){
+					LOG.error(_output.printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)_output).getName() + " without first initializing " + ((DataIdentifier)_output).getName());
+					throw new LanguageException(_output.printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)_output).getName() + " without first initializing " + ((DataIdentifier)_output).getName());
+				}
+				//_output.setProperties(targetAsSeen);
+				((IndexedIdentifier) _output).setOriginalDimensions(targetAsSeen.getDim1(), targetAsSeen.getDim2());
 			}
 			//_output.computeDataType();
 

@@ -730,7 +730,8 @@ public class StatementBlock extends LiveVariableAnalysis
 						LOG.error(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
 						throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
 					}
-					target.setProperties(targetAsSeen);
+					
+					//target.setProperties(targetAsSeen);
 					
 					// process the expressions for the indexing
 					if ( ((IndexedIdentifier)target).getRowLowerBound() != null  )

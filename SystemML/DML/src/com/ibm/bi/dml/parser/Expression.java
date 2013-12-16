@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
@@ -288,15 +289,17 @@ public abstract class Expression
 
 	
 	///////////////////////////////////////////////////////////////////////////
-	// store position information for expressions
+	// store exception info + position information for expressions
 	///////////////////////////////////////////////////////////////////////////
 	public int _beginLine, _beginColumn;
 	public int _endLine, _endColumn;
+	private ArrayList<String> _parseExceptionList = new ArrayList<String>();
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	public void setParseExceptionList(ArrayList<String> passed) { _parseExceptionList = passed;}
 	
 	public void setAllPositions(int blp, int bcp, int elp, int ecp){
 		_beginLine	 = blp; 
@@ -309,6 +312,7 @@ public abstract class Expression
 	public int getBeginColumn() { return _beginColumn; }
 	public int getEndLine() 	{ return _endLine;   }
 	public int getEndColumn()	{ return _endColumn; }
+	public ArrayList<String> getParseExceptionList() { return _parseExceptionList; }
 	
 	public String printErrorLocation(){
 		return "ERROR: line " + _beginLine + ", column " + _beginColumn + " -- ";
@@ -321,4 +325,5 @@ public abstract class Expression
 	public String printInfoLocation(){
 		return "INFO: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
+	
 }

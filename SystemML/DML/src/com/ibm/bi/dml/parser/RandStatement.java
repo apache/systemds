@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.hops.DataGenOp;
@@ -65,6 +66,96 @@ public class RandStatement extends Statement
 	public RandStatement(DataIdentifier id){
 		_id = id;
 		_paramsExpr = new DataExpression(DataOp.RAND);
+	}
+	
+	public RandStatement(	DataIdentifier id, 
+							String tNameStr, 
+							ArrayList<Expression> unnamedParams, 
+							HashMap<String,Expression> namedParams,
+							int beginLine,
+							int beginColumn)throws ParseException{
+		
+		_id = id;
+		_paramsExpr = new DataExpression(DataOp.RAND);
+		
+		if (tNameStr.equals("matrix"))
+		{		
+			setOpCode(DataOp.MATRIX);
+	
+			// check whether named or unnamed parameters are used
+			if (unnamedParams.size() > 1)
+			{
+				if (namedParams.size() > 0)
+				{
+					// throw exception -- cannot mix named and unnamed parameters
+					LOG.error(printErrorLocation(beginLine, beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
+					throw new ParseException(printErrorLocation(beginLine, beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
+	
+				}
+				if (unnamedParams.size() < 3)
+				{
+					// throw exception -- for matrix, must specify at least 3 arguments (in order): data, rows, cols)
+					LOG.error(printErrorLocation(beginLine, beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+					throw new ParseException(printErrorLocation(beginLine, beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+	
+				}
+
+				// assume: data, rows, cols, [byRow], [dimNames]
+				addMatrixExprParam(Statement.RAND_DATA,unnamedParams.get(0));
+				addMatrixExprParam(Statement.RAND_ROWS,unnamedParams.get(1));
+				addMatrixExprParam(Statement.RAND_COLS,unnamedParams.get(2));
+				if (unnamedParams.size() >= 4){
+					addMatrixExprParam(Statement.RAND_BY_ROW,unnamedParams.get(3));
+				}
+				if (unnamedParams.size() == 5){
+					addMatrixExprParam(Statement.RAND_DIMNAMES,unnamedParams.get(4));
+				}
+				if (unnamedParams.size() > 5){
+					// throw exception -- for matrix, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname
+					LOG.error(printErrorLocation(beginLine, beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+					throw new ParseException(printErrorLocation(beginLine, beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+	
+				}
+				   
+			}
+			else
+			{
+				// handle named params
+				if (unnamedParams.size() == 1){
+					addMatrixExprParam(Statement.RAND_DATA, unnamedParams.get(0));
+				}
+				
+				for (String name : namedParams.keySet()){
+					addMatrixExprParam(name, namedParams.get(name)); 
+				}
+			}
+		}
+			
+			
+		else
+		{
+			setOpCode(DataOp.RAND);
+			if (unnamedParams.size() != 0){
+				// throw parsing exception -- for Rand Statment all arguments must be named parameters
+				LOG.error(printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");
+				throw new ParseException(printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
+			}
+
+			// move named parameters to RandStatment
+			for (String name : namedParams.keySet()){
+				addRandExprParam(name, namedParams.get(name)); 
+			}
+		}
+
+
+
+		if (getOpCode().equals(DataOp.RAND))
+			getSource().setRandDefault();
+		
+		else
+			getSource().setMatrixDefault();
+		
+		
 	}
 	
 

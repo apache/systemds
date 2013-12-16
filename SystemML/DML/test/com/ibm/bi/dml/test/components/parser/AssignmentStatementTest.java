@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.parser.AssignmentStatement;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.LanguageException;
 
 
 public class AssignmentStatementTest 
@@ -24,10 +25,10 @@ public class AssignmentStatementTest
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
     @Test
-    public void testVariablesRead() {
+    public void testVariablesRead() throws LanguageException {
         DataIdentifier target = new DataIdentifier("target");
         DataIdentifier source = new DataIdentifier("source");
-        AssignmentStatement as = new AssignmentStatement(target, source);
+        AssignmentStatement as = new AssignmentStatement(target, source,0,0,0,0);
         HashMap<String, DataIdentifier> variables = as.variablesRead().getVariables();
         assertEquals(1, variables.size());
         assertTrue(variables.containsKey("source"));
@@ -35,10 +36,10 @@ public class AssignmentStatementTest
     }
 
     @Test
-    public void testVariablesUpdated() {
+    public void testVariablesUpdated() throws LanguageException {
         DataIdentifier target = new DataIdentifier("target");
         DataIdentifier source = new DataIdentifier("source");
-        AssignmentStatement as = new AssignmentStatement(target, source);
+        AssignmentStatement as = new AssignmentStatement(target, source,0,0,0,0);
         HashMap<String, DataIdentifier> variables = as.variablesUpdated().getVariables();
         assertEquals(1, variables.size());
         assertTrue(variables.containsKey("target"));

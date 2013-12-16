@@ -14,6 +14,7 @@ options {
  	DEBUG_TOKEN_MANAGER = false;
  	UNICODE_INPUT = true;
  	//COMMON_TOKEN_ACTION = true;
+ 	ERROR_REPORTING = true;
 }
 
 PARSER_BEGIN(DMLQLParser)
@@ -311,27 +312,25 @@ DMLProgram __inputInternal() :
 }
 {
 	(
-		(
-			LOOKAHEAD(PathStatement())					current = PathStatement() 
-			| LOOKAHEAD(ImportStatement())				current = ImportStatement()
-			| LOOKAHEAD(RandStatement()) 	  			current = RandStatement()
-			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-			| LOOKAHEAD(ForStatement())					current = ForStatement()
-			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			|  LOOKAHEAD(CVStatement())					current = CVStatement()
-			//| LOOKAHEAD(ELStatement())					current = ELStatement()
-			//| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+		(	
+			LOOKAHEAD(3) 	current = FunctionStatement()
+			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+			| current = PathStatement() 
+			| current = ImportStatement()
+			| current = PrintStatement()
+			| current = WhileStatement()
+			| current = ForStatement()
+			| current = ParForStatement()
+			| current = IfStatement()
+			| current = OutputStatement() 
+			| current = CVStatement()
+			| current = AssignValueStatements()
+			//| current = ELStatement()
+			//| current = ELUseStatement()				 
 		)
 		{
 			StatementBlock sb = null;
+			
 			if (current instanceof WhileStatement) {
 				sb = new WhileStatementBlock();
 			}
@@ -446,6 +445,130 @@ DMLProgram __inputInternal() :
 }
 
 
+Statement AssignValueStatements() :
+{	DataIdentifier id = null;
+	ArrayList<ArrayList<Expression>> targetListList = null;
+	Expression source = null;
+	Token t = null, t1 = null, commaToken = null, tEnd = null;
+	Expression expr = null;
+	Statement retVal = null;
+
+	ArrayList<Expression> unnamedParams = new ArrayList<Expression>();	  
+	HashMap<String,Expression> namedParams = new HashMap<String,Expression>();
+
+	InputStatement is = null;
+}
+{	
+	(
+	 	id = Identifier() | targetListList = ReadIndexList() )
+		{			if (id != null && id.getName().startsWith("$")) {
+	    		LOG.error(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
+				throw new ParseException(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
+			}
+		}
+		
+		t = <ASSIGN >
+
+    	(
+	  		(	  	   		(t = <RAND> | t = <MATRIX> )
+	  	   	
+				<LEFTPAREN>
+				(
+					{commaToken = null;}
+					( commaToken = <COMMA>)? (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() 
+						{
+
+							if (t1 != null){
+								namedParams.put(t1.image, expr);
+							}	
+							else {
+		   						unnamedParams.add(expr);
+							}
+							t1 = null;	
+	
+							int exprCount = namedParams.size() + unnamedParams.size();
+					
+							if (exprCount == 1 && commaToken != null) {
+					  			LOG.error(expr.printErrorLocation() + "should not have comma before first function call parameter");
+								throw new ParseException(expr.printErrorLocation() + "should not have comma before first function call parameter");
+							}
+							if (exprCount != 1 && commaToken == null){
+					  			LOG.error(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
+								throw new ParseException(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
+							}
+						}
+				)*
+				tEnd = <RIGHTPAREN>[<SEMICOLON>]  
+					{
+						RandStatement rs = new RandStatement(id,t.image,unnamedParams,namedParams, t.beginLine, t.beginColumn);
+						rs.setAllPositions(t.beginLine, t.beginColumn, tEnd.beginLine, tEnd.beginColumn);
+						return rs;
+					}
+	  		)
+		
+			| 	
+
+			(  
+	  	 		( t = <READMATRIX> | t = <READMM> | t = <READ_CSV> )
+					{
+						is = new InputStatement(Expression.DataOp.READ);
+
+						if (id == null){							LOG.error(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");
+							throw new ParseException(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");	
+						}
+					}
+				
+					<LEFTPAREN> expr = Expression()
+						{is.addExprParam(Statement.IO_FILENAME,expr,false);}
+					( <COMMA>
+						(  {t1 = null;}
+							t1 = <ID> < ASSIGN > expr = Expression()
+								{is.addExprParam(t1.image, expr,false);}
+						)
+					)*
+					tEnd = <RIGHTPAREN> [ <SEMICOLON> ]
+
+					{						if (t.image.equals("readMM")){
+			    			StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+							is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
+						}
+			
+						else if (t.image.equals("read.csv")){
+						  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
+							is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
+						}
+					
+				 		is.setIdentifier(id);
+				 		id.setDimensions(is);
+				 		id.computeDataType();
+						is.setAllPositions(id.getBeginLine(), id.getBeginColumn(), tEnd.beginLine, tEnd.beginColumn);
+				 		return is;
+					}
+		)
+	  	
+		|
+
+		(		  source = Expression() [ <SEMICOLON> ]
+			{
+				if (t.image.equals("=")){
+				  
+					if (id != null) {
+						AssignmentStatement astmt = new AssignmentStatement(id, source);
+						astmt.setAllPositions(t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
+						return astmt;
+					}
+					else { 	
+						MultiAssignmentStatement mastmt =  new MultiAssignmentStatement(targetListList, source, 0);
+						mastmt.setAllPositions(t.beginLine, t.beginColumn, source.getEndLine(), source.getEndColumn());
+						return mastmt;
+					}
+				}
+			}
+		)	
+	)
+}	
+
+
 PathStatement PathStatement():
 {
 	// track start / end token positions
@@ -456,14 +579,17 @@ PathStatement PathStatement():
 	PathStatement pstmt = new PathStatement();
 }
 {
+	  
 	tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>	{
 		String dequotedString = dequoteStr('\"',t1.image);
 		pstmt.setPathValue(dequotedString);
 		dmlWorkingDir = pstmt.getPathValue();
 	}
-	
-	[<SEMICOLON>]
 
+	[<SEMICOLON>]
+	
+	
+	
 	{
 		// track position for start token tStart, end token t1
 		blp = tStart.beginLine;
@@ -519,7 +645,8 @@ ImportStatement ImportStatement() :
 
 FunctionStatement FunctionStatement() :
 {
-	Vector <DataIdentifier> functionInputs = new Vector<DataIdentifier>(), functionOutputs = new Vector<DataIdentifier>() ;
+	Vector <DataIdentifier> functionInputs  = new Vector<DataIdentifier>();
+	Vector<DataIdentifier > functionOutputs = new Vector<DataIdentifier>() ;
 	FunctionStatement fstmt = new FunctionStatement();
 	Token t = null;
 	Statement current = null;
@@ -534,22 +661,18 @@ FunctionStatement FunctionStatement() :
 	<LEFTCURLYPAREN>
 	(
 		(
-
-  			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-  			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement()
-  			| LOOKAHEAD(MultiAssignmentStatement()) 		current = MultiAssignmentStatement()
-  			| LOOKAHEAD(InputStatement()) 				current = InputStatement()
-  			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-  			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-			| LOOKAHEAD(ForStatement())					current = ForStatement()
-			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			| LOOKAHEAD(CVStatement())					current = CVStatement()
-//			| LOOKAHEAD(ELStatement())					current = ELStatement()
-//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+			LOOKAHEAD(3) 	current = FunctionStatement()
+	  			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+	   			| current = OutputStatement()
+				| current = PrintStatement()
+				| current = WhileStatement()
+				| current = ForStatement()
+				| current = ParForStatement()
+				| current = IfStatement()
+				| current = CVStatement()
+				| current = AssignValueStatements()
+			//	| current = ELStatement()
+			//	| current = ELUseStatement()
 		)
 
 		{
@@ -616,6 +739,7 @@ FunctionStatement FunctionStatement() :
 	}
 }
 
+
 ExternalFunctionStatement ExternalFunctionStatement() :
 {
 	Vector <DataIdentifier> functionInputs = null, functionOutputs = null ;
@@ -670,7 +794,7 @@ HashMap <String,String > ReadGenericParamList() :
 		tStart = <LEFTPAREN>
 	(
 		{t4 = null;}
-		t1 = <ID> <ASSIGN>
+		(t4 = <COMMA>)? t1 = <ID> <ASSIGN>
 		(
 			LOOKAHEAD(2) intid = IntConstant() { map.put(t1.image, intid.toString()); }
 			| doubleid = DoubleConstant() { map.put(t1.image, doubleid.toString());   }
@@ -678,24 +802,24 @@ HashMap <String,String > ReadGenericParamList() :
 			| t2 = <SQL_STRING_LITERAL>   { map.put(t1.image, dequoteStr('\'',t2.image));    }
 			| t2 = <DBLQUOTE_STRING_LITERAL> { map.put(t1.image, dequoteStr('\"',t2.image)); }
 		)
-		(t4 = <COMMA>)?
+		{
+			if (map.size() == 1 && t4 != null){
+				LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma before first parameter");
+				throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma before first parameter");
+			}
+			if (map.size() > 1 && t4 == null){
+				LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "missing comma before parameter " + map.size() + 1);
+				throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "missing comma before parameter " + map.size() + 1);
+			}
+			t4 = null;
+		}
+		
 	)*
 
 	tEnd = <RIGHTPAREN>
 	
 	{
-		if (t4 != null){
-			LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
-			throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
-		}
-		// track position for start / end token tStart
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		//fstmt.setAllPositions(blp, bcp, elp, ecp);
-
-		return map ;
+	  	return map ;
 	}
 }
 
@@ -705,7 +829,7 @@ Vector<DataIdentifier> ReadTypedArgList() :
 {
 	Vector<DataIdentifier> params = new Vector<DataIdentifier>() ;
 	DataIdentifier d1=null, d2=null ;
-	Token t1 = null, t2 = null, t3 = null, t4 = null;
+	Token t1 = null, t2 = null, t3 = null, commaToken = null;
 	String valueType = null;
 	String dataType = null;
 	IntIdentifier intid = null;
@@ -716,8 +840,8 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	
 	<LEFTPAREN>
 	(
-		{ t4 = null; }
-		t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier() (t4 = <COMMA>)? 
+		{ commaToken = null; }
+		( commaToken = <COMMA>)?  t1 = <ID> [<LEFTSQUARE> t2 = <ID> <RIGHTSQUARE>]  d2 = Identifier() 
 
   		(
 			<ASSIGN> intid = IntConstant()     { d2.setDefaultValue(intid.toString());}
@@ -728,6 +852,15 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	  	)?
 
 		{
+			if (commaToken != null && params.size() == 0)
+			{				LOG.error(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
+				throw new ParseException(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
+			}
+			if (commaToken == null && params.size() > 0)
+			{  				LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
+				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
+			}
+			
 			if (t1.image.equalsIgnoreCase("matrix")){
 				if (t2 == null){
 					LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " cannot process argument " + params.size() + 1 + " for UDF " + t1.image);
@@ -755,14 +888,10 @@ Vector<DataIdentifier> ReadTypedArgList() :
 	<RIGHTPAREN>
   
 	{
-	  	if (t4 != null){
-			LOG.error(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
-			throw new ParseException(printErrorLocation(t4.beginLine, t4.beginColumn) + "extra comma at end of parameter list");
-		}
-
 		return params;
 	}
 }
+
 
 ArrayList<ArrayList<Expression>> ReadIndexList() :
 {
@@ -835,57 +964,6 @@ ArrayList<Expression> ColonDelimitedExpression() :
 	}
 }
 
-MultiAssignmentStatement MultiAssignmentStatement() :
-{
-	Expression source = null;
-	ArrayList<ArrayList<Expression>> targetListList = null;
-	Token tStart =  null, tEnd = null;
-	int blp =0, bcp = 0, elp = 0, ecp = 0; 
-}
-{
-	targetListList = ReadIndexList() tStart = <ASSIGN> source = Expression() [<SEMICOLON>] 
-	{
-		MultiAssignmentStatement retVal =  new MultiAssignmentStatement(targetListList, source, 0);
-
-		// track position for statement
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
-		elp = source.getEndLine();
-		ecp = source.getEndColumn();
-		retVal.setAllPositions(blp, bcp, elp, ecp);
-		
-   		return retVal;
-	}
-}
-
-AssignmentStatement AssignmentStatement() :
-{
-	Expression source;
-	DataIdentifier target;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-}
-{
-	target = Identifier()
-	{
-		if (target.getName().startsWith("$"))		{		    LOG.error(target.printErrorLocation() + " cannot use variable assigned from command-line " + target.getName() + " on left-hand side of assignment statement");
-			throw new ParseException(target.printErrorLocation() + " cannot use variable assigned from command-line " + target.getName() + " on left-hand side of assignment statement");
-		}
-	}
-  		<ASSIGN> source = Expression() [<SEMICOLON>] 
-	{
-		AssignmentStatement retVal = new AssignmentStatement(target, source); 
-
-		// track position for statement
-		blp = target.getBeginLine();
-		bcp = target.getBeginColumn();
-		elp = source.getEndLine();
-		ecp = source.getEndColumn();
-		retVal.setAllPositions(blp, bcp, elp, ecp);
-
-		return retVal;
-	}
-}
-
 
 IfStatement IfStatement() :
 {
@@ -899,26 +977,25 @@ IfStatement IfStatement() :
 	
 }
 {
+	
 	tStart = <IF> cp = ConditionalPredicate() { is.setConditionalPredicate(cp); }
+	  	
  	<LEFTCURLYPAREN>
  	(
 		(
-			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-			| LOOKAHEAD(ForStatement())					current = ForStatement()
-			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			| LOOKAHEAD(CVStatement())					current = CVStatement()
-//			| LOOKAHEAD(ELStatement())					current = ELStatement()
-//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
-
+			
+			LOOKAHEAD(3) 	current = FunctionStatement()
+			|  LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+			| current = OutputStatement()
+			| current = PrintStatement()
+			| current = WhileStatement()
+			| current = ForStatement()
+			| current = ParForStatement()
+			| current = IfStatement()
+			| current = CVStatement()
+			| current = AssignValueStatements()
+			//	| current = ELStatement()
+			//	| current = ELUseStatement()
 	   	)
 		{
 			StatementBlock sb = null;
@@ -975,22 +1052,20 @@ IfStatement IfStatement() :
   		<LEFTCURLYPAREN>
    		(
 			(
-				LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-   				| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-				| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-				| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-				| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-				| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-				| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-				| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-				| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-				| LOOKAHEAD(ForStatement())					current = ForStatement()
-				| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-				| LOOKAHEAD(IfStatement())					current = IfStatement()
-				| LOOKAHEAD(CVStatement())					current = CVStatement()
-//				| LOOKAHEAD(ELStatement())					current = ELStatement()
-//				| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
-   
+				
+				LOOKAHEAD(3) 	current = FunctionStatement()
+				| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+				| current = OutputStatement()
+				| current = PrintStatement()
+				| current = WhileStatement()
+				| current = ForStatement()
+				| current = ParForStatement()
+				| current = IfStatement()
+				| current = CVStatement()
+				| current = AssignValueStatements()
+				//	| LOOKAHEAD(ELStatement())					current = ELStatement()
+				//	| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+ 				
    			)
    			{
 			    StatementBlock sb = null;
@@ -1070,22 +1145,18 @@ ForStatement ForStatement() :
 	<LEFTCURLYPAREN>
 	(
 		(
-			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-   			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-   			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-   			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-   			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-   			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-   			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-   			| LOOKAHEAD(ForStatement())					current = ForStatement()
-   			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-   			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			| LOOKAHEAD(CVStatement())					current = CVStatement()
-//			| LOOKAHEAD(ELStatement())					current = ELStatement()
-//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
- 
+	   			LOOKAHEAD(3) 	current = FunctionStatement()
+	   			| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+	   			| current = OutputStatement()
+	   			| current = PrintStatement()
+	   			| current = WhileStatement()
+	   			| current = ForStatement()
+	   			| current = ParForStatement()
+	   			| current = IfStatement()
+				| current = CVStatement()
+				| current = AssignValueStatements()
+			//	| current = ELStatement()
+			//	| current = ELUseStatement()	
 		)
 		{
 			StatementBlock sb = null;
@@ -1163,22 +1234,20 @@ ParForStatement ParForStatement() :
 	<LEFTCURLYPAREN>
   	(
 		(
-			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-			| LOOKAHEAD(ExternalFunctionStatement())	current = ExternalFunctionStatement()
-			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-			| LOOKAHEAD(ForStatement())					current = ForStatement()
-			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-			| LOOKAHEAD(IfStatement())					current = IfStatement()
-			| LOOKAHEAD(CVStatement())					current = CVStatement()
-//			| LOOKAHEAD(ELStatement())					current = ELStatement()
-//			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
- 
+
+			LOOKAHEAD(3) 			current = FunctionStatement()
+			| LOOKAHEAD(3)	current = ExternalFunctionStatement()
+			| current = OutputStatement()
+			| current = PrintStatement()
+			| current = WhileStatement()
+			| current = ForStatement()
+			| current = ParForStatement()
+			| current = IfStatement()
+			| current = CVStatement()
+			| current = AssignValueStatements()
+			//	| current = ELStatement()
+			//	| current = ELUseStatement()
+ 				
  		)
  		{
 			StatementBlock sb = null;
@@ -1256,22 +1325,19 @@ WhileStatement WhileStatement() :
   	<LEFTCURLYPAREN>
   	(
 		(
-			LOOKAHEAD(RandStatement()) 	  				current = RandStatement()
-   			| LOOKAHEAD(AssignmentStatement()) 			current = AssignmentStatement() 
-   			| LOOKAHEAD(MultiAssignmentStatement()) 	current = MultiAssignmentStatement()
-   			| LOOKAHEAD(InputStatement()) 				current = InputStatement() 
-			| LOOKAHEAD(FunctionStatement()) 			current = FunctionStatement()
-			| LOOKAHEAD(ExternalFunctionStatement()) 	current = ExternalFunctionStatement()
-			| LOOKAHEAD(OutputStatement())				current = OutputStatement()
-			| LOOKAHEAD(PrintStatement())				current = PrintStatement()
-			| LOOKAHEAD(WhileStatement())				current = WhileStatement()
-			| LOOKAHEAD(ForStatement())					current = ForStatement()
-			| LOOKAHEAD(ParForStatement())				current = ParForStatement()
-			| LOOKAHEAD(IfStatement())					current = IfStatement()
- 			| LOOKAHEAD(CVStatement())					current = CVStatement()
-// 			| LOOKAHEAD(ELStatement())					current = ELStatement()
-// 			| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
- 
+			
+		    LOOKAHEAD(3) 			current = FunctionStatement()
+			| LOOKAHEAD(3)	current = ExternalFunctionStatement()
+			| current = OutputStatement()
+			| current = PrintStatement()
+			| current = WhileStatement()
+			| current = ForStatement()
+			| current = ParForStatement()
+			| current = IfStatement()
+			| current = CVStatement()
+			| current = AssignValueStatements()
+			//	| current = ELStatement()
+			//	| current = ELUseStatement()
 		)
 		{
 			StatementBlock sb = null;
@@ -1332,7 +1398,9 @@ WhileStatement WhileStatement() :
 
 	return ws;
  }
+
 }
+
 
 IterablePredicate IterablePredicate() :
 {
@@ -1703,6 +1771,7 @@ Expression PrimaryExpression() :
 	} 
 }
 
+
 Identifier IdentifierOrConstant() :
 {
  	Identifier id = null;
@@ -1898,6 +1967,7 @@ StringIdentifier StringConstant() :
  	}
 }
 
+
 DataIdentifier Identifier() :
 {
 	Token t = null;
@@ -1908,10 +1978,12 @@ DataIdentifier Identifier() :
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-	[LOOKAHEAD(4)tNamespace = <ID>{ blp=tNamespace.beginLine; bcp=tNamespace.beginColumn; elp =tNamespace.endLine; ecp = tNamespace.endColumn;} <COLON><COLON>]
+		  
+		[LOOKAHEAD(4)tNamespace = <ID>{ blp=tNamespace.beginLine; bcp=tNamespace.beginColumn; elp =tNamespace.endLine; ecp = tNamespace.endColumn;} <COLON><COLON>]
 			t = <ID> { if (tNamespace == null ) { blp=t.beginLine; bcp=t.beginColumn;} elp= t.endLine; ecp =t.endColumn; }
 			(LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList())?
-
+	
+	
   	{
 		id = new DataIdentifier(t.image);
   
@@ -1965,51 +2037,61 @@ DataIdentifier Identifier() :
 }
 
 
-FunctionCallIdentifier FunctionCall():
+
+/*
+
+RandStatement RandStatement() :
 {
+	RandStatement rs = null;
+	DataIdentifier id = null;
+	Token t1 = null, t2 = null, tName = null;
 	Expression expr = null;
-	FunctionCallIdentifier functCall = null;
-	ArrayList<Expression> exprs = new ArrayList<Expression>();
-	HashMap<String, Expression> namedExprs = new HashMap<String,Expression>(); 
+	String tNameStr = null;
+	HashMap<String,Expression > namedParams = new HashMap<String,Expression>();
+	ArrayList<Expression > unnamedParams = new ArrayList<Expression>();
+	
+	Token tEnd = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	Token tStart = null, tEnd = null, t1 = null, t2 = null;
+	
 }
 {
-	tStart = <LEFTPAREN>
-
-		(
-			{t2 = null;}
-			(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
-			{
-				if (t1 != null){
-					namedExprs.put(t1.image, expr);
-				}	
-				else {
-				   exprs.add(expr);
-				}
-				t1 = null;	
+	id = Identifier() <ASSIGN> (tName = <RAND> | tName = <MATRIX>) <LEFTPAREN>
+	
+	(
+		{t2 = null;}
+		(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
+		{
+			if (t1 != null){
+				namedParams.put(t1.image, expr);
+			}	
+			else {
+			   unnamedParams.add(expr);
 			}
-		)*
-	tEnd = <RIGHTPAREN>  
-	{
+			t1 = null;	
+		}
+	)*
+	tEnd = <RIGHTPAREN>[<SEMICOLON>]  
 
+	{
 		if (t2 != null){
 			LOG.error(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
 			throw new ParseException(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
 		}
-
-		functCall = new FunctionCallIdentifier(exprs, namedExprs);
-
-		blp = tStart.beginLine;
-		bcp = tStart.beginColumn;
+	}
+	
+	
+	{
+		blp = tName.beginLine;
+		bcp = tName.beginColumn;
 		elp = tEnd.beginLine;
 		ecp = tEnd.beginColumn;
-		functCall.setAllPositions(blp, bcp, elp, ecp);
-		
-		return functCall;
-	}     
-}
 
+		
+		rs = new RandStatement(id,nameString,unnamedParams,namedParams, beginLine, beginColumn);
+		rs.setAllPositions(blp, bcp, elp, ecp);
+		return rs;
+	}
+}
 
 InputStatement InputStatement() :
 {
@@ -2018,7 +2100,7 @@ InputStatement InputStatement() :
 	Expression t2 = null;
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 	Token tEnd = null;
-	Token tRead = null;
+	
 }
 {
 	  	id = Identifier()
@@ -2028,10 +2110,10 @@ InputStatement InputStatement() :
 				throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
 			}
   	  	}
-	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_CSV> ) <LEFTPAREN>
-		t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
-				
-		//(< COMMA >(Token t1 = <ID> < ASSIGN > Expression t2 = Expression() {is.addExprParam(t1.image, t2);}))*
+	  	<ASSIGN> (tRead = <READMATRIX> | tRead = <READMM> | tRead = <READ_CSV> )
+
+	  	<LEFTPAREN>
+			t2 = Expression() {is.addExprParam(Statement.IO_FILENAME,t2,false);}
 		(
 			<COMMA>
 			(
@@ -2051,8 +2133,7 @@ InputStatement InputStatement() :
 		  	StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
 			is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);			
 		}
-		
-		
+	
  		is.setIdentifier(id);
  		id.setDimensions(is);
  		id.computeDataType();
@@ -2066,7 +2147,7 @@ InputStatement InputStatement() :
  		return is;
 	}
 }
-
+*/
 
 OutputStatement OutputStatement() :
 {
@@ -2135,6 +2216,59 @@ PrintStatement PrintStatement() :
 }
 
 
+FunctionCallIdentifier FunctionCall():
+{
+	Expression expr = null;
+	FunctionCallIdentifier functCall = null;
+	ArrayList<Expression> exprs = new ArrayList<Expression>();
+	HashMap<String, Expression> namedExprs = new HashMap<String,Expression>(); 
+	int blp = 0, bcp = 0, elp = 0, ecp = 0;
+	Token tStart = null, tEnd = null, t1 = null, commaToken = null;
+}
+{
+	tStart = <LEFTPAREN>
+
+		(
+			{ commaToken = null; }
+			( commaToken = <COMMA>)? (LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression()
+			{
+				if (t1 != null){
+					namedExprs.put(t1.image, expr);
+				}	
+				else {
+				   exprs.add(expr);
+				}
+				t1 = null;
+
+				int exprCount = namedExprs.size() + exprs.size();
+				if (exprCount == 1 && commaToken != null) {
+				  	LOG.error(expr.printErrorLocation() + "should not have comma before first function call parameter");
+					throw new ParseException(expr.printErrorLocation() + "should not have comma before first function call parameter");
+				}
+				if (exprCount != 1 && commaToken == null){
+				  	LOG.error(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
+					throw new ParseException(expr.printErrorLocation() + "missing comma before function call parameter " + exprCount);
+				}
+					
+			}
+		)*
+
+		tEnd = <RIGHTPAREN>
+		
+	
+		{
+			functCall = new FunctionCallIdentifier(exprs, namedExprs);
+	
+			blp = tStart.beginLine;
+			bcp = tStart.beginColumn;
+			elp = tEnd.beginLine;
+			ecp = tEnd.beginColumn;
+			functCall.setAllPositions(blp, bcp, elp, ecp);
+			
+			return functCall;
+		}     
+}
+
 void RelationalOp() :
 {}
 {
@@ -2142,121 +2276,7 @@ void RelationalOp() :
 }
 
 
-RandStatement RandStatement() :
-{
-	RandStatement rs = null;
-	DataIdentifier id = null;
-	Token t1 = null, t2 = null, tName = null;
-	Expression expr = null;
-	String tNameStr = null;
-	HashMap<String,Expression > namedParams = new HashMap<String,Expression>();
-	ArrayList<Expression > unnamedParams = new ArrayList<Expression>();
-	
-	Token tEnd = null;
-	int blp = 0, bcp = 0, elp = 0, ecp = 0;
-	
-}
-{
-	id = Identifier() <ASSIGN> (tName = <RAND> | tName = <MATRIX>) <LEFTPAREN>
-	
-	(
-		{t2 = null;}
-		(LOOKAHEAD(2) t1= <ID> <ASSIGN>)?  expr = Expression() ( t2 = <COMMA>)?
-		{
-			if (t1 != null){
-				namedParams.put(t1.image, expr);
-			}	
-			else {
-			   unnamedParams.add(expr);
-			}
-			t1 = null;	
-		}
-	)*
-	tEnd = <RIGHTPAREN>[<SEMICOLON>]  
 
-	{
-		if (t2 != null){
-			LOG.error(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
-			throw new ParseException(printErrorLocation(t2.beginLine, t2.beginColumn) + "extra comma at end of parameter list");
-		}
-	}
-	
-	
-	{
-		blp = tName.beginLine;
-		bcp = tName.beginColumn;
-		elp = tEnd.beginLine;
-		ecp = tEnd.beginColumn;
-		rs = new RandStatement(id);
-		rs.setAllPositions(blp, bcp, elp, ecp);
-
-		tNameStr = tName.image;
-		if (tNameStr.equals("matrix"))
-		{		
-			rs.setOpCode(DataOp.MATRIX);
-	
-			// check whether named or unnamed parameters are used
-			if (unnamedParams.size() > 1)			{				if (namedParams.size() > 0)				{					// throw exception -- cannot mix named and unnamed parameters
-					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
-					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, cannot mix named and unnamed parameters");
-	
-				}
-				if (unnamedParams.size() < 3)
-				{					// throw exception -- for matrix, must specify at least 3 arguments (in order): data, rows, cols)
-					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
-					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
-	
-				}
-
-				// assume: data, rows, cols, [byRow], [dimNames]
-				rs.addMatrixExprParam(Statement.RAND_DATA,unnamedParams.get(0));
-				rs.addMatrixExprParam(Statement.RAND_ROWS,unnamedParams.get(1));
-				rs.addMatrixExprParam(Statement.RAND_COLS,unnamedParams.get(2));
-				if (unnamedParams.size() >= 4){
-					rs.addMatrixExprParam(Statement.RAND_BY_ROW,unnamedParams.get(3));
-				}
-				if (unnamedParams.size() == 5){
-					rs.addMatrixExprParam(Statement.RAND_DIMNAMES,unnamedParams.get(4));
-				}				if (unnamedParams.size() > 5){					// throw exception -- for matrix, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname
-					LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
-					throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
-	
-				}
-				   
-			}
-			else			{				// handle named params
-				if (unnamedParams.size() == 1){					rs.addMatrixExprParam(Statement.RAND_DATA, unnamedParams.get(0));
-				}
-				
-				for (String name : namedParams.keySet()){					rs.addMatrixExprParam(name, namedParams.get(name)); 
-				}
-			}
-		}
-			
-			
-		else
-		{
-			rs.setOpCode(DataOp.RAND);
-			if (unnamedParams.size() != 0){				// throw parsing exception -- for Rand Statment all arguments must be named parameters
-				LOG.error(printErrorLocation(tName.beginLine, tName.beginColumn) + "for Rand Statment all arguments must be named parameters");
-				throw new ParseException(printErrorLocation(tName.beginLine, tName.beginColumn) + "for Rand Statment all arguments must be named parameters");	
-			}
-
-			// move named parameters to RandStatment
-			for (String name : namedParams.keySet()){
-				rs.addRandExprParam(name, namedParams.get(name)); 
-			}
-		}
-
-
-
-		if (rs.getOpCode().equals(DataOp.RAND))		{			rs.getSource().setRandDefault();
-		}
-		else		{			rs.getSource().setMatrixDefault();
-		}
-		return rs;
-	}
-}
 
 /*
 ELStatement ELStatement() :

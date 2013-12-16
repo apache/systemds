@@ -102,17 +102,19 @@ public abstract class Statement
 	
 	public abstract Statement rewriteStatement(String prefix) throws LanguageException;
 	
+	
 	///////////////////////////////////////////////////////////////////////////
-	// store position information for statements
+	// store exception info + position information for statements
 	///////////////////////////////////////////////////////////////////////////
-	public int _beginLine = 0, _beginColumn = 0;
-	public int _endLine = 0,	 _endColumn = 0;
+	public int _beginLine, _beginColumn;
+	public int _endLine, _endColumn;
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
-	public void setAllPositions(int blp, int bcp, int elp, int ecp) {
+	
+	public void setAllPositions(int blp, int bcp, int elp, int ecp){
 		_beginLine	 = blp; 
 		_beginColumn = bcp; 
 		_endLine 	 = elp;
@@ -131,5 +133,21 @@ public abstract class Statement
 	public String printWarningLocation(){
 		return "WARNING: line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
+	
+	public String printInfoLocation(){
+		return "INFO: line " + _beginLine + ", column " + _beginColumn + " -- ";
+	}
+	public String printErrorLocation(int beginLine, int beginColumn){
+		return "ERROR: line " + beginLine + ", column " + beginColumn + " -- ";
+	}
+	
+	public String printWarningLocation(int beginLine, int beginColumn){
+		return "WARNING: line " + beginLine + ", column " + beginColumn + " -- ";
+	}
+	
+	public String printInfoLocation(int beginLine, int beginColumn){
+		return "INFO: line " + beginLine + ", column " + beginColumn + " -- ";
+	}
+	
 	
 }

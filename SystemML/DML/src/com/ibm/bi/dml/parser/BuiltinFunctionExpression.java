@@ -17,11 +17,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private Expression  	  _first;
-	private Expression  	  _second;
-	private Expression 		  _third;
+	protected Expression  	  _first;
+	protected Expression  	  _second;
+	protected Expression 	  _third;
 	private BuiltinFunctionOp _opcode;
-
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression first,
 			Expression second, Expression third) {
@@ -74,6 +73,53 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	public Expression getThirdExpr() {
 		return _third;
+	}
+
+	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars)
+			throws LanguageException {
+		this.getFirstExpr().validateExpression(ids, constVars);
+		if (_second != null)
+			_second.validateExpression(ids, constVars);
+		if (_third != null)
+			_third.validateExpression(ids, constVars);
+
+		_outputs = new Identifier[stmt.getTargetList().size()];
+		int count = 0;
+		for (DataIdentifier outParam: stmt.getTargetList()){
+			DataIdentifier tmp = new DataIdentifier(outParam);
+			tmp.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			_outputs[count++] = tmp;
+		}
+		
+		switch (_opcode) {
+		case QR:
+			checkNumParameters(1);
+			checkMatrixParam(_first);
+			
+			// setup output properties
+			DataIdentifier qrOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier qrOut2 = (DataIdentifier) getOutputs()[1];
+			
+			long rows = _first.getOutput().getDim1();
+			long cols = _first.getOutput().getDim2();
+			
+			// Output1 - Q
+			qrOut1.setDataType(DataType.MATRIX);
+			qrOut1.setValueType(ValueType.DOUBLE);
+			qrOut1.setDimensions(rows, rows);
+			qrOut1.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			// Output2 - R
+			qrOut2.setDataType(DataType.MATRIX);
+			qrOut2.setValueType(ValueType.DOUBLE);
+			qrOut2.setDimensions(rows, cols);
+			qrOut2.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			break;
+
+		default:
+			throw new LanguageException("Unknown Builtin Function opcode: " + _opcode);
+		}
 	}
 
 	/**
@@ -402,17 +448,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//                   = dimensions of the third, otherwise.
 
 			if (_third != null) {
-				output.setDimensions(_third._output.getDim1(), _third._output
+				output.setDimensions(_third.getOutput().getDim1(), _third.getOutput()
 						.getDim2());
-				output.setBlockDimensions(_third._output.getRowsInBlock(), 
-						                  _third._output.getColumnsInBlock());
-				output.setDataType(_third._output.getDataType());
+				output.setBlockDimensions(_third.getOutput().getRowsInBlock(), 
+						                  _third.getOutput().getColumnsInBlock());
+				output.setDataType(_third.getOutput().getDataType());
 			} else {
-				output.setDimensions(_second._output.getDim1(), _second._output
+				output.setDimensions(_second.getOutput().getDim1(), _second.getOutput()
 						.getDim2());
-				output.setBlockDimensions(_second._output.getRowsInBlock(), 
-		                  _second._output.getColumnsInBlock());
-				output.setDataType(_second._output.getDataType());
+				output.setBlockDimensions(_second.getOutput().getRowsInBlock(), 
+		                  _second.getOutput().getColumnsInBlock());
+				output.setDataType(_second.getOutput().getDataType());
 			}
 			break;
 
@@ -430,8 +476,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkMatchingDimensionsQuantile();
 			}
 
-			if ((_third == null && _second._output.getDataType() != DataType.SCALAR)
-					&& (_third != null && _third._output.getDataType() != DataType.SCALAR)) {
+			if ((_third == null && _second.getOutput().getDataType() != DataType.SCALAR)
+					&& (_third != null && _third.getOutput().getDataType() != DataType.SCALAR)) {
 				
 				throw new LanguageException(this.printErrorLocation() + "Invalid parameters to "
 						+ this.getOpCode(),
@@ -518,7 +564,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(dim1, dim2);
 			output.setBlockDimensions(0, 0);
 			break;
-			
+
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -539,6 +585,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			}
 		}
 		return;
+	}
+	
+	@Override
+	public boolean multipleReturns() {
+		switch(_opcode) {
+		case QR:
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	private boolean isConstant(Expression expr) {
@@ -638,7 +694,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return result;
 	}
 
-	private void checkNumParameters(int count)
+	protected void checkNumParameters(int count)
 			throws LanguageException {
 		if (_first == null){
 			
@@ -662,7 +718,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
        	}
 	}
 
-	private void checkMatrixParam(Expression e) throws LanguageException {
+	protected void checkMatrixParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
 			
 			throw new LanguageException(this.printErrorLocation() +
@@ -832,6 +888,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.COVARIANCE;
 		else if (functionName.equals("seq"))
 			bifop = Expression.BuiltinFunctionOp.SEQ;
+		else if (functionName.equals("qr"))
+			bifop = Expression.BuiltinFunctionOp.QR;
 		else
 			return null;
 		

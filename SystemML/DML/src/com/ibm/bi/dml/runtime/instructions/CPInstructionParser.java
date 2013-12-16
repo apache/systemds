@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.FileCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixReshapeCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.RandCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.MatrixIndexingCPInstruction;
@@ -167,7 +168,9 @@ public class CPInstructionParser extends InstructionParser
 	
 		String2CPInstructionType.put( "tsmm"   , CPINSTRUCTION_TYPE.MMTSJ);
 		
-		String2CPInstructionType.put( "rshape"   , CPINSTRUCTION_TYPE.MatrixReshape);
+		String2CPInstructionType.put( "rshape" , CPINSTRUCTION_TYPE.MatrixReshape);
+		
+		String2CPInstructionType.put( "qr"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
@@ -249,6 +252,9 @@ public class CPInstructionParser extends InstructionParser
 				return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
 			else //exectype CP_FILE
 				return (CPInstruction) ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
+
+		case MultiReturnBuiltin:
+			return (CPInstruction) MultiReturnBuiltinCPInstruction.parseInstruction(str);
 			
 		case Sort: 
 			return (CPInstruction) SortCPInstruction.parseInstruction(str);

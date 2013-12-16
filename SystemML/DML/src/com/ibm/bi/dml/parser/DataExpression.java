@@ -594,7 +594,7 @@ public class DataExpression extends Expression
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ) {
 				
 				// set data type
-		        _output.setDataType(DataType.MATRIX);
+		        getOutput().setDataType(DataType.MATRIX);
 		        
 		        // set number non-zeros
 		        Expression ennz = this.getVarParam("nnz");
@@ -602,12 +602,12 @@ public class DataExpression extends Expression
 		        if( ennz != null )
 		        {
 			        nnz = new Long(ennz.toString());
-			        _output.setNnz(nnz);
+			        getOutput().setNnz(nnz);
 		        }
 		        
 		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
-				_output.setDimensions(-1, -1);
+				getOutput().setDimensions(-1, -1);
 				
 				if ( getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null){
 					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
@@ -626,7 +626,7 @@ public class DataExpression extends Expression
 					}
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
-						_output.setDimensions(dim1, dim2);
+						getOutput().setDimensions(dim1, dim2);
 					} else if ((dim1 != null) || (dim2 != null)) {
 						LOG.error(this.printErrorLocation() + "Partial dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
@@ -634,7 +634,7 @@ public class DataExpression extends Expression
 				}
 				
 				// initialize block dimensions to UNKNOWN 
-				_output.setBlockDimensions(-1, -1);
+				getOutput().setBlockDimensions(-1, -1);
 				
 				// find "format": 1=text, 2=binary
 				int format = 1; // default is "text"
@@ -657,29 +657,29 @@ public class DataExpression extends Expression
 					Long columnBlockCount = (getVarParam(Statement.COLUMNBLOCKCOUNTPARAM) == null) ? null : new Long (getVarParam(Statement.COLUMNBLOCKCOUNTPARAM).toString());
 		
 					if ((rowBlockCount != null) && (columnBlockCount != null)) {
-						_output.setBlockDimensions(rowBlockCount, columnBlockCount);
+						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
 					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
 						LOG.error(this.printErrorLocation() + "Partial block dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Partial block dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					} else {
-						 _output.setBlockDimensions(-1, -1);
+						 getOutput().setBlockDimensions(-1, -1);
 					}
 				}
 				
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( (format == 1 && (_output.getRowsInBlock() != -1 || _output.getColumnsInBlock() != -1))	){
+				if ( (format == 1 && (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1))	){
 					
-					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
-					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + _output.getRowsInBlock() + "," + _output.getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					LOG.error(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
+					throw new LanguageException(this.printErrorLocation() + "Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(Statement.FORMAT_TYPE) + " in \"" + this.toString() + "\".");
 				}
 			
 			}
 			
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
-				_output.setDataType(DataType.SCALAR);
-				_output.setNnz(-1L);
+				getOutput().setDataType(DataType.SCALAR);
+				getOutput().setNnz(-1L);
 			}
 			
 			else{		
@@ -701,13 +701,13 @@ public class DataExpression extends Expression
 			String valueTypeString = getVarParam(Statement.VALUETYPEPARAM) == null ? null :  getVarParam(Statement.VALUETYPEPARAM).toString();
 			if (valueTypeString != null) {
 				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE)) {
-					_output.setValueType(ValueType.DOUBLE);
+					getOutput().setValueType(ValueType.DOUBLE);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE)) {
-					_output.setValueType(ValueType.STRING);
+					getOutput().setValueType(ValueType.STRING);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE)) {
-					_output.setValueType(ValueType.INT);
+					getOutput().setValueType(ValueType.INT);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
-					_output.setValueType(ValueType.BOOLEAN);
+					getOutput().setValueType(ValueType.BOOLEAN);
 				} else {
 					
 					LOG.error(this.printErrorLocation() + "Unknown Value Type " + valueTypeString
@@ -718,7 +718,7 @@ public class DataExpression extends Expression
 							LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			} else {
-				_output.setValueType(ValueType.DOUBLE);
+				getOutput().setValueType(ValueType.DOUBLE);
 			}
 
 			break; 
@@ -763,11 +763,11 @@ public class DataExpression extends Expression
 			}
 			
 			if (getVarParam(Statement.FORMAT_TYPE) == null || getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("text"))
-				_output.setBlockDimensions(-1, -1);
+				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
-				_output.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				getOutput().setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			else if (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(Statement.FORMAT_TYPE).toString().equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)))
-				_output.setBlockDimensions(-1, -1);
+				getOutput().setBlockDimensions(-1, -1);
 			
 			else{
 				LOG.error(this.printErrorLocation() + "Invalid format " + getVarParam(Statement.FORMAT_TYPE) +  " in statement: " + this.toString());
@@ -1165,24 +1165,25 @@ public class DataExpression extends Expression
 				maxExpr.validateExpression(ids, currConstVars);
 			}
 		
-			_output.setFormatType(FormatType.BINARY);
-			_output.setDataType(DataType.MATRIX);
-			_output.setValueType(ValueType.DOUBLE);
-			_output.setDimensions(rowsLong, colsLong);
+			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setDataType(DataType.MATRIX);
+			getOutput().setValueType(ValueType.DOUBLE);
+			getOutput().setDimensions(rowsLong, colsLong);
 			
-			if (_output instanceof IndexedIdentifier){
+			if (getOutput() instanceof IndexedIdentifier){
 				// process the "target" being indexed
-				DataIdentifier targetAsSeen = ids.get(((DataIdentifier)_output).getName());
+				DataIdentifier targetAsSeen = ids.get(((DataIdentifier)getOutput()).getName());
 				if (targetAsSeen == null){
-					LOG.error(_output.printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)_output).getName() + " without first initializing " + ((DataIdentifier)_output).getName());
-					throw new LanguageException(_output.printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)_output).getName() + " without first initializing " + ((DataIdentifier)_output).getName());
+					LOG.error(getOutput().printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)getOutput()).getName() + " without first initializing " + ((DataIdentifier)getOutput()).getName());
+					throw new LanguageException(getOutput().printErrorLocation() + "cannot assign value to indexed identifier " + ((DataIdentifier)getOutput()).getName() + " without first initializing " + ((DataIdentifier)getOutput()).getName());
 				}
 				//_output.setProperties(targetAsSeen);
-				((IndexedIdentifier) _output).setOriginalDimensions(targetAsSeen.getDim1(), targetAsSeen.getDim2());
+				((IndexedIdentifier) getOutput()).setOriginalDimensions(targetAsSeen.getDim1(), targetAsSeen.getDim2());
+				//((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());
 			}
-			//_output.computeDataType();
+			//getOutput().computeDataType();
 
-			if (_output instanceof IndexedIdentifier){
+			if (getOutput() instanceof IndexedIdentifier){
 				LOG.warn(this.printWarningLocation() + "Output for Rand Statement may have incorrect size information");
 			}
 			
@@ -1424,17 +1425,17 @@ public class DataExpression extends Expression
 					colsExpr.validateExpression(ids, currConstVars);
 				}
 			}	
-			_output.setFormatType(FormatType.BINARY);
-			_output.setDataType(DataType.MATRIX);
-			_output.setValueType(ValueType.DOUBLE);
-			_output.setDimensions(rowsLong, colsLong);
+			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setDataType(DataType.MATRIX);
+			getOutput().setValueType(ValueType.DOUBLE);
+			getOutput().setDimensions(rowsLong, colsLong);
 				
-			if (_output instanceof IndexedIdentifier){
-				((IndexedIdentifier) _output).setOriginalDimensions(_output.getDim1(), _output.getDim2());
+			if (getOutput() instanceof IndexedIdentifier){
+				((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());
 			}
-			//_output.computeDataType();
+			//getOutput().computeDataType();
 
-			if (_output instanceof IndexedIdentifier){
+			if (getOutput() instanceof IndexedIdentifier){
 				LOG.warn(this.printWarningLocation() + "Output for matrix Statement may have incorrect size information");
 			}
 			

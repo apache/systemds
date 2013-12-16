@@ -49,7 +49,7 @@ public abstract class Identifier extends Expression
 		_rows_in_block = -1;
 		_columns_in_block = -1;
 		_nnz = -1;
-		_output = this;
+		setOutput(this);
 		_formatType = null;
 	}
 	

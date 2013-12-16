@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataOp;
+import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.MemoTable;
@@ -173,6 +174,18 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				else {
 					hop.set_rows_in_block(GLOBAL_BLOCKSIZE);
 					hop.set_cols_in_block(GLOBAL_BLOCKSIZE);
+					
+					// Functions may return multiple outputs, as defined in array of outputs in FunctionOp.
+					// Reblock properties need to be set for each output.
+					if ( hop instanceof FunctionOp ) {
+						FunctionOp fop = (FunctionOp) hop;
+						if ( fop.getOutputs() != null) {
+							for(Hop out : fop.getOutputs()) {
+								out.set_rows_in_block(GLOBAL_BLOCKSIZE);
+								out.set_cols_in_block(GLOBAL_BLOCKSIZE);
+							}
+						}
+					}
 				}
 				
 				// if any input is not blocked then the output of current Hop should not be blocked

@@ -275,4 +275,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return result;
 	}
 
+	@Override
+	public boolean multipleReturns() {
+		return false;
+	}
 }

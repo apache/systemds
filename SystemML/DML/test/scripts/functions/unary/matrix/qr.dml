@@ -1,0 +1,30 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+/*
+ * DML script to test QR factorization
+ */
+
+A = read($1);
+
+[Q,R] = qr(A);
+
+# Q must be orthogonal i.e., Q = Q^{-1}
+I = Q %*% t(Q);
+
+# Multiplying Q and R, we must get back original A
+B = Q %*% R;
+diff = sum(A - B);
+#   write the difference between original A and computed B as a dummy 1x1 matrix
+D = matrix(1,1,1);
+D = diff*D;
+
+write(I, $2);
+write(D, $3);
+

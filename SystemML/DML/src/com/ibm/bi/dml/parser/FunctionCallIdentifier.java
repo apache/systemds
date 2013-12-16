@@ -20,7 +20,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 	
 	private ArrayList<Expression> _inputParamExpressions;
 	private HashMap<String,Expression> _namedInputParamExpressions;
-	private ArrayList<DataIdentifier> _outputs;
+	//private ArrayList<DataIdentifier> _outputs;
 	private FunctCallOp _opcode;	// stores whether internal or external
 	private String _namespace;		// namespace of the function being called (null if current namespace is to be used)
 
@@ -167,11 +167,11 @@ public class FunctionCallIdentifier extends DataIdentifier
 			
 			else {
 				Expression param = _inputParamExpressions.get(i);
-				boolean sameDataType = param._output.getDataType().equals(fstmt.getInputParams().get(i).getDataType());
+				boolean sameDataType = param.getOutput().getDataType().equals(fstmt.getInputParams().get(i).getDataType());
 				if (!sameDataType){
 					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct dataType");
 				}
-				boolean sameValueType = param._output.getValueType().equals(fstmt.getInputParams().get(i).getValueType());
+				boolean sameValueType = param.getOutput().getValueType().equals(fstmt.getInputParams().get(i).getValueType());
 				if (!sameValueType){
 					throw new LanguageException(this.printErrorLocation() + "parameter " + param.toString() + " does not have correct valueType");
 				}
@@ -179,20 +179,20 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 	
 		// set the outputs for the function
-		_outputs = new ArrayList<DataIdentifier>();
-		for (DataIdentifier outParam: fstmt.getOutputParams()){
-			_outputs.add(new DataIdentifier(outParam));
+		_outputs = new Identifier[fstmt.getOutputParams().size()];
+		for(int i=0; i < fstmt.getOutputParams().size(); i++) {
+			_outputs[i] = new DataIdentifier(fstmt.getOutputParams().get(i));
 		}
 		
 		return;
 	}
 
-	@Override
+	/*@Override
 	public DataIdentifier getOutput() {
 			
 		if (_outputs.size() == 0)
 			return null;
-		/*
+		
 		 {
 			try{
 				LOG.error(this.printErrorLocation() + "function " + this._name + " must return a value");
@@ -203,15 +203,15 @@ public class FunctionCallIdentifier extends DataIdentifier
 			}
 			return null;
 		}
-		*/
+		
 		else
 			return _outputs.get(0);
-	}
+	}*/
 	
-	public ArrayList<DataIdentifier> getOutputs() {
+	/*public ArrayList<DataIdentifier> getOutputs() {
 		
 		return _outputs;
-	}
+	}*/
 	
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -239,9 +239,13 @@ public class FunctionCallIdentifier extends DataIdentifier
 	@Override
 	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
-		for (int i=0; i< _outputs.size(); i++)
-			result.addVariable(_outputs.get(i).getName(), _outputs.get(i));
+		for (int i=0; i< _outputs.length; i++)
+			result.addVariable( ((DataIdentifier)_outputs[i]).getName(), (DataIdentifier)_outputs[i] );
 		return result;
 	}
 
+	@Override
+	public boolean multipleReturns() {
+		return true;
+	}
 }

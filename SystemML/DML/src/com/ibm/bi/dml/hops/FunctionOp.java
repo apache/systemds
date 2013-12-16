@@ -37,6 +37,7 @@ public class FunctionOp extends Hop
 		DML,
 		EXTERNAL_MEM,
 		EXTERNAL_FILE,
+		MULTIRETURN_BUILTIN,
 		UNKNOWN
 	}
 	
@@ -44,11 +45,17 @@ public class FunctionOp extends Hop
 	private String _fnamespace = null;
 	private String _fname = null; 
 	private String[] _outputs = null; 
+	private ArrayList<Hop> _outputHops = null;
 	
 	private FunctionOp() {
 		//default constructor for clone
 	}
-	
+
+	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, ArrayList<Hop> outputHops) {
+		this(type, fnamespace, fname, finputs, outputs);
+		_outputHops = outputHops;
+	}
+
 	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs) 
 	{
 		super(Kind.FunctionOp, fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
@@ -78,6 +85,10 @@ public class FunctionOp extends Hop
 	public void setFunctionName( String fname )
 	{
 		_fname = fname;
+	}
+	
+	public ArrayList<Hop> getOutputs() {
+		return _outputHops;
 	}
 	
 
@@ -130,7 +141,7 @@ public class FunctionOp extends Hop
 				tmp.add( in.constructLops() );
 			
 			//construct function call
-			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs );
+			FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops );
 			set_lops( fcall );
 		}
 		

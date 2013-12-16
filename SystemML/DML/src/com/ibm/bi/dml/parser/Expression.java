@@ -83,7 +83,8 @@ public abstract class Expression
 		SUM, 
 		TAN,
 		TRACE, 
-		TRANS  
+		TRANS,
+		QR
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {
@@ -131,16 +132,19 @@ public abstract class Expression
 		
 	
 	protected Kind _kind;
-	protected Identifier _output;
+	protected Identifier[] _outputs;
 
 	private static int _tempId;
 
 	public Expression() {
-		_output = null;
+		_outputs = null;
 	}
 
 	public void setOutput(Identifier output) {
-		_output = output;
+		if ( _outputs == null) {
+			_outputs = new Identifier[1];
+		}
+		_outputs[0] = output;
 	}
 
 	public Kind getKind() {
@@ -148,10 +152,19 @@ public abstract class Expression
 	}
 
 	public Identifier getOutput() {
-		return _output;
+		return _outputs[0];
+	}
+	
+	public Identifier[] getOutputs() {
+		return _outputs;
 	}
 	
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
+	};
+	
+	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+		LOG.error(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
 		throw new LanguageException(this.printErrorLocation() + "Should never be invoked in Baseclass 'Expression'");
 	};
 	

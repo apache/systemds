@@ -1349,6 +1349,7 @@ public class Dag<N extends Lop>
 					{
 						outputs[count++] = out.getOutputParameters().getLabel();
 					}
+					
 					inst_string = node.getInstructions(inputs, outputs);
 				}
 				else {
@@ -2269,7 +2270,8 @@ public class Dag<N extends Lop>
 	OutputInfo getOutputInfo(N node, boolean cellModeOverride) 
 		throws LopsException 
 	{
-		if ( node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP)
+		if ( (node.get_dataType() == DataType.SCALAR && node.getExecType() == ExecType.CP) 
+				|| node instanceof FunctionCallCP )
 			return null;
 	
 		OutputInfo oinfo = null;
@@ -2422,6 +2424,25 @@ public class Dag<N extends Lop>
 				// finally, add the generated filename and variable name to the list of outputs
 				out.setFileName(oparams.getFile_name());
 				out.setVarName(oparams.getLabel());
+			}
+			else {
+				// If the function call is set with output lops (e.g., multi return builtin),
+				// generate a createvar instruction for each function output
+				FunctionCallCP fcall = (FunctionCallCP) node;
+				if ( fcall.getFunctionOutputs() != null ) {
+					for( Lop fnOut: fcall.getFunctionOutputs()) {
+						OutputParameters fnOutParams = fnOut.getOutputParameters();
+						//OutputInfo oinfo = getOutputInfo((N)fnOut, false);
+						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+								fnOutParams.getLabel(),
+								fnOutParams.getLabel(), 
+								true, 
+								OutputInfo.outputInfoToString(getOutputInfo((N)fnOut, false)),
+								new MatrixCharacteristics(fnOutParams.getNum_rows(), fnOutParams.getNum_cols(), fnOutParams.get_rows_in_block().intValue(), fnOutParams.get_cols_in_block().intValue(), fnOutParams.getNnz())
+							);
+						out.addPreInstruction(createvarInst);
+					}
+				}
 			}
 		}
 		// rootNode is of type Data

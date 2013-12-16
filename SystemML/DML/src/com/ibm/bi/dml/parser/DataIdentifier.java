@@ -124,6 +124,15 @@ public class DataIdentifier extends Identifier
 		return null;
 	}
 	
+	/**
+	 * Method to speicfy if an expression returns multiple outputs.
+	 * This method must be overridden by all child classes.
+	 * @return
+	 */
+	public boolean multipleReturns() throws LanguageException {
+		throw new LanguageException("multipleReturns() must be overridden in the subclass.");
+	}
+	
 	public boolean equals(DataIdentifier target){
 		
 		if (!this.getName().equals(target.getName()))

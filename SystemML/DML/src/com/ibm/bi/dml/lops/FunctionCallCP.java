@@ -10,9 +10,12 @@ package com.ibm.bi.dml.lops;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
+import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -30,7 +33,18 @@ public class FunctionCallCP extends Lop
 	private String _fnamespace;
 	private String _fname;
 	private String[] _outputs;
+	private ArrayList<Lop> _outputLops = null;
 
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ArrayList<Hop> outputHops) throws HopsException, LopsException {
+		this(inputs, fnamespace, fname, outputs);
+		if(outputHops != null) {
+			_outputLops = new ArrayList<Lop>();
+			for(Hop h : outputHops) {
+				_outputLops.add( h.constructLops() );
+			}
+		}
+	}
+	
 	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs) 
 	{
 		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
@@ -55,6 +69,10 @@ public class FunctionCallCP extends Lop
 		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
+	public ArrayList<Lop> getFunctionOutputs() {
+		return _outputLops;
+	}
+	
 	@Override
 	public String toString() {
 
@@ -62,9 +80,38 @@ public class FunctionCallCP extends Lop
 
 	}
 
+	private String getInstructionsMultipleReturnBuiltins(String[] inputs, String[] outputs) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("CP");
+		sb.append(Lop.OPERAND_DELIMITOR); 
+		sb.append(_fname.toLowerCase());
+		sb.append(Lop.OPERAND_DELIMITOR); 
+		for(int i=0; i< inputs.length; i++) {
+			sb.append( getInputs().get(0).prepInputOperand(inputs[i]) );
+			if ( i != inputs.length-1 )
+				sb.append(Lop.SEPARATOR_WITHIN_OPRAND);
+		}
+		sb.append(Lop.OPERAND_DELIMITOR); 
+		for(int i=0; i< _outputs.length; i++) {
+			sb.append(_outputs[i]);
+			if ( i != _outputs.length-1 )
+				sb.append(Lop.SEPARATOR_WITHIN_OPRAND);
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * Method to generate instructions for external functions as well as builtin functions with multiple returns.
+	 * Builtin functions have their namespace set to DMLProgram.INTERNAL_NAMESPACE ("_internal").
+	 */
 	@Override
 	public String getInstructions(String[] inputs, String[] outputs) throws LopsException
 	{		
+		// Handle internal builtin functions
+		if (_fnamespace.equalsIgnoreCase(DMLProgram.INTERNAL_NAMESPACE) ) {
+			return getInstructionsMultipleReturnBuiltins(inputs, outputs);
+		}
+		
 		/**
 		 * Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
 		 * These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields

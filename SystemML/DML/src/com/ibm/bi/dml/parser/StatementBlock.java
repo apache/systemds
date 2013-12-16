@@ -164,6 +164,8 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 			else
 				sourceExpr = ((MultiAssignmentStatement)stmt).getSource();
+			if ( sourceExpr instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)sourceExpr).multipleReturns() )
+				return false;
 			
 			if (sourceExpr instanceof FunctionCallIdentifier){
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
@@ -660,43 +662,61 @@ public class StatementBlock extends LiveVariableAnalysis
 				
 				// perform validation of source expression
 				Expression source = mas.getSource();
-				if (!(source instanceof FunctionCallIdentifier)){
+				/*
+				 * MultiAssignmentStatments currently supports only External, 
+				 * User-defined, and Multi-return Builtin function expressions
+				 */
+				if (!(source instanceof DataIdentifier) 
+						|| (source instanceof DataIdentifier && !((DataIdentifier)source).multipleReturns()) ) {
+				//if (!(source instanceof FunctionCallIdentifier) ) {
+						//|| !(source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).isMultiReturnBuiltinFunction()) ){
 					LOG.error(source.printErrorLocation() + "can only use user-defined functions with multi-assignment statement");
 					throw new LanguageException(source.printErrorLocation() + "can only use user-defined functions with multi-assignment statement");
 				}
-				else {
+				
+				if ( source instanceof FunctionCallIdentifier) {
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
 					fci.validateExpression(dmlProg, ids.getVariables(), currConstVars);
 				}
+				else if ( source instanceof BuiltinFunctionExpression && ((DataIdentifier)source).multipleReturns()) {
+					source.validateExpression(mas, ids.getVariables(), currConstVars);
+				}
+				else 
+					throw new LanguageException("Unexpected error.");
 				
 		
-				for (int j =0; j< targetList.size(); j++){
-					
-					// set target properties (based on type info in function call statement return params)
-					DataIdentifier target = targetList.get(j);
-					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-					FunctionStatement fstmt = (FunctionStatement)_dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-					if (fstmt == null){
-						LOG.error(fci.printErrorLocation() + " function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
-						throw new LanguageException(fci.printErrorLocation() + " function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+				if ( source instanceof FunctionCallIdentifier ) {
+					for (int j =0; j< targetList.size(); j++){
+						
+						DataIdentifier target = targetList.get(j);
+							// set target properties (based on type info in function call statement return params)
+							FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
+							FunctionStatement fstmt = (FunctionStatement)_dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+							if (fstmt == null){
+								LOG.error(fci.printErrorLocation() + " function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+								throw new LanguageException(fci.printErrorLocation() + " function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+							}
+							if (!(target instanceof IndexedIdentifier)){
+								target.setProperties(fstmt.getOutputParams().get(j));
+							}
+							else{
+								DataIdentifier targetAsSeen = ids.getVariable(target.getName());
+								if (targetAsSeen == null){
+									LOG.error(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+									throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
+								}
+								target.setProperties(targetAsSeen);
+							}
+							ids.addVariable(target.getName(), target);
 					}
-					if (!(target instanceof IndexedIdentifier)){
-						target.setProperties(fstmt.getOutputParams().get(j));
-					}
-					else{
-						DataIdentifier targetAsSeen = ids.getVariable(target.getName());
-						if (targetAsSeen == null){
-							LOG.error(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
-							throw new LanguageException(target.printErrorLocation() + "cannot assign value to indexed identifier " + target.toString() + " without first initializing " + target.getName());
-						}
-						target.setProperties(targetAsSeen);
-					}
-					
-					ids.addVariable(target.getName(), target);
 				}
-					
+				else if ( source instanceof BuiltinFunctionExpression ) {
+					Identifier[] outputs = source.getOutputs();
+					for (int j=0; j < targetList.size(); j++) {
+						ids.addVariable(targetList.get(j).getName(), (DataIdentifier)outputs[j]);
+					}
+				}
 			}
-			
 			else if(current instanceof RandStatement)
 			{
 				RandStatement rs = (RandStatement) current;

@@ -1716,36 +1716,46 @@ public class DMLTranslator
 				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 				Expression source = mas.getSource();
 				
-				FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
-				FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
-				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-				if (fstmt == null){
-					LOG.error(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
-					throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
-				}
-				
-				ArrayList<Hop> finputs = new ArrayList<Hop>();
-				for (Expression paramName : fci.getParamExpressions()){
-					Hop in = processExpression(paramName, null, _ids);						
-					finputs.add(in);
-				}
+				if ( source instanceof FunctionCallIdentifier ) {
+					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
+					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
+					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+					if (fstmt == null){
+						LOG.error(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					}
+					
+					ArrayList<Hop> finputs = new ArrayList<Hop>();
+					for (Expression paramName : fci.getParamExpressions()){
+						Hop in = processExpression(paramName, null, _ids);						
+						finputs.add(in);
+					}
 
-				//create function op
-				String[] foutputs = new String[mas.getTargetList().size()]; 
-				int count = 0;
-				for ( DataIdentifier paramName : mas.getTargetList() ){
-					foutputs[count++]=paramName.getName();
+					//create function op
+					String[] foutputs = new String[mas.getTargetList().size()]; 
+					int count = 0;
+					for ( DataIdentifier paramName : mas.getTargetList() ){
+						foutputs[count++]=paramName.getName();
+					}
+					
+					FunctionType ftype = fsb.getFunctionOpType();
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs);
+					output.add(fcall);
+					
+					//TODO function output dataops (phase 3)
+					/*for ( DataIdentifier paramName : mas.getTargetList() ){
+						DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
+						output.add(twFoutput);
+					}*/
 				}
-				
-				FunctionType ftype = fsb.getFunctionOpType();
-				FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs);
-				output.add(fcall);
-				
-				//TODO function output dataops (phase 3)
-				/*for ( DataIdentifier paramName : mas.getTargetList() ){
-					DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
-					output.add(twFoutput);
-				}*/
+				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
+					// construct input hops
+					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), _ids);
+					output.add(fcall);
+					
+				}
+				else
+					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
 			}
 			
 			if (current instanceof RandStatement) {
@@ -2552,6 +2562,62 @@ public class DMLTranslator
 		return currBuiltinOp;
 	}
 
+	/**
+	 * Construct HOps from parse tree: process BuiltinFunction Expressions in 
+	 * MultiAssignment Statements. For all other builtin function expressions,
+	 * <code>processBuiltinFunctionExpression()</code> is used.
+	 */
+	private Hop processMultipleReturnBuiltinFunctionExpression(BuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
+			HashMap<String, Hop> hops) throws ParseException {
+		
+		// Construct Hops for all inputs
+		ArrayList<Hop> inputs = new ArrayList<Hop>();
+		inputs.add( processExpression(source.getFirstExpr(), null, hops) );
+		if ( source.getSecondExpr() != null )
+			inputs.add( processExpression(source.getSecondExpr(), null, hops) );
+		if ( source.getThirdExpr() != null )
+			inputs.add( processExpression(source.getThirdExpr(), null, hops) );
+		
+		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
+		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
+		
+		// Create an array list to hold the outputs of this lop.
+		// Exact list of outputs are added based on opcode.
+		ArrayList<Hop> outputs = new ArrayList<Hop>();
+		
+		// Construct Hop for current builtin function expression based on its type
+		Hop currBuiltinOp = null;
+		switch (source.getOpCode()) {
+		case QR:
+			
+			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
+			String[] outputNames = new String[targetList.size()]; 
+			for ( int i=0; i < targetList.size(); i++ ) {
+				outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
+				Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, outputNames[i]);
+				outputs.add(output);
+			}
+			
+			// Create the hop for current function call
+			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
+			currBuiltinOp = fcall;
+						
+			break;
+			
+		default:
+			throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
+		}
+
+		// set properties for created hops based on outputs of source expression
+		for ( int i=0; i < source.getOutputs().length; i++ ) {
+			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
+			outputs.get(i).setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		}
+		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+
+		return currBuiltinOp;
+	}
+	
 	/**
 	 * Construct Hops from parse tree : Process BuiltinFunction Expression in an
 	 * assignment statement

@@ -60,7 +60,7 @@ public class VariableCPInstruction extends CPInstruction
 	 *     createvar x FP [dimensions] [formatinfo]
 	 */
 	
-	protected static IDSequence _uniqueVarID;
+	public static IDSequence _uniqueVarID;
 	static {
 		_uniqueVarID  = new IDSequence(true); 
 	}

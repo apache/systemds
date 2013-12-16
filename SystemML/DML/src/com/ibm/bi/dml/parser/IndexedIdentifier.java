@@ -721,6 +721,10 @@ public class IndexedIdentifier extends DataIdentifier
 		}
 	}
 	
+	@Override
+	public boolean multipleReturns() {
+		return false;
+	}
 	
 } // end class
 	

@@ -52,6 +52,7 @@ public class DMLProgram
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
 	public static String DEFAULT_NAMESPACE = ".defaultNS";
+	public static String INTERNAL_NAMESPACE = "_internal"; // used for multi-return builtin functions
 	private static final Log LOG = LogFactory.getLog(DMLProgram.class.getName());
 	
 	public DMLProgram(){

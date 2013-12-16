@@ -82,7 +82,7 @@ public class DataOp extends Hop
 		in.getParent().add(this);
 		_fileName = fname;
 
-		if (dop == DataOpTypes.TRANSIENTWRITE)
+		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
 			setFormatType(FileFormatTypes.BINARY);
 	}
 	
@@ -185,6 +185,13 @@ public class DataOp extends Hop
 				isTransient = true;
 				break;
 				
+			case FUNCTIONOUTPUT:
+				/* TODO: currently, function outputs are treated as transient.
+				 * This needs to be revisited whenever function calls are fully integrated into Hop DAGs.
+				 */
+				isTransient = true;
+				break;
+				
 			default:
 				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 			}
@@ -198,12 +205,14 @@ public class DataOp extends Hop
 				
 			case PERSISTENTWRITE:
 			case TRANSIENTWRITE:
+			case FUNCTIONOUTPUT:
 				l = new Data(HopsData2Lops.get(_dataop), this.getInput().get(0).constructLops(), inputLops, get_name(), null, get_dataType(), get_valueType(), isTransient, getFormatType());
 				
 				// TODO: should we set the exec type for transient write ?
-				if (_dataop == DataOpTypes.PERSISTENTWRITE)
+				if (_dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.FUNCTIONOUTPUT)
 					((Data)l ).setExecType(et);
 				break;
+				
 			}
 			
 			/*if (_dataop == DataOpTypes.PERSISTENTREAD) {

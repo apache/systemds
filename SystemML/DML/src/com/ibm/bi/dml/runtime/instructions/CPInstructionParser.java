@@ -171,6 +171,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rshape" , CPINSTRUCTION_TYPE.MatrixReshape);
 		
 		String2CPInstructionType.put( "qr"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2CPInstructionType.put( "lu"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();

@@ -117,6 +117,42 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 
+		case LU:
+			checkNumParameters(1);
+			checkMatrixParam(_first);
+			
+			// setup output properties
+			DataIdentifier luOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier luOut2 = (DataIdentifier) getOutputs()[1];
+			DataIdentifier luOut3 = (DataIdentifier) getOutputs()[2];
+			
+			long inrows = _first.getOutput().getDim1();
+			long incols = _first.getOutput().getDim2();
+			
+			if ( inrows != incols ) {
+				throw new LanguageException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + inrows + ", cols="+incols+")");
+			}
+			
+			// Output1 - P
+			luOut1.setDataType(DataType.MATRIX);
+			luOut1.setValueType(ValueType.DOUBLE);
+			luOut1.setDimensions(inrows, inrows);
+			luOut1.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			// Output2 - L
+			luOut2.setDataType(DataType.MATRIX);
+			luOut2.setValueType(ValueType.DOUBLE);
+			luOut2.setDimensions(inrows, inrows);
+			luOut2.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			// Output3 - U
+			luOut3.setDataType(DataType.MATRIX);
+			luOut3.setValueType(ValueType.DOUBLE);
+			luOut3.setDimensions(inrows, inrows);
+			luOut3.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			break;
+
 		default:
 			throw new LanguageException("Unknown Builtin Function opcode: " + _opcode);
 		}
@@ -591,6 +627,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public boolean multipleReturns() {
 		switch(_opcode) {
 		case QR:
+		case LU:
 			return true;
 		default:
 			return false;
@@ -890,6 +927,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SEQ;
 		else if (functionName.equals("qr"))
 			bifop = Expression.BuiltinFunctionOp.QR;
+		else if (functionName.equals("lu"))
+			bifop = Expression.BuiltinFunctionOp.LU;
 		else
 			return null;
 		

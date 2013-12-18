@@ -2589,6 +2589,7 @@ public class DMLTranslator
 		Hop currBuiltinOp = null;
 		switch (source.getOpCode()) {
 		case QR:
+		case LU:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
 			String[] outputNames = new String[targetList.size()]; 

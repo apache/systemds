@@ -84,7 +84,8 @@ public abstract class Expression
 		TAN,
 		TRACE, 
 		TRANS,
-		QR
+		QR,
+		LU
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {

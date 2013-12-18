@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.QRDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
 
@@ -82,6 +83,18 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, str);
 		}
+		else if ( opcode.equalsIgnoreCase("lu") ) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			
+			// one input and three outputs
+			String[] operandParts = parts[2].split(Lop.SEPARATOR_WITHIN_OPRAND);
+			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(operandParts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, str);
+			
+		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
@@ -93,40 +106,89 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		String opcode = InstructionUtils.getOpCode(instString);
 		
 		if (opcode.equalsIgnoreCase("qr")) {
-			// Prepare input to commons math function
-			//long start = System.nanoTime();
-			//long begin = start;
-			MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.get_name());
-			Matrix mathInput = new Matrix(mobjInput.getFileName(), mobjInput.getNumRows(), mobjInput.getNumColumns(), (mobjInput.getValueType() == ValueType.DOUBLE ? Matrix.ValueType.Double : Matrix.ValueType.Integer));
-			mathInput.setMatrixObject(mobjInput);
-			Array2DRowRealMatrix matrixInput = new Array2DRowRealMatrix(mathInput.getMatrixAsDoubleArray(), false);
-			//long prep = System.nanoTime() - begin;
-			
-			// Perform QR decomposition
-			//begin = System.nanoTime();
-			QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
-			//long decompose = System.nanoTime() - begin;
-			//begin = System.nanoTime();
-			RealMatrix Q = qrdecompose.getQ();
-			RealMatrix R = qrdecompose.getR();
-			//long extract = System.nanoTime() - begin;
-			
-			//begin = System.nanoTime();
-			// Read the results into native format
-			MatrixBlock mbQ = DataConverter.convertToMatrixBlock(Q.getData());
-			MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
-			//long prepResults = System.nanoTime() - begin;
-			
-			ec.setMatrixOutput(_outputs.get(0).get_name(), mbQ);
-			ec.setMatrixOutput(_outputs.get(1).get_name(), mbR);
-			//long stop = System.nanoTime() - start;
-			//System.out.println("Total " + (stop*1e-6) + ": [" + (prep*1e-6) + ", " + (decompose*1e-6) + ", " + (extract*1e-6) + ", " + (prepResults*1e-6));
-			
+			performQR(ec);
+		}
+		else if ( opcode.equalsIgnoreCase("lu") ) {
+			performLU(ec);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
 	}
-	
 
+	/**
+	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
+	 * which is useful in invoking Apache CommonsMath.
+	 * 
+	 * @param ec
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private Array2DRowRealMatrix prepareInputForCommonsMath(ExecutionContext ec, String varname) throws DMLRuntimeException {
+		MatrixObject mobjInput = (MatrixObject) ec.getVariable(input1.get_name());
+		Matrix mathInput = new Matrix(mobjInput.getFileName(), mobjInput.getNumRows(), mobjInput.getNumColumns(), (mobjInput.getValueType() == ValueType.DOUBLE ? Matrix.ValueType.Double : Matrix.ValueType.Integer));
+		mathInput.setMatrixObject(mobjInput);
+		Array2DRowRealMatrix matrixInput = new Array2DRowRealMatrix(mathInput.getMatrixAsDoubleArray(), false);
+		return matrixInput;
+	}
+	
+	private void performLU(ExecutionContext ec) throws DMLRuntimeException {
+		// Prepare input to commons math function
+		long start = System.nanoTime();
+		long begin = start;
+		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
+		long prep = System.nanoTime() - begin;
+		
+		// Perform QR decomposition
+		begin = System.nanoTime();
+		LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
+		long decompose = System.nanoTime() - begin;
+		begin = System.nanoTime();
+		RealMatrix P = ludecompose.getP();
+		RealMatrix L = ludecompose.getL();
+		RealMatrix U = ludecompose.getU();
+		long extract = System.nanoTime() - begin;
+		
+		// Read the results into native format
+		begin = System.nanoTime();
+		MatrixBlock mbP = DataConverter.convertToMatrixBlock(P.getData());
+		MatrixBlock mbL = DataConverter.convertToMatrixBlock(L.getData());
+		MatrixBlock mbU = DataConverter.convertToMatrixBlock(U.getData());
+		long prepResults = System.nanoTime() - begin;
+		
+		ec.setMatrixOutput(_outputs.get(0).get_name(), mbP);
+		ec.setMatrixOutput(_outputs.get(1).get_name(), mbL);
+		ec.setMatrixOutput(_outputs.get(2).get_name(), mbU);
+		long stop = System.nanoTime() - start;
+		System.out.println("Total " + (stop*1e-6) + ": [" + (prep*1e-6) + ", " + (decompose*1e-6) + ", " + (extract*1e-6) + ", " + (prepResults*1e-6));
+	}
+	
+	private void performQR(ExecutionContext ec) throws DMLRuntimeException {
+		// Prepare input to commons math function
+		long start = System.nanoTime();
+		long begin = start;
+		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
+		long prep = System.nanoTime() - begin;
+		
+		// Perform QR decomposition
+		begin = System.nanoTime();
+		QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
+		long decompose = System.nanoTime() - begin;
+		begin = System.nanoTime();
+		RealMatrix Q = qrdecompose.getQ();
+		RealMatrix R = qrdecompose.getR();
+		long extract = System.nanoTime() - begin;
+		
+		// Read the results into native format
+		begin = System.nanoTime();
+		MatrixBlock mbQ = DataConverter.convertToMatrixBlock(Q.getData());
+		MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
+		long prepResults = System.nanoTime() - begin;
+		
+		ec.setMatrixOutput(_outputs.get(0).get_name(), mbQ);
+		ec.setMatrixOutput(_outputs.get(1).get_name(), mbR);
+		long stop = System.nanoTime() - start;
+		System.out.println("Total " + (stop*1e-6) + ": [" + (prep*1e-6) + ", " + (decompose*1e-6) + ", " + (extract*1e-6) + ", " + (prepResults*1e-6));
+	}
 }

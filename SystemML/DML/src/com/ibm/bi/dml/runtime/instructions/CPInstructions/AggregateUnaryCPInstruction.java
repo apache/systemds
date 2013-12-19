@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationType
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public AggregateUnaryCPInstruction(Operator op, CPOperand in, CPOperand out, String istr){
@@ -106,21 +106,21 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		else if ( opcode.equalsIgnoreCase("uamean") ) {
 			// Mean
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), true);
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uarmean") ) {
 			// RowMeans
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), true);
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		} 
 		
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTTWOROWS);
-			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+			AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), true);
 			return new AggregateUnaryCPInstruction(aggun, in1, out, str);
 		}
 		else if ( opcode.equalsIgnoreCase("ua+") ) {
@@ -323,8 +323,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		AggregateUnaryOperator au_op = (AggregateUnaryOperator) optr;
 		
 		MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(), matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
-	
-		matBlock = null;
+		
 		ec.releaseMatrixInput(input1.get_name());
 		
 		if(output.get_dataType() == DataType.SCALAR){

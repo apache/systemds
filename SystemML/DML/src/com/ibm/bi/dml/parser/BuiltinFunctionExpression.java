@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,7 +14,7 @@ import java.util.HashMap;
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected Expression  	  _first;
@@ -179,8 +179,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		Identifier id = this.getFirstExpr().getOutput();
 		output.setProperties(this.getFirstExpr().getOutput());
+		output.setNnz(-1); //conservatively, cannot use input nnz!
 		this.setOutput(output);
-
+		
 		switch (this.getOpCode()) {
 		case COLSUM:
 		case COLMAX:
@@ -218,6 +219,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
 			output.setValueType(id.getValueType());
+			
 			break;
 		
 		case MEAN:

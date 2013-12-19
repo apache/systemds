@@ -10,7 +10,6 @@ package com.ibm.bi.dml.parser;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
@@ -20,15 +19,16 @@ import com.ibm.bi.dml.lops.Lop;
 public class WhileStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private Hop _predicateHops;
 	private Lop _predicateLops = null;
 	
 	
-	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
-		
+	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) 
+		throws LanguageException, ParseException, IOException 
+	{	
 		if (_statements.size() > 1){
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		}
@@ -51,9 +51,7 @@ public class WhileStatementBlock extends StatementBlock
 		///////////////////////////////////////////////////////////////////////////////
 		
 		//remove updated vars from constants
-		HashSet<String> updatedVars = new HashSet<String>();
-		rFindUpdatedVariables(wstmt.getBody(), updatedVars);
-		for( String var : updatedVars )
+		for( String var : _updated.getVariableNames() )
 			if( constVars.containsKey( var ) )
 				constVars.remove( var );
 		
@@ -75,31 +73,37 @@ public class WhileStatementBlock extends StatementBlock
 		
 		// for each updated variable 
 		boolean revalidationRequired = false;
-		for (String key : _updated.getVariableNames()){
-			
+		for (String key : _updated.getVariableNames())
+		{	
 			DataIdentifier startVersion = origVarsBeforeBody.getVariable(key);
 			DataIdentifier endVersion   = ids.getVariable(key);
 			
-			if (startVersion != null && endVersion != null){
-				 
+			if (startVersion != null && endVersion != null)
+			{	
+				//handle size change
 				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
 				long endVersionDim1		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
-				
 				long startVersionDim2 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim2() : startVersion.getDim2(); 
 				long endVersionDim2		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim2() : endVersion.getDim2(); 
 				
-				boolean sizeUnchanged = true;
-				if (startVersionDim1 != endVersionDim1)
-					sizeUnchanged = false;
+				boolean sizeUnchanged = ((startVersionDim1 == endVersionDim1) &&
+						                 (startVersionDim2 == endVersionDim2) );
 				
-				if (startVersionDim2 != endVersionDim2)
-					sizeUnchanged = false;
+				//handle sparsity change
+				//NOTE: nnz not propagated via validate, and hence, we conservatively assume that nnz have been changed.
+				//long startVersionNNZ 	= startVersion.getNnz();
+				//long endVersionNNZ    = endVersion.getNnz(); 
+				//boolean nnzUnchanged  = (startVersionNNZ == endVersionNNZ);
+				boolean nnzUnchanged = false;
 				
 				// IF size has changed -- 
-				if (!sizeUnchanged){
+				if (!sizeUnchanged || !nnzUnchanged){
 					revalidationRequired = true;
 					DataIdentifier recVersion = new DataIdentifier(endVersion);
-					recVersion.setDimensions(-1, -1);
+					if(!sizeUnchanged)
+						recVersion.setDimensions(-1, -1);
+					if(!nnzUnchanged)
+						recVersion.setNnz(-1);
 					origVarsBeforeBody.addVariable(key, recVersion);
 				}
 			}
@@ -107,8 +111,8 @@ public class WhileStatementBlock extends StatementBlock
 		
 			
 		// revalidation is required -- size was updated for at least 1 variable
-		if (revalidationRequired){
-		
+		if (revalidationRequired)
+		{
 			// update ids to the reconciled values
 			ids = origVarsBeforeBody;
 		
@@ -117,9 +121,7 @@ public class WhileStatementBlock extends StatementBlock
 			///////////////////////////////////////////////////////////////////////////////
 		
 			//remove updated vars from constants
-			updatedVars = new HashSet<String>();
-			rFindUpdatedVariables(wstmt.getBody(), updatedVars);
-			for( String var : updatedVars )
+			for( String var : _updated.getVariableNames() )
 				if( constVars.containsKey( var ) )
 					constVars.remove( var );
 			

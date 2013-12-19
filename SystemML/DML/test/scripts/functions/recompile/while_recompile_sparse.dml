@@ -1,0 +1,25 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1);
+print(sum(V)); 
+i = 1;
+while( i <= 1 )
+{
+   print(sum(V)); 
+   
+   j = 1; 
+   while( j <= 1 )
+   {
+      V[i,j] = $2;
+      j = j+1; 
+   }
+   i = i+1;
+}  
+write(V, $3);        

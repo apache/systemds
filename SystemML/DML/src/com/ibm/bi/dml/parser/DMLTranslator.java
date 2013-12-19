@@ -73,14 +73,15 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class DMLTranslator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static int DMLBlockSize = 1000;
 	
-	public DMLProgram _dmlProg;
 	private static final Log LOG = LogFactory.getLog(DMLTranslator.class.getName());
-		
+	private DMLProgram _dmlProg = null;
+	
+	
 	public DMLTranslator(DMLProgram dmlp) 
 		throws DMLRuntimeException 
 	{
@@ -159,7 +160,7 @@ public class DMLTranslator
 				
 				VariableSet activeIn = new VariableSet();
 				for (DataIdentifier id : fstmt.getInputParams()){
-					activeIn.addVariable(id.getName(), id);
+					activeIn.addVariable(id.getName(), id); 
 				}
 				fsb.initializeforwardLV(activeIn);
 			}
@@ -192,7 +193,7 @@ public class DMLTranslator
 		VariableSet activeIn = new VariableSet();
 				
 		// handle function inlining
-		dmlp.setBlocks(StatementBlock.mergeFunctionCalls(dmlp.getBlocks(), dmlp));
+		dmlp.setStatementBlocks(StatementBlock.mergeFunctionCalls(dmlp.getStatementBlocks(), dmlp));
 		
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock sb = dmlp.getStatementBlock(i);
@@ -216,23 +217,47 @@ public class DMLTranslator
 	 * 
 	 * @throws ParseException
 	 */
-	public void constructHops(DMLProgram dmlp) throws ParseException, LanguageException {
-
+	public void constructHops(DMLProgram dmlp) 
+		throws ParseException, LanguageException 
+	{
+		// Step 1: construct hops for all functions
 		// for each namespace, handle function program blocks
-		for (String namespaceKey : dmlp.getNamespaces().keySet()){
-		
+		for (String namespaceKey : dmlp.getNamespaces().keySet()){		
 			for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock current = dmlp.getFunctionStatementBlock(namespaceKey, fname);
 				constructHops(current);
 			}
 		}
 		
+		// Step 2: construct hops for main program
 		// handle regular program blocks
 		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
 			StatementBlock current = dmlp.getStatementBlock(i);
 			constructHops(current);
 		}
 	}
+		
+	public void rewriteHopsDAG(DMLProgram dmlp) 
+		throws ParseException, LanguageException, HopsException 
+	{
+		//apply hop rewrites (reinitialize with current set of flags)
+		ProgramRewriter rewriter = new ProgramRewriter();
+		rewriter.rewriteProgramHopDAGs(dmlp);
+		resetHopsDAGVisitStatus(dmlp);
+		
+		//propagate size information from main into functions (but conservatively)
+		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
+			//InterProceduralAnalysis ipa = new InterProceduralAnalysis();
+		   	//ipa.analyzeProgram(this, dmlp);
+		   	//resetHopsDAGVisitStatus(dmlp);
+		}
+		
+		// Compute memory estimates for all the hops. These estimates are used
+		// subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
+		refreshMemEstimates(dmlp);
+		resetHopsDAGVisitStatus(dmlp);
+	}
+	
 	
 	public void constructLops(DMLProgram dmlp) throws ParseException, LanguageException, HopsException, LopsException {
 
@@ -396,19 +421,6 @@ public class DMLTranslator
 		}
 		
 		//sb.set_lops(lops);
-	}
-	
-	public void rewriteHopsDAG(DMLProgram dmlp, DMLConfig config) 
-		throws ParseException, LanguageException, HopsException 
-	{
-		//apply hop rewrites (reinitialize with current set of flags)
-		ProgramRewriter rewriter = new ProgramRewriter();
-		rewriter.rewriteProgramHopDAGs(dmlp);
-		
-		// Compute memory estimates for all the hops. These estimates are used
-		// subsequently in various optimizations, e.g. CP vs. MR scheduling and parfor.
-		this.resetHopsDAGVisitStatus(dmlp);
-		this.refreshMemEstimates(dmlp);
 	}
 	
 	//TODO Take nested blocks into account
@@ -1475,7 +1487,7 @@ public class DMLTranslator
 		}
 		
 		
-		HashMap<String, Hop> _ids = new HashMap<String, Hop>();
+		HashMap<String, Hop> ids = new HashMap<String, Hop>();
 		ArrayList<Hop> output = new ArrayList<Hop>();
 
 		VariableSet liveIn 	= sb.liveIn();
@@ -1536,7 +1548,7 @@ public class DMLTranslator
 					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
 					read.setAllPositions(var.getBeginLine(), var.getBeginColumn(), var.getEndLine(), var.getEndColumn());
-					_ids.put(varName, read);
+					ids.put(varName, read);
 				}
 			}
 		}
@@ -1551,10 +1563,10 @@ public class DMLTranslator
 				DataExpression source = is.getSource();
 				DataIdentifier target = is.getIdentifier();
 
-				DataOp ae = (DataOp)processExpression(source, target, _ids);
+				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = is.getFormatName();
 				ae.setFormatType(Expression.convertFormatType(formatName));
-				_ids.put(target.getName(), ae);
+				ids.put(target.getName(), ae);
 
 
 				Integer statementId = liveOutToTemp.get(target.getName());
@@ -1575,7 +1587,7 @@ public class DMLTranslator
 				DataExpression source = os.getSource();
 				DataIdentifier target = os.getIdentifier();
 
-				DataOp ae = (DataOp)processExpression(source, target, _ids);
+				DataOp ae = (DataOp)processExpression(source, target, ids);
 				String formatName = os.getFormatName();
 				ae.setFormatType(Expression.convertFormatType(formatName));
 
@@ -1614,8 +1626,8 @@ public class DMLTranslator
 				target.setValueType(ValueType.STRING);
 				target.setAllPositions(current.getBeginLine(), target.getBeginColumn(), current.getEndLine(),  current.getEndColumn());
 				
-				Hop ae = processExpression(source, target, _ids);
-				
+				Hop ae = processExpression(source, target, ids);
+			
 				try {
 					Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.PRINT2, ae);
 					printHop.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
@@ -1637,8 +1649,8 @@ public class DMLTranslator
 					// CASE: target is regular data identifier
 					if (!(target instanceof IndexedIdentifier)) {
 					
-						Hop ae = processExpression(source, target, _ids);
-						_ids.put(target.getName(), ae);
+						Hop ae = processExpression(source, target, ids);
+						ids.put(target.getName(), ae);
 						target.setProperties(source.getOutput());
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
@@ -1652,9 +1664,9 @@ public class DMLTranslator
 					
 					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
-						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, _ids);
+						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, ids);
 						
-						_ids.put(target.getName(), ae);
+						ids.put(target.getName(), ae);
 						
 						// obtain origDim values BEFORE they are potentially updated during setProperties call
 						//	(this is incorrect for LHS Indexing)
@@ -1696,7 +1708,7 @@ public class DMLTranslator
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();
 					for (Expression paramName : fci.getParamExpressions()){
-						Hop in = processExpression(paramName, null, _ids);						
+						Hop in = processExpression(paramName, null, ids);						
 						finputs.add(in);
 					}
 
@@ -1727,7 +1739,7 @@ public class DMLTranslator
 					
 					ArrayList<Hop> finputs = new ArrayList<Hop>();
 					for (Expression paramName : fci.getParamExpressions()){
-						Hop in = processExpression(paramName, null, _ids);						
+						Hop in = processExpression(paramName, null, ids);						
 						finputs.add(in);
 					}
 
@@ -1750,7 +1762,7 @@ public class DMLTranslator
 				}
 				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
-					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), _ids);
+					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), ids);
 					output.add(fcall);
 					
 				}
@@ -1777,10 +1789,10 @@ public class DMLTranslator
 					rs.getIdentifier()._dim2 = ((IntIdentifier)colsExpr).getValue();
 				}
 				
-				Hop rand = processExpression(source, target, _ids);
+				Hop rand = processExpression(source, target, ids);
 				rand.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
-				_ids.put(target.getName(), rand);
+				ids.put(target.getName(), rand);
 				
 				// TODO: Leo What does this piece of code do?
 				Integer statementId = liveOutToTemp.get(target.getName());
@@ -2555,10 +2567,6 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		
-		//TODO clarify with Doug, maybe additional pass to cleanup all information (e.g., nnz only if not in updated context)
-		//TODO statistic propagation across hop dags
-		//System.out.println("nnz "+currBuiltinOp.getNnz()+"("+currBuiltinOp.getOpString()+")");
-		
 		return currBuiltinOp;
 	}
 
@@ -3039,18 +3047,18 @@ public class DMLTranslator
 		default:
 			break;
 		}
+		
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
 	}
 		
 	public void setIdentifierParams(Hop h, Identifier id) {
-		//TODO discuss with Doug
-		if( id.getDim1()> 0 )
+		if( id.getDim1()>= 0 )
 			h.set_dim1(id.getDim1());
-		if( id.getDim2()> 0 )
+		if( id.getDim2()>= 0 )
 			h.set_dim2(id.getDim2());
-		if( id.getNnz()> -1 )
+		if( id.getNnz()>= 0 )
 			h.setNnz(id.getNnz());
 		h.set_rows_in_block(id.getRowsInBlock());
 		h.set_cols_in_block(id.getColumnsInBlock());

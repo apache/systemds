@@ -20,7 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 public class OptimizerUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	////////////////////////////////////////////////////////
@@ -87,7 +87,14 @@ public class OptimizerUtils
 	 * expressions are defined as binary operations on literals and nrow/ncol.
 	 */
 	public static boolean ALLOW_SIZE_EXPRESSION_EVALUATION = true;
-	
+
+	/**
+	 * Enables interprocedural analysis between main script and functions as well as functions
+	 * and other functions. This includes, for example, to propagate statistics into functions
+	 * if save to do so (e.g., if called once).
+	 */
+	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+
 	
 	//////////////////////
 	// Optimizer types  //
@@ -405,7 +412,10 @@ public class OptimizerUtils
 	
 	public static double getSparsity( long dim1, long dim2, long nnz )
 	{
-		return ((double)nnz)/dim1/dim2;
+		if( dim1<=0 || dim2<=0 || nnz<0 )
+			return 1.0;
+		else
+			return ((double)nnz)/dim1/dim2;
 	}
 	
 	public static String toMB(double inB) {

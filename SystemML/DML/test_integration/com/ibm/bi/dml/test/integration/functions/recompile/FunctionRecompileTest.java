@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class FunctionRecompileTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME1 = "funct_recompile";
@@ -45,22 +45,37 @@ public class FunctionRecompileTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testFunctionWithoutRecompile() 
+	public void testFunctionWithoutRecompileWithoutIPA() 
 	{
-		runFunctionTest(false);
+		runFunctionTest(false, false);
 	}
 	
+	/*
 	@Test
-	public void testFunctionWithRecompile() 
+	public void testFunctionWithoutRecompileWithIPA() 
 	{
-		runFunctionTest(true);
+		runFunctionTest(false, true);
 	}
+	*/
 
-
+	@Test
+	public void testFunctionWithRecompileWithoutIPA() 
+	{
+		runFunctionTest(true, false);
+	}
 	
-	private void runFunctionTest( boolean recompile )
+	/*
+	@Test
+	public void testFunctionWithRecompileWithIPA() 
+	{
+		runFunctionTest(true, true);
+	}
+	*/
+
+	private void runFunctionTest( boolean recompile, boolean IPA )
 	{	
-		boolean oldFlag = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
 		{
@@ -86,21 +101,26 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			writeInputMatrix("V", V, true);
 	
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
+			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			runRScript(true);
 			
-			//check expected number of compiled and executed MR jobs
-			if( recompile )
-			{
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						  0, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,MMCJ,GMR), GMR write			
-			}
-			else
-			{
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-						            31, Statistics.getNoOfExecutedMRJobs()); //reblock, 10*(GMR,GMR,GMR), GMR write 
-			}
+			//CHECK compiled MR jobs
+			int expectNumCompiled = -1;
+			if( IPA ) expectNumCompiled = 3; //reblock, GMR,GMR 
+			else      expectNumCompiled = 4;//reblock, GMR,GMR,GMR 
+			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+		
+			//CHECK executed MR jobs
+			int expectNumExecuted = -1;
+			if( recompile ) expectNumExecuted = 0;
+			else if( IPA )  expectNumExecuted = 21; //reblock, 10*(GMR,GMR)
+			else            expectNumExecuted = 31; //reblock, 10*(GMR,GMR,GMR) 
+			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
@@ -109,7 +129,8 @@ public class FunctionRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlag;
+			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}
 	

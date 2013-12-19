@@ -278,7 +278,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			_bounds = new Bounds();
 			for( FunctionStatementBlock fsb : dmlProg.getFunctionStatementBlocks() )
 				rDetermineBounds( fsb, false ); //writes to _bounds	
-			rDetermineBounds( dmlProg.getBlocks(), false ); //writes to _bounds
+			rDetermineBounds( dmlProg.getStatementBlocks(), false ); //writes to _bounds
 			
 			for( Candidate c : C )
 			{

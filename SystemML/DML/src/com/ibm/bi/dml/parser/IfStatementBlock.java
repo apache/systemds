@@ -20,7 +20,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 public class IfStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	private Hop _predicateHops;
@@ -180,50 +180,80 @@ public class IfStatementBlock extends StatementBlock
 		for (String updatedVar : this._updated.getVariableNames()){
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
+			DataIdentifier origVersion = idsOrigCopy.getVariable(updatedVar);
 			
 			if (ifVersion != null && elseVersion != null) {
 				long updatedDim1 = -1, updatedDim2 = -1;
-				 
+				long updatedNnz = -1; 
+				
 				long ifVersionDim1 		= (ifVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)ifVersion).getOrigDim1() : ifVersion.getDim1(); 
 				long elseVersionDim1	= (elseVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)elseVersion).getOrigDim1() : elseVersion.getDim1(); 
 				
 				long ifVersionDim2 		= (ifVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)ifVersion).getOrigDim2() : ifVersion.getDim2(); 
 				long elseVersionDim2	= (elseVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)elseVersion).getOrigDim2() : elseVersion.getDim2(); 
 				
-				if (ifVersionDim1 == elseVersionDim1){
+				if( ifVersionDim1 == elseVersionDim1 ){
 					updatedDim1 = ifVersionDim1;
 				}
-				if (ifVersionDim2 == elseVersionDim2){
+				if( ifVersionDim2 == elseVersionDim2 ){
 					updatedDim2 = ifVersionDim2;
 				}
+				//NOTE: nnz not propagated via validate, and hence, we conservatively assume that nnz have been changed.
+				//if( ifVersion.getNnz() == elseVersion.getNnz() ){
+				//	updatedNnz = ifVersion.getNnz();
+				//}
 				
 				// add reconsiled version (deep copy of ifVersion, cast as DataIdentifier)
 				DataIdentifier recVersion = new DataIdentifier(ifVersion);
 				recVersion.setDimensions(updatedDim1, updatedDim2);
+				recVersion.setNnz(updatedNnz);
 				recVars.addVariable(updatedVar, recVersion);
 			}
 			else {
 				// CASE: defined only if branch
+				DataIdentifier recVersion = null;
 				if (ifVersion != null){
 					// add reconciled version (deep copy of ifVersion, cast as DataIdentifier)
-					DataIdentifier recVersion = new DataIdentifier(ifVersion);
-					recVersion.setDimensions(-1, -1);
+					recVersion = new DataIdentifier(ifVersion);
 					recVars.addVariable(updatedVar, recVersion);
 				}
 				// CASE: defined only else branch
 				else if (elseVersion != null){
 					// add reconciled version (deep copy of elseVersion, cast as DataIdentifier)
-					DataIdentifier recVersion = new DataIdentifier(elseVersion);
-					recVersion.setDimensions(-1, -1);
+					recVersion = new DataIdentifier(elseVersion);
 					recVars.addVariable(updatedVar, recVersion);
 				}
 				// CASE: updated, but not in either if or else branch
 				else {
 					// add reconciled version (deep copy of elseVersion, cast as DataIdentifier)
-					DataIdentifier recVersion = new DataIdentifier(_updated.getVariable(updatedVar));
-					recVersion.setDimensions(-1, -1);
+					recVersion = new DataIdentifier(_updated.getVariable(updatedVar));
 					recVars.addVariable(updatedVar, recVersion);
 				}
+				
+				
+				long updatedDim1 = -1, updatedDim2 = -1;
+				long updatedNnz = -1; 
+				
+				if( origVersion != null ) {
+					long origVersionDim1 = (origVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)origVersion).getOrigDim1() : origVersion.getDim1(); 
+					long recVersionDim1	 = (recVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)recVersion).getOrigDim1() : recVersion.getDim1(); 
+					long origVersionDim2 = (origVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)origVersion).getOrigDim2() : origVersion.getDim2(); 
+					long recVersionDim2	 = (recVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)recVersion).getOrigDim2() : recVersion.getDim2(); 
+					
+					if( origVersionDim1 == recVersionDim1 ){
+						updatedDim1 = origVersionDim1;
+					}
+					if( origVersionDim2 == recVersionDim2 ){
+						updatedDim2 = origVersionDim2;
+					}
+					//NOTE: nnz not propagated via validate, and hence, we conservatively assume that nnz have been changed.
+					//if( origVersion.getNnz() == recVersion.getNnz() ){
+					//	updatedNnz = recVersion.getNnz();
+					//}
+				}
+				
+				recVersion.setDimensions(updatedDim1, updatedDim2);
+				recVersion.setNnz(updatedNnz);
 			}
 		}
 		

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -72,15 +72,23 @@ import com.ibm.bi.dml.utils.visualize.DotGraph;
 public class DMLScript 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//TODO: VISUALIZE option should be updated
+	public enum RUNTIME_PLATFORM { 
+		HADOOP, 	    // execute all matrix operations in MR
+		SINGLE_NODE,    // execute all matrix operations in CP
+		HYBRID,         // execute matrix operations in CP or MR
+		NZ,             // execute matrix operations on NZ SQL backend
+	};
+	
+
+	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
+	
+	
 	public enum EXECUTION_PROPERTIES {VISUALIZE, RUNTIME_PLATFORM, CONFIG};
 	public static boolean VISUALIZE = false;
-	public enum RUNTIME_PLATFORM { HADOOP, SINGLE_NODE, HYBRID, NZ, INVALID };
-	// We should assume the default value is HYBRID
-	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
 	private String _dmlScriptString;
@@ -231,9 +239,7 @@ public class DMLScript
 		}
 	
 		// rewrite HOPs DAGs
-		// defaultConfig contains reconciled information for config
-		dmlt.rewriteHopsDAG(prog, defaultConfig);
-		dmlt.resetHopsDAGVisitStatus(prog);
+		dmlt.rewriteHopsDAG(prog);
 		
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");

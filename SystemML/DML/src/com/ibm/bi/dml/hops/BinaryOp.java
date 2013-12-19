@@ -1268,7 +1268,7 @@ public class BinaryOp extends Hop
 			}
 		
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown()&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
 				setRequiresRecompile();
 		}
 		return _etype;

@@ -36,7 +36,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public abstract class Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
@@ -499,6 +499,10 @@ public abstract class Hop
 	
 	protected boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0) );
+	}
+	
+	protected boolean dimsKnown(boolean includeNnz) {
+		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)) );
 	}
 
 	

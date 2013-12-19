@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -21,7 +21,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class ReblockOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ReblockOp() {
@@ -40,6 +40,8 @@ public class ReblockOp extends Hop
 		set_rows_in_block(rows_per_block);
 		set_cols_in_block(cols_per_block);
 
+		setNnz(inp.getNnz());
+		
 		getParent().addAll(inp.getParent());
 		getInput().add(0, inp);
 

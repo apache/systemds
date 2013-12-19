@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -12,7 +12,7 @@ import java.util.HashMap;
 public abstract class Identifier extends Expression
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected DataType _dataType;
@@ -24,11 +24,19 @@ public abstract class Identifier extends Expression
 	protected long _nnz;
 	protected FormatType _formatType;
 		
-	public Identifier(Identifier i){
+	public Identifier(Identifier i)
+	{
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();
-		_dim1 = i.getDim1();
-		_dim2 = i.getDim2();
+		if( i instanceof IndexedIdentifier ) {
+			IndexedIdentifier ixi = (IndexedIdentifier)i; 
+			_dim1 = ixi.getOrigDim1();
+			_dim2 = ixi.getOrigDim2();
+		}
+		else {
+			_dim1 = i.getDim1();
+			_dim2 = i.getDim2();
+		}
 		_rows_in_block = i.getRowsInBlock();
 		_columns_in_block = i.getColumnsInBlock();
 		_nnz = i.getNnz();
@@ -41,7 +49,8 @@ public abstract class Identifier extends Expression
 		_endColumn 	 = i.getEndColumn();
 	}
 	
-	public Identifier(){
+	public Identifier()
+	{
 		_dim1 = -1;
 		_dim2 = -1;
 		_dataType = DataType.UNKNOWN;
@@ -53,14 +62,14 @@ public abstract class Identifier extends Expression
 		_formatType = null;
 	}
 	
-	public void setProperties(Identifier i){		
-		
+	public void setProperties(Identifier i)
+	{			
 		if (i == null) 
 			return;
 		
 		_dataType = i.getDataType();
 		_valueType = i.getValueType();
-		if (i instanceof IndexedIdentifier){
+		if (i instanceof IndexedIdentifier) {
 			_dim1 = ((IndexedIdentifier)i).getOrigDim1();
 			_dim2 = ((IndexedIdentifier)i).getOrigDim2();
 		}
@@ -75,12 +84,20 @@ public abstract class Identifier extends Expression
 				
 	}
 	
-	public void setDimensionValueProperties(Identifier i){
+	public void setDimensionValueProperties(Identifier i)
+	{
+		if (i instanceof IndexedIdentifier) {
+			IndexedIdentifier ixi = (IndexedIdentifier)i; 
+			_dim1 = ixi.getOrigDim1();
+			_dim2 = ixi.getOrigDim2();
+		}
+		else {
 			_dim1 = i.getDim1();
 			_dim2 = i.getDim2();
-			_nnz = i.getNnz();
-			_dataType = i.getDataType();
-			_valueType = i.getValueType();
+		}
+		_nnz = i.getNnz();
+		_dataType = i.getDataType();
+		_valueType = i.getValueType();
 	}
 	
 	public void setDataType(DataType dt){

@@ -194,7 +194,7 @@ public class MatrixObject extends CacheableData
 	
 	public void setFileExists( boolean flag ) 
 	{
-		_hdfsFileExists = false;
+		_hdfsFileExists = flag;
 	}
 	
 	public String getFileName()

@@ -478,7 +478,10 @@ public class VariableCPInstruction extends CPInstruction
 				// make sure to call clearData(), if it is a matrix object 
 				
 				//System.out.println("  " + this.instString + " ... clearing input2");
-				clearCachedMatrixObject( ec.getVariable(input2.get_name()) );
+				Data input2_data = ec.getVariable(input2.get_name());
+				clearCachedMatrixObject( input2_data );
+				if ( ((MatrixObject) input2_data).isFileExists() && ((MatrixObject) input2_data).isCleanupEnabled() )
+					cleanDataOnHDFS( input2_data );
 			
 			} /*else if ( destRefCount > 1) {
 				System.err.println("  --- " + this.instString + " ... refCount for input2 > 1");

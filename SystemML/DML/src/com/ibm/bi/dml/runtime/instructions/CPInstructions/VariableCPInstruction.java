@@ -480,7 +480,7 @@ public class VariableCPInstruction extends CPInstruction
 				//System.out.println("  " + this.instString + " ... clearing input2");
 				Data input2_data = ec.getVariable(input2.get_name());
 				clearCachedMatrixObject( input2_data );
-				if ( ((MatrixObject) input2_data).isFileExists() && ((MatrixObject) input2_data).isCleanupEnabled() )
+				if ( input2_data instanceof MatrixObject && ((MatrixObject) input2_data).isFileExists() && ((MatrixObject) input2_data).isCleanupEnabled() )
 					cleanDataOnHDFS( input2_data );
 			
 			} /*else if ( destRefCount > 1) {

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,7 +11,6 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Tertiary;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -91,19 +90,19 @@ public class TertiaryCPInstruction extends ComputationCPInstruction
 		case CTABLE_TRANSFORM_SCALAR_WEIGHT:
 			// F = ctable(A,B) or F = ctable(A,B,1)
 			matBlock2 = (MatrixBlock) ec.getMatrixInput(input2.get_name());
-			cst1 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE, input3.isLiteral()).getDoubleValue();
+			cst1 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, matBlock2, cst1, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_HISTOGRAM:
 			// F=ctable(A,1) or F = ctable(A,1,1)
-			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral()).getDoubleValue();
-			cst2 = ec.getScalarInput(input3.get_name(), ValueType.DOUBLE, input3.isLiteral()).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
+			cst2 = ec.getScalarInput(input3.get_name(), input3.get_valueType(), input3.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, cst2, ctableMap);
 			break;
 		case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
 			// F=ctable(A,1,W)
 			wtBlock = (MatrixBlock) ec.getMatrixInput(input3.get_name());
-			cst1 = ec.getScalarInput(input2.get_name(), ValueType.DOUBLE, input2.isLiteral()).getDoubleValue();
+			cst1 = ec.getScalarInput(input2.get_name(), input2.get_valueType(), input2.isLiteral()).getDoubleValue();
 			matBlock1.tertiaryOperations((SimpleOperator)optr, cst1, wtBlock, ctableMap);
 			break;
 		

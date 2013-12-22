@@ -119,10 +119,10 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 		
 		String opcode = InstructionUtils.getOpCode(this.instString);
 		
-		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT, rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT, rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT, colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT, colUpper.isLiteral()).getLongValue();
+		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.get_name(), colUpper.get_valueType(), colUpper.isLiteral()).getLongValue();
 		
 		MatrixObject mo = (MatrixObject)ec.getVariable(input1.get_name());
 		MatrixBlock resultBlock = null;

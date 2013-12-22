@@ -1,14 +1,13 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.instructions.CPFileInstructions;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
@@ -92,10 +91,10 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		String opcode = InstructionUtils.getOpCode( instString );
-		long rl = ec.getScalarInput(rowLower.get_name(), ValueType.INT, rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.get_name(), ValueType.INT, rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.get_name(), ValueType.INT, colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.get_name(), ValueType.INT, colUpper.isLiteral()).getLongValue();
+		long rl = ec.getScalarInput(rowLower.get_name(), rowLower.get_valueType(), rowLower.isLiteral()).getLongValue();
+		long ru = ec.getScalarInput(rowUpper.get_name(), rowUpper.get_valueType(), rowUpper.isLiteral()).getLongValue();
+		long cl = ec.getScalarInput(colLower.get_name(), colLower.get_valueType(), colLower.isLiteral()).getLongValue();
+		long cu = ec.getScalarInput(colUpper.get_name(), colUpper.get_valueType(), colUpper.isLiteral()).getLongValue();
 		MatrixObject mo = (MatrixObject) ec.getVariable(input1.get_name());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 

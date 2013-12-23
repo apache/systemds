@@ -1059,11 +1059,14 @@ public class MatrixObject extends CacheableData
 	{
 
 		long begin = System.currentTimeMillis();;
-		LOG.trace("Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName);
-			
+		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		double sparsity = ((double)mc.nonZero)/(mc.numRows*mc.numColumns); //expected sparsity
+		
+		LOG.trace("Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName 
+				+ ", dimensions: [" + mc.numRows + ", " + mc.numColumns + ", " + mc.nonZero + "]");
+			
+		double sparsity = ( mc.nonZero >= 0 ? ((double)mc.nonZero)/(mc.numRows*mc.numColumns) : 1.0d) ; //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
 				                           rlen, clen, mc.numRowsPerBlock, mc.numColumnsPerBlock, sparsity, _formatProperties);
 		

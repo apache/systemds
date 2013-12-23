@@ -96,6 +96,18 @@ public class DataConverter
 			inputInfo = null;
 			localFS = false;
 		}
+		
+		public void printMe() {
+			try {
+				System.out.println("ReadProperties: " + path + ", Dimensions: " 
+						+ rlen + ", " + clen 
+						+ ", BlockDimensions: " + brlen + ", " + bclen + ", " 
+						+ expectedSparsity + "," + InputInfo.inputInfoToString(inputInfo) + "," + localFS);
+			} catch (DMLRuntimeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
 	}
 	
@@ -306,6 +318,7 @@ public class DataConverter
 		prop.expectedSparsity = expectedSparsity;
 		prop.formatProperties = formatProperties;
 		
+		//prop.printMe();
 		return readMatrixFromHDFS(prop);
 	}
 	
@@ -342,8 +355,7 @@ public class DataConverter
 		//determine target representation (sparse/dense)
 		boolean sparse = (    prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
 				           && prop.clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
-
-		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+prop.dir);
+		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+prop.path);
 		
 		long rlen = prop.rlen;
 		long clen = prop.clen;

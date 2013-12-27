@@ -30,8 +30,8 @@ import com.ibm.bi.dml.packagesupport.DeNaNWrapper;
 import com.ibm.bi.dml.packagesupport.DeNegInfinityWrapper;
 import com.ibm.bi.dml.packagesupport.DynamicReadMatrixCP;
 import com.ibm.bi.dml.packagesupport.DynamicReadMatrixRcCP;
-import com.ibm.bi.dml.packagesupport.EigenWrapper;
-import com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP;
+//import com.ibm.bi.dml.packagesupport.EigenWrapper;
+//import com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP;
 import com.ibm.bi.dml.packagesupport.OrderWrapper;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -718,7 +718,7 @@ public class InterProceduralAnalysis
 			MatrixObject moOut = createOutputMatrix(input.get_dim1(), input.get_dim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
-		else if( className.equals(EigenWrapper.class.getName()) ) 
+		/*else if( className.equals(EigenWrapper.class.getName()) ) 
 		{
 			Hop input = fop.getInput().get(0);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));
@@ -728,7 +728,7 @@ public class InterProceduralAnalysis
 		{
 			Hop input = fop.getInput().get(1);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
-		}
+		}*/
 		else if(   className.equals(DynamicReadMatrixCP.class.getName())
 				|| className.equals(DynamicReadMatrixRcCP.class.getName()) ) 
 		{

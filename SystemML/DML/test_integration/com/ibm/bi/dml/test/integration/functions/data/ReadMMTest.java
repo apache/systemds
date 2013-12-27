@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,10 +13,9 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
@@ -52,7 +51,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class ReadMMTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -121,7 +120,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		createRandomMatrix("a", (rows + 5), cols, -1, 1, 1, -1);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -138,7 +137,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		createRandomMatrix("a", rows, (cols + 5), -1, 1, 1, -1);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	/**
@@ -168,7 +167,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		writeInputMatrix("a", a);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	/**
@@ -187,7 +186,7 @@ public class ReadMMTest extends AutomatedTestBase
 		
 		loadTestConfiguration("TextWrongIndexBaseTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -205,7 +204,7 @@ public class ReadMMTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 1, -1);
 		writeInputBinaryMatrix("a", a, rows, cols, false);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -225,7 +224,7 @@ public class ReadMMTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -246,7 +245,7 @@ public class ReadMMTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	/**
@@ -279,7 +278,7 @@ public class ReadMMTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -303,7 +302,7 @@ public class ReadMMTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("a", a, false, mc);
 		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
 
-		runTest(true, LanguageException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -320,7 +319,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		try {
 			TestUtils.createFile(baseDirectory + INPUT_DIR + "a/in");
-			runTest(true, DMLRuntimeException.class);
+			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to create file " + baseDirectory + INPUT_DIR + "a/in");
@@ -347,7 +346,7 @@ public class ReadMMTest extends AutomatedTestBase
 			TestUtils.createFile(fname + "/in");
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
-			runTest(true, DMLRuntimeException.class);
+			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to create file " + baseDirectory + INPUT_DIR + "a/in");

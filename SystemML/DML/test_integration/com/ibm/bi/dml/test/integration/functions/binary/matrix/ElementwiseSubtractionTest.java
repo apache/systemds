@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,7 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
@@ -17,7 +17,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ElementwiseSubtractionTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -156,7 +156,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionLessRowsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -174,7 +174,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionMoreRowsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -192,7 +192,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionLessColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -210,7 +210,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionMoreColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -228,7 +228,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionLessRowsLessColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -246,7 +246,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionMoreRowsMoreColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -264,7 +264,7 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionLessRowsMoreColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 
 	@Test
@@ -282,6 +282,6 @@ public class ElementwiseSubtractionTest extends AutomatedTestBase
 
 		loadTestConfiguration("WrongDimensionMoreRowsLessColsTest");
 
-		runTest(true, DMLRuntimeException.class);
+		runTest(true, DMLException.class);
 	}
 }

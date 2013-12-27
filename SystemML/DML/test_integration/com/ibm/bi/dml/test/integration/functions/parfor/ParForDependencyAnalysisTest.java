@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,7 +14,6 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -52,7 +51,7 @@ import com.ibm.bi.dml.parser.LanguageException;
 public class ParForDependencyAnalysisTest 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static String DIR = "./test/scripts/functions/parfor/";
@@ -267,7 +266,7 @@ public class ParForDependencyAnalysisTest
 		boolean raisedException = false;
 		try
 		{
-			DMLConfig conf = new DMLConfig(DMLScript.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			DMLConfig conf = new DMLConfig(DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			ConfigurationManager.setConfig(conf);
 			
 			String dmlScriptString="";

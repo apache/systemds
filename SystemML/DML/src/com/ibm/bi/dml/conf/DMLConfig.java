@@ -38,8 +38,10 @@ import org.xml.sax.SAXException;
 public class DMLConfig 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
 	
 	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
 	
@@ -63,7 +65,6 @@ public class DMLConfig
 	
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;
-	
 
     private String config_file_name = null;
 	private Element xml_root = null;
@@ -149,9 +150,9 @@ public class DMLConfig
 						String paramValue = ((Element)optionalConfigNode).getFirstChild().getNodeValue();
 					
 						if (this.xml_root.getElementsByTagName(paramName) != null)
-							System.out.println("INFO: updating " + paramName + " with value " + paramValue);
+							LOG.info("Updating " + paramName + " with value " + paramValue);
 						else 
-							System.out.println("INFO: defining new attribute" + paramName + " with value " + paramValue);
+							LOG.info("Defining new attribute" + paramName + " with value " + paramValue);
 						DMLConfig.setTextValue(this.xml_root, paramName, paramValue);
 					}
 					
@@ -300,6 +301,57 @@ public class DMLConfig
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws ParseException 
+	 */
+	public static DMLConfig readAndMergeConfigurationFiles( String optConfig ) 
+		throws ParseException
+	{
+		// optional config specified overwrites/merge into the default config
+		DMLConfig defaultConfig = null;
+		DMLConfig optionalConfig = null;
+		
+		if( optConfig != null ) { // the optional config is specified
+			try { // try to get the default config first 
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, true);
+			} catch (Exception e) { // it is ok to not have the default
+				defaultConfig = null;
+				LOG.warn("Default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
+			}
+			try { // try to get the optional config next
+				optionalConfig = new DMLConfig(optConfig, false);	
+			} 
+			catch (ParseException e) { // it is not ok as the specification is wrong
+				optionalConfig = null;
+				throw e;
+			}
+			if (defaultConfig != null) {
+				try {
+					defaultConfig.merge(optionalConfig);
+				}
+				catch(ParseException e){
+					defaultConfig = null;
+					throw e;
+				}
+			}
+			else {
+				defaultConfig = optionalConfig;
+			}
+		}
+		else { // the optional config is not specified
+			try { // try to get the default config 
+				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
+			} catch (ParseException e) { // it is not OK to not have the default
+				defaultConfig = null;
+				throw e;
+			}
+		}
+		
+		return defaultConfig;
 	}
 
 	/**

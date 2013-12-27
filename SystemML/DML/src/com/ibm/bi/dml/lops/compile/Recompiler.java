@@ -72,7 +72,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 public class Recompiler 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
@@ -334,6 +334,8 @@ public class Recompiler
 	{
 		boolean ret = false;
 		
+		Hop.resetVisitStatus(hops);
+		
 		if( hops != null )
 			for( Hop hop : hops )
 			{
@@ -349,12 +351,15 @@ public class Recompiler
 	 * @param hops
 	 * @return
 	 */
-	public static boolean requiresRecompilation( Hop hops )
+	public static boolean requiresRecompilation( Hop hop )
 	{
 		boolean ret = false;
 		
-		if( hops != null )
-			ret = rRequiresRecompile(hops);
+		if( hop != null )
+		{
+			hop.resetVisitStatus();
+			ret = rRequiresRecompile(hop);
+		}
 	
 		return ret;
 	}
@@ -651,47 +656,62 @@ public class Recompiler
 		
 	}
 	
+	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars)
+	{
+		extractDAGOutputStatistics(hops, vars, true);
+	}
+	
 	/**
 	 * 
 	 * @param hops
 	 * @param vars
 	 */
-	private static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars)
+	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars, boolean overwrite)
 	{
 		for( Hop hop : hops ) //for all hop roots
-			if(    hop.getOpString().equals("TWrite")  //for all writes
-				&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims
+			extractDAGOutputStatistics(hop, vars, overwrite);
+	}
+	
+	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars)
+	{
+		extractDAGOutputStatistics(hop, vars, true);
+	}
+	
+	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
+	{
+		if(    hop.getOpString().equals("TWrite") ) //for all writes
+			//&& hop.get_dim1()>0 && hop.get_dim2()>0  ) //matrix with known dims FIXME
+		{
+			String varName = hop.get_name();
+			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
 			{
-				String varName = hop.get_name();
-				if( !vars.keySet().contains(varName) ) //not existing so far
-				{
-					//TODO dense, once we have reliable worst-case sparsity estimates this should change.
-					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
-					MatrixCharacteristics mc = new MatrixCharacteristics( 
-												hop.get_dim1(), hop.get_dim2(),
-												DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
-					mo.setMetaData(meta);	
-					vars.put(varName, mo);
-				}
-				else //already existing: take largest   
-				{
-					Data dat = vars.get(varName);
-					if( dat instanceof MatrixObject )
-					{
-						MatrixObject mo = (MatrixObject)dat;
-						MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
-						if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
-						    < OptimizerUtils.estimateSize(hop.get_dim1(), hop.get_dim2(), 1.0d) )
-						{
-							//update statistics if necessary
-							mc.setDimension(hop.get_dim1(), hop.get_dim2());
-							mc.setNonZeros(hop.getNnz());
-						}
-					}
-					
-				}
+				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
+				MatrixCharacteristics mc = new MatrixCharacteristics( 
+											hop.get_dim1(), hop.get_dim2(), 
+											DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+											hop.getNnz());
+				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
+				mo.setMetaData(meta);	
+				vars.put(varName, mo);
 			}
+			else //already existing: take largest   
+			{
+				Data dat = vars.get(varName);
+				if( dat instanceof MatrixObject )
+				{
+					MatrixObject mo = (MatrixObject)dat;
+					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+					if( OptimizerUtils.estimateSizeExactSparsity(mc.get_rows(), mc.get_cols(), (mc.getNonZeros()>0)?((double)mc.getNonZeros())/mc.get_rows()/mc.get_cols():1.0)	
+					    < OptimizerUtils.estimateSize(hop.get_dim1(), hop.get_dim2(), 1.0d) )
+					{
+						//update statistics if necessary
+						mc.setDimension(hop.get_dim1(), hop.get_dim2());
+						mc.setNonZeros(hop.getNnz());
+					}
+				}
+				
+			}
+		}
 	}
 	
 	/**
@@ -703,13 +723,17 @@ public class Recompiler
 	private static boolean rRequiresRecompile( Hop hop )
 	{	
 		boolean ret = hop.requiresRecompile();
-
+		if( hop.get_visited() == VISIT_STATUS.DONE )
+			return ret;
+		
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
 			{
 				ret |= rRequiresRecompile(c);
 				if( ret ) break; // early abort
 			}
+		
+		hop.set_visited(VISIT_STATUS.DONE);
 		
 		return ret;
 	}
@@ -745,7 +769,7 @@ public class Recompiler
 	 * @param vars
 	 * @throws DMLRuntimeException
 	 */
-	private static void rUpdateStatistics( Hop hop, LocalVariableMap vars ) 
+	public static void rUpdateStatistics( Hop hop, LocalVariableMap vars ) 
 		throws DMLRuntimeException
 	{
 		if( hop.get_visited() == VISIT_STATUS.DONE )

@@ -1079,4 +1079,26 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 	}
 	
+	/*
+	public void updateRecompilationFlag()
+		throws DMLRuntimeException 
+	{
+		try
+		{
+			_requiresRecompile =   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				                   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+				                   && Recompiler.requiresRecompilation(get_hops());
+		}
+		catch( HopsException he )
+		{
+			throw new DMLRuntimeException(he);
+		}
+	}
+	
+	public boolean requiresRecompilation()
+	{
+		return _requiresRecompile;
+	}
+	*/
+	
 }  // end class

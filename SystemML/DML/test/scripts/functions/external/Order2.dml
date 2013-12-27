@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -11,7 +11,7 @@ order = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Ma
 			    implemented in (classname="com.ibm.bi.dml.packagesupport.OrderWrapper",exectype="mem")
  
 A = read( $1, rows=$2, cols=$3);  
-B = order(A, $4, true);
+B1 = order(A, $4, true);
 
-write(B, $5);
+write(B1, $5);
 

@@ -247,9 +247,9 @@ public class DMLTranslator
 		
 		//propagate size information from main into functions (but conservatively)
 		if( OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS ) {
-			//InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-		   	//ipa.analyzeProgram(this, dmlp);
-		   	//resetHopsDAGVisitStatus(dmlp);
+			InterProceduralAnalysis ipa = new InterProceduralAnalysis();
+		    ipa.analyzeProgram(this, dmlp);
+		   	resetHopsDAGVisitStatus(dmlp);
 		}
 		
 		// Compute memory estimates for all the hops. These estimates are used

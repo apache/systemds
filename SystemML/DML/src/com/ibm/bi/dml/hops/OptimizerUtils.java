@@ -93,7 +93,7 @@ public class OptimizerUtils
 	 * and other functions. This includes, for example, to propagate statistics into functions
 	 * if save to do so (e.g., if called once).
 	 */
-	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
 
 	
 	//////////////////////

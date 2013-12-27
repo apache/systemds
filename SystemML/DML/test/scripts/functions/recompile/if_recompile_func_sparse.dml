@@ -1,0 +1,37 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+foo1 = function (Matrix[Double] X)
+    return (Matrix[Double] Y)
+{  
+   V = X;
+   print(sum(V)); 
+   if( 1==1 ){
+      V[1,1] = $2;
+   }
+   else {
+      print(sum(V));
+   }   
+   Y = V;  
+}
+
+foo2 = function (Matrix[Double] X)
+    return (Matrix[Double] Y)
+{  
+   V = X;     
+   if( 1==1 ){
+      print(sum(V));
+   } 
+   Y = V;   
+}
+
+V = read($1);
+V = foo1(V);
+V = foo2(V);
+write(V, $3);         

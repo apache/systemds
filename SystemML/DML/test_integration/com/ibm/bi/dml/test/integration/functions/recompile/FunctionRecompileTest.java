@@ -50,13 +50,12 @@ public class FunctionRecompileTest extends AutomatedTestBase
 		runFunctionTest(false, false);
 	}
 	
-	/*
 	@Test
 	public void testFunctionWithoutRecompileWithIPA() 
 	{
 		runFunctionTest(false, true);
 	}
-	*/
+	
 
 	@Test
 	public void testFunctionWithRecompileWithoutIPA() 
@@ -64,13 +63,12 @@ public class FunctionRecompileTest extends AutomatedTestBase
 		runFunctionTest(true, false);
 	}
 	
-	/*
 	@Test
 	public void testFunctionWithRecompileWithIPA() 
 	{
 		runFunctionTest(true, true);
 	}
-	*/
+	
 
 	private void runFunctionTest( boolean recompile, boolean IPA )
 	{	

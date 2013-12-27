@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -25,7 +25,7 @@ import java.util.Set;
 public class LocalVariableMap implements Cloneable
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static String eol = System.getProperty ("line.separator");
@@ -125,7 +125,7 @@ public class LocalVariableMap implements Cloneable
 	}
 		
 	@Override
-	public Object clone() throws CloneNotSupportedException
+	public Object clone()
 	{
 		LocalVariableMap newMap = new LocalVariableMap ();
 		newMap.putAll (this);

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,6 +13,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties;
 import com.ibm.bi.dml.sql.sqllops.SQLLops;
 import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.AGGREGATIONTYPE;
@@ -23,7 +24,7 @@ import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 public class LiteralOp extends Hop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private double value_double = Double.NaN;
@@ -252,6 +253,16 @@ public class LiteralOp extends Hop
 	public void refreshSizeInformation()
 	{
 		//do nothing; it is a scalar
+	}
+	
+	public long getLongValue() throws HopsException {
+		if ( get_valueType() == ValueType.INT ) {
+			return value_long;
+		}
+		else if ( get_valueType() == ValueType.DOUBLE ) 
+			return UtilFunctions.toLong(value_double);
+		else
+			throw new HopsException("Can not coerce an object of type " + get_valueType() + " into Long.");
 	}
 	
 	public double getDoubleValue() throws HopsException {

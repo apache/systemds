@@ -310,6 +310,7 @@ public class LeftIndexingOp  extends Hop
 		Hop input1 = getInput().get(0);		
 		set_dim1( input1.get_dim1() );
 		set_dim2( input1.get_dim2() );
+		setNnz(-1); //TODO enhanced propagation
 	}
 	
 	/**

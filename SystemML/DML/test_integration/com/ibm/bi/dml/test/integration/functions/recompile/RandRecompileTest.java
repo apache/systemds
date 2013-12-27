@@ -80,7 +80,6 @@ public class RandRecompileTest extends AutomatedTestBase
 		runRandTest(TEST_NAME3, true, false);
 	}
 
-	/*
 	@Test
 	public void testRandNRowWithoutRecompileWithIPA() 
 	{
@@ -104,7 +103,7 @@ public class RandRecompileTest extends AutomatedTestBase
 	{
 		runRandTest(TEST_NAME3, true, true);
 	}
-	 */
+	 
 	
 	private void runRandTest( String testName, boolean recompile, boolean IPA )
 	{	

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -22,7 +22,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class FunctionStatementBlock extends StatementBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	/**
@@ -93,9 +93,9 @@ public class FunctionStatementBlock extends StatementBlock
 									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue());
 									constVars.put(curr.getName(), currDoubleValue);
 								}
+								LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " but was safely cast");
 								curr.setValueType(ValueType.DOUBLE);
 								ids.addVariable(curr.getName(), curr);
-								LOG.error(curr.printWarningLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and but was safely cast");
 							}
 							else {
 								// THROW EXCEPTION -- CANNOT CONVERT

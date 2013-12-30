@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.AppendCP;
@@ -1227,7 +1226,7 @@ public class BinaryOp extends Hop
 			_etype = _etypeForced;
 		else 
 		{
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 			{
 				_etype = findExecTypeByMemEstimate();
 			}

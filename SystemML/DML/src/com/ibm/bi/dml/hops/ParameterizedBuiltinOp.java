@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.CombineBinary;
 import com.ibm.bi.dml.lops.CombineTertiary;
 import com.ibm.bi.dml.lops.GroupedAggregate;
@@ -350,14 +349,17 @@ public class ParameterizedBuiltinOp extends Hop
 			_etype = _etypeForced;	
 		else 
 		{
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
-			else if ( _op == ParamBuiltinOp.GROUPEDAGG ) {
-				if ( this.getInput().get(0).areDimsBelowThreshold() )
-					_etype = ExecType.CP;
-				else
-					_etype = ExecType.MR;
+			else if (   _op == ParamBuiltinOp.GROUPEDAGG 
+					 && this.getInput().get(0).areDimsBelowThreshold() ) 
+			{
+				_etype = ExecType.CP;
+			}
+			else
+			{
+				_etype = ExecType.MR;
 			}
 			
 			//mark for recompile (forever)

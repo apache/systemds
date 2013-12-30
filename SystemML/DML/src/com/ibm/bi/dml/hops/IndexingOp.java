@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
@@ -214,7 +213,7 @@ public class IndexingOp extends Hop
 			_etype = _etypeForced;
 		else
 		{	
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			else if ( getInput().get(0).areDimsBelowThreshold() )

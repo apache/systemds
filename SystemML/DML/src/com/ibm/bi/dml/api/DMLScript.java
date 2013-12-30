@@ -518,8 +518,7 @@ public class DMLScript
 		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
-		          "Type = " + OptimizerUtils.getOptType() + "\n"
-				 +"Mode = " + OptimizerUtils.getOptMode() + "\n"
+		          "Level = " + OptimizerUtils.getOptLevel() + "\n"
 				 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
 				 +"Memory Budget = " + ((double)OptimizerUtils.getMemBudget(true)/1024/1024) + " MB" + "\n");
 			

@@ -14,7 +14,6 @@ import java.util.Map.Entry;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.LopsException;
@@ -229,7 +228,7 @@ public class DataGenOp extends Hop
 			_etype = _etypeForced;
 		else 
 		{
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			else if (this.areDimsBelowThreshold() || this.isVector())

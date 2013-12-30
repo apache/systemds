@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.LeftIndex;
@@ -288,7 +287,7 @@ public class LeftIndexingOp  extends Hop
 			_etype = _etypeForced;
 		else 
 		{	
-			if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 				checkAndModifyRecompilationStatus();
 			}

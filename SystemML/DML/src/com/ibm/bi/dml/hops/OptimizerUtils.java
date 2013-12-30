@@ -39,15 +39,14 @@ public class OptimizerUtils
 	 */
 	public static double DEFAULT_SIZE;	
 	
-	public static final double DEF_MEM_FACTOR = 0.25d; //default if result size unkown (aggressive only)
-	public static final double DEF_SPARSITY = 0.1d;  //default if result sparsity unkown (aggressive only)
-	
 	public static final long DOUBLE_SIZE = 8;
 	public static final long INT_SIZE = 4;
 	public static final long CHAR_SIZE = 1;
 	public static final long BOOLEAN_SIZE = 1;
 	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
+	private static DecimalFormat df = new DecimalFormat("#.##");
+	
 	/**
 	 * Enables/disables dynamic re-compilation of lops/instructions.
 	 * If enabled, we recompile each program block that contains at least
@@ -97,54 +96,56 @@ public class OptimizerUtils
 
 	
 	//////////////////////
-	// Optimizer types  //
+	// Optimizer levels //
 	//////////////////////
+
+	private static OptimizationLevel _optLevel = OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
 	
 	/**
 	 * Optimization Types for Compilation
 	 * 
-	 *  STATIC - Decisions for scheduling operations on to CP/MR are based on
+	 *  O0 STATIC - Decisions for scheduling operations on CP/MR are based on
 	 *  predefined set of rules, which check if the dimensions are below a 
-	 *  fixed/static threshold (OLD Method of choosing between CP and MR).
+	 *  fixed/static threshold (OLD Method of choosing between CP and MR). 
+	 *  The optimization scope is LOCAL, i.e., per statement block.
+	 *  Advanced rewrites like constant folding, common subexpression elimination,
+	 *  or inter procedural analysis are NOT applied.
 	 *  
-	 *  MEMORY_BASED - Every operation is scheduled either on CP or MR, solely
+	 *  O1 MEMORY_BASED - Every operation is scheduled on CP or MR, solely
 	 *  based on the amount of memory required to perform that operation. 
 	 *  It does NOT take the execution time into account.
+	 *  The optimization scope is LOCAL, i.e., per statement block.
+	 *  Advanced rewrites like constant folding, common subexpression elimination,
+	 *  or inter procedural analysis are NOT applied.
+	 *  
+	 *  O2 MEMORY_BASED - Every operation is scheduled on CP or MR, solely
+	 *  based on the amount of memory required to perform that operation. 
+	 *  It does NOT take the execution time into account.
+	 *  The optimization scope is LOCAL, i.e., per statement block.
+	 *  All advanced rewrites are applied. This is the default optimization
+	 *  level of SystemML.
 	 *
+	 *  O3 GLOBAL TIME_MEMORY_BASED - Operation scheduling on CP or MR as well as
+	 *  many other rewrites of data flow properties such as block size, partitioning,
+	 *  replication, vectorization, etc are done with the optimization objective of
+	 *  minimizing execution time under hard memory constraints per operation and
+	 *  execution context. The optimization scope if GLOBAL, i.e., program-wide.
+	 *  All advanced rewrites are applied. This optimization level requires more 
+	 *  optimization time but has higher optimization potential.
 	 */
-	public enum OptimizationType { 
-		STATIC, 
-		MEMORY_BASED 
+	public enum OptimizationLevel { 
+		O0_LOCAL_STATIC, 
+		O1_LOCAL_MEMORY_MIN,
+		O2_LOCAL_MEMORY_DEFAULT,
+		O3_GLOBAL_TIME_MEMORY,
 	};
-	
-
-	/**
-	 * Optimization Modes for Compilation
-	 * 
-	 * ROBUST - prepares for worst-case scenarios, and tries to avoid OutofMemoryExceptions
-	 * 
-	 * AGGRESSIVE - prepares for average-case scenarios, takes into account "expectations" 
-	 * i.e., expected #nnz, expected dimensions. Robustness has to be incorporated by taking
-	 * necessary precautions at runtime (e.g., make sure to avoid OutOfMemoryExceptions)
-	 *              
-	 */
-	public enum OptimizationMode { 
-		NONE,       
-		ROBUST,      //worst-case guarantees
-		AGGRESSIVE   //aggressive assumptions for unknowns
-	};
-	
-	private static OptimizationType _optType = OptimizationType.MEMORY_BASED;
-	private static OptimizationMode _optMode = OptimizationMode.ROBUST;
-	private static DecimalFormat df = new DecimalFormat("#.##");
-	
-	
-	public static OptimizationType getOptType() {
-		return _optType;
+		
+	public static OptimizationLevel getOptLevel() {
+		return _optLevel;
 	}
 	
-	public static OptimizationMode getOptMode() {
-		return _optMode;
+	public static boolean isMemoryBasedOptLevel() {
+		return (_optLevel != OptimizationLevel.O0_LOCAL_STATIC);
 	}
 	
 	/**
@@ -155,25 +156,32 @@ public class OptimizerUtils
 	public static void setOptimizationLevel( int optlevel ) 
 		throws DMLRuntimeException
 	{
-		if( optlevel < 1 || optlevel > 3 )
-			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 1-3).");
+		if( optlevel < 0 || optlevel > 3 )
+			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-3).");
 	
 		switch( optlevel )
 		{
-			// opt level 1: static dimensionality
+			// opt level 0: static dimensionality
+			case 0:
+				_optLevel = OptimizationLevel.O0_LOCAL_STATIC;
+				ALLOW_CONSTANT_FOLDING = false;
+				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
+				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
+				break;
+			// opt level 1: memory-based (no advanced rewrites)	
 			case 1:
-				_optType = OptimizationType.STATIC;
-				_optMode = OptimizationMode.NONE;
+				_optLevel = OptimizationLevel.O1_LOCAL_MEMORY_MIN;
+				ALLOW_CONSTANT_FOLDING = false;
+				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
+				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				break;
-			// opt level 2: memory-based (worst-case assumptions)	
+			// opt level 2: memory-based (all advanced rewrites)
 			case 2:
-				_optType = OptimizationType.MEMORY_BASED;
-				_optMode = OptimizationMode.ROBUST;
+				_optLevel = OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
 				break;
-			// opt level 3: memory-based (average-case assumptions)
+			// opt level 3: global, time- and memory-based (all advanced rewrites)
 			case 3:
-				_optType = OptimizationType.MEMORY_BASED;
-				_optMode = OptimizationMode.AGGRESSIVE;
+				_optLevel = OptimizationLevel.O3_GLOBAL_TIME_MEMORY;
 				break;
 		}
 		setDefaultSize();
@@ -183,10 +191,7 @@ public class OptimizerUtils
 	 * 
 	 */
 	private static void setDefaultSize() {
-		if ( _optMode == OptimizationMode.ROBUST ) 
-			DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
-		else 
-			DEFAULT_SIZE = DEF_MEM_FACTOR * InfrastructureAnalyzer.getLocalMaxMemory();
+		DEFAULT_SIZE = InfrastructureAnalyzer.getLocalMaxMemory();
 	}
 	
 	/**
@@ -259,13 +264,8 @@ public class OptimizerUtils
 	 */
 	public static long estimateSize(long nrows, long ncols, double expectedSparsity) 
 	{
-		if (_optMode == OptimizationMode.ROBUST  ) {
-			// In case of ROBUST, ignore the value given for <code>sp</code>, 
-			// and provide a worst-case estimate i.e., a dense representation
-			expectedSparsity = 1.0;
-		}
-		
-		return estimateSizeExactSparsity(nrows, ncols, expectedSparsity);
+		double lexpectedSparsity = 1.0;		
+		return estimateSizeExactSparsity(nrows, ncols, lexpectedSparsity);
 	}
 	
 	/**

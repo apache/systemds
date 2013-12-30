@@ -17,7 +17,6 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -211,7 +210,7 @@ public abstract class Hop
 	 */
 	public double getMemEstimate()
 	{
-		if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) {
+		if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 			if ( ! isMemEstimated() ) {
 				LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
 				computeMemEstimate( new MemoTable() ); 
@@ -462,19 +461,25 @@ public abstract class Hop
 	}
 	
 	/**
-	 * Should not be used because this might return a too aggressive sparsity estimate.
+	 * 
 	 * @return
 	 */
 	@Deprecated
 	public double getSparsity() {
 		
-		if ( _dataType == DataType.SCALAR )
+		if( _dataType == DataType.SCALAR )
 			return 1.0;
 		
-		if (dimsKnown() && _nnz > 0)
-			return (double)_nnz/(double)(_dim1*_dim2);
+		if( dimsKnown(true) )
+		{
+			//prevent overflow via dim1*dim2
+			return ((double)_nnz)/_dim1/_dim2; 
+		}
 		else 
-			return OptimizerUtils.DEF_SPARSITY;
+		{
+			//worst-case estimate
+			return 1.0;
+		}
 	}
 	
 	public Kind getKind() {
@@ -494,7 +499,7 @@ public abstract class Hop
 	}
 	
 	protected boolean areDimsBelowThreshold() {
-		return (_dim1 <= Hop.CPThreshold && _dim2 <= Hop.CPThreshold );
+		return (dimsKnown() && _dim1 <= Hop.CPThreshold && _dim2 <= Hop.CPThreshold );
 	}
 	
 	protected boolean dimsKnown() {

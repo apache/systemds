@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.hops;
 
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationType;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -528,12 +527,11 @@ public class DataOp extends Hop
 			}
 			else 
 			{
-				if ( OptimizerUtils.getOptType() == OptimizationType.MEMORY_BASED ) 
+				if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 				{
 					_etype = findExecTypeByMemEstimate();
 				}
-				else if (    getInput().get(0).areDimsBelowThreshold() 
-						  && getInput().get(1).areDimsBelowThreshold())
+				else if ( getInput().get(0).areDimsBelowThreshold() )
 				{
 					_etype = ExecType.CP;
 				}

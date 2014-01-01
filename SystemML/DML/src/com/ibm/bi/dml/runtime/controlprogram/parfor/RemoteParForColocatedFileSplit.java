@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 public class RemoteParForColocatedFileSplit extends FileSplit
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private String _fname = null;
@@ -69,11 +69,12 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 		//time.start();
 		
 		JobConf job = new JobConf();
+		FileSystem fs = FileSystem.get(job);
 		
 		//read task string
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		RecordReader<LongWritable,Text> reader = new NLineInputFormat().getRecordReader(this, new JobConf(), Reporter.NULL);
+		RecordReader<LongWritable,Text> reader = new NLineInputFormat().getRecordReader(this, job, Reporter.NULL);
 		reader.next(key, value);
 		reader.close();
 		
@@ -88,7 +89,6 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 			for( IntObject val : t.getIterations() )
 			{
 				String fname = _fname+"/"+String.valueOf(((val.getIntValue()-1)/_blen+1));
-				FileSystem fs = FileSystem.get(job);
 				FileStatus status = fs.getFileStatus(new Path(fname)); 
 				BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
 				for( BlockLocation bl : tmp1 )
@@ -104,7 +104,6 @@ public class RemoteParForColocatedFileSplit extends FileSplit
 			for( int li : new int[]{lFrom,lTo} )
 			{
 				String fname = _fname+"/"+String.valueOf( ((li-1)/_blen+1) );
-				FileSystem fs = FileSystem.get(job);
 				FileStatus status = fs.getFileStatus(new Path(fname)); 
 				BlockLocation[] tmp1 = fs.getFileBlockLocations(status, 0, status.getLen());
 				for( BlockLocation bl : tmp1 )

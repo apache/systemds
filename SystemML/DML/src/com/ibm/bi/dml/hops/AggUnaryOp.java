@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -56,9 +57,10 @@ public class AggUnaryOp extends Hop
 		inp.getParent().add(this);
 	}
 
+	@Override
 	public Lop constructLops()
-		throws HopsException 
-	{
+		throws HopsException, LopsException 
+	{	
 		if (get_lops() == null) {
 			try {
 				ExecType et = optFindExecType();
@@ -132,6 +134,7 @@ public class AggUnaryOp extends Hop
 			}
 
 		}
+		
 		return get_lops();
 	}
 

@@ -103,8 +103,10 @@ public class AggBinaryOp extends Hop
 	 *       and existing mem estimate advantageous in terms of consistency hops/lops,
 	 *       and some special cases internally materialize the transpose for better cache locality  
 	 */
-	public Lop constructLops() throws HopsException, LopsException {
-
+	@Override
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{
 		if (get_lops() == null) {
 			if ( isMatrixMultiply() ) {
 				ExecType et = optFindExecType();
@@ -221,6 +223,7 @@ public class AggBinaryOp extends Hop
 				throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");
 			}
 		}
+		
 		return get_lops();
 	}
 	

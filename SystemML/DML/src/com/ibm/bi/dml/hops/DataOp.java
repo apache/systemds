@@ -155,10 +155,11 @@ public class DataOp extends Hop
 		return _fileName;
 	}
 
+	
 	@Override
 	public Lop constructLops()
-			throws HopsException, LopsException {
-				
+			throws HopsException, LopsException 
+	{	
 		if (get_lops() == null) {
 			Lop l = null;
 
@@ -234,7 +235,7 @@ public class DataOp extends Hop
 			
 			set_lops(l);
 		}
-
+	
 		return get_lops();
 
 	}

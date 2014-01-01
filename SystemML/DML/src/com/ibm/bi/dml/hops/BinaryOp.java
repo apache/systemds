@@ -92,8 +92,10 @@ public class BinaryOp extends Hop
 		 op = iop;
 	}
 	
-	public Lop constructLops() throws HopsException {
-
+	@Override
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{	
 		if (get_lops() == null) {
 
 			try {
@@ -515,6 +517,7 @@ public class BinaryOp extends Hop
 				throw new HopsException(this.printErrorLocation() + "error constructing Lops for BinaryOp Hop -- \n" , e);
 			}
 		}
+	
 		return get_lops();
 	}
 

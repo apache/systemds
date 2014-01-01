@@ -13,6 +13,7 @@ import com.ibm.bi.dml.lops.CombineUnary;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
 import com.ibm.bi.dml.lops.PickByCount;
 import com.ibm.bi.dml.lops.SortKeys;
@@ -92,8 +93,10 @@ public class UnaryOp extends Hop
 		return s;
 	}
 
+	@Override
 	public Lop constructLops()
-			throws HopsException {
+		throws HopsException, LopsException 
+	{		
 		if (get_lops() == null) {
 			try {
 			if (get_dataType() == DataType.SCALAR) {
@@ -242,6 +245,7 @@ public class UnaryOp extends Hop
 				throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 			}
 		}
+		
 		return get_lops();
 	}
 

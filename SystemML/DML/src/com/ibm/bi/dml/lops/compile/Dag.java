@@ -19,7 +19,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -70,20 +69,33 @@ import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
  *  Class to maintain a DAG and compile it into jobs
  * @param <N>
  */
-
 public class Dag<N extends Lop> 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	static int total_reducers;
-	static String scratch = "";
 	private static final Log LOG = LogFactory.getLog(Dag.class.getName());
 
-	// hash set for all nodes in dag
+	private static final int CHILD_BREAKS_ALIGNMENT = 2;
+	private static final int CHILD_DOES_NOT_BREAK_ALIGNMENT = 1;
+	private static final int MRCHILD_NOT_FOUND = 0;
+	private static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
+	private static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
 
-	ArrayList<N> nodes;
+	private static int total_reducers = -1;
+	private static String scratch = "";
+	
+	private static IDSequence job_id = null;
+	private static IDSequence var_index = null;
+	
+	static {
+		job_id = new IDSequence();
+		var_index = new IDSequence();
+	}
+	
+	// hash set for all nodes in dag
+	private ArrayList<N> nodes = null;
 	
 	/* 
 	 * Hashmap to translates the nodes in the DAG to a sequence of numbers
@@ -92,22 +104,8 @@ public class Dag<N extends Lop>
 	 *     
 	 * This map is primarily used in performing DFS on the DAG, and subsequently in performing ancestor-descendant checks.
 	 */
-	HashMap<Long, Integer> IDMap = null;
+	private HashMap<Long, Integer> IDMap = null;
 
-	//static int job_id = 0;
-	//static int var_index = 0;
-	
-	static IDSequence job_id, var_index;
-	static {
-		job_id = new IDSequence();
-		var_index = new IDSequence();
-	}
-
-	static final int CHILD_BREAKS_ALIGNMENT = 2;
-	static final int CHILD_DOES_NOT_BREAK_ALIGNMENT = 1;
-	static final int MRCHILD_NOT_FOUND = 0;
-	static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
-	static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
 
 	public static class PiggyProfiler {
 		public static long setupTime=0;
@@ -180,24 +178,29 @@ public class Dag<N extends Lop>
 	/**
 	 * Constructor
 	 */
-
-	public Dag() {
-		/**
-		 * allocate structures
-		 */
-
+	public Dag() 
+	{
+		//allocate internal data structures
 		nodes = new ArrayList<N>();
+		IDMap = new HashMap<Long, Integer>();
 
-		/** get number of reducers from job config */
-		JobConf jConf = new JobConf();
+		// get number of reducers from dml config
 		DMLConfig conf = ConfigurationManager.getConfig();
-		//total_reducers = jConf.getInt("mapred.reduce.tasks", conf.getIntValue(DMLConfig.NUM_REDUCERS) );
 		total_reducers = conf.getIntValue(DMLConfig.NUM_REDUCERS);
 	}
 
+	/**
+	 * 
+	 * @param config
+	 * @return
+	 * @throws LopsException
+	 * @throws IOException
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
 	public ArrayList<Instruction> getJobs(DMLConfig config)
-	throws LopsException, IOException, DMLRuntimeException,
-	DMLUnsupportedOperationException {
+			throws LopsException, IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		return getJobs(null, config);
 	}
 	
@@ -216,23 +219,8 @@ public class Dag<N extends Lop>
 		
 		if (config != null) 
 		{
-			String numReducers  = null; 
-			String scratchSpace = null; 
-			
-			try {
-				numReducers  = config.getTextValue(DMLConfig.NUM_REDUCERS);
-				scratchSpace = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				LOG.error("Error retrieving config parameters " + 
-						DMLConfig.NUM_REDUCERS + " and " + DMLConfig.SCRATCH_SPACE 
-						+ " from DMLConfig");
-			}
-			
-			if ( numReducers != null )
-				total_reducers = Integer.parseInt(numReducers);
-
-			if ( scratchSpace != null )
-				scratch = scratchSpace + "/";
+			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
+			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
 		
 		// hold all nodes in a vector (needed for ordering)
@@ -479,6 +467,7 @@ public class Dag<N extends Lop>
 			nodes.add(node);
 			return true;
 		}
+		
 	}
 
 	private ArrayList<Vector<N>> createNodeVectors(int size) {
@@ -3708,10 +3697,7 @@ public class Dag<N extends Lop>
 
 		// Copy sorted nodes into "v" and construct a mapping between Lop IDs and sequence of numbers
 		v.clear();
-		if ( IDMap != null )
-			IDMap.clear();
-		else 
-			IDMap = new HashMap<Long, Integer>();
+		IDMap.clear();
 		
 		for (int i = 0; i < nodearray.length; i++) {
 			v.add((N) nodearray[i]);

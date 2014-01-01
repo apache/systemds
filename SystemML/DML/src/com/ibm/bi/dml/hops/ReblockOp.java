@@ -10,6 +10,7 @@ package com.ibm.bi.dml.hops;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.ReBlock;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -89,9 +90,11 @@ public class ReblockOp extends Hop
 			}
 		}
 	}
-
+	
 	@Override
-	public Lop constructLops() throws HopsException {
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{
 		if (get_lops() == null) {
 
 			try {
@@ -132,6 +135,7 @@ public class ReblockOp extends Hop
 				throw new HopsException(this.printErrorLocation() + "In Reblock Hop, error constructing Lops -- \n" , e);
 			}
 		}
+		
 		return get_lops();
 	}
 

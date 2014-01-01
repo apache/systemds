@@ -114,17 +114,18 @@ public class Recompiler
 			MemoTable memo = new MemoTable();
 			for( Hop hopRoot : hops )
 				hopRoot.refreshMemEstimates(memo); 
-			
-			// construct lops
+						
+			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
 			for( Hop hopRoot : hops )
 			{
 				Lop lops = hopRoot.constructLops();
-				lops.addToDag(dag);
+				lops.addToDag(dag);	
 			}		
-
+			
 			// construct instructions
 			newInst = dag.getJobs(ConfigurationManager.getConfig());
+			
 		}
 		
 		// replace thread ids in new instructions
@@ -263,9 +264,9 @@ public class Recompiler
 			Dag<Lop> dag = new Dag<Lop>();
 			Lop lops = hops.constructLops();
 			lops.addToDag(dag);		
-
+			
 			// construct instructions
-			newInst = dag.getJobs(ConfigurationManager.getConfig());			
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -755,10 +756,14 @@ public class Recompiler
 		//	return; 
 		
 		//clear all relevant lops to allow for recompilation
-		hop.set_lops(null);
-		if( hop.getInput() != null )
-			for( Hop c : hop.getInput() )
-				rClearLops(c);
+		//(does not apply to literal ops since always constants)
+		//if( !(hop instanceof LiteralOp) ) //TODO
+		{
+			hop.set_lops(null);
+			if( hop.getInput() != null )
+				for( Hop c : hop.getInput() )
+					rClearLops(c);
+		}
 		
 		hop.set_visited(VISIT_STATUS.DONE);
 	}

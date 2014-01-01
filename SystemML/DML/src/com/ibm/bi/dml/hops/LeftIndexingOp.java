@@ -11,6 +11,7 @@ import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.LeftIndex;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.ZeroOut;
@@ -76,8 +77,11 @@ public class LeftIndexingOp  extends Hop
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
+	
+	@Override
 	public Lop constructLops()
-			throws HopsException {
+		throws HopsException, LopsException 
+	{			
 		if (get_lops() == null) {
 			try {
 				ExecType et = optFindExecType();
@@ -179,6 +183,7 @@ public class LeftIndexingOp  extends Hop
 			}
 
 		}
+		
 		return get_lops();
 	}
 	

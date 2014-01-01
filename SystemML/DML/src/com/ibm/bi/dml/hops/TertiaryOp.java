@@ -78,8 +78,10 @@ public class TertiaryOp extends Hop
 		inp3.getParent().add(this);
 	}
 	
-	public Lop constructLops() throws HopsException {
-
+	@Override
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{	
 		if (get_lops() == null) {
 			try {
 				switch(op) {
@@ -108,6 +110,7 @@ public class TertiaryOp extends Hop
 				throw new HopsException(this.printErrorLocation() + "error constructing Lops for TertiaryOp Hop " , e);
 			}
 		}
+	
 		return get_lops();
 	}
 

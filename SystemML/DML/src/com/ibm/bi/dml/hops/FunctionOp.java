@@ -137,7 +137,6 @@ public class FunctionOp extends Hop
 		throw new RuntimeException("Invalid call of inferOutputCharacteristics in FunctionOp.");
 	}
 	
-
 	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException 

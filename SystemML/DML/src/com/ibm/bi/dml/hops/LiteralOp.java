@@ -58,10 +58,11 @@ public class LiteralOp extends Hop
 		this.value_boolean = value;
 	}
 
+	
 	@Override
 	public Lop constructLops()
-			throws HopsException {
-
+		throws HopsException, LopsException  
+	{	
 		if (get_lops() == null) {
 
 			try {
@@ -93,7 +94,7 @@ public class LiteralOp extends Hop
 				throw new HopsException(e);
 			}
 		}
-
+	
 		return get_lops();
 	}
 

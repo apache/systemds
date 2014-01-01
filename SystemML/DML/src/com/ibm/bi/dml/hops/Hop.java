@@ -486,7 +486,8 @@ public abstract class Hop
 		return _kind;
 	}
 
-	abstract public Lop constructLops() throws HopsException, LopsException;
+	public abstract Lop constructLops() 
+		throws HopsException, LopsException;
 	
 	abstract public SQLLops constructSQLLOPs() throws HopsException; 
 

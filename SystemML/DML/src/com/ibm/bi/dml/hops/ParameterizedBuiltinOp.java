@@ -83,7 +83,9 @@ public class ParameterizedBuiltinOp extends Hop
 	}
 
 	@Override
-	public Lop constructLops() throws HopsException, LopsException {
+	public Lop constructLops() 
+		throws HopsException, LopsException 
+	{		
 		if (get_lops() == null) {
 
 			// construct lops for all input parameters

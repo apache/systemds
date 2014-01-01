@@ -11,6 +11,7 @@ import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.RangeBasedReIndex;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -81,8 +82,10 @@ public class IndexingOp extends Hop
 		_colLowerEqualsUpper = passed;
 	}
 
+	@Override
 	public Lop constructLops()
-			throws HopsException {
+		throws HopsException, LopsException 
+	{	
 		if (get_lops() == null) {
 			try {
 				ExecType et = optFindExecType();
@@ -143,6 +146,7 @@ public class IndexingOp extends Hop
 			}
 
 		}
+		
 		return get_lops();
 	}
 

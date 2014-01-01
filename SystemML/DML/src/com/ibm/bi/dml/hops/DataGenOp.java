@@ -43,8 +43,8 @@ public class DataGenOp extends Hop
 	//TODO: MB: potentially move constant and rand seed generation to place in runtime (but currently no central place)
 	public static final long UNSPECIFIED_SEED = -1;
 	
-	// defines the specific data generation method -- random matrix or sequence
-	DataGenMethod method;
+	
+	private DataGenMethod method; // defines the specific data generation method -- random matrix or sequence
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -58,9 +58,10 @@ public class DataGenOp extends Hop
 	
 	/** target identifier which will hold the random object */
 	private DataIdentifier id;
-	/** sparsity of the random object */
-	/** this is used for mem estimate */
+	/** sparsity of the random object, this is used for mem estimate */
 	private double sparsity;
+	/** base directory for temp file (e.g., input seeds)*/
+	private String _baseDir;
 	
 	private DataGenOp() {
 		//default constructor for clone
@@ -89,6 +90,11 @@ public class DataGenOp extends Hop
 		if ( mthd == DataGenMethod.RAND )
 			sparsity = Double.valueOf(((LiteralOp)inputParameters.get(RandStatement.RAND_SPARSITY)).get_name());
 
+		//generate base dir
+		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+	               Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
+		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
@@ -103,18 +109,12 @@ public class DataGenOp extends Hop
 	}
 	
 	@Override
-	public Lop constructLops() throws HopsException, LopsException
+	public Lop constructLops() 
+		throws HopsException, LopsException
 	{
 		if(get_lops() == null)
 		{
 			ExecType et = optFindExecType();
-			
-			String scratchSpaceLoc = null;
-			try {
-				scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
-			} catch (Exception e){
-				throw new LopsException("Could not retrieve parameter " + DMLConfig.SCRATCH_SPACE + " from DMLConfig", e);
-			}
 			
 			HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
 			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
@@ -122,9 +122,7 @@ public class DataGenOp extends Hop
 						.constructLops());
 			}
 			
-			DataGen rnd = new DataGen(method, id, inputLops,
-					scratchSpaceLoc + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
-		   					          Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR,
+			DataGen rnd = new DataGen(method, id, inputLops,_baseDir,
 					get_dataType(), get_valueType(), et);
 			
 			rnd.getOutputParameters().setDimensions(
@@ -319,6 +317,7 @@ public class DataGenOp extends Hop
 		ret.method = method;
 		ret.id = id;
 		ret.sparsity = sparsity;
+		ret._baseDir = _baseDir;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
 		
@@ -334,6 +333,7 @@ public class DataGenOp extends Hop
 		DataGenOp that2 = (DataGenOp)that;	
 		boolean ret = (  method == that2.method
 				      && sparsity == that2.sparsity
+				      && _baseDir.equals(that2._baseDir)
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
 		if( ret )
 		{

@@ -753,16 +753,17 @@ public class DMLScript
 		
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
-		if( MRJobConfiguration.isLocalJobTracker() ) {
+		JobConf job = new JobConf();
+		if( MRJobConfiguration.isLocalJobTracker(job) ) {
 			try 
 			{
 				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
 					                                   dirSuffix  );	
-				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix() + //local dir
+				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix(job) + //local dir
 		                                               dirSuffix );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix() + //system dir
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + //system dir
 													   dirSuffix  );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix() + //staging dir
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + //staging dir
 								                       dirSuffix  );
 			}
 			catch(Exception ex)

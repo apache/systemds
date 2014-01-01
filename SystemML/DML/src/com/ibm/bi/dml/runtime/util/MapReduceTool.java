@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -53,11 +53,17 @@ import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 public class MapReduceTool 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 			
 	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
-	// private static final Log LOG = LogFactory.getLog(AggregateReducer.class);
+	private static JobConf _rJob = null; //cached job conf for read-only operations
+	
+	static{
+		_rJob = new JobConf();
+	}
+	
+	
 	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
 		//TODO: investigate ID pattern, required for parallel jobs
 		/*String nodePrefix = job.get("mapred.task.id");
@@ -108,9 +114,8 @@ public class MapReduceTool
 	public static boolean existsFileOnHDFS(String fname){
 		boolean ret = true;
 		try{
-			JobConf job = new JobConf();
 			Path outpath = new Path(fname);
-			ret = FileSystem.get(job).exists(outpath);
+			ret = FileSystem.get(_rJob).exists(outpath);
 		}
 		catch(Exception ex)
 		{
@@ -133,23 +138,23 @@ public class MapReduceTool
 	}
 
 	public static void deleteFileIfExistOnHDFS(String dir) throws IOException {
-		JobConf job = new JobConf();
 		Path outpath = new Path(dir);
-		if (FileSystem.get(job).exists(outpath)) {
+		FileSystem fs = FileSystem.get(_rJob);
+		if (fs.exists(outpath)) {
 			//System.err.println("Deleting " + outpath + " ... ");
-			FileSystem.get(job).delete(outpath, true);
+			fs.delete(outpath, true);
 		}
 	}
 
 	public static boolean isHDFSDirectory(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(new JobConf());
+		FileSystem fs = FileSystem.get(_rJob);
 		Path pth = new Path(dir);
 		FileStatus fstat = fs.getFileStatus(pth);
 		return fstat.isDir();
 	}
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(new JobConf());
+		FileSystem fs = FileSystem.get(_rJob);
 		return isFileEmpty(fs, dir);
 	}
 
@@ -179,33 +184,32 @@ public class MapReduceTool
 	}
 
 	public static void renameFileOnHDFS(String originalDir, String newDir) throws IOException {
-		JobConf job = new JobConf();
 		Path originalpath = new Path(originalDir);
 		
 		deleteFileIfExistOnHDFS(newDir);
 		Path newpath = new Path(newDir);
 		
-		if (FileSystem.get(job).exists(originalpath)) {
-			FileSystem fs = FileSystem.get(job);
+		FileSystem fs = FileSystem.get(_rJob);
+		if (fs.exists(originalpath)) {
 			fs.rename(originalpath, newpath);
 		}
 	}
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {
-		JobConf job = new JobConf();
 		Path originalPath = new Path(originalDir);
 		Path newPath = new Path(newDir);
 		boolean deleteSource = false;
 		boolean overwrite = true;
 		
-		if (FileSystem.get(job).exists(originalPath)) {
-			FileSystem fs = FileSystem.get(job);
+		JobConf job = new JobConf();
+		FileSystem fs = FileSystem.get(job);
+		if (fs.exists(originalPath)) {
 			FileUtil.copy(fs, originalPath, fs, newPath, deleteSource, overwrite, job);
 		}
 	}
 
 	public static String getSubDirs(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(new Configuration());
+		FileSystem fs = FileSystem.get(_rJob); 
 		FileStatus[] files = fs.listStatus(new Path(dir));
 		String ret = "";
 		for (FileStatus file : files) {
@@ -217,7 +221,7 @@ public class MapReduceTool
 	}
 
 	public static String getSubDirsIgnoreLogs(String dir) throws IOException {
-		FileSystem fs = FileSystem.get(new Configuration());
+		FileSystem fs = FileSystem.get(_rJob);
 		FileStatus[] files = fs.listStatus(new Path(dir));
 		String ret = "";
 		for (FileStatus file : files) {
@@ -308,7 +312,7 @@ public class MapReduceTool
 	
 	private static BufferedReader setupInputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
-        FileSystem fs = FileSystem.get(new Configuration());
+        FileSystem fs = FileSystem.get(_rJob);
         BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));		
         return br;
 	}
@@ -345,7 +349,7 @@ public class MapReduceTool
 		
 	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {
         Path pt=new Path(filename);
-        FileSystem fs = FileSystem.get(new Configuration());
+        FileSystem fs = FileSystem.get(_rJob);
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
         return br;
 	}
@@ -396,7 +400,7 @@ public class MapReduceTool
 	
 	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) throws IOException {
 		Path pt=new Path(dir);
-        FileSystem fs = FileSystem.get(new Configuration());
+        FileSystem fs = FileSystem.get(_rJob);
 		
         if ( !fs.exists(pt) )
         	return stats;
@@ -437,7 +441,7 @@ public class MapReduceTool
 	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo ) throws IOException {
 		//MatrixCharacteristics mc = ((MatrixDimensionsMetaData) md).getMatrixCharacteristics();
         Path pt=new Path(mtdfile);
-        FileSystem fs = FileSystem.get(new Configuration());
+        FileSystem fs = FileSystem.get(_rJob);
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
 		
         String line = "";
@@ -498,7 +502,7 @@ public class MapReduceTool
 	public static void writeScalarMetaDataFile ( String mtdfile, ValueType v ) throws IOException {
 		
         Path pt=new Path(mtdfile);
-        FileSystem fs = FileSystem.get(new Configuration());
+        FileSystem fs = FileSystem.get(_rJob);
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
 		
         try {
@@ -618,8 +622,7 @@ public class MapReduceTool
 		else
 			offset=(int)pos-1;
 		
-		Configuration conf = new Configuration();
-		FileSystem fs=FileSystem.get(conf);
+		FileSystem fs=FileSystem.get(_rJob);
 		Path path=new Path(dir);
 		FileStatus[] files=fs.listStatus(path);
 		Path fileToRead=null;
@@ -679,10 +682,9 @@ public class MapReduceTool
 	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 
 		throws IOException
 	{
-		JobConf job = new JobConf();
 		Path path = new Path(dir);
 		try {
-			FileSystem fs = FileSystem.get(job);
+			FileSystem fs = FileSystem.get(_rJob);
 			if( !fs.exists(path) ) 
 			{
 				char[] c = permissions.toCharArray();

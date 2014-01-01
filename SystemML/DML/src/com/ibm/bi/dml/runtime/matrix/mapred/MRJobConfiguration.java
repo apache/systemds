@@ -444,27 +444,19 @@ public class MRJobConfiguration
 		}
 	}
 	
-	public static String getLocalWorkingDirPrefix()
+	public static String getLocalWorkingDirPrefix(JobConf job)
 	{
-		JobConf job = new JobConf();
 		return job.get("mapred.local.dir");
 	}
 	
-	public static String getSystemWorkingDirPrefix()
+	public static String getSystemWorkingDirPrefix(JobConf job)
 	{
-		JobConf job = new JobConf();
 		return job.get("mapred.system.dir");
 	}
 	
-	public static String getStagingWorkingDirPrefix()
+	public static String getStagingWorkingDirPrefix(JobConf job)
 	{
-		JobConf job = new JobConf();
 		return job.get("mapreduce.jobtracker.staging.root.dir");
-	}
-	
-	public static boolean isLocalJobTracker()
-	{
-		return isLocalJobTracker(new JobConf());
 	}
 	
 	public static boolean isLocalJobTracker(JobConf job)

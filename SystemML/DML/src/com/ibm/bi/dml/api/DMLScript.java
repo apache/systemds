@@ -333,7 +333,7 @@ public class DMLScript
 				if(    script.startsWith("hdfs:") 
 					|| script.startsWith("gpfs:") ) 
 				{ 
-					FileSystem fs = FileSystem.get(new Configuration());
+					FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 					Path scriptPath = new Path(script);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
@@ -706,7 +706,7 @@ public class DMLScript
 		}catch(Exception ex){}
 		
 		//analyze hadoop configuration
-		JobConf job = new JobConf();
+		JobConf job = ConfigurationManager.getCachedJobConf();
 		String jobTracker     = job.get("mapred.job.tracker", "local");
 		String taskController = job.get("mapred.task.tracker.task-controller", "org.apache.hadoop.mapred.DefaultTaskController");
 		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
@@ -753,7 +753,7 @@ public class DMLScript
 		
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
-		JobConf job = new JobConf();
+		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( MRJobConfiguration.isLocalJobTracker(job) ) {
 			try 
 			{

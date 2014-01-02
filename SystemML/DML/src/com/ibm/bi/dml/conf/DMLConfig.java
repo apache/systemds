@@ -26,7 +26,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.w3c.dom.Document;
@@ -178,7 +177,7 @@ public class DMLConfig
 		Document domTree = null;
 		if (config_file_name.startsWith("hdfs:") ||
 		    config_file_name.startsWith("gpfs:") ) { // config file from DFS
-			FileSystem DFS = FileSystem.get(new Configuration());
+			FileSystem DFS = FileSystem.get(ConfigurationManager.getCachedJobConf());
             Path configFilePath = new Path(config_file_name);
             domTree = builder.parse(DFS.open(configFilePath));  
 		}

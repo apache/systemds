@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.conf;
 
+import org.apache.hadoop.mapred.JobConf;
+
 
 
 /**
@@ -22,11 +24,11 @@ public class ConfigurationManager
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static DMLConfig _conf = null; //read systemml configuration
+	private static JobConf _rJob = null; //cached job conf for read-only operations	
 	
-	//private static JobConf _rJob = null; //cached job conf for read-only operations	
-	//static{
-	//	_rJob = new JobConf();
-	//}
+	static{
+		_rJob = new JobConf();
+	}
 	
 	
 	/**
@@ -47,9 +49,15 @@ public class ConfigurationManager
 		return _conf;
 	}
 	
-// for global use by all operations with read-only access to job conf
-//	public static JobConf getCachedJobConf()
-//	{
-//		return _rJob;
-//	}
+    /**
+     * Returns a cached JobConf object, intended for global use by all operations 
+     * with read-only access to job conf. This prevents to read the hadoop conf files
+     * over and over again from classpath. However, 
+     * 
+     * @return
+     */
+	public static JobConf getCachedJobConf()
+	{
+		return _rJob;
+	}
 }

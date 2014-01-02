@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,6 +17,7 @@ import org.apache.hadoop.io.SequenceFile;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -60,7 +61,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class RunMRJobs 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static boolean flagLocalModeOpt = false;
@@ -331,8 +332,7 @@ public class RunMRJobs
 							if (MapReduceTool.isHDFSFileEmpty(fname)) {
 								// createNewFile(Path f)
 								if (outinfo == OutputInfo.TextCellOutputInfo) {
-									FileSystem fs = FileSystem
-											.get(new Configuration());
+									FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 									Path filepath = new Path(fname, "0-m-00000");
 									FSDataOutputStream writer = fs.create(filepath);
 									writer.writeBytes("1 1 0");

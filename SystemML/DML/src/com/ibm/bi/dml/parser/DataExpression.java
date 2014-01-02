@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,14 +13,13 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Set;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.json.java.JSONObject;
 
@@ -28,7 +27,7 @@ import com.ibm.json.java.JSONObject;
 public class DataExpression extends Expression 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
@@ -1536,7 +1535,7 @@ public class DataExpression extends Expression
 		FileSystem fs = null;
 		
 		try {
-			fs = FileSystem.get(new Configuration());
+			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
 			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
@@ -1636,16 +1635,23 @@ public class DataExpression extends Expression
 		return retVal;
 	}
 	
-	public String[] readMatrixMarketFile(String filename) throws LanguageException {
-		
+	/**
+	 * 
+	 * @param filename
+	 * @return
+	 * @throws LanguageException
+	 */
+	public String[] readMatrixMarketFile(String filename) 
+		throws LanguageException 
+	{
 		String[] retVal = new String[2];
 		retVal[0] = new String("");
 		retVal[1] = new String("");
 		boolean exists = false;
-		FileSystem fs = null;
 		
-		try {
-			fs = FileSystem.get(new JobConf());
+		try 
+		{
+			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 			Path pt = new Path(filename);
 			if (fs.exists(pt)){
 				exists = true;
@@ -1696,7 +1702,7 @@ public class DataExpression extends Expression
 		FileSystem fs = null;
 		
 		try {
-			fs = FileSystem.get(new Configuration());
+			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
 			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
@@ -1766,7 +1772,7 @@ public class DataExpression extends Expression
 		FileSystem fs = null;
 		
 		try {
-			fs = FileSystem.get(new Configuration());
+			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
 			e.printStackTrace();
 			LOG.error(this.printErrorLocation() + "could not read the configuration file.");

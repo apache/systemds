@@ -138,6 +138,58 @@ public class Recompiler
 	}
 
 	/**
+	 * Note: This overloaded method is required for predicate instructions because
+	 * they have only a single hops DAG and we need to synchronize on the original 
+	 * (shared) hops object. Hence, we cannot create any wrapper arraylist for each
+	 * recompilation - this would result in race conditions for concurrent recompilation 
+	 * in a parfor body. 	
+	 * 
+	 * @param hops
+	 * @param vars
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws HopsException
+	 * @throws LopsException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, long tid ) 
+		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+	{
+		ArrayList<Instruction> newInst = null;
+
+		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
+		{	
+			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
+					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
+			
+			// clear existing lops
+			hops.resetVisitStatus();
+			rClearLops( hops );
+
+			// update statistics if unknown
+			hops.resetVisitStatus();
+			rUpdateStatistics( hops, vars );
+			hops.resetVisitStatus();
+			hops.refreshMemEstimates(new MemoTable()); 		
+			
+			// construct lops
+			Dag<Lop> dag = new Dag<Lop>();
+			Lop lops = hops.constructLops();
+			lops.addToDag(dag);		
+			
+			// construct instructions
+			newInst = dag.getJobs(ConfigurationManager.getConfig());
+		}
+		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
+		
+		return newInst;
+	}
+	
+	/**
 	 * 
 	 * @param hops
 	 * @param tid
@@ -222,59 +274,6 @@ public class Recompiler
 		//recompileCount++;
 		return newInst;
 	}
-	
-	
-	/**
-	 * Note: This overloaded method is required for predicate instructions because
-	 * they have only a single hops DAG and we need to synchronize on the original 
-	 * (shared) hops object. Hence, we cannot create any wrapper arraylist for each
-	 * recompilation - this would result in race conditions for concurrent recompilation 
-	 * in a parfor body. 	
-	 * 
-	 * @param hops
-	 * @param vars
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
-	 * @throws IOException
-	 */
-	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, long tid ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
-	{
-		ArrayList<Instruction> newInst = null;
-
-		synchronized( hops ) //need for synchronization as we do temp changes in shared hops/lops
-		{	
-			LOG.debug ("\n**************** Optimizer (Recompile) *************\nMemory Budget = " + 
-					   OptimizerUtils.toMB(OptimizerUtils.getMemBudget(true)) + " MB");
-			
-			// clear existing lops
-			hops.resetVisitStatus();
-			rClearLops( hops );
-
-			// update statistics if unknown
-			hops.resetVisitStatus();
-			rUpdateStatistics( hops, vars );
-			hops.resetVisitStatus();
-			hops.refreshMemEstimates(new MemoTable()); 		
-			
-			// construct lops
-			Dag<Lop> dag = new Dag<Lop>();
-			Lop lops = hops.constructLops();
-			lops.addToDag(dag);		
-			
-			// construct instructions
-			newInst = dag.getJobs(ConfigurationManager.getConfig());
-		}
-		
-		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, false, false);
-		
-		return newInst;
-	}
 
 	/**
 	 * 
@@ -335,14 +334,18 @@ public class Recompiler
 	{
 		boolean ret = false;
 		
-		Hop.resetVisitStatus(hops);
-		
 		if( hops != null )
-			for( Hop hop : hops )
+		{
+			synchronized( hops )
 			{
-				ret |= rRequiresRecompile(hop);
-				if( ret ) break; // early abort
+				Hop.resetVisitStatus(hops);
+				for( Hop hop : hops )
+				{
+					ret |= rRequiresRecompile(hop);
+					if( ret ) break; // early abort
+				}
 			}
+		}
 		
 		return ret;
 	}
@@ -358,10 +361,13 @@ public class Recompiler
 		
 		if( hop != null )
 		{
-			hop.resetVisitStatus();
-			ret = rRequiresRecompile(hop);
+			synchronized( hop )
+			{
+				hop.resetVisitStatus();
+				ret = rRequiresRecompile(hop);
+			}
 		}
-	
+		
 		return ret;
 	}
 	

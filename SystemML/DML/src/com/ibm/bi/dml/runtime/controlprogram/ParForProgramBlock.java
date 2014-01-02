@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -97,7 +96,7 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 public class ParForProgramBlock extends ForProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	// execution modes
@@ -636,84 +635,91 @@ public class ParForProgramBlock extends ForProgramBlock
 			time = new Timing();
 			time.start();
 		}
+
+		int numExecutedTasks = 0;
+		int numExecutedIterations = 0;
 		
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
 		
-		// Step 1) init parallel workers, task queue and threads
-		LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
-		Thread[] threads         = new Thread[_numThreads];
-		LocalParWorker[] workers = new LocalParWorker[_numThreads];
-		for( int i=0; i<_numThreads; i++ )
+		try
 		{
-			//create parallel workers as (lazy) deep copies
-			workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
-			threads[i] = new Thread( workers[i] );
-			threads[i].setPriority(Thread.MAX_PRIORITY); 
-		}
-		
-		// start threads (from now on waiting for tasks)
-		for( Thread thread : threads )
-			thread.start();
-		
-		if( _monitor ) 
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
-		
-		// Step 2) create tasks 
-		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
-		int numIterations = partitioner.getNumIterations();
-		int numCreatedTasks = -1;
-		if( USE_STREAMING_TASK_CREATION )
-		{
-			//put tasks into queue (parworker start work on first tasks while creating tasks) 
-			numCreatedTasks = partitioner.createTasks(queue);		
-		}
-		else
-		{
-			Collection<Task> tasks = partitioner.createTasks();
-			numCreatedTasks = tasks.size();
+			// Step 1) init parallel workers, task queue and threads
+			LocalTaskQueue<Task> queue = new LocalTaskQueue<Task>();
+			Thread[] threads         = new Thread[_numThreads];
+			LocalParWorker[] workers = new LocalParWorker[_numThreads];
+			for( int i=0; i<_numThreads; i++ )
+			{
+				//create parallel workers as (lazy) deep copies
+				workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
+				threads[i] = new Thread( workers[i] );
+				threads[i].setPriority(Thread.MAX_PRIORITY); 
+			}
 			
-			// put tasks into queue
-			for( Task t : tasks )
-				queue.enqueueTask( t );
+			// start threads (from now on waiting for tasks)
+			for( Thread thread : threads )
+				thread.start();
 			
-			// mark end of task input stream
-			queue.closeInput();		
+			if( _monitor ) 
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
+			
+			// Step 2) create tasks 
+			TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
+			int numIterations = partitioner.getNumIterations();
+			int numCreatedTasks = -1;
+			if( USE_STREAMING_TASK_CREATION )
+			{
+				//put tasks into queue (parworker start work on first tasks while creating tasks) 
+				numCreatedTasks = partitioner.createTasks(queue);		
+			}
+			else
+			{
+				Collection<Task> tasks = partitioner.createTasks();
+				numCreatedTasks = tasks.size();
+				
+				// put tasks into queue
+				for( Task t : tasks )
+					queue.enqueueTask( t );
+				
+				// mark end of task input stream
+				queue.closeInput();		
+			}
+			if( _monitor )
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
+			
+			// Step 3) join all threads (wait for finished work)
+			for( Thread thread : threads )
+				thread.join();
+			
+			if( _monitor ) 
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
+				
+				
+			// Step 4) collecting results from each parallel worker
+			//obtain results
+			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
+			for( int i=0; i<_numThreads; i++ )
+			{
+				localVariables[i] = workers[i].getVariables();
+				numExecutedTasks += workers[i].getExecutedTasks();
+				numExecutedIterations += workers[i].getExecutedIterations();			
+			}
+			//consolidate results into global symbol table
+			consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
+					                    localVariables );
 		}
-		if( _monitor )
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
-		
-		// Step 3) join all threads (wait for finished work)
-		for( Thread thread : threads )
-			thread.join();
-		
-		if( _monitor ) 
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
-			
-			
-		// Step 4) collecting results from each parallel worker
-		//obtain results
-		LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
-		int numExecutedTasks = 0;
-		int numExecutedIterations = 0;
-		for( int i=0; i<_numThreads; i++ )
+		finally 
 		{
-			localVariables[i] = workers[i].getVariables();
-			numExecutedTasks += workers[i].getExecutedTasks();
-			numExecutedIterations += workers[i].getExecutedIterations();			
-		}
-		//consolidate results into global symbol table
-		consolidateAndCheckResults( ec, numIterations, numCreatedTasks, numExecutedIterations, numExecutedTasks, 
-				                    localVariables );
-		
-		//remove thread-local memory budget
-		resetMemoryBudget();
-		
-		if( _monitor ) 
-		{
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+			//remove thread-local memory budget (reset to original budget)
+			//(in finally to prevent error side effects for multiple scripts in one jvm)
+			resetMemoryBudget();
+			
+			if( _monitor ) 
+			{
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
+				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+			}
 		}
 	}	
 	
@@ -1200,7 +1206,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path(fname);
-			FileSystem fs = FileSystem.get(new Configuration());
+			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			boolean flagFirst = true; //workaround for keeping gen order
@@ -1238,7 +1244,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			Path path = new Path( fname );
-			FileSystem fs = FileSystem.get(new Configuration());
+			FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 	        
 			Task t = null;

@@ -64,6 +64,7 @@ The source code for this program is not published or otherwise divested of its t
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-logging-1.1.1.jar" />  <!-- for LogFactory used by com.ibm.bi.dml.sgd.Summit.java -->
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-httpclient-3.1.jar" /> <!-- for running "auto" in local mode -->
 		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-cli-1.2.jar" /> <!-- for GenericOptionParser -->
+		<pathelement location="${hadoop.local.path}/share/hadoop/common/lib/commons-collections-3.2.1.jar" /> 
 	</path>
 	
 	<path id="DML.classpath">

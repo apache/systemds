@@ -29,9 +29,10 @@
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib/commons-math-2.2.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/avro-1.7.4.jar"/>
 	<classpathentry kind="lib" path="lib/nimble_hadoop1.jar"/>
-	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-2.2.0-mr1.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/slf4j-api-1.7.5.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/slf4j-log4j12-1.7.5.jar"/>
 	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/conf"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/hadoop-core-2.2.0-mr1.jar"/>
+	<classpathentry kind="lib" path="/DevelopmentEnvironmentBinaries/ibm-hadoop/share/hadoop/common/lib/commons-collections-3.2.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

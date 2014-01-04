@@ -364,7 +364,7 @@ public class AggBinaryOp extends Hop
 		return _etype;
 	}
 	
-	private MMTSJType checkTransposeSelf()
+	public MMTSJType checkTransposeSelf()
 	{
 		MMTSJType ret = MMTSJType.NONE;
 		

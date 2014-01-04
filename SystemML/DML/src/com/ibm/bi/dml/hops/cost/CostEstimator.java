@@ -25,6 +25,7 @@ import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELProgramBlock;
 //import com.ibm.bi.dml.runtime.controlprogram.ELUseProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
@@ -58,7 +59,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public abstract class CostEstimator 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
@@ -150,7 +151,8 @@ public abstract class CostEstimator
 			
 			ret *= getNumIterations(vars, stats, tmp.getIterablePredicateVars());			
 		}		
-		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
+		else if ( pb instanceof FunctionProgramBlock 
+				  && !(pb instanceof ExternalFunctionProgramBlock)) //see generic
 		{
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
@@ -288,6 +290,8 @@ public abstract class CostEstimator
 		
 		if( inst instanceof VariableCPInstruction ){		
 			if( optype.equals("createvar") ) {
+				if( parts.length<10 )
+					return;
 				String varname = parts[1];
 				long rlen = Long.parseLong(parts[5]);
 				long clen = Long.parseLong(parts[6]);

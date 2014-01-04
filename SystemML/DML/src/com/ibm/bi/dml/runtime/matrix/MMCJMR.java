@@ -208,7 +208,8 @@ public class MMCJMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		
+		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
+
 		byte[] resultIndexes=new byte[]{MRInstructionParser.parseSingleInstruction(aggBinInstrction).output};
 		byte[] resultDimsUnknown_Array = new byte[]{resultDimsUnknown};
 		// byte[] resultIndexes=new byte[]{AggregateBinaryInstruction.parseMRInstruction(aggBinInstrction).output};

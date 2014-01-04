@@ -235,6 +235,14 @@ public class GMR
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
 		
+		//System.out.println("GMR --> setting blocksize = "+ DMLTranslator.DMLBlockSize);
+		/* TODO MP
+		if(realbrlens == null || realbrlens.length == 0) {
+			job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);
+		}else {
+			job.setInt("DMLBlockSize", realbrlens[0]);
+		}*/
+		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, aggInstructionsInReducer, 
 				otherInstructionsInReducer, resultIndexes);

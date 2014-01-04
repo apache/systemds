@@ -8,7 +8,9 @@
 package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -133,10 +135,18 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		createInstructions();
 	}
 	
-	private void changeTmpInput( long id )
+	private void changeTmpInput( long id, ExecutionContext ec )
 	{
 		ArrayList<DataIdentifier> inputParams = getInputParams();
 		block2CellInst = getBlock2CellInstructions(inputParams, _unblockedFileNames);
+		
+		//post processing FUNCTION PATCH
+		for( String var : _skipInReblock )
+		{
+			Data dat = ec.getVariable(var);
+			if( dat instanceof MatrixObject )
+				_unblockedFileNames.put(var, ((MatrixObject)dat).getFileName());
+		}
 	}
 	
 	/**
@@ -172,7 +182,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	{
 		_runID = _idSeq.getNextID();
 		
-		changeTmpInput( _runID ); 
+		changeTmpInput( _runID, ec ); 
 		changeTmpOutput( _runID );
 		
 		// export input variables to HDFS (see RunMRJobs)
@@ -336,11 +346,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		
 		//list of matrices that need to be reblocked
 		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<DataIdentifier>();
 
 		// identify outputs that are matrices
 		for (int i = 0; i < outputParams.size(); i++) {
 			if (outputParams.get(i).getDataType() == DataType.MATRIX) {
-				matrices.add(outputParams.get(i));
+				if( _skipOutReblock.contains(outputParams.get(i).getName()) )
+					matricesNoReblock.add(outputParams.get(i));
+				else
+					matrices.add(outputParams.get(i));
 			}
 		}
 
@@ -436,11 +450,15 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		
 		//list of input matrices
 		ArrayList<DataIdentifier> matrices = new ArrayList<DataIdentifier>();
+		ArrayList<DataIdentifier> matricesNoReblock = new ArrayList<DataIdentifier>();
 
 		// find all inputs that are matrices
 		for (int i = 0; i < inputParams.size(); i++) {
 			if (inputParams.get(i).getDataType() == DataType.MATRIX) {
-				matrices.add(inputParams.get(i));
+				if( _skipInReblock.contains(inputParams.get(i).getName()) )
+					matricesNoReblock.add(inputParams.get(i));
+				else
+					matrices.add(inputParams.get(i));
 			}
 		}
 		
@@ -517,6 +535,37 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				LOG.trace("----------------------------------");
 			}			
 		}
+		
+		//BEGIN FUNCTION PATCH
+		if( matricesNoReblock.size() > 0 )
+		{
+			//if( b2cinst==null )
+			//	b2cinst = new ArrayList<Instruction>();
+			
+			for( int i=0; i<matricesNoReblock.size(); i++ )
+			{
+				String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+				
+				try{
+					String filename = scratchSpaceLoc +
+							          Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
+							           _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
+					//String outLabel = matricesNoReblock.get(i).getName()+"_extFnInput";
+					//Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabel, filename, false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
+					//Instruction cpInst = VariableCPInstruction.prepareCopyInstruction( matricesNoReblock.get(i).getName(), outLabel);
+					
+					unBlockedFileNames.put(matricesNoReblock.get(i).getName(), filename); //
+					
+					//b2cinst.add(createInst);
+					//b2cinst.add(cpInst);
+				}
+				catch (Exception e) {
+					throw new PackageRuntimeException(e);
+				}
+							
+			}
+		}
+		//END FUNCTION PATCH
 		
 		return b2cinst; //null if no input matrices
 	}
@@ -1035,5 +1084,45 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		if(_dagQueue != null)
 	  	    _dagQueue.forceShutDown();
 		_dagQueue = null;
+	}
+	
+	
+	/////////////////////////////////////////////////
+	// Extension for Global Data Flow Optimization
+	// by Mathias Peters
+	///////
+	
+	//FUNCTION PATCH
+	
+	private Collection<String> _skipInReblock = new HashSet<String>();
+	private Collection<String> _skipOutReblock = new HashSet<String>();
+	
+	public void setSkippedReblockLists( Collection<String> varsIn, Collection<String> varsOut )
+	{
+		_skipInReblock.clear();
+		_skipOutReblock.clear();
+		
+		if( varsIn!=null || varsOut!=null )
+		{
+			if( varsIn != null )
+				_skipInReblock.addAll(varsIn);		
+			if( varsOut != null )
+				_skipOutReblock.addAll(varsOut);
+		
+			 //regenerate instructions
+			createInstructions();
+		}
+	}
+	
+	
+	@Override
+	public ArrayList<Instruction> getInstructions()
+	{
+		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
+		if( cell2BlockInst != null )
+			tmp.addAll(cell2BlockInst);
+		if( block2CellInst != null )
+			tmp.addAll(block2CellInst);
+		return tmp;
 	}
 }

@@ -280,6 +280,7 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 	    DistributedCache.addCacheFile(partitionUri, job);
 	    DistributedCache.createSymlink(job);
 	    job.setInt("dfs.replication", replication);
+		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 	  //  System.out.println("num reducers: "+job.getNumReduceTasks());
 	    job.setBoolean(VALUE_IS_WEIGHT, valueIsWeight);
 	    

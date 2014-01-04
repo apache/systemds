@@ -20,6 +20,18 @@ public class Timing
 	
 	private long _start = -1;
 	
+	public Timing() {
+		//default constructor
+	}
+	
+	public Timing(boolean start)
+	{
+		//init and start the timer
+		if( start ){
+			start();
+		}
+	}
+	
 	/**
 	 * Starts the time measurement.
 	 */

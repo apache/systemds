@@ -148,6 +148,10 @@ public class OptimizerUtils
 		return (_optLevel != OptimizationLevel.O0_LOCAL_STATIC);
 	}
 	
+	public static boolean isOptLevel( OptimizationLevel level ){
+		return (_optLevel == level);
+	}
+	
 	/**
 	 * 
 	 * @param optlevel

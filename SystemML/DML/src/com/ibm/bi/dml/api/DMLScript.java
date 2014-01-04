@@ -39,6 +39,8 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
+import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
@@ -537,7 +539,7 @@ public class DMLScript
 			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
 			dmlt.resetLopsDAGVisitStatus(prog);
 		}
-
+		
 		////////////////////// generate runtime program ///////////////////////////////
 		Program rtprog = prog.getRuntimeProgram(config);
 
@@ -547,6 +549,14 @@ public class DMLScript
 			LOG.info("*******************************************************");
 		}
 
+		//optional global data flow optimization
+		if(OptimizerUtils.isOptLevel(OptimizationLevel.O3_GLOBAL_TIME_MEMORY) ) 
+		{
+			LOG.warn("Optimization level '" + OptimizationLevel.O3_GLOBAL_TIME_MEMORY + "' " +
+					 "is still in experimental state and not intended for productive use.");
+			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
+		}
+		
 		//count number compiled MR jobs	
 		int jobCount = DMLProgram.countCompiledMRJobs(rtprog);
 		Statistics.setNoOfCompiledMRJobs( jobCount );				
@@ -753,7 +763,7 @@ public class DMLScript
 		
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
-		JobConf job = ConfigurationManager.getCachedJobConf();
+		JobConf job = new JobConf();
 		if( MRJobConfiguration.isLocalJobTracker(job) ) {
 			try 
 			{
@@ -825,4 +835,5 @@ public class DMLScript
 		Date date = new Date();
 		return dateFormat.format(date);
 	}
+
 }  

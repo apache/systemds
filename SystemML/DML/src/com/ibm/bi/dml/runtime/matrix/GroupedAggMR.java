@@ -80,7 +80,8 @@ public class GroupedAggMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		
+		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
+
 		//set up what matrices are needed to pass from the mapper to reducer
 		MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, null, null, 
 				grpAggInstructions, resultIndexes);

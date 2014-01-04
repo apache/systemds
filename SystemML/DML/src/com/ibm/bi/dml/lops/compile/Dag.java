@@ -226,7 +226,7 @@ public class Dag<N extends Lop>
 		// hold all nodes in a vector (needed for ordering)
 		Vector<N> node_v = new Vector<N>();
 		node_v.addAll(nodes);
-
+		
 		/*
 		 * Sort the nodes by topological order.
 		 * 
@@ -3757,11 +3757,16 @@ public class Dag<N extends Lop>
 	 * @param marked
 	 */
 	void dagDFS(N root, boolean[] marked) {
+		//contains check currently required for globalopt, will be removed when cleaned up
+		if( !IDMap.containsKey(root.getID()) )
+			return;
+		
 		int mapID = IDMap.get(root.getID());
 		if ( marked[mapID] )
 			return;
 		marked[mapID] = true;
 		for(int i=0; i < root.getOutputs().size(); i++) {
+			//System.out.println("CALLING DFS "+root);
 			dagDFS((N)root.getOutputs().get(i), marked);
 		}
 	}

@@ -508,11 +508,12 @@ public class DataOp extends Hop
 	protected ExecType optFindExecType() 
 		throws HopsException 
 	{
-		// Since a DATA hop does not represent any computation, 
-		// this function is not applicable. 
-		//return null;
+		//MB: find exec type has two meanings here: (1) for write it means the actual
+		//exec type, while (2) for read it affects the recompilation decision as needed
+		//for example for sum(X) where the memory consumption is solely determined by the DataOp
 		
-		//MB: changed to account for persistent write
+		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
+		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
 		{
@@ -530,7 +531,7 @@ public class DataOp extends Hop
 			{
 				if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 				{
-					_etype = findExecTypeByMemEstimate();
+					_etype = letype;
 				}
 				else if ( getInput().get(0).areDimsBelowThreshold() )
 				{
@@ -549,7 +550,7 @@ public class DataOp extends Hop
 	    else //READ
 		{
 	    	//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _recompileRead )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==ExecType.MR && _recompileRead )
 				setRequiresRecompile();
 	    	
 			_etype = null;

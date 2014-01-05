@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -30,7 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.SQLInstructions.SQLScalarAssignInstru
 public class IfProgramBlock extends ProgramBlock 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ArrayList<Instruction> _predicate;
@@ -182,15 +183,18 @@ public class IfProgramBlock extends ProgramBlock
 		{
 			if( _predicate!=null && _predicate.size()>0 )
 			{
-				if( _sb!=null )
+				if( _sb != null )
 				{
 					IfStatementBlock isb = (IfStatementBlock)_sb;
-					result = (BooleanObject) executePredicate(_predicate, isb.getPredicateHops(), ValueType.BOOLEAN, ec);
+					Hop predicateOp = isb.getPredicateHops();
+					boolean recompile = isb.requiresPredicateRecompilation();
+					result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BOOLEAN, ec);
 				}
 				else
-					result = (BooleanObject) executePredicate(_predicate, null, ValueType.BOOLEAN, ec);
+					result = (BooleanObject) executePredicate(_predicate, null, false, ValueType.BOOLEAN, ec);
 			}
-			else {
+			else 
+			{
 				// TODO: Doug: how do we differentiate variables and literals here?
 				ScalarObject scalarResult = null;
 				Data resultData = ec.getVariable(_predicateResultVar);

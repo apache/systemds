@@ -11,9 +11,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 
 
@@ -25,7 +29,8 @@ public class IfStatementBlock extends StatementBlock
 		
 	private Hop _predicateHops;
 	private Lop _predicateLops = null;
-		
+	private boolean _requiresPredicateRecompile = false;
+	
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars) throws LanguageException, ParseException, IOException {
 		
 		if (_statements.size() > 1){
@@ -500,4 +505,21 @@ public class IfStatementBlock extends StatementBlock
 		return liveInReturn;
 	}
 	
+	
+	/////////
+	// materialized hops recompilation flags
+	////
+	
+	public void updatePredicateRecompilationFlag() 
+		throws HopsException
+	{
+		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+			                           && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+			                           && Recompiler.requiresRecompilation(getPredicateHops());
+	}
+	
+	public boolean requiresPredicateRecompilation()
+	{
+		return _requiresPredicateRecompile;
+	}
 }

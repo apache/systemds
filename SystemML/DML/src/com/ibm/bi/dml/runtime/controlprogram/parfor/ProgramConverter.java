@@ -78,7 +78,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 public class ProgramConverter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramConverter.class.getName());
@@ -594,6 +594,7 @@ public class ProgramConverter
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );
 				ret.set_hops( hops );
+				ret.updateRecompilationFlag();
 			}
 			else
 			{

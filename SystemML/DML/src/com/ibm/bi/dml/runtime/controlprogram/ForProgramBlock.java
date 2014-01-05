@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class ForProgramBlock extends ProgramBlock
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected ArrayList<Instruction> 	_fromInstructions;
@@ -224,13 +224,23 @@ public class ForProgramBlock extends ProgramBlock
 				{
 					ForStatementBlock fsb = (ForStatementBlock)_sb;
 					Hop predHops = null;
-					if 		(pos == 1) predHops = fsb.getFromHops();
-					else if (pos == 2) predHops = fsb.getToHops();
-					else if (pos == 3) predHops = fsb.getIncrementHops();
-					tmp = (IntObject) executePredicate(instructions, predHops, ValueType.INT, ec);
+					boolean recompile = false;
+					if (pos == 1){ 
+						predHops = fsb.getFromHops();
+						recompile = fsb.requiresFromRecompilation();
+					}
+					else if (pos == 2) {
+						predHops = fsb.getToHops();
+						recompile = fsb.requiresToRecompilation();
+					}
+					else if (pos == 3){
+						predHops = fsb.getIncrementHops();
+						recompile = fsb.requiresIncrementRecompilation();
+					}
+					tmp = (IntObject) executePredicate(instructions, predHops, recompile, ValueType.INT, ec);
 				}
 				else
-					tmp = (IntObject) executePredicate(instructions, null, ValueType.INT, ec);
+					tmp = (IntObject) executePredicate(instructions, null, false, ValueType.INT, ec);
 			}
 		}
 		catch(Exception ex)

@@ -46,7 +46,7 @@ import com.ibm.bi.dml.utils.Statistics;
 public class ProgramBlock 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
@@ -137,7 +137,8 @@ public class ProgramBlock
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& _sb != null 
-				&& Recompiler.requiresRecompilation(_sb.get_hops())  )
+				&& _sb.requiresRecompilation() )
+				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), ec.getVariables(), _tid);
 			}
@@ -160,7 +161,7 @@ public class ProgramBlock
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, ValueType retType, ExecutionContext ec) 
+	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, boolean requiresRecompile, ValueType retType, ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		ArrayList<Instruction> tmp = inst;
@@ -169,7 +170,8 @@ public class ProgramBlock
 		try {
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				&& Recompiler.requiresRecompilation(hops)            )
+				&& requiresRecompile )
+				//&& Recompiler.requiresRecompilation(hops)         )
 			{
 				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), _tid);
 			}

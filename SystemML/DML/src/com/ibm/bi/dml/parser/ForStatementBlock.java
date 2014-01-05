@@ -11,9 +11,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 
 
 public class ForStatementBlock extends StatementBlock 
@@ -30,6 +34,11 @@ public class ForStatementBlock extends StatementBlock
 	protected Lop _toLops          = null;
 	protected Lop _incrementLops   = null;
 
+	protected boolean _requiresFromRecompile      = false;
+	protected boolean _requiresToRecompile        = false;
+	protected boolean _requiresIncrementRecompile = false;
+	
+	
 	public IterablePredicate getIterPredicate(){
 		return ((ForStatement)_statements.get(0)).getIterablePredicate();
 	}
@@ -366,4 +375,36 @@ public class ForStatementBlock extends StatementBlock
 		
 		return ret;
 	}
+	
+	/////////
+	// materialized hops recompilation flags
+	////
+	
+	public void updatePredicateRecompilationFlags() 
+		throws HopsException
+	{
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+            && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	 )
+		{
+			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
+			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());
+			_requiresIncrementRecompile = Recompiler.requiresRecompilation(getIncrementHops());
+		}
+	}
+	
+	public boolean requiresFromRecompilation()
+	{
+		return _requiresFromRecompile;
+	}
+	
+	public boolean requiresToRecompilation()
+	{
+		return _requiresToRecompile;
+	}
+	
+	public boolean requiresIncrementRecompilation()
+	{
+		return _requiresIncrementRecompile;
+	}
+	
 }

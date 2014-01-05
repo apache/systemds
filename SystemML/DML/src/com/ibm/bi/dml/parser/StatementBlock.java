@@ -16,9 +16,13 @@ import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -39,6 +43,8 @@ public class StatementBlock extends LiveVariableAnalysis
 	ArrayList<Lop> _lops = null;
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
+	
+	private boolean _requiresRecompile = false;
 	
 	public StatementBlock(){
 		_dmlProg = null;
@@ -1078,27 +1084,23 @@ public class StatementBlock extends LiveVariableAnalysis
 				}
 			}
 	}
+
+	/////////
+	// materialized hops recompilation flags
+	////
 	
-	/*
-	public void updateRecompilationFlag()
-		throws DMLRuntimeException 
+	public void updateRecompilationFlag() 
+		throws HopsException
 	{
-		try
-		{
-			_requiresRecompile =   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				                   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
-				                   && Recompiler.requiresRecompilation(get_hops());
-		}
-		catch( HopsException he )
-		{
-			throw new DMLRuntimeException(he);
-		}
+		_requiresRecompile =   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+			                   && DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
+			                   && Recompiler.requiresRecompilation(get_hops());
 	}
 	
 	public boolean requiresRecompilation()
 	{
 		return _requiresRecompile;
 	}
-	*/
+	
 	
 }  // end class

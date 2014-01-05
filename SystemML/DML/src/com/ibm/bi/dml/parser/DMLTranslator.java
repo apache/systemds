@@ -286,8 +286,10 @@ public class DMLTranslator
 	
 	public void constructLops(StatementBlock sb) throws HopsException, LopsException {
 		
-		if (sb instanceof WhileStatementBlock){
-			WhileStatement whileStmt = (WhileStatement)sb.getStatement(0);
+		if (sb instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock)sb;
+			WhileStatement whileStmt = (WhileStatement)wsb.getStatement(0);
 			ArrayList<StatementBlock> body = whileStmt.getBody();
 				
 			if (sb.get_hops() != null && sb.get_hops().size() != 0) {
@@ -300,13 +302,15 @@ public class DMLTranslator
 			}
 			
 			// handle while stmt predicate
-			Lop l = ((WhileStatementBlock) sb).getPredicateHops().constructLops();
-			((WhileStatementBlock) sb).set_predicateLops(l);	
+			Lop l = wsb.getPredicateHops().constructLops();
+			wsb.set_predicateLops(l);	
+			wsb.updatePredicateRecompilationFlag();
 		}
 		
-		else if (sb instanceof IfStatementBlock){
-			
-			IfStatement ifStmt = (IfStatement)sb.getStatement(0);
+		else if (sb instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement ifStmt = (IfStatement)isb.getStatement(0);
 			ArrayList<StatementBlock> ifBody = ifStmt.getIfBody();
 			ArrayList<StatementBlock> elseBody = ifStmt.getElseBody();
 				
@@ -323,8 +327,9 @@ public class DMLTranslator
 				constructLops(stmtBlock);
 			
 			// handle if stmt predicate
-			Lop l = ((IfStatementBlock) sb).getPredicateHops().constructLops();
-			((IfStatementBlock) sb).set_predicateLops(l);
+			Lop l = isb.getPredicateHops().constructLops();
+			isb.set_predicateLops(l);
+			isb.updatePredicateRecompilationFlag();
 		}
 		
 		else if (sb instanceof ForStatementBlock) //NOTE: applies to ForStatementBlock and ParForStatementBlock
@@ -354,6 +359,7 @@ public class DMLTranslator
 				Lop llobs = fsb.getIncrementHops().constructLops();
 				fsb.setIncrementLops(llobs);
 			}
+			fsb.updatePredicateRecompilationFlags();
 		}
 		else if (sb instanceof FunctionStatementBlock){
 			FunctionStatement functStmt = (FunctionStatement)sb.getStatement(0);
@@ -380,7 +386,7 @@ public class DMLTranslator
 				lops.add(hop.constructLops());
 			}
 			sb.set_lops(lops);
-			
+			sb.updateRecompilationFlag(); 
 		}
 		
 	} // end method

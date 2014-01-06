@@ -20,6 +20,8 @@ import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
+import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.FormatType;
+import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
@@ -43,7 +45,7 @@ public class ReblockRewrite extends Rewrite
 	private int fromBlockSize = -1;
 	private int toBlockSize = -1;
 
-	private FormatParam format;
+	private int value;
 
 	@Override
 	public void apply(OptimizedPlan plan) {
@@ -107,7 +109,7 @@ public class ReblockRewrite extends Rewrite
 			
 		}
 		
-		if (this.format.getValue().equals(FormatParam.BINARY_BLOCK)) {
+		if (value == FormatType.BINARY_BLOCK.ordinal()) {
 			
 			if(this.fromBlockSize != -1L) {
 				operator.set_cols_in_block(this.fromBlockSize);
@@ -197,21 +199,21 @@ public class ReblockRewrite extends Rewrite
 				// takes Binblock from the
 				// input and appends a reblock
 				
-				if(this.format.getValue().equals(FormatParam.TEXT) && data.getFormatType().equals(FileFormatTypes.TEXT)) {
+				if(value==FormatType.TEXT_CELL.ordinal() && data.getFormatType().equals(FileFormatTypes.TEXT)) {
 					return;
 				}
 				
-				if(this.format.getValue().equals(FormatParam.BINARY_CELL) && data.getFormatType().equals(FileFormatTypes.TEXT)) {
+				if(value==FormatType.BINARY_CELL.ordinal() && data.getFormatType().equals(FileFormatTypes.TEXT)) {
 					return;
 				}
-				if(this.format.getValue().equals(FormatParam.TEXT) 
+				if(value==FormatType.TEXT_CELL.ordinal() 
 						&& data.getFormatType().equals(FileFormatTypes.BINARY) 
 						&& data.get_cols_in_block() == -1L
 				) {
 					return;
 				}
 				
-				if (!this.format.isFormatValid(operator)) {
+				if (true) {//(!this.format.isFormatValid(operator)) {
 					Hop input = operator.getInput().get(0);
 					Lop inputLop = input.get_lops();
 					if (inputLop.getOutputParameters().get_cols_in_block() > -1L) {
@@ -232,7 +234,7 @@ public class ReblockRewrite extends Rewrite
 				try {
 					reblock = new ReBlock(constructedLop, -1L, -1L, operator
 							.get_dataType(), operator.get_valueType());
-					if (this.format.getValue().equals(FormatParam.TEXT)) {
+					if (value==FormatType.TEXT_CELL.ordinal()) {
 						reblock.getOutputParameters().setFormat(Format.TEXT);
 					} else {
 						reblock.getOutputParameters().setFormat(Format.BINARY);
@@ -279,7 +281,7 @@ public class ReblockRewrite extends Rewrite
 //				}
 				
 				//operator is not instance of DataOP
-				if (this.format.getValue().equals(FormatParam.BINARY_CELL)) {
+				if (value==FormatType.BINARY_CELL.ordinal()) {
 					//every normal operator can produce binary cell
 					constructedLop.getOutputParameters().setFormat(Format.BINARY);
 				} else {
@@ -315,12 +317,12 @@ public class ReblockRewrite extends Rewrite
 	private Lop handleTransientReads(Hop operator, Lop constructedLop,
 			OptimizedPlan plan) {
 		MemoEntry memoEntry = plan.getInputPlans().get(0);
-		Configuration inputConfig = memoEntry.getConfig();
-		ConfigParam inputFormat = inputConfig.getParamByName(FormatParam.NAME);
-		ConfigParam inputBlockSize = inputConfig.getParamByName(BlockSizeParam.NAME);
+		RewriteConfigSet inputConfig = memoEntry.getConfig();
+		RewriteConfig inputFormat = inputConfig.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
+		RewriteConfig inputBlockSize = inputConfig.getConfigByType(RewriteConfigType.BLOCK_SIZE);
 		
 		DataOp data = (DataOp)operator;
-		if(inputFormat.getValue().equals(FormatParam.TEXT)) {
+		if(inputFormat.getValue()==FormatType.TEXT_CELL.ordinal()) {
 			data.setFormatType(FileFormatTypes.TEXT);
 		}else {
 			data.setFormatType(FileFormatTypes.BINARY);
@@ -336,7 +338,7 @@ public class ReblockRewrite extends Rewrite
 			LOG.error(e.getMessage(), e);
 		}
 			
-		if(this.format.getValue().equals(inputFormat.getValue()) && this.toBlockSize == inputBlockSize.getValue()) {
+		if(value==inputFormat.getValue() && this.toBlockSize == inputBlockSize.getValue()) {
 			plan.setGeneratedLop(constructedLop);
 		} else {
 		
@@ -375,7 +377,7 @@ public class ReblockRewrite extends Rewrite
 		DataOp data = (DataOp)operator;
 		data.set_cols_in_block(this.toBlockSize);
 		data.set_rows_in_block(this.toBlockSize);
-		if(this.format.getValue().equals(FormatParam.TEXT)) {
+		if(value==FormatType.TEXT_CELL.ordinal()) {
 			data.setFormatType(FileFormatTypes.TEXT);
 		}else {
 			data.setFormatType(FileFormatTypes.BINARY);
@@ -415,10 +417,9 @@ public class ReblockRewrite extends Rewrite
 				Set<String> varsOut = new HashSet<String>();
 
 				for (MemoEntry inputPlan : plan.getInputPlans()) {
-					ConfigParam format = inputPlan.getConfig().getParamByName(
-							FormatParam.NAME);
+					RewriteConfig format = inputPlan.getConfig().getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 					Hop inputHop = inputPlan.getRootHop();
-					if (format.getValue().equals(FormatParam.TEXT)) {
+					if (format.getValue()==FormatType.TEXT_CELL.ordinal()) {
 						varsIn.add(inputHop.get_name());
 					}
 				}
@@ -446,12 +447,12 @@ public class ReblockRewrite extends Rewrite
 		this.toBlockSize = toBlockSize;
 	}
 
-	public FormatParam getFormat() {
-		return format;
+	public FormatType getFormat() {
+		return FormatType.values()[value];
 	}
 
-	public void setFormat(FormatParam format) {
-		this.format = format;
+	public void setFormat(FormatType format) {
+		value = format.ordinal();
 	}
 
 }

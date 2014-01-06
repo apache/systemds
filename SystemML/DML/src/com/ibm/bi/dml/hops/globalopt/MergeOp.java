@@ -9,8 +9,6 @@ package com.ibm.bi.dml.hops.globalopt;
 
 import java.util.ArrayList;
 
-import org.apache.harmony.luni.util.NotImplementedException;
-
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.globalopt.HopsVisitor.Flag;
@@ -56,7 +54,7 @@ public class MergeOp extends CrossBlockOp
 	private void acceptSinkToSource(HopsVisitor visitor)
 	{
 		//TODO: implement me
-		throw new NotImplementedException();
+		throw new RuntimeException("Not implemented yet!");
 	}
 	
 	/**

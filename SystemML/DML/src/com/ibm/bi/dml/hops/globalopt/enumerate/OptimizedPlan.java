@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.globalopt.MergeOp;
+import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
@@ -35,13 +36,13 @@ public class OptimizedPlan
 	private Lop generatedLop;
 	private double cost;
 	private double cumulatedCost;
-	private Configuration config;
-	private Configuration extractedConfig;
+	private RewriteConfigSet config;
+	private RewriteConfigSet extractedConfig;
 	private Program runtimeProgram;
 	
 	private List<Long> hopsOnPath = new ArrayList<Long>();
 	
-	private Map<String, Rewrite> rewriteMap = new HashMap<String, Rewrite>();
+	private Map<RewriteConfigType, Rewrite> rewriteMap = new HashMap<RewriteConfigType, Rewrite>();
 	
 	
 	private List<MemoEntry> inputPlans = new ArrayList<MemoEntry>();
@@ -54,11 +55,11 @@ public class OptimizedPlan
 		this.operator = operator;
 	}
 	
-	public Configuration getConfig() {
+	public RewriteConfigSet getConfig() {
 		return config;
 	}
 	
-	public void setConfig(Configuration config) {
+	public void setConfig(RewriteConfigSet config) {
 		this.config = config;
 	}
 
@@ -114,25 +115,25 @@ public class OptimizedPlan
 		}
 	}
 
-	public Rewrite getRewrite(String name) {
-		return rewriteMap.get(name);
+	public Rewrite getRewrite(RewriteConfigType type) {
+		return rewriteMap.get(type);
 	}
 
-	public void addRewrite(String name, Rewrite rewrite) {
-		Rewrite oldRewrite = this.rewriteMap.get(name);
+	public void addRewrite(RewriteConfigType type, Rewrite rewrite) {
+		Rewrite oldRewrite = this.rewriteMap.get(type);
 		if(oldRewrite != null) {
 //			throw new IllegalStateException("++++++++++++++++++++++++++++OVERWRITING OLD REWRITE: " + oldRewrite);
 		} else {
-			this.rewriteMap.put(name, rewrite);
+			this.rewriteMap.put(type, rewrite);
 		}
 	}
 	
 
-	public Map<String, Rewrite> getRewriteMap() {
+	public Map<RewriteConfigType, Rewrite> getRewriteMap() {
 		return rewriteMap;
 	}
 
-	public void setRewriteMap(Map<String, Rewrite> rewriteMap) {
+	public void setRewriteMap(Map<RewriteConfigType, Rewrite> rewriteMap) {
 		this.rewriteMap = rewriteMap;
 	}
 
@@ -146,11 +147,11 @@ public class OptimizedPlan
 		
 	}
 
-	public Configuration getExtractedConfig() {
+	public RewriteConfigSet getExtractedConfig() {
 		return extractedConfig;
 	}
 
-	public void setExtractedConfig(Configuration extractedConfig) {
+	public void setExtractedConfig(RewriteConfigSet extractedConfig) {
 		this.extractedConfig = extractedConfig;
 	}
 

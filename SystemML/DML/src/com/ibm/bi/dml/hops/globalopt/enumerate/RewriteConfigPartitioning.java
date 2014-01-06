@@ -7,59 +7,43 @@
 
 package com.ibm.bi.dml.hops.globalopt.enumerate;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.MemoTable;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.ReblockOp;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.InterestingPropertyType;
+import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 
 
-public class LocationParam extends ConfigParam 
+/**
+ * 
+ */
+public class RewriteConfigPartitioning extends RewriteConfig
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static final String NAME = "dataLocation";
-	public static final int MR = 0;
-	public static final int CP = 1;
-	private static final int UNKNOWN = -1;
+	//valid instance configurations
+	private static int[] _defValues = new int[]{ PDataPartitionFormat.NONE.ordinal(),
+		                                         PDataPartitionFormat.ROW_WISE.ordinal(), 
+		                                         PDataPartitionFormat.COLUMN_WISE.ordinal() };  
+	
+	public RewriteConfigPartitioning()
+	{
+		super( RewriteConfigType.DATA_PARTITIONING, -1 );
+	}
 	
 	@Override
-	public Set<InterestingProperty> createsInterestingProperties() {
-		Set<InterestingProperty> retVal = new HashSet<InterestingProperty>();
-		InterestingProperty locationProp = new DataLocationProperty();
-		locationProp.setValue(new Integer(this.getValue()));
-		retVal.add(locationProp);
-		return retVal;
+	public int[] getDefinedValues()
+	{
+		return _defValues;
 	}
 
 	@Override
-	public Rewrite requiresRewrite(InterestingProperty toCreate) {
-		LocationRewrite requiredRewrite = new LocationRewrite();
-		requiredRewrite.setExecLocation(this.value);
-		return requiredRewrite;
-	}
-
-	@Override
-	public String getName() {
-		return NAME;
+	public InterestingProperty getInterestingProperty()
+	{
+		//direct mapping from rewrite config to interesting property
+		return new InterestingProperty(InterestingPropertyType.PARTITION_FORMAT, getValue());
 	}
 	
-	public ConfigParam createInstance(Integer value) {
-		ConfigParam param = new LocationParam();
-		param.setName(this.getName());
-		param.setDefinedValues(this.getDefinedValues().toArray(new Integer[this.getDefinedValues().size()]));
-		param.setValue(value);
-		return param;
-	}
+/*
 
 
 	@Override
@@ -96,9 +80,6 @@ public class LocationParam extends ConfigParam
 		return buffer.toString();
 	}
 
-	/**
-	 * @return
-	 */
 	@Override
 	public String getValueString() {
 		if(this.getValue() == null) { 
@@ -152,7 +133,7 @@ public class LocationParam extends ConfigParam
 	}
 
 	@Override
-	public ConfigParam extractParamFromHop(Hop hop) {
+	public RewriteConfig extractParamFromHop(Hop hop) {
 		ExecType forcedExecType = hop.getForcedExecType();
 		Integer extractedExecType = CP;
 		if(forcedExecType == null) {
@@ -160,8 +141,9 @@ public class LocationParam extends ConfigParam
 		}else if(forcedExecType.equals(ExecType.MR)) {
 			extractedExecType = MR;
 		}
-		ConfigParam extracted = this.createInstance(extractedExecType);
+		RewriteConfig extracted = this.createInstance(extractedExecType);
 		return extracted;
 	}
+*/
 
 }

@@ -11,19 +11,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.harmony.luni.util.NotImplementedException;
-
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.globalopt.HopsVisitor.Flag;
 import com.ibm.bi.dml.hops.globalopt.enumerate.BlockSizeRewrite;
-import com.ibm.bi.dml.hops.globalopt.enumerate.FormatParam;
-import com.ibm.bi.dml.hops.globalopt.enumerate.LocationParam;
 import com.ibm.bi.dml.hops.globalopt.enumerate.LocationRewrite;
 import com.ibm.bi.dml.hops.globalopt.enumerate.ReblockRewrite;
 import com.ibm.bi.dml.hops.globalopt.enumerate.Rewrite;
+import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.LopsException;
@@ -43,7 +40,7 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 	
 	private ProgramBlock preceedingBlock;
 	private ProgramBlock succeedingBlock;
-	private Map<String, Rewrite> appliedRewrites = new HashMap<String, Rewrite>();
+	private Map<RewriteConfigType, Rewrite> appliedRewrites = new HashMap<RewriteConfigType, Rewrite>();
 	
 	public CrossBlockOp() {}
 	
@@ -82,7 +79,7 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 	private void acceptSinkToSource(HopsVisitor visitor)
 	{
 		//TODO: implement me
-		throw new NotImplementedException();
+		throw new RuntimeException("Not implemented yet!");
 	}
 	/**
 	 * @param visitor
@@ -226,24 +223,24 @@ public class CrossBlockOp extends Hop implements HopsVisitable
 		this.succeedingBlock = succedingBlock;
 	}
 
-	public Map<String, Rewrite> getAppliedRewrites() {
+	public Map<RewriteConfigType, Rewrite> getAppliedRewrites() {
 		return appliedRewrites;
 	}
 
-	public void setAppliedRewrites(Map<String, Rewrite> appliedRewrites) {
+	public void setAppliedRewrites(Map<RewriteConfigType, Rewrite> appliedRewrites) {
 		this.appliedRewrites = appliedRewrites;
 	}
 
 	public void addRewrite(Rewrite rewrite) {
 		if(rewrite instanceof ReblockRewrite) {
-			this.appliedRewrites.put(FormatParam.NAME, rewrite);
+			this.appliedRewrites.put(RewriteConfigType.FORMAT_CHANGE, rewrite);
 		}
 		if(rewrite instanceof BlockSizeRewrite) {
 			//FIXME: find the places where this string is used and replace with constant  
-			this.appliedRewrites.put("bs", rewrite);
+			this.appliedRewrites.put(RewriteConfigType.BLOCK_SIZE, rewrite);
 		}
 		if(rewrite instanceof LocationRewrite) {
-			this.appliedRewrites.put(LocationParam.NAME, rewrite);
+			this.appliedRewrites.put(RewriteConfigType.EXEC_TYPE, rewrite);
 		}
 	}
 	

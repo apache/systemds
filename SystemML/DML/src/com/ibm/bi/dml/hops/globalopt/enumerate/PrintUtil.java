@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Data;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.OutputParameters;
@@ -106,7 +107,7 @@ public class PrintUtil
 			}
 		}
 		
-		Configuration config = plan.getConfig();
+		RewriteConfigSet config = plan.getConfig();
 		if(config != null) {
 			for(int i = 0; i < lvl; i++) {
 				builder.append(TAB_CONSTANT);
@@ -173,7 +174,7 @@ public class PrintUtil
 		for(Entry<Double, OptimizedPlan> entry : costMap.entrySet()) {
 			OptimizedPlan value = entry.getValue();
 			String lopString = PrintUtil.generateLopDagString(value.getGeneratedLop());
-			ConfigParam blockSizeParam = value.getConfig().getParamByName(BlockSizeParam.NAME);
+			RewriteConfig blockSizeParam = value.getConfig().getConfigByType(RewriteConfigType.BLOCK_SIZE);
 			
 			builder.append(entry.getKey() + " " + blockSizeParam.getValue() + " " + lopString);
 			builder.append("\n");

@@ -27,7 +27,6 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizer;
 import com.ibm.bi.dml.hops.globalopt.HopsDag;
-import com.ibm.bi.dml.hops.globalopt.MaximalGlobalGraphCreator;
 import com.ibm.bi.dml.hops.globalopt.PrintVisitor;
 import com.ibm.bi.dml.hops.globalopt.RewriteRule;
 import com.ibm.bi.dml.parser.DMLProgram;

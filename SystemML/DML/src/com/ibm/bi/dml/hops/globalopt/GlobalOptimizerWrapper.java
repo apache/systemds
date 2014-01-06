@@ -12,15 +12,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.globalopt.enumerate.BlockSizeParam;
-import com.ibm.bi.dml.hops.globalopt.enumerate.BlockSizeProperty;
-import com.ibm.bi.dml.hops.globalopt.enumerate.ConfigParam;
-import com.ibm.bi.dml.hops.globalopt.enumerate.DataLocationProperty;
-import com.ibm.bi.dml.hops.globalopt.enumerate.FormatParam;
-import com.ibm.bi.dml.hops.globalopt.enumerate.FormatProperty;
 import com.ibm.bi.dml.hops.globalopt.enumerate.GlobalEnumerationOptimizer;
-import com.ibm.bi.dml.hops.globalopt.enumerate.LocationParam;
-import com.ibm.bi.dml.hops.globalopt.enumerate.OptimizerConfig;
 import com.ibm.bi.dml.hops.globalopt.transform.BlockSizeRule;
 import com.ibm.bi.dml.hops.globalopt.transform.GlobalTransformationOptimizer;
 import com.ibm.bi.dml.hops.globalopt.transform.GlobalTransformationOptimizer.Strategy;
@@ -39,13 +31,17 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  * MB Solved issues
  * - Merge and cleanup with BI repository
  * - NPEs on DAG piggypacking while costing enumerated plans
- * - Cleanup: removed unnecessary classes (FormatValue) and methods (propagateBlocksize)
+ * - Cleanup: removed unnecessary classes and methods
+ * 
  * 
  * MB Open Issues TODO
  * - Non-deterministic behavior (different optimal plans generated) 
  * - Many unnecessary reblocks generated into "optimal" plan
  * - No lops modifications (pure configuration on hops level) for integration with dyn recompile
  * - Consolidate properties, configurations, params, options etc into property/config
+ * 
+ * Additional Ideas Experiments
+ * - replication-factor -> any usecase that uses read-only matrices in loops (e.g., logistic regression)
  * 
  */
 public class GlobalOptimizerWrapper 
@@ -65,7 +61,6 @@ public class GlobalOptimizerWrapper
 	
 	//internal parameters
 	private static final GlobalOptimizerType OPTIM = GlobalOptimizerType.ENUMERATE_DP; 
-	private static final Integer[] BLOCK_SIZES     = new Integer[]{-1,600,2000,3000,4000,5000};
 	
 	/**
 	 * 
@@ -107,19 +102,7 @@ public class GlobalOptimizerWrapper
 		switch( type )
 		{
 			case ENUMERATE_DP: 
-				OptimizerConfig config = new OptimizerConfig();
-				config.addInterestingProperty( new BlockSizeProperty() );
-				config.addInterestingProperty( new DataLocationProperty() );
-				config.addInterestingProperty( new FormatProperty() );
-				ConfigParam param = new BlockSizeParam();
-				param.setDefinedValues(BLOCK_SIZES);
-				config.addConfigParam(param);
-				ConfigParam execLocParam = new LocationParam();
-				execLocParam.setDefinedValues(DataLocationProperty.CP, DataLocationProperty.MR);
-				config.addConfigParam(execLocParam);
-				ConfigParam formatParam = new FormatParam(FormatParam.TEXT, FormatParam.BINARY_BLOCK , FormatParam.BINARY_CELL);
-				config.addConfigParam(formatParam);
-				optimizer = new GlobalEnumerationOptimizer( config );
+				optimizer = new GlobalEnumerationOptimizer();
 				break;
 				
 			case TRANSFORM: 

@@ -35,9 +35,12 @@ import com.ibm.bi.dml.hops.globalopt.CrossBlockOp;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizer;
 import com.ibm.bi.dml.hops.globalopt.HopsDag;
 import com.ibm.bi.dml.hops.globalopt.LoopOp;
-import com.ibm.bi.dml.hops.globalopt.RuntimeMaximalGlobalGraphCreator;
+import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.FormatType;
+import com.ibm.bi.dml.hops.globalopt.enumerate.InterestingProperty.InterestingPropertyType;
+import com.ibm.bi.dml.hops.globalopt.enumerate.RewriteConfig.RewriteConfigType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
@@ -48,8 +51,8 @@ import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 
 /**
- * Enumeration based Optimizer for global data flow enumeration. 
- * Implements TODO:DPConf using dynamic programming. 
+ * Global data flow optimization via enumeration-based optimizer (dynamic programming). 
+ * 
  */
 public class GlobalEnumerationOptimizer extends GlobalOptimizer
 {
@@ -58,32 +61,43 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(GlobalEnumerationOptimizer.class);
+	private static final boolean LDEBUG = false; //local debug flag
 	
-	/** used for creating the initial global global data flow*/
-	private RuntimeMaximalGlobalGraphCreator runtimeGraphCreator;
-	/** Carries the configured parameters and interesting properties */
-	private OptimizerConfig optimizerConfig;
-	/** the Memo table */
-	private MemoStructure memo;
+	
+	//internal configuration parameters
+	public static final int[] BLOCK_SIZES         = new int[]{-1,600,2000,3000,4000,5000};
+	public static final int[] REPLICATION_FACTORS = new int[]{1,2,3,4,5};
+	
+	private MemoStructure _memo = null; //plan memoization table
+	
+	
 	/** the configurations that are applied to {@link Hops}. this is a pre-computed set */
-	private Set<Configuration> generatedConfigs;
+	private Collection<RewriteConfigSet> generatedConfigs;
+	
+	
 	/** the combinations interesting that are produced by applying a given combination*/
-	private Set<InterestingPropertyCombination> interestingPropertyCombinations;
+	private Set<InterestingPropertySet> interestingPropertyCombinations;
 	/** association between combinations of rewrites and combinations of interesting properties */
-	private Map<Configuration, InterestingPropertyCombination> configToProperties;
+	private Map<RewriteConfigSet, InterestingPropertySet> configToProperties;
 	/* TODO: was used in the first versions, may be replaced with this.runtimeProgram */ 
 	private Program currentProgram;
 
-	private boolean debug = false;
-	
-	public GlobalEnumerationOptimizer( OptimizerConfig config ) {
-		this.runtimeGraphCreator = new RuntimeMaximalGlobalGraphCreator();
-		this.optimizerConfig = config;
-		this.memo = new MemoStructure();
-		this.configToProperties = new HashMap<Configuration, InterestingPropertyCombination>();
+	public GlobalEnumerationOptimizer( ) 
+	{
+		//init internal memo structure
+		_memo = new MemoStructure();
 		
-		Set<ConfigParam> configurationParameters = this.optimizerConfig.getConfigurationParameters();
-		this.generatedConfigs = generateConfigCombinations(configurationParameters);
+		//init internal configuration (register rewrites, )
+		HashSet<RewriteConfig> rewriteConfigs = new HashSet<RewriteConfig>();
+		rewriteConfigs.add( new RewriteConfigBlocksize() );
+		rewriteConfigs.add( new RewriteConfigExecType() );
+		rewriteConfigs.add( new RewriteConfigFormat() );
+		
+		
+		
+		//TODO
+		this.configToProperties = new HashMap<RewriteConfigSet, InterestingPropertySet>();
+		this.generatedConfigs = RewriteConfigUtils.generateConfigCombinations(rewriteConfigs);
 		this.interestingPropertyCombinations = generatePropertyCombinations(this.generatedConfigs);
 	}
 	
@@ -94,13 +108,18 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	@Override
 	public Program optimize(DMLProgram prog, Program rtprog) 
 		throws DMLRuntimeException, HopsException, LopsException 
-	{
-		this.currentProgram = rtprog;
+	{		
+		currentProgram = rtprog;
 		Summary summary = new Summary();
-		Map<String, HopsDag> mggSet = this.runtimeGraphCreator.createGraph(rtprog);
+		
+		//init global data flow graph
+		GlobalGraphCreator graphCreator = new GlobalGraphCreator();
+		Map<String, HopsDag> mggSet = graphCreator.createGraph(rtprog);
+	
+		
 		
 		for(HopsDag d : mggSet.values()) {
-			Map<InterestingPropertyCombination, MemoEntry> optPlans = new HashMap<InterestingPropertyCombination, MemoEntry>();
+			Map<InterestingPropertySet, MemoEntry> optPlans = new HashMap<InterestingPropertySet, MemoEntry>();
 			
 			for(Hop o : d.getDagOutputs().values()) {
 				optPlans = enumOpt(o, summary);
@@ -203,7 +222,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	/**
 	 * Recursive method to descend in the {@link HopsDag} and put all the root lops into a {@link Dag} 
 	 * (which is used for instructions generation later). Root lops are lops from transient writes/function ops 
-	 * of blocks. The association between @param root and @param dag is created in @see {@link RuntimeMaximalGlobalGraphCreator}.
+	 * of blocks. The association between @param root and @param dag is created in @see {@link GlobalGraphCreator}.
 	 * 
 	 * @param dag
 	 * @param addedLopIDs
@@ -249,7 +268,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	private void applyLops(OptimizedPlan optimalRoot, HopsDag hopsDag, Set<Long> addedLopIDs) {
 		Hop root = optimalRoot.getOperator();
 		
-		if(this.debug) {
+		if( LDEBUG ) {
 			System.out.println(" before =====================");
 			System.out.println(optimalRoot.getConfig());
 			System.out.println(root);
@@ -287,7 +306,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 *  For given operator @param out do:
 	 *  (1) check the memo table if entry then return entry
 	 *  (2) check and handle loops
-	 *  (3) generate candidates for optimal sub plans for each possible {@link InterestingPropertyCombination} enumConfig()
+	 *  (3) generate candidates for optimal sub plans for each possible {@link InterestingPropertySet} enumConfig()
 	 *  (4) in case of invalid configurations that can be calculated from the node itself prune away pruneInvalids()
 	 *  (5) check for rewrites that can be derived for this node in isolation TODO: refactor
 	 *  (6) retrieve the inputs 
@@ -304,14 +323,14 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 */
-	public Map<InterestingPropertyCombination, MemoEntry> enumOpt(Hop out, Summary summary) 
+	public Map<InterestingPropertySet, MemoEntry> enumOpt(Hop out, Summary summary) 
 		throws HopsException, LopsException 
 	{
 		SummaryEntry record = summary.startRecording(out);
 		summary.incrementDescents();
 		
-		if(memo.getEntry(out) != null) {
-			Map<InterestingPropertyCombination, MemoEntry> entry = memo.getEntry(out);
+		if(_memo.getEntry(out) != null) {
+			Map<InterestingPropertySet, MemoEntry> entry = _memo.getEntry(out);
 			return entry;
 		} else {
 			
@@ -319,7 +338,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				enumLoop(out);
 			}
 			
-			Map<InterestingPropertyCombination, Set<OptimizedPlan>> intermediates = enumConfig(out, summary, record);
+			Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates = enumConfig(out, summary, record);
 			
 			if(intermediates.size() > 0) {
 				pruneInvalid(intermediates, summary, record);
@@ -331,7 +350,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			summary.increaseLevel();
 			for(Hop i : inputs) {
 				if(isToConfigure(i)) {
-					Map<InterestingPropertyCombination, MemoEntry> optChildren = enumOpt(i, summary);
+					Map<InterestingPropertySet, MemoEntry> optChildren = enumOpt(i, summary);
 					//TODO: external function use case
 					if(out instanceof CrossBlockOp && ((CrossBlockOp)out).getLeftInput() instanceof FunctionOp) 
 					{
@@ -350,8 +369,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			pruneSuboptimal(intermediates, true, summary, record);
 			checkForContainment(intermediates);
 			
-			Map<InterestingPropertyCombination, MemoEntry> memoEntry = createMemoEntry(intermediates, out);
-			memo.add(memoEntry, out);
+			Map<InterestingPropertySet, MemoEntry> memoEntry = createMemoEntry(intermediates, out);
+			_memo.add(memoEntry, out);
 			if(LOG.isInfoEnabled()) {
 				LOG.info("enumerated " + out.getKind() + ": " + out.get_name());
 			}
@@ -361,20 +380,20 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		//lots of redundant calls here
 		summary.setNumberOfConfigs(this.generatedConfigs.size());
 		summary.setNumberOfInterestingProperties(this.interestingPropertyCombinations.size());
-		return memo.getEntry(out);
+		return _memo.getEntry(out);
 	}
 
 	/**
-	 * Checks if any of the optimal plans for the given {@link InterestingPropertyCombination}s has multiple inputs and 
-	 * if those inputs share a node. In this case, the optimal plan has to have the same {@link InterestingPropertyCombination}.
+	 * Checks if any of the optimal plans for the given {@link InterestingPropertySet}s has multiple inputs and 
+	 * if those inputs share a node. In this case, the optimal plan has to have the same {@link InterestingPropertySet}.
 	 * If that is not the case the memo table has to be wiped out, and enumeration has to be repeated for those two plans with fixed 
 	 * ips.
 	 * @param intermediates
 	 * @return
 	 */
-	private boolean checkForContainment(Map<InterestingPropertyCombination, Set<OptimizedPlan>> intermediates) {
+	private boolean checkForContainment(Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates) {
 		LOG.info("checking for containment");
-		for(Entry<InterestingPropertyCombination, Set<OptimizedPlan>> entry : intermediates.entrySet()) {
+		for(Entry<InterestingPropertySet, Set<OptimizedPlan>> entry : intermediates.entrySet()) {
 			if(!entry.getValue().isEmpty())	{
 				OptimizedPlan rootPlan = entry.getValue().iterator().next();
 				System.out.println("Checking for containment for " + rootPlan.getOperator() + " " + entry.getKey());
@@ -490,19 +509,19 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param root
 	 * @return
 	 */
-	public Map<InterestingPropertyCombination, MemoEntry> createMemoEntry(
-			Map<InterestingPropertyCombination, Set<OptimizedPlan>> nodePlans, Hop root) {
-		Map<InterestingPropertyCombination, MemoEntry> retVal = new HashMap<InterestingPropertyCombination, MemoEntry>();
-		for(InterestingPropertyCombination combi : nodePlans.keySet()) {
+	public Map<InterestingPropertySet, MemoEntry> createMemoEntry(
+			Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans, Hop root) {
+		Map<InterestingPropertySet, MemoEntry> retVal = new HashMap<InterestingPropertySet, MemoEntry>();
+		for(InterestingPropertySet combi : nodePlans.keySet()) {
 			Set<OptimizedPlan> subPlans = nodePlans.get(combi);
 			if(subPlans.size() > 1) 
 				throw new IllegalStateException("At this point, at most one best sub plan per IP combination should exist!");
 			if(subPlans.size() == 1) {
 				OptimizedPlan plan = subPlans.iterator().next();
 				
-				Configuration config = plan.getConfig();
+				RewriteConfigSet config = plan.getConfig();
 				Lop lop = plan.getGeneratedLop();
-				Long lopId = this.memo.addPlan(lop);
+				Long lopId = _memo.addPlan(lop);
 				
 				MemoEntry e = new MemoEntry();
 				e.setOptPlan(plan);
@@ -519,7 +538,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	}
 
 	/**
-	 * Assign costs to each candidate per {@link InterestingPropertyCombination}. Generates runtime plans for candidates and
+	 * Assign costs to each candidate per {@link InterestingPropertySet}. Generates runtime plans for candidates and
 	 * hands them over to the cost model. 
 	 * 
 	 * TODO: consolidate logic for checking rewrites to one place
@@ -532,7 +551,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @throws LopsException
 	 */
 	private void pruneSuboptimal(
-			Map<InterestingPropertyCombination, Set<OptimizedPlan>> nodePlans,
+			Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans,
 			boolean completeSubplan, Summary summary, SummaryEntry record)
 			throws HopsException, LopsException {
 		long costCounter = 0;
@@ -543,7 +562,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			// summary...
 			// and costing with dummy hops
 		} else {
-			for (Entry<InterestingPropertyCombination, Set<OptimizedPlan>> e : nodePlans
+			for (Entry<InterestingPropertySet, Set<OptimizedPlan>> e : nodePlans
 					.entrySet()) {
 				Set<OptimizedPlan> plansToCost = e.getValue();
 				Set<OptimizedPlan> replacement = new HashSet<OptimizedPlan>();
@@ -586,7 +605,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 						p.computeCumulatedCosts();
 						costMap.put(p.getCumulatedCost(), p);
 						
-						if(debug ) {
+						if( LDEBUG ) {
 							System.out.println(p.getConfig() + " " + p.getCumulatedCost() + " " + PrintUtil.generateLopDagString(p.getGeneratedLop()));
 						}
 					}
@@ -596,7 +615,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 						Collections.sort(costs);
 						Double minCost = costs.get(0);
 						OptimizedPlan bestPlan = costMap.get(minCost);
-						if(this.debug) {
+						if( LDEBUG ) {
 							System.out.println("best plan: "
 									+ bestPlan.getConfig() + " " + bestPlan.getCumulatedCost()
 									+ " "
@@ -661,20 +680,20 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	public void generateRuntimePlan(OptimizedPlan p, Hop root)
 			throws HopsException, LopsException {
 		
-		Configuration config = p.getConfig();
+		RewriteConfigSet config = p.getConfig();
 		root.set_lops(null);
 		
 		configureInputLops(p, root);
 		
-		Configuration extractedConfig = p.getExtractedConfig();
+		RewriteConfigSet extractedConfig = p.getExtractedConfig();
 		if(extractedConfig != null) {
-			extractedConfig.applyToHop(root);
+			PlanRewriter.applyToHop(root, extractedConfig);
 		}else {
 			throw new IllegalStateException("At this point there always be an extracted config");
 		}
 		
 		Lop resultingSubPlan = root.constructLops();
-		config.generateRewrites(root, p);
+		PlanRewriter.generateRewrites(root, p, config);
 		
 		p.setGeneratedLop(resultingSubPlan);
 		if (resultingSubPlan == null) {
@@ -687,7 +706,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		
 	}
 
-	private void createCrossBlockOutputsForFunctionOps(OptimizedPlan p, InterestingPropertyCombination interestingProperties) {
+	private void createCrossBlockOutputsForFunctionOps(OptimizedPlan p, InterestingPropertySet interestingProperties) {
 		/**
 		 * This function creates two memo entries one for the funcOp and one for the follwoing crossblock hop
 		 * binblock is per default in DMLBlockSize
@@ -698,19 +717,19 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		
 		Hop operator = p.getOperator();
 		FunctionOp funcOp = (FunctionOp)operator;
-		Configuration config = p.getConfig();
+		RewriteConfigSet config = p.getConfig();
 		
 		Collection<CrossBlockOp> outputs = funcOp.getCrossBlockOutputs();
 		for (CrossBlockOp crossBlockHop : outputs) {
-			ConfigParam formatParam = config.getParamByName(FormatParam.NAME);
-			if(formatParam.getValue().equals(FormatParam.BINARY_BLOCK)) {
+			RewriteConfig formatParam = config.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
+			if(formatParam.isValue(FormatType.BINARY_BLOCK.ordinal())) {
 				funcOp.set_cols_in_block(DMLTranslator.DMLBlockSize);
 				funcOp.set_rows_in_block(DMLTranslator.DMLBlockSize);
 				
-				InterestingPropertyCombination propertyCombination = null;
+				InterestingPropertySet propertyCombination = null;
 				OptimizedPlan plan = new OptimizedPlan();
-				for(Configuration c : this.generatedConfigs)  {
-					ConfigParam blockParam = c.getParamByName(BlockSizeParam.NAME);
+				for(RewriteConfigSet c : this.generatedConfigs)  {
+					RewriteConfig blockParam = c.getConfigByType(RewriteConfigType.BLOCK_SIZE);
 					if(blockParam.getValue() == (long)DMLTranslator.DMLBlockSize) {
 						plan.setConfig(c);
 						propertyCombination = this.configToProperties.get(c);
@@ -722,9 +741,9 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				p.computeCumulatedCosts();
 				plan.setCumulatedCost(p.getCumulatedCost());
 				plan.setOperator(crossBlockHop);
-				Map<InterestingPropertyCombination, MemoEntry> entry = this.memo.getEntry(crossBlockHop);
+				Map<InterestingPropertySet, MemoEntry> entry = _memo.getEntry(crossBlockHop);
 				if(entry == null) {
-					Map<InterestingPropertyCombination, Set<OptimizedPlan>> nodePlans = new HashMap<InterestingPropertyCombination, Set<OptimizedPlan>>();
+					Map<InterestingPropertySet, Set<OptimizedPlan>> nodePlans = new HashMap<InterestingPropertySet, Set<OptimizedPlan>>();
 					Set<OptimizedPlan> planSet = new HashSet<OptimizedPlan>();
 					planSet.add(plan);
 					nodePlans.put(propertyCombination, planSet);
@@ -757,8 +776,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					MemoEntry relevantSubplan = inputPlans
 							.get(i);
 					OptimizedPlan optPlan = relevantSubplan.getOptPlan();
-					Configuration extractedConfig = optPlan.getExtractedConfig();
-					extractedConfig.applyToHop(input);
+					RewriteConfigSet extractedConfig = optPlan.getExtractedConfig();
+					PlanRewriter.applyToHop(input, extractedConfig);
 				}
 			}
 		}
@@ -781,9 +800,9 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					
 					MemoEntry relevantSubplan = inputPlans
 							.get(i);
-					Configuration inputConfig = relevantSubplan.getConfig();
+					RewriteConfigSet inputConfig = relevantSubplan.getConfig();
 					Long lopId = relevantSubplan.getLopId();
-					Lop lop = this.memo.getPlan(lopId);
+					Lop lop = _memo.getPlan(lopId);
 					input.set_lops(lop);
 					
 					/*
@@ -792,7 +811,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					 * and pick that block size and configure lop with that block size
 					 * 
 					*/
-					if(inputConfig.getParamByName(LocationParam.NAME).getValue().equals(LocationParam.CP)) {
+					if(inputConfig.getConfigByType(RewriteConfigType.EXEC_TYPE).getValue()==ExecType.CP.ordinal()) {
 						boolean fromSibling = false;
 						for(Hop in : root.getInput()) {
 							if(!(in instanceof LiteralOp) && !in.equals(input)) {
@@ -802,15 +821,15 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 								
 								//this is a workaround to prevent a permanent change in the inputConfig
 								//due to reference change
-								BlockSizeParam param = new BlockSizeParam();
+								RewriteConfigBlocksize param = new RewriteConfigBlocksize();
 								param.setValue(getColsInBlock);
 								
 								input.set_lops(null);
-								inputConfig.applyToHop(input);
-								param.applyToHop(input);
+								PlanRewriter.applyToHop(input, inputConfig);
+								PlanRewriter.applyToHop(input, param);
 								try {
 									lop = input.constructLops();
-									this.memo.setPlan(lopId, lop);
+									_memo.setPlan(lopId, lop);
 								} catch (HopsException e) {
 									LOG.error(e.getMessage(), e);
 								} catch (LopsException e) {
@@ -822,15 +841,13 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 						}
 						//export whatever block size is needed by parent node
 						if(!fromSibling) {
-							BlockSizeParam param = new BlockSizeParam();
-							param.setValue((int)root.get_cols_in_block());
-							
+							RewriteConfigBlocksize bsize = new RewriteConfigBlocksize((int)root.get_cols_in_block());
 							input.set_lops(null);
-							inputConfig.applyToHop(input);
-							param.applyToHop(input);
+							PlanRewriter.applyToHop(input, inputConfig);
+							PlanRewriter.applyToHop(input, bsize);
 							try {
 								lop = input.constructLops();
-								this.memo.setPlan(lopId, lop);
+								_memo.setPlan(lopId, lop);
 							} catch (HopsException e) {
 								LOG.error(e.getMessage(), e);
 							} catch (LopsException e) {
@@ -840,7 +857,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 						
 						
 					}else {
-						inputConfig.applyToHop(input);
+						PlanRewriter.applyToHop(input, inputConfig);
 					}
 				}
 			}
@@ -856,10 +873,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param combined
 	 * @param record 
 	 */
-	private void pruneInvalid(Map<InterestingPropertyCombination, Set<OptimizedPlan>> combined, Summary summary, SummaryEntry record) {
+	private void pruneInvalid(Map<InterestingPropertySet, Set<OptimizedPlan>> combined, Summary summary, SummaryEntry record) {
 		long pruneCounter = 0;
 		long planCounter = 0;
-		Set<InterestingPropertyCombination> removeSet = new HashSet<InterestingPropertyCombination>();
+		Set<InterestingPropertySet> removeSet = new HashSet<InterestingPropertySet>();
 		
 		for(Set<OptimizedPlan> plans : combined.values()){
 		
@@ -869,10 +886,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				
 				Hop operator = plan.getOperator();
 				
-				Configuration config = plan.getConfig();
+				RewriteConfigSet config = plan.getConfig();
 				
 				//check for CP memory limit 
-				if(!config.isValidForOperator(operator))
+				if(!PlanRewriter.isValidForOperator(operator, config) )
 				{
 					isIntermediateValid = false;
 				}
@@ -898,14 +915,14 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		}
 		
 		//TODO: this is very inefficient, remove unnecessary loops
-		for(InterestingPropertyCombination ipc : combined.keySet()) {
+		for(InterestingPropertySet ipc : combined.keySet()) {
 			if(combined.get(ipc).isEmpty()) {
 				removeSet.add(ipc);
 			}
 			planCounter += combined.get(ipc).size();
 		}
 		
-		for(InterestingPropertyCombination ipc : removeSet) {
+		for(InterestingPropertySet ipc : removeSet) {
 			combined.remove(ipc);
 		}
 		
@@ -927,16 +944,15 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 */
 	private boolean isFormatValid(OptimizedPlan plan) {
 		Hop operator = plan.getOperator();
-		Configuration rootConfig = plan.getConfig();
-		ConfigParam rootFormat = rootConfig.getParamByName(FormatParam.NAME);
+		RewriteConfigSet rootConfig = plan.getConfig();
+		RewriteConfig rootFormat = rootConfig.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 		List<MemoEntry> inputPlans = plan.getInputPlans();
 		if(inputPlans != null && inputPlans.size() > 0) {
 			MemoEntry firstInput = inputPlans.get(0);
-			Configuration inputConfig = firstInput.getConfig();
-			FormatParam inputFormat = (FormatParam) inputConfig.getParamByName(FormatParam.NAME);
-			
-			
-			if(!inputFormat.isFormatValid(operator)) {
+			RewriteConfigSet inputConfig = firstInput.getConfig();
+			RewriteConfigFormat inputFormat = (RewriteConfigFormat)inputConfig.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
+		
+			if(!PlanRewriter.isFormatValid(operator, inputFormat)) {
 				return false;
 			}
 		}
@@ -950,7 +966,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param inputPlans
 	 * @return
 	 */
-	private boolean checkValidityOfInputs(Configuration rootConfig, List<MemoEntry> inputPlans) {
+	private boolean checkValidityOfInputs(RewriteConfigSet rootConfig, List<MemoEntry> inputPlans) {
 		boolean areInputsValid = true;
 		
 		if(inputPlans != null && inputPlans.size() > 1) {
@@ -958,13 +974,13 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				Hop op1 = inputPlans.get(i).getRootHop();
 				
 				if(op1.get_dataType().equals(DataType.MATRIX)) {
-					Configuration firstConfig = inputPlans.get(i).getConfig();
+					RewriteConfigSet firstConfig = inputPlans.get(i).getConfig();
 					
 					Hop op2 = inputPlans.get(i + 1).getRootHop();
 					
 					if(op2.get_dataType().equals(DataType.MATRIX)) {
-						Configuration followConfig = inputPlans.get(i + 1).getConfig();
-						if(!ConfigurationUtil.isCompatible(firstConfig, followConfig)) {
+						RewriteConfigSet followConfig = inputPlans.get(i + 1).getConfig();
+						if(!RewriteConfigUtils.isCompatible(firstConfig, followConfig)) {
 							areInputsValid = false;
 							break;
 						}
@@ -987,20 +1003,20 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	private boolean isCrossBlockHopWiringValid(OptimizedPlan plan) {
 		
 		Hop operator = plan.getOperator();
-		Configuration config = plan.getConfig();
+		RewriteConfigSet config = plan.getConfig();
 		List<MemoEntry> inputs = plan.getInputPlans();
-		Integer rootBlockSize = config.getParamByName(BlockSizeParam.NAME).getValue();
-		Integer rootFormat = config.getParamByName(FormatParam.NAME).getValue();
-		Integer rootLocation = config.getParamByName(LocationParam.NAME).getValue();
+		Integer rootBlockSize = config.getConfigByType(RewriteConfigType.BLOCK_SIZE).getValue();
+		Integer rootFormat = config.getConfigByType(RewriteConfigType.FORMAT_CHANGE).getValue();
+		Integer rootLocation = config.getConfigByType(RewriteConfigType.EXEC_TYPE).getValue();
 		
 		if(inputs != null && inputs.size() > 0) {
 			
 			if(operator instanceof CrossBlockOp) {
 				MemoEntry memoEntry = inputs.get(0);
-				Configuration inputConfig = memoEntry.getConfig();
-				Integer inputBlockSize = inputConfig.getParamByName(BlockSizeParam.NAME).getValue();
-				Integer inputFormat = inputConfig.getParamByName(FormatParam.NAME).getValue();
-				Integer inputLocation = inputConfig.getParamByName(LocationParam.NAME).getValue();
+				RewriteConfigSet inputConfig = memoEntry.getConfig();
+				Integer inputBlockSize = inputConfig.getConfigByType(RewriteConfigType.BLOCK_SIZE).getValue();
+				Integer inputFormat = inputConfig.getConfigByType(RewriteConfigType.FORMAT_CHANGE).getValue();
+				Integer inputLocation = inputConfig.getConfigByType(RewriteConfigType.EXEC_TYPE).getValue();
 				if(rootBlockSize != inputBlockSize) {
 					return false;
 				}
@@ -1019,16 +1035,16 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					|| ((DataOp)operator).get_dataop().equals(DataOpTypes.PERSISTENTWRITE))
 			) {
 				MemoEntry memoEntry = inputs.get(0);
-				Configuration inputConfig = memoEntry.getConfig();
-				Integer inputBlockSize = inputConfig.getParamByName(BlockSizeParam.NAME).getValue();
-				Integer inputFormat = inputConfig.getParamByName(FormatParam.NAME).getValue();
+				RewriteConfigSet inputConfig = memoEntry.getConfig();
+				int inputBlockSize = inputConfig.getConfigByType(RewriteConfigType.BLOCK_SIZE).getValue();
+				int inputFormat = inputConfig.getConfigByType(RewriteConfigType.BLOCK_SIZE).getValue();
 				
-				if(rootFormat.equals(FormatParam.BINARY_BLOCK) && inputFormat != rootFormat) {
+				if(rootFormat==FormatType.BINARY_BLOCK.ordinal() && inputFormat != rootFormat) {
 					return false;
 				}
 				
 				if(!rootBlockSize.equals(inputBlockSize) 
-						&& rootFormat.equals(FormatParam.BINARY_BLOCK) && inputFormat.equals(FormatParam.BINARY_BLOCK)) {
+						&& rootFormat == FormatType.BINARY_BLOCK.ordinal() && inputFormat==FormatType.BINARY_BLOCK.ordinal()) {
 					return false;
 				}
 				
@@ -1046,25 +1062,25 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param record
 	 * @return
 	 */
-	public Map<InterestingPropertyCombination, Set<OptimizedPlan>> combine(
-			Map<InterestingPropertyCombination, Set<OptimizedPlan>> intermediates,
-			Map<InterestingPropertyCombination, MemoEntry> children, Summary summary, SummaryEntry record) {
+	public Map<InterestingPropertySet, Set<OptimizedPlan>> combine(
+			Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates,
+			Map<InterestingPropertySet, MemoEntry> children, Summary summary, SummaryEntry record) {
 		
 		long combineCounter = 0;
-		Map<InterestingPropertyCombination, Set<OptimizedPlan>> combinations = 
-			new HashMap<InterestingPropertyCombination, Set<OptimizedPlan>>();
+		Map<InterestingPropertySet, Set<OptimizedPlan>> combinations = 
+			new HashMap<InterestingPropertySet, Set<OptimizedPlan>>();
 		
 		if(children.isEmpty()) {
 			combinations.putAll(intermediates);
 		} else {
 			
-			for(Entry<InterestingPropertyCombination, Set<OptimizedPlan>> entry : intermediates.entrySet()) {
-				InterestingPropertyCombination key = entry.getKey();
+			for(Entry<InterestingPropertySet, Set<OptimizedPlan>> entry : intermediates.entrySet()) {
+				InterestingPropertySet key = entry.getKey();
 				Set<OptimizedPlan> nodePlanSet = entry.getValue();
 				
 				for(OptimizedPlan plan : nodePlanSet) {
 					
-					for(Entry<InterestingPropertyCombination, MemoEntry> childEntry : children.entrySet()){
+					for(Entry<InterestingPropertySet, MemoEntry> childEntry : children.entrySet()){
 						OptimizedPlan newPlan = new OptimizedPlan();;
 						newPlan.setOperator(plan.getOperator());
 						newPlan.setExtractedConfig(plan.getExtractedConfig());
@@ -1113,8 +1129,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		for(Set<OptimizedPlan> plans : planSets) {
 			for(OptimizedPlan plan : plans) {
 				
-				Configuration config = plan.getConfig();
-				ConfigParam param = config.getParamByName(BlockSizeParam.NAME);
+				RewriteConfigSet config = plan.getConfig();
+				RewriteConfig param = config.getConfigByType(RewriteConfigType.BLOCK_SIZE);
 				int nodeBlockSize = param.getValue();
 				
 				Hop operator = plan.getOperator();
@@ -1149,20 +1165,20 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param config
 	 */
 	private void checkRewriteFromFirstChild(OptimizedPlan plan,
-			Configuration config) {
+			RewriteConfigSet config) {
 		List<MemoEntry> inputPlans = plan.getInputPlans();
 		if(inputPlans != null && inputPlans.size() > 0) {
 			MemoEntry firstEntry = inputPlans.get(0);
-			InterestingPropertyCombination inputInterestingProperties = firstEntry.getInterestingProperties();
-			InterestingProperty inputFormatProperty = inputInterestingProperties.getPropertyByName(FormatProperty.NAME);
+			InterestingPropertySet inputInterestingProperties = firstEntry.getInterestingProperties();
+			InterestingProperty inputFormatProperty = inputInterestingProperties.getPropertyByType(InterestingPropertyType.FORMAT);
 			
-			ConfigParam formatParam = config.getParamByName(FormatParam.NAME);
+			RewriteConfig formatParam = config.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 			
-			if(!formatParam.getValue().equals(inputFormatProperty.getValue())) {
+			if(!(formatParam.getValue()==inputFormatProperty.getValue())) {
 				ReblockRewrite rewrite = new ReblockRewrite();
-				rewrite.setFormat((FormatParam) formatParam);
-					InterestingProperty blockSizeProperty = inputInterestingProperties.getPropertyByName(BlockSizeProperty.NAME);
-					ConfigParam blockSizeParam = config.getParamByName(BlockSizeParam.NAME);
+				rewrite.setFormat(FormatType.values()[formatParam.getValue()]);
+					InterestingProperty blockSizeProperty = inputInterestingProperties.getPropertyByType(InterestingPropertyType.BLOCK_SIZE);
+					RewriteConfig blockSizeParam = config.getConfigByType(RewriteConfigType.BLOCK_SIZE);
 					rewrite.setFromBlockSize((int)blockSizeProperty.getValue());
 					rewrite.setToBlockSize(blockSizeParam.getValue());
 					
@@ -1170,7 +1186,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 					operator.set_cols_in_block(blockSizeProperty.getValue());
 					operator.set_rows_in_block(blockSizeProperty.getValue());
 //				}
-				plan.addRewrite(FormatParam.NAME, rewrite);
+				plan.addRewrite(RewriteConfigType.FORMAT_CHANGE, rewrite);
 			}
 		}
 	}
@@ -1182,20 +1198,20 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param operator
 	 */
 	private void checkRewriteForReadOperators(OptimizedPlan plan,
-			Configuration config, Hop operator) {
+			RewriteConfigSet config, Hop operator) {
 		DataOp dataOp = (DataOp)operator;
 		FileFormatTypes currentFormat = dataOp.getFormatType();
-		ConfigParam formatParam = config.getParamByName(FormatParam.NAME);
+		RewriteConfig formatParam = config.getConfigByType(RewriteConfigType.FORMAT_CHANGE);
 		if(!formatParam.equals(currentFormat)) {
 			ReblockRewrite rewrite = new ReblockRewrite();
-			rewrite.setFormat((FormatParam) formatParam);
-			if(formatParam.getValue().equals(FormatParam.BINARY_BLOCK)) {
-				ConfigParam blockSizeParam = config.getParamByName(BlockSizeParam.NAME);
+			rewrite.setFormat(FormatType.values()[formatParam.getValue()]);
+			if(formatParam.getValue()==FormatType.BINARY_BLOCK.ordinal()) {
+				RewriteConfig blockSizeParam = config.getConfigByType(RewriteConfigType.BLOCK_SIZE);
 				rewrite.setFromBlockSize((int)dataOp.get_cols_in_block());
 				rewrite.setToBlockSize(blockSizeParam.getValue());
-				plan.addRewrite(BlockSizeParam.NAME, rewrite);
+				plan.addRewrite(RewriteConfigType.BLOCK_SIZE, rewrite);
 			}
-			plan.addRewrite(FormatParam.NAME, rewrite);
+			plan.addRewrite(RewriteConfigType.FORMAT_CHANGE, rewrite);
 		}
 	}
 
@@ -1210,8 +1226,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 			List<MemoEntry> inputs = plan.getInputPlans();
 			if(inputs != null && inputs.size() > 0) {
 				for(MemoEntry e : inputs) {
-					InterestingPropertyCombination interestingProperties = e.getInterestingProperties();
-					InterestingProperty prop = interestingProperties.getPropertyByName(BlockSizeProperty.NAME);
+					InterestingPropertySet interestingProperties = e.getInterestingProperties();
+					InterestingProperty prop = interestingProperties.getPropertyByType(InterestingPropertyType.BLOCK_SIZE);
 					if(prop.getValue() != -1) {
 						int outgoingBlockSize = (int)prop.getValue();
 						if(nodeBlockSize != outgoingBlockSize) {
@@ -1221,11 +1237,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 							ReblockRewrite rewrite = new ReblockRewrite();
 							rewrite.setFromBlockSize(outgoingBlockSize);
 							rewrite.setToBlockSize(nodeBlockSize);
-							FormatParam param = new FormatParam();
-							param.setValue(FormatParam.BINARY_BLOCK);
-							rewrite.setFormat(param);
-							plan.addRewrite(BlockSizeParam.NAME, rewrite);
-							plan.addRewrite(FormatParam.NAME, rewrite);
+							//RewriteConfigFormat param = new RewriteConfigFormat(FormatType.BINARY_BLOCK.ordinal());
+							rewrite.setFormat(FormatType.BINARY_BLOCK);
+							plan.addRewrite(RewriteConfigType.BLOCK_SIZE, rewrite);
+							plan.addRewrite(RewriteConfigType.FORMAT_CHANGE, rewrite);
 						}
 					}
 				}
@@ -1245,19 +1260,19 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param record 
 	 * @return
 	 */
-	public Map<InterestingPropertyCombination, Set<OptimizedPlan>> enumConfig(Hop out, Summary summary, SummaryEntry record) {
+	public Map<InterestingPropertySet, Set<OptimizedPlan>> enumConfig(Hop out, Summary summary, SummaryEntry record) {
 		long planCounter = 0;
 		
-		Map<InterestingPropertyCombination, Set<OptimizedPlan>> retVal = new HashMap<InterestingPropertyCombination, Set<OptimizedPlan>>();
+		Map<InterestingPropertySet, Set<OptimizedPlan>> retVal = new HashMap<InterestingPropertySet, Set<OptimizedPlan>>();
 		boolean toConfigure = isToConfigure(out);
 		if(toConfigure) {
-			for (Configuration c : generatedConfigs) {
+			for (RewriteConfigSet c : generatedConfigs) {
 				if(out.get_dataType().equals(DataType.SCALAR)
-					&& (c.getParamByName(LocationParam.NAME).getValue() != LocationParam.CP)) 
+					&& (c.getConfigByType(RewriteConfigType.EXEC_TYPE).isValue(ExecType.CP.ordinal()))) 
 				{
 					//don't generate MR configs for scalars
 				}else {
-					InterestingPropertyCombination combination = this.configToProperties.get(c);
+					InterestingPropertySet combination = this.configToProperties.get(c);
 					//TODO: enable and complete for external function usecase
 //					if(out instanceof FunctionOp) {
 //						FunctionOp functionOp = (FunctionOp)out;
@@ -1272,7 +1287,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 						p.setConfig(c);
 						p.setOperator(out);
 						
-						Configuration extractedConfig = ConfigurationUtil.extractConfigurationFromHop(out, c);
+						RewriteConfigSet extractedConfig = RewriteConfigUtils.extractConfigurationFromHop(out, c);
 						p.setExtractedConfig(extractedConfig);
 						p.setRuntimeProgram(this.currentProgram);
 						Set<OptimizedPlan> plans = new HashSet<OptimizedPlan>();
@@ -1303,8 +1318,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	
 	private long enumerateFunctionOps(Hop out, Summary summary,
 			long planCounter,
-			Map<InterestingPropertyCombination, Set<OptimizedPlan>> retVal,
-			Configuration c, InterestingPropertyCombination combination,
+			Map<InterestingPropertySet, Set<OptimizedPlan>> retVal,
+			RewriteConfigSet c, InterestingPropertySet combination,
 			FunctionOp functionOp, InterestingProperty formatProperty) {
 		Set<OptimizedPlan> plans = new HashSet<OptimizedPlan>();
 //		if(formatProperty.getValue().getAsLong() == FormatProperty.TEXT) {
@@ -1315,7 +1330,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 				p.setConfig(c);
 				p.setOperator(out);
 				p.setOutput(output);
-				Configuration extractedConfig = ConfigurationUtil.extractConfigurationFromHop(out, c);
+				RewriteConfigSet extractedConfig = RewriteConfigUtils.extractConfigurationFromHop(out, c);
 				p.setExtractedConfig(extractedConfig);
 				p.setRuntimeProgram(this.currentProgram);
 				plans.add(p);
@@ -1339,53 +1354,7 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return true;
 	}
 
-	/**
-	 * TODO: use caching later on since the result of this method will not change for constant sets of
-	 * configuration parameters. 
-	 * Creates a set of all possible combinations of types and values.
-	 * @param configurationParameters
-	 */
-	public Set<Configuration> generateConfigCombinations(
-			Set<ConfigParam> configurationParameters) {
-		Set<Configuration> nodeConfigs = new HashSet<Configuration>();
-		boolean firstRun = true;
-		for(ConfigParam cp : configurationParameters) {
-			
-			if(!nodeConfigs.isEmpty()) {
-				firstRun = false;
-			}
-			Set<Configuration> replacementSet = new HashSet<Configuration>();
-			for(Integer defVal : cp.getDefinedValues())
-			{
-				ConfigParam instance = cp.createInstance(defVal);
-				if(firstRun) {
-					Configuration c = new Configuration();
-					c.addParam(instance);
-					replacementSet.add(c);
-				} else {
-					for(Configuration c : nodeConfigs) {
-						Configuration copy = c.generateConfig(instance);
-						if(copy != null) {
-							replacementSet.add(copy);
-						}
-					}
-				}
-			}
-			nodeConfigs = replacementSet;
-		}
-		
-		Iterator<Configuration> iterator = nodeConfigs.iterator();
-		while(iterator.hasNext()) {
-			Configuration config = iterator.next();
-			if(!ConfigurationUtil.isValidConfiguration(config)) {
-				iterator.remove();
-			}
-		}
-		
-		return nodeConfigs;
-	}
-
-	OptimizedPlan pickOptimal(Map<InterestingPropertyCombination, MemoEntry> plans) {
+	OptimizedPlan pickOptimal(Map<InterestingPropertySet, MemoEntry> plans) {
 		OptimizedPlan optimal = null;
 		double optimalCost = Double.MAX_VALUE;
 		if(plans != null && plans.size() > 0) {
@@ -1404,14 +1373,14 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	}
 
 	//TODO: reason about incompatible combinations
-	private Set<InterestingPropertyCombination> generatePropertyCombinations(
-			Set<Configuration> configs) {
-		Set<InterestingPropertyCombination> retVal = new HashSet<InterestingPropertyCombination>();
+	private Set<InterestingPropertySet> generatePropertyCombinations(
+			Collection<RewriteConfigSet> configs) {
+		Set<InterestingPropertySet> retVal = new HashSet<InterestingPropertySet>();
 		
-		for(Configuration c : configs) {
-			InterestingPropertyCombination combination = new InterestingPropertyCombination();
-			for(ConfigParam p : c.getParameters().values()) {
-				combination.setProperties(p.createsInterestingProperties());
+		for(RewriteConfigSet c : configs) {
+			InterestingPropertySet combination = new InterestingPropertySet();
+			for(RewriteConfig p : c.getConfigs()) {
+				combination.addProperty(p.getInterestingProperty());
 			}
 			retVal.add(combination);
 			this.configToProperties.put(c, combination);
@@ -1426,10 +1395,10 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 	 * @param dataConfigs
 	 */
 	@Deprecated
-	public Map<InterestingPropertyCombination, Set<OptimizedPlan>> createIntermediatesSet(
-			Map<InterestingPropertyCombination, OptimizedPlan> dataConfigs) {
-		Map<InterestingPropertyCombination, Set<OptimizedPlan>> intermediates = new HashMap<InterestingPropertyCombination, Set<OptimizedPlan>>();
-		for(Entry<InterestingPropertyCombination, OptimizedPlan> e : dataConfigs.entrySet()) {
+	public Map<InterestingPropertySet, Set<OptimizedPlan>> createIntermediatesSet(
+			Map<InterestingPropertySet, OptimizedPlan> dataConfigs) {
+		Map<InterestingPropertySet, Set<OptimizedPlan>> intermediates = new HashMap<InterestingPropertySet, Set<OptimizedPlan>>();
+		for(Entry<InterestingPropertySet, OptimizedPlan> e : dataConfigs.entrySet()) {
 			Set<OptimizedPlan> set = new HashSet<OptimizedPlan>();
 			set.add(e.getValue());
 			intermediates.put(e.getKey(), set);
@@ -1437,24 +1406,8 @@ public class GlobalEnumerationOptimizer extends GlobalOptimizer
 		return intermediates;
 	}
 
-	public OptimizerConfig getOptimizerConfig() {
-		return optimizerConfig;
-	}
-
-	public Set<Configuration> getGeneratedConfigs() {
-		return generatedConfigs;
-	}
-
-	public Set<InterestingPropertyCombination> getInterestingPropertyCombinations() {
+	public Set<InterestingPropertySet> getInterestingPropertyCombinations() {
 		return interestingPropertyCombinations;
-	}
-
-	public MemoStructure getMemo() {
-		return memo;
-	}
-
-	public void setMemo(MemoStructure memo) {
-		this.memo = memo;
 	}
 
 	public Program getCurrentProgram() {

@@ -22,8 +22,8 @@ public class MemoEntry
 	private Lop rootLop;
 	private Long lopId;
 	private double cost;
-	private Configuration config;
-	private InterestingPropertyCombination interestingProperties;
+	private RewriteConfigSet config;
+	private InterestingPropertySet interestingProperties;
 	
 	public Hop getRootHop() {
 		return rootHop;
@@ -49,20 +49,20 @@ public class MemoEntry
 		this.cost = cost;
 	}
 	
-	public Configuration getConfig() {
+	public RewriteConfigSet getConfig() {
 		return config;
 	}
 	
-	public void setConfig(Configuration config) {
+	public void setConfig(RewriteConfigSet config) {
 		this.config = config;
 	}
 	
-	public InterestingPropertyCombination getInterestingProperties() {
+	public InterestingPropertySet getInterestingProperties() {
 		return interestingProperties;
 	}
 	
 	public void setInterestingProperties(
-			InterestingPropertyCombination interestingProperties) {
+			InterestingPropertySet interestingProperties) {
 		this.interestingProperties = interestingProperties;
 	}
 	

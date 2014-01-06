@@ -7,33 +7,36 @@
 
 package com.ibm.bi.dml.hops.globalopt.enumerate;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 
-public class LocationRewrite extends Rewrite 
+
+/**
+ * 
+ */
+public class RewriteConfigVectorization extends RewriteConfig
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private int execLocation = -1;
+	//valid instance configurations
+	private static int[] _defValues = new int[]{ 0, 1 }; //no | yes  
+	
+	public RewriteConfigVectorization()
+	{
+		super( RewriteConfigType.VECTORIZATION, -1 );
+	}
 	
 	@Override
-	public void apply(OptimizedPlan plan) {
-		Hop operator = plan.getOperator();
-		ExecType eType = ExecType.MR;
-		if(execLocation == ExecType.CP.ordinal() )
-			eType = ExecType.CP;
-		operator.setForcedExecType(eType);
-
+	public int[] getDefinedValues()
+	{
+		return _defValues;
 	}
 
-	public Integer getExecLocation() {
-		return execLocation;
+	@Override
+	public InterestingProperty getInterestingProperty()
+	{
+		//no interesting property directly influenced here
+		//however, interesting properties of input determine if valid and if cost beneficial
+		return null;
 	}
-
-	public void setExecLocation(Integer execLocation) {
-		this.execLocation = execLocation;
-	}
-
 }

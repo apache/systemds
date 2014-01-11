@@ -1,13 +1,14 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -27,20 +28,9 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
  * 
- * Applied rule-based rewrites
- * - 1) rewrite set data partitioner (incl. recompile RIX)
- * - 2) rewrite result partitioning (incl. recompile LIX)
- * - 3) rewrite set execution strategy
- * - 4) rewrite use data colocation		 
- * - 5) rewrite set partition replication factor
- * - 6) rewrite set export replication factor 
- * - 7) rewrite use nested parallelism 
- * - 8) rewrite set degree of parallelism
- * - 9) rewrite set task partitioner
- * - 10) rewrite set result merge 		 		 
- * - 11) rewrite set recompile memory budget
- * - 12) rewrite remove recursive parfor	
- * - 13) rewrite remove unnecessary parfor
+ * Applied rule-based rewrites:
+ * - see base class.
+ * 
  * 
  * Checked constraints:
  * - 1) rewrite set data partitioner (incl. recompile RIX)
@@ -55,7 +45,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 public class OptimizerConstrained extends OptimizerRuleBased
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -78,6 +68,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
 		OptNode pn = plan.getRoot();
+		double M = -1, M2 = -1; //memory consumption
 		
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -106,7 +97,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		ExecType oldET = pn.getExecType();
 		int oldK = pn.getK();
 		pn.setSerialParFor(); //for basic mem consumption 
-		double M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
+		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
 		pn.setExecType(oldET);
 		pn.setK(oldK);
 		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M) );
@@ -120,53 +111,62 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
 		boolean flagLIX = super.rewriteSetResultPartitioning( pn, M, ec.getVariables() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
+		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M) );
+		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		
 		// rewrite 3: execution strategy
-		rewriteSetExecutionStategy( pn, M, flagLIX );
+		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M, M2, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
 		{
-			// rewrite 4: data colocation
+			if( flagRecompMR ){
+				//rewrite 4: set operations exec type
+				rewriteSetOperationsExecType( pn, flagRecompMR );
+				M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+			}
+			
+			// rewrite 5: data colocation
 			super.rewriteDataColocation( pn, ec.getVariables() );
 			
-			// rewrite 5: rewrite set partition replication factor
+			// rewrite 6: rewrite set partition replication factor
 			super.rewriteSetPartitionReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 6: rewrite set partition replication factor
+			// rewrite 7: rewrite set partition replication factor
 			super.rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 7: nested parallelism (incl exec types)	
+			// rewrite 8: nested parallelism (incl exec types)	
 			boolean flagNested = super.rewriteNestedParallelism( pn, M, flagLIX );
 			
-			// rewrite 8: determine parallelism
+			// rewrite 9: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, flagNested );
 			
-			// rewrite 9: task partitioning 
+			// rewrite 10: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 8: determine parallelism
+			// rewrite 9: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 9: task partitioning
+			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 10: set result merge
+		//rewrite 11: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 11: set local recompile memory budget
+		//rewrite 12: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 12: parfor (in recursive functions) to for
+		// rewrite 13: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 13: parfor (par=1) to for 
+		// rewrite 14: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -211,14 +211,15 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	/**
 	 * 
 	 * 
-	 * NOTES:
-	 * 	- checking cm2 (min lJVM, rJVM) is sufficient because otherwise MR jobs generated anyway
-	 * 
 	 * @param n
 	 * @param M
+	 * @throws DMLRuntimeException 
 	 */
-	protected void rewriteSetExecutionStategy(OptNode n, double M, boolean flagLIX)
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M, double M2, boolean flagLIX) 
+		throws DMLRuntimeException
 	{
+		boolean ret = false;
+		
 		// constraint awareness
 		if( n.getExecType() != null  )
 		{
@@ -229,7 +230,9 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: forced 'set execution strategy' - result="+mode );	
 		}
 		else
-			super.rewriteSetExecutionStategy(n, M, flagLIX);
+			ret = super.rewriteSetExecutionStategy(n, M, M2, flagLIX);
+		
+		return ret;
 	}
 
 		

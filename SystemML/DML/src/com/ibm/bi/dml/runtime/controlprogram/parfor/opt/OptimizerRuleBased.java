@@ -68,18 +68,20 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
  * - 1) rewrite set data partitioner (incl. recompile RIX)
  * - 2) rewrite result partitioning (incl. recompile LIX)
  * - 3) rewrite set execution strategy
- * - 4) rewrite use data colocation		 
- * - 5) rewrite set partition replication factor
- * - 6) rewrite set export replication factor 
- * - 7) rewrite use nested parallelism 
- * - 8) rewrite set degree of parallelism
- * - 9) rewrite set task partitioner
- * - 10) rewrite set result merge 		 		 
- * - 11) rewrite set recompile memory budget
- * - 12) rewrite remove recursive parfor	
- * - 13) rewrite remove unnecessary parfor		
+ * - 4) rewrite set operations exec type (incl. recompile)
+ * - 5) rewrite use data colocation		 
+ * - 6) rewrite set partition replication factor
+ * - 7) rewrite set export replication factor 
+ * - 8) rewrite use nested parallelism 
+ * - 9) rewrite set degree of parallelism
+ * - 10) rewrite set task partitioner
+ * - 11) rewrite set result merge 		 		 
+ * - 12) rewrite set recompile memory budget
+ * - 13) rewrite remove recursive parfor	
+ * - 14) rewrite remove unnecessary parfor		
  * 	 
  * 
+ * TODO take remote memory into account in data/result partitioning rewrites (smaller/larger)
  * TODO memory estimates with shared reads
  * TODO memory estimates of result merge into plan tree 
  * TODO blockwise partitioning
@@ -88,7 +90,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 public class OptimizerRuleBased extends Optimizer
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations
@@ -148,6 +150,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
 		OptNode pn = plan.getRoot();
+		double M = -1, M2 = -1; //memory consumption
 		
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -174,7 +177,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//ESTIMATE memory consumption 
 		pn.setSerialParFor(); //for basic mem consumption 
-		double M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
+		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn);
 		LOG.debug(getOptMode()+" OPT: estimated mem (serial exec) M="+toMB(M) );
 		
 		//OPTIMIZE PARFOR PLAN
@@ -186,53 +189,62 @@ public class OptimizerRuleBased extends Optimizer
 		// rewrite 2: rewrite result partitioning (incl. log/phy recompile LIX) 
 		boolean flagLIX = rewriteSetResultPartitioning( pn, M, ec.getVariables() );
 		M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
+		M2 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec) M="+toMB(M) );
+		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		
 		// rewrite 3: execution strategy
-		rewriteSetExecutionStategy( pn, M, flagLIX );
+		boolean flagRecompMR = rewriteSetExecutionStategy( pn, M, M2, flagLIX );
 		
 		//exec-type-specific rewrites
 		if( pn.getExecType() == ExecType.MR )
 		{
-			// rewrite 4: data colocation
+			if( flagRecompMR ){
+				//rewrite 4: set operations exec type
+				rewriteSetOperationsExecType( pn, flagRecompMR );
+				M = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+			}
+			
+			// rewrite 5: data colocation
 			rewriteDataColocation( pn, ec.getVariables() );
 			
-			// rewrite 5: rewrite set partition replication factor
+			// rewrite 6: rewrite set partition replication factor
 			rewriteSetPartitionReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 6: rewrite set partition replication factor
+			// rewrite 7: rewrite set partition replication factor
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
-			// rewrite 7: nested parallelism (incl exec types)	
+			// rewrite 8: nested parallelism (incl exec types)	
 			boolean flagNested = rewriteNestedParallelism( pn, M, flagLIX );
 			
-			// rewrite 8: determine parallelism
+			// rewrite 9: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, flagNested );
 			
-			// rewrite 9: task partitioning 
+			// rewrite 10: task partitioning 
 			rewriteSetTaskPartitioner( pn, flagNested, flagLIX );
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
-			// rewrite 8: determine parallelism
+			// rewrite 9: determine parallelism
 			rewriteSetDegreeOfParallelism( pn, M, false );
 			
-			// rewrite 9: task partitioning
+			// rewrite 10: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 		}	
 		
-		//rewrite 10: set result merge
+		//rewrite 11: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 11: set local recompile memory budget
+		//rewrite 12: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 12: parfor (in recursive functions) to for
+		// rewrite 13: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 13: parfor (par=1) to for 
+		// rewrite 14: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -594,18 +606,19 @@ public class OptimizerRuleBased extends Optimizer
 	
 	/**
 	 * 
-	 * 
-	 * NOTES:
-	 * 	- checking cm2 (min lJVM, rJVM) is sufficient because otherwise MR jobs generated anyway
-	 * 
 	 * @param n
 	 * @param M
+	 * @throws DMLRuntimeException 
 	 */
-	protected void rewriteSetExecutionStategy(OptNode n, double M, boolean flagLIX)
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M, double M2, boolean flagLIX) 
+		throws DMLRuntimeException
 	{
+		boolean isCPOnly = n.isCPOnly();
+		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
+		
 		//deciding on the execution strategy
-		if(    n.isCPOnly()   //Required: all instruction can be be executed in CP
-			&& M <= _rm     ) //Required: cp inst fit into JVM mem per node
+		if(    (isCPOnly && M <= _rm )   //Required: all instruction can be be executed in CP
+			|| (isCPOnlyPossible && M2 <= _rm) )  //Required: cp inst fit into remote JVM mem 
 		{
 			//at this point all required conditions for REMOTE_MR given, now its an opt decision
 			int cpk = (int) Math.min( _lk, Math.floor( _lm / M ) ); //estimated local exploited par  
@@ -620,18 +633,23 @@ public class OptimizerRuleBased extends Optimizer
 			{
 				n.setExecType( ExecType.MR ); //remote parfor
 			}
+			//MR if MR operations in local, but CP only in remote (less overall MR jobs)
+			else if( (!isCPOnly) && isCPOnlyPossible )
+			{
+				n.setExecType( ExecType.MR ); //remote parfor
+			}
 			//MR if necessary for LIX rewrite (LIX true iff cp only and rm valid)
-			else if( flagLIX )
+			else if( flagLIX ) 
 			{
 				n.setExecType( ExecType.MR );  //remote parfor
 			}
 			//otherwise CP
-			else
+			else 
 			{
 				n.setExecType( ExecType.CP ); //local parfor	
 			}			
 		}
-		else
+		else //mr instructions in body, or rm too small
 		{
 			n.setExecType( ExecType.CP ); //local parfor
 		}
@@ -643,13 +661,109 @@ public class OptimizerRuleBased extends Optimizer
 		PExecMode mode = (n.getExecType()==ExecType.CP)? PExecMode.LOCAL : PExecMode.REMOTE_MR;
 		pfpb.setExecMode( mode );	
 		
+		//decide if recompilation according to remote mem budget necessary
+		boolean requiresRecompile = (mode == PExecMode.REMOTE_MR && !isCPOnly );
+		
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'set execution strategy' - result="+mode );
+		LOG.debug(getOptMode()+" OPT: rewrite 'set execution strategy' - result="+mode+" (recompile="+requiresRecompile+")" );
+		
+		return requiresRecompile;
 	}
 	
+	/**
+	 * 
+	 * @param pn
+	 * @return
+	 */
 	protected boolean isLargeProblem(OptNode pn)
 	{
 		return (_N >= PROB_SIZE_THRESHOLD_REMOTE || _Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param memBudget
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 
+		throws DMLRuntimeException
+	{
+		ExecType et = n.getExecType();
+		boolean ret = ( et == ExecType.CP);		
+		
+		if( n.isLeaf() && et == ExecType.MR )
+		{
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
+			if( h.getForcedExecType()!=LopProperties.ExecType.MR ) //e.g., -exec=hadoop
+			{
+				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
+				if( mem <= memBudget )
+					ret = true;
+			}
+		}
+		
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+			{
+				if( !ret ) break; //early abort if already false
+				ret &= isCPOnlyPossible(c, memBudget);
+			}
+		return ret;
+	}
+	
+	
+	///////
+	//REWRITE set operations exec type
+	///
+	
+	/**
+	 * 
+	 * @param pn
+	 * @param recompile
+	 * @throws DMLRuntimeException
+	 */
+	protected void rewriteSetOperationsExecType(OptNode pn, boolean recompile) 
+		throws DMLRuntimeException
+	{
+		//set exec type in internal opt tree
+		int count = setOperationExecType(pn, ExecType.CP);
+		
+		//recompile program (actual programblock modification)
+		if( recompile && count<=0 )
+			LOG.warn("OPT: Forced set operations exec type 'CP', but no operation requires recompile.");
+		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+                                  .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		HashSet<String> fnStack = new HashSet<String>();
+		Recompiler.recompileProgramBlockHierarchy2Forced(pfpb.getChildBlocks(), 0, fnStack, LopProperties.ExecType.CP);
+		
+		//debug output
+		LOG.debug(getOptMode()+" OPT: rewrite 'set operation exec type CP' - result="+count);
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param et
+	 * @return
+	 */
+	protected int setOperationExecType( OptNode n, ExecType et )
+	{
+		int count = 0;
+		
+		//set operation exec type to CP, count num recompiles
+		if( n.getExecType()!=ExecType.CP && n.getNodeType()==NodeType.HOP ) {
+			n.setExecType( ExecType.CP );
+			count = 1;
+		}
+		
+		//recursively set exec type of childs
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				count += setOperationExecType(c, et);
+		
+		return count;
 	}
 	
 	///////

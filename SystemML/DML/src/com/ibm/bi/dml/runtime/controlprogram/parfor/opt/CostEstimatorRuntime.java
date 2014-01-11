@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,8 +9,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 
 
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariabl
 public class CostEstimatorRuntime extends CostEstimator
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//internal estimation parameters
@@ -53,7 +53,7 @@ public class CostEstimatorRuntime extends CostEstimator
 		val = getEstimate(measure, str, dim1, dim2, dim3, sparsity, df);
 		
 		//FIXME just for test until cost functions for MR are trained
-		if( node.getExecType() == ExecType.MR )
+		if( node.getExecType() == OptNode.ExecType.MR )
 			val = 60000; //1min or 60k
 		
 		//System.out.println("measure="+measure+", operation="+str+", val="+val);
@@ -61,6 +61,14 @@ public class CostEstimatorRuntime extends CostEstimator
 		return val;
 	}
 	
+	@Override
+	public double getLeafNodeEstimate( TestMeasure measure, OptNode node, ExecType et ) 
+			throws DMLRuntimeException
+	{
+		//TODO for the moment invariant of et
+		
+		return getLeafNodeEstimate(measure, node);
+	}
 	
 	/**
 	 * 

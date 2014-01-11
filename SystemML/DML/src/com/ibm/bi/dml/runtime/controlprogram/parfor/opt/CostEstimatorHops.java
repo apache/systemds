@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 public class CostEstimatorHops extends CostEstimator
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static long DEFAULT_MEM_MR = -1;
@@ -65,7 +65,7 @@ public class CostEstimatorHops extends CostEstimator
 				value = DEFAULT_MEM_MR;
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getMemBudget(true) )
 			{
-				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE )
+				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.get_name()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_MR;
 			}
@@ -94,4 +94,26 @@ public class CostEstimatorHops extends CostEstimator
 		return value;
 	}
 
+	@Override
+	public double getLeafNodeEstimate(TestMeasure measure, OptNode node, ExecType et)
+		throws DMLRuntimeException 
+	{
+		if( node.getNodeType() != NodeType.HOP )
+			return 0; //generic optnode but no childs (e.g., PB for rmvar inst)
+		
+		if( measure != TestMeasure.MEMORY_USAGE )
+			throw new DMLRuntimeException( "Testmeasure "+measure+" not supported by cost model "+CostModelType.STATIC_MEM_METRIC+"." );
+		
+		//core mem estimation (use hops estimate)
+		Hop h = _map.getMappedHop( node.getID() );
+		double value = h.getMemEstimate();
+		if( et != ExecType.CP ) //MR, null
+			value = DEFAULT_MEM_MR;
+		if( value <= 0 ) //no mem estimate
+			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
+		
+		LOG.trace("Memory estimate (forced exec type) "+h.get_name()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		
+		return value;
+	}
 }

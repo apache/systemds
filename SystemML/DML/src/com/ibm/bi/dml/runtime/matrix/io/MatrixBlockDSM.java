@@ -3542,7 +3542,7 @@ public class MatrixBlockDSM extends MatrixValue
 				double[] values=sparseRows[r].getValueContainer();
 				for(int i=0; i<sparseRows[r].size(); i++)
 				{
-					op.fn.execute(cmobj, values[i], 1.0);
+					op.fn.execute(cmobj, values[i]);
 					nzcount++;
 				}
 			}
@@ -3553,7 +3553,7 @@ public class MatrixBlockDSM extends MatrixValue
 		{
 			//always vector (see check above)
 			for(int i=0; i<rlen; i++)
-				op.fn.execute(cmobj, denseBlock[i], 1.0);
+				op.fn.execute(cmobj, denseBlock[i]);
 		}
 
 		return cmobj;
@@ -3634,7 +3634,7 @@ public class MatrixBlockDSM extends MatrixValue
 		if(sparse && sparseRows!=null) //SPARSE
 		{
 			for(int i=0; i < rlen; i++ ) 
-				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0), 1.0);
+				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0));
 		}
 		else if(denseBlock!=null) //DENSE
 		{
@@ -3644,12 +3644,12 @@ public class MatrixBlockDSM extends MatrixValue
 				//both dense vectors (default case)
 				if(that.denseBlock!=null)
 					for( int i=0; i<rlen; i++ )
-						op.fn.execute(covobj, denseBlock[i], that.denseBlock[i], 1.0);
+						op.fn.execute(covobj, denseBlock[i], that.denseBlock[i]);
 			}
 			else
 			{
 				for(int i=0; i<rlen; i++)
-					op.fn.execute(covobj, denseBlock[i], that.quickGetValue(i,0), 1.0);
+					op.fn.execute(covobj, denseBlock[i], that.quickGetValue(i,0));
 			}
 		}
 		

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,15 +16,17 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 public class COV extends ValueFunction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private static COV singleObj = null;
 	
 	private KahanPlus _plus = null; 
 	
 	public static COV getCOMFnObject() {
-		//return new obj, required for correctness in multi-threaded
-		//execution due to state in cm object
-		return new COV(); 
+		if ( singleObj == null )
+			singleObj = new COV();
+		return singleObj;
 	}
 	
 	private COV()
@@ -37,7 +39,18 @@ public class COV extends ValueFunction
 		throw new CloneNotSupportedException();
 	}
 	
-	public Data execute(Data in1, double u, double v, double w2) throws DMLRuntimeException 
+	/**
+	 * General case for arbitrary weights w2
+	 * 
+	 * @param in1
+	 * @param u
+	 * @param v
+	 * @param w2
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public Data execute(Data in1, double u, double v, double w2) 
+		throws DMLRuntimeException 
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;
 		if(cov1.isCOVAllZeros())
@@ -55,6 +68,33 @@ public class COV extends ValueFunction
 		cov1.mean=(KahanObject) _plus.execute(cov1.mean, w2*du/w);
 		cov1.mean_v=(KahanObject) _plus.execute(cov1.mean_v, w2*dv/w);
 		cov1.c2=(KahanObject) _plus.execute(cov1.c2, cov1.w*w2/w*du*dv);
+		cov1.w=w;
+		
+		return cov1;
+	}
+	
+	/**
+	 * Special case for weights w2==1
+	 */
+	public Data execute(Data in1, double u, double v) 
+		throws DMLRuntimeException 
+	{
+		CM_COV_Object cov1=(CM_COV_Object) in1;
+		if(cov1.isCOVAllZeros())
+		{
+			cov1.w=1L;
+			cov1.mean.set(u, 0);
+			cov1.mean_v.set(v, 0);
+			cov1.c2.set(0,0);
+			return cov1;
+		}
+		
+		double w=cov1.w+1;
+		double du=u-cov1.mean._sum;
+		double dv=v-cov1.mean_v._sum;
+		cov1.mean=(KahanObject) _plus.execute(cov1.mean, du/w);
+		cov1.mean_v=(KahanObject) _plus.execute(cov1.mean_v, dv/w);
+		cov1.c2=(KahanObject) _plus.execute(cov1.c2, cov1.w/w*du*dv);
 		cov1.w=w;
 		
 		return cov1;

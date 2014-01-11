@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,7 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationType
 public class CM extends ValueFunction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private AggregateOperationTypes _type = null;
@@ -50,7 +50,7 @@ public class CM extends ValueFunction
 	
 	public static CM getCMFnObject( AggregateOperationTypes type ) {
 		//return new obj, required for correctness in multi-threaded
-		//execution due to state in cm object	
+		//execution due to state in cm object (buff2, buff3)	
 		return new CM( type ); 
 	}
 	
@@ -59,6 +59,114 @@ public class CM extends ValueFunction
 		throw new CloneNotSupportedException();
 	}
 
+	/**
+	 * Special case for weights w2==1
+	 */
+	@Override
+	public Data execute(Data in1, double in2) 
+		throws DMLRuntimeException 
+	{
+		CM_COV_Object cm1=(CM_COV_Object) in1;
+		
+		if(cm1.isCMAllZeros())
+		{
+			cm1.w=1;
+			cm1.mean.set(in2, 0);
+			cm1.m2.set(0,0);
+			cm1.m3.set(0,0);
+			cm1.m4.set(0,0);
+			return cm1;
+		}
+		
+		switch( _type )
+		{
+			case COUNT:
+			{
+				cm1.w = cm1.w + 1;
+				break;
+			}
+			case MEAN:
+			{
+				double w= cm1.w + 1;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
+				cm1.w=w;			
+				break;
+			}
+			case CM2:
+			{
+				double w= cm1.w + 1;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
+				double t1=cm1.w/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;				
+				break;
+			}
+			case CM3:
+			{
+				double w = cm1.w + 1;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
+				double t1=cm1.w/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1.0-Math.pow(t2, 2));
+				double f2=1.0/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, lt2-3*cm1.m2._sum*f2*d);
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case CM4:
+			{
+				double w=cm1.w+1;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
+				double t1=cm1.w/w*d;
+				double t2=-1/cm1.w;
+				double lt1=t1*d;
+				double lt2=Math.pow(t1, 3)*(1.0-Math.pow(t2, 2));
+				double lt3=Math.pow(t1, 4)*(1.0-Math.pow(t2, 3));
+				double f2=1.0/w;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				_buff3.set(cm1.m3);
+				_buff3=(KahanObject) _plus.execute(_buff3, lt2-3*cm1.m2._sum*f2*d);
+				cm1.m4=(KahanObject) _plus.execute(cm1.m4, 6*cm1.m2._sum*Math.pow(-f2*d, 2) + lt3-4*cm1.m3._sum*f2*d);
+				cm1.m2.set(_buff2);
+				cm1.m3.set(_buff3);
+				cm1.w=w;
+				break;
+			}
+			case VARIANCE:
+			{
+				double w=cm1.w+1;
+				double d=in2-cm1.mean._sum;
+				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
+				double t1=cm1.w/w*d;
+				double lt1=t1*d;
+				_buff2.set(cm1.m2);
+				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
+				cm1.m2.set(_buff2);
+				cm1.w=w;
+				break;
+			}
+		}
+		
+		return cm1;
+	}
+	
+	/**
+	 * General case for arbitary weights w2
+	 */
 	@Override
 	public Data execute(Data in1, double in2, double w2) 
 		throws DMLRuntimeException 

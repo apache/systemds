@@ -28,7 +28,7 @@ import com.ibm.bi.dml.parser.Statement;
 public class Data extends Lop  
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {READ,WRITE};
@@ -72,6 +72,7 @@ public class Data extends Lop
 	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient, FileFormatTypes fmt) throws LopsException 
 	{
 		super(Lop.Type.Data, dt, vt);	
+		
 		operation = op;	
 		
 		transient_var = isTransient;
@@ -348,17 +349,23 @@ public class Data extends Lop
 			sb.append( "CP" );
 			sb.append( OPERAND_DELIMITOR );
 			if ( operation == OperationTypes.READ ) 
+			{
 				sb.append( "read" );
+				sb.append( OPERAND_DELIMITOR );
+				sb.append ( this.prepInputOperand(input1) );
+			}
 			else if ( operation == OperationTypes.WRITE)
+			{
 				sb.append( "write" );
+				sb.append( OPERAND_DELIMITOR );
+				sb.append ( getInputs().get(0).prepInputOperand(input1) );
+			}
 			else
 				throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 			
 			sb.append( OPERAND_DELIMITOR );
-			sb.append ( getInputs().get(0).prepInputOperand(input1) );
-			sb.append( OPERAND_DELIMITOR );
 			// TODO: appropriate literal flag must be passed for the second operand, when dynamic read/write functionality is added.
-			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, true) );
+			sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, true) ); //FIXME
 
 			// attach outputInfo in case of matrices
 			OutputParameters oparams = getOutputParameters();
@@ -417,6 +424,7 @@ public class Data extends Lop
 				}
 				
 			}
+			
 			return sb.toString();
 		}
 		throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + get_dataType());

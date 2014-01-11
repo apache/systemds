@@ -101,7 +101,7 @@ public class DataGenOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		return "datagen_" + method;
+		return "dg(" + method +")";
 	}
 	
 	public DataGenMethod getDataGenMethod() {

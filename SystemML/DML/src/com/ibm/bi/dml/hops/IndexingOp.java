@@ -26,7 +26,7 @@ public class IndexingOp extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static String OPSTRING = "Indexing";
+	public static String OPSTRING = "rix"; //"Indexing";
 	
 	private boolean _rowLowerEqualsUpper = false;
 	private boolean _colLowerEqualsUpper = false;

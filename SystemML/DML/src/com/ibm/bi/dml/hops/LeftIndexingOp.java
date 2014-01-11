@@ -29,7 +29,7 @@ public class LeftIndexingOp  extends Hop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static String OPSTRING = "LeftIndexing";
+	public static String OPSTRING = "lix"; //"LeftIndexing";
 	
 	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
 	

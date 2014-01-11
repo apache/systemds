@@ -11,10 +11,14 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VISIT_STATUS;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BinaryCPInstruction;
+import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 
 /**
  * Rule: Constant Folding. For all statement blocks, 
@@ -26,7 +30,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class RewriteConstantFolding extends HopRewriteRule
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	@Override
@@ -95,18 +99,19 @@ public class RewriteConstantFolding extends HopRewriteRule
 			double ret = Double.MAX_VALUE;
 			
 			if(   (lit1.get_valueType()==ValueType.DOUBLE || lit1.get_valueType()==ValueType.INT)
-			   && (lit2.get_valueType()==ValueType.DOUBLE || lit2.get_valueType()==ValueType.INT) )
+			   && (lit2.get_valueType()==ValueType.DOUBLE || lit2.get_valueType()==ValueType.INT)
+			   &&  root.get_valueType()==ValueType.DOUBLE || root.get_valueType()==ValueType.INT ) //disable boolean, string
 			{
-				double lret = lit1.getDoubleValue();
-				double rret = lit2.getDoubleValue();
-				switch( broot.getOp() )
+				try
 				{
-					case PLUS:	ret = lret + rret; break;
-					case MINUS:	ret = lret - rret; break;
-					case MULT:  ret = lret * rret; break;
-					case DIV:   ret = lret / rret; break;
-					case MIN:   ret = Math.min(lret, rret); break;
-					case MAX:   ret = Math.max(lret, rret); break;
+					double lret = lit1.getDoubleValue();
+					double rret = lit2.getDoubleValue();
+					ret = evalScalarBinaryOperator(broot.getOp(), lret, rret);
+				}
+				catch( DMLRuntimeException ex )
+				{
+					LOG.error("Failed to execute constant folding instructions.", ex);
+					ret = Double.MAX_VALUE;
 				}
 			}
 			
@@ -141,4 +146,35 @@ public class RewriteConstantFolding extends HopRewriteRule
 		root.set_visited( VISIT_STATUS.DONE );
 	}
 
+	/**
+	 * In order to prevent unexpected side effects from constant folding,
+	 * we use the same runtime for constant folding as we would use for 
+	 * actual instruction execution. 
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private double evalScalarBinaryOperator(OpOp2 op, double left, double right) 
+		throws DMLRuntimeException
+	{
+		String bopcode = Hop.HopsOpOp2String.get(op);
+		if( bopcode == null )
+			throw new DMLRuntimeException("Unknown binary operator type: "+op);
+		BinaryOperator bop = BinaryCPInstruction.getBinaryOperator(bopcode);
+		double ret = bop.fn.execute(left, right);
+		
+		/* old constant folding approach
+		switch( broot.getOp() )
+		{
+			case PLUS:	ret = lret + rret; break;
+			case MINUS:	ret = lret - rret; break;
+			case MULT:  ret = lret * rret; break;
+			case DIV:   ret = lret / rret; break;
+			case MIN:   ret = Math.min(lret, rret); break;
+			case MAX:   ret = Math.max(lret, rret); break;
+		}
+		*/
+		return ret;
+	}
+	
 }

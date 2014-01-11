@@ -24,11 +24,11 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class Unary extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, EXP, Over, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, ROUND, NOTSUPPORTED
 	};
 
 	OperationTypes operation;
@@ -190,7 +190,10 @@ public class Unary extends Lop
 			return "/";
 
 		case MODULUS:
-			return "%%";			
+			return "%%";
+			
+		case INTDIV:
+			return "%/%";	
 			
 		case Over:
 			return "so";
@@ -297,18 +300,19 @@ public class Unary extends Lop
 		if (this.getInputs().size() == 2) {
 			// Unary operators with two inputs
 			// Determine the correct operation, depending on the scalar input
+			Lop linput1 = getInputs().get(0);
+			Lop linput2 = getInputs().get(1);
+			
 			int scalarIndex = -1, matrixIndex = -1;
 			String matrixLabel= null;
-			if (this.getInputs().get(0).get_dataType() == DataType.MATRIX) {
+			if( linput1.get_dataType() == DataType.MATRIX ) {
 				// inputIndex1 is matrix, and inputIndex2 is scalar
 				scalarIndex = 1;
-				matrixIndex = 1-scalarIndex;
 				matrixLabel = String.valueOf(inputIndex1);
 			}
 			else {
 				// inputIndex2 is matrix, and inputIndex1 is scalar
 				scalarIndex = 0;
-				matrixIndex = 1-scalarIndex;
 				matrixLabel = String.valueOf(inputIndex2); 
 				
 				// when the first operand is a scalar, setup the operation type accordingly
@@ -326,14 +330,25 @@ public class Unary extends Lop
 			sb.append( getOpcode() );
 			sb.append( OPERAND_DELIMITOR );
 			
-			// append the matrix operand
-			sb.append( getInputs().get(matrixIndex).prepInputOperand(matrixLabel));
-			sb.append( OPERAND_DELIMITOR );
-			
-			// append the scalar operand
-			sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
-			sb.append( OPERAND_DELIMITOR );
-			
+			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS )
+			{
+				//TODO discuss w/ Shirish: we should consolidate the other operations (see ScalarInstruction.parseInstruction / BinaryCPInstruction.getScalarOperator)
+				//append both operands
+				sb.append( (linput1.get_dataType()==DataType.MATRIX? linput1.prepInputOperand(String.valueOf(inputIndex1)) : linput1.prepScalarInputOperand(getExecType())) );
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( (linput2.get_dataType()==DataType.MATRIX? linput2.prepInputOperand(String.valueOf(inputIndex2)) : linput2.prepScalarInputOperand(getExecType())) );
+				sb.append( OPERAND_DELIMITOR );	
+			}
+			else
+			{
+				// append the matrix operand
+				sb.append( getInputs().get(matrixIndex).prepInputOperand(matrixLabel));
+				sb.append( OPERAND_DELIMITOR );
+				
+				// append the scalar operand
+				sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
+				sb.append( OPERAND_DELIMITOR );
+			}
 			sb.append( this.prepOutputOperand(outputIndex+""));
 			
 			return sb.toString();

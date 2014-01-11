@@ -9,6 +9,8 @@ package com.ibm.bi.dml.runtime.instructions.MRInstructions;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -16,6 +18,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.EqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
@@ -41,7 +44,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 public class ScalarInstruction extends UnaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ScalarInstruction(Operator op, byte in, byte out, String istr)
@@ -56,12 +59,18 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 		InstructionUtils.checkNumFields ( str, 3 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in, out;
 		double cst;
+		boolean firstArgScalar = isFirstArgumentScalar(str);
 		String opcode = parts[0];
-		in = Byte.parseByte(parts[1]);
-		cst = Double.parseDouble(parts[2]);
+		if( firstArgScalar ) {
+			cst = Double.parseDouble(parts[1]);
+			in = Byte.parseByte(parts[2]);
+		}
+		else {
+			in = Byte.parseByte(parts[1]);
+			cst = Double.parseDouble(parts[2]);
+		}
 		out = Byte.parseByte(parts[3]);
 		
 		if ( opcode.equalsIgnoreCase("+") ) {
@@ -83,8 +92,15 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 			return new ScalarInstruction(new RightScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("%%") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(Modulus.getModulusFnObject(), cst), in, out, str);
 			return new ScalarInstruction(new RightScalarOperator(Modulus.getModulusFnObject(), cst), in, out, str);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("%/%") ) {
+			if( firstArgScalar )
+				return new ScalarInstruction(new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), cst), in, out, str);
+			return new ScalarInstruction(new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), cst), in, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("so") ) {
 			return new ScalarInstruction(new LeftScalarOperator(Divide.getDivideFnObject(), cst), in, out, str);
 		} 
@@ -125,7 +141,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 	
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList != null )
@@ -149,5 +165,23 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 				if(out==tempValue)
 					cachedValues.add(output, out);
 			}
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 */
+	private static boolean isFirstArgumentScalar(String inst)
+	{
+		//get first argument
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
+		String arg1 = parts[1];
+		
+		//get data type of first argument
+		String[] subparts = arg1.split(Lop.VALUETYPE_PREFIX);
+		DataType dt = DataType.valueOf(subparts[1]);
+		
+		return (dt == DataType.SCALAR);
 	}
 }

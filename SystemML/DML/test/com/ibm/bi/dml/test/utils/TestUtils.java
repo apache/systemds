@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -63,7 +63,7 @@ import com.ibm.bi.dml.test.MatrixIndex;
 public class TestUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/** job configuration used for file system access */
@@ -324,7 +324,7 @@ public class TestUtils
 				
 			//	System.out.println("actual value: "+actualValue+", expected value: "+expectedValue);
 				
-				if (!compareCellValue(expectedValue, actualValue, epsilon)) {
+				if (!compareCellValue(expectedValue, actualValue, epsilon, false)) {
 					System.out.println(expectedFile+": "+index+" mismatch: expected " + expectedValue + ", actual " + actualValue);
 					countErrors++;
 				}
@@ -391,7 +391,7 @@ public class TestUtils
 				
 			//	System.out.println("actual value: "+actualValue+", expected value: "+expectedValue);
 				
-				if (!compareCellValue(expectedValue, actualValue, epsilon)) {
+				if (!compareCellValue(expectedValue, actualValue, epsilon, false)) {
 					System.out.println(expectedFile+": "+index+" mismatch: expected " + expectedValue + ", actual " + actualValue);
 					countErrors++;
 				}
@@ -604,11 +604,13 @@ public class TestUtils
 	 *            Tolerance
 	 * @return
 	 */
-	private static boolean compareCellValue(Double v1, Double v2, double t) {
+	private static boolean compareCellValue(Double v1, Double v2, double t, boolean ignoreNaN) {
 		if (v1 == null)
 			v1 = 0.0;
 		if (v2 == null)
 			v2 = 0.0;
+		if( ignoreNaN && (v1.isNaN() || v1.isInfinite() || v2.isNaN() || v2.isInfinite()) )
+			return true;
 		if (v1.equals(v2))
 			return true;
 
@@ -624,7 +626,7 @@ public class TestUtils
 	 * @return
 	 */
 	private static boolean compareCellValue(Double v1, Double v2) {
-		return compareCellValue(v1, v2, 0);
+		return compareCellValue(v1, v2, 0, false);
 	}
 
 	/**
@@ -648,7 +650,7 @@ public class TestUtils
 		int countErrors = 0;
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon))
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false))
 					countErrors++;
 			}
 		}
@@ -656,11 +658,27 @@ public class TestUtils
 	}
 	
 	public static void compareScalars(double d1, double d2, double tol) {
-		if(!compareCellValue(d1, d2, tol)) {
+		if(!compareCellValue(d1, d2, tol, false)) {
 			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , true);
 		}
 	}
 
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @param tolerance
+	 * @param name1
+	 * @param name2
+	 * @param ignoreNaN
+	 * @return
+	 */
+	public static boolean compareMatrices(HashMap<CellIndex, Double> m1, HashMap<CellIndex, Double> m2,
+			double tolerance, String name1, String name2) 
+	{
+		return compareMatrices(m1, m2, tolerance, name1, name2, false);
+	}
+	
 	/**
 	 * Compares two matrices given as HashMaps. The matrix containing more nnz
 	 * is iterated and each cell value compared against the corresponding cell
@@ -675,7 +693,7 @@ public class TestUtils
 	 * @return True if matrices are identical regarding tolerance.
 	 */
 	public static boolean compareMatrices(HashMap<CellIndex, Double> m1, HashMap<CellIndex, Double> m2,
-			double tolerance, String name1, String name2) {
+			double tolerance, String name1, String name2, boolean ignoreNaN) {
 		HashMap<CellIndex, Double> first = m2;
 		HashMap<CellIndex, Double> second = m1;
 		String namefirst = name2;
@@ -709,9 +727,9 @@ public class TestUtils
 			if (Math.abs(v1 - v2) > maxerr)
 				maxerr = Math.abs(v1 - v2);
 
-			if (!compareCellValue(first.get(index), second.get(index), 0)) {
+			if (!compareCellValue(first.get(index), second.get(index), 0, ignoreNaN)) {
 				countErrorIdentical++;
-				if (!compareCellValue(first.get(index), second.get(index), tolerance)) {
+				if (!compareCellValue(first.get(index), second.get(index), tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
 					if(!flag)
 						System.out.println(index+": "+first.get(index)+" <--> "+second.get(index));
@@ -895,7 +913,7 @@ public class TestUtils
 				if (actualValue == null)
 					actualValue = 0.0;
 
-				if (!compareCellValue(expectedValue, actualValue, epsilon))
+				if (!compareCellValue(expectedValue, actualValue, epsilon, false))
 					countErrors++;
 			}
 			assertTrue("for file " + hdfsDir + " " + countErrors + " values are not in equal", countErrors == 0);

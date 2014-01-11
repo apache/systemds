@@ -22,12 +22,12 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class BinaryCP extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS,
+		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		LOG,POW,MAX,MIN,PRINT,
@@ -88,6 +88,8 @@ public class BinaryCP extends Lop
 			opString = "/"; break;
 		case MODULUS:
 			opString = "%%"; break;	
+		case INTDIV:
+			opString = "%/%"; break;	
 		case POW:	
 			opString = "^"; break;
 			

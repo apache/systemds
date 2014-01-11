@@ -14,8 +14,6 @@ import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-import static com.ibm.bi.dml.runtime.util.UtilFunctions.toInt;
-
 public class ElementwiseModulusTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
@@ -69,9 +67,10 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -5, 5, 1, -1);
 		double[][] b = getNonZeroRandomMatrix(rows, cols, -20, 20, -1);
 		double[][] c = new double[rows][cols];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				c[i][j] = Modulus.modOrNaN(toInt(a[i][j]), toInt(b[i][j]));
+				c[i][j] = fnmod.execute(a[i][j], b[i][j]);
 			}
 		}
 		
@@ -94,13 +93,13 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		
 		loadTestConfiguration("SparseTest");
-		
 		double[][] a = getRandomMatrix(rows, cols, -5, 5, 0.05, -1);
 		double[][] b = getNonZeroRandomMatrix(rows, cols, -20, 20, -1);
 		double[][] c = new double[rows][cols];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				c[i][j] = Modulus.modOrNaN(toInt(a[i][j]), toInt(b[i][j]));
+				c[i][j] = fnmod.execute(a[i][j], b[i][j]);
 			}
 		}
 		
@@ -267,13 +266,13 @@ public class ElementwiseModulusTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		
 		loadTestConfiguration("DivisionByZeroTest");
-		
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		double[][] b = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		double[][] c = new double[rows][cols];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				c[i][j] = Modulus.modOrNaN(toInt(a[i][j]), toInt(b[i][j]));
+				c[i][j] = fnmod.execute(a[i][j], b[i][j]);
 			}
 		}
 		writeInputMatrix("a", a);

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.EqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanReturnDouble;
+import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEqualsReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanReturnDouble;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
@@ -35,7 +36,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 public class BinaryInstruction extends BinaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public BinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
@@ -71,7 +72,10 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		}
 		else if ( opcode.equalsIgnoreCase("%%") ) {
 			return new BinaryInstruction(new BinaryOperator(Modulus.getModulusFnObject()), in1, in2, out, str);
-		}	
+		}
+		else if ( opcode.equalsIgnoreCase("%/%") ) {
+			return new BinaryInstruction(new BinaryOperator(IntegerDivide.getIntegerDivideFnObject()), in1, in2, out, str);
+		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
 			return new BinaryInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, out, str);
 		}

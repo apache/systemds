@@ -2342,6 +2342,8 @@ public class DMLTranslator
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.DIV, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.MODULUS) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MODULUS, left, right);
+		} else if (source.getOpCode() == Expression.BinaryOp.INTDIV) {
+			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.INTDIV, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.MATMULT) {
 			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.POW) {

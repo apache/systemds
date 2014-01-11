@@ -112,6 +112,7 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "*"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "/"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "%%"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+		String2MRInstructionType.put( "%/%"  , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "so"   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "^"    , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "max"  , MRINSTRUCTION_TYPE.ArithmeticBinary);

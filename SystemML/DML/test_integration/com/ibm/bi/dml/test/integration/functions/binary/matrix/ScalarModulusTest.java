@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,12 +14,11 @@ import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-import static com.ibm.bi.dml.runtime.util.UtilFunctions.toInt;
 
 public class ScalarModulusTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	@Override
@@ -64,9 +63,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = toInt(vector[i][0]) % divisor;
-			computedVectorRight[i][0] = dividend % toInt(vector[i][0]);
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -77,8 +77,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = toInt(matrix[i][j]) % divisor;
-				computedMatrixRight[i][j] = dividend % toInt(matrix[i][j]);
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
@@ -109,9 +109,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = toInt(vector[i][0]) % divisor;
-			computedVectorRight[i][0] = dividend % toInt(vector[i][0]);
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -122,8 +123,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = toInt(matrix[i][j]) % divisor;
-				computedMatrixRight[i][j] = dividend % toInt(matrix[i][j]);
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
@@ -154,9 +155,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = toInt(vector[i][0]) % divisor;
-			computedVectorRight[i][0] = dividend % toInt(vector[i][0]);
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -167,8 +169,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = toInt(matrix[i][j]) % divisor;
-				computedMatrixRight[i][j] = dividend % toInt(matrix[i][j]);
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
@@ -199,9 +201,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getNonZeroRandomMatrix(rows, 1, 1, 5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = toInt(vector[i][0]) % divisor;
-			computedVectorRight[i][0] = dividend % toInt(vector[i][0]);
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -212,8 +215,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = toInt(matrix[i][j]) % divisor;
-				computedMatrixRight[i][j] = dividend % toInt(matrix[i][j]);
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
@@ -244,9 +247,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.05, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = Modulus.modOrNaN(toInt(vector[i][0]), divisor);
-			computedVectorRight[i][0] = Modulus.modOrNaN(dividend, toInt(vector[i][0]));
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -257,8 +261,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = Modulus.modOrNaN(toInt(matrix[i][j]), divisor);
-				computedMatrixRight[i][j] = Modulus.modOrNaN(dividend, toInt(matrix[i][j]));
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);
@@ -289,9 +293,10 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] vector = getRandomMatrix(rows, 1, 1, 5, 0.5, -1);
 		double[][] computedVectorLeft = new double[rows][1];
 		double[][] computedVectorRight = new double[rows][1];
+		Modulus fnmod = Modulus.getModulusFnObject();
 		for(int i = 0; i < rows; i++) {
-			computedVectorLeft[i][0] = Modulus.modOrNaN(toInt(vector[i][0]), divisor);
-			computedVectorRight[i][0] = Modulus.modOrNaN(dividend, toInt(vector[i][0]));
+			computedVectorLeft[i][0] = fnmod.execute(vector[i][0], divisor);
+			computedVectorRight[i][0] = fnmod.execute(dividend, vector[i][0]);
 		}
 		writeInputMatrix("vector", vector);
 		writeExpectedMatrix("vector_left", computedVectorLeft);
@@ -302,8 +307,8 @@ public class ScalarModulusTest extends AutomatedTestBase
 		double[][] computedMatrixRight = new double[rows][cols];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				computedMatrixLeft[i][j] = Modulus.modOrNaN(toInt(matrix[i][j]), divisor);
-				computedMatrixRight[i][j] = Modulus.modOrNaN(dividend, toInt(matrix[i][j]));
+				computedMatrixLeft[i][j] = fnmod.execute(matrix[i][j], divisor);
+				computedMatrixRight[i][j] = fnmod.execute(dividend, matrix[i][j]);
 			}
 		}
 		writeInputMatrix("matrix", matrix);

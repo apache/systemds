@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -229,6 +229,7 @@ TOKEN :
 	| <MULT  		: "*">
 	| <DIV  		: "/">
 	| <MODULUS      : "%%">
+	| <INTDIV       : "%/%">
 	| <MATRIXMULT 	: "%*%">
 	| <POWER  		: "^">
 	| <LESSEQUAL  	: "<=">
@@ -1656,7 +1657,7 @@ Expression MultDivExpression() :
 	expr = MatrixMultExpression() 
  	(
    		{Expression left, right; Expression.BinaryOp bop = null;}
-   		(t = <MULT> | t = <DIV> | t = <MODULUS>)  {bop = Expression.getBinaryOp(t.image); }
+   		(t = <MULT> | t = <DIV> | t = <MODULUS> | t = <INTDIV>)  {bop = Expression.getBinaryOp(t.image); }
    		right = MatrixMultExpression() 
    		{
 		    left = expr;

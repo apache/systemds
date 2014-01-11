@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Divide;
 import com.ibm.bi.dml.runtime.functionobjects.Equals;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
+import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
@@ -36,7 +37,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 public class BinaryCPInstruction extends ComputationCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public BinaryCPInstruction(Operator op, 
@@ -91,7 +92,7 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 	
 	//scalar-scalar or matrix-matrix operator 
 	//is searched for by this function
-	static BinaryOperator getBinaryOperator(String opcode) throws DMLRuntimeException{
+	public static BinaryOperator getBinaryOperator(String opcode) throws DMLRuntimeException{
 		if(opcode.equalsIgnoreCase("=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
 		else if(opcode.equalsIgnoreCase("!="))
@@ -120,6 +121,8 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 			return new BinaryOperator(Divide.getDivideFnObject());
 		else if(opcode.equalsIgnoreCase("%%"))
 			return new BinaryOperator(Modulus.getModulusFnObject());
+		else if(opcode.equalsIgnoreCase("%/%"))
+			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
 		else if(opcode.equalsIgnoreCase("^"))
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )
@@ -160,7 +163,12 @@ public class BinaryCPInstruction extends ComputationCPInstruction
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Modulus.getModulusFnObject(), default_constant);
 			else return new RightScalarOperator(Modulus.getModulusFnObject(), default_constant);
-		}  		
+		}
+		else if ( opcode.equalsIgnoreCase("%/%") ) {
+			if(arg1IsScalar)
+				return new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
+			else return new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
+		}
 		//operations for which only matrix-scalar makes sense
 		else if ( opcode.equalsIgnoreCase("^") ){
 			return new RightScalarOperator(Power.getPowerFnObject(), default_constant);

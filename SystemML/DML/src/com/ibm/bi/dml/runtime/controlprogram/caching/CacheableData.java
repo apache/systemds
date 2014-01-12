@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -44,7 +44,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public abstract class CacheableData extends Data
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
@@ -53,7 +53,9 @@ public abstract class CacheableData extends Data
 	public static final double 	CACHING_BUFFER_SIZE = 0.1; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
-	public static final boolean CACHING_STATS = false;
+	
+	public static final String CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
+	
 	
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
 	private static boolean _activeFlag = false;

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.controlprogram.caching;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -43,7 +44,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class MatrixObject extends CacheableData
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/**
@@ -340,7 +341,7 @@ public class MatrixObject extends CacheableData
 			
 			try
 			{
-				if(CACHING_STATS)
+				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
 				_data = readMatrixFromHDFS( _hdfsFileName );
 				_dirtyFlag = false;
@@ -353,7 +354,7 @@ public class MatrixObject extends CacheableData
 			//mark for initial local write despite read operation
 			_requiresLocalWrite = true;
 		}
-		else if( CACHING_STATS )
+		else if( DMLScript.STATISTICS )
 		{
 			if( _data!=null )
 				CacheStatistics.incrementMemHits();
@@ -1154,7 +1155,7 @@ public class MatrixObject extends CacheableData
 			LOG.trace ("Writing matrix to HDFS ("+filePathAndName+") - NOTHING TO WRITE (_data == null).");
 		}
 		
-		if(CACHING_STATS)
+		if( DMLScript.STATISTICS )
 			CacheStatistics.incrementHDFSWrites();
 	}
 	

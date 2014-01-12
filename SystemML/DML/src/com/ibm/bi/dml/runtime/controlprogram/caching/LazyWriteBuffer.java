@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -26,7 +27,7 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 public class LazyWriteBuffer 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum RPolicy{
@@ -79,7 +80,7 @@ public class LazyWriteBuffer
 						
 						//evict matrix
 						LocalFileUtils.writeByteArrayToLocal(ftmp, tmp.data);
-						if(CacheableData.CACHING_STATS)
+						if( DMLScript.STATISTICS )
 							CacheStatistics.incrementFSWrites();
 						_size-=tmp.data.length;
 						
@@ -107,14 +108,14 @@ public class LazyWriteBuffer
 			mb.write(dout);
 			bbuff.markSerialized(); //for serialization outside global lock
 			
-			if(CacheableData.CACHING_STATS)
+			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSBuffWrites();
 		}	
 		else
 		{
 			//write directly to local FS (bypass buffer if too large)
 			LocalFileUtils.writeMatrixBlockToLocal(fname, mb);
-			if(CacheableData.CACHING_STATS)
+			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSWrites();
 		}
 	}
@@ -182,13 +183,13 @@ public class LazyWriteBuffer
 			DataInputStream din = new DataInputStream(bis); 
 			mb = new MatrixBlock();
 			mb.readFields(din);
-			if(CacheableData.CACHING_STATS)
+			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSBuffWrites();
 		}
 		else
 		{
 			mb = LocalFileUtils.readMatrixBlockFromLocal(fname); //read from FS
-			if(CacheableData.CACHING_STATS)
+			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSHits();
 		}
 		

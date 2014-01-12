@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CacheStatistics 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//enum used for MR counters
@@ -103,6 +103,16 @@ public class CacheStatistics
 		_numHitsFSBuff.incrementAndGet();
 	}
 	
+	public static void incrementFSBuffHits( int delta )
+	{
+		_numHitsFSBuff.addAndGet(delta);
+	}
+	
+	public static int getFSBuffHits()
+	{
+		return _numHitsFSBuff.get();
+	}
+	
 	public static void incrementFSHits()
 	{
 		_numHitsFS.incrementAndGet();
@@ -136,6 +146,16 @@ public class CacheStatistics
 	public static void incrementFSBuffWrites()
 	{
 		_numWritesFSBuff.incrementAndGet();
+	}
+	
+	public static void incrementFSBuffWrites(int delta)
+	{
+		_numWritesFSBuff.addAndGet(delta);
+	}
+	
+	public static int getFSBuffWrites()
+	{
+		return _numWritesFSBuff.get();
 	}
 	
 	public static void incrementFSWrites()

@@ -18,6 +18,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -30,6 +31,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * Remote ParWorker implementation, realized as MR mapper.
@@ -108,16 +110,17 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		}
 		
 		//statistic maintenance
-		reporter.incrCounter(Stat.PARFOR_NUMITERS, getExecutedIterations()-numIters);
-		reporter.incrCounter(Stat.PARFOR_NUMTASKS, 1);
-		
-		if( CacheableData.CACHING_STATS  && !InfrastructureAnalyzer.isLocalMode() )
-		{
-			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_MEM, CacheStatistics.getMemHits());
-			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_FS, CacheStatistics.getFSHits());
-			reporter.incrCounter( CacheStatistics.Stat.CACHE_HITS_HDFS, CacheStatistics.getHDFSHits());
-			reporter.incrCounter( CacheStatistics.Stat.CACHE_WRITES_FS, CacheStatistics.getFSWrites());
-			reporter.incrCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS, CacheStatistics.getHDFSWrites());
+		reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMITERS.toString(), getExecutedIterations()-numIters);
+		reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMTASKS.toString(), 1);
+		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode() ) {
+			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JITCOMPILE.toString(), Statistics.getJITCompileTime());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_MEM.toString(), CacheStatistics.getMemHits());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString(), CacheStatistics.getFSBuffHits());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_FS.toString(), CacheStatistics.getFSHits());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_HITS_HDFS.toString(), CacheStatistics.getHDFSHits());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_FSBUFF.toString(), CacheStatistics.getFSBuffWrites());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_FS.toString(), CacheStatistics.getFSWrites());
+			reporter.incrCounter( CacheableData.CACHING_COUNTER_GROUP_NAME, CacheStatistics.Stat.CACHE_WRITES_HDFS.toString(), CacheStatistics.getHDFSWrites());
 		}
 	}
 
@@ -211,9 +214,12 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			LOG.trace("reuse configured RemoteParWorkerMapper "+_stringID);
 		}
 		
-		//always reset cache stats because counters per map task
-		if( CacheableData.CACHING_STATS && !InfrastructureAnalyzer.isLocalMode() )
+		//always reset stats because counters per map task (for case of JVM reuse)
+		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() )
+		{
 			CacheStatistics.reset();
+			Statistics.resetJITCompileTime();
+		}
 	}
 	
 	private void pinResultVariables()

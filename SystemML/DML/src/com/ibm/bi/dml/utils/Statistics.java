@@ -7,8 +7,11 @@
 
 package com.ibm.bi.dml.utils;
 
+import java.lang.management.CompilationMXBean;
+import java.lang.management.ManagementFactory;
+
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 
 /**
  * This class captures all statistics.
@@ -31,6 +34,8 @@ public class Statistics
 	/** number of compiled MR jobs */
 	private static int iNoOfCompiledMRJobs = 0;
 
+	private static long jitCompileTime = 0;
+	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -58,6 +63,10 @@ public class Statistics
 	public static synchronized void incrementNoOfCompiledMRJobs() {
 		iNoOfCompiledMRJobs ++;
 	}
+	
+	public static synchronized void incrementJITCompileTime( long time ) {
+		jitCompileTime += time;
+	}
 
 	/**
 	 * Starts the timer, should be invoked immediately before invoking
@@ -83,14 +92,39 @@ public class Statistics
 	public static long getRunTime() {
 		return lEndTime - lStartTime;
 	}
+	
+	/**
+	 * 
+	 */
+	public static void resetJITCompileTime(){
+		jitCompileTime = -1 * getJITCompileTime();
+	}
+	
+	/**
+	 * Returns the total time of asynchronous JIT compilation in milliseconds.
+	 * 
+	 * @return
+	 */
+	public static long getJITCompileTime(){
+		long ret = -1; //unsupported
+		CompilationMXBean cmx = ManagementFactory.getCompilationMXBean();
+		if( cmx.isCompilationTimeMonitoringSupported() )
+		{
+			ret = cmx.getTotalCompilationTime();
+			ret += jitCompileTime; //add from remote processes
+		}
+		return ret;
+	}
 
 	/**
 	 * Prints statistics.
 	 * 
 	 * @return
 	 */
-	public static String display() {
+	public static String display() 
+	{
 		StringBuilder sb = new StringBuilder();
+		
 		sb.append("SystemML Statistics:\n");
 		double totalT = getRunTime()*1e-9; // nanoSec --> sec
 		sb.append("Total time:\t\t" + totalT + " sec.\n");
@@ -102,11 +136,15 @@ public class Statistics
 		sb.append("RunTime: " + execTime*1e-9 + "\n");*/
 		sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
-		if( CacheableData.CACHING_STATS )
+		
+		//show extended caching/compilation statistics
+		if( DMLScript.STATISTICS ) 
 		{
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
+			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 		}
+		
 		return sb.toString();
 	}
 }

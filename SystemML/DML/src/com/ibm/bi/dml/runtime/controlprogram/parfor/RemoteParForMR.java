@@ -17,7 +17,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.Counters;
+import org.apache.hadoop.mapred.Counters.Group;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -26,6 +26,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs.ExecMode;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -183,16 +184,19 @@ public class RemoteParForMR
 			
 			// Process different counters 
 			Statistics.incrementNoOfExecutedMRJobs();
-			Counters group = runjob.getCounters();
-			int numTasks = (int)group.getCounter( Stat.PARFOR_NUMTASKS );
-			int numIters = (int)group.getCounter( Stat.PARFOR_NUMITERS );
-			if( CacheableData.CACHING_STATS && !InfrastructureAnalyzer.isLocalMode() )
-			{
-				CacheStatistics.incrementMemHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_MEM ));
-				CacheStatistics.incrementFSHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_FS ));
-				CacheStatistics.incrementHDFSHits((int)group.getCounter( CacheStatistics.Stat.CACHE_HITS_HDFS ));
-				CacheStatistics.incrementFSWrites((int)group.getCounter( CacheStatistics.Stat.CACHE_WRITES_FS ));
-				CacheStatistics.incrementHDFSWrites((int)group.getCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS ));
+			Group pgroup = runjob.getCounters().getGroup(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME);
+			int numTasks = (int)pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() );
+			int numIters = (int)pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() );
+			if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() ) {
+				Statistics.incrementJITCompileTime( pgroup.getCounter( Stat.PARFOR_JITCOMPILE.toString() ) );
+				Group cgroup = runjob.getCounters().getGroup(CacheableData.CACHING_COUNTER_GROUP_NAME.toString());
+				CacheStatistics.incrementMemHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_MEM.toString() ));
+				CacheStatistics.incrementFSBuffHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString() ));
+				CacheStatistics.incrementFSHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FS.toString() ));
+				CacheStatistics.incrementHDFSHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_HDFS.toString() ));
+				CacheStatistics.incrementFSBuffWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FSBUFF.toString() ));
+				CacheStatistics.incrementFSWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FS.toString() ));
+				CacheStatistics.incrementHDFSWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS.toString() ));
 			}
 				
 			// read all files of result variables and prepare for return

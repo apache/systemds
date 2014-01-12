@@ -83,6 +83,7 @@ public class DMLScript
 	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
+	public static boolean STATISTICS = false; //default statistics
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -91,20 +92,24 @@ public class DMLScript
 	
 	
 	public static String USAGE = "Usage is " + DMLScript.class.getCanonicalName() 
-			+ " [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? [-args | -nvargs]? <args-list>? \n" 
-			+ " -f: <filename> will be interpreted as a filename path + \n"
-			+ "     <filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n" 
-			+ " -s: <filename> will be interpreted as a DML script string \n"
-			+ " -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
-			+ " [-v | -visualize]: (optional) use visualization of DAGs \n"
-			+ " -config: (optional) use config file <config_filename> (default: use parameter values in default SystemML-config.xml config file) \n" 
-			+ "          <config_filename> prefixed with hdfs or gpfs is from DFS, otherwise it is local file + \n"
-			+ " -args: (optional) parameterize DML script with contents of [args list], ALL args after -args flag \n"
-			+ "    	each argument must be an unnamed-argument, where 1st value after -args will replace $1 in DML script, 2nd value will replace $2 in DML script, and so on."
-			+ " -nvargs: (optional) parameterize DML script with contents of [args list], ALL args after -nvargs flag \n"
-			+ "		each argument must be be named-argument of form argName=argValue, where value will replace $argName in DML script"
-			+ "    	argName must be a valid DML variable name (start with letter, contain only letters, numbers, or underscores)" 
-			+ " <args-list>: (optional) args to DML script \n" ;
+			+ "   [-f | -s] <filename>" + " -exec <mode>" +  /*" (-nz)?" + */ " (-config=<config_filename>)? [-args | -nvargs]? <args-list>? \n" 
+			+ "   -f: <filename> will be interpreted as a filename path (if <filename> is prefixed\n"
+			+ "         with hdfs or gpfs it is read from DFS, otherwise from local file system\n" 
+			+ "   -s: <filename> will be interpreted as a DML script string \n"
+			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
+			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
+			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
+			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
+			+ "         values in default SystemML-config.xml config file; if <config_filename> is\n" 
+			+ "         prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)\n"
+			+ "   -args: (optional) parameterize DML script with contents of [args list], ALL args\n"
+			+ "         after -args flag, each argument must be an unnamed-argument, where 1st value\n"
+			+ "         after -args will replace $1 in DML script, 2nd value will replace $2, etc.\n"
+			+ "   -nvargs: (optional) parameterize DML script with contents of [args list], ALL args\n"
+			+ "         after -nvargs flag, each argument must be be named-argument of form argName=argValue,\n"
+			+ "         where value will replace $argName in DML script, argName must be a valid DML variable\n"
+			+ "         name (start with letter, contain only letters, numbers, or underscores).\n"
+			+ "   <args-list>: (optional) args to DML script \n" ;
 	
 	
 	///////////////////////////////
@@ -200,6 +205,8 @@ public class DMLScript
 			{
 				if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
 					VISUALIZE = true;
+				else if( args[i].equalsIgnoreCase("-stats") )
+					STATISTICS = true;
 				else if ( args[i].equalsIgnoreCase("-exec")){
 					rtplatform = parseRuntimePlatform(args[++i]);
 					if( rtplatform==null ) 
@@ -272,7 +279,7 @@ public class DMLScript
 			
 			if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
 				arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
-				arg.equalsIgnoreCase("-exec") ||
+				arg.equalsIgnoreCase("-stats") || arg.equalsIgnoreCase("-exec") ||
 				arg.startsWith("-config="))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
@@ -691,8 +698,10 @@ public class DMLScript
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.setNoOfExecutedMRJobs( 0 );
-		if(CacheableData.CACHING_STATS)
+		if( STATISTICS ) {
 			CacheStatistics.reset();
+			Statistics.resetJITCompileTime();
+		}
 	}
 	
 	/**

@@ -122,6 +122,9 @@ public class ProgramConverter
 	public static final String PARFOR_PB_FC      = " FC" + LEVELIN;
 	public static final String PARFOR_PB_EFC     = " EFC" + LEVELIN;
 	
+	public static final String PARFOR_CONF_STATS = "stats";
+	
+	
 	//exception msgs
 	public static final String NOT_SUPPORTED_EXTERNALFUNCTION_PB = "Not supported: ExternalFunctionProgramBlock contains MR instructions. " +
 			                                                       "(ExternalFunctionPRogramBlockCP can be used)";
@@ -643,6 +646,11 @@ public class ProgramConverter
 		
 		//handle DML config
 		sb.append( ConfigurationManager.getConfig().serializeDMLConfig() );
+		sb.append( COMPONENTS_DELIM );
+		sb.append( NEWLINE );
+		
+		//handle additional configurations
+		sb.append( PARFOR_CONF_STATS + "=" + DMLScript.STATISTICS );
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
@@ -1342,6 +1350,10 @@ public class ProgramConverter
 			ConfigurationManager.setConfig(config);
 		}
 		
+		//handle additional configs
+		String aconfs = st.nextToken();
+		parseAndSetAdditionalConfigurations( aconfs );
+		
 		//handle program
 		String progStr = st.nextToken();
 		Program prog = parseProgram( progStr, id ); 
@@ -2005,6 +2017,13 @@ public class ProgramConverter
 		}
 		
 		return ec;
+	}
+	
+	public static void parseAndSetAdditionalConfigurations(String conf)
+	{
+		//set statistics flag
+		String[] statsFlag = conf.split("=");
+		DMLScript.STATISTICS = Boolean.parseBoolean(statsFlag[1]);
 	}
 
 	//////////

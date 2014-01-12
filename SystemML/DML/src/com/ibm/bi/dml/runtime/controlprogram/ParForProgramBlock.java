@@ -17,6 +17,7 @@ import java.util.HashSet;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Level;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -206,6 +207,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final String PARFOR_MR_RESULTMERGE_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_resultmerge%VAR%"; 
 	public static final String PARFOR_DATAPARTITIONS_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_datapartitions%VAR%"; 
 	
+	public static final String PARFOR_COUNTER_GROUP_NAME    = "SystemML ParFOR Counters";
+	
 	// static ID generator sequences
 	private static IDSequence   _pfIDSeq        = null;
 	private static IDSequence   _pwIDSeq        = null;
@@ -220,6 +223,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected PExecMode        _execMode        = null;
 	protected POptMode         _optMode         = null;
 	protected boolean          _monitor         = false;
+	protected Level            _optLogLevel     = null;
 	
 	
 	//specifics used for optimization
@@ -292,6 +296,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			_resultMerge     = PResultMerge.valueOf( _params.get(ParForStatementBlock.RESULT_MERGE).toUpperCase() );
 			_execMode        = PExecMode.valueOf( _params.get(ParForStatementBlock.EXEC_MODE).toUpperCase() );
 			_optMode         = POptMode.valueOf( _params.get(ParForStatementBlock.OPT_MODE).toUpperCase());		
+			_optLogLevel     = Level.toLevel( _params.get(ParForStatementBlock.OPT_LOG));
 			_monitor         = (Integer.parseInt(_params.get(ParForStatementBlock.PROFILE) ) == 1);
 		}
 		catch(Exception ex)
@@ -466,7 +471,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _optMode != POptMode.NONE )
 		{
 			updateIterablePredicateVars( iterVarName, from, to, incr );
-			OptimizationWrapper.optimize( _optMode, _sb, this, ec, _monitor ); 
+			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
+			OptimizationWrapper.optimize( _optMode, _sb, this, ec, _monitor ); //core optimize
 			
 			//take changed iterable predicate into account
 			iterVarName = _iterablePredicateVars[0];

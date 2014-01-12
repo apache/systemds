@@ -57,6 +57,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	public static final String RESULT_MERGE     = "resultmerge"; //task partitioner 
 	public static final String EXEC_MODE        = "mode";        //runtime execution mode	
 	public static final String OPT_MODE         = "opt";        //runtime execution mode	
+	public static final String OPT_LOG          = "log";        //parfor logging mode 	
 	public static final String PROFILE          = "profile";    //monitor and report parfor performance profile 	
 	
 	//default external parameter values
@@ -98,6 +99,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramNames.add( EXEC_MODE ); 
 		_paramNames.add( OPT_MODE ); 
 		_paramNames.add( PROFILE ); 
+		_paramNames.add( OPT_LOG ); 
 		
 		// populate defaults lookup-table
 		_paramDefaults = new HashMap<String, String>();
@@ -110,6 +112,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults.put( EXEC_MODE,         String.valueOf(PExecMode.LOCAL) );
 		_paramDefaults.put( OPT_MODE,          String.valueOf(POptMode.RULEBASED) );
 		_paramDefaults.put( PROFILE,           "0" );
+		_paramDefaults.put( OPT_LOG,           Logger.getRootLogger().getLevel().toString() );
 		
 		_paramDefaults2 = new HashMap<String, String>(); //OPT_MODE always specified
 		_paramDefaults2.put( CHECK,             "1" );
@@ -119,7 +122,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults2.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.UNSPECIFIED) );
 		_paramDefaults2.put( RESULT_MERGE,      String.valueOf(PResultMerge.UNSPECIFIED) );
 		_paramDefaults2.put( EXEC_MODE,         String.valueOf(PExecMode.UNSPECIFIED) );
-		_paramDefaults2.put( PROFILE,           "0" );
+		_paramDefaults2.put( OPT_LOG,           Logger.getRootLogger().getLevel().toString() );
 		
 		_idSeq = new IDSequence();
 		_idSeqfn = new IDSequence();

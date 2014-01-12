@@ -1,0 +1,39 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+V = read($1,rows=$2,cols=$3);
+m = $2;
+n = $3;
+W = m;
+
+R = matrix(0, rows=n,cols=n); 
+
+parfor( i in 1:(n-1), log=debug )
+{
+   X = V[,i];                 
+   m2X = centralMoment(X,2);
+   sigmaX = sqrt(m2X * (W/(W-1.0)) );
+      
+   parfor( j in (i+1):n )  
+   {  
+      Y = V[,j];
+
+      #corr computation    
+      m2Y = centralMoment(Y,2);
+      sigmaY = sqrt(m2Y * (W/(W-1.0)) );      
+      covXY = cov(X,Y);      
+      rXY = covXY / (sigmaX*sigmaY); 
+      
+      print("R[{"+i+","+j+"}]="+rXY); 
+      R[i,j] = rXY; 
+      
+   }
+}   
+
+write(R, $4); 

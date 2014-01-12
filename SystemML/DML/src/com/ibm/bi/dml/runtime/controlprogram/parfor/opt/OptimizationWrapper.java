@@ -162,6 +162,15 @@ public class OptimizationWrapper
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
 	
+	/**
+	 * 
+	 * @param optLogLevel
+	 */
+	public static void setLogLevel( Level optLogLevel )
+	{
+		Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
+		      .setLevel( optLogLevel );
+	}
 	
 	/**
 	 * 

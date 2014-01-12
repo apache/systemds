@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -24,11 +24,13 @@ import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.FunctionStatement;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
+import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.ParForStatement;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.CVProgramBlock;
@@ -69,7 +71,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 public class OptTreeConverter 
 {		
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//internal configuration flags
@@ -350,12 +352,18 @@ public class OptTreeConverter
 		if( pb instanceof IfProgramBlock )
 		{
 			IfProgramBlock ipb = (IfProgramBlock) pb;
-			IfStatement is = (IfStatement) sb.getStatement(0);
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement is = (IfStatement) isb.getStatement(0);
 			
 			node = new OptNode( NodeType.IF );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
-			//process if condition
+			
+			//handle predicate
+			isb.getPredicateHops().resetVisitStatus();
+			node.addChilds( rCreateAbstractOptNodes( isb.getPredicateHops(), vars, memo ) );
+			
+			//process if branch
 			OptNode ifn = new OptNode(NodeType.GENERIC);
 			_hlMap.putProgMapping(sb, pb, ifn);
 			ifn.setExecType(ExecType.CP);
@@ -367,7 +375,7 @@ public class OptTreeConverter
 				StatementBlock lsb = is.getIfBody().get(i);
 				ifn.addChild( rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
 			}
-			//process else condition
+			//process else branch
 			if( ipb.getChildBlocksElseBody() != null )
 			{
 				OptNode efn = new OptNode(NodeType.GENERIC);
@@ -386,11 +394,17 @@ public class OptTreeConverter
 		else if( pb instanceof WhileProgramBlock )
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
-			WhileStatement ws = (WhileStatement) sb.getStatement(0);
+			WhileStatementBlock wsb = (WhileStatementBlock)sb;
+			WhileStatement ws = (WhileStatement) wsb.getStatement(0);
 			
 			node = new OptNode( NodeType.WHILE );
 			_hlMap.putProgMapping(sb, pb, node);
 			node.setExecType(ExecType.CP);
+			
+			//handle predicate
+			wsb.getPredicateHops().resetVisitStatus();
+			node.addChilds( rCreateAbstractOptNodes( wsb.getPredicateHops(), vars, memo ) );
+			
 			//process body
 			int len = ws.getBody().size();
 			for( int i=0; i<wpb.getChildBlocks().size() && i<len; i++ )
@@ -412,6 +426,7 @@ public class OptTreeConverter
 			
 			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
+			//handle predicate
 			fsb.getFromHops().resetVisitStatus();
 			fsb.getToHops().resetVisitStatus();
 			fsb.getIncrementHops().resetVisitStatus();

@@ -105,6 +105,8 @@ public abstract class CostEstimator
 		else
 		{
 			//aggreagtion methods for different program block types and measure types
+			//TODO EXEC TIME requires reconsideration of for/parfor/if predicates 
+			//TODO MEMORY requires reconsideration of parfor -> potential overestimation, but safe
 			String tmp = null;
 			double N = -1;
 			switch ( measure )

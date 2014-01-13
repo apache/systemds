@@ -332,24 +332,30 @@ public class OptimizerRuleBased extends Optimizer
 					ret |= rFindDataPartitioningCandidates( cn, cand, vars );
 		}
 		else if( n.getNodeType()== NodeType.HOP
-			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) 
-			     && n.getExecType() == ExecType.MR )
+			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).get_name();
-			if( cand.containsKey(inMatrix) )
+			if( cand.containsKey(inMatrix) ) //Required Condition: partitioning applicable
 			{
-				//NOTE: subsequent rewrites will still use the MR mem estimate
-				//(guarded by subsequent operations that have at least the memory req of one partition)
 				PDataPartitionFormat dpf = cand.get(inMatrix);
 				double mnew = getNewRIXMemoryEstimate( n, inMatrix, dpf, vars );
-				if( mnew < _lm ) //apply rewrite if partitions fit into memory
-					n.setExecType(ExecType.CP);
-				else
-					n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
-				n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
-				h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
-				ret = true;
+				//NOTE: for the moment, we do not partition according to the remote mem, because we can execute 
+				//it even without partitioning in CP. However, advanced optimizers should reason about this 					   
+				//double mold = h.getMemEstimate();
+				if(	   n.getExecType() == ExecType.MR ) //Opt Condition: MR, 
+				   // || (mold > _rm && mnew <= _rm)   ) //Opt Condition: non-MR special cases (for remote exec)
+				{
+					//NOTE: subsequent rewrites will still use the MR mem estimate
+					//(guarded by subsequent operations that have at least the memory req of one partition)
+					if( mnew < _lm ) //apply rewrite if partitions fit into memory
+						n.setExecType(ExecType.CP);
+					else
+						n.setExecType(ExecType.CP); //CP_FILE, but hop still in MR 
+					n.addParam(ParamType.DATA_PARTITION_FORMAT, dpf.toString());
+					h.setMemEstimate( mnew ); //CP vs CP_FILE in ProgramRecompiler bases on mem_estimate
+					ret = true;
+				}
 			}
 		}
 		
@@ -640,6 +646,11 @@ public class OptimizerRuleBased extends Optimizer
 			}
 			//MR if necessary for LIX rewrite (LIX true iff cp only and rm valid)
 			else if( flagLIX ) 
+			{
+				n.setExecType( ExecType.MR );  //remote parfor
+			}
+			//MR if remote data partitioning, because data will be distributed on all nodes 
+			else if( n.getParam(ParamType.DATA_PARTITIONER)!=null && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString()) )
 			{
 				n.setExecType( ExecType.MR );  //remote parfor
 			}

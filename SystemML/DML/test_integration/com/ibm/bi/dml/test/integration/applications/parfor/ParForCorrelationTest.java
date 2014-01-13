@@ -12,7 +12,7 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue.CellIndex;
@@ -23,16 +23,16 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class ParForCorrelationTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME = "parfor_corr";
 	private final static String TEST_DIR = "applications/parfor/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows1 = (int)Hop.CPThreshold;  // # of rows in each vector (for CP instructions)
-	private final static int rows2 = (int)Hop.CPThreshold+1;  // # of rows in each vector (for MR instructions)
+	private final static int rows = 3578;  
 	private final static int cols1 = 20;      // # of columns in each vector  
+	private final static int cols2 = 5;      // # of columns in each vector  
 	
 	private final static double minVal=0;    // minimum value in each vector 
 	private final static double maxVal=1000; // maximum value in each vector 
@@ -129,12 +129,9 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType, boolean profile, boolean debug, boolean statistics )
 	{
 		//inst exec type, influenced via rows
-		int rows = -1;
-		if( instType == ExecType.CP )
-			rows = rows1;
-		else //if type MR
-			rows = rows2;
-		int cols = cols1;
+		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		rtplatform = (instType==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		int cols = (instType==ExecType.MR)? cols2 : cols1;
 		
 		//script
 		int scriptNum = -1;
@@ -193,6 +190,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		finally
 		{
 			DMLScript.STATISTICS = oldStatistics;
+			rtplatform = oldPlatform;
 		}
 		
 		//compare matrices

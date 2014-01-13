@@ -884,7 +884,7 @@ public class ProgramConverter
 			if( !(   linst instanceof CPInstruction 
 				  || linst instanceof ExternalFunctionInvocationInstruction ) )
 			{
-				throw new DMLRuntimeException( NOT_SUPPORTED_MR_INSTRUCTION + " " +linst.getClass().getName() );
+				throw new DMLRuntimeException( NOT_SUPPORTED_MR_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
 			}
 			
 			if( count > 0 )

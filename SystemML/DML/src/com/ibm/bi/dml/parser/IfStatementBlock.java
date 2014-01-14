@@ -151,7 +151,7 @@ public class IfStatementBlock extends StatementBlock
 				
 				// String
 				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof StringIdentifier && elseConstVersion instanceof StringIdentifier){
-					if ( ((BooleanIdentifier)ifConstVersion).getValue() == ((BooleanIdentifier) elseConstVersion).getValue() )
+					if ( ((StringIdentifier)ifConstVersion).getValue() == ((StringIdentifier) elseConstVersion).getValue() )
 						recConstVars.put(updatedVar, ifConstVersion);
 				}
 				

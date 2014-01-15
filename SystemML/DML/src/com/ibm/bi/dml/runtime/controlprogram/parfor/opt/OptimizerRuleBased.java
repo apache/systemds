@@ -1216,23 +1216,39 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 								    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
+		PResultMerge ret = null;
+		
 		//investigate details of current parfor node
 		boolean flagMRParFOR = (n.getExecType() == ExecType.MR);
+		boolean flagLargeResult = hasLargeTotalResults( n, pfpb.getResultVariables(), vars, true );
 		boolean flagMRLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
 		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars, true );
 		
-		//actual decision on result merge
-		PResultMerge ret = null;
-		if( flagOnlyInMemResults )
-			ret = PResultMerge.LOCAL_MEM;
-		else if(    ( flagMRParFOR || flagMRLeftIndexing) 
-			    && !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
+		//optimimality decision on result merge
+		//MR, if remote exec, and w/compare (prevent huge transfer/merge costs)
+		if( flagMRParFOR && flagLargeResult )
+		{
 			ret = PResultMerge.REMOTE_MR;
-		else
-			ret = PResultMerge.LOCAL_AUTOMATIC;
+		}
+		//CP, if all results in mem	
+		else if( flagOnlyInMemResults )
+		{
+			ret = PResultMerge.LOCAL_MEM;
+		}
+		//MR, if result partitioning and copy not possible
 		//NOTE: 'at least one' instead of 'all' condition of flagMRLeftIndexing because the 
 		//      benefit for large matrices outweigths potentially unnecessary MR jobs for smaller matrices)
+		else if(    ( flagMRParFOR || flagMRLeftIndexing) 
+			    && !(flagCellFormatWoCompare && ResultMergeLocalFile.ALLOW_COPY_CELLFILES ) )
+		{
+			ret = PResultMerge.REMOTE_MR;
+		}
+		//CP, otherwise (decide later if in mem or file-based)
+		else
+		{
+			ret = PResultMerge.LOCAL_AUTOMATIC;
+		}
 		
 		// modify rtprog	
 		pfpb.setResultMerge(ret);
@@ -1326,6 +1342,48 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		return ret;
+	}
+
+	/**
+	 * Heuristically compute total result sizes, if larger than local mem budget assumed to be large.
+	 * 
+	 * @param n
+	 * @param resultVars
+	 * @param vars
+	 * @param checkSize
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected boolean hasLargeTotalResults( OptNode pn, ArrayList<String> resultVars, LocalVariableMap vars, boolean checkSize ) 
+		throws DMLRuntimeException
+	{
+		double totalSize = 0;
+		
+		//get num tasks according to task partitioning 
+		//PTaskPartitioner tp = PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER));
+		int W = _N; //N as worst case estimate //TODO determine exact according to task patritioner and parallelism
+		
+		for( String var : resultVars )
+		{
+			MatrixObject mo = (MatrixObject) vars.get( var );
+			if( mo!=null ) //for local result var of child parfor potentially unknown (but we're only interested in top level)
+			{
+				long rows = mo.getNumRows();
+				long cols = mo.getNumColumns();	
+				long nnz = mo.getNnz();
+				
+				if( nnz > 0 ) //w/ compare
+				{
+					totalSize += W * OptimizerUtils.estimateSizeExactSparsity(rows, cols, 1.0);
+				}
+				else //in total at most as dimensions (due to disjoint results)
+				{
+					totalSize += OptimizerUtils.estimateSizeExactSparsity(rows, cols, 1.0);
+				}
+			}
+		}
+		
+		return ( totalSize >= _lm ); //heuristic:  large if >= local mem budget 
 	}
 	
 	/**

@@ -122,6 +122,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		_paramDefaults2.put( DATA_PARTITIONER,  String.valueOf(PDataPartitioner.UNSPECIFIED) );
 		_paramDefaults2.put( RESULT_MERGE,      String.valueOf(PResultMerge.UNSPECIFIED) );
 		_paramDefaults2.put( EXEC_MODE,         String.valueOf(PExecMode.UNSPECIFIED) );
+		_paramDefaults2.put( PROFILE,           "0" );
 		_paramDefaults2.put( OPT_LOG,           Logger.getRootLogger().getLevel().toString() );
 		
 		_idSeq = new IDSequence();

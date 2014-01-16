@@ -1711,6 +1711,10 @@ public class Dag<N extends Lop>
   private boolean branchCanBePiggyBackedMapAndReduce(N tmpNode, N node,
       Vector<N> execNodes, Vector<N> finishedNodes) {
 	   
+	  if ( node.getExecLocation() != ExecLocation.MapAndReduce ) 
+		  return false;
+	  JobType jt = JobType.findJobTypeFromLop(node);
+	  
 	  for(int i=0; i < execNodes.size(); i++)
 	    {
 	      N n = execNodes.elementAt(i);
@@ -1718,17 +1722,26 @@ public class Dag<N extends Lop>
 	      if(n.equals(node))
 	        continue;
 	      
-	      if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
+	      boolean eval = false;
+	      if ( n.equals(tmpNode) || (isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap)) )
+	    	  eval = true;
+	      
+	      if ( eval ) {
+	    	  ExecLocation el = n.getExecLocation();
+	    	  if ( el != ExecLocation.Map && el != ExecLocation.MapOrReduce )
+	    		  return false;
+	    	  else if ( !isCompatible(n, jt) )
+	    		  return false;
+	      }
+	      
+	      /*if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
 	        return false;
 	      
 	      if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-	        return false;
+	        return false;*/
 	        
 	     }
-	    
-	    
 	    return true;
-
   }
 
   private boolean branchHasNoOtherUnExecutedParents(N tmpNode, N node,

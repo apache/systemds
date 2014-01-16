@@ -246,11 +246,11 @@ public class IndexingOp extends Hop
 	{
 		//TODO we disabled VRIX temporarily due to piggybacking side effects for following cm or cov.
 		
-		//if(    singleRow && m1_dim2 == m2_dim2 && m2_dim2!=-1
-		//	|| singleCol && m1_dim1 == m2_dim1 && m2_dim1!=-1 )
-		//{
-		//	return IndexingMethod.MR_VRIX;
-		//}
+		if(    singleRow && m1_dim2 == m2_dim2 && m2_dim2!=-1
+			|| singleCol && m1_dim1 == m2_dim1 && m2_dim1!=-1 )
+		{
+			return IndexingMethod.MR_VRIX;
+		}
 		
 		return IndexingMethod.MR_RIX; //general case
 	}

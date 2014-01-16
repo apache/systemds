@@ -38,10 +38,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class MatrixMultLib 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static boolean LOW_LEVEL_OPTIMIZATION = true;
+	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
 
 	////////////////////////////////
 	// public matrix mult interface
@@ -62,8 +62,7 @@ public class MatrixMultLib
 	public static void matrixMult(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret) 
 		throws DMLRuntimeException
 	{		
-		//Timing time = new Timing();
-		//time.start();
+		//Timing time = new Timing(true);
 		
 		if(!m1.sparse && !m2.sparse)
 			matrixMultDenseDense(m1, m2, ret);
@@ -74,7 +73,8 @@ public class MatrixMultLib
 		else
 			matrixMultDenseSparse(m1, m2, ret);
 		
-		//System.out.println("MM in "+time.stop());
+		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
+		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
 
 
@@ -89,15 +89,15 @@ public class MatrixMultLib
 	public static void matrixMultTransposeSelf( MatrixBlockDSM m1, MatrixBlockDSM ret, boolean leftTranspose )
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		//Timing time = new Timing();
-		//time.start();
+		//Timing time = new Timing(true);
 		
 		if( m1.sparse )
 			matrixMultTransposeSelfSparse(m1, ret, leftTranspose);
 		else 
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose);
 
-		//System.out.println("TSMM in "+time.stop());
+		//System.out.println("TSMM ("+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+") in "+time.stop());
+
 	}
 	
 	
@@ -170,9 +170,56 @@ public class MatrixMultLib
 		}
 		else //MATRIX-MATRIX
 		{	
-			double val; 
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
+				//1) Unrolled inner loop (for better instruction-level parallelism)
+				//2) Blocked execution (for less cache trashing in parallel exec) 	
+				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
+				
+				final int blocksizeI = 64; //256KB c block (typical L2 size per core), 32KB a block (typical L1-data size) 
+				final int blocksizeK = 64; //256KB b block (typical L2 size per core) 
+				final int blocksizeJ = 512; //4KB (typical main-memory page size), for scan 
+				double val;
+				int bn, bjmin;
+				
+				//blocked execution
+				for( int bi = 0; bi < m; bi+=blocksizeI )
+					for( int bk = 0, bimin = Math.min(m, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
+						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
+						{
+							//core sub block matrix multiplication
+				    		bjmin = Math.min(n, bj+blocksizeJ);
+							bn = (bjmin-bj)%8;
+							
+							for( int i = bi, aix=bi*cd, cix=bi*n; i < bimin; i++, aix+=cd, cix+=n) 
+								for( int k = bk, bix=bk*n; k < bkmin; k++, bix+=n)
+								{	
+									val = a[ aix+k ]; 
+									if( val != 0 )
+									{
+										//rest, not aligned to 8-blocks
+										for( int j = bj; j < bj+bn; j++)
+											c[ cix+j ] += val * b[ bix+j ];
+										
+										//unrolled 8-block 
+										for( int j = bj+bn; j < bjmin; j+=8) 
+										{
+											c[ cix+j   ] += val * b[ bix+j   ];
+											c[ cix+j+1 ] += val * b[ bix+j+1 ];
+											c[ cix+j+2 ] += val * b[ bix+j+2 ];
+											c[ cix+j+3 ] += val * b[ bix+j+3 ];
+											c[ cix+j+4 ] += val * b[ bix+j+4 ];
+											c[ cix+j+5 ] += val * b[ bix+j+5 ];
+											c[ cix+j+6 ] += val * b[ bix+j+6 ];
+											c[ cix+j+7 ] += val * b[ bix+j+7 ];
+										}
+									}
+								}
+						}
+				
+				
+				/*
+				//old version, w/o blocked execution
 				int bn = n%8;
 				for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
 					for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
@@ -197,9 +244,12 @@ public class MatrixMultLib
 							}
 						}
 					}	
+				*/
+				
 			}
 			else
 			{
+				double val;
 				for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
 					for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
 					{			
@@ -209,36 +259,7 @@ public class MatrixMultLib
 								c[ cix+j ] += val * b[ bix+j ];
 					}				
 			}
-			ret.recomputeNonZeros();
-			
-			
-			//opt version with blocking 
-			/*
-			int blocksize1 = 32;
-			int blocksize2 = 32;
-			int blocksize3 = 500;
-			double val = 0;	
-			for( int bi = 0; bi < m; bi+=blocksize1) 
-			{
-				int maxI = Math.min(m,bi+blocksize1);
-				for( int bk = 0; bk < cd; bk+=blocksize2)
-				{
-					int maxK = Math.min(cd,bk+blocksize2);
-					for( int bj = 0; bj < n; bj+=blocksize3) 
-					{	
-						int maxJ = Math.min(n,bj+blocksize3);
-						for( int i = bi, aix=bi*cd, cix=bi*n; i < maxI; i++, aix+=cd, cix+=n) 
-							for( int k = bk, bix=bk*n; k < maxK; k++, bix+=n)
-							{			
-								val = a[ aix+k ];
-								if( val != 0 )
-									for( int j = bj; j < maxJ; j++) 
-										c[ cix+j ] += val * b[ bix+j ];
-							}	
-					}
-				}
-			}
-			*/		
+			ret.recomputeNonZeros();		
 		}		
 		ret.examSparsity();
 	}

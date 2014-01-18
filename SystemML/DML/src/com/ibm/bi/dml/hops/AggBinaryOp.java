@@ -145,20 +145,34 @@ public class AggBinaryOp extends Hop
 							vector_in = new DataPartition(getInput().get(1).constructLops(), get_dataType(), get_valueType());
 						}
 						
+						// If number of columns is smaller than block size then explicit aggregation is not required.
+						// i.e., entire matrix multiplication can be performed in the mappers.
+						boolean needAgg = true;
+						if ( getInput().get(0).get_dim2() <= getInput().get(0).get_cols_in_block() ) {
+							needAgg = false;
+						}
+						
 						PartialMVMult mvmult = new PartialMVMult(getInput().get(0).constructLops(), vector_in, get_dataType(), get_valueType());
-						Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
-						Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
-						
 						mvmult.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-						grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
-						agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 						
-						agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+						if (needAgg) {
+							Group grp = new Group(mvmult, Group.OperationTypes.Sort, get_dataType(), get_valueType());
+							Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), get_dataType(), get_valueType(), ExecType.MR);
+							
+							grp.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							agg1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+							
+							agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+							
+							// aggregation uses kahanSum but the inputs do not have correction values
+							agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+							
+							set_lops(agg1);
+						}
+						else {
+							set_lops(mvmult);
+						}
 						
-						// aggregation uses kahanSum but the inputs do not have correction values
-						agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-						
-						set_lops(agg1);
 					}
 					else if ( method == MMultMethod.CPMM ) {
 						MMCJ mmcj = new MMCJ(

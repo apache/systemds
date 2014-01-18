@@ -90,6 +90,10 @@ public abstract class IOStatement extends Statement
 	
 	@Override
 	public boolean controlStatement() {
+		Expression fmt = _paramsExpr.getVarParam(FORMAT_TYPE);
+		if ( fmt != null && fmt.toString().equalsIgnoreCase("csv")) {
+			return true;
+		}
 		return false;
 	}
 	

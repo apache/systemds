@@ -889,7 +889,7 @@ public class TestUtils
 			}
 			compareIn.close();
 
-			assertTrue(fs.getFileStatus(outDirectory).isDir());
+			//assertTrue(fs.getFileStatus(outDirectory).isDir());
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			long cellCounter = 0;

@@ -993,6 +993,13 @@ public class Recompiler
 			{
 				long rows = mo.getNumRows();
 				long cols = mo.getNumColumns();
+				
+				// If the dimensions are unknown then reblock can not be recompiled into CP
+				// Note: unknown dimensions at this point can only happen for CSV files.
+				if ( rows == -1 || cols == -1 ) {
+					ret = false;
+					break;
+				}
 				long nnz = mo.getNnz();
 				double mem = MatrixBlockDSM.estimateSize(rows, cols, (nnz>0) ? ((double)nnz)/rows/cols : 1.0d);				
 				if( mem >= OptimizerUtils.getMemBudget(true) )

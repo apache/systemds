@@ -463,7 +463,9 @@ public class DataExpression extends Expression
 		        }
 			} 
 	        
-			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV)){
+			boolean isCSV = false;
+			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(Statement.FORMAT_TYPE_VALUE_CSV));
+			if (isCSV){
 				
 				 // Handle delimited file format
 				 // 
@@ -578,14 +580,14 @@ public class DataExpression extends Expression
 				}
 				
 				
-				if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
+				/*if (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null) {
 					
 					LOG.error(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
 							+  " must specify both row and column dimensions ");
 					
 					throw new LanguageException(this.printErrorLocation() + "For delimited file " + getVarParam(Statement.IO_FILENAME) 
 							+  " must specify both row and column dimensions ");
-				}
+				}*/
 				
 			} 
 	        dataTypeString = (getVarParam(Statement.DATATYPEPARAM) == null) ? null : getVarParam(Statement.DATATYPEPARAM).toString();
@@ -608,7 +610,7 @@ public class DataExpression extends Expression
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if ( getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null){
+				if ( !isCSV && (getVarParam(Statement.READROWPARAM) == null || getVarParam(Statement.READCOLPARAM) == null)){
 					LOG.error(this.printErrorLocation() + "Missing or incomplete dimension information in read statement");
 					throw new LanguageException(this.printErrorLocation() + "Missing or incomplete dimension information in read statement: " + filename, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 				
@@ -626,7 +628,7 @@ public class DataExpression extends Expression
 					// set dim1 and dim2 values 
 					if (dim1 != null && dim2 != null){
 						getOutput().setDimensions(dim1, dim2);
-					} else if ((dim1 != null) || (dim2 != null)) {
+					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
 						LOG.error(this.printErrorLocation() + "Partial dimension information in read statement");
 						throw new LanguageException(this.printErrorLocation() + "Partial dimension information in read statement", LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 					}	

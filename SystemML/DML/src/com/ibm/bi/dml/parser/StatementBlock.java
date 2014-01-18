@@ -160,6 +160,11 @@ public class StatementBlock extends LiveVariableAnalysis
 		}
 		
 		// for regular stmt block, check if this is a function call stmt block
+		if (stmt instanceof InputStatement) {
+			Expression fmt = ((InputStatement)stmt).getExprParam(Statement.FORMAT_TYPE);
+			if ( fmt != null && fmt.toString().equalsIgnoreCase("csv") ) 
+				return false;
+		}
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
 			Expression sourceExpr = null;
 			if (stmt instanceof AssignmentStatement) {

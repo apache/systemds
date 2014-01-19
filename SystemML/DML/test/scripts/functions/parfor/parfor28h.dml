@@ -1,0 +1,28 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+#example usecase from LSML, orderedDistances.dml
+
+n_t = 1000;
+n_f = 77;
+X_train = matrix(1, rows=n_t,cols=n_f);
+alldist = matrix(0, rows=n_t, cols=n_t);
+parfor(r in 1:(n_t-1))
+{
+    Xr = X_train[r,];
+    myd = matrix (0, rows = 1, cols = n_t)
+    parfor(c in (r+1):n_t) {
+       tmp = rowSums((Xr - X_train[c,])^2);
+       myd[1,c] = tmp;
+    }
+    alldist[r,] = myd;
+}
+alldist = alldist + t(alldist);
+print(sum(alldist));
+

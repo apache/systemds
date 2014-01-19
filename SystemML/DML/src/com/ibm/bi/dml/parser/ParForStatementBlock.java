@@ -325,7 +325,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				
 				throw new LanguageException( "PARFOR loop dependency analysis: " +
 						                     "inter-iteration (loop-carried) dependencies detected for variable(s): " +
-						                     depVars.toString() +".\n " +
+						                     depVars.toString() +". (lines "+getBeginLine()+" - "+getEndLine()+")\n " +
 						                    // "in lines"+this.+"\n" +
 						                     "Please, ensure independence of iterations." );				
 			}
@@ -349,7 +349,10 @@ public class ParForStatementBlock extends ForStatementBlock
 		rConsolidateResultVars(pfs.getBody(), tmp);
 		for( String var : tmp )
 			if(_vsParent.containsVariable(var))
-				addToResultVariablesNoDup( var );
+				addToResultVariablesNoDup( var );			
+		if( LDEBUG )
+			for( String rvar : _resultVars )
+				LOG.debug("INFO: PARFOR final result variable: "+rvar);		
 		
 		//cleanup function cache in order to prevent side effects between parfor statements
 		if( USE_FN_CACHE )
@@ -975,6 +978,8 @@ public class ParForStatementBlock extends ForStatementBlock
 					_bounds._lower.put(ip.getIterVar()._name, low);
 					_bounds._upper.put(ip.getIterVar()._name, up);
 					_bounds._increment.put(ip.getIterVar()._name, incr);
+					if( lFlag ) //if local (required for constant check)
+						_bounds._local.add(ip.getIterVar()._name);
 				}	
 				
 				//recursive invocation (but not for nested parfors due to constant check)
@@ -1270,7 +1275,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		// no output dependency to itself if no index access will happen twice
 		// hence we check for: (all surrounding indexes are used by f1 and all intercepts != 0 )
 		boolean gcheck=true;
-		for( String var : _bounds._lower.keySet() )
+		for( String var : _bounds._local ) //check only local, nested checked from parent
 		{
 			if(   var.startsWith(INTERAL_FN_INDEX_ROW) 
 			   || var.startsWith(INTERAL_FN_INDEX_COL)) 
@@ -1892,6 +1897,9 @@ public class ParForStatementBlock extends ForStatementBlock
 		HashMap<String, Long> _lower     = new HashMap<String, Long>();
 		HashMap<String, Long> _upper     = new HashMap<String, Long>();
 		HashMap<String, Long> _increment = new HashMap<String, Long>();
+		
+		//contains all local variable names (subset of lower/upper/incr sets)
+		HashSet<String> _local = new HashSet<String>();
 	}
 	
 	/**

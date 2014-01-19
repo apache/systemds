@@ -1360,8 +1360,9 @@ public class OptimizerRuleBased extends Optimizer
 		double totalSize = 0;
 		
 		//get num tasks according to task partitioning 
-		//PTaskPartitioner tp = PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER));
-		int W = _N; //N as worst case estimate //TODO determine exact according to task patritioner and parallelism
+		PTaskPartitioner tp = PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER));
+		int k = pn.getK();
+		int W = estimateNumTasks(tp, _N, k); 
 		
 		for( String var : resultVars )
 		{
@@ -1384,6 +1385,31 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		return ( totalSize >= _lm ); //heuristic:  large if >= local mem budget 
+	}
+	
+	/**
+	 * 
+	 * @param tp
+	 * @param N
+	 * @param k
+	 * @return
+	 */
+	protected int estimateNumTasks( PTaskPartitioner tp, int N, int k )
+	{
+		int W = -1;
+		
+		switch( tp )
+		{
+			case NAIVE:
+			case FIXED:            W = N; break; 
+			case STATIC:           W = N / k; break;
+			case FACTORING:
+			case FACTORING_CMIN:
+			case FACTORING_CMAX:   W = k * (int)(Math.log(((double)N)/k)/Math.log(2.0)); break;
+			default:               W = N; break; //N as worst case estimate
+		}
+		
+		return W;
 	}
 	
 	/**

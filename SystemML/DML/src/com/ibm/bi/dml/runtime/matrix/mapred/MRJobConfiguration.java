@@ -139,6 +139,10 @@ public class MRJobConfiguration
 	private static final String RESULTMERGE_INPUT_INFO_CONFIG="resultmerge.input.inputinfo";
 	private static final String RESULTMERGE_COMPARE_FILENAME_CONFIG="resultmerge.compare.filename";
 	private static final String RESULTMERGE_STAGING_DIR_CONFIG="resultmerge.staging.dir";
+	private static final String RESULTMERGE_MATRIX_NUM_ROW_CONFIG="resultmerge.matrix.num.row";
+	private static final String RESULTMERGE_MATRIX_NUM_COLUMN_CONFIG="resultmerge.matrix.num.column";
+	private static final String RESULTMERGE_BLOCK_NUM_ROW_CONFIG="resultmerge.block.num.row";
+	private static final String RESULTMERGE_BLOCK_NUM_COLUMN_CONFIG="resultmerge.block.num.column";
 	
 	private static final String SORT_PARTITION_FILENAME = "sort.partition.filename";
 	
@@ -710,12 +714,16 @@ public class MRJobConfiguration
 		return job.get(PARTITIONING_OUTPUT_FILENAME_CONFIG);
 	}
 	
-	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir )
+	public static void setResultMergeInfo( JobConf job, String fnameNew, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException
 	{
 		job.set(RESULTMERGE_COMPARE_FILENAME_CONFIG, fnameNew);
 		job.set(RESULTMERGE_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
 		job.set(RESULTMERGE_STAGING_DIR_CONFIG, stagingDir);
+		job.set(RESULTMERGE_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
+		job.set(RESULTMERGE_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
+		job.set(RESULTMERGE_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
+		job.set(RESULTMERGE_BLOCK_NUM_COLUMN_CONFIG, String.valueOf(bclen));
 	}
 	
 	public static String getResultMergeInfoCompareFilename( JobConf job )
@@ -731,6 +739,17 @@ public class MRJobConfiguration
 	public static String getResultMergeStagingDir( JobConf job )
 	{
 		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get("mapred.tip.id");
+	}
+	
+	public static long[] getResultMergeMatrixCharacteristics( JobConf job )
+	{
+		long[] ret = new long[4];
+		ret[0] = Long.parseLong(job.get(RESULTMERGE_MATRIX_NUM_ROW_CONFIG));
+		ret[1] = Long.parseLong(job.get(RESULTMERGE_MATRIX_NUM_COLUMN_CONFIG));
+		ret[2] = Long.parseLong(job.get(RESULTMERGE_BLOCK_NUM_ROW_CONFIG));
+		ret[3] = Long.parseLong(job.get(RESULTMERGE_BLOCK_NUM_COLUMN_CONFIG));
+		
+		return ret;
 	}
 	
 	public static byte[] getInputIndexesInMapper(JobConf job)

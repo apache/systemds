@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 /**
  * Remote result merge reducer that receives all worker results partitioned by
@@ -41,9 +40,9 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
  */
 public class ResultMergeRemoteReducer 
 	implements Reducer<Writable, Writable, Writable, Writable>
-{
+{	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ResultMergeReducer _reducer = null;
@@ -298,110 +297,58 @@ public class ResultMergeRemoteReducer
 		@Override
 		public void processKeyValueList(Writable key, Iterator<Writable> valueList, OutputCollector<Writable, Writable> out, Reporter reporter)
 			throws IOException 
-		{
+		{	
 			try
 			{
+				MatrixIndexes ixOut = ((ResultMergeTaggedMatrixIndexes)key).getIndexes();
 				MatrixBlock mbOut = null;
+				double[][] aCompare = null;
+				boolean appendOnly = false;
 				
-				//with compare
+				//get and prepare compare block if required
 				if( _requiresCompare )
 				{
-					// NOTES MB:
-					// 1) the old mapred api does not support multiple scans (reset/mark),
-					//    once we switch to the new api, we can use the resetableiterator for doing
-					//    the two required scans (finding the compare obj, compare all other objs)
-					// 2) we cannot assume that the entire valueList fits in main memory, hence
-					//    we spill all blocks to local disk until we see the compare block.
-				
-					//setup working dir
-					LocalFileUtils.createLocalFileIfNotExist( _stagingDir );
-					
-					//scan for compare object (incl result merge if compare available)
-					double[][] aCompare = null;
-					boolean appendOnly = false;
-					int blockListCnt = 0;
-					while( valueList.hasNext() ) {
-						TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next();
-						MatrixBlock bVal = (MatrixBlock) tVal.getBaseObject();
-						
-						if( tVal.getTag()==ResultMergeRemoteMR.COMPARE_TAG )
-							aCompare = DataConverter.convertToDoubleMatrix(bVal);
-						else 
-						{
-							if( aCompare == null )
-								LocalFileUtils.writeMatrixBlockToLocal(_stagingDir+"/"+(++blockListCnt), bVal);
-							else //merge on the fly
-							{
-								if( mbOut == null )
-								{
-									mbOut = new MatrixBlock();
-									mbOut.copy( bVal );
-									appendOnly = mbOut.isInSparseFormat();
-								}
-								else
-									mergeWithComp(mbOut, bVal, aCompare);
-							}
-						}
-					}
-					
-					//result merge for objs before compare
-					for( ; blockListCnt > 0; blockListCnt-- )				
-					{	
-						MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal(_stagingDir+"/"+blockListCnt);
-						if( mbOut == null )
-						{
-							mbOut = new MatrixBlock();
-							mbOut.copy( tmp );
-							appendOnly = mbOut.isInSparseFormat();
-						}
-						else
-							mergeWithComp(mbOut, tmp, aCompare);
-					}
-					
-					//sort sparse due to append-only
-					if( appendOnly )
-						mbOut.sortSparseRows();
-					
-					//change sparsity if required after 
-					mbOut.examSparsity(); 
-					
-					//cleanup working dir
-					LocalFileUtils.cleanupWorkingDirectory( _stagingDir );
+					TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next();
+					MatrixBlock bVal = (MatrixBlock) tVal.getBaseObject();
+					if( tVal.getTag()!=ResultMergeRemoteMR.COMPARE_TAG )
+						throw new IOException("Failed to read compare block at expected first position.");
+					aCompare = DataConverter.convertToDoubleMatrix(bVal);
 				}
-				//without compare
-				else
+				
+				//merge all result blocks into final result block 
+				while( valueList.hasNext() ) 
 				{
-					boolean appendOnly = false;
-					while( valueList.hasNext() )  
+					TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next();
+					MatrixBlock bVal = (MatrixBlock) tVal.getBaseObject();
+					
+					if( mbOut == null ) //copy first block
 					{
-						TaggedMatrixBlock tVal = (TaggedMatrixBlock) valueList.next(); 
-						MatrixBlock tmp = (MatrixBlock) tVal.getBaseObject();
-						if( mbOut == null )
-						{
-							mbOut = new MatrixBlock();
-							mbOut.copy( tmp );
-							appendOnly = mbOut.isInSparseFormat();
-						}
+						mbOut = new MatrixBlock();
+						mbOut.copy( bVal );
+						appendOnly = mbOut.isInSparseFormat();
+					}
+					else //merge remaining blocks
+					{
+						if( _requiresCompare )
+							mergeWithComp(mbOut, bVal, aCompare);
 						else
-						{
-							mergeWithoutComp(mbOut, tmp, appendOnly);	
-						}
-					}				
-					
-					//sort sparse due to append-only
-					if( appendOnly )
-						mbOut.sortSparseRows();
-					
-					//change sparsity if required after 
-					mbOut.examSparsity(); 
+							mergeWithoutComp(mbOut, bVal, appendOnly);	
+					}
 				}
 				
-				out.collect(key, mbOut);
+				//sort sparse due to append-only
+				if( appendOnly )
+					mbOut.sortSparseRows();
+				
+				//change sparsity if required after 
+				mbOut.examSparsity(); 
+				
+				out.collect(ixOut, mbOut);
 			}
 			catch( Exception ex )
 			{
 				throw new IOException(ex);
-			}
+			}			
 		}
 		
 	}

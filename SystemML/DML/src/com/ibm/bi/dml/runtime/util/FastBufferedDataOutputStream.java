@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -11,6 +11,9 @@ import java.io.DataOutput;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSMDataOutput;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 
 /**
  * This buffered output stream is essentially a merged copy of the IBM JDK
@@ -23,10 +26,10 @@ import java.io.OutputStream;
  * - 3) specific support for writing double arrays in a blockwise fashion
  * 
  */
-public class FastBufferedDataOutputStream extends FilterOutputStream implements DataOutput
+public class FastBufferedDataOutputStream extends FilterOutputStream implements DataOutput, MatrixBlockDSMDataOutput
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	protected byte[] _buff;
@@ -92,9 +95,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
     }
 
     
-    /////////////////////////////////////////
+    /////////////////////////////
     // DataOutput Implementation
-    /////////////////////////////////////////
+    /////////////////////////////
     
 	@Override
 	public void writeBoolean(boolean v) 
@@ -103,7 +106,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		if (_count >= _bufflen) {
 		    flushBuffer();
 		}
-		_buff[_count++] = (byte)(v?1:0);
+		_buff[_count++] = (byte)(v ? 1 : 0);
 	}
 
 
@@ -117,7 +120,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
 		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
 		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((v       ) & 0xFF);
+		_buff[_count++] = (byte)((v >>>  0) & 0xFF);
 	}
 	
 
@@ -136,7 +139,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
 		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
 		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((v       ) & 0xFF);
+		_buff[_count++] = (byte)((v >>>  0) & 0xFF);
 	}
 	
 	@Override
@@ -155,7 +158,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
 		_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
 		_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((tmp       ) & 0xFF);		
+		_buff[_count++] = (byte)((tmp >>>  0) & 0xFF);		
 	}
 
 	@Override
@@ -163,7 +166,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		if (_count+1 > _bufflen) {
 		    flushBuffer();
 		}
-		_buff[_count++] = (byte)((v) & 0xFF);	
+		_buff[_count++] = (byte) v;	
 	}
 
 	@Override
@@ -197,12 +200,14 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 
-    /////////////////////////////////////////
-    // Custom implementation for arrays
-    /////////////////////////////////////////	
-	private static final int BLOCK_NVALS = 512;
-	private static final int BLOCK_NBYTES = BLOCK_NVALS*8;
+    ///////////////////////////////////////////////
+    // Implementation of MatrixBlockDSMDataOutput
+    ///////////////////////////////////////////////	
 	
+	private static final int BLOCK_NVALS = 512;
+	private static final int BLOCK_NBYTES = BLOCK_NVALS*8; //4KB
+	
+	@Override
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
 	{
@@ -227,7 +232,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
 					_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
 					_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-					_buff[_count++] = (byte)((tmp       ) & 0xFF);	
+					_buff[_count++] = (byte)((tmp >>>  0) & 0xFF);	
 				}
 			}
 			
@@ -241,6 +246,72 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 			for( int i=0; i<len; i++ )
 				writeDouble(varr[i]);
 		}
+	}
+
+	@Override
+	public void writeSparseRows(int rlen, SparseRow[] rows) 
+		throws IOException
+	{
+		int lrlen = Math.min(rows.length, rlen);
+		int i; //used for two consecutive loops
+		
+		//process existing rows
+		for( i=0; i<lrlen; i++ )
+		{
+			SparseRow arow = rows[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				int alen2 = alen*12;
+				int[] aix = arow.getIndexContainer();
+				double[] avals = arow.getValueContainer();
+				
+				writeInt( alen );
+				
+				if( alen2 < _bufflen )
+				{
+					if (_count+alen2 > _bufflen) 
+					    flushBuffer();
+					
+					for( int j=0; j<alen; j++ )
+					{
+						int tmp1 = aix[j];
+						long tmp2 = Double.doubleToLongBits(avals[j]);
+						
+						_buff[_count   ] = (byte)((tmp1 >>> 24) & 0xFF);
+						_buff[_count+1 ] = (byte)((tmp1 >>> 16) & 0xFF);
+						_buff[_count+2 ] = (byte)((tmp1 >>>  8) & 0xFF);
+						_buff[_count+3 ] = (byte)((tmp1 >>>  0) & 0xFF);
+						
+						_buff[_count+4 ] = (byte)((tmp2 >>> 56) & 0xFF);
+						_buff[_count+5 ] = (byte)((tmp2 >>> 48) & 0xFF);
+						_buff[_count+6 ] = (byte)((tmp2 >>> 40) & 0xFF);
+						_buff[_count+7 ] = (byte)((tmp2 >>> 32) & 0xFF);
+						_buff[_count+8 ] = (byte)((tmp2 >>> 24) & 0xFF);
+						_buff[_count+9 ] = (byte)((tmp2 >>> 16) & 0xFF);
+						_buff[_count+10] = (byte)((tmp2 >>>  8) & 0xFF);
+						_buff[_count+11] = (byte)((tmp2 >>>  0) & 0xFF);
+						
+						_count += 12;
+					}
+				}
+				else
+				{
+					//row does not fit in buffer
+					for( int j=0; j<alen; j++ )
+					{
+						writeInt( aix[j] );
+						writeDouble( avals[j] );
+					}
+				}	
+			}
+			else 
+				writeInt( 0 );
+		}
+		
+		//process remaining empty rows
+		for( ; i<rlen; i++ )
+			writeInt( 0 );
 	}
 	
 }

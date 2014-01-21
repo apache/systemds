@@ -26,7 +26,6 @@ import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheDataOutput;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
@@ -51,7 +50,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
 import com.ibm.bi.dml.runtime.util.RandN;
 import com.ibm.bi.dml.runtime.util.RandNPair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -2393,44 +2391,52 @@ public class MatrixBlockDSM extends MatrixValue
 		//	out.writeInt(0);
 	}
 	
-	private void writeDenseBlock(DataOutput out) throws IOException {
+	private void writeDenseBlock(DataOutput out) throws IOException 
+	{
 		out.writeByte(DENSE_BLOCK);
 		
 		int limit=rlen*clen;
-		if( out instanceof FastBufferedDataOutputStream )
-			((FastBufferedDataOutputStream)out).writeDoubleArray(limit, denseBlock);
-		else if( out instanceof CacheDataOutput )
-			((CacheDataOutput)out).writeDoubleArray(limit, denseBlock);
-		else
+		if( out instanceof MatrixBlockDSMDataOutput ) //fast serialize
+			((MatrixBlockDSMDataOutput)out).writeDoubleArray(limit, denseBlock);
+		else //general case (if fast serialize not supported)
 			for(int i=0; i<limit; i++)
 				out.writeDouble(denseBlock[i]);
 	}
 	
-	private void writeSparseBlock(DataOutput out) throws IOException {
+	private void writeSparseBlock(DataOutput out) throws IOException 
+	{
 		out.writeByte(SPARSE_BLOCK);
-		int r=0;
-		for(;r<Math.min(rlen, sparseRows.length); r++)
+		
+		if( out instanceof MatrixBlockDSMDataOutput ) //fast serialize
+			((MatrixBlockDSMDataOutput)out).writeSparseRows(rlen, sparseRows);
+		else //general case (if fast serialize not supported)
 		{
-			if(sparseRows[r]==null)
-				out.writeInt(0);
-			else
+			int r=0;
+			for(;r<Math.min(rlen, sparseRows.length); r++)
 			{
-				int nr=sparseRows[r].size();
-				out.writeInt(nr);
-				int[] cols=sparseRows[r].getIndexContainer();
-				double[] values=sparseRows[r].getValueContainer();
-				for(int j=0; j<nr; j++)
+				if(sparseRows[r]==null)
+					out.writeInt(0);
+				else
 				{
-					out.writeInt(cols[j]);
-					out.writeDouble(values[j]);
-				}
-			}	
+					int nr=sparseRows[r].size();
+					out.writeInt(nr);
+					int[] cols=sparseRows[r].getIndexContainer();
+					double[] values=sparseRows[r].getValueContainer();
+					for(int j=0; j<nr; j++)
+					{
+						out.writeInt(cols[j]);
+						out.writeDouble(values[j]);
+					}
+					
+				}	
+			}
+			for(;r<rlen; r++)
+				out.writeInt(0);
 		}
-		for(;r<rlen; r++)
-			out.writeInt(0);
 	}
 	
 	private void writeSparseToDense(DataOutput out) throws IOException {
+		//TODO those binary search operations (quick get on sparse) are absolutely unnecessary.
 		out.writeByte(DENSE_BLOCK);
 		for(int i=0; i<rlen; i++)
 			for(int j=0; j<clen; j++)

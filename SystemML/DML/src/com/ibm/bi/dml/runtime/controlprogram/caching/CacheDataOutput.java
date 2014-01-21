@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,14 +10,19 @@ package com.ibm.bi.dml.runtime.controlprogram.caching;
 import java.io.DataOutput;
 import java.io.IOException;
 
+
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSMDataOutput;
+import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+
 /**
+ * Customer DataOutput to serialize directly into the given byte array.
  * 
  * 
  */
-public class CacheDataOutput implements DataOutput
+public class CacheDataOutput implements DataOutput, MatrixBlockDSMDataOutput 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	protected byte[] _buff;
@@ -58,7 +63,7 @@ public class CacheDataOutput implements DataOutput
 	public void writeBoolean(boolean v) 
 		throws IOException 
 	{
-		_buff[_count++] = (byte)(v?1:0);
+		_buff[_count++] = (byte)( v ? 1 : 0 );
 	}
 
 
@@ -66,10 +71,11 @@ public class CacheDataOutput implements DataOutput
 	public void writeInt(int v) 
 		throws IOException 
 	{
-		_buff[_count++] = (byte)((v >>> 24) & 0xFF);
-		_buff[_count++] = (byte)((v >>> 16) & 0xFF);
-		_buff[_count++] = (byte)((v >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((v       ) & 0xFF);
+		_buff[_count  ] = (byte)((v >>> 24) & 0xFF);
+		_buff[_count+1] = (byte)((v >>> 16) & 0xFF);
+		_buff[_count+2] = (byte)((v >>>  8) & 0xFF);
+		_buff[_count+3] = (byte)((v >>>  0) & 0xFF);
+		_count += 4;
 	}
 	
 	@Override
@@ -77,19 +83,20 @@ public class CacheDataOutput implements DataOutput
 		throws IOException 
 	{
 		long tmp = Double.doubleToLongBits(v);		
-		_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
-		_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-		_buff[_count++] = (byte)((tmp       ) & 0xFF);		
+		_buff[_count  ] = (byte)((tmp >>> 56) & 0xFF);
+		_buff[_count+1] = (byte)((tmp >>> 48) & 0xFF);
+		_buff[_count+2] = (byte)((tmp >>> 40) & 0xFF);
+		_buff[_count+3] = (byte)((tmp >>> 32) & 0xFF);
+		_buff[_count+4] = (byte)((tmp >>> 24) & 0xFF);
+		_buff[_count+5] = (byte)((tmp >>> 16) & 0xFF);
+		_buff[_count+6] = (byte)((tmp >>>  8) & 0xFF);
+		_buff[_count+7] = (byte)((tmp >>>  0) & 0xFF);		
+		_count += 8;
 	}
 
 	@Override
 	public void writeByte(int v) throws IOException {
-		_buff[_count++] = (byte)((v) & 0xFF);	
+		_buff[_count++] = (byte) v;	
 	}
 
 	@Override
@@ -128,26 +135,76 @@ public class CacheDataOutput implements DataOutput
 	}
 
 
-    /////////////////////////////////////////
-    // Custom implementation for arrays
-    /////////////////////////////////////////	
+    ///////////////////////////////////////////////
+    // Implementation of MatrixBlockDSMDataOutput
+    ///////////////////////////////////////////////	
 	
+	@Override
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
 	{
-		long tmp = -1;
-		
 		for( int i=0; i<len; i++ )
 		{
-			tmp = Double.doubleToLongBits(varr[i]);
-			_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>> 32) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>> 24) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>> 16) & 0xFF);
-			_buff[_count++] = (byte)((tmp >>>  8) & 0xFF);
-			_buff[_count++] = (byte)((tmp       ) & 0xFF);	
+		    long tmp = Double.doubleToLongBits(varr[i]);
+			_buff[_count  ] = (byte)(tmp >>> 56);
+			_buff[_count+1] = (byte)(tmp >>> 48);
+			_buff[_count+2] = (byte)(tmp >>> 40);
+			_buff[_count+3] = (byte)(tmp >>> 32);
+			_buff[_count+4] = (byte)(tmp >>> 24);
+			_buff[_count+5] = (byte)(tmp >>> 16);
+			_buff[_count+6] = (byte)(tmp >>>  8);
+			_buff[_count+7] = (byte)(tmp >>>  0);	
+			_count+=8;
 		}
+	}
+	
+	@Override
+	public void writeSparseRows(int rlen, SparseRow[] rows) 
+		throws IOException
+	{
+		int lrlen = Math.min(rows.length, rlen);
+		int i; //used for two consecutive loops
+		
+		//process existing rows
+		for( i=0; i<lrlen; i++ )
+		{
+			SparseRow arow = rows[i];
+			if( arow!=null && arow.size()>0 )
+			{
+				int alen = arow.size();
+				int[] aix = arow.getIndexContainer();
+				double[] avals = arow.getValueContainer();
+				
+				writeInt( alen );
+
+				for( int j=0; j<alen; j++ )
+				{
+					int tmp1 = aix[j];
+					long tmp2 = Double.doubleToLongBits(avals[j]);
+					
+					_buff[_count   ] = (byte)((tmp1 >>> 24) & 0xFF);
+					_buff[_count+1 ] = (byte)((tmp1 >>> 16) & 0xFF);
+					_buff[_count+2 ] = (byte)((tmp1 >>>  8) & 0xFF);
+					_buff[_count+3 ] = (byte)((tmp1 >>>  0) & 0xFF);
+					
+					_buff[_count+4 ] = (byte)((tmp2 >>> 56) & 0xFF);
+					_buff[_count+5 ] = (byte)((tmp2 >>> 48) & 0xFF);
+					_buff[_count+6 ] = (byte)((tmp2 >>> 40) & 0xFF);
+					_buff[_count+7 ] = (byte)((tmp2 >>> 32) & 0xFF);
+					_buff[_count+8 ] = (byte)((tmp2 >>> 24) & 0xFF);
+					_buff[_count+9 ] = (byte)((tmp2 >>> 16) & 0xFF);
+					_buff[_count+10] = (byte)((tmp2 >>>  8) & 0xFF);
+					_buff[_count+11] = (byte)((tmp2 >>>  0) & 0xFF);
+					
+					_count +=12;
+				}	
+			}
+			else 
+				writeInt( 0 );
+		}
+		
+		//process remaining empty rows
+		for( ; i<rlen; i++ )
+			writeInt( 0 );
 	}
 }

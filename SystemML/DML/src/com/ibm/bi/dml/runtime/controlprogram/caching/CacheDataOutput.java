@@ -30,7 +30,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDSMDataOutput
 	protected int _count;
 
 	public CacheDataOutput( byte[] mem ) 
-	{
+	{		
 		_buff = mem;
 		_bufflen = _buff.length;
 		_count = 0;
@@ -146,14 +146,14 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDSMDataOutput
 		for( int i=0; i<len; i++ )
 		{
 		    long tmp = Double.doubleToLongBits(varr[i]);
-			_buff[_count  ] = (byte)(tmp >>> 56);
-			_buff[_count+1] = (byte)(tmp >>> 48);
-			_buff[_count+2] = (byte)(tmp >>> 40);
-			_buff[_count+3] = (byte)(tmp >>> 32);
-			_buff[_count+4] = (byte)(tmp >>> 24);
-			_buff[_count+5] = (byte)(tmp >>> 16);
-			_buff[_count+6] = (byte)(tmp >>>  8);
-			_buff[_count+7] = (byte)(tmp >>>  0);	
+			_buff[_count  ] = (byte)((tmp >>> 56) & 0xFF);
+			_buff[_count+1] = (byte)((tmp >>> 48) & 0xFF);
+			_buff[_count+2] = (byte)((tmp >>> 40) & 0xFF);
+			_buff[_count+3] = (byte)((tmp >>> 32) & 0xFF);
+			_buff[_count+4] = (byte)((tmp >>> 24) & 0xFF);
+			_buff[_count+5] = (byte)((tmp >>> 16) & 0xFF);
+			_buff[_count+6] = (byte)((tmp >>>  8) & 0xFF);
+			_buff[_count+7] = (byte)((tmp >>>  0) & 0xFF);	
 			_count+=8;
 		}
 	}

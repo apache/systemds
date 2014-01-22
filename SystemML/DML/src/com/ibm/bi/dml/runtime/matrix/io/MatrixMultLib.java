@@ -176,45 +176,46 @@ public class MatrixMultLib
 				//2) Blocked execution (for less cache trashing in parallel exec) 	
 				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
 				
-				final int blocksizeI = 64; //256KB c block (typical L2 size per core), 32KB a block (typical L1-data size) 
-				final int blocksizeK = 64; //256KB b block (typical L2 size per core) 
+				final int blocksizeI = 64; //256KB c block (typical L2 size per core), 32KB a block 
+				final int blocksizeK = 64; //256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
 				final int blocksizeJ = 512; //4KB (typical main-memory page size), for scan 
-				double val;
-				int bn, bjmin;
-				
+
 				//blocked execution
 				for( int bi = 0; bi < m; bi+=blocksizeI )
 					for( int bk = 0, bimin = Math.min(m, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
 						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
 						{
 							//core sub block matrix multiplication
-				    		bjmin = Math.min(n, bj+blocksizeJ);
-							bn = (bjmin-bj)%8;
+				    		final int bjmin = Math.min(n, bj+blocksizeJ);
+							final int bn = (bjmin-bj)%8;
 							
-							for( int i = bi, aix=bi*cd, cix=bi*n; i < bimin; i++, aix+=cd, cix+=n) 
-								for( int k = bk, bix=bk*n; k < bkmin; k++, bix+=n)
-								{	
-									val = a[ aix+k ]; 
-									if( val != 0 )
+							for( int i = bi; i < bimin; i++) 
+								for( int k = bk, aixk=i*cd+bk; k < bkmin; k++, aixk++)
+								{
+									final double val = a[ aixk ]; 									
+									if( val != 0 ) //skip row if applicable
 									{
+										int cixj = i * n + bj; //re-init scan index on c
+										int bixj = k * n + bj; //re-init scan index on b
+										
 										//rest, not aligned to 8-blocks
-										for( int j = bj; j < bj+bn; j++)
-											c[ cix+j ] += val * b[ bix+j ];
+										for( int j = bj; j < bj+bn; j++, cixj++, bixj++)
+											c[ cixj ] += val * b[ bixj ];
 										
 										//unrolled 8-block 
-										for( int j = bj+bn; j < bjmin; j+=8) 
+										for( int j = bj+bn; j < bjmin; j+=8, bixj+=8, cixj+=8) 
 										{
-											c[ cix+j   ] += val * b[ bix+j   ];
-											c[ cix+j+1 ] += val * b[ bix+j+1 ];
-											c[ cix+j+2 ] += val * b[ bix+j+2 ];
-											c[ cix+j+3 ] += val * b[ bix+j+3 ];
-											c[ cix+j+4 ] += val * b[ bix+j+4 ];
-											c[ cix+j+5 ] += val * b[ bix+j+5 ];
-											c[ cix+j+6 ] += val * b[ bix+j+6 ];
-											c[ cix+j+7 ] += val * b[ bix+j+7 ];
+											c[ cixj+0 ] += val * b[ bixj+0 ];
+											c[ cixj+1 ] += val * b[ bixj+1 ];
+											c[ cixj+2 ] += val * b[ bixj+2 ];
+											c[ cixj+3 ] += val * b[ bixj+3 ];
+											c[ cixj+4 ] += val * b[ bixj+4 ];
+											c[ cixj+5 ] += val * b[ bixj+5 ];
+											c[ cixj+6 ] += val * b[ bixj+6 ];
+											c[ cixj+7 ] += val * b[ bixj+7 ];
 										}
 									}
-								}
+								}	
 						}
 				
 				

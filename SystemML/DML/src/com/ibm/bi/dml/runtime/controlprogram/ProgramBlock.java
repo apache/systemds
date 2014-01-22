@@ -134,6 +134,7 @@ public class ProgramBlock
 
 		//dynamically recompile instructions if enabled and required
 		try {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& _sb != null 
@@ -141,6 +142,10 @@ public class ProgramBlock
 				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb.get_hops(), ec.getVariables(), _tid);
+			}
+			if( DMLScript.STATISTICS ){
+				long t1 = System.nanoTime();
+				Statistics.incrementHOPRecompileTime(t1-t0);
 			}
 		}
 		catch(Exception ex)
@@ -168,12 +173,17 @@ public class ProgramBlock
 		
 		//dynamically recompile instructions if enabled and required
 		try {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID	
 				&& requiresRecompile )
 				//&& Recompiler.requiresRecompilation(hops)         )
 			{
 				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), _tid);
+			}
+			if( DMLScript.STATISTICS ){
+				long t1 = System.nanoTime();
+				Statistics.incrementHOPRecompileTime(t1-t0);
 			}
 		}
 		catch(Exception ex)

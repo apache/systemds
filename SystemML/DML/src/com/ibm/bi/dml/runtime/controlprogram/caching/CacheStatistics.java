@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This singleton provides basic caching statistics in CP.
@@ -34,7 +35,11 @@ public class CacheStatistics
 		CACHE_HITS_HDFS,
 		CACHE_WRITES_FSBUFF,
 		CACHE_WRITES_FS,
-		CACHE_WRITES_HDFS
+		CACHE_WRITES_HDFS,
+		CACHE_TIME_ACQR, //acquire read
+		CACHE_TIME_ACQM, //acquire read
+		CACHE_TIME_RLS, //release
+		CACHE_TIME_EXP, //export 
 	}
 	
 	//hit statistics (for acquire read)
@@ -49,6 +54,11 @@ public class CacheStatistics
 	private static AtomicInteger _numWritesFS     = null;
 	private static AtomicInteger _numWritesHDFS   = null;
 	
+	//time statistics caching
+	private static AtomicLong _ctimeAcquireR   = null; //in nano sec
+	private static AtomicLong _ctimeAcquireM   = null; //in nano sec
+	private static AtomicLong _ctimeRelease    = null; //in nano sec
+	private static AtomicLong _ctimeExport     = null; //in nano sec
 
 	static
 	{
@@ -66,6 +76,11 @@ public class CacheStatistics
 		_numWritesFSBuff = new AtomicInteger(0);
 		_numWritesFS = new AtomicInteger(0);
 		_numWritesHDFS = new AtomicInteger(0);
+		
+		_ctimeAcquireR = new AtomicLong(0);
+		_ctimeAcquireM = new AtomicLong(0);
+		_ctimeRelease = new AtomicLong(0);
+		_ctimeExport = new AtomicLong(0);
 	}
 	
 	public static void incrementTotalHits()
@@ -187,6 +202,48 @@ public class CacheStatistics
 	{
 		return _numWritesHDFS.get();
 	}
+	
+	public static void incrementAcquireRTime(long delta)
+	{
+		_ctimeAcquireR.addAndGet(delta);
+	}
+	
+	public static long getAcquireRTime()
+	{
+		return _ctimeAcquireR.get();
+	}
+	
+	public static void incrementAcquireMTime(long delta)
+	{
+		_ctimeAcquireM.addAndGet(delta);
+	}
+	
+	public static long getAcquireMTime()
+	{
+		return _ctimeAcquireM.get();
+	}
+
+	public static void incrementReleaseTime(long delta)
+	{
+		_ctimeRelease.addAndGet(delta);
+	}
+	
+	public static long getReleaseTime()
+	{
+		return _ctimeRelease.get();
+	}
+
+	
+	public static void incrementExportTime(long delta)
+	{
+		_ctimeExport.addAndGet(delta);
+	}
+	
+	public static long getExportTime()
+	{
+		return _ctimeExport.get();
+	}
+	
 
 	public static String displayHits()
 	{	
@@ -212,6 +269,22 @@ public class CacheStatistics
 		sb.append("/");
 		sb.append(_numWritesHDFS.get());
 		
+		
+		return sb.toString();
+	}
+	
+	public static String displayTime()
+	{	
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("%.3f", ((double)_ctimeAcquireR.get())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeAcquireM.get())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeRelease.get())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeExport.get())/1000000000)); //in sec
+		
+		;
 		
 		return sb.toString();
 	}

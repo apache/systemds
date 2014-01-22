@@ -700,6 +700,7 @@ public class DMLScript
 		Statistics.setNoOfExecutedMRJobs( 0 );
 		if( STATISTICS ) {
 			CacheStatistics.reset();
+			Statistics.resetHOPRecompileTime();
 			Statistics.resetJITCompileTime();
 		}
 	}

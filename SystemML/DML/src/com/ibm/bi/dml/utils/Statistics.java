@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 public class Statistics 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static long lStartTime = 0;
@@ -34,7 +34,8 @@ public class Statistics
 	/** number of compiled MR jobs */
 	private static int iNoOfCompiledMRJobs = 0;
 
-	private static long jitCompileTime = 0;
+	private static long jitCompileTime = 0; //in milli sec
+	private static long hopRecompileTime = 0; //in nano sec
 	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
@@ -66,6 +67,10 @@ public class Statistics
 	
 	public static synchronized void incrementJITCompileTime( long time ) {
 		jitCompileTime += time;
+	}
+	
+	public static synchronized void incrementHOPRecompileTime( long time ) {
+		hopRecompileTime += time;
 	}
 
 	/**
@@ -101,6 +106,13 @@ public class Statistics
 	}
 	
 	/**
+	 * 
+	 */
+	public static void resetHOPRecompileTime(){
+		hopRecompileTime = 0;
+	}
+	
+	/**
 	 * Returns the total time of asynchronous JIT compilation in milliseconds.
 	 * 
 	 * @return
@@ -114,6 +126,10 @@ public class Statistics
 			ret += jitCompileTime; //add from remote processes
 		}
 		return ret;
+	}
+	
+	public static long getHopRecompileTime(){
+		return hopRecompileTime;
 	}
 
 	/**
@@ -142,6 +158,8 @@ public class Statistics
 		{
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
+			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
+			sb.append("Total HOP recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 		}
 		

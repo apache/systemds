@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.io.Pair;
 public class LocalFileUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public static final int BUFFER_SIZE = 8192;
@@ -275,9 +275,25 @@ public class LocalFileUtils
 	 */
 	public static void deleteFileIfExists(String dir) 
 	{
+		deleteFileIfExists(dir, false);
+	}
+	
+	/**
+	 * 
+	 * @param dir
+	 * @param fileOnly
+	 */
+	public static void deleteFileIfExists(String dir, boolean fileOnly) 
+	{
 		File fdir = new File(dir);
-		if( fdir.exists() )
-			rDelete(fdir);
+		
+		if( fdir.exists() ) 
+		{
+			if( fileOnly ) //delete single file
+				fdir.delete();
+			else //recursively delete entire directory
+				rDelete(fdir);	
+		}
 	}
 	
 	/**
@@ -418,7 +434,7 @@ public class LocalFileUtils
 				rDelete( f );	
 		}
 		
-		//delete file itself
+		//delete file/dir itself
 		dir.delete();
 	}
 

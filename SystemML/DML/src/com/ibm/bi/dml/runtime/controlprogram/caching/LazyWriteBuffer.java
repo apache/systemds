@@ -146,8 +146,9 @@ public class LazyWriteBuffer
 		
 		//delete from FS if required
 		if( requiresDelete )
-			LocalFileUtils.deleteFileIfExists(fname);
+			LocalFileUtils.deleteFileIfExists(fname, true);
 	}
+	
 	
 	/**
 	 * 

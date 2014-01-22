@@ -323,7 +323,7 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Acquire read "+_varName);
-		//CacheStatistics.incrementTotalHits();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToRead() )
 			throw new CacheStatusException ("MatrixObject not available to read.");
@@ -361,6 +361,11 @@ public class MatrixObject extends CacheableData
 		}
 		acquire( false, _data==null );	
 		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireRTime(t1-t0);
+		}
+		
 		return _data;
 	}
 	
@@ -379,7 +384,8 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Acquire modify "+_varName);
-
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		if ( !isAvailableToModify() )
 			throw new CacheStatusException("MatrixObject not available to modify.");
 		
@@ -409,6 +415,11 @@ public class MatrixObject extends CacheableData
 		acquire( true, _data==null );
 		_dirtyFlag = true;
 		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireMTime(t1-t0);
+		}
+		
 		return _data;
 	}
 	
@@ -428,6 +439,7 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Acquire modify newdata "+_varName);
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if (! isAvailableToModify ())
 			throw new CacheStatusException ("MatrixObject not available to modify.");
@@ -443,6 +455,11 @@ public class MatrixObject extends CacheableData
 		if (newData == null)
 			throw new CacheException("acquireModify with empty matrix block.");
 		_data = newData; 
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireMTime(t1-t0);
+		}
 		
 		return _data;
 	}
@@ -464,6 +481,7 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Release "+_varName);
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		boolean write = false;
 		if ( isModify() )
@@ -501,6 +519,11 @@ public class MatrixObject extends CacheableData
 		else {
 			LOG.trace("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString());
 		}
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementReleaseTime(t1-t0);
+		}
 	}
 
 	/**
@@ -517,24 +540,23 @@ public class MatrixObject extends CacheableData
 	{
 		LOG.trace("Clear data "+_varName);
 		
-		if( !_cleanupFlag ) //if cleanup not enabled, do nothing
-			return;
-		
-		if (! isAvailableToModify ())
+		// check if cleanup enabled and possible 
+		if( !_cleanupFlag ) 
+			return; // do nothing
+		if( !isAvailableToModify() )
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
+		
+		// clear existing WB / FS representation (but prevent unnecessary probes)
+		if( !(isEmpty()||(_data!=null && isBelowCachingThreshold()) ))
+			freeEvictedBlob();	
 		
 		// clear the in-memory data
 		_data = null;	
 		clearCache();
 		
-		if (! isEmpty())
-		{
-			_data = null;
-			_dirtyFlag = false;
-			setEmpty();
-		}
-		
-		freeEvictedBlob();
+		// change object state EMPTY
+		_dirtyFlag = false;
+		setEmpty();
 	}
 	
 	public void exportData()
@@ -602,7 +624,8 @@ public class MatrixObject extends CacheableData
 		throws CacheException
 	{
 		LOG.trace("Export data "+_varName+" "+fName);
-			
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new CacheStatusException ("MatrixObject not available to read.");
@@ -680,6 +703,11 @@ public class MatrixObject extends CacheableData
 			//CASE 3: data already in hdfs (do nothing, no need for export)
 			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
+		  
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementExportTime(t1-t0);
+		}
 	}
 
 	
@@ -736,6 +764,9 @@ public class MatrixObject extends CacheableData
 	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
 		throws CacheException
 	{
+		LOG.trace("Acquire partition "+_varName+" "+pred);
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		if ( !_partitioned )
 			throw new CacheStatusException ("MatrixObject not available to indexed read.");
 		
@@ -821,6 +852,11 @@ public class MatrixObject extends CacheableData
 		catch(Exception ex)
 		{
 			throw new CacheException(ex);
+		}
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireRTime(t1-t0);
 		}
 		
 		return mb;
@@ -918,7 +954,7 @@ public class MatrixObject extends CacheableData
 	    if (_data == null)
 			throw new CacheIOException (filePath + " : Restore failed.");
 	    
-		LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
+	    LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
 	}		
 
 	@Override
@@ -1076,6 +1112,7 @@ public class MatrixObject extends CacheableData
 			throw new IOException("Unable to load matrix from file "+filePathAndName);
 		}
 		
+		//System.out.println("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
 		LOG.trace("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
 		return newData;
 	}

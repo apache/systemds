@@ -100,7 +100,7 @@ public class PageRankTest extends AutomatedTestBase
 		int expectedNumberOfJobs = 8;
 		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
         
-        compareResults();
+        compareResults(0.0000001);
     }
 
 }

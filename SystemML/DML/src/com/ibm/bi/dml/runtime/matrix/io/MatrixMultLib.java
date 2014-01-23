@@ -96,7 +96,7 @@ public class MatrixMultLib
 		else 
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose);
 
-		//System.out.println("TSMM ("+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+") in "+time.stop());
+		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
 
 	}
 	
@@ -129,139 +129,65 @@ public class MatrixMultLib
 		final int m = m1.rlen;
 		final int n = m2.clen;
 		final int cd = m1.clen;
-					
-		if( m==1 && n==1 ) //DOT PRODUCT
+
+		if( LOW_LEVEL_OPTIMIZATION )
 		{
-			for( int i=0; i<cd; i++ )
-				c[0] += a[i] * b[i];
-			ret.nonZeros = (c[0]!=0) ? 1 : 0;
-		}
-		else if( n==1 ) //MATRIX-VECTOR
-		{
-			if( LOW_LEVEL_OPTIMIZATION )
+			if( m==1 && n==1 ) //DOT PRODUCT
 			{
-				int bcd = cd%8;
-				for( int i = 0, aix=0, cix=0; i < m; i++, cix++) 
-				{
-					//compute rest
-					for( int k = 0; k < bcd; k++, aix++)
-						c[ cix ] += a[ aix ] * b[ k ];
-					//unrolled 8-block 
-					for( int k = bcd; k < cd; k+=8, aix+=8)
-					{
-						c[ cix ] += a[ aix   ] * b[ k   ];
-						c[ cix ] += a[ aix+1 ] * b[ k+1 ];
-						c[ cix ] += a[ aix+2 ] * b[ k+2 ];
-						c[ cix ] += a[ aix+3 ] * b[ k+3 ];
-						c[ cix ] += a[ aix+4 ] * b[ k+4 ];
-						c[ cix ] += a[ aix+5 ] * b[ k+5 ];
-						c[ cix ] += a[ aix+6 ] * b[ k+6 ];
-						c[ cix ] += a[ aix+7 ] * b[ k+7 ];
-					}				
-				}
+				c[0] = dotProduct(a, b, cd);
 			}
-			else
+			else if( n==1 ) //MATRIX-VECTOR
 			{
-				for( int i = 0, aix=0, cix=0; i < m; i++, cix++) 
-					for( int k = 0; k < cd; k++, aix++)
-						c[ cix ] += a[ aix ] * b[ k ];				
+				for( int i=0, aix=0; i < m; i++, aix+=cd) 
+					c[ i ] = dotProduct(a, b, aix, 0, cd);	
 			}
-			ret.recomputeNonZeros();
-		}
-		else //MATRIX-MATRIX
-		{	
-			if( LOW_LEVEL_OPTIMIZATION )
-			{
+			else //MATRIX-MATRIX
+			{	
 				//1) Unrolled inner loop (for better instruction-level parallelism)
 				//2) Blocked execution (for less cache trashing in parallel exec) 	
 				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
 				
-				final int blocksizeI = 64; //256KB c block (typical L2 size per core), 32KB a block 
-				final int blocksizeK = 64; //256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
-				final int blocksizeJ = 512; //4KB (typical main-memory page size), for scan 
+				final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
+				final int blocksizeK = 32; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
+				final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
 
 				//blocked execution
 				for( int bi = 0; bi < m; bi+=blocksizeI )
 					for( int bk = 0, bimin = Math.min(m, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
 						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
 						{
+							int bjlen = Math.min(n, bj+blocksizeJ)-bj;
 							//core sub block matrix multiplication
-				    		final int bjmin = Math.min(n, bj+blocksizeJ);
-							final int bn = (bjmin-bj)%8;
-							
-							for( int i = bi; i < bimin; i++) 
-								for( int k = bk, aixk=i*cd+bk; k < bkmin; k++, aixk++)
+				    		for( int i = bi; i < bimin; i++) 
+				    		{
+				    			int cixj = i * n + bj; //re-init scan index on c
+								for( int k = bk, aix=i*cd; k < bkmin; k++)
 								{
-									final double val = a[ aixk ]; 									
+									double val = a[ aix+k ]; 									
 									if( val != 0 ) //skip row if applicable
 									{
-										int cixj = i * n + bj; //re-init scan index on c
 										int bixj = k * n + bj; //re-init scan index on b
-										
-										//rest, not aligned to 8-blocks
-										for( int j = bj; j < bj+bn; j++, cixj++, bixj++)
-											c[ cixj ] += val * b[ bixj ];
-										
-										//unrolled 8-block 
-										for( int j = bj+bn; j < bjmin; j+=8, bixj+=8, cixj+=8) 
-										{
-											c[ cixj+0 ] += val * b[ bixj+0 ];
-											c[ cixj+1 ] += val * b[ bixj+1 ];
-											c[ cixj+2 ] += val * b[ bixj+2 ];
-											c[ cixj+3 ] += val * b[ bixj+3 ];
-											c[ cixj+4 ] += val * b[ bixj+4 ];
-											c[ cixj+5 ] += val * b[ bixj+5 ];
-											c[ cixj+6 ] += val * b[ bixj+6 ];
-											c[ cixj+7 ] += val * b[ bixj+7 ];
-										}
+										vectMultiplyAdd(val, b, c, bixj, cixj, bjlen);
 									}
 								}	
+				    		}
 						}
-				
-				
-				/*
-				//old version, w/o blocked execution
-				int bn = n%8;
-				for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
-					for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
-					{			
-						val = a[ aix ];
-						if( val != 0 )
-						{
-							//rest, not aligned to 8-blocks
-							for( int j = 0; j < bn; j++)
-								c[ cix+j ] += val * b[ bix+j ];
-							//unrolled 8-block 
-							for( int j = bn; j < n; j+=8) 
-							{
-								c[ cix+j   ] += val * b[ bix+j   ];
-								c[ cix+j+1 ] += val * b[ bix+j+1 ];
-								c[ cix+j+2 ] += val * b[ bix+j+2 ];
-								c[ cix+j+3 ] += val * b[ bix+j+3 ];
-								c[ cix+j+4 ] += val * b[ bix+j+4 ];
-								c[ cix+j+5 ] += val * b[ bix+j+5 ];
-								c[ cix+j+6 ] += val * b[ bix+j+6 ];
-								c[ cix+j+7 ] += val * b[ bix+j+7 ];
-							}
-						}
-					}	
-				*/
-				
 			}
-			else
-			{
-				double val;
-				for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
-					for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
-					{			
-						val = a[ aix ];
-						if( val != 0 )
-							for( int j = 0; j < n; j++) 
-								c[ cix+j ] += val * b[ bix+j ];
-					}				
-			}
-			ret.recomputeNonZeros();		
-		}		
+		}
+		else
+		{
+			double val;
+			for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
+				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
+				{			
+					val = a[ aix ];
+					if( val != 0 )
+						for( int j = 0; j < n; j++) 
+							c[ cix+j ] += val * b[ bix+j ];
+				}	
+		}
+		
+		ret.recomputeNonZeros();
 		ret.examSparsity();
 	}
 	
@@ -288,11 +214,6 @@ public class MatrixMultLib
 		int m = m1.rlen;
 		int n = m2.clen;
 		int cd = m1.clen;
-		
-		double val;
-		int blen;
-		int[] bix;
-		double[] bvals;
 	
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if( LOW_LEVEL_OPTIMIZATION )
@@ -300,31 +221,16 @@ public class MatrixMultLib
 			for( int i=0, aix=0, cix=0; i < m; i++, cix+=n ) 
 				for(int k = 0; k < cd; k++, aix++ ) 
 				{
-					val = a[aix];
+					double val = a[aix];
 					if( val != 0 )
 					{
 						SparseRow brow = m2.sparseRows[ k ];
 						if( brow != null && brow.size() > 0 ) 
 						{
-							blen = brow.size();
-							bix = brow.getIndexContainer();
-							bvals = brow.getValueContainer();	
-							int bblen = blen%8;
-							//rest, not aligned to 8-blocks
-							for( int j = 0; j < bblen; j++)
-								c[cix+bix[j]] += val * bvals[j];
-							//unrolled 8-block 
-							for(int j = bblen; j < blen; j+=8)
-							{
-								c[cix+bix[j]  ] += val * bvals[j  ];
-								c[cix+bix[j+1]] += val * bvals[j+1];
-								c[cix+bix[j+2]] += val * bvals[j+2];
-								c[cix+bix[j+3]] += val * bvals[j+3];
-								c[cix+bix[j+4]] += val * bvals[j+4];
-								c[cix+bix[j+5]] += val * bvals[j+5];
-								c[cix+bix[j+6]] += val * bvals[j+6];
-								c[cix+bix[j+7]] += val * bvals[j+7];
-							}
+							int blen = brow.size();
+							int[] bix = brow.getIndexContainer();
+							double[] bvals = brow.getValueContainer();								
+							vectMultiplyAdd(val, bvals, c, bix, cix, blen);
 						}
 					}
 				}	
@@ -334,21 +240,22 @@ public class MatrixMultLib
 			for( int i=0, aix=0, cix=0; i < m; i++, cix+=n ) 
 				for(int k = 0; k < cd; k++, aix++ ) 
 				{
-					val = a[aix];
+					double val = a[aix];
 					if( val!=0 )
 					{
 						SparseRow brow = m2.sparseRows[ k ];
 						if( brow != null && brow.size() > 0 ) 
 						{
-							blen = brow.size();
-							bix = brow.getIndexContainer();
-							bvals = brow.getValueContainer();	
+							int blen = brow.size();
+							int[] bix = brow.getIndexContainer();
+							double[] bvals = brow.getValueContainer();	
 							for(int j = 0; j < blen; j++)
 								c[cix+bix[j]] += val * bvals[j];								
 						}
 					}
 				}		
 		}
+		
 		ret.recomputeNonZeros();
 		ret.examSparsity();	
 	}
@@ -375,137 +282,82 @@ public class MatrixMultLib
 		double[] c = ret.denseBlock;
 		int m = m1.rlen;
 		int n = m2.clen;
-		
-		double val;
-		int alen;
-		int[] aix;
-		double[] avals;
-		
-		if( m==1 && n==1 ) //DOT PRODUCT
+
+		if( LOW_LEVEL_OPTIMIZATION )
 		{
-			SparseRow arow = m1.sparseRows[0];
-			if( arow != null && arow.size() > 0 )
+		
+			if( m==1 && n==1 ) //DOT PRODUCT
 			{
-				alen = arow.size();
-				aix = arow.getIndexContainer();
-				avals = arow.getValueContainer();
-				
-				for(int k = 0; k < alen; k++) 
-					c[0] += avals[k] * b[aix[k]];
-			}
-			ret.nonZeros = (c[0]!=0) ? 1 : 0;
-		}
-		else if( n==1 ) //MATRIX-VECTOR
-		{
-			if( LOW_LEVEL_OPTIMIZATION )
-			{
-				int balen;
-				for( int i=0; i<Math.min(m, m1.sparseRows.length); i++ )
+				SparseRow arow = m1.sparseRows[0];
+				if( arow != null && arow.size() > 0 )
 				{
-					SparseRow arow = m1.sparseRows[i];
-					if( arow != null && arow.size() > 0 ) 
-					{
-						alen = arow.size();
-						balen = alen%8;
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
-						
-						//compute rest
-						for( int k = 0; k < balen; k++)
-							c[i] += avals[k] * b[aix[k]];	
-						//unrolled 8-block 
-						for(int k = balen; k < alen; k+=8) 
-						{
-							c[i] += avals[k  ] * b[aix[k]  ];
-							c[i] += avals[k+1] * b[aix[k+1]];
-							c[i] += avals[k+2] * b[aix[k+2]];
-							c[i] += avals[k+3] * b[aix[k+3]];
-							c[i] += avals[k+4] * b[aix[k+4]];
-							c[i] += avals[k+5] * b[aix[k+5]];
-							c[i] += avals[k+6] * b[aix[k+6]];
-							c[i] += avals[k+7] * b[aix[k+7]];
-						}
-					}
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();
+					
+					c[0] = dotProduct(avals, b, aix, 0, alen);
 				}
 			}
-			else
+			else if( n==1 ) //MATRIX-VECTOR
 			{
 				for( int i=0; i<Math.min(m, m1.sparseRows.length); i++ )
 				{
 					SparseRow arow = m1.sparseRows[i];
 					if( arow != null && arow.size() > 0 ) 
 					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
-						
-						for(int k = 0; k < alen; k++) 
-							c[i] += avals[k] * b[aix[k]];														
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();					
+					
+						c[i] = dotProduct(avals, b, aix, 0, alen);							
 					}
 				}
 			}
-			ret.recomputeNonZeros();			
-		}
-		else //MATRIX-MATRIX
-		{
-			if(LOW_LEVEL_OPTIMIZATION)
+			else //MATRIX-MATRIX
 			{
-				int bn=n%8;
 				int bix;
 				for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 				{
 					SparseRow arow = m1.sparseRows[i];
 					if( arow != null && arow.size() > 0 ) 
 					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();					
 						
 						for(int k = 0; k < alen; k++) 
 						{
-							val = avals[k];
+							double val = avals[k];
 							bix = aix[k]*n;
-							//compute rest
-							for(int j = 0; j < bn; j++)
-								c[cix+j] += val * b[bix+j];
-							//unrolled 8-block 
-							for(int j = bn; j < n; j+=8)
-							{
-								c[cix+j  ] += val * b[bix+j  ];
-								c[cix+j+1] += val * b[bix+j+1];
-								c[cix+j+2] += val * b[bix+j+2];
-								c[cix+j+3] += val * b[bix+j+3];
-								c[cix+j+4] += val * b[bix+j+4];
-								c[cix+j+5] += val * b[bix+j+5];
-								c[cix+j+6] += val * b[bix+j+6];
-								c[cix+j+7] += val * b[bix+j+7];
-							}
+							
+							vectMultiplyAdd(val, b, c, bix, cix, n);
 						}						
 					}
-				}				
+				}					
 			}
-			else
+		}
+		else
+		{
+			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
-				for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
+				SparseRow arow = m1.sparseRows[i];
+				if( arow != null && arow.size() > 0 ) 
 				{
-					SparseRow arow = m1.sparseRows[i];
-					if( arow != null && arow.size() > 0 ) 
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();					
+					
+					for(int k = 0; k < alen; k++) 
 					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
-						
-						for(int k = 0; k < alen; k++) 
-						{
-							val = avals[k];
-							for(int j = 0, bix=aix[k]*n; j < n; j++)
-								c[cix+j] += val * b[bix+j];								
-						}						
-					}
+						double val = avals[k];
+						for(int j = 0, bix=aix[k]*n; j < n; j++)
+							c[cix+j] += val * b[bix+j];								
+					}						
 				}
 			}
-			ret.recomputeNonZeros();
 		}
+		
+		ret.recomputeNonZeros();
 		ret.examSparsity();
 	}
 	
@@ -531,49 +383,29 @@ public class MatrixMultLib
 		int m = m1.rlen;
 		int n = m2.clen;
 		
-		double val;
-		int alen, blen;
-		int[] aix, bix;
-		double[] avals, bvals;
-		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if(LOW_LEVEL_OPTIMIZATION)
 		{
-			int bblen;
 			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
 				if( arow != null && arow.size() > 0 ) 
 				{
-					alen = arow.size();
-					aix = arow.getIndexContainer();
-					avals = arow.getValueContainer();					
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();					
 					
 					for(int k = 0; k < alen; k++) 
 					{
-						val = avals[k];
+						double val = avals[k];
 						SparseRow brow = m2.sparseRows[ aix[k] ];
 						if( brow != null && brow.size() > 0 ) 
 						{
-							blen = brow.size();
-							bblen = blen%8;
-							bix = brow.getIndexContainer();
-							bvals = brow.getValueContainer();	
-							//compute rest
-							for(int j = 0; j < bblen; j++)
-								c[cix+bix[j]] += val * bvals[j];
-							//unrolled 8-block 
-							for(int j = bblen; j < blen; j+=8)
-							{
-								c[cix+bix[j]  ] += val * bvals[j  ];
-								c[cix+bix[j+1]] += val * bvals[j+1];
-								c[cix+bix[j+2]] += val * bvals[j+2];
-								c[cix+bix[j+3]] += val * bvals[j+3];
-								c[cix+bix[j+4]] += val * bvals[j+4];
-								c[cix+bix[j+5]] += val * bvals[j+5];
-								c[cix+bix[j+6]] += val * bvals[j+6];
-								c[cix+bix[j+7]] += val * bvals[j+7];
-							}
+							int blen = brow.size();
+							int[] bix = brow.getIndexContainer();
+							double[] bvals = brow.getValueContainer();	
+							
+							vectMultiplyAdd(val, bvals, c, bix, cix, blen);
 						}
 					}						
 				}
@@ -586,19 +418,19 @@ public class MatrixMultLib
 				SparseRow arow = m1.sparseRows[i];
 				if( arow != null && arow.size() > 0 ) 
 				{
-					alen = arow.size();
-					aix = arow.getIndexContainer();
-					avals = arow.getValueContainer();					
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();					
 					
 					for(int k = 0; k < alen; k++) 
 					{
-						val = avals[k];
+						double val = avals[k];
 						SparseRow brow = m2.sparseRows[ aix[k] ];
 						if( brow != null && brow.size() > 0 ) 
 						{
-							blen = brow.size();
-							bix = brow.getIndexContainer();
-							bvals = brow.getValueContainer();	
+							int blen = brow.size();
+							int[] bix = brow.getIndexContainer();
+							double[] bvals = brow.getValueContainer();	
 							for(int j = 0; j < blen; j++)
 								c[cix+bix[j]] += val * bvals[j];								
 						}
@@ -638,140 +470,107 @@ public class MatrixMultLib
 		int m = m1.rlen;
 		int n = m1.clen;
 		
-		double val;
 		if( leftTranspose ) // t(X)%*%X
 		{
-			if( n==1 ) //VECTOR 
+			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				for( int i = 0; i < m; i++ )
-					c[0] += a[i] * a[i];
-			}
-			else //MATRIX
-			{	
-				//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
-				if( LOW_LEVEL_OPTIMIZATION )
+				if( n==1 ) //VECTOR 
 				{
+					c[0] = dotProduct(a, a, m);
+				}
+				else //MATRIX
+				{	
+					//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
+				
 					//1) Unrolled inner loop, for better ILP
 					//2) Blocked execution, for less cache trashing in parallel exec 					
-					int blocksize = 64;
-					int bn, bjmin, bjmax;
-					for( int bi = 0; bi<n; bi+=blocksize )
-						for( int bj = bi; bj<n; bj+=blocksize ) 
+					int blocksizeI = 16;
+					int blocksizeJ = 256;
+
+					for( int bi = 0; bi<n; bi+=blocksizeI )
+						for( int bj = bi; bj<n; bj+=blocksizeJ )
 						{
-							bjmin = Math.min(n, bj+blocksize);
+							final int bimin = Math.min(n, bi+blocksizeI);
+							final int bjmin = Math.min(n, bj+blocksizeJ);
+							
 							for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
-								for(int i = bi, ix3 = bi*n; i < Math.min(n, bi+blocksize); i++, ix3+=n) 
+								for(int i = bi, ix3 = bi*n; i < bimin; i++, ix3+=n) 
 								{
-									val = a[ ix1+i ];
+									double val = a[ ix1+i ];
 									if( val != 0 )
 									{
 										//from i due to symmetry
-										bjmax = Math.max(i,bj);
-										bn = (bjmin-bjmax)%8;
-										//compute rest
-										for(int j = bjmax; j < bjmax+bn; j++) 
-											c[ ix3+j ]  += val * a[ ix1+j ];
-										//unrolled 8-block
-										for(int j = bjmax+bn; j < bjmin; j+=8) 
-										{
-											c[ ix3+j   ]  += val * a[ ix1+j   ];
-											c[ ix3+j+1 ]  += val * a[ ix1+j+1 ];
-											c[ ix3+j+2 ]  += val * a[ ix1+j+2 ];
-											c[ ix3+j+3 ]  += val * a[ ix1+j+3 ];
-											c[ ix3+j+4 ]  += val * a[ ix1+j+4 ];
-											c[ ix3+j+5 ]  += val * a[ ix1+j+5 ];
-											c[ ix3+j+6 ]  += val * a[ ix1+j+6 ];
-											c[ ix3+j+7 ]  += val * a[ ix1+j+7 ];
-										}
+										int bjmax = Math.max(i,bj);
+										vectMultiplyAdd(val, a, c, ix1+bjmax, ix3+bjmax, bjmin-bjmax);
 									}
 								}
 						}	
 				}
-				else
-				{	
-					for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
-						for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+			}
+			else
+			{	
+				for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
+					for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
+					{
+						double val = a[ ix1+i ];
+						if( val != 0 )
 						{
-							val = a[ ix1+i ];
-							if( val != 0 )
-							{
-								for(int j = i; j < n; j++) //from i due to symmetry
-									c[ ix3+j ]  += val * a[ ix1+j ];
-							}
+							for(int j = i; j < n; j++) //from i due to symmetry
+								c[ ix3+j ]  += val * a[ ix1+j ];
 						}
-				}
+					}
 			}
 		}
 		else // X%*%t(X)
 		{
-			if( m==1 ) //VECTOR
+			if(LOW_LEVEL_OPTIMIZATION)
 			{
-				for( int i = 0; i < n; i++ )
-					c[0] += a[i] * a[i];
-			}
-			else //MATRIX
-			{
-				//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
-				if(LOW_LEVEL_OPTIMIZATION)
+				if( m==1 ) //VECTOR
 				{
+					c[0] = dotProduct(a, a, n);
+				}
+				else //MATRIX
+				{
+					//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
+				
 					//1) Unrolled inner loop, for better ILP
 					//2) Blocked execution, for less cache trashing in parallel exec 
 					//   (smaller block sizes would be slightly better, but consistent as is)
-					int blocksize = 64; 
-					int bn = n%8;
-					int bjmin, bjmax;
+					//3) Single write in inner loop (transient intermediates)
+					int blocksize = 64;
 					for( int bi = 0; bi<m; bi+=blocksize )
 						for( int bj = bi; bj<m; bj+=blocksize ) 
 						{
-							bjmin =  Math.min(m, bj+blocksize);							
-							for(int i = bi, ix1 = bi*n, ix3 = bi*m; i < Math.min(m, bi+blocksize); i++, ix1+=n, ix3+=m)
+							final int bimin = Math.min(m, bi+blocksize);
+							final int bjmin = Math.min(m, bj+blocksize);	
+							
+							for(int i = bi, ix1 = bi*n, ix3 = bi*m; i < bimin; i++, ix1+=n, ix3+=m)
 							{
-								bjmax = Math.max(i,bj);
+								final int bjmax = Math.max(i,bj);
 								for(int j = bjmax, ix2 = bjmax*n; j <bjmin; j++, ix2+=n) //from i due to symmetry
 								{
-									val = 0;
-									//compute rest
-									for(int k = 0; k < bn; k++)
-										val += a[ ix1+k ] * a[ix2+k];
-									//unrolled 8-block
-									for(int k = bn; k < n; k+=8)
-									{
-										val += a[ ix1+k   ] * a[ix2+k  ];
-										val += a[ ix1+k+1 ] * a[ix2+k+1];
-										val += a[ ix1+k+2 ] * a[ix2+k+2];
-										val += a[ ix1+k+3 ] * a[ix2+k+3];
-										val += a[ ix1+k+4 ] * a[ix2+k+4];
-										val += a[ ix1+k+5 ] * a[ix2+k+5];
-										val += a[ ix1+k+6 ] * a[ix2+k+6];
-										val += a[ ix1+k+7 ] * a[ix2+k+7];
-									}
-									c[ ix3+j ] = val;	
+									c[ ix3+j ] = dotProduct(a, a, ix1, ix2, n);	
 								}
 							}
 						}
 				}
-				else
-				{
-					for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
-						for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
-						{
-							val = 0;
-							for(int k = 0; k < n; k++)
-								val += a[ ix1+k ] * a[ix2+k];
-							c[ ix3+j ] = val;	
-						}
-				}
+			}
+			else
+			{
+				for(int i = 0, ix1 = 0, ix3 = 0; i < m; i++, ix1+=n, ix3+=m)
+					for(int j = i, ix2 = i*n; j < m; j++, ix2+=n) //from i due to symmetry
+					{
+						double val = 0;
+						for(int k = 0; k < n; k++)
+							val += a[ ix1+k ] * a[ix2+k];
+						c[ ix3+j ] = val;	
+					}
 			}
 		}
 
 		//3) copy symmetric values
-		for( int i=0; i<ret.rlen; i++)
-			for( int j=i+1; j<ret.clen; j++ )
-			{
-				val = c[i*ret.clen+j];
-				if( val != 0 ) 
-					c[ j*ret.clen+i ] = val;
-			}
+		copyUpperToLowerTriangle( ret );
+		
 		ret.recomputeNonZeros();
 		ret.examSparsity();	
 	}
@@ -801,11 +600,6 @@ public class MatrixMultLib
 		double[] c = ret.denseBlock;
 		int m = m1.rlen;
 		int n = m1.clen;
-		
-		double val;
-		int alen;
-		int[] aix;
-		double[] avals;
 
 		if( leftTranspose ) // t(X)%*%X 
 		{
@@ -813,37 +607,20 @@ public class MatrixMultLib
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				int balen;
-				int ix2;
 				for( SparseRow arow : m1.sparseRows )
 					if( arow != null && arow.size() > 0 ) 
 					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();					
 						
 						for(int i = 0; i < alen; i++) 
 						{
-							val = avals[i];
+							double val = avals[i];
 							if( val != 0 )
 							{
-								balen = (alen-i)%8;
-								ix2 = aix[i]*n;
-								//compute rest
-								for(int j = i; j < i+balen; j++)
-									c[ix2+aix[j]] += val * avals[j];
-								//unrolled 8-block
-								for(int j = i+balen; j < alen; j+=8)
-								{
-									c[ix2+aix[j]  ] += val * avals[j  ];
-									c[ix2+aix[j+1]] += val * avals[j+1];
-									c[ix2+aix[j+2]] += val * avals[j+2];
-									c[ix2+aix[j+3]] += val * avals[j+3];
-									c[ix2+aix[j+4]] += val * avals[j+4];
-									c[ix2+aix[j+5]] += val * avals[j+5];
-									c[ix2+aix[j+6]] += val * avals[j+6];
-									c[ix2+aix[j+7]] += val * avals[j+7];
-								}
+								int ix2 = aix[i]*n;
+								vectMultiplyAdd(val, avals, c, aix, ix2, alen);
 							}
 						}
 					}	
@@ -853,13 +630,13 @@ public class MatrixMultLib
 				for( SparseRow arow : m1.sparseRows )
 					if( arow != null && arow.size() > 0 ) 
 					{
-						alen = arow.size();
-						aix = arow.getIndexContainer();
-						avals = arow.getValueContainer();					
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();					
 						
 						for(int i = 0; i < alen; i++) 
 						{
-							val = avals[i];
+							double val = avals[i];
 							if( val != 0 )
 								for(int j = i, ix2 = aix[i]*n; j < alen; j++)
 									c[ix2+aix[j]] += val * avals[j];
@@ -874,10 +651,9 @@ public class MatrixMultLib
 				SparseRow arow = m1.sparseRows[0];
 				if( arow !=null && arow.size()>0 )
 				{
-					alen = arow.size();
-					avals = arow.getValueContainer();	
-					for( int i = 0; i < alen; i++ )
-						c[0] += avals[i] * avals[i];
+					int alen = arow.size();
+					double[] avals = arow.getValueContainer();	
+					c[0] = dotProduct(avals, avals, alen);
 				}
 			}
 			else //MATRIX
@@ -894,37 +670,20 @@ public class MatrixMultLib
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					int balen;
-					int ix2;
 					for( SparseRow arow : tmpBlock.sparseRows )
 						if( arow != null && arow.size() > 0 ) 
 						{
-							alen = arow.size();
-							aix = arow.getIndexContainer();
-							avals = arow.getValueContainer();					
+							int alen = arow.size();
+							int[] aix = arow.getIndexContainer();
+							double[] avals = arow.getValueContainer();					
 							
 							for(int i = 0; i < alen; i++) 
 							{
-								val = avals[i];
+								double val = avals[i];
 								if( val != 0 )
 								{
-									balen = (alen-i)%8;
-									ix2 = aix[i]*m;
-									//compute rest
-									for(int j = i; j < i+balen; j++)
-										c[ix2+aix[j]] += val * avals[j];
-									//unrolled 8-block
-									for(int j = i+balen; j < alen; j+=8)
-									{
-										c[ix2+aix[j]  ] += val * avals[j  ];
-										c[ix2+aix[j+1]] += val * avals[j+1];
-										c[ix2+aix[j+2]] += val * avals[j+2];
-										c[ix2+aix[j+3]] += val * avals[j+3];
-										c[ix2+aix[j+4]] += val * avals[j+4];
-										c[ix2+aix[j+5]] += val * avals[j+5];
-										c[ix2+aix[j+6]] += val * avals[j+6];
-										c[ix2+aix[j+7]] += val * avals[j+7];
-									}
+									int ix2 = aix[i]*m;
+									vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
 								}
 							}
 						}
@@ -934,13 +693,13 @@ public class MatrixMultLib
 					for( SparseRow arow : tmpBlock.sparseRows )
 						if( arow != null && arow.size() > 0 ) 
 						{
-							alen = arow.size();
-							aix = arow.getIndexContainer();
-							avals = arow.getValueContainer();					
+							int alen = arow.size();
+							int[] aix = arow.getIndexContainer();
+							double[] avals = arow.getValueContainer();					
 							
 							for(int i = 0; i < alen; i++) 
 							{
-								val = avals[i];
+								double val = avals[i];
 								if( val != 0 )
 									for(int j = i, ix2 = aix[i]*m; j < alen; j++)
 										c[ix2+aix[j]] += val * avals[j];
@@ -951,17 +710,238 @@ public class MatrixMultLib
 		}
 	
 		//3) copy symmetric values
-		for( int i=0; i<ret.rlen; i++)
-			for( int j=i+1; j<ret.clen; j++ )
-			{
-				val = c[i*ret.clen+j];
-				if( val != 0 ) 
-					c[ j*ret.clen+i ] = val;
-			}
+		copyUpperToLowerTriangle( ret );
+		
 		ret.recomputeNonZeros(); 
 		ret.examSparsity();	
 	}
 	
+	////////////////////////////////////////////
+	// performance-relevant utility functions //
+	////////////////////////////////////////////
+	
+	/**
+	 * Computes the dot-product of two vectors. Experiments (on long vectors of
+	 * 10^7 values) showed that this generic function provides equivalent performance
+	 * even for the specific case of dotProduct(a,a,len) as used for TSMM.  
+	 * 
+	 * @param a
+	 * @param b
+	 * @param len
+	 * @return
+	 */
+	private static double dotProduct( double[] a, double[] b, int len )
+	{
+		double val = 0;
+		final int bn = len%8;
+				
+		//compute rest
+		for( int i = 0; i < bn; i++ )
+			val += a[ i ] * b[ i ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int i = bn; i < len; i+=8 )
+		{
+			//read 64B cachelines of a and b
+			//compute cval' = sum(a * b) + cval
+			val += a[ i+0 ] * b[ i+0 ]
+			     + a[ i+1 ] * b[ i+1 ]
+			     + a[ i+2 ] * b[ i+2 ]
+			     + a[ i+3 ] * b[ i+3 ]
+			     + a[ i+4 ] * b[ i+4 ]
+			     + a[ i+5 ] * b[ i+5 ]
+			     + a[ i+6 ] * b[ i+6 ]
+			     + a[ i+7 ] * b[ i+7 ];
+		}
+		
+		//scalar result
+		return val; 
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param b
+	 * @param ai
+	 * @param bi
+	 * @param len
+	 * @return
+	 */
+	private static double dotProduct( double[] a, double[] b, int ai, int bi, int len )
+	{
+		double val = 0;
+		final int bn = len%8;
+				
+		//compute rest
+		for( int i = 0; i < bn; i++, ai++, bi++ )
+			val += a[ ai ] * b[ bi ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int i = bn; i < len; i+=8, ai+=8, bi+=8 )
+		{
+			//read 64B cachelines of a and b
+			//compute cval' = sum(a * b) + cval
+			val += a[ ai+0 ] * b[ bi+0 ]
+			     + a[ ai+1 ] * b[ bi+1 ]
+			     + a[ ai+2 ] * b[ bi+2 ]
+			     + a[ ai+3 ] * b[ bi+3 ]
+			     + a[ ai+4 ] * b[ bi+4 ]
+			     + a[ ai+5 ] * b[ bi+5 ]
+			     + a[ ai+6 ] * b[ bi+6 ]
+			     + a[ ai+7 ] * b[ bi+7 ];
+		}
+		
+		//scalar result
+		return val; 
+	}
+	
+	private static double dotProduct( double[] a, double[] b, int[] aix, int bi, int len )
+	{
+		double val = 0;
+		final int bn = len%8;
+				
+		//compute rest
+		for( int i = 0; i < bn; i++ )
+			val += a[ i ] * b[ bi+aix[i] ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int i = bn; i < len; i+=8 )
+		{
+			//read 64B cacheline of a
+			//read 64B of b via 'gather'
+			//compute cval' = sum(a * b) + cval
+			val += a[ i+0 ] * b[ bi+aix[i+0] ]
+			     + a[ i+1 ] * b[ bi+aix[i+1] ]
+			     + a[ i+2 ] * b[ bi+aix[i+2] ]
+			     + a[ i+3 ] * b[ bi+aix[i+3] ]
+			     + a[ i+4 ] * b[ bi+aix[i+4] ]
+			     + a[ i+5 ] * b[ bi+aix[i+5] ]
+			     + a[ i+6 ] * b[ bi+aix[i+6] ]
+			     + a[ i+7 ] * b[ bi+aix[i+7] ];
+		}
+		
+		//scalar result
+		return val; 
+	}
+
+	/**
+	 * 
+	 * @param aval
+	 * @param b
+	 * @param c
+	 * @param bi
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int bi, int ci, int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, bi++, ci++)
+			c[ ci ] += aval * b[ bi ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, bi+=8, ci+=8) 
+		{
+			//read 64B cachelines of b and c
+			//compute c' = aval * b + c
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += aval * b[ bi+0 ];
+			c[ ci+1 ] += aval * b[ bi+1 ];
+			c[ ci+2 ] += aval * b[ bi+2 ];
+			c[ ci+3 ] += aval * b[ bi+3 ];
+			c[ ci+4 ] += aval * b[ bi+4 ];
+			c[ ci+5 ] += aval * b[ bi+5 ];
+			c[ ci+6 ] += aval * b[ bi+6 ];
+			c[ ci+7 ] += aval * b[ bi+7 ];
+		}
+	}
+	
+	/**
+	 * 
+	 * @param aval
+	 * @param b
+	 * @param c
+	 * @param bix
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int[] bix, int ci, int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++ )
+			c[ ci + bix[j] ] += aval * b[ j ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8 )
+		{
+			//read 64B cacheline of b
+			//read 64B of c via 'gather'
+			//compute c' = aval * b + c
+			//write back 64B of c = c' via 'scatter'
+			c[ ci+bix[j+0] ] += aval * b[ j+0 ];
+			c[ ci+bix[j+1] ] += aval * b[ j+1 ];
+			c[ ci+bix[j+2] ] += aval * b[ j+2 ];
+			c[ ci+bix[j+3] ] += aval * b[ j+3 ];
+			c[ ci+bix[j+4] ] += aval * b[ j+4 ];
+			c[ ci+bix[j+5] ] += aval * b[ j+5 ];
+			c[ ci+bix[j+6] ] += aval * b[ j+6 ];
+			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
+		}
+	}
+	
+	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int[] bix, int bi, int ci, int len )
+	{
+		final int bn = (len-bi)%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = bi; j < bi+bn; j++ )
+			c[ ci + bix[j] ] += aval * b[ j ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int j = bi+bn; j < len; j+=8 )
+		{
+			//read 64B cacheline of b
+			//read 64B of c via 'gather'
+			//compute c' = aval * b + c
+			//write back 64B of c = c' via 'scatter'
+			c[ ci+bix[j+0] ] += aval * b[ j+0 ];
+			c[ ci+bix[j+1] ] += aval * b[ j+1 ];
+			c[ ci+bix[j+2] ] += aval * b[ j+2 ];
+			c[ ci+bix[j+3] ] += aval * b[ j+3 ];
+			c[ ci+bix[j+4] ] += aval * b[ j+4 ];
+			c[ ci+bix[j+5] ] += aval * b[ j+5 ];
+			c[ ci+bix[j+6] ] += aval * b[ j+6 ];
+			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
+		}
+	}
+	
+	
+	/**
+	 * Used for all version of TSMM where the result is known to be symmetric.
+	 * Hence, we compute only the upper triangular matrix and copy this partial
+	 * result down to lower triangular matrix once.
+	 * 
+	 * @param ret
+	 */
+	private static void copyUpperToLowerTriangle( MatrixBlockDSM ret )
+	{
+		double[] c = ret.denseBlock;
+		final int m = ret.rlen;
+		final int n = ret.clen;
+		
+		//copy symmetric values
+		for( int i=0, uix=0; i<m; i++, uix+=n )
+			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
+			{
+				c[ lix ] = c[ uix+j ];
+				//c[ j*ret.clen+i ] = c[i*ret.clen+j];
+			}
+	}
+
 	
 	
 	/////////////////////////////////////////////////////
@@ -1025,6 +1005,5 @@ public class MatrixMultLib
 			}
 		}
 		ret.nonZeros=nnzs;
-	}
-	
+	}	
 }

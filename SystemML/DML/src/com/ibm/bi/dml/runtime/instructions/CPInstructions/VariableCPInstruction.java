@@ -16,7 +16,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -39,7 +38,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class VariableCPInstruction extends CPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	/*
@@ -60,24 +59,40 @@ public class VariableCPInstruction extends CPInstruction
 	 *     createvar x FP [dimensions] [formatinfo]
 	 */
 	
-	public static IDSequence _uniqueVarID;
-	static {
-		_uniqueVarID  = new IDSequence(true); 
-	}
-	private enum VariableOperationCode {
-		CreateVariable, AssignVariable, RemoveVariable, CopyVariable, RemoveVariableAndFile, AssignVariableWithFirstValue, CastAsMatrixVariable, ValuePick, InMemValuePick, InMemIQM, IQSize, Write, Read, SetFileName, SequenceIncrement
+	private enum VariableOperationCode 
+	{
+		CreateVariable, 
+		AssignVariable, 
+		RemoveVariable, 
+		CopyVariable, 
+		RemoveVariableAndFile, 
+		AssignVariableWithFirstValue, 
+		CastAsMatrixVariable, 
+		ValuePick, 
+		InMemValuePick, 
+		InMemIQM, 
+		IQSize, 
+		Write, 
+		Read, 
+		SetFileName, 
+		SequenceIncrement,
 	}
 	
-	VariableOperationCode opcode;
+	private static IDSequence _uniqueVarID;	
+	
+	private VariableOperationCode opcode;
 	private CPOperand input1;
 	private CPOperand input2;
 	private CPOperand input3;
 	private CPOperand output;
 	private MetaData metadata;
-	int arity;
 	
 	// CSV related members (used only in createvar instructions)
-	FileFormatProperties formatProperties;
+	private FileFormatProperties formatProperties;
+	
+	static {
+		_uniqueVarID  = new IDSequence(true); 
+	}
 	
 	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLUnsupportedOperationException {
 		
@@ -130,10 +145,6 @@ public class VariableCPInstruction extends CPInstruction
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
 	
-	/*public VariableOperationCode getVariableOpCode() {
-		return opcode;
-	}*/
-	
 	// Checks if this instructon is a remove instruction for varName
 	public boolean isRemoveVariable(String varName) {
 		if ( opcode == VariableOperationCode.RemoveVariable || opcode == VariableOperationCode.RemoveVariableAndFile) {
@@ -164,7 +175,6 @@ public class VariableCPInstruction extends CPInstruction
 		input2 = in2;
 		input3 = in3;
 		output = out;
-		arity = _arity;
 		instString = istr;
 		
 		formatProperties = null;
@@ -391,36 +401,12 @@ public class VariableCPInstruction extends CPInstruction
 		}
 		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, str);
 	}
-
-	//private int getRefCount(ProgramBlock pb, String var, boolean breakIfMultipleRefs) {
-	private static int getRefCount(ExecutionContext ec, Data d, boolean breakIfMultipleRefs) {
-		
-		//Data d = pb.getVariable(var);
-		
-		if ( d == null )
-			return 0;
-		
-		int refCount = 0;
-		//int hash = d.hashCode();
-		for( String key : ec.getVariables().keySet() ) {
-			//System.out.println("    probing for " + key + ": " + pb.getVariable(key));
-			if ( ec.getVariable(key).equals(d) ) {
-				refCount++;
-				
-				//if ( !key.equalsIgnoreCase(var) && !instString.contains("rmvar"))
-				//	System.err.println("   " + instString + " .. var " + var + ", key " + key);
-				// early exit if specified by "breakIfMultipleRefs"
-				if ( breakIfMultipleRefs && refCount > 1)
-					return refCount;
-			}
-		}
-		return refCount;
-	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		
-		switch ( opcode ) { 
+		switch ( opcode ) 
+		{ 
 		case CreateVariable:
 			
 			if ( input1.get_dataType() == DataType.MATRIX ) {
@@ -471,17 +457,21 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			
 			// check if <destVar> has any existing references
-			int destRefCount = getRefCount(ec, ec.getVariable(input2.get_name()), false);
+			Data input2_data = ec.getVariable(input2.get_name());
+			int destRefCount = ec.getVariables().getNumReferences( input2_data, true );
 			
 			if ( destRefCount == 1 ) {
 				// input2.get_name() currently refers to a Data object.
 				// make sure to call clearData(), if it is a matrix object 
 				
 				//System.out.println("  " + this.instString + " ... clearing input2");
-				Data input2_data = ec.getVariable(input2.get_name());
-				clearCachedMatrixObject( input2_data );
-				if ( input2_data instanceof MatrixObject && ((MatrixObject) input2_data).isFileExists() && ((MatrixObject) input2_data).isCleanupEnabled() )
-					cleanDataOnHDFS( input2_data );
+				if( input2_data instanceof MatrixObject )
+				{
+					MatrixObject mo = (MatrixObject) input2_data;
+					mo.clearData();
+					if ( mo.isFileExists() && mo.isCleanupEnabled() )
+						cleanDataOnHDFS( mo );
+				}
 			
 			} /*else if ( destRefCount > 1) {
 				System.err.println("  --- " + this.instString + " ... refCount for input2 > 1");
@@ -510,12 +500,12 @@ public class VariableCPInstruction extends CPInstruction
 			}
 			
 			// check if in-memory object can be cleaned up
-			int refCnt = getRefCount(ec, ec.getVariable(input1.get_name()), true);
+			int refCnt = ec.getVariables().getNumReferences(m, true);
 			if ( refCnt== 1 ) {
 				// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 				
 				//remove matrix object from cache
-				clearCachedMatrixObject( m );
+				m.clearData();
 			}
 			else if ( refCnt == 0 ) 
 				throw new DMLRuntimeException("  " + this.toString() + " -- refCount=0 is unexpected!");
@@ -728,17 +718,18 @@ public class VariableCPInstruction extends CPInstruction
 		}
 
 		// check if any other variable refers to the same Data object
-		int refCount = getRefCount(ec, input1_data, true);
+		int refCount = ec.getVariables().getNumReferences(input1_data, true);
 		if ( refCount == 1 ) {
 			// no other variable in the symbol table points to the same Data object as that of input1.get_name()
 			
 			if ( input1_data instanceof MatrixObject ) {
 				// clean in-memory object
-				clearCachedMatrixObject( input1_data );
+				MatrixObject mo = (MatrixObject) input1_data;
+				mo.clearData();
 				
-				if ( ((MatrixObject) input1_data).isFileExists() && ((MatrixObject) input1_data).isCleanupEnabled() )
+				if ( mo.isFileExists() && mo.isCleanupEnabled() )
 					// clean data on hdfs, if exists
-					cleanDataOnHDFS( input1_data );
+					cleanDataOnHDFS( mo );
 			}
 		}
 		else if ( refCount == 0 ) 
@@ -846,34 +837,17 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	/**
-	 * 
-	 * @param pb
-	 * @param op
-	 * @throws CacheException 
-	 */
-	private static void clearCachedMatrixObject( Data d) 
-		throws CacheException 
+	private static void cleanDataOnHDFS(MatrixObject mo) 
+		throws DMLRuntimeException 
 	{
-		if ( d instanceof MatrixObject ) {
-			((MatrixObject)d).clearData();
-		}
-	}
-	
-	private static void cleanDataOnHDFS(Data d) 
-			throws DMLRuntimeException {
-		if (d instanceof MatrixObject ) {
-			MatrixObject m = (MatrixObject) d;
-			try {
-				String fpath = m.getFileName();
-				if (fpath != null) {
-					MapReduceTool.deleteFileIfExistOnHDFS(fpath);
-					// removeMetaData(); // delete in-memory metadata
-					MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
-				}
-			} catch (IOException e) {
-				throw new DMLRuntimeException(e);
+		try {
+			String fpath = mo.getFileName();
+			if (fpath != null) {
+				MapReduceTool.deleteFileIfExistOnHDFS(fpath);
+				MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
 			}
+		} catch (IOException e) {
+			throw new DMLRuntimeException(e);
 		}
 	}
 	

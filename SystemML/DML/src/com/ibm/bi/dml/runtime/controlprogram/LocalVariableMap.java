@@ -81,9 +81,29 @@ public class LocalVariableMap implements Cloneable
 		localMap.remove (name);
 	}
 	
-	public void removeAll ()
+	public void removeAll()
 	{
 		localMap = new HashMap <String, Data> ();
+	}
+	
+	/**
+	 * 
+	 * @param d
+	 * @param earlyAbort
+	 * @return
+	 */
+	public int getNumReferences( Data d, boolean earlyAbort )
+	{
+		if ( d == null )
+			return 0;
+		
+		int refCount = 0;
+		for( Entry<String, Data> e : localMap.entrySet() ) 
+			if ( e.getValue().equals(d) ) 
+				if( ++refCount > 1 && earlyAbort )
+					return refCount;
+		
+		return refCount;
 	}
 	
 	public String serialize () throws DMLRuntimeException

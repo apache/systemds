@@ -150,7 +150,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		    flushBuffer();
 		}
 		
-		long tmp = Double.doubleToLongBits(v);		
+		long tmp = Double.doubleToRawLongBits(v);		
 		_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
 		_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
 		_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
@@ -224,7 +224,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 				
 				for( j=0; j<BLOCK_NVALS; j++ )
 				{
-					tmp = Double.doubleToLongBits(varr[i+j]);
+					tmp = Double.doubleToRawLongBits(varr[i+j]);
 					_buff[_count++] = (byte)((tmp >>> 56) & 0xFF);
 					_buff[_count++] = (byte)((tmp >>> 48) & 0xFF);
 					_buff[_count++] = (byte)((tmp >>> 40) & 0xFF);
@@ -276,13 +276,12 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					for( int j=0; j<alen; j++ )
 					{
 						int tmp1 = aix[j];
-						long tmp2 = Double.doubleToLongBits(avals[j]);
-						
-						_buff[_count   ] = (byte)((tmp1 >>> 24) & 0xFF);
+						_buff[_count+0 ] = (byte)((tmp1 >>> 24) & 0xFF);
 						_buff[_count+1 ] = (byte)((tmp1 >>> 16) & 0xFF);
 						_buff[_count+2 ] = (byte)((tmp1 >>>  8) & 0xFF);
 						_buff[_count+3 ] = (byte)((tmp1 >>>  0) & 0xFF);
 						
+						long tmp2 = Double.doubleToRawLongBits(avals[j]);
 						_buff[_count+4 ] = (byte)((tmp2 >>> 56) & 0xFF);
 						_buff[_count+5 ] = (byte)((tmp2 >>> 48) & 0xFF);
 						_buff[_count+6 ] = (byte)((tmp2 >>> 40) & 0xFF);

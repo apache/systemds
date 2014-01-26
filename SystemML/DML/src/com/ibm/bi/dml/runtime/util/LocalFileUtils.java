@@ -14,8 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -140,56 +138,6 @@ public class LocalFileUtils
 				fos.close ();	
 		}	
 	}
-
-	
-	/**
-	 * NOTE: this is an experimental method (achieves 25% improvement for dense matrices)
-	 * and is currently only applicable for dense matrices.
-	 * 
-	 * @param filePathAndName
-	 * @param mb
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 */
-	@Deprecated 
-	public static void writeMatrixBlockToLocal2(String filePathAndName, MatrixBlock mb)
-		throws FileNotFoundException, IOException
-	{		
-		double[] a = mb.getDenseArray();
-		int m = mb.getNumRows();
-		int n = mb.getNumColumns();
-		int BUFFER_NUM_VALS = BUFFER_SIZE/8;
-		
-		FileOutputStream fos = new FileOutputStream( filePathAndName );
-		FileChannel file = fos.getChannel();
-		ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
-		
-		try 
-		{
-			buf.putInt(m);
-			buf.putInt(n);
-			file.write(buf);
-			buf.clear();
-			
-			int limit = m*n;
-			for(int i=0; i<limit; i+=BUFFER_NUM_VALS)
-			{
-				for( int j=0; j<BUFFER_NUM_VALS && i+j <limit; j++ )
-					buf.putDouble(a[i+j]);
-				
-				file.write(buf);
-				buf.clear();
-			}
-		}
-		finally
-		{
-			if( file != null )
-				file.close ();	
-			if( fos != null )
-				fos.close();
-		}	
-	}
-
 
 	/**
 	 * 

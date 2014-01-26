@@ -118,10 +118,9 @@ public class MatrixMultLib
 		//check inputs / outputs
 		if( m1.denseBlock==null || m2.denseBlock==null )
 			return;
-		ret.sparse=false;
+		ret.sparse = false;
 		if( ret.denseBlock==null )
 			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		
 		double[] a = m1.denseBlock;
 		double[] b = m2.denseBlock;
@@ -143,6 +142,9 @@ public class MatrixMultLib
 			}
 			else //MATRIX-MATRIX
 			{	
+				//init empty result
+				Arrays.fill(c, 0, c.length, 0);
+				
 				//1) Unrolled inner loop (for better instruction-level parallelism)
 				//2) Blocked execution (for less cache trashing in parallel exec) 	
 				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
@@ -176,6 +178,9 @@ public class MatrixMultLib
 		}
 		else
 		{
+			//init empty result
+			Arrays.fill(c, 0, c.length, 0);
+			
 			double val;
 			for( int i = 0, aix=0, cix=0; i < m; i++, cix+=n) 
 				for( int k = 0, bix=0; k < cd; k++, aix++, bix+=n)
@@ -204,7 +209,7 @@ public class MatrixMultLib
 		//check inputs / outputs
 		if( m1.denseBlock==null || m2.sparseRows==null  )
 			return;
-		ret.sparse=false;
+		ret.sparse = false;
 		if( ret.denseBlock==null )
 			ret.denseBlock = new double[ret.rlen * ret.clen];
 		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
@@ -273,10 +278,9 @@ public class MatrixMultLib
 		//check inputs / outputs
 		if( m1.sparseRows==null || m2.denseBlock==null )
 			return;	
-		ret.sparse=false;
+		ret.sparse = false;
 		if(ret.denseBlock==null)
 			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
@@ -315,6 +319,9 @@ public class MatrixMultLib
 			}
 			else //MATRIX-MATRIX
 			{
+				//init empty result
+				Arrays.fill(c, 0, c.length, 0);
+				
 				int bix;
 				for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 				{
@@ -338,6 +345,9 @@ public class MatrixMultLib
 		}
 		else
 		{
+			//init empty result
+			Arrays.fill(c, 0, c.length, 0);
+			
 			for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 			{
 				SparseRow arow = m1.sparseRows[i];
@@ -459,7 +469,6 @@ public class MatrixMultLib
 		ret.sparse = false;
 		if(ret.denseBlock==null)
 			ret.denseBlock = new double[ret.rlen * ret.clen]; 
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		if( m1.denseBlock == null )
 			return;
 		
@@ -474,41 +483,48 @@ public class MatrixMultLib
 		{
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				if( n==1 ) //VECTOR 
+				if( n==1 ) //VECTOR (col)
 				{
 					c[0] = dotProduct(a, a, m);
 				}
 				else //MATRIX
 				{	
+					//init empty result
+					Arrays.fill(c, 0, c.length, 0);
+					
 					//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
 				
 					//1) Unrolled inner loop, for better ILP
 					//2) Blocked execution, for less cache trashing in parallel exec 					
-					int blocksizeI = 16;
-					int blocksizeJ = 256;
+					final int blocksizeI = 16;
+					final int blocksizeJ = 256;
 
 					for( int bi = 0; bi<n; bi+=blocksizeI )
-						for( int bj = bi; bj<n; bj+=blocksizeJ )
-						{
-							final int bimin = Math.min(n, bi+blocksizeI);
-							final int bjmin = Math.min(n, bj+blocksizeJ);
-							
-							for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
-								for(int i = bi, ix3 = bi*n; i < bimin; i++, ix3+=n) 
+						for( int bj = bi, bimin = Math.min(n, bi+blocksizeI); bj<n; bj+=blocksizeJ )
+							for(int k = 0, bjmin = Math.min(n, bj+blocksizeJ); k < m; k++)
+							{
+								int ix1 = k * n; //re-init scan index on b
+								
+								for(int i = bi; i < bimin; i++) 
 								{
 									double val = a[ ix1+i ];
 									if( val != 0 )
 									{
 										//from i due to symmetry
 										int bjmax = Math.max(i,bj);
-										vectMultiplyAdd(val, a, c, ix1+bjmax, ix3+bjmax, bjmin-bjmax);
+										int ix3 = i * n + bjmax; //re-init scan index on c
+										
+										vectMultiplyAdd(val, a, c, ix1+bjmax, ix3, bjmin-bjmax);
 									}
 								}
-						}	
+							}
 				}
 			}
 			else
 			{	
+				//init empty result
+				Arrays.fill(c, 0, c.length, 0);
+				
 				for(int k = 0, ix1 = 0; k < m; k++, ix1+=n)
 					for(int i = 0, ix3 = 0; i < n; i++, ix3+=n) 
 					{
@@ -531,6 +547,9 @@ public class MatrixMultLib
 				}
 				else //MATRIX
 				{
+					//init empty result
+					Arrays.fill(c, 0, c.length, 0);
+					
 					//algorithm: scan c, foreach ci,j: scan row of a and t(a) (IJK)				
 				
 					//1) Unrolled inner loop, for better ILP
@@ -589,11 +608,10 @@ public class MatrixMultLib
 		ret.rlen = leftTranspose ? m1.clen : m1.rlen;
 		ret.clen = leftTranspose ? m1.clen : m1.rlen;
 		ret.sparse = false;  //assumption dense output
-		if(ret.denseBlock==null)
-			ret.denseBlock = new double[ret.rlen * ret.clen];
-		Arrays.fill(ret.denseBlock, 0, ret.denseBlock.length, 0);
 		if( m1.sparseRows == null )
 			return;
+		if(ret.denseBlock==null)
+			ret.denseBlock = new double[ret.rlen * ret.clen];
 		
 		//2) transpose self matrix multiply sparse
 		// (compute only upper-triangular matrix due to symmetry)		
@@ -603,6 +621,9 @@ public class MatrixMultLib
 
 		if( leftTranspose ) // t(X)%*%X 
 		{
+			//init empty result
+			Arrays.fill(c, 0, c.length, 0);
+			
 			//only general case (because vectors always dense)
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
@@ -620,7 +641,8 @@ public class MatrixMultLib
 							if( val != 0 )
 							{
 								int ix2 = aix[i]*n;
-								vectMultiplyAdd(val, avals, c, aix, ix2, alen);
+								vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
+								
 							}
 						}
 					}	
@@ -658,6 +680,9 @@ public class MatrixMultLib
 			}
 			else //MATRIX
 			{	
+				//init empty result
+				Arrays.fill(c, 0, c.length, 0);
+				
 				//note: reorg to similar layout as t(X)%*%X because faster than 
 				//direct computation with IJK (no dependencies/branches in inner loop)
 				MatrixBlockDSM tmpBlock = new MatrixBlock(n,m,m1.sparse);
@@ -823,7 +848,7 @@ public class MatrixMultLib
 		//scalar result
 		return val; 
 	}
-
+	
 	/**
 	 * 
 	 * @param aval
@@ -936,10 +961,7 @@ public class MatrixMultLib
 		//copy symmetric values
 		for( int i=0, uix=0; i<m; i++, uix+=n )
 			for( int j=i+1, lix=j*n+i; j<n; j++, lix+=n )
-			{
 				c[ lix ] = c[ uix+j ];
-				//c[ j*ret.clen+i ] = c[i*ret.clen+j];
-			}
 	}
 
 	

@@ -84,6 +84,7 @@ public class DMLScript
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
+	//public static boolean EXPLAIN = false; //default explain
 	
 	public static String _uuid = IDHandler.createDistributedUniqueID(); 
 	
@@ -98,6 +99,7 @@ public class DMLScript
 			+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, hybrid)\n"
 			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
+//			+ "   -explain: (optional) show the initially compiled runtime program\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
 			+ "         values in default SystemML-config.xml config file; if <config_filename> is\n" 
@@ -205,6 +207,8 @@ public class DMLScript
 			{
 				if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
 					VISUALIZE = true;
+//				else if( args[i].equalsIgnoreCase("-explain") )
+//					EXPLAIN = true;
 				else if( args[i].equalsIgnoreCase("-stats") )
 					STATISTICS = true;
 				else if ( args[i].equalsIgnoreCase("-exec")){
@@ -279,7 +283,9 @@ public class DMLScript
 			
 			if (arg.equalsIgnoreCase("-l") || arg.equalsIgnoreCase("-log") ||
 				arg.equalsIgnoreCase("-v") || arg.equalsIgnoreCase("-visualize")||
-				arg.equalsIgnoreCase("-stats") || arg.equalsIgnoreCase("-exec") ||
+//				arg.equalsIgnoreCase("-explain") || 
+				arg.equalsIgnoreCase("-stats") || 
+				arg.equalsIgnoreCase("-exec") ||
 				arg.startsWith("-config="))
 			{
 					throw new LanguageException("-args or -nvargs must be the final argument for DMLScript!");
@@ -568,6 +574,13 @@ public class DMLScript
 		int jobCount = DMLProgram.countCompiledMRJobs(rtprog);
 		Statistics.setNoOfCompiledMRJobs( jobCount );				
 		
+		//explain runtime program
+//		if( EXPLAIN )
+//		{
+//			LOG.info("EXPLAIN (runtime program):");
+//			LOG.info( rtprog.explain() );
+//		}
+		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, new ExecutionContext());
 		//System.out.println("Estimated costs: "+costs);
 				
@@ -702,6 +715,7 @@ public class DMLScript
 			CacheStatistics.reset();
 			Statistics.resetHOPRecompileTime();
 			Statistics.resetJITCompileTime();
+			Statistics.resetCPHeavyHitters();
 		}
 	}
 	

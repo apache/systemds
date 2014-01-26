@@ -9,6 +9,10 @@ package com.ibm.bi.dml.utils;
 
 import java.lang.management.CompilationMXBean;
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -36,6 +40,9 @@ public class Statistics
 
 	private static long jitCompileTime = 0; //in milli sec
 	private static long hopRecompileTime = 0; //in nano sec
+	
+	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
+	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
 	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
@@ -113,6 +120,62 @@ public class Statistics
 	}
 	
 	/**
+	 * 
+	 */
+	public static void resetCPHeavyHitters(){
+		_cpInstTime.clear();
+		_cpInstCounts.clear();
+	}
+	
+	public synchronized static void maintainCPHeavyHitters( String key, long timeNanos )
+	{
+		Long oldVal = _cpInstTime.get(key);
+		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
+		_cpInstTime.put(key, newVal);
+
+		Long oldCnt = _cpInstCounts.get(key);
+		Long newCnt = 1 + ((oldCnt!=null) ? oldCnt : 0);
+		_cpInstCounts.put(key, newCnt);
+	}
+	
+	/**
+	 * 
+	 * @param num
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static String getHeavyHitters( int num )
+	{
+		int len = _cpInstTime.size();
+		if( num <= 0 || len <= 0 )
+			return "-";
+		
+		//get top k via sort
+		Entry<String,Long>[] tmp = _cpInstTime.entrySet().toArray(new Entry[len]);
+		Arrays.sort(tmp, new Comparator<Entry<String, Long>>() {
+		    public int compare(Entry<String, Long> e1, Entry<String, Long> e2) {
+		        return e1.getValue().compareTo(e2.getValue());
+		    }
+		});
+		
+		//prepare output string
+		System.out.println("stats len "+len);
+		StringBuilder sb = new StringBuilder();
+		for( int i=0; i<Math.min(num, len); i++ ){
+			String key = tmp[len-1-i].getKey();
+			sb.append("-- "+(i+1)+") \t");
+			sb.append(key);
+			sb.append(" \t");
+			sb.append(String.format("%.3f", ((double)tmp[len-1-i].getValue())/1000000000));
+			sb.append(" sec \t");
+			sb.append(_cpInstCounts.get(key));
+			sb.append("\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	/**
 	 * Returns the total time of asynchronous JIT compilation in milliseconds.
 	 * 
 	 * @return
@@ -161,6 +224,7 @@ public class Statistics
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			sb.append("Total HOP recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
+			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
 		}
 		
 		return sb.toString();

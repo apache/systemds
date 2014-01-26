@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
@@ -287,7 +288,6 @@ public class ProgramBlock
 		try 
 		{
 			long t0 = 0, t1 = 0;
-			
 			if( LOG.isTraceEnabled() )
 			{
 				t0 = System.nanoTime();
@@ -334,6 +334,8 @@ public class ProgramBlock
 			} 
 			else if (currInst instanceof CPInstruction) 
 			{
+				long t2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				
 				CPInstruction tmp = (CPInstruction)currInst;
 				if( tmp.requiresLabelUpdate() ) //update labels only if required
 				{
@@ -353,11 +355,17 @@ public class ProgramBlock
 					t1 = System.nanoTime();
 					LOG.trace("CP Instruction: " + currInst.toString() + ", duration = " + (t1-t0)/1000000);
 				}
+
+				if( DMLScript.STATISTICS){
+					long t3 = System.nanoTime();
+					String opcode = InstructionUtils.getOpCode(tmp.toString());
+					Statistics.maintainCPHeavyHitters(opcode, t3-t2);
+				}
 			} 
 			else if(currInst instanceof SQLInstructionBase)
 			{			
 				((SQLInstructionBase)currInst).execute(null); // TODO: must pass SQLExecutionContext here!!!
-			}	
+			}
 		}
 		catch (Exception e)
 		{
@@ -377,6 +385,33 @@ public class ProgramBlock
 		}
 	}
 	
+	/*
+	public String explain( int level )
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		//explain block
+		String offset = "";
+		for( int i=0; i<level; i++ )
+			offset+="--";	
+		sb.append("GENERIC\n");
+		
+		//explain instructions
+		int nextlevel = level+1;
+		offset += "--";		
+		for( Instruction inst : _inst )
+		{
+			sb.append(offset);
+			if( inst instanceof MRJobInstruction )
+				sb.append( ((MRJobInstruction)inst).toString(nextlevel) );
+			else 
+				sb.append( inst );
+			sb.append("\n");
+		}
+		
+		return sb.toString();
+	}
+	*/
 	
 	///////////////////////////////////////////////////////////////////////////
 	// store position information for program blocks

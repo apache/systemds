@@ -2873,26 +2873,20 @@ public class MatrixBlockDSM extends MatrixValue
 	{
 		if( denseBlock == null )
 			return;
+		dest.allocateDenseBlock();
 		
 		if( cl==cu ) //specific case: column vector 
 		{
-			dest.allocateDenseBlock();
 			for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
-			{
 				dest.denseBlock[ix] = denseBlock[i];
-				//HotSpot JVM bug causes crash in presence of NaNs 
-				//dest.nonZeros+=(dest.denseBlock[ix]!=0)?1:0;
-				if( dest.denseBlock[ix] != 0 )
-					dest.nonZeros++;
-			}
 		}
 		else //general case (dense)
 		{
-			dest.allocateDenseBlock();
 			for(int i = rl, ix1 = rl*clen+cl, ix2=0; i <= ru; i++, ix1+=clen, ix2+=dest.clen) 
 				System.arraycopy(denseBlock, ix1, dest.denseBlock, ix2, dest.clen);
-			dest.recomputeNonZeros();
-		}	
+		}
+		
+		dest.recomputeNonZeros();
 	}
 	
 	@Override
@@ -4974,13 +4968,13 @@ public class MatrixBlockDSM extends MatrixValue
 		int index=0;
 		for(int r=0; r<rlen; r++)
 		{
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
-			
 			for(int c=0; c<clen; c++)
 			{
 				if(denseBlock[index]!=0)
 				{
+					if(sparseRows[r]==null) //create sparse row only if required
+						sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
+					
 					sparseRows[r].append(c, denseBlock[index]);
 					nonZeros++;
 				}

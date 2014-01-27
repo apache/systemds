@@ -7,9 +7,6 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,7 +39,7 @@ public class LazyWriteBuffer
 	
 	static 
 	{
-		//obtain the buffer size in bytes
+		//obtain the logical buffer size in bytes
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
@@ -63,9 +60,8 @@ public class LazyWriteBuffer
 		if( !requiresWrite ) //if it fits in writebuffer
 		{			
 			ByteBuffer bbuff = null;
-			byte[] buff = null; 
 			
-			//modify buffer
+			//modify buffer pool
 			synchronized( _mData )
 			{
 				//evict matrices to make room (by default FIFO)
@@ -79,34 +75,25 @@ public class LazyWriteBuffer
 						tmp.checkSerialized();
 						
 						//evict matrix
-						LocalFileUtils.writeByteArrayToLocal(ftmp, tmp.data);
+						tmp.evictBuffer(ftmp);
+						_size-=tmp.getSize();
+						
 						if( DMLScript.STATISTICS )
 							CacheStatistics.incrementFSWrites();
-						_size-=tmp.data.length;
-						
-						//keep page for reuse
-						//if( lSize <= tmp.data.length && lSize*1.5d >= tmp.data.length && (buff==null||tmp.data.length<buff.length) ) //TODO 
-						//	buff = tmp.data;
 					}
 				}
 				
-				//allocate mem (if necessary) and lock
-				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					buff = PageCache.getPage((int)lSize);
-				if( buff==null )
-					buff = new byte[(int)lSize];
-				bbuff = new ByteBuffer(buff);
-		
-				//put placeholder into buffer
+				//create buffer (reserve mem), and lock
+				bbuff = new ByteBuffer((int)lSize);
+				
+				//put placeholder into buffer pool
 				_mData.put(fname, bbuff);
 				_mQueue.addLast(fname);
-				_size+=buff.length;	
+				_size += lSize;	
 			}
 			
-			//serialize matrix
-			DataOutput dout = new CacheDataOutput(buff);
-			mb.write(dout);
-			bbuff.markSerialized(); //for serialization outside global lock
+			//serialize matrix (outside synchronized critical path)
+			bbuff.serializeMatrix(mb);
 			
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSBuffWrites();
@@ -134,10 +121,9 @@ public class LazyWriteBuffer
 			ByteBuffer ldata = _mData.remove(fname);
 			if( ldata != null )
 			{
-				_size -= ldata.data.length; 
+				_size -= ldata.getSize(); 
 				requiresDelete = false;
-				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					PageCache.putPage(ldata.data);
+				ldata.freeMemory(); //cleanup
 			}
 			
 			//remove queue entry
@@ -148,7 +134,6 @@ public class LazyWriteBuffer
 		if( requiresDelete )
 			LocalFileUtils.deleteFileIfExists(fname, true);
 	}
-	
 	
 	/**
 	 * 
@@ -180,12 +165,9 @@ public class LazyWriteBuffer
 		//deserialize or read from FS if required
 		if( ldata != null )
 		{
-			ByteArrayInputStream bis = new ByteArrayInputStream(ldata.data);
-			DataInputStream din = new DataInputStream(bis); 
-			mb = new MatrixBlock();
-			mb.readFields(din);
+			mb = ldata.deserializeMatrix();
 			if( DMLScript.STATISTICS )
-				CacheStatistics.incrementFSBuffWrites();
+				CacheStatistics.incrementFSBuffHits();
 		}
 		else
 		{

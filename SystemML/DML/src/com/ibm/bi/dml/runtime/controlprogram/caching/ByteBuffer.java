@@ -7,6 +7,15 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+
 /**
  * Wrapper for WriteBuffer byte array per matrix in order to
  * support matrix serialization outside global lock.
@@ -17,22 +26,102 @@ public class ByteBuffer
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	private boolean _serialized;	
+	private boolean _sparse;
+	private int _size;
 	
-	protected byte[] data;
-	private boolean serialized;
+	protected byte[]       _bdata = null; //sparse matrix
+	protected MatrixBlock  _mdata = null; //dense matrix
 	
-	public ByteBuffer( byte[] idata )
+	public ByteBuffer( int size )
 	{
-		data = idata;
-		serialized = false;
+		_size = size;
+		_serialized = false;
+	}
+	
+	public void serializeMatrix( MatrixBlock mb ) 
+		throws IOException
+	{
+		_sparse = mb.isInSparseFormat();
+		
+		if( _sparse )
+		{
+			//deep serialize (for compression)
+			if( CacheableData.CACHING_BUFFER_PAGECACHE )
+				_bdata = PageCache.getPage(_size);
+			if( _bdata==null )
+				_bdata = new byte[_size];
+			DataOutput dout = new CacheDataOutput(_bdata);
+			mb.write(dout);
+		}
+		else
+		{
+			//shallow serialize
+			_mdata = mb;
+		}
+			
+		_serialized = true;
+	}
+	
+	public MatrixBlock deserializeMatrix() 
+		throws IOException
+	{
+		MatrixBlock ret = null;
+		
+		if( _sparse )
+		{
+			ByteArrayInputStream bis = new ByteArrayInputStream(_bdata);
+			DataInputStream din = new DataInputStream(bis); 
+			ret = new MatrixBlock();
+			ret.readFields(din);
+		}
+		else
+		{
+			ret = _mdata;
+		}
+		
+		return ret;
+	}
+	
+	public void evictBuffer( String fname ) 
+		throws FileNotFoundException, IOException
+	{
+		if( _sparse )
+		{
+			//write out byte serialized array
+			LocalFileUtils.writeByteArrayToLocal(fname, _bdata);
+		}
+		else
+		{
+			//serialize matrix to output stream
+			LocalFileUtils.writeMatrixBlockToLocal(fname, _mdata);
+		}
 	}
 	
 	/**
+	 * Returns the buffer size in bytes.
 	 * 
+	 * @return
 	 */
-	public void markSerialized()
+	public int getSize()
 	{
-		serialized = true;
+		return _size;
+	}
+	
+	public void freeMemory()
+	{
+		//clear strong references to buffer/matrix
+		if( _sparse )
+		{
+			if( CacheableData.CACHING_BUFFER_PAGECACHE )
+				PageCache.putPage(_bdata);
+			_bdata = null;
+		}
+		else
+		{
+			_mdata = null;
+		}	
+		
 	}
 	
 	/**
@@ -40,10 +129,10 @@ public class ByteBuffer
 	 */
 	public void checkSerialized()
 	{
-		if( serialized )
+		if( _serialized )
 			return;
 		
-		while( !serialized )
+		while( !_serialized )
 		{
 			try{Thread.sleep(1);} catch(Exception e) {}
 		}

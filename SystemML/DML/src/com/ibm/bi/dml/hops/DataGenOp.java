@@ -188,20 +188,28 @@ public class DataGenOp extends Hop
 	{		
 		double ret = 0;
 		
-		if ( method == DataGenMethod.RAND ) {
-			Hop min = getInput().get(_paramIndexMap.get("min")); //min 
-			Hop max = getInput().get(_paramIndexMap.get("max")); //max
-			if(    min instanceof LiteralOp && min.get_name().equals("0")
-				&& max instanceof LiteralOp && max.get_name().equals("0"))
-			{
-				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
+		try
+		{
+			if ( method == DataGenMethod.RAND ) {
+				Hop min = getInput().get(_paramIndexMap.get("min")); //min 
+				Hop max = getInput().get(_paramIndexMap.get("max")); //max
+				if(    min instanceof LiteralOp && ((LiteralOp)min).getDoubleValue()==0.0
+					&& max instanceof LiteralOp && ((LiteralOp)max).getDoubleValue()==0.0 )
+				{
+					ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
+				}
+				else
+					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 			}
-			else
-				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+			else {
+				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+			}
 		}
-		else {
-			_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+		catch(HopsException he)
+		{
+			throw new RuntimeException(he);
 		}
+		
 		return ret;
 	}
 	

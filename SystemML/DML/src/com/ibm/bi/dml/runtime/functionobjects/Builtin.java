@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -9,25 +9,38 @@ package com.ibm.bi.dml.runtime.functionobjects;
 
 import java.util.HashMap;
 
+import org.apache.commons.math.util.FastMath;
+
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 
 
-/*
- *  Class with pre-defined set of objects.
- *  This class can not be instantiated elsewhere.
+/**
+ *  Class with pre-defined set of objects. This class can not be instantiated elsewhere.
+ *  
+ *  Notes on commons.math FastMath:
+ *  * FastMath uses lookup tables and interpolation instead of native calls.
+ *  * The memory overhead for those tables is roughly 48KB in total (acceptable)
+ *  * Micro and application benchmarks showed significantly (30%-3x) performance improvements
+ *    for most operations; without loss of accuracy.
+ *  * atan / sqrt were 20% slower in FastMath and hence, we use Math there
+ *  * round / abs were equivalent in FastMath and hence, we use Math there
+ *  * Finally, there is just one argument against FastMath - The comparison heavily depends
+ *    on the JVM. For example, currently the IBM JDK JIT compiles to HW instructions for sqrt
+ *    which makes this operation very efficient; as soon as other operations like log/exp are
+ *    similarly compiled, we should rerun the micro benchmarks, and switch back if necessary.
+ *  
  */
-
-
 public class Builtin extends ValueFunction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, MAXINDEX  };
 	public BuiltinFunctionCode bFunc;
 	
+	private static final boolean FASTMATH = true;
 	
 	static public HashMap<String, BuiltinFunctionCode> String2BuiltinFunctionCode;
 	static {
@@ -196,26 +209,26 @@ public class Builtin extends ValueFunction
 	
 	public double execute (double in) throws DMLRuntimeException {
 		switch(bFunc) {
-		case SIN:    return Math.sin(in);
-		case COS:    return Math.cos(in);
-		case TAN:    return Math.tan(in);
-		case ASIN:   return Math.asin(in);
-		case ACOS:   return Math.acos(in);
-		case ATAN:   return Math.atan(in);
+		case SIN:    return FASTMATH ? FastMath.sin(in) : Math.sin(in);
+		case COS:    return FASTMATH ? FastMath.cos(in) : Math.cos(in);
+		case TAN:    return FASTMATH ? FastMath.tan(in) : Math.tan(in);
+		case ASIN:   return FASTMATH ? FastMath.asin(in) : Math.asin(in);
+		case ACOS:   return FASTMATH ? FastMath.acos(in) : Math.acos(in);
+		case ATAN:   return Math.atan(in); //faster in Math
 		
 		case LOG:
 			//if ( in <= 0 )
 			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
 			// for negative numbers, Math.log will return NaN
-			return Math.log(in); 
+			return FASTMATH ? FastMath.log(in) : Math.log(in);
 		
 		case ABS:
-			return Math.abs(in);
+			return Math.abs(in); //no need for FastMath
 			
 		case SQRT:
 			//if ( in < 0 )
 			//	throw new DMLRuntimeException("Builtin.execute(): squareroot can only be computed for non-negative numbers (input = " + in + ").");
-			return Math.sqrt(in);
+			return Math.sqrt(in); //faster in Math
 		
 		case PLOGP:
 			if (Double.compare(in, 0.0) == 0)
@@ -223,13 +236,13 @@ public class Builtin extends ValueFunction
 			else if (in < 0)
 				return Double.NaN;
 			else
-				return (in * Math.log(in));
+				return (in * (FASTMATH ? FastMath.log(in) : Math.log(in)));
 			
 		case EXP:
-			return Math.exp(in);
+			return FASTMATH ? FastMath.exp(in) : Math.exp(in);
 		
 		case ROUND:
-			return Math.round(in);
+			return Math.round(in); //no need for FastMath
 			
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
@@ -256,8 +269,11 @@ public class Builtin extends ValueFunction
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
-			return (Math.log(in1)/Math.log(in2)); 
-			
+			if( FASTMATH )
+				return (FastMath.log(in1)/FastMath.log(in2)); 
+			else
+				return (Math.log(in1)/Math.log(in2)); 
+				
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -272,7 +288,11 @@ public class Builtin extends ValueFunction
 		case LOG:
 			if ( in1 <= 0 )
 				throw new DMLRuntimeException("Builtin.execute(): logarithm can be computed only for non-negative numbers.");
-			return (Math.log(in1)/Math.log(in2)); 
+			if( FASTMATH )
+				return (FastMath.log(in1)/FastMath.log(in2));
+			else
+				return (Math.log(in1)/Math.log(in2));
+				
 		
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);

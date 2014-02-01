@@ -23,14 +23,12 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class ParameterizedBuiltin extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum OperationTypes { INVALID, CDF, RMEMPTY };
+	public enum OperationTypes { INVALID, CDF, RMEMPTY, REPLACE };
 	
-	OperationTypes operation;
-			
-	//private Operation _operation;
+	private OperationTypes _operation;
 	private HashMap<String, Lop> _inputParams;
 
 	/**
@@ -53,7 +51,7 @@ public class ParameterizedBuiltin extends Lop
 				inputParametersLops, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
-		operation = op;
+		_operation = op;
 		
 		for (Lop lop : inputParametersLops.values()) {
 			this.addInput(lop);
@@ -76,7 +74,7 @@ public class ParameterizedBuiltin extends Lop
 		       inputParametersLops, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
-		operation = op;
+		_operation = op;
 		
 		for (Lop lop : inputParametersLops.values()) {
 			this.addInput(lop);
@@ -85,17 +83,27 @@ public class ParameterizedBuiltin extends Lop
 		
 		_inputParams = inputParametersLops;
 		
-		/*
-		 * This lop is executed in control program. 
-		 */
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		ExecLocation eloc = null;
+		if( _operation == OperationTypes.REPLACE && et==ExecType.MR )
+		{
+			eloc = ExecLocation.MapOrReduce;
+			//lps.addCompatibility(JobType.CSV_REBLOCK);
+			//lps.addCompatibility(JobType.DATAGEN);
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.REBLOCK);
+		}
+		else //executed in CP / CP_FILE
+		{
+			eloc = ExecLocation.ControlProgram;
+			lps.addCompatibility(JobType.INVALID);
+		}
+		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
 	}
 
-	//@Override
+	@Override
 	public String getInstructions(String output) 
 		throws LopsException 
 	{
@@ -103,40 +111,58 @@ public class ParameterizedBuiltin extends Lop
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 
-		switch(operation) {
-		case CDF:
-			sb.append( "cdf" );
-			sb.append( OPERAND_DELIMITOR );
-			
-			for ( String s : _inputParams.keySet() ) 
-			{	
-				sb.append( s );
-				sb.append( NAME_VALUE_SEPARATOR );
-				
-				// get the value/label of the scalar input associated with name "s"
-				Lop iLop = _inputParams.get(s);
-				sb.append( iLop.prepScalarLabel() );
+		switch(_operation) 
+		{
+			case CDF:
+				sb.append( "cdf" );
 				sb.append( OPERAND_DELIMITOR );
-			}
-			break;
-			
-		case RMEMPTY:
-			sb.append("rmempty");
-			sb.append(OPERAND_DELIMITOR);
-			
-			for ( String s : _inputParams.keySet() ) {
 				
-				sb.append(s);
-				sb.append(NAME_VALUE_SEPARATOR);
+				for ( String s : _inputParams.keySet() ) 
+				{	
+					sb.append( s );
+					sb.append( NAME_VALUE_SEPARATOR );
+					
+					// get the value/label of the scalar input associated with name "s"
+					Lop iLop = _inputParams.get(s);
+					sb.append( iLop.prepScalarLabel() );
+					sb.append( OPERAND_DELIMITOR );
+				}
+				break;
 				
-				// instruction patching not required because rmEmpty always executed as CP/CP_FILE
-				Lop iLop = _inputParams.get(s);
-				sb.append(iLop.getOutputParameters().getLabel());
+			case RMEMPTY:
+				sb.append("rmempty");
 				sb.append(OPERAND_DELIMITOR);
-			}
-			break;
-		default:
-			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + operation);
+				
+				for ( String s : _inputParams.keySet() ) {
+					
+					sb.append(s);
+					sb.append(NAME_VALUE_SEPARATOR);
+					
+					// instruction patching not required because rmEmpty always executed as CP/CP_FILE
+					Lop iLop = _inputParams.get(s);
+					sb.append(iLop.getOutputParameters().getLabel());
+					sb.append(OPERAND_DELIMITOR);
+				}
+				break;
+			
+			case REPLACE:
+				sb.append( "replace" );
+				sb.append( OPERAND_DELIMITOR );
+				
+				for ( String s : _inputParams.keySet() ) 
+				{	
+					sb.append( s );
+					sb.append( NAME_VALUE_SEPARATOR );
+					
+					// get the value/label of the scalar input associated with name "s"
+					Lop iLop = _inputParams.get(s);
+					sb.append(iLop.getOutputParameters().getLabel());
+					sb.append( OPERAND_DELIMITOR );
+				}
+				break;
+			
+			default:
+				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
 		
 		sb.append(this.prepOutputOperand(output));
@@ -144,10 +170,50 @@ public class ParameterizedBuiltin extends Lop
 		return sb.toString();
 	}
 
+
+	@Override 
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		switch(_operation) 
+		{
+			case REPLACE:
+				sb.append( "replace" );
+				sb.append( OPERAND_DELIMITOR );
+		
+				Lop iLop = _inputParams.get("target");
+				int pos = getInputs().indexOf(iLop);
+				int index = (pos==0)? input_index1 : (pos==1)? input_index2 : input_index3;
+				//input_index
+				sb.append(prepInputOperand(index));
+				sb.append( OPERAND_DELIMITOR );
+				
+				Lop iLop2 = _inputParams.get("pattern");
+				sb.append(iLop2.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+				
+				Lop iLop3 = _inputParams.get("replacement");
+				sb.append(iLop3.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+			break;	
+				
+			default:
+				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+		}
+		
+		sb.append( prepOutputOperand(output_index));
+		
+		return sb.toString();
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(operation.toString());
+		sb.append(_operation.toString());
 
 		if (getInputs().size() > 0)
 			sb.append("(");

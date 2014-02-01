@@ -619,7 +619,7 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         if (isNaN == 0)
         {
             is_np_neginfinite  = ppred (natural_parameters, negative_infinity, "==") * ppred (y, 0.0, "!=");
-            natural_parameters = deNegInfinity (natural_parameters);
+            natural_parameters = replace(target=natural_parameters, pattern=-1/0, replacement=0); #deNegInfinity
             natural_parameters = natural_parameters - is_np_neginfinite / (1.0 - is_np_neginfinite);
 
             log_l = sum (y * natural_parameters - b_cumulant);
@@ -631,9 +631,9 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
     { # BINOMIAL/BERNOULLI DISTRIBUTION
         is_LT_pos_infinite = ppred (linear_terms, positive_infinity, "==");
         is_LT_neg_infinite = ppred (linear_terms, positive_infinity, "==");
-        finite_linear_terms = deNegInfinity (linear_terms);
+        finite_linear_terms = replace(target=linear_terms, pattern=-1/0, replacement=0); #deNegInfinity
         minus_linear_terms = - finite_linear_terms;
-        minus_linear_terms = deNegInfinity (minus_linear_terms);
+        minus_linear_terms = replace(target=minus_linear_terms, pattern=-1/0, replacement=0); #deNegInfinity
         finite_linear_terms = - minus_linear_terms;
         y_prob = linear_terms;
         if          (link_type == 1 & link_power == 0.0) { # Bernoulli.log
@@ -694,10 +694,3 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
     }
 }
 
-
-
-deNaN = externalFunction (Matrix[Double] A) return (Matrix[Double] B)
-    implemented in (classname = "com.ibm.bi.dml.packagesupport.DeNaNWrapper", exectype = "mem");
-deNegInfinity = externalFunction (Matrix[Double] A) return (Matrix[Double] B)
-    implemented in (classname = "com.ibm.bi.dml.packagesupport.DeNegInfinityWrapper", exectype = "mem");
-        

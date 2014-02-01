@@ -26,10 +26,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	int arity;
+	private int arity;
 	protected HashMap<String,String> params;
 	
 	public ParameterizedBuiltinCPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String istr )
@@ -92,7 +92,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, str);
 		}
-		else if ( opcode.equalsIgnoreCase("rmempty") ) {
+		else if(   opcode.equalsIgnoreCase("rmempty") 
+				|| opcode.equalsIgnoreCase("replace") ) 
+		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, str);
 		}
@@ -150,6 +152,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//release locks
 			ec.setMatrixOutput(output.get_name(), soresBlock);
+			ec.releaseMatrixInput(params.get("target"));
+		}
+		else if ( opcode.equalsIgnoreCase("replace") ) {
+			// acquire locks
+			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			
+			// compute the result
+			double pattern = Double.parseDouble( params.get("pattern") );
+			double replacement = Double.parseDouble( params.get("replacement") );
+			MatrixBlock ret = (MatrixBlock) target.replaceOperations(new MatrixBlock(), pattern, replacement);
+			
+			//release locks
+			ec.setMatrixOutput(output.get_name(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
 		else {

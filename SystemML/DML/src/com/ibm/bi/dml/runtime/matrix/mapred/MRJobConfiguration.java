@@ -1634,9 +1634,9 @@ public class MRJobConfiguration
 	public static void setMatrixCharactristicsForOutput(JobConf job,
 			byte tag, MatrixCharacteristics dim)
 	{
-		if (dim == null){
-			System.out.println("setMatrixCharactristicsForOutput:dim is NULL");
-		}
+		//if (dim == null){
+		//	System.out.println("setMatrixCharactristicsForOutput:dim is NULL");
+		//}
 		job.setLong(OUTPUT_MATRIX_NUM_ROW_PREFIX_CONFIG+tag, dim.numRows);
 		job.setLong(OUTPUT_MATRIX_NUM_COLUMN_PREFIX_CONFIG+tag, dim.numColumns);
 		job.setInt(OUTPUT_BLOCK_NUM_ROW_PREFIX_CONFIG+tag, dim.numRowsPerBlock);

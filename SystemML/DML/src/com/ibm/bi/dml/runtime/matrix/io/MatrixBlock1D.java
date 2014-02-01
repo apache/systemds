@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -42,7 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstr
 public class MatrixBlock1D extends MatrixValue
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//protected static final Log LOG = LogFactory.getLog(MatrixBlock1D.class);
@@ -2303,9 +2303,15 @@ public class MatrixBlock1D extends MatrixValue
 	}
 
 	@Override
-	public void slideOperations(ArrayList<IndexedMatrixValue> outlist,
+	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
+			throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throw new RuntimeException("operation not supported fro MatrixBlock1D");
+	}
+	
+	@Override
+	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro MatrixBlock1D");
 	}

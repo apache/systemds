@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -29,11 +29,11 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 public class ParameterizedBuiltin extends ValueFunction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	
-	public enum ParameterizedBuiltinCode { INVALID, CDF, CDF_NORMAL, CDF_EXP, CDF_CHISQ, CDF_F, CDF_T, RMEMPTY };
+	public enum ParameterizedBuiltinCode { INVALID, CDF, CDF_NORMAL, CDF_EXP, CDF_CHISQ, CDF_F, CDF_T, RMEMPTY, REPLACE };
 	public enum ProbabilityDistributionCode { INVALID, NORMAL, EXP, CHISQ, F, T };
 	
 	public ParameterizedBuiltinCode bFunc;
@@ -45,6 +45,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		
 		String2ParameterizedBuiltinCode.put( "cdf", ParameterizedBuiltinCode.CDF);
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
+		String2ParameterizedBuiltinCode.put( "replace", ParameterizedBuiltinCode.REPLACE);
 	}
 	
 	static public HashMap<String, ProbabilityDistributionCode> String2DistCode;
@@ -105,6 +106,9 @@ public class ParameterizedBuiltin extends ValueFunction
 				
 			case RMEMPTY:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.RMEMPTY);
+				
+			case REPLACE:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REPLACE);	
 		}
 		
 		

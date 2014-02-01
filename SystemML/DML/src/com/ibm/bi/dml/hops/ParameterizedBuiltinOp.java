@@ -264,6 +264,22 @@ public class ParameterizedBuiltinOp extends Hop
 				get_lops().getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 			} 
+			else if(   _op == ParamBuiltinOp.REPLACE ) 
+			{
+				ExecType et = optFindExecType();
+				
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+						et, inputlops,
+						HopsParameterizedBuiltinLops.get(_op), get_dataType(), get_valueType());
+				
+				pbilop.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+				
+				set_lops(pbilop);
+
+				// set the dimesnions for the lop for the output
+				get_lops().getOutputParameters().setDimensions(get_dim1(),
+						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
+			} 
 
 		}
 
@@ -331,6 +347,18 @@ public class ParameterizedBuiltinOp extends Hop
 			if ( mc.dimsKnown() )
 				ret= new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()}; 
 		}
+		else if (   _op == ParamBuiltinOp.REPLACE ) 
+		{ 
+			// the worst-case estimate from the input directly propagates to the output 
+			// #nnz depends on the replacement pattern and value, same as input if non-zero
+			if ( mc.dimsKnown() )
+			{
+				if( isNonZeroReplaceArguments() )
+					ret= new long[]{mc.get_rows(), mc.get_cols(), mc.getNonZeros()};
+				else
+					ret= new long[]{mc.get_rows(), mc.get_cols(), -1};
+			}
+		}
 		
 		return ret;
 	}
@@ -395,6 +423,16 @@ public class ParameterizedBuiltinOp extends Hop
 					set_dim1( target.get_dim1() );
 				setNnz( target.getNnz() );
 				break;
+			
+			case REPLACE: 
+				//dimensions are exactly known from input, sparsity might increase/decrease if pattern/replacement 0 
+				Hop target2 = getInput().get(_paramIndexMap.get("target"));
+				set_dim1( target2.get_dim1() );
+				set_dim2( target2.get_dim2() );
+				if( isNonZeroReplaceArguments() )
+					setNnz( target2.getNnz() );
+				
+				break;	
 		}
 	}
 	
@@ -433,6 +471,31 @@ public class ParameterizedBuiltinOp extends Hop
 				ret &= (   that2.getInput().get(pos2)!=null
 					    && getInput().get(pos1) == that2.getInput().get(pos2) );
 			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Only applies to REPLACE.
+	 * @return
+	 */
+	private boolean isNonZeroReplaceArguments()
+	{
+		boolean ret = false;
+		try 
+		{
+			Hop pattern = getInput().get(_paramIndexMap.get("pattern"));
+			Hop replace = getInput().get(_paramIndexMap.get("replacement"));
+			if( pattern instanceof LiteralOp && ((LiteralOp)pattern).getDoubleValue()!=0d &&
+			    replace instanceof LiteralOp && ((LiteralOp)replace).getDoubleValue()!=0d )
+			{
+				ret = true;
+			}
+		}
+		catch(Exception ex) 
+		{
+			LOG.warn(ex.getMessage());	
 		}
 		
 		return ret;

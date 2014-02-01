@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 public class OperationsOnMatrixValues 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static void performScalarIgnoreIndexes(MatrixValue value_in, MatrixValue value_out, ScalarOperator op) 
@@ -107,12 +107,12 @@ public class OperationsOnMatrixValues
 		indexes_out.setIndexes(indexes_in);
 	}
 	
-	public static void performSlide(MatrixIndexes indexes_in, MatrixValue value_in, 
+	public static void performSlice(MatrixIndexes indexes_in, MatrixValue value_in, 
 			ArrayList<IndexedMatrixValue> outlist, IndexRange range, 
 			int rowCut, int colCut, int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		value_in.slideOperations(outlist, range, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
+		value_in.sliceOperations(outlist, range, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
 	}
 	
 	// ------------- Tertiary Operations -------------
@@ -337,79 +337,6 @@ public class OperationsOnMatrixValues
 		value_out=value1.aggregateBinaryOperations(value1, value2, value_out, op);
 	}
 	
-	public static void main(String[] args)
-	{
-/*		boolean sparse1=false, sparse23=true;
-		
-		MatrixIndexes ind1=new MatrixIndexes(1,2);
-		MatrixBlock m1=new MatrixBlock(3, 2, sparse1);
-		m1.setValue(0, 0, 1);
-		m1.setValue(0, 1, 2);
-		m1.setValue(1, 0, 3);
-		m1.setValue(1, 1, 4);
-		m1.setValue(2, 0, 5);
-		m1.setValue(2, 1, 6);
-		System.out.println("matrix m1: ");
-		ind1.print();
-		m1.print();
-		
-		MatrixIndexes ind2=new MatrixIndexes(1,2);
-		MatrixBlock m2=new MatrixBlock(3, 2, sparse23);
-		m2.setValue(0, 0, 6);
-		m2.setValue(0, 1, 5);
-		m2.setValue(1, 0, 4);
-		m2.setValue(1, 1, 3);
-		m2.setValue(2, 0, 2);
-		m2.setValue(2, 1, 1);
-		System.out.println("matrix m2: ");
-		ind2.print();
-		m2.print();
-		
-		
-		MatrixIndexes ind3=new MatrixIndexes(2, 3);
-		MatrixBlock m3=new MatrixBlock(2, 3, sparse23);
-		m3.setValue(0, 0, 6);
-		m3.setValue(0, 1, 5);
-		m3.setValue(0, 2, 4);
-		m3.setValue(1, 0, 3);
-		m3.setValue(1, 1, 2);
-		m3.setValue(1, 2, 1);
-		System.out.println("matrix m3:");
-		ind3.print();
-		m3.print();
-	
-		MatrixBlock m4=new MatrixBlock();
-		MatrixIndexes ind4=new MatrixIndexes();
-		
-		try {
-			System.out.println("--------------------------------");
-			System.out.println("m4=col_sum(m1)");
-			//performAggregateUnary(ind1, m1, ind4, m4, AggregateUnary.SupportedOperation.AGU_COLUMN_SUM);
-			ind4.print();
-			m4.print();
-			
-			System.out.println("--------------------------------");
-			System.out.println("m4=m1 %*% m3");
-			performAggregateBinary(ind1, m1, ind3, m3, ind4, m4, AggregateBinary.SupportedOperation.AGB_MMULT);
-			ind4.print();
-			m4.print();
-			
-			System.out.println("--------------------------------");
-			System.out.println("prepare m4 for product");
-			m4.reset(3, 2, false);
-			startAggregation(m4, Aggregate.SupportedOperation.AGG_PRODUCT, 3, 2, false);
-			m4.print();
-			
-			System.out.println("--------------------------------");
-			System.out.println("product");
-			incrementalAggregation(m4, m1, Aggregate.SupportedOperation.AGG_PRODUCT);
-			m4.print();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
-	}
-
 	static int numRowsInBlock, numColsInBlock ;
 	public static void setNumRowsInBlock(int i) {
 		numRowsInBlock = i ;

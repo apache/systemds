@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ParameterizedBuiltinFunctionOp _opcode;
@@ -32,6 +32,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG;
 		else if (functionName.equals("removeEmpty"))
 			pbifop = Expression.ParameterizedBuiltinFunctionOp.RMEMPTY;
+		else if (functionName.equals("replace"))
+			pbifop = Expression.ParameterizedBuiltinFunctionOp.REPLACE;
 		else
 			return null;
 		
@@ -232,6 +234,53 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			output.setDimensions(-1, -1);
+			
+			break;
+		}
+		
+		case REPLACE:
+		{
+			//check existence and correctness of arguments
+			Expression target = getVarParam("target");
+			if( target==null ) {				
+				String error = this.printErrorLocation() + "Named parameter 'target' missing. Please specify the input matrix.";
+				LOG.error( error );
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( target.getOutput().getDataType() != DataType.MATRIX ){
+				String error = this.printErrorLocation() + "Input matrix 'target' is of type '"+target.getOutput().getDataType()+"'. Please specify the input matrix.";
+				LOG.error( error );	
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			}	
+			
+			Expression pattern = getVarParam("pattern");
+			if( pattern==null ) {
+				String error = this.printErrorLocation() + "Named parameter 'pattern' missing. Please specify the replacement pattern.";
+				LOG.error( error );
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( pattern.getOutput().getDataType() != DataType.SCALAR ){				
+				String error = this.printErrorLocation() + "Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.";
+				LOG.error( error );	
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			}	
+			
+			Expression replacement = getVarParam("replacement");
+			if( replacement==null ) {
+				String error = this.printErrorLocation() + "Named parameter 'replacement' missing. Please specify the replacement value.";
+				LOG.error( error );
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if( replacement.getOutput().getDataType() != DataType.SCALAR ){				
+				String error = this.printErrorLocation() + "Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.";
+				LOG.error( error );	
+				throw new LanguageException(error, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);				
+			}	
+			
+			// Output is a matrix with same dims as input
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
 			
 			break;
 		}

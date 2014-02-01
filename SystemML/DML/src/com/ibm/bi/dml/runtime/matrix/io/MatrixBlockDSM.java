@@ -45,7 +45,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
@@ -2113,7 +2112,7 @@ public class MatrixBlockDSM extends MatrixValue
 	 * @param rowoffset
 	 * @param coloffset
 	 */
-	public void appendToSparse( MatrixBlockDSM that, int rowoffset, int coloffset ) //FIXME
+	public void appendToSparse( MatrixBlockDSM that, int rowoffset, int coloffset ) 
 	{
 		if(   that.sparse && that.sparseRows==null 
 		   || !that.sparse && that.denseBlock==null )
@@ -2484,7 +2483,8 @@ public class MatrixBlockDSM extends MatrixValue
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret,
 			int startRow, int startColumn, int length)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if (!(op.fn.equals(SwapIndex.getSwapIndexFnObject()) || op.fn.equals(MaxIndex.getMaxIndexFnObject())))
 			throw new DMLRuntimeException("the current reorgOperations cannot support "
 					+op.fn.getClass()+", needs to examine whether appendValue is applicable!");
@@ -2523,10 +2523,42 @@ public class MatrixBlockDSM extends MatrixValue
 					}
 				}
 			}
-		}else
+		}
+		else
 		{
-			if(denseBlock!=null)
+			if( denseBlock != null ) 
 			{
+				/*
+				if( result.isInSparseFormat() ) //SPARSE<-DENSE
+				{
+					double[] a = denseBlock;
+					for( int i=0, aix=0; i<rlen; i++ )
+						for( int j=0; j<clen; j++, aix++ )
+						{
+							temp.set(i, j);
+							op.fn.execute(temp, temp);
+							result.appendValue(temp.row, temp.column, a[aix]);	
+						}
+				}
+				else //DENSE<-DENSE
+				{
+					result.allocateDenseBlock();
+					Arrays.fill(result.denseBlock, 0);
+					double[] a = denseBlock;
+					double[] c = result.denseBlock;
+					int n = result.clen;
+					
+					for( int i=0, aix=0; i<rlen; i++ )
+						for( int j=0; j<clen; j++, aix++ )
+						{
+							temp.set(i, j);
+							op.fn.execute(temp, temp);
+							c[temp.row*n+temp.column] = a[aix];	
+						}
+					result.nonZeros = nonZeros;
+				}
+				*/	
+				
 				int limit=rlen*clen;
 				int r,c;
 				for(int i=0; i<limit; i++)
@@ -2643,7 +2675,7 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 	
-	private void slideHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
+	private void sliceHelp(int r, IndexRange range, int colCut, MatrixBlockDSM left, MatrixBlockDSM right, int rowOffset, int normalBlockRowFactor, int normalBlockColFactor)
 	{
 	//	if(left==null || right==null)
 	//		throw new RuntimeException("left = "+left+", and right = "+right);
@@ -2667,7 +2699,7 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 	}
 	
-	private boolean checkSparcityOnSlide(int selectRlen, int selectClen, int finalRlen, int finalClen)
+	private boolean checkSparcityOnSlice(int selectRlen, int selectClen, int finalRlen, int finalClen)
 	{
 		//handle vectors specially
 		//if result is a column vector, use dense format, otherwise use the normal process to decide
@@ -2993,7 +3025,7 @@ public class MatrixBlockDSM extends MatrixValue
 	}
 	
 	
-	public void slideOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
+	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
 	{
 		MatrixBlockDSM topleft=null, topright=null, bottomleft=null, bottomright=null;
@@ -3016,25 +3048,25 @@ public class MatrixBlockDSM extends MatrixValue
 			//		checkSparcityOnSlide(rowCut-(int)range.rowStart, colCut-(int)range.colStart, blockRowFactor, blockColFactor));
 			
 			topleft.reset(blockRowFactor, blockColFactor, 
-					checkSparcityOnSlide(minrowcut-(int)range.rowStart, mincolcut-(int)range.colStart, blockRowFactor, blockColFactor));
+					checkSparcityOnSlice(minrowcut-(int)range.rowStart, mincolcut-(int)range.colStart, blockRowFactor, blockColFactor));
 		}
 		if(range.rowStart<rowCut && range.colEnd>=colCut)
 		{
 			topright=(MatrixBlockDSM) p.next().getValue();
 			topright.reset(blockRowFactor, boundaryClen, 
-					checkSparcityOnSlide(minrowcut-(int)range.rowStart, (int)range.colEnd-maxcolcut+1, blockRowFactor, boundaryClen));
+					checkSparcityOnSlice(minrowcut-(int)range.rowStart, (int)range.colEnd-maxcolcut+1, blockRowFactor, boundaryClen));
 		}
 		if(range.rowEnd>=rowCut && range.colStart<colCut)
 		{
 			bottomleft=(MatrixBlockDSM) p.next().getValue();
 			bottomleft.reset(boundaryRlen, blockColFactor, 
-					checkSparcityOnSlide((int)range.rowEnd-maxrowcut+1, mincolcut-(int)range.colStart, boundaryRlen, blockColFactor));
+					checkSparcityOnSlice((int)range.rowEnd-maxrowcut+1, mincolcut-(int)range.colStart, boundaryRlen, blockColFactor));
 		}
 		if(range.rowEnd>=rowCut && range.colEnd>=colCut)
 		{
 			bottomright=(MatrixBlockDSM) p.next().getValue();
 			bottomright.reset(boundaryRlen, boundaryClen, 
-					checkSparcityOnSlide((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
+					checkSparcityOnSlice((int)range.rowEnd-maxrowcut+1, (int)range.colEnd-maxcolcut+1, boundaryRlen, boundaryClen));
 			//System.out.println("bottomright size: "+bottomright.rlen+" X "+bottomright.clen);
 		}
 		
@@ -3044,10 +3076,10 @@ public class MatrixBlockDSM extends MatrixValue
 			{
 				int r=(int)range.rowStart;
 				for(; r<Math.min(Math.min(rowCut, sparseRows.length), range.rowEnd+1); r++)
-					slideHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockRowFactor, normalBlockColFactor);
 				
 				for(; r<=Math.min(range.rowEnd, sparseRows.length-1); r++)
-					slideHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
 				//System.out.println("in: \n"+this);
 				//System.out.println("outlist: \n"+outlist);
 			}
@@ -4709,6 +4741,97 @@ public class MatrixBlockDSM extends MatrixValue
 		return result;
 	}
 	
+	@Override
+	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		MatrixBlockDSM ret = checkType(result);
+		examSparsity(); //ensure its in the right format
+		ret.reset(rlen, clen, sparse);
+		if( nonZeros == 0 && pattern != 0  )
+			return ret; //early abort
+		boolean NaNpattern = Double.isNaN(pattern);
+		
+		if( sparse ) //SPARSE
+		{
+			if( pattern !=0d ) //SPARSE <- SPARSE (sparse-safe)
+			{
+				ret.adjustSparseRows(ret.rlen);
+				SparseRow[] a = sparseRows;
+				SparseRow[] c = ret.sparseRows;
+				
+				for( int i=0; i<rlen; i++ )
+				{
+					SparseRow arow = a[ i ];
+					if( arow!=null && arow.size()>0 )
+					{
+						SparseRow crow = new SparseRow(arow.size());
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();
+						for( int j=0; j<alen; j++ )
+						{
+							double val = avals[j];
+							if( val== pattern || (NaNpattern && Double.isNaN(val)) )
+								crow.append(aix[j], replacement);
+							else
+								crow.append(aix[j], val);
+						}
+						c[ i ] = crow;
+					}
+				}
+			}
+			else //DENSE <- SPARSE
+			{
+				ret.sparse = false;
+				int mn = ret.rlen * ret.clen;
+				if(ret.denseBlock==null)
+					ret.denseBlock = new double[ mn ];	
+				SparseRow[] a = sparseRows;
+				double[] c = ret.denseBlock;
+				
+				//initialize with replacement (since all 0 values, see SPARSITY_TURN_POINT)
+				Arrays.fill(c, replacement); 
+				
+				//overwrite with existing values (via scatter)
+				for( int i=0, cix=0; i<rlen; i++, cix+=clen )
+				{
+					SparseRow arow = a[ i ];
+					if( arow!=null && arow.size()>0 )
+					{
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();
+						for( int j=0; j<alen; j++ )
+							if( avals[ j ] != 0 )
+								c[ cix+aix[j] ] = avals[ j ];
+					}
+				}
+			}			
+		}
+		else //DENSE <- DENSE
+		{
+			int mn = ret.rlen * ret.clen;
+			if(ret.denseBlock==null)
+				ret.denseBlock = new double[ mn ];	
+			double[] a = denseBlock;
+			double[] c = ret.denseBlock;
+			
+			for( int i=0; i<mn; i++ ) 
+			{
+				double val = a[i];
+				if( val== pattern || (NaNpattern && Double.isNaN(val)) )
+					c[i] = replacement;
+				else
+					c[i] = a[i];
+			}
+		}
+		
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		
+		return ret;
+	}
 	
 	
 	@Override
@@ -5910,44 +6033,7 @@ public class MatrixBlockDSM extends MatrixValue
 		return denseBlock[r*clen+c]; 
 	}
 	
-	public static void testUnsafeSetNGet(int r, int c)
-	{
-		MatrixBlockDSM b1=new MatrixBlockDSM();
-		b1.spaceAllocForDenseUnsafe(r, c);
-		Random rand=new Random();
-		int n=rand.nextInt(r*c);
-		for(int i=0; i<n; i++)
-			b1.setValueDenseUnsafe(rand.nextInt(r), rand.nextInt(c), rand.nextDouble());
-		b1.recomputeNonZeros();
-		System.out.println("~~~~~~~~~~~~\nb1\n");
-		System.out.println(b1);
-		
-		MatrixBlockDSM b2=new MatrixBlockDSM();
-		b2.spaceAllocForSparseUnsafe(r, c, SparseRow.initialCapacity*r);
-		for(int i=0; i<r; i++)
-			for(int j=0; j<c; j++)
-				b2.setValueSparseUnsafe(i, j, b1.getValueDenseUnsafe(i, j));
-		b2.recomputeNonZeros();
-		System.out.println("~~~~~~~~~~~~\nb2\n");
-		System.out.println(b2);
-		
-		//append is better than set, if you control the order of set
-		MatrixBlockDSM b3=new MatrixBlockDSM();
-		b3.spaceAllocForSparseUnsafe(r, c, SparseRow.initialCapacity*r);
-		for(int i=0; i<r; i++)
-			for(int j=0; j<c; j++)
-				b3.appendValueSparseUnsafe(i, j, b2.getValueSparseUnsafe(i, j));
-		b3.recomputeNonZeros();
-		System.out.println("~~~~~~~~~~~~\nb3\n");
-		System.out.println(b3);
-		if(!equal(b1, b2) || !equal(b1, b3))
-			System.err.println("the results are not equal!");
-		
-		
-		
-		if(b1.getNonZeros()!=b2.getNonZeros() || b2.getNonZeros()!=b3.getNonZeros())
-			System.err.println("non zeros do not match!");
-	}
+
 	
 	public static boolean equal(MatrixBlockDSM m1, MatrixBlockDSM m2)
 	{
@@ -5974,360 +6060,6 @@ public class MatrixBlockDSM extends MatrixValue
 				}
 		return ret;
 	}
-	static class Factory1D implements ObjectFactory
-	{
-		int rows, cols;
-		double sparsity;
-		public Factory1D(int rows, int cols, double sparsity) {
-			this.rows=rows;
-			this.cols=cols;
-			this.sparsity=sparsity;
-		}
 
-		public Object makeObject() {
-			
-			return getRandomSparseMatrix1D(rows, cols, sparsity, 1);
-		}
-	}
-	
-	static class FactoryDSM implements ObjectFactory
-	{
-		int rows, cols;
-		double sparsity;
-		public FactoryDSM(int rows, int cols, double sparsity) {
-			this.rows=rows;
-			this.cols=cols;
-			this.sparsity=sparsity;
-		}
-
-		public Object makeObject() {
-			
-			return getRandomSparseMatrix(rows, cols, sparsity, 1);
-		}
-		
-	}
-	
-	public static void printResults(String info, long oldtime, long newtime)
-	{
-	//	System.out.println(info+((double)oldtime/(double)newtime));
-		System.out.println(((double)oldtime/(double)newtime));
-	}
-	
-	public static void onerun(int rows, int cols, double sparsity, int runs) throws Exception
-	{
-//		MemoryTestBench bench=new MemoryTestBench();
-//		bench.showMemoryUsage(new Factory1D(rows, cols, sparsity));
-//		bench.showMemoryUsage(new FactoryDSM(rows, cols, sparsity));
-		System.out.println("-----------------------------------------");
-//		System.out.println("rows: "+rows+", cols: "+cols+", sparsity: "+sparsity+", runs: "+runs);
-		System.out.println(sparsity);
-		MatrixBlock1D m_old=getRandomSparseMatrix1D(rows, cols, sparsity, 1);
-		//m_old.examSparsity();
-		MatrixBlock1D m_old2=getRandomSparseMatrix1D(rows, cols, sparsity, 2);
-		//m_old2.examSparsity();
-		MatrixBlock1D m_old3=new MatrixBlock1D(rows, cols, true);
-		//System.out.println(m_old);
-		MatrixBlockDSM m_new=getRandomSparseMatrix(rows, cols, sparsity, 1);
-		//m_new.examSparsity();
-		MatrixBlockDSM m_new2=getRandomSparseMatrix(rows, cols, sparsity, 2);
-	//	m_new2.examSparsity();
-		MatrixBlockDSM m_new3=new MatrixBlockDSM(rows, cols, true);
-	//	System.out.println(m_new);
-		long start, oldtime, newtime;
-		//Operator op;
-		
-		UnaryOperator op=new UnaryOperator(Builtin.getBuiltinFnObject("round"));
-/*		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.unaryOperationsInPlace(op);
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.unaryOperationsInPlace(op);
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old, m_new))
-			System.err.println("result doesn't match!");
-		printResults("unary inplace op: ", oldtime, newtime);
-	//	System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-*/
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.unaryOperations(op, m_old3);
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.unaryOperations(op, m_new3);
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-		//System.out.println("unary op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("unary op: ", oldtime, newtime);
-//		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
- 	
-		LeftScalarOperator op1=new LeftScalarOperator(Multiply.getMultiplyFnObject(), 2);
-/*		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.scalarOperationsInPlace(op1);
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.scalarOperationsInPlace(op1);
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old, m_new))
-			System.err.println("result doesn't match!");
-		printResults("scalar inplace op: ", oldtime, newtime);
-//		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-*/
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.scalarOperations(op1, m_old3);
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.scalarOperations(op1, m_new3);
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-	//	System.out.println("scalar op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("scalar op: ", oldtime, newtime);
-	//	System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-		
-		BinaryOperator op11=new BinaryOperator(Plus.getPlusFnObject());
-		
-/*		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-		{	
-			long begin=System.nanoTime();
-			m_old.binaryOperationsInPlace(op11, m_old2);
-			System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-		//	System.out.println(System.nanoTime()-begin);
-		}
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-	//	System.out.println("~~~");
-		for(int i=0; i<runs; i++)
-		{
-			long begin=System.nanoTime();
-			m_new.binaryOperationsInPlace(op11, m_new2);
-			System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-		//	System.out.println(System.nanoTime()-begin);
-		}
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old, m_new))
-			System.err.println("result doesn't match!");
-		//System.out.println("binary op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("binary op inplace: ", oldtime, newtime);
-		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-*/		
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-		{
-		//	long begin=System.nanoTime();
-			m_old.binaryOperations(op11, m_old2, m_old3);
-	//		System.out.println(System.nanoTime()-begin);
-		}
-		oldtime=System.nanoTime()-start;
-	//	System.out.println("~~~");
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-		{
-		//	long begin=System.nanoTime();
-			m_new.binaryOperations(op11, m_new2, m_new3);
-	//		System.out.println(System.nanoTime()-begin);
-		}
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-		//System.out.println("binary op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("binary op: ", oldtime, newtime);
-//		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-
-		ReorgOperator op12=new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.reorgOperations(op12, m_old3, 0, 0, m_old.getNumRows());
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.reorgOperations(op12, m_new3, 0, 0, m_old.getNumRows());
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-		//System.out.println("unary op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("reorg op: ", oldtime, newtime);
-//		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-	
-/*		AggregateBinaryOperator op13=new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()));
-		
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.aggregateBinaryOperations(m_old, m_old2, m_old3, op13);
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.aggregateBinaryOperations(m_new, m_new2, m_new3, op13);
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-		//System.out.println("binary op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("aggregate binary op: ", oldtime, newtime);
-//		System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-*/		
-/*		AggregateUnaryOperator op14=new AggregateUnaryOperator(new AggregateOperator(0, Plus.getPlusFnObject()), ReduceAll.getReduceAllFnObject());
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_old.aggregateUnaryOperations(op14, m_old3, m_old.getNumRows(), m_old.getNumColumns(), new MatrixIndexes(1, 1));
-		oldtime=System.nanoTime()-start;
-		start=System.nanoTime();
-		for(int i=0; i<runs; i++)
-			m_new.aggregateUnaryOperations(op14, m_new3, m_old.getNumRows(), m_old.getNumColumns(), new MatrixIndexes(1, 1));
-		newtime=System.nanoTime()-start;
-		if(!equal(m_old3, m_new3))
-			System.err.println("result doesn't match!");
-	//	System.out.println("scalar op: "+oldtime+", "+newtime+", "+((double)oldtime/(double)newtime));
-		printResults("aggregate unary op: ", oldtime, newtime);
-	//	System.out.println("sparsity of m_mew: "+m_new.isInSparseFormat()+"\t sparsity of m_old: "+m_old.isInSparseFormat());
-*/
-
-	}
-	
-	public static void testSelection(int rows, int cols, double sparsity) throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
-		m.examSparsity();
-		System.out.println(m);
-		//MatrixBlockDSM result=new MatrixBlockDSM(rows, cols, true);
-		//m.selectOperations(result, new IndexRange(3, rows-3, 3, cols-3));
-		
-		ArrayList<IndexedMatrixValue> results=new ArrayList<IndexedMatrixValue>();
-		for(int i=0; i<4; i++)
-			results.add(new IndexedMatrixValue(MatrixBlockDSM.class));
-		m.slideOperations(results, new IndexRange(3, rows-3, 3, cols-3), 5, 5, 10, 10, 6, 6);
-		for(IndexedMatrixValue r: results)
-			System.out.println("----------------\n\n"+r);
-	}
-	
-	public static void testGetSparseCellInterator()
-	{
-		int rows=50;
-		int cols=10;
-		double sparsity=0.05;
-		MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
-		System.out.println(m);
-		SparseCellIterator iter=m.getSparseCellIterator();
-		while(iter.hasNext())
-			System.out.println(iter.next());
-	}
-	
-	public static void  main(String[] args) throws Exception
-	{
-		long rows=7525500;
-		long cols=rows;
-		double sp = (double)1/rows;
-		System.out.println("rows " + rows + ", cols " + cols + ", sp " + sp + ": " + (estimateSize(rows,cols,sp)/1024/1024));
-		
-		/*MatrixBlockDSM m=getRandomSparseMatrix(10, 10, 0.5, 1);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-		MatrixBlockDSM m2=new MatrixBlock();
-		m2.copy(m);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m2);
-		m.reset(20, 20, true, 200);
-		m.setValue(1, 19, 119);
-		m.setValue(19, 19, 1919);
-		
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);*/
-		
-		//testGetSparseCellInterator();
-		//testUnsafeSetNGet(10, 10);
-		
-	//	int rows=10, cols=10, runs=10;
-		/*double[] sparsities=new double[]{0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1};
-		for(double sparsity: sparsities)
-			onerun(rows, cols, sparsity, runs);
-			*/
-		//testSelection(10, 10, 1);
-		
-	/*	double sparsity=0.5;
-	//	MatrixBlockDSM m=getRandomSparseMatrix(rows, cols, sparsity, 1);
-		MatrixBlockDSM m=new MatrixBlockDSM(rows, cols, false);
-		//m.examSparsity();
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-		m.dropLastRowsOrColums(CorrectionLocationType.LASTROW);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-		m.dropLastRowsOrColums(CorrectionLocationType.LASTCOLUMN);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOROWS);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-		m.dropLastRowsOrColums(CorrectionLocationType.LASTTWOCOLUMNS);
-		System.out.println("~~~~~~~~~~~~");
-		System.out.println(m);
-*/
-		
-		/*
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-		
-		MatrixBlockDSM m1=getRandomDenseMatrix(2, 4, 1);
-		System.out.println(m1.toString());
-		
-		MatrixBlockDSM m2=getRandomSparseMatrix(4,3,0.3,1);
-		System.out.println(m2.toString());
-		
-		MatrixBlockDSM result = (MatrixBlockDSM) m1.aggregateBinaryOperations(m1, m2, new MatrixBlock(), aggbin);
-		
-		System.out.println(result.toString());
-		
-		// -------------------------------------------------
-		//DMLScript.READ_AS_SPARSE = Boolean.parseBoolean(args[0]);
-		String Vfile = args[0];
-		String Wfile = args[1];
-		int numD = Integer.parseInt(args[2]);
-		int numW = Integer.parseInt(args[3]);
-		int numT = Integer.parseInt(args[4]);
-		
-		MatrixBlockDSM W = DataConverter.readMatrixFromHDFS(Wfile, InputInfo.BinaryBlockInputInfo, numD, numT, 1000, 1000);
-		MatrixBlockDSM V = DataConverter.readMatrixFromHDFS(Vfile, InputInfo.BinaryBlockInputInfo, numD, numW, 1000, 1000);
-		
-		long st = System.currentTimeMillis();
-		MatrixBlockDSM tW = new MatrixBlockDSM(numT, numD, W.sparse);
-		W.reorgOperations(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), tW, 0, 0, 0);
-		long txTime = System.currentTimeMillis() - st;
-		
-		MatrixBlockDSM tWV = new MatrixBlockDSM(numT, numW, false);
-		st = System.currentTimeMillis();
-		tW.aggregateBinaryOperations(tW, V, tWV, aggbin);
-		long mmultTime = System.currentTimeMillis()-st;
-		System.out.println("    Transpose " + txTime + ", MMult " + mmultTime);
-		
-		//m.examSparsity();
-		W = null;
-		V = null;
-		tW = null;
-		tWV = null;
-		*/
-	}
-
-	public void addDummyZeroValue() {
-		/*		if ( sparse ) {
-					if ( sparseBlock == null )
-						sparseBlock = new HashMap<CellIndex,Double>(); 
-					sparseBlock.put(new CellIndex(0, 0), 0.0);
-				}
-				else {
-					try {
-						throw new DMLRuntimeException("Unexpected.. ");
-					} catch (DMLRuntimeException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-		*/	}
 
 }

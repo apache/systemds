@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.MRInstructions.GroupedAggregateInstru
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.MatrixReshapeMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.MRInstructions.ParameterizedBuiltinMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.MRInstructions.RangeBasedReIndexInstruction;
@@ -178,6 +179,8 @@ public class MRInstructionParser extends InstructionParser
 		
 		String2MRInstructionType.put( "csvwrite", MRINSTRUCTION_TYPE.CSVWrite);
 		
+		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
+		
 	}
 	
 	
@@ -279,6 +282,9 @@ public class MRInstructionParser extends InstructionParser
 			
 		case CSVWrite:
 			return (MRInstruction)CSVWriteInstruction.parseInstruction(str);
+			
+		case ParameterizedBuiltin:
+			return (MRInstruction)ParameterizedBuiltinMRInstruction.parseInstruction(str);
 			
 		case INVALID:
 		default: 

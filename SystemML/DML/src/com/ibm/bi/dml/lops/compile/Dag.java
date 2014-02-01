@@ -1409,10 +1409,8 @@ public class Dag<N extends Lop>
 				}
 				
 				try {
-					LOG.trace("Generating simple instruction - "
-								+ inst_string);
-					inst.add(CPInstructionParser
-							.parseSingleInstruction(inst_string));
+					LOG.trace("Generating simple instruction - "+ inst_string);
+					inst.add(CPInstructionParser.parseSingleInstruction(inst_string));
 				} catch (Exception e) {
 					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
 							+ inst_string, e);
@@ -3205,6 +3203,12 @@ public class Dag<N extends Lop>
 							inputIndices.get(2), output_index));
 					nodeIndexMapping.put(node, output_index);
 					//}
+				}
+				else if( node.getType() == Type.ParameterizedBuiltin ){
+					otherInstructionsReducer.add(node.getInstructions(
+							inputIndices.get(0), inputIndices.get(1),
+							inputIndices.get(2), output_index));
+					nodeIndexMapping.put(node, output_index);
 				}
 
 				return output_index;

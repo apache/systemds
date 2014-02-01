@@ -2486,6 +2486,11 @@ public class DMLTranslator
 					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.RMEMPTY, paramHops);
 			break;
 			
+		case REPLACE:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+					target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.REPLACE, paramHops);
+			break;	
+			
 		default:
 			
 			LOG.error(source.printErrorLocation() + 

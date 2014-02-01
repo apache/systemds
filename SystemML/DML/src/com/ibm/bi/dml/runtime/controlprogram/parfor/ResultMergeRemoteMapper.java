@@ -8,9 +8,7 @@
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
@@ -24,6 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.TaggedMatrixCell;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 /**
  * Remote resultmerge mapper implementation that does the preprocessing
@@ -96,6 +95,7 @@ public class ResultMergeRemoteMapper
 		private MatrixIndexes _objKey;
 		private MatrixCell _objValueHelp;
 		private TaggedMatrixCell _objValue;
+		private FastStringTokenizer _st;
 		
 		protected ResultMergeMapperTextCell(byte tag)
 		{
@@ -104,17 +104,18 @@ public class ResultMergeRemoteMapper
 			_objValueHelp = new MatrixCell();
 			_objValue = new TaggedMatrixCell();
 			_objValue.setTag( _tag );
+			
+			_st = new FastStringTokenizer(' ');
 		}
 
 		@Override
 		protected void processKeyValue(Writable key, Writable value, OutputCollector<Writable, Writable> out, Reporter reporter)
 				throws IOException 
 		{
-			String cellStr = ((Text)value).toString().trim();	
-			StringTokenizer st = new StringTokenizer(cellStr, " ");
-			long row = Long.parseLong( st.nextToken() );
-			long col = Long.parseLong( st.nextToken() );
-			double lvalue = Double.parseDouble( st.nextToken() );
+			_st.reset( value.toString() ); //reset tokenizer
+			long row = _st.nextLong();
+			long col = _st.nextLong();
+			double lvalue = _st.nextDouble();
 			
 			_objKey.setIndexes(row,col);
 			_objValueHelp.setValue(lvalue);

@@ -1,17 +1,15 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
 
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
@@ -29,6 +27,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 /**
  * Remote data partitioner mapper implementation that does the actual
@@ -39,7 +38,7 @@ public class DataPartitionerRemoteMapper
 	implements Mapper<Writable, Writable, Writable, Writable>
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private DataPartitionerMapper _mapper = null;
@@ -123,9 +122,12 @@ public class DataPartitionerRemoteMapper
 	
 	private class DataPartitionerMapperTextcell extends DataPartitionerMapper
 	{
+		private FastStringTokenizer _st = null;
+		
 		protected DataPartitionerMapperTextcell(long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pdf, int n) 
 		{
 			super(rlen, clen, brlen, bclen, pdf, n);
+			_st = new FastStringTokenizer(' ');
 		}
 
 		@Override
@@ -137,11 +139,10 @@ public class DataPartitionerRemoteMapper
 			
 			try
 			{
-				String cellStr = ((Text)value).toString().trim();		
-				StringTokenizer st = new StringTokenizer(cellStr, " ");
-				row = Long.parseLong( st.nextToken() );
-				col = Long.parseLong( st.nextToken() );
-				double lvalue = Double.parseDouble( st.nextToken() );
+				_st.reset( value.toString() ); //reset tokenizer
+				row = _st.nextLong();
+				col = _st.nextLong();
+				double lvalue = _st.nextDouble();
 				
 				LongWritable longKey = new LongWritable();
 				PairWritableCell pairValue = new PairWritableCell();

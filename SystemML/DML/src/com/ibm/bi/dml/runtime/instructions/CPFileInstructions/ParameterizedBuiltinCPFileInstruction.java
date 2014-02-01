@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -58,6 +57,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -69,7 +69,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinCPInstruction 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ParameterizedBuiltinCPFileInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String istr) 
@@ -284,7 +284,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-					
+			FastStringTokenizer st = new FastStringTokenizer(' ');		
+			
 			for(InputSplit split: splits)
 			{
 				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);				
@@ -292,11 +293,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				{
 					while( reader.next(key, value) )
 					{
-						String cellStr = value.toString().trim();							
-						StringTokenizer st = new StringTokenizer(cellStr, " ");
-						long row = Integer.parseInt( st.nextToken() );
-						long col = Integer.parseInt( st.nextToken() );
-						double lvalue = Double.parseDouble( st.nextToken() );
+						st.reset( value.toString() ); //reset tokenizer
+						long row = st.nextLong();
+						long col = st.nextLong();
+						double lvalue = st.nextDouble();
 						
 						buffer.add(new Cell(row,col,lvalue));
 						

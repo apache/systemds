@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -10,7 +10,6 @@ package com.ibm.bi.dml.packagesupport;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.nimble.hadoop.HDFSFileManager;
@@ -26,6 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 /**
  * Class to represent the matrix input type
@@ -36,7 +36,7 @@ import com.ibm.bi.dml.runtime.util.DataConverter;
 public class Matrix extends FIO 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final long serialVersionUID = -1058329938431848909L;
@@ -169,27 +169,27 @@ public class Matrix extends FIO
 				String line = null;
 	
 				// read each file into memory.
-				for (String file : files) {
-	
+				FastStringTokenizer st = new FastStringTokenizer(' ');
+				for (String file : files) 
+				{
 					FSDataInputStream inStrm;
 					inStrm = HDFSFileManager.getInputStreamStatic(file);
 					BufferedReader br = new BufferedReader(new InputStreamReader(
 							inStrm));
 	
-					while ((line = br.readLine()) != null) {
+					while ((line = br.readLine()) != null) 
+					{
+						st.reset( line ); //reset tokenizer
+						int i = st.nextInt() - 1;
+						int j = st.nextInt() - 1;
+						double val = st.nextDouble();
 	
-						StringTokenizer tk = new StringTokenizer(line);
-						int i, j;
-						double val;
-	
-						i = Integer.parseInt(tk.nextToken());
-						j = Integer.parseInt(tk.nextToken());
-						val = Double.parseDouble(tk.nextToken());
-	
-						arr[i - 1][j - 1] = val;
+						arr[ i ][ j ] = val;
 					}
 				}
-			} catch (Exception e) {
+			} 
+			catch (Exception e) 
+			{
 				throw new PackageRuntimeException(e.toString());
 			}
 			ret = arr;

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,15 +17,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 public class StagingFileUtils 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final int CELL_BUFFER_SIZE = 100000;
@@ -104,12 +104,12 @@ public class StagingFileUtils
 		throws NumberFormatException, IOException
 	{
 		String value = null;
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		while( (value=in.readLine())!=null )
 		{
-			String cellStr = value.toString().trim();							
-			StringTokenizer st = new StringTokenizer(cellStr, " ");
-			long row1 = Long.parseLong( st.nextToken() );
-			long row2 = Long.parseLong( st.nextToken() );
+			st.reset( value ); //reset tokenizer
+			long row1 = st.nextLong();
+			long row2 = st.nextLong();
 			
 			int id = (int)row1/blen;
 			if( !map.containsKey(id) )
@@ -128,12 +128,12 @@ public class StagingFileUtils
 		
 		String value = null;
 		int len = 0;
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		while( (value=in.readLine())!=null )
 		{
-			String cellStr = value.toString().trim();							
-			StringTokenizer st = new StringTokenizer(cellStr, " ");
-			long row1 = Long.parseLong( st.nextToken() );
-			long row2 = Long.parseLong( st.nextToken() );
+			st.reset( value ); //reset tokenizer
+			long row1 = st.nextLong();
+			long row2 = st.nextLong();
 			
 			int id = (int)row1/blen;
 			if( !map.containsKey(id) )
@@ -171,14 +171,13 @@ public class StagingFileUtils
 		try 
 		{
 			String value = null;
-			long row, col;
+			FastStringTokenizer st = new FastStringTokenizer(' '); 
 			while( (value=in.readLine())!=null )
 			{
-				String cellStr = value.toString().trim();							
-				StringTokenizer st = new StringTokenizer(cellStr, " ");
-				row = Long.parseLong( st.nextToken() );
-				col = Long.parseLong( st.nextToken() );
-				double lvalue = Double.parseDouble( st.nextToken() );
+				st.reset( value ); //reset tokenizer
+				long row = st.nextLong();
+				long col = st.nextLong();
+				double lvalue = st.nextDouble();
 				Cell c =  new Cell( row, col, lvalue );
 				buffer.addLast( c );
 			}
@@ -207,32 +206,30 @@ public class StagingFileUtils
 		
 		FileInputStream fis = new FileInputStream( fname );
 		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		try 
 		{
 			String value = null;
-			long row, col;
 			if( sparse )
 			{
 				while( (value=in.readLine())!=null )
 				{
-					String cellStr = value.toString().trim();							
-					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					row = Long.parseLong( st.nextToken() );
-					col = Long.parseLong( st.nextToken() );
-					double lvalue = Double.parseDouble( st.nextToken() );
-					tmp.quickSetValue((int)row, (int)col, lvalue);
+					st.reset( value ); //reset tokenizer
+					int row = st.nextInt();
+					int col = st.nextInt();
+					double lvalue = st.nextDouble();
+					tmp.quickSetValue(row, col, lvalue);
 				}
 			}
 			else
 			{
 				while( (value=in.readLine())!=null )
 				{
-					String cellStr = value.toString().trim();							
-					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					row = Long.parseLong( st.nextToken() );
-					col = Long.parseLong( st.nextToken() );
-					double lvalue = Double.parseDouble( st.nextToken() );
-					tmp.setValueDenseUnsafe((int)row, (int)col, lvalue);
+					st.reset( value ); //reset tokenizer
+					int row = st.nextInt();
+					int col = st.nextInt();
+					double lvalue = st.nextDouble();
+					tmp.setValueDenseUnsafe(row, col, lvalue);
 				}
 				
 				tmp.recomputeNonZeros();

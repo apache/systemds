@@ -17,7 +17,6 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,11 +26,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
@@ -41,10 +37,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToBinaryCellConverter;
-import com.ibm.bi.dml.runtime.matrix.io.BinaryBlockToTextCellConverter;
 import com.ibm.bi.dml.runtime.matrix.io.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.io.Converter;
 import com.ibm.bi.dml.runtime.matrix.io.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.io.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
@@ -52,12 +45,9 @@ import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.io.Pair;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 
 
 /**
@@ -96,19 +86,6 @@ public class DataConverter
 			inputInfo = null;
 			localFS = false;
 		}
-		
-		public void printMe() {
-			try {
-				System.out.println("ReadProperties: " + path + ", Dimensions: " 
-						+ rlen + ", " + clen 
-						+ ", BlockDimensions: " + brlen + ", " + bclen + ", " 
-						+ expectedSparsity + "," + InputInfo.inputInfoToString(inputInfo) + "," + localFS);
-			} catch (DMLRuntimeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
 	}
 	
 	/**
@@ -129,6 +106,16 @@ public class DataConverter
 		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1, null);
 	}
 	
+	/**
+	 * 
+	 * @param mat
+	 * @param dir
+	 * @param outputinfo
+	 * @param mc
+	 * @param replication
+	 * @param formatProperties
+	 * @throws IOException
+	 */
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication, FileFormatProperties formatProperties)
 			throws IOException
 	{
@@ -352,10 +339,11 @@ public class DataConverter
 	public static MatrixBlock readMatrixFromHDFS(ReadProperties prop) 
 		throws IOException
 	{	
+		//Timing time = new Timing(true);
+		
 		//determine target representation (sparse/dense)
 		boolean sparse = (    prop.expectedSparsity < MatrixBlockDSM.SPARCITY_TURN_POINT
 				           && prop.clen > MatrixBlock.SKINNY_MATRIX_TURN_POINT ); 
-		//System.out.println("read matrix (sparse="+sparse+") from HDFS: "+prop.path);
 		
 		long rlen = prop.rlen;
 		long clen = prop.clen;
@@ -368,21 +356,10 @@ public class DataConverter
 		
 		//prepare file access
 		JobConf job = new JobConf();	
-		Path path = null; 
-		FileSystem fs = null;
-		if ( prop.localFS ) {
-			path = new Path("file:///" + prop.path);
-			//System.out.println("local file system path ..." + path.toUri() + ", " + path.toString());
-			fs = FileSystem.getLocal(job);
-		}
-		else {
-			path = new Path(prop.path);
-			fs = FileSystem.get(job);
-		}
-		
+		FileSystem fs = (prop.localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
+		Path path = new Path( ((prop.localFS) ? "file:///" : "") + prop.path); 
 		if( !fs.exists(path) )	
 			throw new IOException("File "+prop.path+" does not exist on HDFS/LFS.");
-		//System.out.println("dataconverter: reading file " + path + " [" + rlen + "," + clen + "] from localFS=" + localFS);
 		
 		try 
 		{
@@ -395,7 +372,7 @@ public class DataConverter
 			//core matrix reading 
 			if( inputinfo == InputInfo.TextCellInputInfo )
 			{			
-				if( fs.getFileStatus(path).isDir() )
+				if( fs.isDirectory(path) )
 					readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, prop.brlen, prop.bclen);
 				else
 					readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, prop.brlen, prop.bclen, isMMFile);
@@ -429,7 +406,6 @@ public class DataConverter
 			throw new IOException(e);
 		}
 
-		//System.out.println("read matrix (after exec sparse="+ret.isInSparseFormat()+") from HDFS: "+dir);
 		//System.out.println("read matrix ("+rlen+","+clen+","+ret.getNonZeros()+") in "+time.stop());
 		
 		return ret;
@@ -663,7 +639,7 @@ public class DataConverter
 		}
 
 		// if the source is a directory
-		if (hdfs.getFileStatus(srcFilePath).isDir()) {
+		if (hdfs.isDirectory(srcFilePath)) {
 			try {
 				FileStatus contents[] = hdfs.listStatus(srcFilePath);
 				Path[] partPaths = new Path[contents.length];
@@ -948,6 +924,7 @@ public class DataConverter
 		{
 			if( sparse ) //SPARSE
 			{
+				
 				SparseCellIterator iter = src.getSparseCellIterator();
 				while( iter.hasNext() )
 				{
@@ -1106,6 +1083,8 @@ public class DataConverter
 		
 		try
 		{
+			FastStringTokenizer st = new FastStringTokenizer(' ');
+			
 			for(InputSplit split: splits)
 			{
 				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
@@ -1116,24 +1095,23 @@ public class DataConverter
 					{
 						while( reader.next(key, value) )
 						{
-							String cellStr = value.toString().trim();							
-							StringTokenizer st = new StringTokenizer(cellStr, " ");
-							row = Integer.parseInt( st.nextToken() )-1;
-							col = Integer.parseInt( st.nextToken() )-1;
-							double lvalue = Double.parseDouble( st.nextToken() );
-							//dest.quickSetValue( row, col, lvalue );
+							st.reset( value.toString() ); //reinit tokenizer
+							row = st.nextInt() - 1;
+							col = st.nextInt() - 1;
+							double lvalue = st.nextDouble();
 							dest.appendValue(row, col, lvalue);
 						}
+						
+						dest.sortSparseRows();
 					} 
 					else //DENSE<-value
 					{
 						while( reader.next(key, value) )
 						{
-							String cellStr = value.toString().trim();
-							StringTokenizer st = new StringTokenizer(cellStr, " ");
-							row = Integer.parseInt( st.nextToken() )-1;
-							col = Integer.parseInt( st.nextToken() )-1;
-							double lvalue = Double.parseDouble( st.nextToken() );
+							st.reset( value.toString() ); //reinit tokenizer
+							row = st.nextInt()-1;
+							col = st.nextInt()-1;
+							double lvalue = st.nextDouble();
 							dest.setValueDenseUnsafe( row, col, lvalue );
 						}
 					}
@@ -1144,9 +1122,6 @@ public class DataConverter
 						reader.close();
 				}
 			}
-			
-			if( sparse )
-				dest.sortSparseRows();
 		}
 		catch(Exception ex)
 		{
@@ -1160,6 +1135,100 @@ public class DataConverter
 			{
 				throw new IOException( "Unable to read matrix in text cell format.", ex );
 			}
+		}
+	}
+
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param dest
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @throws IOException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 */
+	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+		throws IOException, IllegalAccessException, InstantiationException
+	{
+		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
+		
+		boolean sparse = dest.isInSparseFormat();
+		String value = null;
+		int row = -1;
+		int col = -1;
+		
+		// Read the header lines, if reading from a matrixMarket file
+		if ( matrixMarket ) {
+			value = br.readLine(); // header line
+			if ( !value.startsWith("%%") ) {
+				throw new IOException("Error while reading \"" + path.toString() + "\" in MatrixMarket format. Expecting a header line <blah>, but encountered, \"" + value +"\".");
+			}
+			value = br.readLine(); // line with matrix dimensions
+			
+			// validate
+			long mm_rlen, mm_clen, mm_nnz;
+			String[] fields = value.split(" ");
+			mm_rlen = Long.parseLong(fields[0]);
+			mm_clen = Long.parseLong(fields[1]);
+			mm_nnz = Long.parseLong(fields[2]);
+			if ( rlen != mm_rlen || clen != mm_clen ) {
+				throw new IOException("Unexpected matrix dimensions while reading \"" + path.toString() + "\". Expecting dimensions [" + rlen + " rows, " + clen + " cols] but encountered [" + mm_rlen + " rows, " + mm_clen + "cols].");
+			}
+		}
+		
+		try
+		{			
+			FastStringTokenizer st = new FastStringTokenizer(' ');
+			
+			if( sparse ) //SPARSE<-value
+			{
+				while( (value=br.readLine())!=null )
+				{
+					st.reset( value ); //reinit tokenizer
+					row = st.nextInt()-1;
+					col = st.nextInt()-1;
+					double lvalue = st.nextDouble();
+					dest.appendValue(row, col, lvalue);
+				}
+				
+				dest.sortSparseRows();
+			} 
+			else //DENSE<-value
+			{
+				while( (value=br.readLine())!=null )
+				{
+					st.reset( value ); //reinit tokenizer
+					row = st.nextInt()-1;
+					col = st.nextInt()-1;	
+					double lvalue = st.nextDouble();
+					dest.setValueDenseUnsafe( row, col, lvalue );
+				}
+			}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			
+			//post-mortem error handling and bounds checking
+			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
+			{
+				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
+									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+			}
+			else
+			{
+				throw new IOException( "Unable to read matrix in raw text cell format.", ex );
+			}
+		}
+		finally
+		{
+			if( br != null )
+				br.close();
 		}
 	}
 	
@@ -1267,99 +1336,7 @@ public class DataConverter
 				br.close();
 		}
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param dest
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
-	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
-		throws IOException, IllegalAccessException, InstantiationException
-	{
-		boolean sparse = dest.isInSparseFormat();
-		//FileSystem fs = FileSystem.get(job);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));	
-		
-		String value = null;
-		int row = -1;
-		int col = -1;
 
-		// Read the header lines, if reading from a matrixMarket file
-		if ( matrixMarket ) {
-			value = br.readLine(); // header line
-			if ( !value.startsWith("%%") ) {
-				throw new IOException("Error while reading \"" + path.toString() + "\" in MatrixMarket format. Expecting a header line <blah>, but encountered, \"" + value +"\".");
-			}
-			value = br.readLine(); // line with matrix dimensions
-			
-			// validate
-			long mm_rlen, mm_clen, mm_nnz;
-			String[] fields = value.split(" ");
-			mm_rlen = Long.parseLong(fields[0]);
-			mm_clen = Long.parseLong(fields[1]);
-			mm_nnz = Long.parseLong(fields[2]);
-			if ( rlen != mm_rlen || clen != mm_clen ) {
-				throw new IOException("Unexpected matrix dimensions while reading \"" + path.toString() + "\". Expecting dimensions [" + rlen + " rows, " + clen + " cols] but encountered [" + mm_rlen + " rows, " + mm_clen + "cols].");
-			}
-		}
-		
-		try
-		{
-			if( sparse ) //SPARSE<-value
-			{
-				while( (value=br.readLine())!=null )
-				{
-					String cellStr = value.toString().trim();							
-					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					row = Integer.parseInt( st.nextToken() )-1;
-					col = Integer.parseInt( st.nextToken() )-1;
-					double lvalue = Double.parseDouble( st.nextToken() );
-					//dest.quickSetValue( row, col, lvalue );
-					dest.appendValue(row, col, lvalue);
-				}
-				
-				dest.sortSparseRows();
-			} 
-			else //DENSE<-value
-			{
-				while( (value=br.readLine())!=null )
-				{
-					String cellStr = value.toString().trim();
-					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					row = Integer.parseInt( st.nextToken() )-1;
-					col = Integer.parseInt( st.nextToken() )-1;
-					double lvalue = Double.parseDouble( st.nextToken() );
-					dest.setValueDenseUnsafe( row, col, lvalue );
-				}
-			}
-		}
-		catch(Exception ex)
-		{
-			//post-mortem error handling and bounds checking
-			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
-			{
-				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
-									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-			}
-			else
-			{
-				throw new IOException( "Unable to read matrix in raw text cell format.", ex );
-			}
-		}
-		finally
-		{
-			if( br != null )
-				br.close();
-		}
-	}
 	
 	/**
 	 * Note: see readBinaryBlockMatrixFromHDFS for why we directly use SequenceFile.Reader.
@@ -1672,10 +1649,9 @@ public class DataConverter
 	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
 		throws IOException
 	{
-		FileStatus fStatus = fs.getFileStatus(file);
 		Path[] ret = null;
 		
-		if( fStatus.isDir() )
+		if( fs.isDirectory(file) )
 		{
 			LinkedList<Path> tmp = new LinkedList<Path>();
 			FileStatus[] dStatus = fs.listStatus(file);
@@ -1691,166 +1667,4 @@ public class DataConverter
 		
 		return ret;
 	}
-	
-	
-	//////////////
-	// OLD/UNUSED functionality
-	///////
-	
-	@SuppressWarnings("unchecked")
-	public static void writeMatrixToHDFSOld(MatrixBlock mat, 
-										 String dir, 
-										 OutputInfo outputinfo, 
-										 long rlen, 
-										 long clen, 
-										 int brlen, 
-										 int bclen)
-		throws IOException
-	{
-		JobConf job = new JobConf();
-		FileOutputFormat.setOutputPath(job, new Path(dir));
-		
-		try{
-			long numEntriesWritten = 0;
-			// If the file already exists on HDFS, remove it.
-			MapReduceTool.deleteFileIfExistOnHDFS(dir);
-			
-			if ( outputinfo == OutputInfo.TextCellOutputInfo ) {
-		        Path pt=new Path(dir);
-		        FileSystem fs = FileSystem.get(new Configuration());
-		        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
-		        Converter outputConverter = new BinaryBlockToTextCellConverter();
-
-				outputConverter.setBlockSize((int)rlen, (int)clen);
-				
-				outputConverter.convert(new MatrixIndexes(1, 1), mat);
-				while(outputConverter.hasNext()){
-					br.write(outputConverter.next().getValue().toString() + "\n");
-					numEntriesWritten++;
-				}
-				
-				if ( numEntriesWritten == 0 ) {
-					br.write("1 1 0\n");
-				}
-				
-				br.close();
-			}
-			else if ( outputinfo == OutputInfo.BinaryCellOutputInfo ) {
-				FileSystem fs = FileSystem.get(job);
-				SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
-				Converter outputConverter = new BinaryBlockToBinaryCellConverter();
-				
-				outputConverter.setBlockSize((int)rlen, (int)clen);
-				
-				outputConverter.convert(new MatrixIndexes(1, 1), mat);
-				Pair pair;
-				Writable index, cell;
-				while(outputConverter.hasNext()){
-					pair = outputConverter.next();
-					index = (Writable) pair.getKey();
-					cell = (Writable) pair.getValue();
-					
-					writer.append(index, cell);
-					numEntriesWritten++;
-				}
-				
-				if ( numEntriesWritten == 0 ) {
-					writer.append(new MatrixIndexes(1, 1), new MatrixCell(0));
-				}
-				writer.close();
-			}
-			else{
-				FileSystem fs = FileSystem.get(job);
-				SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, new Path(dir), outputinfo.outputKeyClass, outputinfo.outputValueClass);
-				//reblock
-				MatrixBlock fullBlock = new MatrixBlock(brlen, bclen, false);
-				
-				MatrixBlock block;
-				for(int blockRow = 0; blockRow < (int)Math.ceil(mat.getNumRows()/(double)brlen); blockRow++){
-					for(int blockCol = 0; blockCol < (int)Math.ceil(mat.getNumColumns()/(double)bclen); blockCol++){
-						int maxRow = (blockRow*brlen + brlen < mat.getNumRows()) ? brlen : mat.getNumRows() - blockRow*brlen;
-						int maxCol = (blockCol*bclen + bclen < mat.getNumColumns()) ? bclen : mat.getNumColumns() - blockCol*bclen;
-						
-						if(maxRow < brlen || maxCol < bclen)
-							block = new MatrixBlock(maxRow, maxCol, false);
-						else block = fullBlock;
-						
-						for(int row = 0; row < maxRow; row++) {
-							for(int col = 0; col < maxCol; col++){
-								double value = mat.getValue(row + blockRow*brlen, col + blockCol*bclen);
-								block.setValue(row, col, value);
-							}
-						}
-						if ( blockRow == 0 && blockCol == 0 & block.getNonZeros() == 0 )
-							block.addDummyZeroValue();
-						writer.append(new MatrixIndexes(blockRow+1, blockCol+1), block);
-						block.reset();
-					}
-				}
-				
-				writer.close();
-			}
-		}catch(Exception e){
-			throw new IOException(e);
-		}
-	}
-	
-	
-	@SuppressWarnings("unchecked")
-	public static MatrixBlock readMatrixFromHDFSOld(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen) 
-		throws IOException
-	{	
-		// force dense representation for 1D matrices (vectors)
-		boolean sp = true;
-		if ( rlen == 1 || clen == 1 )
-			sp = false;
-		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sp);
-		
-	//	String filename = getSubDirsIgnoreLogs(dir);
-		JobConf job = new JobConf();
-		
-		if(!FileSystem.get(job).exists(new Path(dir)))	
-			return null;
-		
-		FileInputFormat.addInputPath(job, new Path(dir));
-		
-		try {
-
-			InputFormat informat=inputinfo.inputFormatClass.newInstance();
-			if(informat instanceof TextInputFormat)
-				((TextInputFormat)informat).configure(job);
-			InputSplit[] splits= informat.getSplits(job, 1);
-			
-			Converter inputConverter=MRJobConfiguration.getConverterClass(inputinfo, brlen, bclen, ConvertTarget.CELL).newInstance();
-			inputConverter.setBlockSize(brlen, bclen);
-    		
-			Writable key=inputinfo.inputKeyClass.newInstance();
-			Writable value=inputinfo.inputValueClass.newInstance();
-			
-			for(InputSplit split: splits)
-			{
-				RecordReader reader=informat.getRecordReader(split, job, Reporter.NULL);
-				while(reader.next(key, value))
-				{
-					inputConverter.convert(key, value);
-					while(inputConverter.hasNext())
-					{
-						Pair pair=inputConverter.next();
-						MatrixIndexes index=(MatrixIndexes) pair.getKey();
-						MatrixCell cell=(MatrixCell) pair.getValue();
-						ret.setValue((int)index.getRowIndex()-1, (int)index.getColumnIndex()-1, cell.getValue());
-					}
-				}
-				reader.close();
-			}
-			
-			ret.examSparsity();
-		} catch (Exception e) {
-			throw new IOException(e);
-		}
-		
-		return ret;
-	}
-	
 }

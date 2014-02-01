@@ -1,58 +1,58 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
 
 package com.ibm.bi.dml.runtime.matrix.io;
 
-import java.util.StringTokenizer;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 
 public class TextToBinaryCellConverter 
 implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private MatrixIndexes indexes=new MatrixIndexes();
-	private MatrixCell value=new MatrixCell();
-	private Pair<MatrixIndexes, MatrixCell> pair=
-		new Pair<MatrixIndexes, MatrixCell>(indexes, value);
-	private boolean hasValue=false;
-	private boolean toIgnore=false;
+	private MatrixIndexes indexes = new MatrixIndexes();
+	private MatrixCell value = new MatrixCell();
+	private Pair<MatrixIndexes, MatrixCell> pair = new Pair<MatrixIndexes, MatrixCell>(indexes, value);
+	private FastStringTokenizer st = new FastStringTokenizer(' '); 
+	private boolean hasValue = false;
+	private boolean toIgnore = false;
 
 	@Override
 	public void convert(LongWritable k1, Text v1) 
 	{	
-		String str = v1.toString().trim();
-		//added to support matrix market format
-		if(str.startsWith("%"))
-		{
+		String str = v1.toString();
+		
+		//handle support for matrix market format
+		if(str.startsWith("%")) {
 			if(str.startsWith("%%"))
 				toIgnore=true;
 			hasValue=false;
 			return;
 		}
-		else if(toIgnore)
-		{
+		else if(toIgnore) {
 			toIgnore=false;
 			hasValue=false;
 			return;
 		}
-									
-		StringTokenizer st = new StringTokenizer(str, " ");
-		indexes.setIndexes( Long.parseLong(st.nextToken()), 
-				            Long.parseLong(st.nextToken()) );
-		value.setValue( Double.parseDouble(st.nextToken()) );
-		hasValue = true;
+			
+		//reset the tokenizer
+		st.reset( str );
 		
+		//convert text to matrix cell
+		indexes.setIndexes( st.nextLong(), st.nextLong() );
+		value.setValue( st.nextDouble() );
+		hasValue = true;		
 	}
 	
 	@Override
@@ -68,6 +68,13 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 		hasValue=false;
 		return pair;
 	}
+
+	@Override
+	public void setBlockSize(int rl, int cl) 
+	{
+		
+	}
+	
 	
 	public static void main(String[] args) throws Exception {
 		TextToBinaryCellConverter conv=new TextToBinaryCellConverter();
@@ -85,8 +92,4 @@ implements Converter<LongWritable, Text, MatrixIndexes, MatrixCell>
 		}
 	}
 
-	@Override
-	public void setBlockSize(int rl, int cl) {
-		
-	}
 }

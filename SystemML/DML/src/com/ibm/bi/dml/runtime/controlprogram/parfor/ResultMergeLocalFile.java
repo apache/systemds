@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -14,7 +14,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -47,6 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -60,7 +60,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class ResultMergeLocalFile extends ResultMerge
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//NOTE: if we allow simple copies, this might result in a scattered file and many MR tasks for subsequent jobs
@@ -585,12 +585,14 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
 		int brlen = mc.get_rows_per_block(); 
 		int bclen = mc.get_cols_per_block();
-		long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
+		//long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
 		//NOTE MB: Originally, we used long row, col but this led reproducibly to JIT compilation
 		// errors during runtime; experienced under WINDOWS, Intel x86-64, IBM JDK 64bit/32bit.
 		// It works fine with int row, col but we require long for larger matrices.
 		// Since, textcell is never used for result merge (hybrid/hadoop: binaryblock, singlenode:binarycell)
 		// we just propose the to exclude it with -Xjit:exclude={package.method*}(count=0,optLevel=0)
+		
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		
 		for(InputSplit split : splits)
 		{
@@ -599,10 +601,9 @@ public class ResultMergeLocalFile extends ResultMerge
 			{
 				while(reader.next(key, value))
 				{
-					String cellStr = value.toString().trim();						
-					StringTokenizer st = new StringTokenizer(cellStr, " ");
-					row = Long.parseLong( st.nextToken() ); //see above
-				    col = Long.parseLong( st.nextToken() ); //see above
+					st.reset( value.toString() ); //reset tokenizer
+					long row = st.nextLong();
+				    long col = st.nextLong();
 					double lvalue = Double.parseDouble( st.nextToken() );
 					
 					Cell tmp = new Cell( row, col, lvalue ); 

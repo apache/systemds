@@ -106,7 +106,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// Output1 - Q
 			qrOut1.setDataType(DataType.MATRIX);
 			qrOut1.setValueType(ValueType.DOUBLE);
-			qrOut1.setDimensions(rows, rows);
+			qrOut1.setDimensions(rows, cols);
 			qrOut1.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
 			
 			// Output2 - R
@@ -153,6 +153,32 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 
+		case EIGEN:
+			checkNumParameters(1);
+			checkMatrixParam(_first);
+			
+			// setup output properties
+			DataIdentifier eigenOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier eigenOut2 = (DataIdentifier) getOutputs()[1];
+			
+			if ( _first.getOutput().getDim1() != _first.getOutput().getDim2() ) {
+				throw new LanguageException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + _first.getOutput().getDim1() + ", cols="+ _first.getOutput().getDim2() +")");
+			}
+			
+			// Output1 - Eigen Vectors
+			eigenOut1.setDataType(DataType.MATRIX);
+			eigenOut1.setValueType(ValueType.DOUBLE);
+			eigenOut1.setDimensions(_first.getOutput().getDim1(), _first.getOutput().getDim2());
+			eigenOut1.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			// Output2 - Eigen Values
+			eigenOut2.setDataType(DataType.MATRIX);
+			eigenOut2.setValueType(ValueType.DOUBLE);
+			eigenOut2.setDimensions(_first.getOutput().getDim1(), 1);
+			eigenOut2.setBlockDimensions(_first.getOutput().getRowsInBlock(), _first.getOutput().getColumnsInBlock());
+			
+			break;
+		
 		default:
 			throw new LanguageException("Unknown Builtin Function opcode: " + _opcode);
 		}
@@ -603,6 +629,24 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(0, 0);
 			break;
 
+		case SOLVE:
+			checkNumParameters(2);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			
+			if ( getSecondExpr().getOutput().dimsKnown() && !is1DMatrix(getSecondExpr()) )
+				throw new LanguageException("Second input to solve() must be a vector");
+			
+			if ( getFirstExpr().getOutput().dimsKnown() && getSecondExpr().getOutput().dimsKnown() && 
+					getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1() )
+				throw new LanguageException("Dimension mismatch in a call to solve()");
+			
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setDimensions(getFirstExpr().getOutput().getDim2(), 1);
+			output.setBlockDimensions(0, 0);
+			break;
+		
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -630,6 +674,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		switch(_opcode) {
 		case QR:
 		case LU:
+		case EIGEN:
 			return true;
 		default:
 			return false;
@@ -931,6 +976,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.QR;
 		else if (functionName.equals("lu"))
 			bifop = Expression.BuiltinFunctionOp.LU;
+		else if (functionName.equals("eigen"))
+			bifop = Expression.BuiltinFunctionOp.EIGEN;
+		else if (functionName.equals("solve"))
+			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else
 			return null;
 		

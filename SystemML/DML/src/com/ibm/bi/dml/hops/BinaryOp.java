@@ -1161,7 +1161,14 @@ public class BinaryOp extends Hop
 			// getMemEstimate works for both cases of known dims and worst-case
 			ret = getInput().get(0).getMemEstimate() * 3; 
 		}
-		
+		else if ( op == OpOp2.SOLVE ) {
+			// x=solve(A,b) relies on QR decomposition of A, which is done using Apache commons-math
+			// matrix of size same as the first input
+			double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 1.0); 
+			return interOutput;
+
+		}
+
 		return ret;
 	}
 	
@@ -1180,6 +1187,12 @@ public class BinaryOp extends Hop
 		{
 			if( mc[0].dimsKnown() && mc[1].dimsKnown() ) 
 				ret = new long[]{mc[0].get_rows(), mc[0].get_cols()+mc[1].get_cols(), mc[0].getNonZeros() + mc[1].getNonZeros()};
+		}
+		else if ( op == OpOp2.SOLVE ) {
+			// Output is a (likely to be dense) vector of size number of columns in the first input
+			if ( mc[0].get_cols() > 0 ) {
+				ret = new long[]{ mc[0].get_cols(), 1, mc[0].get_cols()};
+			}
 		}
 		else //general case
 		{
@@ -1225,8 +1238,9 @@ public class BinaryOp extends Hop
 		
 		checkAndSetForcedPlatform();
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null ) {		
 			_etype = _etypeForced;
+		}
 		else 
 		{
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
@@ -1273,6 +1287,13 @@ public class BinaryOp extends Hop
 			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==ExecType.MR) || op == OpOp2.APPEND) )
 				setRequiresRecompile();
 		}
+
+		if ( op == OpOp2.SOLVE ) {
+			_etype = ExecType.CP;
+			if ( getMemEstimate() > OptimizerUtils.getMemBudget(true) )
+				throw new HopsException("Insufficient memory to execute function: solve()" );
+		}
+		
 		return _etype;
 	}
 	

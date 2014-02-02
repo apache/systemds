@@ -82,6 +82,9 @@ public class Builtin extends ValueFunction
 		
 		BuiltinFunctionCode code = String2BuiltinFunctionCode.get(str);
 		
+		if ( code == null ) 
+			return null;
+		
 		switch ( code ) {
 		case SIN:
 			if ( sinObj == null )

@@ -111,6 +111,7 @@ public class CPInstructionParser extends InstructionParser
 
 		String2CPInstructionType.put( "max"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		String2CPInstructionType.put( "min"  , CPINSTRUCTION_TYPE.BuiltinBinary);
+		String2CPInstructionType.put( "solve"  , CPINSTRUCTION_TYPE.BuiltinBinary);
 		
 		String2CPInstructionType.put( "exp"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "abs"  , CPINSTRUCTION_TYPE.BuiltinUnary);
@@ -174,6 +175,7 @@ public class CPInstructionParser extends InstructionParser
 		
 		String2CPInstructionType.put( "qr"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
+		String2CPInstructionType.put( "eigen"     , CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();

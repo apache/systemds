@@ -1559,7 +1559,39 @@ public class DataConverter
 		return mb;
 	}
 
-	
+	/**
+	 * Creates a dense Matrix Block and copies the given double vector into it.
+	 * 
+	 * @param data
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock convertToMatrixBlock( double[] data, boolean columnVector ) 
+		throws DMLRuntimeException
+	{
+		int rows, cols;
+		if ( columnVector ) {
+			rows = data.length;
+			cols = 1;
+		}
+		else {
+			rows = 1;
+			cols = data.length;
+		}
+		MatrixBlock mb = new MatrixBlock(rows, cols, false);
+		try
+		{ 
+			//copy data to mb (can be used because we create a dense matrix)
+			mb.init( data, rows, cols );
+		} 
+		catch (Exception e){} //can never happen
+		
+		//check and convert internal representation
+		mb.examSparsity();
+		
+		return mb;
+	}
+
 	
 	/////////////////////////////////////////////
 	// Helper methods for the specific formats //

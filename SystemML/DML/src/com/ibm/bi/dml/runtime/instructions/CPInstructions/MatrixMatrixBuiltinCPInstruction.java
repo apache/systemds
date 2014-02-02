@@ -7,12 +7,19 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.DecompositionSolver;
+import org.apache.commons.math.linear.QRDecompositionImpl;
+import org.apache.commons.math.linear.RealMatrix;
+
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 
 public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
@@ -34,7 +41,15 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException{
         MatrixBlock matBlock1 = ec.getMatrixInput(input1.get_name());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.get_name());
+        
+        String opcode = InstructionUtils.getOpCode(instString);
+        
+        if ( opcode.equalsIgnoreCase("solve") ) {
+        	executeSolve(ec);
+        	return;
+        }
 		
+        /* Default behavior of this instruction */
 		String output_name = output.get_name();
 		BinaryOperator bop = (BinaryOperator) optr;
 		
@@ -45,5 +60,40 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		resultBlock = matBlock1 = matBlock2 = null;
 		ec.releaseMatrixInput(input1.get_name());
 		ec.releaseMatrixInput(input2.get_name());
+	}
+	
+	void executeSolve(ExecutionContext ec) throws DMLRuntimeException {
+		long begin = System.nanoTime(), start = begin;
+		
+		Array2DRowRealMatrix matrixInput = prepareInputForCommonsMath(ec, input1.get_name());
+		Array2DRowRealMatrix vectorInput = prepareInputForCommonsMath(ec, input2.get_name());
+		
+		long inputPrep = System.nanoTime() - start;
+		start = System.nanoTime();
+		
+		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
+		DecompositionSolver lusolver = ludecompose.getSolver();
+		RealMatrix solutionMatrix = lusolver.solve(vectorInput);*/
+		
+		// Setup a solver based on QR Decomposition
+		QRDecompositionImpl qrdecompose = new QRDecompositionImpl(matrixInput);
+		DecompositionSolver solver = qrdecompose.getSolver();
+		// Invoke solve
+		RealMatrix solutionMatrix = solver.solve(vectorInput);
+		
+		long compute = System.nanoTime() - start;
+		start = System.nanoTime();
+		
+		MatrixBlock solution = DataConverter.convertToMatrixBlock(solutionMatrix.getData());
+		
+		ec.setMatrixOutput(output.get_name(), solution);
+		ec.releaseMatrixInput(input1.get_name());
+		ec.releaseMatrixInput(input2.get_name());
+		long outputPrep = System.nanoTime() - start;
+		long total = System.nanoTime()-begin;
+		
+		System.out.println("  extfunApache " + inputPrep*1e-6 + " " + compute*1e-6 + " " + outputPrep*1e-6 + " " + total*1e-6);
+		
+		return;
 	}
 }

@@ -19,6 +19,7 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
+import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
@@ -480,7 +481,7 @@ public class Recompiler
 			return;
 		
 		//update function names
-		if( hop instanceof FunctionOp ) {
+		if( hop instanceof FunctionOp && ((FunctionOp)hop).getFunctionType() != FunctionType.MULTIRETURN_BUILTIN) {
 			FunctionOp fop = (FunctionOp) hop;
 			fop.setFunctionName( fop.getFunctionName() +
 					             ProgramConverter.CP_CHILD_THREAD + pid);

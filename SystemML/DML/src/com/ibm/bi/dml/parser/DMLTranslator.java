@@ -47,6 +47,7 @@ import com.ibm.bi.dml.hops.UnaryOp;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -2611,6 +2612,7 @@ public class DMLTranslator
 		switch (source.getOpCode()) {
 		case QR:
 		case LU:
+		case EIGEN:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
 			String[] outputNames = new String[targetList.size()]; 
@@ -3055,6 +3057,12 @@ public class DMLTranslator
 			}
 			randParams.put(Statement.SEQ_INCR, expr3);
 			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
+			break;
+			
+		case SOLVE:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
+			// Force the execution type of this HOP since the runtime simply invokes a method in Apache Commons Math Library.
+			currBuiltinOp.setForcedExecType(ExecType.CP);
 			break;
 			
 		default:

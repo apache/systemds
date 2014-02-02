@@ -360,6 +360,36 @@ public class MatrixBlockDSM extends MatrixValue
 		maxcolumn = c;
 	}
 	
+	/**
+	 * NOTE: This method is designed only for dense representation.
+	 * 
+	 * @param arr
+	 * @param r
+	 * @param c
+	 * @throws DMLRuntimeException
+	 */
+	public void init(double[] arr, int r, int c) 
+		throws DMLRuntimeException 
+	{	
+		//input checks 
+		if ( sparse )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() can be invoked only on matrices with dense representation.");
+		if( r*c > rlen*clen )
+			throw new DMLRuntimeException("MatrixBlockDSM.init() invoked with too large dimensions ("+r+","+c+") vs ("+rlen+","+clen+")");
+		
+		//allocate or resize dense block
+		allocateDenseBlock();
+		
+		//copy and compute nnz in 1 pass
+		System.arraycopy(arr, 0, denseBlock, 0, arr.length);
+		for(int i=0; i < denseBlock.length; i++) {
+			if( denseBlock[i] != 0 )
+				nonZeros++;
+		}
+		maxrow = r;
+		maxcolumn = c;
+	}
+	
 	
 	public int getNumRows()
 	{

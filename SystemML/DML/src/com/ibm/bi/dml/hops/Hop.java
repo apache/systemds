@@ -650,7 +650,7 @@ public abstract class Hop
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, INVALID
+		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, INVALID
 	};
 
 	// Operations that require 3 operands
@@ -753,6 +753,7 @@ public abstract class Hop
 		HopsOpOp2LopsB.put(OpOp2.MAX, com.ibm.bi.dml.lops.Binary.OperationTypes.MAX);
 		HopsOpOp2LopsB.put(OpOp2.AND, com.ibm.bi.dml.lops.Binary.OperationTypes.OR);
 		HopsOpOp2LopsB.put(OpOp2.OR, com.ibm.bi.dml.lops.Binary.OperationTypes.AND);
+		HopsOpOp2LopsB.put(OpOp2.SOLVE, com.ibm.bi.dml.lops.Binary.OperationTypes.SOLVE);
 		HopsOpOp2LopsB.put(OpOp2.POW, com.ibm.bi.dml.lops.Binary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp2LopsB.put(OpOp2.LOG, com.ibm.bi.dml.lops.Binary.OperationTypes.NOTSUPPORTED);
 	}

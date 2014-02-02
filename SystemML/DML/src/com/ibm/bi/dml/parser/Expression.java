@@ -85,7 +85,9 @@ public abstract class Expression
 		TRACE, 
 		TRANS,
 		QR,
-		LU
+		LU,
+		EIGEN,
+		SOLVE
 	};
 
 	public enum ParameterizedBuiltinFunctionOp {

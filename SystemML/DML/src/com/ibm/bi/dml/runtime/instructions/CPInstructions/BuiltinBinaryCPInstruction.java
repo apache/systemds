@@ -48,29 +48,6 @@ public class BuiltinBinaryCPInstruction extends BinaryCPInstruction
 		
 		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
 		
-		/*
-		int _arity = parts.length - 2;
-		
-		boolean b = ((Builtin) func).checkArity(_arity);
-		if ( !b ) {
-			throw new DMLRuntimeException("Invalid number of inputs to builtin function: " 
-										  + ((Builtin) func).bFunc);
-		}
-		*/
-		
-		// TODO: VALUE TYPE CHECKING
-		/*
-		ValueType vt1, vt2, vt3;
-		vt1 = vt2 = vt3 = null;
-		vt1 = in1.get_valueType();
-		if ( in2 != null )
-			vt2 = in2.get_valueType();
-		vt3 = out.get_valueType();
-		if ( vt1 != ValueType.BOOLEAN || vt3 != ValueType.BOOLEAN 
-				|| (vt2 != null && vt2 != ValueType.BOOLEAN) )
-			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
-		*/
-		
 		// Determine appropriate Function Object based on opcode
 			
 		if ( in1.get_dataType() == DataType.SCALAR && in2.get_dataType() == DataType.SCALAR ) {

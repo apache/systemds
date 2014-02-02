@@ -7,10 +7,15 @@
 
 package com.ibm.bi.dml.runtime.instructions.CPInstructions;
 
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+
+import com.ibm.bi.dml.packagesupport.Matrix;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -62,4 +67,21 @@ public class CPInstruction extends Instruction
 		return InstructionUtils.getOpCode(instString);
 	}
 	
+	/**
+	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
+	 * which is useful in invoking Apache CommonsMath.
+	 * 
+	 * @param ec
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected Array2DRowRealMatrix prepareInputForCommonsMath(ExecutionContext ec, String varname) throws DMLRuntimeException {
+		MatrixObject mobjInput = (MatrixObject) ec.getVariable(varname);
+		Matrix mathInput = new Matrix(mobjInput.getFileName(), mobjInput.getNumRows(), mobjInput.getNumColumns(), (mobjInput.getValueType() == ValueType.DOUBLE ? Matrix.ValueType.Double : Matrix.ValueType.Integer));
+		mathInput.setMatrixObject(mobjInput);
+		Array2DRowRealMatrix matrixInput = new Array2DRowRealMatrix(mathInput.getMatrixAsDoubleArray(), false);
+		return matrixInput;
+	}
+
 }

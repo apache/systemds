@@ -13,18 +13,46 @@
 
 A = read($1);
 
-[Q,R] = qr(A);
+[H,R] = qr(A);
+
+# Compute Q from Householder vectors
+m = nrow(A);
+n = ncol(A);
+
+/*
+ones = matrix(1, m, 1);
+eye = diag(ones);
+Q = eye;
+for( j in n:1 ) {
+    v = H[,j];
+    Qj = eye - 2 * (v %*% t(v))/castAsScalar((t(v)%*%v));
+    Q = Qj %*% Q;
+}
 
 # Q must be orthogonal i.e., Q = Q^{-1}
 I = Q %*% t(Q);
 
 # Multiplying Q and R, we must get back original A
 B = Q %*% R;
-diff = sum(A - B);
+
+d = sum(A-B);
+print("d = " + d);
+diff = 0; #sum(A - B);
 #   write the difference between original A and computed B as a dummy 1x1 matrix
 D = matrix(1,1,1);
 D = diff*D;
 
 write(I, $2);
 write(D, $3);
+*/
 
+# Compute t(Q)%*%b using computed householder vectors
+b = read($2);
+tQb = matrix(0, m, 1);
+min_mn = min(m,n);
+for(j in min_mn:1) {
+  v = H[,j];
+  b = b - 2 * (v %*% (t(v) %*% b)); 
+}
+
+write(b, $3);

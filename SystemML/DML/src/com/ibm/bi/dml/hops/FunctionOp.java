@@ -121,18 +121,84 @@ public class FunctionOp extends Hop
 			_memEstimate = 2* getInputSize(); //in/out
 		else if(    _type == FunctionType.EXTERNAL_FILE || _type == FunctionType.UNKNOWN )
 			_memEstimate = CostEstimatorHops.DEFAULT_MEM_MR;
+		else if ( _type == FunctionType.MULTIRETURN_BUILTIN ) {
+			boolean outputDimsKnown = true;
+			for(Hop out : getOutputs()){
+				outputDimsKnown &= out.dimsKnown();
+			}
+			if( outputDimsKnown ) { 
+				long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2); 
+				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+			}
+			_memEstimate = getInputOutputSize();
+			//System.out.println("QREst " + (_memEstimate/1024/1024));
+		}
 	}
 	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
+		if ( getFunctionType() != FunctionType.MULTIRETURN_BUILTIN )
+			throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
+		else {
+			if ( getFunctionName().equalsIgnoreCase("qr") ) {
+				// upper-triangular and lower-triangular matrices
+				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 0.5);
+				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 0.5);
+				//System.out.println("QROut " + (outputH+outputR)/1024/1024);
+				return outputH+outputR; 
+				
+			}
+			else if ( getFunctionName().equalsIgnoreCase("lu") ) {
+				// upper-triangular and lower-triangular matrices
+				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 1.0/getOutputs().get(1).get_dim2());
+				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 0.5);
+				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), getOutputs().get(1).get_dim2(), 0.5);
+				//System.out.println("LUOut " + (outputL+outputU+outputP)/1024/1024);
+				return outputL+outputU+outputP; 
+				
+			}
+			else if ( getFunctionName().equalsIgnoreCase("eigen") ) {
+				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).get_dim1(), getOutputs().get(0).get_dim2(), 1.0);
+				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).get_dim1(), 1, 1.0);
+				//System.out.println("EigenOut " + (outputVectors+outputValues)/1024/1024);
+				return outputVectors+outputValues; 
+				
+			}
+			else
+				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
+		}
 	}
 	
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
+		if ( getFunctionType() != FunctionType.MULTIRETURN_BUILTIN )
+			throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
+		else {
+			if ( getFunctionName().equalsIgnoreCase("qr") ) {
+				// matrix of size same as the input
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 1.0); 
+				//System.out.println("QRInter " + interOutput/1024/1024);
+				return interOutput;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("lu")) {
+				// 1D vector 
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), 1, 1.0); 
+				//System.out.println("LUInter " + interOutput/1024/1024);
+				return interOutput;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("eigen")) {
+				// One matrix of size original input and three 1D vectors (used to represent tridiagonal matrix)
+				double interOutput = OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), getInput().get(0).get_dim2(), 1.0) 
+						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).get_dim1(), 1, 1.0); 
+				//System.out.println("EigenInter " + interOutput/1024/1024);
+				return interOutput;
+			}
+			else
+				throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
+		}
 	}
 	
 	@Override
@@ -146,7 +212,11 @@ public class FunctionOp extends Hop
 		throws HopsException, LopsException 
 	{
 		if (get_lops() == null) {
+			ExecType et = optFindExecType();
 			
+			if ( et != ExecType.CP ) {
+				throw new HopsException("Invalid execution type for function: " + _fname);
+			}
 			//construct input lops (recursive)
 			ArrayList<Lop> tmp = new ArrayList<Lop>();
 			for( Hop in : getInput() )
@@ -178,6 +248,16 @@ public class FunctionOp extends Hop
 	protected ExecType optFindExecType() 
 		throws HopsException 
 	{
+		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
+			System.out.println(getFunctionName() + " " + (getMemEstimate()/1024/1024) + " " + (OptimizerUtils.getMemBudget(true)/1024/1024));
+			// check if there is sufficient memory to execute this function
+			if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
+				return ExecType.CP;
+			}
+			else {
+				throw new HopsException("Insufficient memory to execute function: " + getFunctionName());
+			}
+		}
 		// the actual function call is always CP
 		return ExecType.CP;
 	}

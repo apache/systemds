@@ -28,7 +28,7 @@ public class Binary extends Lop
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
-		MAX, MIN, NOTSUPPORTED};	
+		MAX, MIN, SOLVE, NOTSUPPORTED};	
 	OperationTypes operation;
 	
 
@@ -133,6 +133,9 @@ public class Binary extends Lop
 			return "min";
 		case MAX:
 			return "max";
+			
+		case SOLVE:
+			return "solve";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Binary operation: " + operation);

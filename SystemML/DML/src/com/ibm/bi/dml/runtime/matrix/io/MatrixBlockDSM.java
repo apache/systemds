@@ -149,7 +149,7 @@ public class MatrixBlockDSM extends MatrixValue
 		long lnonZeros = (long) nonZeros;
 		
 		//ensure exact size estimates for write
-		if( sparse || lnonZeros==0 || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
 		{
 			recomputeNonZeros();
 			lnonZeros = (long) nonZeros;
@@ -158,7 +158,7 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		if(sparse)
 		{
-			if(sparseRows==null || lnonZeros==0)
+			if(sparseRows==null)
 				return 9; //empty block
 			else if(lnonZeros>=(lrlen*lclen)*SPARCITY_TURN_POINT || lclen<=SKINNY_MATRIX_TURN_POINT)
 				return lrlen*lclen*8 + 9;	
@@ -174,6 +174,26 @@ public class MatrixBlockDSM extends MatrixValue
 			else
 				return lrlen*lclen*8 + 9;
 		}
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isExactInSparseFormat()
+	{
+		long lrlen = (long) rlen;
+		long lclen = (long) clen;
+		long lnonZeros = (long) nonZeros;
+			
+		//ensure exact size estimates for write
+		if( sparse || lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT )
+		{
+			recomputeNonZeros();
+			lnonZeros = (long) nonZeros;
+		}
+		
+		return (lnonZeros<(lrlen*lclen)*SPARCITY_TURN_POINT && lclen>SKINNY_MATRIX_TURN_POINT);
 	}
 	
 	public static long estimateSizeOnDisk( long lrlen, long lclen, long lnonZeros, boolean sparse )
@@ -5134,7 +5154,11 @@ public class MatrixBlockDSM extends MatrixValue
 				index++;
 			}
 		}
+				
+		//cleanup dense block
+		denseBlock = null;
 	}
+	
 	public void sparseToDense() throws DMLRuntimeException {
 		
 		//LOG.info("**** sparseToDense: "+this.getNumRows()+"x"+this.getNumColumns()+"  nonZeros: "+this.nonZeros);
@@ -5167,6 +5191,8 @@ public class MatrixBlockDSM extends MatrixValue
 			//sparseRows[r].setIndexContainer(null);
 		}
 		
+		//cleanup sparse rows
+		sparseRows = null;
 	}
 	
 	private void denseBinaryInPlaceHelp(BinaryOperator op, MatrixBlockDSM that) throws DMLRuntimeException 
@@ -5394,12 +5420,14 @@ public class MatrixBlockDSM extends MatrixValue
 			// sparse representation
 			sparseRows=new SparseRow[rows];
 			estimatedNNzsPerRow=(int)(clen*sparsity);
-			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
+			for(int i=0; i<rows; i++) {	
 				for(int j=0; j<cols; j++) {
-					if(random.nextDouble() <= sparsity) {
+					if(random.nextDouble() <= sparsity) 
+					{
+						if( sparseRows[i] == null ) //create sparse row if required
+							sparseRows[i] = new SparseRow(estimatedNNzsPerRow, clen);
 						val = min + (range * ru.nextDouble());
-						this.sparseRows[i].append(j, val );
+						sparseRows[i].append(j, val );
 					}
 				}
 			}
@@ -5744,12 +5772,13 @@ public class MatrixBlockDSM extends MatrixValue
 			sparseRows=new SparseRow[rows];
 			estimatedNNzsPerRow=(int)(clen*sparsity);
 			for(int i=0; i<rows; i++) {
-				this.sparseRows[i]=new SparseRow(estimatedNNzsPerRow, clen);	
 				for(int j=0; j<cols; j++) {
 					if(random.nextDouble()>sparsity)
 						continue;
+					if( sparseRows[i] == null ) //create sparse row if required
+						sparseRows[i] = new SparseRow(estimatedNNzsPerRow, clen);	
 					val = rn.nextDouble();
-					this.sparseRows[i].append(j, val );
+					sparseRows[i].append(j, val );
 				}
 			}
 		}

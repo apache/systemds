@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -988,18 +989,15 @@ public class MatrixObject extends CacheableData
 	@Override
 	protected boolean isBelowCachingThreshold()
 	{
-		boolean ret = false;
+		long rlen = _data.getNumRows();
+		long clen = _data.getNumColumns();
+		long nnz = _data.getNonZeros();
 		
-		if( _data.getNonZeros() != -1 ) //nnz known
-		{
-			ret = ( _data.getNonZeros() <= CACHING_THRESHOLD );
-		}
-		else //nnz unknown, use dimensions
-		{
-			ret = (((long)_data.getNumRows())*((long)_data.getNumColumns()) <= CACHING_THRESHOLD ); 
-		}
+		//get in-memory size (assume dense, if nnz unknown)
+		double sparsity = OptimizerUtils.getSparsity( rlen, clen, nnz );
+		double size = MatrixBlock.estimateSize( rlen, clen, sparsity ); 
 		
-		return ret;
+		return ( size <= CACHING_THRESHOLD );
 	}
 	
 	// *******************************************

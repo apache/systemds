@@ -41,25 +41,38 @@ public class ByteBuffer
 	
 	public void serializeMatrix( MatrixBlock mb ) 
 		throws IOException
-	{
-		_sparse = mb.isInSparseFormat();
+	{	
+		boolean sparseSrc = mb.isInSparseFormat(); //current representation
+		boolean sparseTrgt = mb.isExactInSparseFormat(); //intended target representation
+		_sparse = sparseTrgt;
 		
-		if( _sparse )
+		try
 		{
-			//deep serialize (for compression)
-			if( CacheableData.CACHING_BUFFER_PAGECACHE )
-				_bdata = PageCache.getPage(_size);
-			if( _bdata==null )
-				_bdata = new byte[_size];
-			DataOutput dout = new CacheDataOutput(_bdata);
-			mb.write(dout);
+			if( _sparse ) //SPARSE/DENSE -> SPARSE
+			{
+				//deep serialize (for compression)
+				if( CacheableData.CACHING_BUFFER_PAGECACHE )
+					_bdata = PageCache.getPage(_size);
+				if( _bdata==null )
+					_bdata = new byte[_size];
+				DataOutput dout = new CacheDataOutput(_bdata);
+				mb.write(dout);
+			}
+			else //SPARSE/DENSE -> DENSE
+			{
+				//change representation (if required), incl. free sparse
+				if( sparseSrc ) 
+					mb.examSparsity(); 
+				
+				//shallow serialize
+				_mdata = mb;
+			}
 		}
-		else
+		catch(Exception ex)
 		{
-			//shallow serialize
-			_mdata = mb;
+			throw new IOException("Failed to serialize matrix block.", ex);
 		}
-			
+		
 		_serialized = true;
 	}
 	

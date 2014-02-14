@@ -76,6 +76,7 @@ public class LazyWriteBuffer
 						
 						//evict matrix
 						tmp.evictBuffer(ftmp);
+						tmp.freeMemory();
 						_size-=tmp.getSize();
 						
 						if( DMLScript.STATISTICS )

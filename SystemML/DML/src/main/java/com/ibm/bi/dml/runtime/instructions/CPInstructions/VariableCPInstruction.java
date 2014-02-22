@@ -65,9 +65,12 @@ public class VariableCPInstruction extends CPInstruction
 		AssignVariable, 
 		RemoveVariable, 
 		CopyVariable, 
-		RemoveVariableAndFile, 
-		AssignVariableWithFirstValue, 
-		CastAsMatrixVariable, 
+		RemoveVariableAndFile,		 
+		CastAsScalarVariable, 
+		CastAsMatrixVariable,
+		CastAsDoubleVariable,
+		CastAsIntegerVariable,
+		CastAsBooleanVariable,
 		ValuePick, 
 		InMemValuePick, 
 		InMemIQM, 
@@ -111,11 +114,20 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( str.equalsIgnoreCase("rmfilevar") ) 
 			return VariableOperationCode.RemoveVariableAndFile;
 		
-		else if ( str.equalsIgnoreCase("assignvarwithfile") ) 
-			return VariableOperationCode.AssignVariableWithFirstValue;
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_SCALAR_OPCODE) ) 
+			return VariableOperationCode.CastAsScalarVariable;
 		
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) ) 
 			return VariableOperationCode.CastAsMatrixVariable;
+		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) ) 
+			return VariableOperationCode.CastAsDoubleVariable;
+		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_INT_OPCODE) ) 
+			return VariableOperationCode.CastAsIntegerVariable;
+		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_BOOLEAN_OPCODE) ) 
+			return VariableOperationCode.CastAsBooleanVariable;
 		
 		else if ( str.equalsIgnoreCase("valuepick") ) 
 			return VariableOperationCode.ValuePick;
@@ -318,8 +330,8 @@ public class VariableCPInstruction extends CPInstruction
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
-			if ( in1.get_valueType() != in2.get_valueType() ) 
-				throw new DMLRuntimeException("Value type mismatch while assigning variables.");
+			//if ( in1.get_valueType() != in2.get_valueType() ) 
+			//	throw new DMLRuntimeException("Value type mismatch while assigning variables ("+in1.get_valueType()+", "+in2.get_valueType()+").");
 			break;
 			
 		case RemoveVariable:
@@ -340,12 +352,11 @@ public class VariableCPInstruction extends CPInstruction
 				throw new DMLRuntimeException("Unexpected value type for second argument in: " + str);
 			break;
 			
-		case AssignVariableWithFirstValue:
-			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
-			out = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double 
-			break;
-			
+		case CastAsScalarVariable:
 		case CastAsMatrixVariable:
+		case CastAsDoubleVariable:
+		case CastAsIntegerVariable:
+		case CastAsBooleanVariable:			
 			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
 			out = new CPOperand(parts[2]); // output variable name 
 			break;
@@ -514,20 +525,37 @@ public class VariableCPInstruction extends CPInstruction
 			ec.removeVariable( input1.get_name() );
 			break;
 			
-		case AssignVariableWithFirstValue:
+		case CastAsScalarVariable: //castAsScalarVariable
 			MatrixBlock mBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
+			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
+				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 			double value = mBlock.getValue(0,0);
-			//double value = MapReduceTool.readFirstNumberFromHDFSMatrix(mobj.getFileName());
 			ec.releaseMatrixInput(input1.get_name());
 			ec.setScalarOutput(output.get_name(), new DoubleObject(value));
 			break;
-		case CastAsMatrixVariable:
+		case CastAsMatrixVariable:{
 			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
 			MatrixBlock out = new MatrixBlock(1,1,false);
 			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
 			ec.setMatrixOutput(output.get_name(), out);
-			
 			break;
+		}
+		case CastAsDoubleVariable:{ 
+			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+			ec.setScalarOutput(output.get_name(), new DoubleObject(scalarInput.getDoubleValue()));
+			break;
+		}
+		case CastAsIntegerVariable:{ 
+			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+			ec.setScalarOutput(output.get_name(), new IntObject(scalarInput.getIntValue()));
+			break;
+		}
+		case CastAsBooleanVariable:{ 
+			ScalarObject scalarInput = ec.getScalarInput(input1.get_name(), input1.get_valueType(), input1.isLiteral());
+			ec.setScalarOutput(output.get_name(), new BooleanObject(scalarInput.getBooleanValue()));
+			break;
+		}
+		
 		case ValuePick:
 			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
 			// pick a value from "temp3" and assign to Var0

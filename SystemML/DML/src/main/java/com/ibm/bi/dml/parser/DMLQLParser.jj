@@ -144,10 +144,7 @@ MORE :
 }
 
 
-// Multi-line comments; copied from 
-
-// http://www.idevelopment.info/data/Programming/java/JavaCC/The_JavaCC_FAQ.htm#more
-// When a /* is seen in the DEFAULT state, skip it and switch to the IN_COMMENT state
+// Multi-line comments
 MORE : { "/*": IN_COMMENT } 
      
 // When any other character is seen in the IN_COMMENT state, skip it.
@@ -262,7 +259,7 @@ TOKEN :
  	// LITERALS
  
  	// The name of an optree or an existing annotation type.
- 	| <ID : ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
+ 	| <ID : ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_","."])* >
  	| <DOLLAR_ID : "$"["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9","_"])* >
  	| <DOLLAR_ID_POS : "$"(["0"-"9"])+ >
 
@@ -424,7 +421,8 @@ DMLProgram __inputInternal() :
 				try {
 
 					// check if the function is defined in the current namespace
-					if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName())){					    LOG.error(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
+					if (dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).containsKey(first.getName())){
+					    LOG.error(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
 						throw new LanguageException(first.printErrorLocation() + "function " + first.getName() + " already defined in current namespace ");
 					}
 					dmlp.getFunctionStatementBlocks(DMLProgram.DEFAULT_NAMESPACE).put(first.getName(), (FunctionStatementBlock)sb);
@@ -447,7 +445,8 @@ DMLProgram __inputInternal() :
 
 
 Statement AssignValueStatements() :
-{	DataIdentifier id = null;
+{
+	DataIdentifier id = null;
 	ArrayList<ArrayList<Expression>> targetListList = null;
 	Expression source = null;
 	Token t = null, t1 = null, commaToken = null, tEnd = null;
@@ -459,10 +458,12 @@ Statement AssignValueStatements() :
 
 	InputStatement is = null;
 }
-{	
+{
+	
 	(
 	 	id = Identifier() | targetListList = ReadIndexList() )
-		{			if (id != null && id.getName().startsWith("$")) {
+		{
+			if (id != null && id.getName().startsWith("$")) {
 	    		LOG.error(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
 				throw new ParseException(id.printErrorLocation() + " cannot assign value to variable " + id.getName() + " passed from command-line");
 			}
@@ -471,7 +472,8 @@ Statement AssignValueStatements() :
 		t = <ASSIGN >
 
     	(
-	  		(	  	   		(t = <RAND> | t = <MATRIX> )
+	  		(
+	  	   		(t = <RAND> | t = <MATRIX> )
 	  	   	
 				<LEFTPAREN>
 				(
@@ -514,7 +516,8 @@ Statement AssignValueStatements() :
 					{
 						is = new InputStatement(Expression.DataOp.READ);
 
-						if (id == null){							LOG.error(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");
+						if (id == null){
+							LOG.error(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");
 							throw new ParseException(printErrorLocation(t.beginLine, t.beginColumn) + "read statement only supports single assignment");	
 						}
 					}
@@ -529,7 +532,8 @@ Statement AssignValueStatements() :
 					)*
 					tEnd = <RIGHTPAREN> [ <SEMICOLON> ]
 
-					{						if (t.image.equals("readMM")){
+					{
+						if (t.image.equals("readMM")){
 			    			StringIdentifier readMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
 							is.addExprParam(Statement.FORMAT_TYPE, readMMExpr, false);
 						}
@@ -549,7 +553,8 @@ Statement AssignValueStatements() :
 	  	
 		|
 
-		(		  source = Expression() [ <SEMICOLON> ]
+		(
+		  source = Expression() [ <SEMICOLON> ]
 			{
 				if (t.image.equals("=")){
 				  
@@ -581,7 +586,8 @@ PathStatement PathStatement():
 }
 {
 	  
-	tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>	{
+	tStart = <SETWD> <LEFTPAREN> t1 = <DBLQUOTE_STRING_LITERAL> <RIGHTPAREN>
+	{
 		String dequotedString = dequoteStr('\"',t1.image);
 		pstmt.setPathValue(dequotedString);
 		dmlWorkingDir = pstmt.getPathValue();
@@ -762,7 +768,8 @@ ExternalFunctionStatement ExternalFunctionStatement() :
 	{
 		fstmt.setOtherParams(map);
 		fstmt._inputParams = functionInputs ;
-		if (functionOutputs != null) {			fstmt._outputParams = functionOutputs ;
+		if (functionOutputs != null) {
+			fstmt._outputParams = functionOutputs ;
 		}
 		fstmt.setName(t.image);
 
@@ -792,7 +799,8 @@ HashMap <String,String > ReadGenericParamList() :
 		
 }
 {
-		tStart = <LEFTPAREN>
+	
+	tStart = <LEFTPAREN>
 	(
 		{t4 = null;}
 		(t4 = <COMMA>)? t1 = <ID> <ASSIGN>
@@ -854,11 +862,13 @@ Vector<DataIdentifier> ReadTypedArgList() :
 
 		{
 			if (commaToken != null && params.size() == 0)
-			{				LOG.error(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
+			{
+				LOG.error(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
 				throw new ParseException(printErrorLocation(commaToken.beginLine, commaToken.beginColumn) + "extra comma before first parameter");
 			}
 			if (commaToken == null && params.size() > 0)
-			{  				LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
+			{  
+				LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
 				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + "missing comma before function call parameter " + params.size());
 			}
 			
@@ -1050,74 +1060,88 @@ IfStatement IfStatement() :
 
  	(
 		LOOKAHEAD(1) <ELSE>
-  		<LEFTCURLYPAREN>
-   		(
+		(
 			(
-				
-				LOOKAHEAD(3) 	current = FunctionStatement()
-				| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
-				| current = OutputStatement()
-				| current = PrintStatement()
-				| current = WhileStatement()
-				| current = ForStatement()
-				| current = ParForStatement()
-				| current = IfStatement()
-				| current = CVStatement()
-				| current = AssignValueStatements()
-				//	| LOOKAHEAD(ELStatement())					current = ELStatement()
-				//	| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
- 				
-   			)
-   			{
-			    StatementBlock sb = null;
-			    if (current instanceof WhileStatement) {
-			    	sb = new WhileStatementBlock();
-			    }
-			    else if (current instanceof IfStatement) {
-			    	sb = new IfStatementBlock();
-			    }
-			    else if (current instanceof ParForStatement) {
-			    	sb = new ParForStatementBlock();
-			    }
-			    else if (current instanceof ForStatement) {
-			    	sb = new ForStatementBlock();
-			    }
-				else if (current instanceof FunctionStatement) {
-					LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
-			    	throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
-			  	}
-			  	else if (current instanceof ExternalFunctionStatement) {
-					LOG.error(current.printErrorLocation()+ " Nested function definitions are not supported ");
-			  		throw new ParseException(current.printErrorLocation()+ " Nested function definitions are not supported ");
-			  	}
-			  	
-			    else if (current instanceof CVStatement) {
-					//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
-					//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in function definition");
-					sb = new CVStatementBlock();
-				}
-//				else if (current instanceof ELStatement) {
-//					LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
-//					throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in function definition");
-//					//sb = new ELStatementBlock();
-//				}
-//				else if (current instanceof ELUseStatement) {
-//					LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
-//					throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in function definition");
-//					//sb = new ELUseStatementBlock();
-//				}   
-			    else {
-			    	sb = new StatementBlock();
-			    }
-			    sb.addStatement(current);
-			    is.addStatementBlockElseBody(sb);
-			}
-   		)*
- 		tEnd = <RIGHTCURLYPAREN>
-  		{
-    		is.mergeStatementBlocksElseBody();
-  		}
- 	)? [<SEMICOLON>]
+			  
+		  		<LEFTCURLYPAREN>
+		   		(
+					(
+						
+						LOOKAHEAD(3) 	current = FunctionStatement()
+						| LOOKAHEAD(3) 	current = ExternalFunctionStatement()
+						| current = OutputStatement()
+						| current = PrintStatement()
+						| current = WhileStatement()
+						| current = ForStatement()
+						| current = ParForStatement()
+						| current = IfStatement()
+						| current = CVStatement()
+						| current = AssignValueStatements()
+						//	| LOOKAHEAD(ELStatement())					current = ELStatement()
+						//	| LOOKAHEAD(ELUseStatement())				current = ELUseStatement()
+		 				
+		   			)
+		   			{
+					    StatementBlock sb = null;
+					    if (current instanceof WhileStatement) {
+					    	sb = new WhileStatementBlock();
+					    }
+					    else if (current instanceof IfStatement) {
+					    	sb = new IfStatementBlock();
+					    }
+					    else if (current instanceof ParForStatement) {
+					    	sb = new ParForStatementBlock();
+					    }
+					    else if (current instanceof ForStatement) {
+					    	sb = new ForStatementBlock();
+					    }
+						else if (current instanceof FunctionStatement) {
+							LOG.error(current.printErrorLocation() + " Nested function definitions are not supported ");
+					    	throw new ParseException(current.printErrorLocation() + " Nested function definitions are not supported ");
+					  	}
+					  	else if (current instanceof ExternalFunctionStatement) {
+							LOG.error(current.printErrorLocation()+ " Nested function definitions are not supported ");
+					  		throw new ParseException(current.printErrorLocation()+ " Nested function definitions are not supported ");
+					  	}
+					  	
+					    else if (current instanceof CVStatement) {
+							//LOG.error(current.printErrorLocation() + "\"crossval\" not supported in DML");
+							//throw new ParseException(current.printErrorLocation() + "\"crossval\" not supported in function definition");
+							sb = new CVStatementBlock();
+						}
+						//else if (current instanceof ELStatement) {
+						//	LOG.error(current.printErrorLocation() + "\"ensemble\" not supported in DML");
+						//	throw new ParseException(current.printErrorLocation() + "\"ensemble\" not supported in function definition");
+						//	//sb = new ELStatementBlock();
+						//}
+						//else if (current instanceof ELUseStatement) {
+						//	LOG.error(current.printErrorLocation() + "\"use ensemble\" not supported in DML");
+						//	throw new ParseException(current.printErrorLocation() + "\"use ensemble\" not supported in function definition");
+						//	//sb = new ELUseStatementBlock();
+						//}   
+					    else {
+					    	sb = new StatementBlock();
+					    }
+					    sb.addStatement(current);
+					    is.addStatementBlockElseBody(sb);
+					}
+		   		)*
+		 		tEnd = <RIGHTCURLYPAREN>
+		  		{
+		    		is.mergeStatementBlocksElseBody();
+		  		}
+	  		)
+
+			| current = IfStatement()
+
+	  			{
+					StatementBlock sb = new IfStatementBlock();
+					sb.addStatement(current);
+					is.addStatementBlockElseBody(sb);
+					is.mergeStatementBlocksElseBody();
+				}			 
+		)
+	)? [<SEMICOLON>]
  	{
 		// track position for statement
 		blp = tStart.beginLine;
@@ -1428,17 +1452,21 @@ IterablePredicate IterablePredicate() :
 		}
 		if (tSeq != null && !tSeq.image.equals("seq")){
 			LOG.error(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 
-			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 		} 
-   		if (fci == null && exprParams == null){   		    LOG.error(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
+			throw new ParseException(printErrorLocation(tIn.beginLine, tIn.beginColumn) +"for iterable predicate, only function supported is seq"); 
+		} 
+   		if (fci == null && exprParams == null){
+   		    LOG.error(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
   			throw new ParseException(printErrorLocation(tStart.beginLine, tStart.beginColumn) + "iterable predicate in for loop must specify parameters"); 
 		}
 		if (fci != null) {
     		ArrayList<Expression> seqExprs = fci.getParamExpressions();
 
-    		if (seqExprs.size() <  2){    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
+    		if (seqExprs.size() <  2){
+    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
     			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq must specify both from and to value");
 			}
-    		if (seqExprs.size() > 3) {    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
+    		if (seqExprs.size() > 3) {
+    		    LOG.error(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
     			throw new ParseException(printErrorLocation(tSeq.beginLine, tSeq.beginColumn) + "seq cannot specify more than 3 args -- from, to, increment");
   			}
     		else {
@@ -1788,7 +1816,9 @@ Identifier IdentifierOrConstant() :
 
 			String argVal = commandArgs.get(t1.image);
 
-			if (argVal == null)			{			    LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
+			if (argVal == null)
+			{
+			    LOG.error(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
 				throw new ParseException(printErrorLocation(t1.beginLine, t1.beginColumn) + " value for " + t1.image + " is undefined ");
 			}				
 			try {
@@ -1979,7 +2009,8 @@ DataIdentifier Identifier() :
 	int blp = 0, bcp = 0, elp = 0, ecp = 0;
 }
 {
-		  
+	
+	  
 		[LOOKAHEAD(4)tNamespace = <ID>{ blp=tNamespace.beginLine; bcp=tNamespace.beginColumn; elp =tNamespace.endLine; ecp = tNamespace.endColumn;} <COLON><COLON>]
 			t = <ID> { if (tNamespace == null ) { blp=t.beginLine; bcp=t.beginColumn;} elp= t.endLine; ecp =t.endColumn; }
 			(LOOKAHEAD(FunctionCall()) functCall = FunctionCall()  | exprListList = ReadIndexList())?
@@ -2107,7 +2138,8 @@ InputStatement InputStatement() :
 	  	id = Identifier()
 	
 	  	{
-			if (id.getName().startsWith("$")){				LOG.error(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
+			if (id.getName().startsWith("$")){
+				LOG.error(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
 				throw new ParseException(printErrorLocation(id.getBeginLine(), id.getBeginColumn()) + "command-line parameter " + id.getName() + " cannot be assigned a value");
 			}
   	  	}
@@ -2179,12 +2211,14 @@ OutputStatement OutputStatement() :
 		tWrite = tStart;
 		if (tWrite.image.equals("writeMM")){
 
-			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
+			StringIdentifier writeMMExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_MATRIXMARKET);
+			os.addExprParam(Statement.FORMAT_TYPE, writeMMExpr,false);
 		}
 		else if (tWrite.image.equals("write.csv")){
 			StringIdentifier delimitedExpr = new StringIdentifier(Statement.FORMAT_TYPE_VALUE_CSV);
 			os.addExprParam(Statement.FORMAT_TYPE, delimitedExpr, false);
-		}	
+		}
+	
 		blp = tStart.beginLine;
 		bcp = tStart.beginColumn;
 		elp = tEnd.beginLine;

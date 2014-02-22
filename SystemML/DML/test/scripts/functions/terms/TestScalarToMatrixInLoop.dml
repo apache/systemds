@@ -12,6 +12,7 @@
 A = Rand(cols=$$cols$$, rows=$$rows$$);
 W = 5;
 i = 0;
+W = A + W; #otherwise rejected because loop has conditional type change.
 while( i < 1)
 {
 	W = A + W;

@@ -25,6 +25,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.FormatType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 
 
@@ -440,6 +441,12 @@ public class StatementBlock extends LiveVariableAnalysis
 														fstmt.getInputParams().get(i).getEndColumn());
 					}
 					
+					//auto casting of inputs on inlining (if required) TODO discuss with Doug
+					ValueType targetVT = newTarget.getValueType();
+					if( newTarget.getDataType()==DataType.SCALAR && targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING ){
+						currCallParam = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),currCallParam, null, null);
+					}
+
 					// create the assignment statement to bind the call parameter to formal parameter
 					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
 					newStatements.add(binding);
@@ -473,7 +480,14 @@ public class StatementBlock extends LiveVariableAnalysis
 					else{
 						newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));
 					}
-					// create the assignment statement to bind the call parameter to formal parameter
+					
+					//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites) TODO discuss with Doug
+					ValueType sourceVT = newSource.getValueType();
+					if( newSource.getDataType()==DataType.SCALAR && sourceVT != ValueType.STRING ){
+						newSource = new BuiltinFunctionExpression(BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),newSource, null, null);
+					}
+					
+					// create the assignment statement to bind the return parameter to formal parameter
 					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget._beginLine, newTarget._beginColumn, newTarget._endLine, newTarget._endColumn);
 					
 					newStatements.add(binding);
@@ -562,7 +576,10 @@ public class StatementBlock extends LiveVariableAnalysis
 			 	Expression source = as.getSource();
 				
 				if (source instanceof FunctionCallIdentifier)			
-					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars);
+				{
+					FunctionCallIdentifier fcall = (FunctionCallIdentifier) source;
+					fcall.validateExpression(dmlProg, ids.getVariables(),currConstVars);
+				}
 				else
 					source.validateExpression(ids.getVariables(), currConstVars);
 				
@@ -599,6 +616,7 @@ public class StatementBlock extends LiveVariableAnalysis
 					}
 				}
 				// CASE: target NOT indexed identifier
+				
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(source.getOutput());
 					if (source.getOutput() instanceof IndexedIdentifier){
@@ -607,7 +625,8 @@ public class StatementBlock extends LiveVariableAnalysis
 					
 				}
 				// CASE: target is indexed identifier
-				else {
+				else 
+				{
 					// process the "target" being indexed
 					DataIdentifier targetAsSeen = ids.getVariable(target.getName());
 					if (targetAsSeen == null){
@@ -659,12 +678,10 @@ public class StatementBlock extends LiveVariableAnalysis
 										+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols " );
 					}
 					
-					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
-					
-						
+					((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);		
 				}
-				ids.addVariable(target.getName(), target);
 				
+				ids.addVariable(target.getName(), target);
 			}
 			
 			else if (current instanceof MultiAssignmentStatement){

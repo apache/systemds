@@ -1,0 +1,23 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+foo = function(Integer in) return (Matrix[Double] out) 
+{
+   if( 1==1 ){} #prevent inlining
+   out = matrix(1, rows=10, cols=10);
+   out = out*in;
+   #out = matrix(in, rows=10, cols=10); unsupported expression in rand
+}
+
+Y = matrix(1, rows=10, cols=10);
+X = 7;
+X = foo(X);
+
+print("Result: "+sum(X + Y));
+#expected: "Result: 800.0"

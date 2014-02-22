@@ -81,15 +81,30 @@ public class IfStatementBlock extends StatementBlock
 		/////////////////////////////////////////////////////////////////////////////////
 		//  check data type and value type are same for updated variables in both 
 		//	if statement and else statement
+		//  (reject conditional data type change)
 		/////////////////////////////////////////////////////////////////////////////////
 		for (String updatedVar : this._updated.getVariableNames()){
+			DataIdentifier origVersion  = idsOrigCopy.getVariable(updatedVar);
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
 			
-			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getDataType().equals(elseVersion.getOutput().getDataType())){
-				LOG.warn(elseVersion.printWarningLocation() + "variable " + elseVersion.getName() + " defined with different data type in if and else clause");
+			//data type handling: reject conditional data type change
+			if( ifVersion != null && elseVersion != null ) //both branches exist
+			{
+				if (!ifVersion.getOutput().getDataType().equals(elseVersion.getOutput().getDataType())){
+					String error = printErrorLocation() + "IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if/else branch.";
+					LOG.error(error); throw new LanguageException(error);
+				}	
 			}
-					
+			else if( origVersion !=null ) //only if branch exists
+			{
+				if (!ifVersion.getOutput().getDataType().equals(origVersion.getOutput().getDataType())){
+					String error = ifstmt.printErrorLocation() + "IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if branch.";
+					LOG.error(error); throw new LanguageException(error);
+				}
+			}
+			
+			//value type handling		
 			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getValueType().equals(elseVersion.getOutput().getValueType())){
 				LOG.warn(elseVersion.printWarningLocation() + "variable " + elseVersion.getName() + " defined with different value type in if and else clause");
 			}
@@ -203,6 +218,8 @@ public class IfStatementBlock extends StatementBlock
 				if( ifVersionDim2 == elseVersionDim2 ){
 					updatedDim2 = ifVersionDim2;
 				}
+				
+				
 				//NOTE: nnz not propagated via validate, and hence, we conservatively assume that nnz have been changed.
 				//if( ifVersion.getNnz() == elseVersion.getNnz() ){
 				//	updatedNnz = ifVersion.getNnz();

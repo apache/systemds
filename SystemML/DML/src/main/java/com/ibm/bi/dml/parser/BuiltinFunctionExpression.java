@@ -288,13 +288,48 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkNumParameters(1);
 			checkMatrixParam(_first);
 			if (( _first.getOutput().getDim1() != -1 && _first.getOutput().getDim1() !=1) || ( _first.getOutput().getDim2() != -1 && _first.getOutput().getDim2() !=1)) {
-				throw new LanguageException(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2 " + _first.getOutput().getDim2(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				throw new LanguageException(this.printErrorLocation() + "dimension mismatch while casting matrix to scalar: dim1: " + _first.getOutput().getDim1() +  " dim2: " + _first.getOutput().getDim2(), LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
 			output.setValueType(id.getValueType());
 			break;
+		case CAST_AS_MATRIX:
+			checkNumParameters(1);
+			checkScalarParam(_first);
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(1, 1);
+			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
+			output.setValueType(id.getValueType());
+			break;
+		case CAST_AS_DOUBLE:
+			checkNumParameters(1);
+			checkScalarParam(_first);
+			output.setDataType(DataType.SCALAR);
+			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
+			output.setDimensions(0, 0);
+			output.setBlockDimensions (0, 0);
+			output.setValueType(ValueType.DOUBLE);
+			break;
+		case CAST_AS_INT:
+			checkNumParameters(1);
+			checkScalarParam(_first);
+			output.setDataType(DataType.SCALAR);
+			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
+			output.setDimensions(0, 0);
+			output.setBlockDimensions (0, 0);
+			output.setValueType(ValueType.INT);
+			break;
+		case CAST_AS_BOOLEAN:
+			checkNumParameters(1);
+			checkScalarParam(_first);
+			output.setDataType(DataType.SCALAR);
+			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
+			output.setDimensions(0, 0);
+			output.setBlockDimensions (0, 0);
+			output.setValueType(ValueType.BOOLEAN);
+			break;	
 		case APPEND:
 			checkNumParameters(2);
 			checkMatrixParam(_first);
@@ -954,8 +989,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
 		else if (functionName.equals("colMeans"))
 			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
-		else if (functionName.equals("castAsScalar"))
+		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) //'castAsScalar' for backwards compatibility
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
+		else if (functionName.equals("as.matrix"))
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_MATRIX;
+		else if (functionName.equals("as.double"))
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_DOUBLE;
+		else if (functionName.equals("as.integer"))
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_INT;
+		else if (functionName.equals("as.logical")) //alternative: as.boolean
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_BOOLEAN;
 		else if (functionName.equals("quantile"))
 			bifop= Expression.BuiltinFunctionOp.QUANTILE;
 		else if (functionName.equals("interQuantile"))
@@ -991,4 +1034,25 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return retVal;
 	} // end method getBuiltinFunctionExpression
 
+	/**
+	 * 
+	 * @param vt
+	 * @return
+	 * @throws LanguageException
+	 */
+	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) 
+		throws LanguageException
+	{
+		switch( vt )
+		{
+			case DOUBLE:
+				return BuiltinFunctionOp.CAST_AS_DOUBLE;
+			case INT:
+				return BuiltinFunctionOp.CAST_AS_INT;
+			case BOOLEAN:
+				return BuiltinFunctionOp.CAST_AS_BOOLEAN;
+			default:
+				throw new LanguageException("No cast for value type "+vt);
+		}
+	}
 }

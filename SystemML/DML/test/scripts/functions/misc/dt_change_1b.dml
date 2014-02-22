@@ -1,0 +1,20 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+Y = matrix(1, rows=10, cols=10);
+
+if( 1==1 ) {
+   X = matrix(7, rows=10, cols=10);
+}
+else {
+   X = matrix(7, rows=10, cols=10);
+}
+
+print("Result: "+sum(X + Y));
+#expected: "Result: 800.0"

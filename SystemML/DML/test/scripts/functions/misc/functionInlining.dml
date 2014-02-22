@@ -1,0 +1,30 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+foo = function(Double in) return (Double out)
+{
+   out = in + in; #will be inlined
+}
+
+foo2 = function(Integer in) return (Double out)
+{ 
+   out = in + in; #will be inlined
+}
+
+x = $1;
+
+if( 1!=1 ){
+  x = x;
+}
+
+ret1 = foo(x);
+ret2 = foo2(x);
+ 
+print("Result1: "+ret1);
+print("Result2: "+ret2);

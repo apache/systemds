@@ -45,7 +45,11 @@ public abstract class Expression
 		ASIN, 
 		ATAN,
 		AVG,
-		CAST_AS_SCALAR, 
+		CAST_AS_MATRIX, 
+		CAST_AS_SCALAR,
+		CAST_AS_DOUBLE, 
+		CAST_AS_INT,
+		CAST_AS_BOOLEAN,
 		CENTRALMOMENT, 
 		COLMEAN,
 		COLMAX,
@@ -266,7 +270,7 @@ public abstract class Expression
 
 		if (d1 == d2)
 			return d1;
-
+		
 		if (cast) {
 			if (d1 == DataType.MATRIX && d2 == DataType.SCALAR)
 				return DataType.MATRIX;

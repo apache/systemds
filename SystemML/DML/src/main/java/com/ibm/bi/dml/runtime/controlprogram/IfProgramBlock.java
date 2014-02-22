@@ -19,8 +19,6 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ComputationCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.CPInstructions.IntObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.StringObject;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CPInstruction.CPINSTRUCTION_TYPE;
@@ -195,61 +193,30 @@ public class IfProgramBlock extends ProgramBlock
 			}
 			else 
 			{
-				// TODO: Doug: how do we differentiate variables and literals here?
+				//get result var
 				ScalarObject scalarResult = null;
 				Data resultData = ec.getVariable(_predicateResultVar);
 				if ( resultData == null ) {
-					// resultvar is a literal (can it be of any value type other than BOOLEAN??) 
+					//note: resultvar is a literal (can it be of any value type other than String, hence no literal/varname conflict) 
 					scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN, true);
 				}
 				else {
 					scalarResult = ec.getScalarInput(_predicateResultVar, ValueType.BOOLEAN, false);
 				}
-				if (scalarResult instanceof StringObject){
-					// throw runtime exception -- variable evaluated to string
-					result = null;
-					LOG.trace(this.printBlockErrorLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to string " + scalarResult + " which is not allowed for predicates in DML");
+				
+				//check for invalid type String 
+				if (scalarResult instanceof StringObject)
 					throw new DMLRuntimeException(this.printBlockErrorLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to string " + scalarResult + " which is not allowed for predicates in DML");
-				}	
-				else if (scalarResult instanceof IntObject){
-					// throw runtime exception -- variable evaluated to string
-					if (((IntObject)scalarResult).getIntValue() == 0){
-						result =  new BooleanObject(false);
-					}
-					else if (((IntObject)scalarResult).getIntValue() == 1){
-						result =  new BooleanObject(true);
-					} 
-					else {
-						result = new BooleanObject(true);
-						LOG.warn(this.printWarningLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to integer " + scalarResult + " which is converted in DML to logical true");
-						//throw new DMLRuntimeException(this.printBlockErrorLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to integer " + scalarResult + " which is not allowed for predicates in DML");
 				
-					}
-				}
-				else if (scalarResult instanceof DoubleObject){
-					// throw runtime exception -- variable evaluated to string
-					if (((DoubleObject)scalarResult).getIntValue() == 0){
-						result =  new BooleanObject(false);
-					}
-					else if (((DoubleObject)scalarResult).getIntValue() == 1){
-						result =  new BooleanObject(true);
-					} 
-					else {
-						result = new BooleanObject(true);
-						LOG.warn(this.printWarningLocation() + "\nIf predicate variable "+ _predicateResultVar + " evaluated to double " + scalarResult + " which is converted in DML to logical true");
-						
-				
-					}
-				}
-				else {
+				//process result
+				if( scalarResult instanceof BooleanObject )
 					result = (BooleanObject)scalarResult;
-				}
+				else
+					result = new BooleanObject( scalarResult.getBooleanValue() ); //auto casting
 			}
-			
 		}
 		catch(Exception ex)
 		{
-			LOG.trace("\nIf predicate variables: "+ ec.getVariables().toString());
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.", ex);
 		}
 		

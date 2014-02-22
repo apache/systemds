@@ -239,6 +239,13 @@ public class InterProceduralAnalysis
 	 */
 	private void pruneFunctionCandidatesForStatisticPropagation(HashMap<String, Integer> fcand)
 	{
+		//debug input
+		if( LOG.isDebugEnabled() )
+			for( String key : fcand.keySet() )
+			{
+				LOG.debug("IPA: FUNC statistic propagation candidate: "+key+", callCount="+fcand.get(key));
+			}
+		
 		//materialize key set
 		HashSet<String> tmp = new HashSet<String>();
 		for( String key : fcand.keySet() )
@@ -256,8 +263,8 @@ public class InterProceduralAnalysis
 		if( LOG.isDebugEnabled() )
 			for( String key : fcand.keySet() )
 			{
-				LOG.debug("IPA: FUNC statistic propagation candidate: "+key);
-				//System.out.println("IPA: FUNC statistic propagation candidate: "+key);
+				LOG.debug("IPA: FUNC statistic propagation candidate (after pruning): "+key);
+				//System.out.println("IPA: FUNC statistic propagation candidate (after pruning): "+key);
 			}
 	}
 

@@ -2891,14 +2891,22 @@ public class DMLTranslator
 			break;
 
 		case CAST_AS_SCALAR:
-			// TODO: fix the hops/lops first.
-			try {
-				currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
-			} catch (HopsException e) {
-				e.printStackTrace();
-			}
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
 			break;
+		case CAST_AS_MATRIX:
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), Hop.OpOp1.CAST_AS_MATRIX, expr);
+			break;	
 
+		case CAST_AS_DOUBLE:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.DOUBLE, Hop.OpOp1.CAST_AS_DOUBLE, expr);
+			break;
+		case CAST_AS_INT:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT, Hop.OpOp1.CAST_AS_INT, expr);
+			break;
+		case CAST_AS_BOOLEAN:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
+			break;
+			
 		case ABS:
 		case SIN:
 		case COS:

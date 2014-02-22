@@ -23,19 +23,19 @@
 
 #changing to additive sar since R's arima seems to do that
 
-arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer p, Integer P, Integer q, Integer Q, Integer s, Integer useJacobi) return (Double obj){
+arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer pIn, Integer P, Integer qIn, Integer Q, Integer s, Integer useJacobi) return (Double obj){
 	b = X[,2:ncol(X)]%*%w
 	
 	R = Rand(rows=nrow(X), cols=nrow(X), min=0, max=0)
-	for(i7 in 1:q){
-		ma_ind_ns = P+p+i7
+	for(i7 in 1:qIn){
+		ma_ind_ns = P+pIn+i7
 		err_ind_ns = i7
 		ones_ns = Rand(rows=nrow(R)-err_ind_ns, cols=1, min=1, max=1)
 		d_ns = ones_ns * castAsScalar(w[ma_ind_ns,1])
 		R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] = R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] + diag(d_ns)
 	}
 	for(i8 in 1:Q){
-		ma_ind_s = P+p+q+i8
+		ma_ind_s = P+pIn+qIn+i8
 		err_ind_s = s*i8
 		ones_s = Rand(rows=nrow(R)-err_ind_s, cols=1, min=1, max=1)
 		d_s = ones_s * castAsScalar(w[ma_ind_s,1])
@@ -266,10 +266,10 @@ while(continue == 1 & num_func_invoc <= max_func_invoc) {
 
 best_point = simplex[,best_index]
 if(include_mean == 1){
-	tmp = Rand(rows=totcols, cols=1, min=0, max=0)
-	tmp[1:nrow(best_point),1] = best_point
-	tmp[nrow(tmp),1] = mu
-	best_point = tmp
+	tmp2 = Rand(rows=totcols, cols=1, min=0, max=0)
+	tmp2[1:nrow(best_point),1] = best_point
+	tmp2[nrow(tmp2),1] = mu
+	best_point = tmp2
 }
 
 write(best_point, $12, format="text")

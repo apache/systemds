@@ -18,6 +18,8 @@ import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.Recompiler;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.BooleanObject;
+import com.ibm.bi.dml.runtime.instructions.CPInstructions.DoubleObject;
 
 
 public class ForStatementBlock extends StatementBlock 
@@ -100,6 +102,12 @@ public class ForStatementBlock extends StatementBlock
 			
 			if (startVersion != null && endVersion != null)
 			{
+				//handle data type change (reject) 
+				if (!startVersion.getOutput().getDataType().equals(endVersion.getOutput().getDataType())){
+					String error = printErrorLocation() + "ForStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.";
+					LOG.error(error); throw new LanguageException(error);
+				}	
+				
 				//handle size change
 				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
 				long endVersionDim1		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
@@ -364,7 +372,19 @@ public class ForStatementBlock extends StatementBlock
 			if (currConstVars.containsKey(identifierName))
 			{
 				ConstIdentifier constValue = currConstVars.get(identifierName);
-				ret = new IntIdentifier((IntIdentifier)constValue);
+				//AUTO CASTING (using runtime operations for consistency)
+				switch( constValue.getValueType() ) 
+				{
+					case DOUBLE: 
+						ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier)constValue).getValue()).getLongValue());
+						break;
+					case INT:    
+						ret = new IntIdentifier((IntIdentifier)constValue);
+						break;
+					case BOOLEAN: 
+						ret = new IntIdentifier(new BooleanObject(((BooleanIdentifier)constValue).getValue()).getLongValue());
+						break;
+				}
 			}
 		}
 		else

@@ -21,14 +21,21 @@ import com.ibm.bi.dml.parser.Expression.*;
 public class UnaryCP extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, PRINT, NROW, NCOL, LENGTH, ROUND, PRINT2, NOTSUPPORTED
 	};
-	public static final String CAST_AS_MATRIX_OPCODE = "castAsMatrix";
+	
+	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
+	public static final String CAST_AS_MATRIX_OPCODE = "castdtm";
+	public static final String CAST_AS_DOUBLE_OPCODE = "castvtd";
+	public static final String CAST_AS_INT_OPCODE    = "castvti";
+	public static final String CAST_AS_BOOLEAN_OPCODE = "castvtb";
 
+	
+	
 	OperationTypes operation;
 
 	/**
@@ -122,14 +129,28 @@ public class UnaryCP extends Lop
 			opString += "print2";
 			break;
 
+		case CAST_AS_MATRIX:
+			opString += CAST_AS_MATRIX_OPCODE;
+			break;	
+			
 		// CAST_AS_SCALAR, NROW, NCOL, LENGTH builtins take matrix as the input
 		// and produces a scalar
 		case CAST_AS_SCALAR:
-			opString += "assignvarwithfile";
+			opString += CAST_AS_SCALAR_OPCODE; //old opcode "assignvarwithfile";
 			break;
-		case CAST_AS_MATRIX:
-			opString += CAST_AS_MATRIX_OPCODE;
+
+		case CAST_AS_DOUBLE:
+			opString += CAST_AS_DOUBLE_OPCODE; 
 			break;
+
+		case CAST_AS_INT:
+			opString += CAST_AS_INT_OPCODE; 
+			break;
+
+		case CAST_AS_BOOLEAN:
+			opString += CAST_AS_BOOLEAN_OPCODE; 
+			break;
+
 		case NROW:
 			opString += "nrow";
 			break;

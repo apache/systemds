@@ -33,7 +33,7 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
 public class ProgramRewriter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ArrayList<HopRewriteRule> _ruleSet = null;
@@ -51,6 +51,7 @@ public class ProgramRewriter
 			_ruleSet.add( new RewriteConstantFolding()                ); //dependencies: common subexpression elimination
 		_ruleSet.add(     new RewriteMatrixMultChainOptimization()    );
 		_ruleSet.add(     new RewriteAlgebraicSimplification()        ); //dependencies: common subexpression elimination
+		_ruleSet.add(     new RewriteRemoveUnnecessaryCasts()         );
 	}
 	
 	/**

@@ -643,7 +643,9 @@ public abstract class Hop
 
 	// TODO BJR: I intend to remove OpOp1.MINUS, once we made the change
 	public enum OpOp1 {
-		MINUS, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, CAST_AS_SCALAR, PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
+		MINUS, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
+		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, PRINT2
 	}
 
 	// Operations that require two operands
@@ -823,6 +825,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
 		HopsOpOp1LopsU.put(OpOp1.ROUND, com.ibm.bi.dml.lops.Unary.OperationTypes.ROUND);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 	}
 
 	static public HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
@@ -841,6 +844,10 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.EXP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.EXP);
 		HopsOpOp1LopsUS.put(OpOp1.LOG, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LOG);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_INT);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
 		HopsOpOp1LopsUS.put(OpOp1.NROW, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NROW);
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LENGTH);

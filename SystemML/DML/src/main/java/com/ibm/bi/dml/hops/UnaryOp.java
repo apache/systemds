@@ -42,10 +42,6 @@ public class UnaryOp extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	public enum Position {
-		before, after, none
-	};
 
 	private OpOp1 _op = null;
 
@@ -55,7 +51,8 @@ public class UnaryOp extends Hop
 	}
 	
 	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp)
-			throws HopsException {
+			throws HopsException 
+	{
 		super(Hop.Kind.UnaryOp, l, dt, vt);
 
 		getInput().add(0, inp);
@@ -97,37 +94,40 @@ public class UnaryOp extends Hop
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{		
-		if (get_lops() == null) {
-			try {
-			if (get_dataType() == DataType.SCALAR) {
-				if (_op == Hop.OpOp1.IQM) {
+		//reuse existing lop
+		if( get_lops() != null )
+			return get_lops();
+		
+		try 
+		{
+			Hop input = getInput().get(0);
+			
+			if (get_dataType() == DataType.SCALAR || _op == OpOp1.CAST_AS_MATRIX) 
+			{
+				if (_op == Hop.OpOp1.IQM)  //special handling IQM
+				{
 					ExecType et = optFindExecType();
 					if ( et == ExecType.MR ) {
-						CombineUnary combine = CombineUnary
-								.constructCombineLop(
-										getInput()
-												.get(0).constructLops(),
-										DataType.MATRIX, get_valueType());
+						CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
+										                       DataType.MATRIX, get_valueType());
 						combine.getOutputParameters().setDimensions(
-								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(), 
-								getInput().get(0).get_rows_in_block(),
-								getInput().get(0).get_cols_in_block(),
-								getInput().get(0).getNnz());
+								input.get_dim1(),
+								input.get_dim2(), 
+								input.get_rows_in_block(),
+								input.get_cols_in_block(),
+								input.getNnz());
 	
-						SortKeys sort = SortKeys
-								.constructSortByValueLop(
-										combine,
-										SortKeys.OperationTypes.WithNoWeights,
-										DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
+						SortKeys sort = SortKeys.constructSortByValueLop(combine,
+										           SortKeys.OperationTypes.WithNoWeights,
+										           DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
 	
 						// Sort dimensions are same as the first input
 						sort.getOutputParameters().setDimensions(
-								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(),
-								getInput().get(0).get_rows_in_block(),
-								getInput().get(0).get_cols_in_block(),
-								getInput().get(0).getNnz());
+								input.get_dim1(),
+								input.get_dim2(),
+								input.get_rows_in_block(),
+								input.get_cols_in_block(),
+								input.getNnz());
 	
 						Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
 						
@@ -186,10 +186,8 @@ public class UnaryOp extends Hop
 	
 						binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 						
-						BinaryCP binScalar2 = new BinaryCP(
-								unary1, binScalar1, HopsOpOp2LopsBS
-										.get(Hop.OpOp2.DIV), DataType.SCALAR,
-								get_valueType());
+						BinaryCP binScalar2 = new BinaryCP(unary1, binScalar1, HopsOpOp2LopsBS.get(Hop.OpOp2.DIV), 
+								                           DataType.SCALAR,get_valueType());
 						binScalar2.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 						
 						binScalar2.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -198,20 +196,17 @@ public class UnaryOp extends Hop
 					}
 					else {
 						SortKeys sort = SortKeys.constructSortByValueLop(
-								getInput().get(0).constructLops(), 
+								input.constructLops(), 
 								SortKeys.OperationTypes.WithNoWeights, 
 								DataType.MATRIX, ValueType.DOUBLE, et );
 						sort.getOutputParameters().setDimensions(
-								getInput().get(0).get_dim1(),
-								getInput().get(0).get_dim2(),
-								getInput().get(0).get_rows_in_block(),
-								getInput().get(0).get_cols_in_block(),
-								getInput().get(0).getNnz());
-						PickByCount pick = new PickByCount(
-								sort,
-								null,
-								get_dataType(),
-								get_valueType(),
+								input.get_dim1(),
+								input.get_dim2(),
+								input.get_rows_in_block(),
+								input.get_cols_in_block(),
+								input.getNnz());
+						PickByCount pick = new PickByCount(sort, null,
+								get_dataType(),get_valueType(),
 								PickByCount.OperationTypes.IQM, et, true);
 			
 						pick.getOutputParameters().setDimensions(get_dim1(),
@@ -221,29 +216,34 @@ public class UnaryOp extends Hop
 						
 						set_lops(pick);
 					}
-				} else {
-					UnaryCP unary1 = new UnaryCP(
-							getInput().get(0).constructLops(), HopsOpOp1LopsUS
-									.get(_op), get_dataType(), get_valueType());
+				} 
+				else //general case SCALAR/CAST (always in CP)
+				{
+					UnaryCP.OperationTypes optype = HopsOpOp1LopsUS.get(_op);
+					if( optype == null )
+						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
+					
+					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, get_dataType(), get_valueType());
 					unary1.getOutputParameters().setDimensions(get_dim1(), get_dim2(), 
 							             get_rows_in_block(), get_cols_in_block(), getNnz());
 					unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 					set_lops(unary1);
 				}
-
-			} else {
+			} 
+			else //general case MATRIX
+			{
 				ExecType et = optFindExecType();
-				Unary unary1 = new Unary(
-						getInput().get(0).constructLops(), HopsOpOp1LopsU
-								.get(_op), get_dataType(), get_valueType(), et);
+				Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
+						                 get_dataType(), get_valueType(), et);
 				unary1.getOutputParameters().setDimensions(get_dim1(),
 						get_dim2(), get_rows_in_block(), get_cols_in_block(), getNnz());
 				unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 				set_lops(unary1);
 			}
-			} catch (Exception e) {
-				throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
-			}
+		} 
+		catch (Exception e) 
+		{
+			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 		}
 		
 		return get_lops();
@@ -526,7 +526,9 @@ public class UnaryOp extends Hop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() 
+		throws HopsException 
+	{
 		
 		checkAndSetForcedPlatform();
 	

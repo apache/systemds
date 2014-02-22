@@ -138,16 +138,18 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "cpvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmvar"    	, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "assignvarwithfile", CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_DOUBLE_OPCODE, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "valuepick"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "iqsize"      , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "read"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "write" 		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "createvar"   , CPINSTRUCTION_TYPE.Variable);
-		//String2CPInstructionType.put( "setfilename" , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "seqincr" 	,CPINSTRUCTION_TYPE.Variable); 
+		String2CPInstructionType.put( "seqincr" 	, CPINSTRUCTION_TYPE.Variable); 
 
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);

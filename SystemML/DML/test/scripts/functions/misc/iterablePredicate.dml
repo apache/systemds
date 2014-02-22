@@ -1,0 +1,25 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+from = $1;
+to = $2;
+
+# test auto casting constant propagation
+for( i in from:to ) {
+   print( "Result: "+i );
+}
+
+# test auto casting with variables
+if( 1==1 ){
+   from = 1 + from;
+   to = 10 + to;
+}
+for( i in from:to ) {
+   print( "Result: "+i );
+}

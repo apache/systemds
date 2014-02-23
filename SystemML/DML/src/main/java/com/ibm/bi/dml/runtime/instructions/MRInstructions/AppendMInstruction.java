@@ -54,7 +54,7 @@ public class AppendMInstruction extends BinaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 
@@ -65,6 +65,7 @@ public class AppendMInstruction extends BinaryMRInstructionBase
 		{
 			if(in1==null)
 				continue;
+			
 			//check if this is a boundary block
 			long lastBlockColIndex=_offset/blockColFactor;
 			if(_offset%blockColFactor!=0)
@@ -73,9 +74,8 @@ public class AppendMInstruction extends BinaryMRInstructionBase
 				cachedValues.add(output, in1);
 			else
 			{
-				MatrixValue value_in2=MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor);
+				MatrixValue value_in2 = MRBaseForCommonInstructions.getDataFromDistributedCache(input2, in1.getIndexes().getRowIndex(), 1, blockRowFactor, blockColFactor).getValue();
 				
-				//MatrixValue value_in2=cachedValues.getFirst(input2).getValue();
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
 				IndexedMatrixValue first=cachedValues.holdPlace(output, valueClass);

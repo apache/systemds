@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -13,7 +13,6 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.io.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -27,7 +26,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 public class AggregateBinaryInstruction extends BinaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public AggregateBinaryInstruction(Operator op, byte in1, byte in2, byte out, String istr)
@@ -65,21 +64,20 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
-
-		MatrixValue vector=null;
-		if ( in2 == null ) {
-			//vector = MRBaseForCommonInstructions.loadDataFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1); // MRBaseForCommonInstructions.distCacheValues.get(input2);
-			vector = MRBaseForCommonInstructions.readBlockFromDistributedCache(input2, in1.getIndexes().getColumnIndex(), 1, blockRowFactor, blockColFactor); // MRBaseForCommonInstructions.distCacheValues.get(input2);
-			if ( vector == null )
-				throw new DMLRuntimeException("Unexpected: vector read from distcache is null!");
-			in2 = new IndexedMatrixValue(new MatrixIndexes(in1.getIndexes().getColumnIndex(),1), vector);
+		
+		//load data from distcache (matrix vector)
+		if ( in2 == null ) 
+		{
+			in2 = MRBaseForCommonInstructions.getDataFromDistributedCache(
+						input2, in1.getIndexes().getColumnIndex(), 1, 
+						blockRowFactor, blockColFactor);
 		}
 		
-		if(in1==null || (in2==null && vector==null))
+		if(in1==null || in2==null)
 			return;
 
 		//allocate space for the output value
@@ -90,22 +88,15 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			out=cachedValues.holdPlace(output, valueClass);
 		
 		//process instruction
-		//if ( instString.contains("mvmult") ) {
-		//	OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-		//			new MatrixIndexes(1,1), vector, out.getIndexes(), out.getValue(), 
-		//			((AggregateBinaryOperator)optr), true);
-		//}
-		//else {
-			//System.out.println("matmult: [" + in1.getIndexes() + "] x [" + in2.getIndexes() +"]");
-			OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), in1.getValue(), 
-					in2.getIndexes(), in2.getValue(), out.getIndexes(), out.getValue(), 
+		OperationsOnMatrixValues.performAggregateBinary(
+				    in1.getIndexes(), in1.getValue(), 
+					in2.getIndexes(), in2.getValue(), 
+					out.getIndexes(), out.getValue(), 
 					((AggregateBinaryOperator)optr), false);
-		//}
 		
 		//put the output value in the cache
 		if(out==tempValue)
 			cachedValues.add(output, out);
-		//System.out.println("--> " + in1.getIndexes() + " x " + in2.getIndexes() + " = " + out.getIndexes());
 	}
 
 }

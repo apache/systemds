@@ -15,7 +15,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.OutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
@@ -48,6 +50,7 @@ import com.ibm.bi.dml.runtime.matrix.io.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.IJV;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlockDSM.SparseCellIterator;
 import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 
 /**
@@ -59,7 +62,7 @@ import com.ibm.bi.dml.runtime.matrix.io.SparseRow;
 public class DataConverter 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 	//////////////
@@ -276,6 +279,7 @@ public class DataConverter
 		
 		return readMatrixFromHDFS(prop);
 	}
+	
 	/**
 	 * 
 	 * @param dir
@@ -411,6 +415,43 @@ public class DataConverter
 		return ret;
 	}
 
+	public static ArrayList<IndexedMatrixValue> readMatrixBlocksFromHDFS(String dir, InputInfo inputInfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
+		throws IOException
+	{	
+		//Timing time = new Timing(true);
+		
+		ArrayList<IndexedMatrixValue> ret = new ArrayList<IndexedMatrixValue>();
+		
+		//check input format
+		if( inputInfo != InputInfo.BinaryBlockInputInfo )
+			throw new IOException("Read matrix blocks from hdfs is only supported for binary blocked format.");
+		
+		//prepare file access
+		JobConf job = new JobConf();	
+		FileSystem fs = (localFS) ? FileSystem.getLocal(job) : FileSystem.get(job);
+		Path path = new Path( ((localFS) ? "file:///" : "") + dir); 
+		if( !fs.exists(path) )	
+			throw new IOException("File "+path+" does not exist on HDFS/LFS.");
+		
+		try 
+		{
+			//check for empty file
+			if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
+				throw new EOFException("Empty input file "+ path +".");
+			
+			readBinaryBlockMatrixBlocksFromHDFS( path, job, fs, ret, rlen, clen, brlen, bclen );
+			
+		} 
+		catch (Exception e) 
+		{
+			throw new IOException(e);
+		}
+
+		//System.out.println("read matrix ("+rlen+","+clen+","+ret.getNonZeros()+") in "+time.stop());
+		
+		return ret;
+	}
+	
 	/**
 	 * Reads a partition that contains the given block index (rowBlockIndex, colBlockIndex)
 	 * from a file on HDFS/LocalFS as specified by <code>dir</code>, which is partitioned using 
@@ -656,6 +697,8 @@ public class DataConverter
 					InputStream in = hdfs.open(partPaths[i]);
 					try {
 						IOUtils.copyBytes(in, out, conf, false);
+						if(i<numPartFiles-1)
+							out.write('\n');
 					} finally {
 						in.close();
 					}
@@ -1496,6 +1539,45 @@ public class DataConverter
 		}
 	}
 	
+	
+	private static void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
+		throws IOException, IllegalAccessException, InstantiationException
+	{
+		MatrixIndexes key = new MatrixIndexes(); 
+		MatrixBlock value = new MatrixBlock();
+			
+		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
+		{
+			//directly read from sequence files (individual partfiles)
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
+			
+			try
+			{
+				while( reader.next(key, value) )
+				{	
+					int row_offset = (int)(key.getRowIndex()-1)*brlen;
+					int col_offset = (int)(key.getColumnIndex()-1)*bclen;
+					int rows = value.getNumRows();
+					int cols = value.getNumColumns();
+					
+					//bound check per block
+					if( row_offset + rows < 0 || row_offset + rows > rlen || col_offset + cols<0 || col_offset + cols > clen )
+					{
+						throw new IOException("Matrix block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
+								              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+					}
+			
+					//copy block to result
+					dest.add(new IndexedMatrixValue(key, value));
+				}
+			}
+			finally
+			{
+				if( reader != null )
+					reader.close();
+			}
+		}
+	}
 	
 	
 	//////////////

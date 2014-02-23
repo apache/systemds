@@ -159,7 +159,6 @@ public class Statistics
 		});
 		
 		//prepare output string
-		System.out.println("stats len "+len);
 		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<Math.min(num, len); i++ ){
 			String key = tmp[len-1-i].getKey();

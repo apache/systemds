@@ -74,7 +74,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	{
 		LOG.trace("execute RemoteParWorkerMapper "+_stringID+" ("+_workerID+")");
 		
-		int numIters = getExecutedIterations(); //for multiple iterations
+		int numIters = getExecutedIterations(); //for multiple iterations / jvm reuse
 		
 		try 
 		{
@@ -173,7 +173,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocksInMapper(job);
 				ParForBody body = ProgramConverter.parseParForBody(in, (int)_workerID);
-				
 				_childBlocks = body.getChildBlocks();
 				_ec          = body.getEc();				
 				_resultVars  = body.getResultVarNames();

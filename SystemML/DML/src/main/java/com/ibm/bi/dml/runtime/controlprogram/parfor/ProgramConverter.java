@@ -1348,6 +1348,7 @@ public class ProgramConverter
 		if( !InfrastructureAnalyzer.isLocalMode() ) {
 			DMLConfig config = DMLConfig.parseDMLConfig(confStr);
 			ConfigurationManager.setConfig(config);
+			ParForProgramBlock.initInternalConfigurations(config);
 		}
 		
 		//handle additional configs

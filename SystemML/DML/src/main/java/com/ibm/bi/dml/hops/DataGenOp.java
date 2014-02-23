@@ -30,7 +30,6 @@ import com.ibm.bi.dml.sql.sqllops.SQLLopProperties.JOINTYPE;
 import com.ibm.bi.dml.sql.sqllops.SQLLops.GENERATES;
 
 /**
- * <p>Defines a Rand-HOP.</p>
  * 
  * 
  */
@@ -199,7 +198,11 @@ public class DataGenOp extends Hop
 					ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 				}
 				else
-					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+				{
+					ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
+					//disabled sparsity-aware estimation due to dense generation, we can re-enable it once, we have a sparse generation method
+					//ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+				}
 			}
 			else {
 				_outputMemEstimate = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
@@ -313,6 +316,7 @@ public class DataGenOp extends Hop
 		return System.nanoTime();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{

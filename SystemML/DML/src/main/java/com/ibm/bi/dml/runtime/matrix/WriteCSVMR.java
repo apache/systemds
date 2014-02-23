@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
@@ -57,7 +58,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 public class WriteCSVMR 
 {
     @SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
 
@@ -98,6 +99,8 @@ public class WriteCSVMR
 		
 		//set up the number of reducers
 		MRJobConfiguration.setNumReducers(job, maxRlen, numReducers);
+		//job.setInt("mapred.tasktracker.map.tasks.maximum", 2);
+		//job.setNumReduceTasks(2);
 		
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];
 		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
@@ -158,13 +161,13 @@ public class WriteCSVMR
 		
 		/* Process different counters */
 		
-	/*	Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
+		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
 			// number of non-zeros
 			stats[i].nonZero=group.getCounter(Integer.toString(i));
 			//	System.out.println("result #"+resultIndexes[i]+" ===>\n"+stats[i]);
 		}
-	*/	
+		
 		return new JobReturn(stats, outputInfos, runjob.isSuccessful());
 	}
 	
@@ -254,11 +257,11 @@ public class WriteCSVMR
 			int i=0;
 			for(; i<numCols-1; i++)
 			{
-				if(!sparse)//if(container[i]!=0)
+				if( !sparse || container[i]!=0 )
 					buffer.append(container[i]);
 				buffer.append(delim);
 			}
-			if(!sparse)//if(container[i]!=0)
+			if( !sparse || container[i]!=0 )
 				buffer.append(container[i]);
 			ByteBuffer bytes = Text.encode(buffer.toString());
 		    int length = bytes.limit();
@@ -272,6 +275,14 @@ public class WriteCSVMR
 			for(int i=0; i<numCols; i++)
 				str+=container[i]+", ";
 			return str;
+		}
+
+		public long getNonZeros() {
+			int n=0;
+			for(int i=0; i<numCols; i++)
+				if(container[i]!=0)
+					n++;
+			return n;
 		}
 	}
 	
@@ -313,9 +324,8 @@ public class WriteCSVMR
 					{
 						outIndexes.setTag(output);
 						out.collect(outIndexes, value);
+						//LOG.info("Mapper output: "+outIndexes+", "+value+", tag: "+output);
 					}
-					
-				//	System.out.println("Mapper output: "+outIndexes+", "+value);
 				}
 			}
 			reporter.incrCounter(Counters.MAP_TIME, System.currentTimeMillis()-start);
@@ -366,7 +376,6 @@ public class WriteCSVMR
 		String[] delims=null;
 		boolean[] sparses=null;
 		boolean firsttime=true;
-		Reporter cachedReporter=null;
 		int[] tagToResultIndex=null;
 		//HashMap<Byte, CSVWriteInstruction> csvWriteInstructions=new HashMap<Byte, CSVWriteInstruction>();
 		
@@ -426,7 +435,7 @@ public class WriteCSVMR
 			byte tag=inkey.getTag();
 			zeroBlock.setFormatParameters(delims[tag], sparses[tag]);
 			outValue.setFormatParameters(delims[tag], sparses[tag]);
-			//System.out.println("~~~~~ Reducer read: "+inkey+", "+inValue);
+			//LOG.info("~~~~~ Reducer read: "+inkey+", "+inValue);
 			Situation sit=Situation.MIDDLE;
 			if(rowIndexes[tag]==minRowIndexes[tag])
 				sit=Situation.START;
@@ -437,14 +446,17 @@ public class WriteCSVMR
 			if(sit==Situation.NEWLINE)
 			{
 				//if the previous row has not finished
+				//LOG.info("~~~the previous row has not finished");
 				addEndingMissingValues(tag, reporter);
 			}
 			if(sit==Situation.NEWLINE||sit==Situation.START)
 			{	
 				//if a row is completely missing
+				//LOG.info("~~~~a row is completely missing");
 				sit=addMissingRows(tag, inkey.getFirstIndex(), sit, reporter);
 			}
 			//add missing value at the beginning of this row
+			//LOG.info("~~~~add missing value at the beginning of this row");
 			for(long col=colIndexes[tag]+1; col<inkey.getSecondIndex(); col++)
 			{
 				zeroBlock.numCols=colsPerBlock[tag];
@@ -455,8 +467,10 @@ public class WriteCSVMR
 			colIndexes[tag]=inkey.getSecondIndex();
 			while(inValue.hasNext())
 			{
+				//LOG.info("~~ in loop output ");
 				outValue.set(inValue.next(), sit);
 				collectFinalMultipleOutputs.directOutput(nullKey, outValue, tagToResultIndex[tag], reporter);
+				resultsNonZeros[tagToResultIndex[tag]]+=outValue.getNonZeros();
 				sit=RowBlockForTextOutput.Situation.MIDDLE;
 			}
 			rowIndexes[tag]=inkey.getFirstIndex();
@@ -481,6 +495,7 @@ public class WriteCSVMR
 			
 			int numParitions=job.getNumReduceTasks();
 			int taskID=MapReduceTool.getUniqueTaskId(job);
+			//LOG.info("## taks id: "+taskID);
 			//for efficiency only, the arrays may have missing values
 			rowIndexes=new long[maxIndex+1];
 			colIndexes=new long[maxIndex+1];
@@ -509,9 +524,9 @@ public class WriteCSVMR
 				colsPerBlock[ri]=dim.get_cols_per_block();
 				long rstep=(long)Math.ceil((double)dim.get_rows()/(double)numParitions);
 				minRowIndexes[ri]=rowIndexes[ri]=rstep*taskID;
-				maxRowIndexes[ri]=Math.max(rstep*(taskID+1), dim.numRows);
+				maxRowIndexes[ri]=Math.min(rstep*(taskID+1), dim.numRows);
 				colIndexes[ri]=0;
-				
+				//LOG.info("## rowIndex: "+rowIndexes[ri]+", maxRowIndexes: "+maxRowIndexes[ri]);
 			}
 			
 			zeroBlock.container=new double[maxCol];

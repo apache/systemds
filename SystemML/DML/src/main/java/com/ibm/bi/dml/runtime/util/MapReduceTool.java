@@ -102,7 +102,8 @@ public class MapReduceTool
 		
 		String nodePrefix = job.get("mapred.task.id");
 		int j = nodePrefix.lastIndexOf("_");
-		nodePrefix = nodePrefix.substring(j + 1);
+		int i=nodePrefix.lastIndexOf("_", j-1);
+		nodePrefix = nodePrefix.substring(i+1, j);
 		// System.out.println("nodePrefix = " + nodePrefix) ;
 		return (new Integer(nodePrefix)).intValue();
 	}
@@ -703,42 +704,4 @@ public class MapReduceTool
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
 		//similarly setting dfs.datanode.data.dir.perm as no effect either.
 	}
-	
-	/*
-	
-	public static FileSystem getURIAwareFileSystem( String uriStr )
-		throws IOException
-	{
-		return getURIAwareFileSystem(uriStr, new Configuration());
-	}
-
-	public static FileSystem getURIAwareFileSystem(String uriStr, Configuration job) 
-		throws IOException
-	{
-		FileSystem fs = null;
-		
-		//URI parsing - general structure: [scheme:][//authority][path][?query][#fragment] 
-		try
-		{
-			URI uri = new URI( uriStr );
-			String scheme = uri.getScheme();
-			if( scheme != null && (scheme.equals("file") || scheme.equals("hdfs")) )
-			{
-				//create URI-aware filesystem
-				fs = FileSystem.get(uri, job);
-			}
-			else
-			{
-				//create default filesystem
-				fs = FileSystem.get(job);
-			}	
-		}
-		catch(Exception ex)
-		{
-			throw new IOException("Error creating URI-aware file system for "+uriStr);
-		}
-		
-		return fs;
-	}
-	*/
 }

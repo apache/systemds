@@ -17,6 +17,9 @@ The source code for this program is not published or otherwise divested of its t
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
    <numreducers>10</numreducers> 
+   
+   <!-- default jvm reuse flag for specific MR jobs, valid values: true | false  -->
+   <jvmreuse>false</jvmreuse> 
 
    <!-- default block dim for binary files -->
    <defaultblocksize>1000</defaultblocksize> 

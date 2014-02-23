@@ -18,6 +18,7 @@ import org.apache.hadoop.io.SequenceFile;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -105,6 +106,7 @@ public class RunMRJobs
 			String shuffleInst = updateLabels(inst.getIv_shuffleInstructions(), ec.getVariables());
 			String aggInst = updateLabels(inst.getIv_aggInstructions(), ec.getVariables());
 			String otherInst = updateLabels(inst.getIv_otherInstructions(), ec.getVariables());
+			boolean jvmReuse = ConfigurationManager.getConfig().getBooleanValue(DMLConfig.JVM_REUSE);
 			
 			switch(inst.getJobType()) {
 			
@@ -113,7 +115,7 @@ public class RunMRJobs
 						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						inst.getPartitioned(), inst.getPformats(), inst.getPsizes(),
 						rrInst, mapInst, aggInst, otherInst,
-						inst.getIv_numReducers(), inst.getIv_replication(), inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
+						inst.getIv_numReducers(), inst.getIv_replication(), jvmReuse, inst.getIv_resultIndices(), inst.getDimsUnknownFilePrefix(),
 						inst.getOutputs(), inst.getOutputInfos() );
 				 break;
 

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -60,7 +60,7 @@ public class SortMR
 {
 
     @SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
   public static final String NUM_VALUES_PREFIX="num.values.in";
@@ -405,13 +405,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
     MRJobInstruction dummy = new MRJobInstruction(JobType.GMR);
     GMR.runJob(dummy, new String[]{args[1], args[3]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
-    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, 
+    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, false, 
     		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(dummy, new String[]{args[1]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
-    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, 
+    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, false,
     		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
   
@@ -449,13 +449,13 @@ static class TotalOrderPartitioner<K extends WritableComparable, V extends Writa
 
     GMR.runJob(dummy, new String[]{args[2], args[4]}, new InputInfo[]{inputinfo, InputInfo.TextCellInputInfo}, 
     		new long[]{matchar.numRows, 4}, new long[]{matchar.numColumns, 4}, new int[]{matchar.numRowsPerBlock, 1}, 
-    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, 
+    		new int[]{matchar.numColumnsPerBlock, 1}, null, null, null, rrins, "", "", "", 0, 1, false,
     		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
     
     rrins="rangepick:::0:DOUBLE:::0.25:DOUBLE:::2:DOUBLE";
     GMR.runJob(dummy, new String[]{args[2]}, new InputInfo[]{inputinfo}, 
     		new long[]{matchar.numRows}, new long[]{matchar.numColumns}, new int[]{matchar.numRowsPerBlock}, 
-    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, 
+    		new int[]{matchar.numColumnsPerBlock}, null, null, null, rrins, "", "", "", 0, 1, false,
     		new byte[]{2}, "scratch_space", new String[]{"final"}, new OutputInfo[]{OutputInfo.TextCellOutputInfo});
   }
 

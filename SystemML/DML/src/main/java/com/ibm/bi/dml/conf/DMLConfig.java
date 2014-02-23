@@ -50,6 +50,7 @@ public class DMLConfig
 	public static final String SCRATCH_SPACE        = "scratch";
 	public static final String OPTIMIZATION_LEVEL   = "optlevel";	
 	public static final String NUM_REDUCERS         = "numreducers";
+	public static final String JVM_REUSE            = "jvmreuse";
 	public static final String DEFAULT_BLOCK_SIZE   = "defaultblocksize"; 	
 	public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
 	public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
@@ -75,6 +76,7 @@ public class DMLConfig
 		_defaultVals.put(SCRATCH_SPACE,        "scratch_space" );
 		_defaultVals.put(OPTIMIZATION_LEVEL,   "2" );
 		_defaultVals.put(NUM_REDUCERS,         "10" );
+		_defaultVals.put(JVM_REUSE,            "false" );
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,   "1000" );
 		_defaultVals.put(NUM_MERGE_TASKS,      "4" );
 		_defaultVals.put(NUM_SOW_THREADS,      "1" );
@@ -213,6 +215,11 @@ public class DMLConfig
 	public int getIntValue( String tagName )
 	{
 		return Integer.parseInt( getTextValue(tagName) );
+	}
+	
+	public boolean getBooleanValue( String tagName )
+	{
+		return Boolean.parseBoolean( getTextValue(tagName) );
 	}
 	
 	

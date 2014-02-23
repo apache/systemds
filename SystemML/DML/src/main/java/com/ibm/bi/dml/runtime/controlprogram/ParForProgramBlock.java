@@ -187,8 +187,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static       boolean USE_RANGE_TASKS_IF_USEFUL   = true;   	// use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true;  	// start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean ALLOW_NESTED_PARALLELISM	= true;    // if not, transparently change parfor to for on program conversions (local,remote)
-	public static final boolean ALLOW_REUSE_MR_JVMS         = false;     // potential benefits: less setup costs per task, NOTE> cannot be used MR4490 in Hadoop 1.0.3, still not fixed in 1.1.1
-	public static final boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
+	public static       boolean ALLOW_REUSE_MR_JVMS         = true;    // potential benefits: less setup costs per task, NOTE> cannot be used MR4490 in Hadoop 1.0.3, still not fixed in 1.1.1
+	public static       boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
 	public static final boolean USE_FLEX_SCHEDULER_CONF     = false;
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false;    // if result merge is run in parallel or serial 
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
@@ -279,7 +279,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		throws DMLRuntimeException  
 	{
 		super(prog, iterPredVars);
-	
+
+		//init internal flags according to DML config
+		initInternalConfigurations(ConfigurationManager.getConfig());
+		
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
 		_resultVarsIDSeq = new IDSequence();
@@ -440,6 +443,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		return _numIterations;
 	}
 
+	public static void initInternalConfigurations( DMLConfig conf )
+	{
+		ALLOW_REUSE_MR_JVMS = conf.getBooleanValue(DMLConfig.JVM_REUSE);
+		ALLOW_REUSE_MR_PAR_WORKER = ALLOW_REUSE_MR_JVMS;
+	}
+	
 	public ParForStatementBlock getStatementBlock( )
 	{
 		return _sb;

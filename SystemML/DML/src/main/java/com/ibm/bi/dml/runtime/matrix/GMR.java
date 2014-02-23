@@ -127,7 +127,7 @@ public class GMR
 			int[] brlens, int[] bclens, 
 			boolean[] partitioned, PDataPartitionFormat[] pformats, int[] psizes,
 			String recordReaderInstruction, String instructionsInMapper, String aggInstructionsInReducer, 
-			String otherInstructionsInReducer, int numReducers, int replication, byte[] resultIndexes, String dimsUnknownFilePrefix, 
+			String otherInstructionsInReducer, int numReducers, int replication, boolean jvmReuse, byte[] resultIndexes, String dimsUnknownFilePrefix, 
 			String[] outputs, OutputInfo[] outputInfos) 
 	throws Exception
 	{
@@ -234,6 +234,11 @@ public class GMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
+
+		//set up jvm reuse (incl. reuse of loaded dist cache matrices)
+		if( jvmReuse )
+			job.setNumTasksToExecutePerJvm(-1);
+		
 		
 		//System.out.println("GMR --> setting blocksize = "+ DMLTranslator.DMLBlockSize);
 		/* TODO MP
@@ -431,7 +436,7 @@ public class GMR
 		JobReturn ret = runJob(new MRJobInstruction(JobType.GMR), inputs, inputInfos, rlens, clens, brlens, bclens, 
 				partitioned, pformats, psizes, 
 				null, instructionsInMapper, aggInstructionsInReducer, otherInstructionsInReducer,
-				numReducers, replication, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
+				numReducers, replication, false, resultIndexes, dimsUnknownFilePrefix, outputs, outputInfos);
 		
 	}
 

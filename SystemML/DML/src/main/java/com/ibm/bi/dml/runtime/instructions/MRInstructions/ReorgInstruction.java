@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -15,6 +15,7 @@ import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.io.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.io.OperationsOnMatrixValues;
@@ -27,14 +28,28 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class ReorgInstruction extends UnaryMRInstructionBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	//required for diag (load-balance-aware output of empty blocks)
+	private MatrixCharacteristics _mcIn = null;
+	private boolean _outputEmptyBlocks = true;
 	
 	public ReorgInstruction(Operator op, byte in, byte out, String istr)
 	{
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
+	}
+	
+	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
+	{
+		_mcIn = in; 
+	}
+	
+	public void setOutputEmptyBlocks( boolean flag )
+	{
+		_outputEmptyBlocks = flag; 
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
@@ -95,9 +110,24 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 				
 				//special handling for vector to matrix diag to make sure the missing 0' are accounted for 
 				//(only for block representation)
-				if(valueClass.equals(MatrixBlock.class) && ((ReorgOperator)optr).fn==MaxIndex.getMaxIndexFnObject())
+				if(_outputEmptyBlocks && valueClass.equals(MatrixBlock.class) && ((ReorgOperator)optr).fn==MaxIndex.getMaxIndexFnObject())
 				{
 					long diagIndex=out.getIndexes().getRowIndex();//row index is equal to the col index
+					long rlen = Math.max(_mcIn.get_rows(), _mcIn.get_cols()); //input can be row/column vector
+					long brlen = Math.max(_mcIn.get_rows_per_block(),_mcIn.get_cols_per_block());
+					long numRowBlocks = (rlen/brlen)+((rlen%brlen!=0)? 1 : 0);
+					for(long rc=1; rc<=numRowBlocks; rc++)
+					{
+						if( rc==diagIndex ) continue; //prevent duplicate output
+						IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
+						int lbrlen = (int) ((rc*brlen<=rlen) ? brlen : rlen%brlen);
+						emptyIndexValue.getIndexes().setIndexes(rc, diagIndex);
+						emptyIndexValue.getValue().reset(lbrlen, out.getValue().getNumColumns(), true);
+					}
+					
+					// MB> this code led to huge imbalance because mappers with high row index created
+					//     many blocks (e.g., ix=3->4 vs ix=100,000->200,000 blocks ). 					
+					/*
 					for(long rc=1; rc<diagIndex; rc++)
 					{
 						IndexedMatrixValue emptyIndexValue=cachedValues.holdPlace(output, valueClass);
@@ -107,9 +137,8 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 						emptyIndexValue.getIndexes().setIndexes(diagIndex, rc);
 						emptyIndexValue.getValue().reset(out.getValue().getNumRows(), blockColFactor, true);
 					}
+					*/
 				}
 			}
 	}
-
-
 }

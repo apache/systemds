@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
@@ -154,8 +155,7 @@ public class MatrixBlockDSM extends MatrixValue
 			recomputeNonZeros();
 			lnonZeros = (long) nonZeros;
 		}
-		
-		
+				
 		if(sparse)
 		{
 			if(sparseRows==null)
@@ -2578,7 +2578,6 @@ public class MatrixBlockDSM extends MatrixValue
 		{
 			if( denseBlock != null ) 
 			{
-				/*
 				if( result.isInSparseFormat() ) //SPARSE<-DENSE
 				{
 					double[] a = denseBlock;
@@ -2607,8 +2606,8 @@ public class MatrixBlockDSM extends MatrixValue
 						}
 					result.nonZeros = nonZeros;
 				}
-				*/	
 				
+				/*
 				int limit=rlen*clen;
 				int r,c;
 				for(int i=0; i<limit; i++)
@@ -2619,6 +2618,7 @@ public class MatrixBlockDSM extends MatrixValue
 					op.fn.execute(temp, temp);
 					result.appendValue(temp.row, temp.column, denseBlock[i]);
 				}
+				*/
 			}
 		}
 		
@@ -2959,8 +2959,11 @@ public class MatrixBlockDSM extends MatrixValue
 		
 		if( cl==cu ) //specific case: column vector 
 		{
-			for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
-				dest.denseBlock[ix] = denseBlock[i];
+			if( clen==1 ) //vector -> vector
+				System.arraycopy(denseBlock, rl, dest.denseBlock, 0, ru-rl+1);
+			else //matrix -> vector
+				for( int i=rl*clen+cl, ix=0; i<=ru*clen+cu; i+=clen, ix++ )
+					dest.denseBlock[ix] = denseBlock[i];
 		}
 		else //general case (dense)
 		{
@@ -3510,18 +3513,44 @@ public class MatrixBlockDSM extends MatrixValue
 					}
 				}
 			}
-		}else
+		}
+		else
 		{
 			if(denseBlock!=null)
 			{
-				int limit=rlen*clen;
-				for(int i=0; i<limit; i++)
+				if(   op.indexFn instanceof ReduceAll  //special case uak+
+				   && op.aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN ) 
 				{
-					r=i/clen;
-					c=i%clen;
-					result.tempCellIndex.set(r, c);
-					op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, denseBlock[i], buffer);
+					//performance improvement over general case: 3-4x for uak+
+					double[] a = denseBlock;
+					for( int i=0, aix=0; i<rlen; i++ )
+						for( int j=0; j<clen; j++, aix++ )
+							op.aggOp.increOp.fn.execute(buffer, a[aix]);
+					
+					result.quickSetValue(0, 0, buffer._sum); //result
+					result.quickSetValue(0, 1, buffer._correction); //correction
+				}
+				else //general case
+				{
+					double[] a = denseBlock;
+					for( int i=0, aix=0; i<rlen; i++ )
+						for( int j=0; j<clen; j++, aix++ )
+						{
+							result.tempCellIndex.set(i, j);
+							op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
+							incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, a[aix], buffer);
+						}
+					/*
+					int limit=rlen*clen;
+					for(int i=0; i<limit; i++)
+					{
+						r=i/clen;
+						c=i%clen;
+						result.tempCellIndex.set(r, c);
+						op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
+						incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, denseBlock[i], buffer);
+					}
+					*/	
 				}
 			}
 		}
@@ -5420,7 +5449,7 @@ public class MatrixBlockDSM extends MatrixValue
 			// sparse representation
 			sparseRows=new SparseRow[rows];
 			estimatedNNzsPerRow=(int)(clen*sparsity);
-			for(int i=0; i<rows; i++) {	
+			for(int i=0; i<rows; i++) {
 				for(int j=0; j<cols; j++) {
 					if(random.nextDouble() <= sparsity) 
 					{

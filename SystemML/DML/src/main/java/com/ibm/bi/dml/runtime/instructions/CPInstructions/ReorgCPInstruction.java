@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -23,7 +23,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 public class ReorgCPInstruction extends UnaryCPInstruction
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String istr){
@@ -52,32 +52,18 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		long begin, st, tread, tcompute, twrite, ttotal;
-		
-		begin = System.currentTimeMillis();
-		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());
-		tread = System.currentTimeMillis() - begin;
-		
-		st = System.currentTimeMillis();
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		//acquire inputs
+		MatrixBlock matBlock = (MatrixBlock) ec.getMatrixInput(input1.get_name());		
 		ReorgOperator r_op = (ReorgOperator) optr;
-		String output_name = output.get_name();
 		
-		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations (r_op, new MatrixBlock(), 0, 0, 0));
+		//execute operation
+		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
         
-		tcompute = System.currentTimeMillis() - st;
-		
-		st = System.currentTimeMillis();
-		matBlock = null;
+		//release inputs/outputs
 		ec.releaseMatrixInput(input1.get_name());
-		ec.setMatrixOutput(output_name, soresBlock);
-		soresBlock = null;
-		
-		twrite = System.currentTimeMillis() - st;
-		ttotal = System.currentTimeMillis()-begin;
-		
-		LOG.trace("CPInst " + this.toString() + "\t" + tread + "\t" + tcompute + "\t" + twrite + "\t" + ttotal);
-		
+		ec.setMatrixOutput(output.get_name(), soresBlock);
 	}
 	
 }

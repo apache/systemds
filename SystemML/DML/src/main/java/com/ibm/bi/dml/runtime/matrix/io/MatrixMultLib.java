@@ -29,10 +29,13 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
  *   is 3x faster than f2j-BLAS-DGEMM, 2x faster than f2c-BLAS-DGEMM, and
  *   level (+10% after JIT) with a native C implementation. 
  * * Calling native BLAS would loose platform independence and would require 
- *   JNI calls incl data transfer (and changing the representation from row-
- *   to column-major representation). Furthermore, BLAS does not support sparse 
- *   matrices and would be an external dependency. 
- * 
+ *   JNI calls incl data transfer. Furthermore, BLAS does not support sparse 
+ *   matrices (except Sparse BLAS, with dedicated function calls and matrix formats) 
+ *   and would be an external dependency. 
+ * * Experiments in 02/2014 showed that on dense-dense this implementation now achieves
+ *   almost 30% peak FP performance. Compared to Intel MKL 11.1 (dgemm, N=1000) it is
+ *   just 3.2x (sparsity=1.0) and 1.9x (sparsity=0.5) slower, respectively.
+ *   
  *  
  */
 public class MatrixMultLib 
@@ -131,11 +134,24 @@ public class MatrixMultLib
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
-			if( m==1 && n==1 ) //DOT PRODUCT
+			if( m==1 && n==1 ) 		   //DOT PRODUCT
 			{
 				c[0] = dotProduct(a, b, cd);
 			}
-			else if( n==1 ) //MATRIX-VECTOR
+			else if( n>1 && cd == 1 )  //OUTER PRODUCT
+			{
+				for( int i=0, cix=0; i < m; i++, cix+=n) {
+					if( a[i]!=0 )
+						vectMultiplyWrite(a[i], b, c, 0, cix, n);
+					else
+						Arrays.fill(c, cix, cix+n, 0);
+				}
+			}
+			else if( n==1 && cd == 1 ) //VECTOR-SCALAR
+			{
+				vectMultiplyWrite(b[0], a, c, 0, 0, m);
+			}
+			else if( n==1 )            //MATRIX-VECTOR
 			{
 				for( int i=0, aix=0; i < m; i++, aix+=cd) 
 					c[ i ] = dotProduct(a, b, aix, 0, cd);	
@@ -150,28 +166,49 @@ public class MatrixMultLib
 				//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
 				
 				final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
-				final int blocksizeK = 32; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
+				final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
 				final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
 
+				//temporary arrays (nnz a, b index)
+				double[] ta = new double[ blocksizeK ];
+				int[]  tbi  = new int[ blocksizeK ];
+				
 				//blocked execution
 				for( int bi = 0; bi < m; bi+=blocksizeI )
 					for( int bk = 0, bimin = Math.min(m, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
 						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) 
 						{
+							int bklen = bkmin-bk;
 							int bjlen = Math.min(n, bj+blocksizeJ)-bj;
+							
 							//core sub block matrix multiplication
 				    		for( int i = bi; i < bimin; i++) 
 				    		{
-				    			int cixj = i * n + bj; //re-init scan index on c
-								for( int k = bk, aix=i*cd; k < bkmin; k++)
-								{
-									double val = a[ aix+k ]; 									
-									if( val != 0 ) //skip row if applicable
-									{
-										int bixj = k * n + bj; //re-init scan index on b
-										vectMultiplyAdd(val, b, c, bixj, cixj, bjlen);
-									}
-								}	
+				    			int aixi = i * cd + bk; //start index on a
+				    			int cixj = i * n + bj; //scan index on c
+				    			
+				    			//determine nnz of a (for sparsity-aware skipping of rows)
+				    			int knnz = 0;
+				    			for( int k = 0; k < bklen; k++ )
+				    				if( a[aixi+k] != 0 ) {
+				    					ta[ knnz ] = a[aixi+k];
+				    					tbi[ knnz ] = (bk+k) * n + bj; //scan index on b
+				    					knnz ++;
+				    				}
+				    			
+				    			//rest not aligned to blocks of 4 rows
+				    			final int bn = knnz % 4;
+				    			switch( bn ){
+					    			case 1: vectMultiplyAdd(ta[0], b, c, tbi[0], cixj, bjlen); break;
+					    	    	case 2: vectMultiplyAdd2(ta[0],ta[1], b, c, tbi[0], tbi[1], cixj, bjlen); break;
+					    			case 3: vectMultiplyAdd3(ta[0],ta[1],ta[2], b, c, tbi[0], tbi[1],tbi[2], cixj, bjlen); break;
+				    			}
+				    			
+				    			//compute blocks of 4 rows (core inner loop)
+				    			for( int k = bn; k<knnz; k+=4 ){
+				    				vectMultiplyAdd4( ta[k], ta[k+1], ta[k+2], ta[k+3], b, c, 
+				    						          tbi[k], tbi[k+1], tbi[k+2], tbi[k+3], cixj, bjlen );
+				    			}
 				    		}
 						}
 			}
@@ -195,6 +232,7 @@ public class MatrixMultLib
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 	}
+	
 	
 	/**
 	 * 
@@ -284,8 +322,8 @@ public class MatrixMultLib
 		
 		double[] b = m2.denseBlock;
 		double[] c = ret.denseBlock;
-		int m = m1.rlen;
-		int n = m2.clen;
+		final int m = m1.rlen;
+		final int n = m2.clen;
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
@@ -322,7 +360,6 @@ public class MatrixMultLib
 				//init empty result
 				Arrays.fill(c, 0, c.length, 0);
 				
-				int bix;
 				for( int i=0, cix=0; i<Math.min(m, m1.sparseRows.length); i++, cix+=n )
 				{
 					SparseRow arow = m1.sparseRows[i];
@@ -332,13 +369,19 @@ public class MatrixMultLib
 						int[] aix = arow.getIndexContainer();
 						double[] avals = arow.getValueContainer();					
 						
-						for(int k = 0; k < alen; k++) 
-						{
-							double val = avals[k];
-							bix = aix[k]*n;
-							
-							vectMultiplyAdd(val, b, c, bix, cix, n);
-						}						
+						//rest not aligned to blocks of 4 rows
+		    			final int bn = alen % 4;
+		    			switch( bn ){
+			    			case 1: vectMultiplyAdd(avals[0], b, c, aix[0]*n, cix, n); break;
+			    	    	case 2: vectMultiplyAdd2(avals[0],avals[1], b, c, aix[0]*n, aix[1]*n, cix, n); break;
+			    			case 3: vectMultiplyAdd3(avals[0],avals[1],avals[2], b, c, aix[0]*n, aix[1]*n, aix[2]*n, cix, n); break;
+		    			}
+		    			
+		    			//compute blocks of 4 rows (core inner loop)
+		    			for( int k = bn; k<alen; k+=4 ) {
+		    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+		    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+		    			}
 					}
 				}					
 			}
@@ -459,9 +502,10 @@ public class MatrixMultLib
 	 * @param ret
 	 * @param leftTranspose
 	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void matrixMultTransposeSelfDense( MatrixBlockDSM m1, MatrixBlockDSM ret, boolean leftTranspose ) 
-		throws DMLRuntimeException
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//1) allocate output block
 		ret.rlen = leftTranspose ? m1.clen : m1.rlen;
@@ -491,32 +535,60 @@ public class MatrixMultLib
 				{	
 					//init empty result
 					Arrays.fill(c, 0, c.length, 0);
-					
-					//algorithm: scan a once (t(a)), foreach val: scan row of a and row of c (KIJ)
-				
-					//1) Unrolled inner loop, for better ILP
-					//2) Blocked execution, for less cache trashing in parallel exec 					
-					final int blocksizeI = 16;
-					final int blocksizeJ = 256;
 
-					for( int bi = 0; bi<n; bi+=blocksizeI )
-						for( int bj = bi, bimin = Math.min(n, bi+blocksizeI); bj<n; bj+=blocksizeJ )
-							for(int k = 0, bjmin = Math.min(n, bj+blocksizeJ); k < m; k++)
+					//1) Unrolled inner loop (for better instruction-level parallelism)
+					//2) Blocked execution (for less cache trashing in parallel exec) 	
+					//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
+					
+					final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
+					final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
+					final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
+
+					//temporary arrays (nnz a, b index)
+					double[] ta = new double[ blocksizeK ];
+					int[]  tbi  = new int[ blocksizeK ];
+					
+					final int mx = n;
+					final int cdx = m;
+					final int nx = n;
+					
+					//blocked execution
+					for( int bi = 0; bi < mx; bi+=blocksizeI ) //from bi due to symmetry
+						for( int bk = 0, bimin = Math.min(mx, bi+blocksizeI); bk < cdx; bk+=blocksizeK ) 
+							for( int bj = bi, bkmin = Math.min(cdx, bk+blocksizeK); bj < nx; bj+=blocksizeJ ) 
 							{
-								int ix1 = k * n; //re-init scan index on b
+								int bklen = bkmin-bk;
+								int bjlen = Math.min(nx, bj+blocksizeJ)-bj;
 								
-								for(int i = bi; i < bimin; i++) 
-								{
-									double val = a[ ix1+i ];
-									if( val != 0 )
-									{
-										//from i due to symmetry
-										int bjmax = Math.max(i,bj);
-										int ix3 = i * n + bjmax; //re-init scan index on c
-										
-										vectMultiplyAdd(val, a, c, ix1+bjmax, ix3, bjmin-bjmax);
-									}
-								}
+								//core sub block matrix multiplication
+					    		for( int i = bi; i < bimin; i++) 
+					    		{
+					    			int aixi = bk*n +i; //start index on a (logical t(X))
+					    			int cixj = i * nx + bj; //scan index on c
+					    			
+					    			//determine nnz of a (for sparsity-aware skipping of rows)
+					    			int knnz = 0;
+					    			for( int k = 0; k < bklen; k++, aixi+=n )
+					    				if( a[aixi] != 0 ) {
+					    					ta[ knnz ] = a[aixi];
+					    					tbi[ knnz ] = (bk+k) * nx + bj; //scan index on b
+					    					knnz ++;
+					    				}
+					    			
+					    			//rest not aligned to blocks of 4 rows
+					    			final int bn = knnz % 4;
+					    			switch( bn ){
+						    			case 1: vectMultiplyAdd(ta[0], a, c, tbi[0], cixj, bjlen); break;
+						    	    	case 2: vectMultiplyAdd2(ta[0],ta[1], a, c, tbi[0], tbi[1], cixj, bjlen); break;
+						    			case 3: vectMultiplyAdd3(ta[0],ta[1],ta[2], a, c, tbi[0], tbi[1],tbi[2], cixj, bjlen); break;
+					    			}
+					    			
+					    			//compute blocks of 4 rows (core inner loop)
+					    			for( int k = bn; k<knnz; k+=4 ){
+					    				vectMultiplyAdd4( ta[k], ta[k+1], ta[k+2], ta[k+3], a, c, 
+					    						          tbi[k], tbi[k+1], tbi[k+2], tbi[k+3], cixj, bjlen );
+					    			}
+					    		}
 							}
 				}
 			}
@@ -755,7 +827,7 @@ public class MatrixMultLib
 	 * @param len
 	 * @return
 	 */
-	private static double dotProduct( double[] a, double[] b, int len )
+	private static double dotProduct( double[] a, double[] b, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
@@ -792,7 +864,7 @@ public class MatrixMultLib
 	 * @param len
 	 * @return
 	 */
-	private static double dotProduct( double[] a, double[] b, int ai, int bi, int len )
+	private static double dotProduct( double[] a, double[] b, int ai, int bi, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
@@ -820,7 +892,7 @@ public class MatrixMultLib
 		return val; 
 	}
 	
-	private static double dotProduct( double[] a, double[] b, int[] aix, int bi, int len )
+	private static double dotProduct( double[] a, double[] b, int[] aix, final int bi, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
@@ -858,7 +930,7 @@ public class MatrixMultLib
 	 * @param ci
 	 * @param len
 	 */
-	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int bi, int ci, int len )
+	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -885,6 +957,120 @@ public class MatrixMultLib
 	
 	/**
 	 * 
+	 * @param aval1
+	 * @param aval2
+	 * @param b
+	 * @param c
+	 * @param bi
+	 * @param bi2
+	 * @param ci
+	 * @param len
+	 */
+    private static void vectMultiplyAdd2( final double aval1, final double aval2, double[] b, double[] c, int bi1, int bi2, int ci, final int len )
+	{
+		final int bn = len%8;	
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, bi1++, bi2++, ci++ )
+			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, ci+=8 ) 
+		{
+			//read 64B cachelines of b (2x) and c
+			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += aval1 * b[ bi1+0 ] + aval2 * b[ bi2+0 ];
+			c[ ci+1 ] += aval1 * b[ bi1+1 ] + aval2 * b[ bi2+1 ];
+			c[ ci+2 ] += aval1 * b[ bi1+2 ] + aval2 * b[ bi2+2 ];
+			c[ ci+3 ] += aval1 * b[ bi1+3 ] + aval2 * b[ bi2+3 ];
+			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ];
+			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ];
+			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ];	
+		}
+	}
+	
+    /**
+     * 
+     * @param aval1
+     * @param aval2
+     * @param aval3
+     * @param b
+     * @param c
+     * @param bi1
+     * @param bi2
+     * @param bi3
+     * @param ci
+     * @param len
+     */
+	private static void vectMultiplyAdd3( final double aval1, final double aval2, final double aval3, double[] b, double[] c, int bi1, int bi2, int bi3, int ci, final int len )
+	{
+		final int bn = len%8;	
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, bi1++, bi2++, bi3++, ci++ )
+			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ] + aval3 * b[ bi3 ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, ci+=8 ) 
+		{
+			//read 64B cachelines of b (3x) and c
+			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += aval1 * b[ bi1+0 ] + aval2 * b[ bi2+0 ] + aval3 * b[ bi3+0 ];
+			c[ ci+1 ] += aval1 * b[ bi1+1 ] + aval2 * b[ bi2+1 ] + aval3 * b[ bi3+1 ];
+			c[ ci+2 ] += aval1 * b[ bi1+2 ] + aval2 * b[ bi2+2 ] + aval3 * b[ bi3+2 ];
+			c[ ci+3 ] += aval1 * b[ bi1+3 ] + aval2 * b[ bi2+3 ] + aval3 * b[ bi3+3 ];
+			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ] + aval3 * b[ bi3+4 ];
+			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ] + aval3 * b[ bi3+5 ];
+			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ] + aval3 * b[ bi3+6 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ];	
+		}
+	}
+	
+	/**
+	 * 
+	 * @param aval1
+	 * @param aval2
+	 * @param aval3
+	 * @param aval4
+	 * @param b
+	 * @param c
+	 * @param bi1
+	 * @param bi2
+	 * @param bi3
+	 * @param bi4
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectMultiplyAdd4( final double aval1, final double aval2, final double aval3, final double aval4, double[] b, double[] c, int bi1, int bi2, int bi3, int bi4, int ci, final int len )
+	{
+		final int bn = len%8;	
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, bi1++, bi2++, bi3++, bi4++, ci++ )
+			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ] + aval3 * b[ bi3 ] + aval4 * b[ bi4 ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, bi4+=8, ci+=8) 
+		{
+			//read 64B cachelines of b (4x) and c 
+			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += aval1 * b[ bi1+0 ] + aval2 * b[ bi2+0 ] + aval3 * b[ bi3+0 ] + aval4 * b[ bi4+0 ];
+			c[ ci+1 ] += aval1 * b[ bi1+1 ] + aval2 * b[ bi2+1 ] + aval3 * b[ bi3+1 ] + aval4 * b[ bi4+1 ];
+			c[ ci+2 ] += aval1 * b[ bi1+2 ] + aval2 * b[ bi2+2 ] + aval3 * b[ bi3+2 ] + aval4 * b[ bi4+2 ];
+			c[ ci+3 ] += aval1 * b[ bi1+3 ] + aval2 * b[ bi2+3 ] + aval3 * b[ bi3+3 ] + aval4 * b[ bi4+3 ];
+			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ] + aval3 * b[ bi3+4 ] + aval4 * b[ bi4+4 ];
+			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ] + aval3 * b[ bi3+5 ] + aval4 * b[ bi4+5 ];
+			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ] + aval3 * b[ bi3+6 ] + aval4 * b[ bi4+6 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ] + aval4 * b[ bi4+7 ];	
+		}
+	}
+	
+	/**
+	 * 
 	 * @param aval
 	 * @param b
 	 * @param c
@@ -892,7 +1078,7 @@ public class MatrixMultLib
 	 * @param ci
 	 * @param len
 	 */
-	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int[] bix, int ci, int len )
+	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int ci, final int len )
 	{
 		final int bn = len%8;
 		
@@ -918,7 +1104,7 @@ public class MatrixMultLib
 		}
 	}
 	
-	private static void vectMultiplyAdd( double aval, double[] b, double[] c, int[] bix, int bi, int ci, int len )
+	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int bi, final int ci, final int len )
 	{
 		final int bn = (len-bi)%8;
 		
@@ -964,19 +1150,45 @@ public class MatrixMultLib
 				c[ lix ] = c[ uix+j ];
 	}
 
-	
+	/**
+	 * 
+	 * @param aval
+	 * @param b
+	 * @param c
+	 * @param bi
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectMultiplyWrite( final double aval, double[] b, double[] c, int bi, int ci, final int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, bi++, ci++)
+			c[ ci ] = aval * b[ bi ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, bi+=8, ci+=8) 
+		{
+			//read 64B cachelines of b and c
+			//compute c' = aval * b + c
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] = aval * b[ bi+0 ];
+			c[ ci+1 ] = aval * b[ bi+1 ];
+			c[ ci+2 ] = aval * b[ bi+2 ];
+			c[ ci+3 ] = aval * b[ bi+3 ];
+			c[ ci+4 ] = aval * b[ bi+4 ];
+			c[ ci+5 ] = aval * b[ bi+5 ];
+			c[ ci+6 ] = aval * b[ bi+6 ];
+			c[ ci+7 ] = aval * b[ bi+7 ];
+		}
+	}
 	
 	/////////////////////////////////////////////////////
 	// old matrix mult implementation (for comparison) //
 	/////////////////////////////////////////////////////	
 	
-	/**
-	 * 
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param ret
-	 */
+	/*
 	@Deprecated
 	public static void matrixMultDenseDenseOld(MatrixBlockDSM m1, MatrixBlockDSM m2, MatrixBlockDSM ret)
 	{	
@@ -1027,5 +1239,6 @@ public class MatrixMultLib
 			}
 		}
 		ret.nonZeros=nnzs;
-	}	
+	}
+	*/
 }

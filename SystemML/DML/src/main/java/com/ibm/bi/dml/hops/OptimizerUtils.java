@@ -220,6 +220,16 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public static double getRemoteMemBudget()
+	{
+		double ret = InfrastructureAnalyzer.getRemoteMaxMemory();
+		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+	
+	/**
 	 * Returns the number of reducers that potentially run in parallel.
 	 * This is either just the configured value (SystemML config) or
 	 * the minimum of configured value and available reduce slots. 

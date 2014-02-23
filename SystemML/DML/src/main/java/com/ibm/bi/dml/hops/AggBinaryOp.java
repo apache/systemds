@@ -411,7 +411,7 @@ public class AggBinaryOp extends Hop
 	private static boolean partitionVectorInDistCache(long rows, long cols) {
 		//return true;
 		double vec_size = OptimizerUtils.estimateSize(rows, cols, 1.0);
-		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) );
+		return ( vec_size > MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget() );
 	}
 	
 	/*
@@ -433,7 +433,7 @@ public class AggBinaryOp extends Hop
 			// matrix-vector multiplication. 
 			// Choose DIST_MVMULT if the "dense" vector fits in memory.
 			double vec_size = OptimizerUtils.estimateSize(m2_rows, m2_cols, 1.0);
-			if ( vec_size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getMemBudget(false) )
+			if ( vec_size < MVMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudget() )
 				return MMultMethod.DIST_MV;
 		}
 		

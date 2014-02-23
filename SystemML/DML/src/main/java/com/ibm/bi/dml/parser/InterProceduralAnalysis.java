@@ -190,8 +190,9 @@ public class InterProceduralAnalysis
 		else //generic (last-level)
 		{
 			ArrayList<Hop> roots = sb.get_hops();
-			for( Hop root : roots )
-				getFunctionCandidatesForStatisticPropagation(sb.getDMLProg(), root, fcand);
+			if( roots != null ) //empty statement blocks
+				for( Hop root : roots )
+					getFunctionCandidatesForStatisticPropagation(sb.getDMLProg(), root, fcand);
 		}
 	}
 	
@@ -209,7 +210,7 @@ public class InterProceduralAnalysis
 		if( hop.get_visited() == VISIT_STATUS.DONE )
 			return;
 		
-		if( hop instanceof FunctionOp )
+		if( hop instanceof FunctionOp && !((FunctionOp)hop).getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE) )
 		{
 			//maintain counters and investigate functions if not seen so far
 			FunctionOp fop = (FunctionOp) hop;
@@ -725,17 +726,19 @@ public class InterProceduralAnalysis
 			MatrixObject moOut = createOutputMatrix(input.get_dim1(), input.get_dim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
-		/*else if( className.equals(EigenWrapper.class.getName()) ) 
+		else if( className.equals("com.ibm.bi.dml.packagesupport.EigenWrapper") ) 
+		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(0);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));
 			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.get_dim1(), input.get_dim1(),-1));			
 		}
-		else if( className.equals(LinearSolverWrapperCP.class.getName()) ) 
+		else if( className.equals("com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP") ) 
+		//else if( className.equals(LinearSolverWrapperCP.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(1);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.get_dim1(), 1, -1));
-		}*/
+		}
 		else if(   className.equals(DynamicReadMatrixCP.class.getName())
 				|| className.equals(DynamicReadMatrixRcCP.class.getName()) ) 
 		{

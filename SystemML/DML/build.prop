@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # IBM Confidential
 # OCO Source Materials
-# (C) Copyright IBM Corp. 2010, 2013
+# (C) Copyright IBM Corp. 2010, 2014
 # The source code for this program is not published or
 # otherwise divested of its trade secrets, irrespective of
 # what has been deposited with the U.S. Copyright Office.
@@ -13,8 +13,8 @@
 general.localmode=false
 
 #Lib - from shared lib or own lib
-build.sharedlib=../DevelopmentEnvironmentBinaries/biginsights-shared-libraries/lib
-build.ownlib=lib
+build.sharedlib=./lib/tmp_dev
+build.ownlib=./lib
 
 #javacc
 javacc.home=${build.sharedlib}/javacc-5.0
@@ -38,7 +38,7 @@ build.configjartgz=machine-learning.tar.gz
 build.jarnamejunit=JunitSystemML.jar
 
 #HADOOP local mode specific setting
-hadoop.local.path=../DevelopmentEnvironmentBinaries/ibm-hadoop
+hadoop.local.path=./lib/tmp_dev
 hadoop.jvmargs.localmode=-Xmx1250m
 
 #HADOOP cluster mode specific setting

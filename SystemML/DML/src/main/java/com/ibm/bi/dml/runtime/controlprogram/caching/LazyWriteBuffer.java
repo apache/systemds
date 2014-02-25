@@ -197,8 +197,10 @@ public class LazyWriteBuffer
 	 */
 	public static void cleanup()
 	{
-		_mData = null;
-		_mQueue = null;
+		if( _mData!=null )
+			_mData.clear();
+		if( _mQueue!=null )
+			_mQueue.clear();
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.clear();
 	}

@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
@@ -243,15 +244,34 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 	 * 
 	 */
 	@Override
-	public void close() throws IOException 
+	public void close() 
+		throws IOException 
 	{
-		//cleanup cached variables in order to prevent writing to disk
-		boolean isLocal = InfrastructureAnalyzer.isLocalMode();
-		if( !isLocal && !ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
+		//cleanup cache and local tmp dir
+		if( !InfrastructureAnalyzer.isLocalMode() )
 		{
 			CacheableData.cleanupCacheDir();
 			CacheableData.disableCaching();
 			LocalFileUtils.cleanupWorkingDirectory();
+		}
+		
+		//change cache status for jvm_reuse (make empty allows us to
+		//reuse in-memory objects if still present, re-load from HDFS
+		//if evicted by garbage collector - without this approach, we
+		//could not cleanup the local working dir, because this would 
+		//delete evicted matrices as well. 
+		if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER )
+		{
+			for( RemoteParWorkerMapper pw : _sCache.values() )
+			{
+				LocalVariableMap vars = pw._ec.getVariables();
+				for( String varName : vars.keySet() )
+				{
+					Data dat = vars.get(varName);
+					if( dat instanceof MatrixObject )
+						((MatrixObject)dat).setEmptyStatus();
+				}
+			}
 		}
 	}
 	

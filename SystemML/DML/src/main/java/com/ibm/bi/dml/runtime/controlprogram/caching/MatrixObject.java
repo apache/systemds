@@ -334,7 +334,7 @@ public class MatrixObject extends CacheableData
 			getCache();
 		
 		//read data from HDFS if required
-		if( isEmpty() ) 
+		if( isEmpty() && _data==null ) //probe data for jvm_reuse support  
 		{
 			//check filename
 			if( _hdfsFileName == null )
@@ -1329,4 +1329,11 @@ public class MatrixObject extends CacheableData
 		return _cleanupFlag;
 	}
 
+	/**
+	 * 
+	 */
+	public void setEmptyStatus()
+	{
+		setEmpty();
+	}
 }

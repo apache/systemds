@@ -58,6 +58,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
+import com.ibm.bi.dml.runtime.matrix.CleanupMR;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -101,6 +102,8 @@ public class DMLScript
 			+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
 //			+ "   -explain: (optional) show the initially compiled runtime program\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
+			+ "   -clean: (optional) cleanup all SystemML working directories (FS, HDFS).\n"
+			+ "         All other flags are ignored in this mode. \n"
 			+ "   -config: (optional) use config file <config_filename> (default: use parameter\n"
 			+ "         values in default SystemML-config.xml config file; if <config_filename> is\n" 
 			+ "         prefixed with hdfs or gpfs it is read from DFS, otherwise from local file system)\n"
@@ -177,6 +180,11 @@ public class DMLScript
 		//check for help 
 		if( args.length==0 || (args.length==1 && (args[0].equalsIgnoreCase("-help")|| args[0].equalsIgnoreCase("-?"))) ){
 			System.err.println( USAGE );
+			return true;
+		}
+		//check for clean
+		else if( args.length==1 && args[0].equalsIgnoreCase("-clean") ){
+			cleanSystemMLWorkspace();
 			return true;
 		}
 			
@@ -860,4 +868,34 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
+	/**
+	 * 
+	 * @throws DMLException
+	 */
+	private static void cleanSystemMLWorkspace() 
+		throws DMLException
+	{
+		try
+		{
+			//read the default config
+			DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(null);
+			
+			//run cleanup job to clean remote local tmp dirs
+			CleanupMR.runJob(conf);
+			
+			//cleanup scratch space (on HDFS)
+			String scratch = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
+			if( scratch != null )
+				MapReduceTool.deleteFileIfExistOnHDFS(scratch);
+			
+			//cleanup local working dir
+			String localtmp = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
+			if( localtmp != null )
+				LocalFileUtils.cleanupRcWorkingDirectory(localtmp);
+		}
+		catch(Exception ex)
+		{
+			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
+		}
+	}
 }  

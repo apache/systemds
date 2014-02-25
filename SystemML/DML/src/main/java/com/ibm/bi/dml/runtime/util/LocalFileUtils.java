@@ -368,7 +368,19 @@ public class LocalFileUtils
 			rDelete(f);
 	}
 	
+	public static int cleanupRcWorkingDirectory(String dir) 
+	{
+		int ret = 0;
+		
+		File f =  new File(dir);
+		if( f.exists() )
+			ret += rcDelete(f);
+		
+		return ret;
+	}
+	
 	/**
+	 * Recursively deletes an entire local file system directory.
 	 * 
 	 * @param dir
 	 */
@@ -384,6 +396,31 @@ public class LocalFileUtils
 		
 		//delete file/dir itself
 		dir.delete();
+	}
+	
+	/**
+	 * Recursively deletes an entire local file system directory
+	 * and returns the number of files deleted.
+	 * 
+	 * @param dir
+	 * @return
+	 */
+	public static int rcDelete(File dir)
+	{
+		int count = 0;
+		
+		//recursively delete files if required
+		if( dir.isDirectory() )
+		{
+			File[] files = dir.listFiles();
+			for( File f : files )
+				count += rcDelete( f );	
+		}
+		
+		//delete file/dir itself
+		count += dir.delete() ? 1 : 0;
+		
+		return count;
 	}
 
 	/**

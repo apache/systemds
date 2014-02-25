@@ -202,6 +202,8 @@ public class MRJobConfiguration
 	private static final String DISTCACHE_INPUT_INDICES="distcache.input.indices";
 	private static final String DISTCACHE_INPUT_PATHS = "distcache.input.paths";
 	
+	private static final String SYSTEMML_LOCAL_TMP_DIR = "systemml.local.tmp.dir";
+	
 	/*
 	 * SystemML Counter Group names
 	 * 
@@ -1114,6 +1116,8 @@ public class MRJobConfiguration
 		return job.get(DISTCACHE_INPUT_PATHS);
 	}
 	
+	
+	
 	private static String getCSVString(boolean[] flags) {
 		if ( flags == null || flags.length == 0 )
 			return "";
@@ -1891,6 +1895,16 @@ public class MRJobConfiguration
 		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
 		
 		return sb.toString(); 
+	}
+	
+	public static void setSystemMLLocalTmpDir(JobConf job, String dir)
+	{
+		job.set(SYSTEMML_LOCAL_TMP_DIR, dir);
+	}
+	
+	public static String getSystemMLLocalTmpDir(JobConf job)
+	{
+		return job.get(SYSTEMML_LOCAL_TMP_DIR);
 	}
 }
 

@@ -165,7 +165,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		boolean raisedException = false;
 		try
 		{
-			DMLConfig conf = new DMLConfig(DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			ConfigurationManager.setConfig(conf);
 			
 			String dmlScriptString="";

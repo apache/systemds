@@ -53,11 +53,13 @@ public abstract class AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	protected static final String SCRIPT_DIR = "./test/scripts/";
+	protected static final String SCRIPT_DIR = "./DML/test/scripts/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
 	protected static final String TEMP_DIR = "./tmp/";
+	protected static final String CONFIG_DIR = "./DML/";
+	
 	
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	protected static final boolean DEBUG = false;
@@ -803,7 +805,10 @@ public abstract class AutomatedTestBase
 			System.err.println("Unknown runtime platform: " + rtplatform);
 			System.exit(1);
 		}
-			
+		//use optional config file since default under SystemML/DML
+		args.add("-config="+CONFIG_DIR+"SystemML-config.xml");
+		
+		
 		// program-specific parameters
 		if ( newWay == true ) {
 			for (int i=0; i < programArgs.length; i++)
@@ -882,7 +887,7 @@ public abstract class AutomatedTestBase
 		try 
 		{
 			//parse config file
-			DMLConfig conf = new DMLConfig(DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 
 			// delete the scratch_space and all contents
 			// (prevent side effect between tests)

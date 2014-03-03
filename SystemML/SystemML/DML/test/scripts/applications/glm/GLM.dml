@@ -7,7 +7,7 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-setwd ("test/scripts/applications/glm");
+setwd ("DML/test/scripts/applications/glm");
 # source ("Cholesky.dml");
 source ("CGSteihaug.dml");
 source ("Misc.dml");

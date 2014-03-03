@@ -7,12 +7,12 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-eigen = externalFunction(Matrix[Double] A) 
+eigen1 = externalFunction(Matrix[Double] A) 
 return (Matrix[Double] E, Matrix[Double] V) 
 implemented in (classname="com.ibm.bi.dml.packagesupport.EigenWrapper",exectype="mem")
  
 A = read( "$$indir$$A", rows=$$rows$$, cols=$$cols$$, format="text");
-[E,V] = eigen(A);
+[E,V] = eigen1(A);
 
 write(E, "$$outdir$$val", format="text");
 write(V, "$$outdir$$vec", format="text");

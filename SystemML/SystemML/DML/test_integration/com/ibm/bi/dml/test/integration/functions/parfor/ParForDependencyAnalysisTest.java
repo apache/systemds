@@ -20,6 +20,7 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLQLParser;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 
 /**
  * Different test cases for ParFOR loop dependency analysis:
@@ -48,14 +49,18 @@ import com.ibm.bi.dml.parser.LanguageException;
  * * functions
  *    49a: dep, 49b: dep       
  */
-public class ParForDependencyAnalysisTest 
+public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public static String DIR = "./test/scripts/functions/parfor/";
+	public static String DIR = SCRIPT_DIR+"/functions/parfor/";
 	
+	@Override
+	public void setUp() {
+		
+	}
 	
 	@Test
 	public void testDependencyAnalysis1() { runTest("parfor1.dml", false); }
@@ -269,7 +274,7 @@ public class ParForDependencyAnalysisTest
 		boolean raisedException = false;
 		try
 		{
-			DMLConfig conf = new DMLConfig(DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
+			DMLConfig conf = new DMLConfig(CONFIG_DIR+DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH);
 			ConfigurationManager.setConfig(conf);
 			
 			String dmlScriptString="";

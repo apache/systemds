@@ -1,0 +1,46 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2013
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+
+#PerfTestTool: DML template for estimation cost functions.
+
+dynRead = externalFunction(Matrix[Double] d, String fname, Integer m, Integer n) 
+return (Matrix[Double] D) 
+implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicReadMatrix2DCP",exectype="mem") 
+
+dynWrite = externalFunction(Matrix[Double] R, String fname) 
+return (Matrix[Double] D) 
+implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicWriteMatrix2DCP",exectype="mem") 
+
+solve = externalFunction(Matrix[Double] A, Matrix[Double] y) 
+return (Matrix[Double] b) 
+implemented in (classname="com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP",exectype="mem") 
+
+k = %numModels%;
+m = -1; 
+n = -1;
+
+dummy = matrix(1,rows=1,cols=1); 
+
+for( i in 1:k, par=8, mode=LOCAL )
+{
+   sin1 = "./conf/PerfTestTool/"+i+"_in1.csv";   
+   sin2 = "./conf/PerfTestTool/"+i+"_in2.csv";   
+   
+   D = dynRead( dummy, sin1, m, n );
+   y = dynRead( dummy, sin2, m, 1 );
+   
+   A = t(D) %*% D; # X'X
+   b = t(D) %*% y; # X'y
+   beta = solve(A,b); 
+
+   sout = "./conf/PerfTestTool/"+i+"_out.csv";   
+   
+   X=dynWrite( beta, sout );
+}

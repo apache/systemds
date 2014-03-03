@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Built-By: reinwald
+Build-Jdk: 1.6.0
+Created-By: Maven Integration for Eclipse
+

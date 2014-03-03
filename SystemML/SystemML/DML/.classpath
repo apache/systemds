@@ -2,7 +2,12 @@
 <classpath>
 	<classpathentry excluding="scripts/" kind="src" path="test"/>
 	<classpathentry excluding="com/ibm/bi/dml/test/integration/functions/external/EigenTest.java" kind="src" path="test_integration"/>
-	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry excluding="**/packagesupport/EigenWrapper.java|**/packagesupport/LinearSolverWrapperCP.java" kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/grappa_vis.jar"/>
 	<classpathentry kind="lib" path="lib/f2jutil.jar"/>
@@ -20,6 +25,18 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test_integration/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>

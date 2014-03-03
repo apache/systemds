@@ -1398,7 +1398,7 @@ public class TestUtils
 			if (nzcount > 0) {
 				for (int i = 0; i < matrix.length; i++) {
 					for (int j = 0; j < matrix[i].length; j++) {
-						if (!isR && matrix[i][j] == 0)
+						if ( matrix[i][j] == 0 ) 
 							continue;
 						pw.println((i + 1) + " " + (j + 1) + " " + matrix[i][j]);
 					}

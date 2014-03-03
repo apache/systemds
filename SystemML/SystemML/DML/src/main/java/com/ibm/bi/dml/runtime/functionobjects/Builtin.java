@@ -282,6 +282,26 @@ public class Builtin extends ValueFunction
 		}
 	}
 	
+	/**
+	 * Simplified version without exception handling
+	 * 
+	 * @param in1
+	 * @param in2
+	 * @return
+	 */
+	public double execute2(double in1, double in2) 
+	{
+		switch(bFunc) {		
+			case MAX:
+				return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
+			case MIN:
+				return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
+			case MAXINDEX: 
+				return (in1 >= in2) ? 1 : 0;	
+		}
+		return -1;
+	}
+	
 	public double execute (int in1, int in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		

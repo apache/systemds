@@ -29,11 +29,11 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.MaxIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
@@ -1755,49 +1755,57 @@ public class MatrixBlockDSM extends MatrixValue
 		}
 		else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
 		{
+			
 			//e.g., ak+ kahan plus as used in sum, mmcj and tsmm
-			if( newWithCor.isInSparseFormat() && aggOp.sparseSafe ) //SPARSE
+			if(aggOp.increOp.fn instanceof KahanPlus)
 			{
-				SparseRow[] bRows = newWithCor.getSparseRows();
-				if( bRows==null ) //early abort on empty block
-					return;
-				for( int r=0; r<Math.min(rlen, bRows.length); r++ )
+				MatrixAggLib.aggregateBinaryMatrix(newWithCor, this, cor);
+			}
+			else
+			{
+				if( newWithCor.isInSparseFormat() && aggOp.sparseSafe ) //SPARSE
 				{
-					SparseRow brow = bRows[r];
-					if( brow != null && brow.size() > 0 ) 
+					SparseRow[] bRows = newWithCor.getSparseRows();
+					if( bRows==null ) //early abort on empty block
+						return;
+					for( int r=0; r<Math.min(rlen, bRows.length); r++ )
 					{
-						int blen = brow.size();
-						int[] bix = brow.getIndexContainer();
-						double[] bvals = brow.getValueContainer();
-						for( int j=0; j<blen; j++)
+						SparseRow brow = bRows[r];
+						if( brow != null && brow.size() > 0 ) 
 						{
-							int c = bix[j];
-							buffer._sum = this.quickGetValue(r, c);
-							buffer._correction = cor.quickGetValue(r, c);
-							buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, bvals[j]);
-							quickSetValue(r, c, buffer._sum);
-							cor.quickSetValue(r, c, buffer._correction);			
+							int blen = brow.size();
+							int[] bix = brow.getIndexContainer();
+							double[] bvals = brow.getValueContainer();
+							for( int j=0; j<blen; j++)
+							{
+								int c = bix[j];
+								buffer._sum = this.quickGetValue(r, c);
+								buffer._correction = cor.quickGetValue(r, c);
+								buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, bvals[j]);
+								quickSetValue(r, c, buffer._sum);
+								cor.quickSetValue(r, c, buffer._correction);			
+							}
 						}
 					}
+					
 				}
-				
-			}
-			else //DENSE or SPARSE (!sparsesafe)
-			{
-				for(int r=0; r<rlen; r++)
-					for(int c=0; c<clen; c++)
-					{
-						buffer._sum=this.quickGetValue(r, c);
-						buffer._correction=cor.quickGetValue(r, c);
-						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
-						quickSetValue(r, c, buffer._sum);
-						cor.quickSetValue(r, c, buffer._correction);
-					}
-			}
+				else //DENSE or SPARSE (!sparsesafe)
+				{
+					for(int r=0; r<rlen; r++)
+						for(int c=0; c<clen; c++)
+						{
+							buffer._sum=this.quickGetValue(r, c);
+							buffer._correction=cor.quickGetValue(r, c);
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
+							quickSetValue(r, c, buffer._sum);
+							cor.quickSetValue(r, c, buffer._correction);
+						}
+				}
 			
-			//change representation if required
-			//(note since ak+ on blocks is currently only applied in MR, hence no need to account for this in mem estimates)
-			examSparsity(); 
+				//change representation if required
+				//(note since ak+ on blocks is currently only applied in MR, hence no need to account for this in mem estimates)
+				examSparsity(); 
+			}
 		}
 		else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
@@ -3472,8 +3480,7 @@ public class MatrixBlockDSM extends MatrixValue
 				buffer._sum=result.quickGetValue(row, column);
 				buffer._correction=result.quickGetValue(corRow, corCol);
 				double count=result.quickGetValue(countRow, countCol)+1.0;
-				double toadd=(newvalue-buffer._sum)/count;
-				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
+				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newvalue, count);
 				result.quickSetValue(row, column, buffer._sum);
 				result.quickSetValue(corRow, corCol, buffer._correction);
 				result.quickSetValue(countRow, countCol, count);
@@ -3492,7 +3499,7 @@ public class MatrixBlockDSM extends MatrixValue
 		//initialize result
 		if(op.aggOp.initialValue!=0)
 			result.resetDenseWithValue(result.rlen, result.clen, op.aggOp.initialValue);
-		
+
 		KahanObject buffer=new KahanObject(0,0);
 		int r = 0, c = 0;
 		if(sparse)
@@ -3518,39 +3525,14 @@ public class MatrixBlockDSM extends MatrixValue
 		{
 			if(denseBlock!=null)
 			{
-				if(   op.indexFn instanceof ReduceAll  //special case uak+
-				   && op.aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN ) 
+				int limit=rlen*clen;
+				for(int i=0; i<limit; i++)
 				{
-					//performance improvement over general case: 3-4x for uak+
-					double[] a = denseBlock;
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ )
-							op.aggOp.increOp.fn.execute(buffer, a[aix]);
-					
-					result.quickSetValue(0, 0, buffer._sum); //result
-					result.quickSetValue(0, 1, buffer._correction); //correction
-				}
-				else //general case
-				{
-					double[] a = denseBlock;
-					for( int i=0, aix=0; i<rlen; i++ )
-						for( int j=0; j<clen; j++, aix++ )
-						{
-							result.tempCellIndex.set(i, j);
-							op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-							incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, a[aix], buffer);
-						}
-					/*
-					int limit=rlen*clen;
-					for(int i=0; i<limit; i++)
-					{
-						r=i/clen;
-						c=i%clen;
-						result.tempCellIndex.set(r, c);
-						op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
-						incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, denseBlock[i], buffer);
-					}
-					*/	
+					r=i/clen;
+					c=i%clen;
+					result.tempCellIndex.set(r, c);
+					op.indexFn.execute(result.tempCellIndex, result.tempCellIndex);
+					incrementalAggregateUnaryHelp(op.aggOp, result, result.tempCellIndex.row, result.tempCellIndex.column, denseBlock[i], buffer);
 				}
 			}
 		}
@@ -3575,7 +3557,7 @@ public class MatrixBlockDSM extends MatrixValue
 				   && op.aggOp.increOp.fn instanceof Builtin 
 				   && ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX ){
 					double currMaxValue = result.quickGetValue(i, 1);
-					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), maxcolumn, j);
+					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, j);
 					double newMaxValue = quickGetValue(i, j);
 					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						   
@@ -3620,19 +3602,24 @@ public class MatrixBlockDSM extends MatrixValue
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
 		
-		//TODO: this code is hack to support trace, and should be removed when selection is supported
-		if(op.isTrace)
-			traceHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+		MatrixBlockDSM ret = (MatrixBlockDSM) result;
+		if(op.isTrace) //TODO: this code is hack to support trace, and should be removed when selection is supported
+			traceHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		else if(op.isDiagM2V)
-			diagM2VHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+			diagM2VHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
+		else if( MatrixAggLib.isSupportedUnaryAggregateOperator(op) ) {
+			MatrixAggLib.aggregateUnaryMatrix(this, ret, op);
+			MatrixAggLib.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
+		}
 		else if(op.sparseSafe)
-			sparseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+			sparseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		else
-			denseAggregateUnaryHelp(op, (MatrixBlockDSM)result, blockingFactorRow, blockingFactorCol, indexesIn);
+			denseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
 		
 		if(op.aggOp.correctionExists && inCP)
 			((MatrixBlockDSM)result).dropLastRowsOrColums(op.aggOp.correctionLocation);
-		return result;
+		
+		return ret;
 	}
 	
 	public CM_COV_Object cmOperations(CMOperator op) throws DMLRuntimeException {
@@ -4183,6 +4170,7 @@ public class MatrixBlockDSM extends MatrixValue
 			sparseAggregateBinaryHelp(m1, m2, (MatrixBlockDSM)result, op);
 		else
 			aggBinSparseUnsafe(m1, m2, (MatrixBlockDSM)result, op);
+
 		return result;
 	}
 	
@@ -6130,7 +6118,6 @@ public class MatrixBlockDSM extends MatrixValue
 			for(int j=0; j<m1.getNumColumns(); j++)
 				if(Math.abs(m1.quickGetValue(i, j)-m2.quickGetValue(i, j))>0.0000000001)
 				{
-					System.out.println(m1.quickGetValue(i, j)+" vs "+m2.quickGetValue(i, j)+":"+ (Math.abs(m1.quickGetValue(i, j)-m2.quickGetValue(i, j))));
 					ret=false;
 				}
 		return ret;
@@ -6143,7 +6130,6 @@ public class MatrixBlockDSM extends MatrixValue
 			for(int j=0; j<m1.getNumColumns(); j++)
 				if(Math.abs(m1.getValue(i, j)-m2.quickGetValue(i, j))>0.0000000001)
 				{
-					System.out.println(m1.getValue(i, j)+" vs "+m2.getValue(i, j)+":"+ (Math.abs(m1.getValue(i, j)-m2.quickGetValue(i, j))));
 					ret=false;
 				}
 		return ret;

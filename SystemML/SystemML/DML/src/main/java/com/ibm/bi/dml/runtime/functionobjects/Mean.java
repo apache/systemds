@@ -12,21 +12,23 @@ import com.ibm.bi.dml.runtime.instructions.CPInstructions.Data;
 import com.ibm.bi.dml.runtime.instructions.CPInstructions.KahanObject;
 
 
-public class KahanPlus extends ValueFunction 
+public class Mean extends ValueFunction 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private static KahanPlus singleObj = null;
+	private static Mean singleObj = null;
 	
-	private KahanPlus() {
-		// nothing to do here
+	private KahanPlus _plus = null; 
+	
+	private Mean() {
+		_plus = KahanPlus.getKahanPlusFnObject();
 	}
 	
-	public static KahanPlus getKahanPlusFnObject() {
+	public static Mean getMeanFnObject() {
 		if ( singleObj == null )
-			singleObj = new KahanPlus();
+			singleObj = new Mean();
 		return singleObj;
 	}
 	
@@ -36,24 +38,10 @@ public class KahanPlus extends ValueFunction
 	}
 	
 	//overwride in1
-	public Data execute(Data in1, double in2) throws DMLRuntimeException {
+	public Data execute(Data in1, double in2, double count) throws DMLRuntimeException {
 		KahanObject kahanObj=(KahanObject)in1;
-		double correction=in2+kahanObj._correction;
-		double sum=kahanObj._sum+correction;
-		//kahanObj._correction=(correction-(sum-kahanObj._sum)); 	
-		//kahanObj._sum=sum;                                     
-		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt 		
-		return kahanObj;
-	}
-	
-	//overwride in1, in2 is the sum, in3 is the correction
-	public Data execute(Data in1, double in2, double in3) throws DMLRuntimeException {
-		KahanObject kahanObj=(KahanObject)in1;
-		double correction=in2+(kahanObj._correction+in3);
-		double sum=kahanObj._sum+correction;
-		//kahanObj._correction=correction-(sum-kahanObj._sum);
-		//kahanObj._sum=sum;
-		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt
+		double delta = (in2-kahanObj._sum)/count;
+		_plus.execute(in1, delta);	
 		return kahanObj;
 	}
 	
@@ -64,10 +52,9 @@ public class KahanPlus extends ValueFunction
 	 * @param in1
 	 * @param in2
 	 */
-	public void execute2(KahanObject in1, double in2) 
+	public void execute2(KahanObject in1, double in2, double count) 
 	{
-		double correction = in2 + in1._correction;
-		double sum = in1._sum + correction;
-		in1.set(sum, correction-(sum-in1._sum)); //prevent eager JIT opt 	
+		double delta = (in2-in1._sum)/count;
+		_plus.execute2(in1, delta);
 	}
 }

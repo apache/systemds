@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2013
+ * (C) Copyright IBM Corp. 2010, 2014
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -28,7 +28,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class FullColAggregateTest extends AutomatedTestBase 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private final static String TEST_NAME1 = "ColSums";
@@ -297,8 +297,8 @@ public class FullColAggregateTest extends AutomatedTestBase
 			
 			loadTestConfiguration(config);
 	
-			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
+			//generate actual dataset 
+			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
 			boolean exceptionExpected = false;

@@ -31,20 +31,14 @@ public class AggregateUnaryOperator  extends Operator
 	
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{
-		this( aop, iop, false );
-	}
-	
-	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop, boolean unsafe)
-	{
 		aggOp=aop;
 		indexFn=iop;
 		
 		//decide on sparse safe
-		if( !unsafe && //disabled sparsesafe operation (e.g., mean)
-		   (aggOp.increOp.fn instanceof Plus || 
+		if( aggOp.increOp.fn instanceof Plus || 
 			aggOp.increOp.fn instanceof KahanPlus || 
 			aggOp.increOp.fn instanceof Or || 
-			aggOp.increOp.fn instanceof Minus ) )
+			aggOp.increOp.fn instanceof Minus ) 
 		{
 			sparseSafe=true;
 		}
